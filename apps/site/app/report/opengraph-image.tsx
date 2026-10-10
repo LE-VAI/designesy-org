@@ -18,7 +18,7 @@ export default async function OpenGraphImage({
     return renderOgCard({
       eyebrow: 'Report',
       title: 'One URL, three engines',
-      lede: 'Score + drift + readiness in a single composite report. One grade for design intelligence.',
+      lede: 'Contract score, drift and readiness in one report, with one combined score.',
       path: 'designesy.org/report',
     });
   }
@@ -41,7 +41,7 @@ export default async function OpenGraphImage({
       lede:
         result.score === null
           ? 'The target could not be read, so no score is reported.'
-          : `${result.pass} passed · ${result.fail} failed · composite design-intelligence report`,
+          : `${result.pass} passed · ${result.fail} failed · combined score report`,
       path: 'designesy.org/report',
       badge: result.grade ?? undefined, // null when unreachable — the card omits the badge rather than showing a letter
     });

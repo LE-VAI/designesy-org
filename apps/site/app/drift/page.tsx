@@ -64,7 +64,7 @@ export default async function DriftPage({ searchParams }: { searchParams?: Promi
           items={[
             { title: 'Watch it over time', desc: 'Monitor runs these 12 checks again each time and compares the run with your first and your last.', route: '/monitor', carry: true },
             { title: 'Freeze it for your agents', desc: 'Guardrails turns the same tokens into a build contract and the lint rules that hold it.', route: '/guardrails', carry: true },
-            { title: 'Run the full audit', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one composite grade.`, route: '/score', carry: true },
+            { title: 'Run the full audit', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one combined score.`, route: '/score', carry: true },
           ]}
         />
       </main>

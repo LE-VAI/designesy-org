@@ -1302,14 +1302,13 @@ html[data-motion="paused"] :is(
   .score-verify-log-step,
   .row-check,
   .check-cell-check,
-  .constel-node,
   .demo-stagger-bar,
   .orb-canvas-wrap,
   .eg-inst-target > [data-host],
   .eg-inst-state > span,
   .ix-foot,
   .hero-seam-mark :is(.seam-dot, .seam-orbit, .seam-square, .seam-square-satellite, .seam-triangle, .seam-block)
-) {
+)  {
   animation-delay: -3600s !important;
 }
 
@@ -10067,11 +10066,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
-.score-hero-top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-24);
-}
 
 .score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok-ink); }
 .score-grade-emblem.is-c { background: color-mix(in srgb, var(--grade-c) 12%, transparent); border-color: color-mix(in srgb, var(--grade-c) 30%, transparent); color: var(--warn-ink); }
@@ -10098,26 +10092,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-width: 0;
 }
 
-.score-percent-badge {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-8);
-}
-
-.score-percent-value {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-.score-percent-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  font-weight: 600;
-}
 
 .score-site-url {
   display: flex;
@@ -10164,36 +10138,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Score-scale legend — per Lighthouse PR #8121. Four bands with color dots
    so users can verify what the gauge color means. Sits between the hero-top
    and the metrics grid. */
-.score-scale-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-12) var(--space-20);
-  padding: var(--space-8) 0 var(--space-12);
-  margin-top: var(--space-8);
-  border-top: 1px solid var(--line);
-  font-size: 0.72rem;
-  color: var(--muted);
-  letter-spacing: 0.01em;
-}
-.score-scale-band {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-fine-40);
-  white-space: nowrap;
-}
-.score-scale-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
 /* One dot per grade, in the grade scale's own tokens (the ring's colours). */
-.score-scale-band.is-f .score-scale-dot { background: var(--grade-f); }
-.score-scale-band.is-d .score-scale-dot { background: var(--grade-d); }
-.score-scale-band.is-c .score-scale-dot { background: var(--grade-c); }
-.score-scale-band.is-b .score-scale-dot { background: var(--grade-b); }
-.score-scale-band.is-a .score-scale-dot { background: var(--grade-a); }
 
 /* Skeleton loading rows — replaces the bare spinner during the 40-check run.
    Per AuditBuffet/CRAIG Four-State Contract: loading must match content shape,
@@ -10597,6 +10542,23 @@ a.lab-card:focus-visible .lab-card-arrow {
   right: 0;
   height: 2px;
   border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--tile-hue, var(--line));
+}
+
+/* A tile takes its grade's colour from the contract's grade tokens: the bar
+   (a mark) in --grade-*, the letter and score (text) in --grade-*-ink. It used
+   a 90/70 status rule of its own, so a D drew red and a B drew yellow. */
+.score-engine-tile[data-grade="a"] { --tile-hue: var(--grade-a); --tile-ink: var(--grade-a-ink); }
+.score-engine-tile[data-grade="b"] { --tile-hue: var(--grade-b); --tile-ink: var(--grade-b-ink); }
+.score-engine-tile[data-grade="c"] { --tile-hue: var(--grade-c); --tile-ink: var(--grade-c-ink); }
+.score-engine-tile[data-grade="d"] { --tile-hue: var(--grade-d); --tile-ink: var(--grade-d-ink); }
+.score-engine-tile[data-grade="f"] { --tile-hue: var(--grade-f); --tile-ink: var(--grade-f-ink); }
+[data-theme="light"] .score-engine-tile[data-grade="b"] { --tile-hue: color-mix(in srgb, var(--grade-b) 80%, var(--ink)); }
+.score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
+.score-engine-tile-score small {
+  margin-left: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 
 .score-engine-tile-head {
@@ -10607,7 +10569,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -10615,7 +10577,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-count {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -10654,9 +10616,10 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-pwf {
-  font-size: 0.7rem;
+  /* What needs attention, in the category lines' words; 12px, the results
+     floor (it was 11.2px). */
+  font-size: 0.75rem;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .score-engine-tile-pwf b {
@@ -11677,12 +11640,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-card-item:active {
   background: var(--surface-hover);
 }
-.score-cat-legend-row:active {
-  transform: scale(0.985);
-}
 @media (prefers-reduced-motion: reduce) {
-  .score-card-item:active,
-  .score-cat-legend-row:active {
+  .score-card-item:active {
     transform: none;
   }
 }
@@ -11862,10 +11821,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     padding: var(--space-20);
   }
 
-  .score-hero-top {
-    gap: var(--space-16);
-  }
-
+  
   .score-grade-emblem {
     width: 4.5rem;
     height: 4.5rem;
@@ -11875,10 +11831,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     font-size: 2.5rem;
   }
 
-  .score-percent-value {
-    font-size: 1.75rem;
-  }
-
+  
   .score-progress-bar {
     width: 100%;
   }
@@ -11966,10 +11919,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     font-size: 2.25rem;
   }
 
-  .score-percent-value {
-    font-size: 1.5rem;
-  }
-
+  
   .score-metric-val {
     font-size: 1.1rem;
   }
@@ -12658,6 +12608,12 @@ html[data-motion="paused"] .pricing-card::after {
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-12);
+}
+
+/* The report's result: the shared readout and category list (B′). */
+.report-result {
+  padding: var(--space-32) 0;
+  border-bottom: 1px solid var(--line-faint);
 }
 
 /* A run that read nothing: the score form's empty-run card, in the report's
@@ -13424,24 +13380,19 @@ select {
    =========================================================================== */
 
 .score-verdict-line {
+  /* The verdict sentence under the readout (B′). Plain: the blue rule beside
+     it and the check icon went, since blue means selected and links, and a
+     check mark on a D said "passed". */
   font-size: clamp(0.95rem, 0.95rem + 0.2vw, 1.075rem);
   font-weight: 500;
   letter-spacing: -0.006em;
   line-height: 1.42;
   color: var(--ink);
   margin: 0;
+  max-width: 40ch;
   text-wrap: balance;
-  border-left: 2px solid var(--signal);
-  padding-left: var(--space-12);
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
 }
 
-.score-verdict-check {
-  flex-shrink: 0;
-  opacity: 0.8;
-}
 
 .score-tip-hint {
   margin-top: var(--space-12);
@@ -13462,148 +13413,14 @@ select {
 
 /* ── Constellation gauge ────────────────────────────────────────────────── */
 
-.score-constellation {
-  position: relative;
-  width: clamp(11rem, 34vw, 15.5rem);
-  aspect-ratio: 1 / 1;
-  flex-shrink: 0;
-}
-
-.score-constellation > svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-.constel-spoke {
-  stroke: var(--line);
-  stroke-width: 0.35;
-  opacity: 0.6;
-}
-
-.constel-track {
-  stroke: var(--line);
-  stroke-width: 2.4;
-  opacity: 0.55;
-}
-
-.constel-main-fill {
-  stroke-width: 2.4;
-  stroke-linecap: round;
-  transition: stroke var(--duration-fast) var(--ease);
-}
 
 /* Grade-colored main arc — same five-band semantics as the retired emblem,
    so OG/badge logic keeps a single grade language. */
-.constel-main-fill.is-a { stroke: var(--grade-a); }
-.constel-main-fill.is-b { stroke: var(--grade-b); }
-.constel-main-fill.is-c { stroke: var(--grade-c); }
-.constel-main-fill.is-d { stroke: var(--grade-d); }
-.constel-main-fill.is-f { stroke: var(--grade-f); }
 
-.constel-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-fine-05);
-  pointer-events: none;
-}
-
-.constel-grade {
-  font-size: clamp(2.1rem, 2.1rem + 1.1vw, 3rem);
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 1;
-}
-
-.constel-grade.is-a { color: var(--grade-a-ink); }
-.constel-grade.is-b { color: var(--grade-b-light); }
-.constel-grade.is-c { color: var(--warn-ink); }
-.constel-grade.is-d { color: var(--grade-d-ink); }
-.constel-grade.is-f { color: var(--error-ink); }
-
-.constel-pct {
-  font-size: clamp(0.8rem, 0.8rem + 0.3vw, 1rem);
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
 
 /* Category nodes — each is a micro-arc whose fill equals the category's
    own 0-100 score. Click filters the feed (same affordance as chips). */
-.constel-node {
-  cursor: pointer;
-  opacity: 0;
-  animation: constelNodeIn var(--duration) var(--ease-out) forwards;
-}
 
-@keyframes constelNodeIn {
-  from { opacity: 0; transform: scale(0.6); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.constel-node-track {
-  stroke: var(--line);
-  stroke-width: 1.5;
-  opacity: 0.6;
-  fill: var(--paper);
-}
-
-.constel-node-fill {
-  stroke: var(--signal-light);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  transition: stroke-dasharray var(--duration-fast) var(--ease-out);
-}
-
-.constel-node.is-active .constel-node-track {
-  stroke: var(--signal);
-  opacity: 1;
-}
-
-@media (hover: hover) {
-  .constel-node:hover .constel-node-track {
-    stroke: var(--signal);
-    opacity: 1;
-  }
-}
-
-.constel-node.is-active .constel-node-fill {
-  stroke: var(--signal-access);
-  stroke-width: 2.2;
-}
-
-.constel-node-label {
-  fill: var(--ink);
-  font-size: 4.6px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
-
-.constel-node.is-unscored {
-  cursor: default;
-}
-
-.constel-node.is-unscored .constel-node-label {
-  fill: var(--muted-dim);
-}
-
-.constel-node.is-unscored .constel-node-track {
-  stroke-dasharray: 1.5 1.5;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .constel-node {
-    animation: none;
-    opacity: 1;
-  }
-}
 
 /* ── Hero meta additions: delta chip + strongest/weakest line ──────────── */
 
@@ -13641,23 +13458,12 @@ select {
   transform: translateY(-1px);
 }
 
-.score-strong-weak {
-  margin: var(--space-fine-15) 0 var(--space-fine-45);
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.score-strong-weak strong {
-  color: var(--ink);
-  font-weight: 600;
-}
 
 .score-url-time {
   margin-left: var(--space-8);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--muted-dim);
   font-family: var(--mono);
   white-space: nowrap;
@@ -13666,126 +13472,285 @@ select {
 /* Scope badge — shows "universal scope" when scoring external sites.
    Hidden for designesy.org (which uses contract scope, the default). */
 .score-scope-badge {
+  /* The rules a run was scored under ("Standard rules", "Strict rules"):
+     a neutral chip. It was signal blue in mono lowercase, and blue now means
+     selected and links only. */
   margin-left: var(--space-8);
   padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
-  font-size: 0.6875rem;
-  font-family: var(--mono);
-  color: var(--signal-text);
-  background: color-mix(in oklch, var(--signal) 8%, transparent);
-  border: 1px solid color-mix(in oklch, var(--signal) 20%, transparent);
-  white-space: nowrap;
-  text-transform: lowercase;
-  letter-spacing: 0.02em;
-}
-
-/* ── Category legend (text mirror of the SVG nodes) ─────────────────────── */
-
-.score-cat-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  /* 11 categories — 3-col puts the orphan in the bottom-right instead of
-     stranding it alone on a 6th row. 3+3+3+2 reads as a deliberate rhythm;
-     2+2+2+2+2+1 reads as a bug. */
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-4) var(--space-12);
-}
-
-.score-cat-legend-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-fine-55);
-  width: 100%;
-  /* Fixed row height so name, bar, and score share one center axis on every
-     row — was min-height:2rem, which let taller rows push the score closer to
-     the NEXT row's bar (the alignment drift the eye catches). */
-  height: 2rem;
-  padding: 0 var(--space-fine-40);
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: left;
-  transition: transform var(--duration-quick) var(--ease-out),
-              color var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out),
-              border-color var(--duration-fast) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .score-cat-legend-row:hover {
-    color: var(--ink);
-    background: var(--surface-soft);
-  }
-}
-
-.score-cat-legend-row.is-active {
+  font-size: 0.75rem;
   color: var(--ink);
-  border-color: var(--signal);
-  background: color-mix(in srgb, var(--signal) 10%, transparent);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  white-space: nowrap;
 }
+
+/* "31 of 44 checks scored", beside the URL and the rules. */
+.score-scored-line {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+
 
 /* Unscored rows dim the bar, never the label: at opacity 0.55 the --muted
    label measured 2.97:1 in dark. The "–" score already says it is unscored. */
-.score-cat-legend-row.is-unscored .score-cat-legend-bar {
-  opacity: 0.55;
-}
 
-.score-cat-legend-name {
-  flex: 0 0 auto;
-  min-width: 5.4rem;
-}
 
-.score-cat-legend-bar {
-  flex: 1 1 auto;
-  height: 3px;
-  background: var(--surface);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.score-cat-legend-fill {
-  display: block;
-  height: 100%;
-  background: var(--signal-light);
-  border-radius: 999px;
-  transition: width var(--duration) var(--ease-out);
-  /* Sweep-in on score: each bar draws from empty to its value with a small
-     stagger (transform scaleX, GPU-safe, no layout thrash). The inline width
-     stays as the final value; the animation only covers the entrance, so the
-     transition above still handles live re-scores. Stagger delay is set via
-     the --bar-i custom property on the row (falls back to 0). */
-  transform-origin: left center;
-  animation: scoreBarSweep var(--duration) var(--ease-out) both;
-  animation-delay: calc(var(--bar-i, 0) * 40ms);
-}
 @keyframes scoreBarSweep {
   from { transform: scaleX(0); opacity: 0.4; }
   to   { transform: scaleX(1); opacity: 1; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .score-cat-legend-fill { animation: none; }
+
+
+/* ── Result readout and category list (B′, owner-approved 2026-10-10) ───────
+   One design wherever a contract score renders (score-form.tsx, the report;
+   score/result-parts.tsx). It replaced the ring: a grade letter in one face
+   and a percentage in another, eleven unlabelled nodes, and the same eleven
+   values again as bars. Measured in the approved mock: the letter's ink 36px
+   against the digits' 39px, bottoms within 2px; 0 of 14 count lines wrap at
+   390 or 1440; no text under 12px. scripts/check-results-readout.js checks
+   all three on the built page. */
+.rs {
+  container-type: inline-size;
 }
 
-.score-cat-legend-fill.is-weak {
-  background: var(--warn);
+.rs-layout {
+  display: grid;
+  gap: var(--space-24);
 }
 
-.score-cat-legend-score {
-  /* Fixed right-aligned value column on the shared row axis — tabular-nums
-     keeps digits monospaced so 8 / 88 / 100 all end at the same edge. */
-  flex: 0 0 2.2rem;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
+.rs-side {
+  display: grid;
+  gap: var(--space-16);
+  align-content: start;
+  min-width: 0;
+}
+
+.rs-head {
+  display: grid;
+  gap: var(--space-12);
+}
+
+/* One voice: the letter takes the numeral's face, size, weight and baseline,
+   coloured by grade; no box around it. */
+.rs-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-12);
+  font: 700 3.25rem/1 var(--display);
+  letter-spacing: -0.02em;
+}
+.rs-grade {
+  color: var(--tone-ink);
+}
+.rs-num {
   color: var(--ink);
-  line-height: 1;
+  font-variant-numeric: proportional-nums;
 }
+.rs-num small {
+  font: 500 1rem/1 var(--mono);
+  color: var(--muted);
+  letter-spacing: 0;
+  margin-left: var(--space-6);
+}
+
+/* Grade tones: the contract's grade tokens, marks and text. */
+:is(.rs-readout, .rs-track > span)[data-grade="a"] { --tone: var(--grade-a); --tone-ink: var(--grade-a-ink); }
+:is(.rs-readout, .rs-track > span)[data-grade="b"] { --tone: var(--grade-b); --tone-ink: var(--grade-b-ink); }
+:is(.rs-readout, .rs-track > span)[data-grade="c"] { --tone: var(--grade-c); --tone-ink: var(--grade-c-ink); }
+:is(.rs-readout, .rs-track > span)[data-grade="d"] { --tone: var(--grade-d); --tone-ink: var(--grade-d-ink); }
+:is(.rs-readout, .rs-track > span)[data-grade="f"] { --tone: var(--grade-f); --tone-ink: var(--grade-f-ink); }
+
+/* The scale: F (under 60) takes a third, D to A a sixth each, so every band
+   has room for its label; the marker sits at --at (0 to 1). */
+.rs-scale {
+  display: grid;
+  gap: var(--space-6);
+}
+.rs-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 2px;
+  height: var(--space-6);
+}
+.rs-track > span {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tone) 22%, transparent);
+}
+.rs-track > span.is-here {
+  background: var(--tone);
+}
+.rs-marker {
+  position: absolute;
+  top: calc(-1 * var(--space-4));
+  bottom: calc(-1 * var(--space-4));
+  left: calc(var(--at, 0) * 100% - 1px);
+  width: 2px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+.rs-ticks {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 2px;
+  font: 500 0.75rem/1.2 var(--sans);
+  color: var(--muted-dim);
+}
+.rs-ticks > span {
+  text-align: center;
+}
+.rs-ticks > span:first-child {
+  text-align: left;
+}
+.rs-ticks b {
+  font: 500 0.75rem/1.2 var(--mono);
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.3em;
+  color: var(--muted-dim);
+}
+.rs-ticks > span.is-here,
+.rs-ticks > span.is-here b {
+  color: var(--ink);
+}
+
+/* The list, its legend as its header on one line. */
+.rs-listwrap {
+  display: grid;
+  gap: var(--space-12);
+  min-width: 0;
+}
+/* Four keys in 276px of text: an 8px gap keeps them on one line in the
+   311px a 390 phone gives the score form (a 12px gap needed 312). */
+.rs-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6) var(--space-8);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.rs-legend i {
+  display: inline-block;
+  width: var(--space-8);
+  height: var(--space-8);
+  border-radius: 2px;
+  margin-right: var(--space-6);
+  background: var(--tone);
+}
+.rs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.rs-list > li + li .rs-row {
+  border-top: 1px solid var(--line-faint);
+}
+
+/* One tone rule for categories, on the grade thresholds (verdict.ts
+   categoryTone): the contract's status tokens; a missing value is muted. */
+:is(.rs-row, .rs-legend i)[data-tone="pass"] { --tone: var(--ok); --tone-ink: var(--ok-ink); }
+:is(.rs-row, .rs-legend i)[data-tone="warn"] { --tone: var(--warn); --tone-ink: var(--warn-ink); }
+:is(.rs-row, .rs-legend i)[data-tone="fail"] { --tone: var(--error); --tone-ink: var(--error-ink); }
+:is(.rs-row, .rs-legend i)[data-tone="none"] { --tone: var(--line-strong); --tone-ink: var(--muted); }
+
+/* Marks hold 3:1 on the light theme too (WCAG 1.4.11). The contract's light
+   --warn and --grade-b read as inks, but as fills they measured 2.62:1 on a
+   selected row's bar track, 2.81:1 on the plain track and 2.84 to 2.95:1 on
+   the paper. A mark takes the hue mixed toward ink (3.29 and 3.9:1). */
+[data-theme="light"] :is(.rs-row, .rs-legend i)[data-tone="warn"] { --tone: color-mix(in srgb, var(--warn) 85%, var(--ink)); }
+[data-theme="light"] .rs-track > span[data-grade="b"] { --tone: color-mix(in srgb, var(--grade-b) 80%, var(--ink)); }
+
+/* A row: name, bar, score; the count line under the name, never a narrow
+   fourth column (7 of 14 wrapped there at 1440 in the first mock). */
+.rs-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 11rem) 1fr 2.5rem;
+  align-items: center;
+  column-gap: var(--space-12);
+  row-gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-10) var(--space-4);
+  font: inherit;
+  font-size: 0.9375rem;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+button.rs-row {
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
+}
+@media (hover: hover) {
+  button.rs-row:hover {
+    background: var(--surface-hover);
+  }
+}
+/* Selected (it filters the checks below): blue keeps that one meaning. */
+button.rs-row[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--signal) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--signal-access);
+}
+button.rs-row:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+.rs-name {
+  color: var(--ink);
+  min-width: 0;
+}
+.rs-bar {
+  height: var(--space-6);
+  border-radius: 999px;
+  background: var(--line-faint);
+  overflow: hidden;
+}
+.rs-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tone);
+  transform-origin: left center;
+  animation: scoreBarSweep var(--duration) var(--ease-out) both;
+  animation-delay: calc(var(--bar-i, 0) * 40ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rs-bar > i { animation: none; }
+}
+.rs-val {
+  text-align: right;
+  font: 600 0.9375rem/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--tone-ink);
+}
+/* The count line runs under the name and on under the score, which has no
+   second line: the longest the engine writes ("1 failed · 2 need work · 1
+   needs a browser run") wrapped in the 251px under the name and bar at 390. */
+.rs-detail {
+  grid-column: 1 / -1;
+  font: 400 0.8125rem/1.35 var(--sans);
+  color: var(--muted);
+}
+
+/* Wide cards (the report, the platform pages): readout left, list right,
+   the readout held in view while the longer list scrolls. */
+@container (min-width: 56rem) {
+  .rs-layout {
+    grid-template-columns: 5fr 7fr;
+    align-items: start;
+    gap: var(--space-40);
+  }
+  .rs-side {
+    position: sticky;
+    top: var(--space-96);
+  }
+}
+
 
 /* ── Scoring rubric (published math) ────────────────────────────────────── */
 
@@ -13961,24 +13926,13 @@ select {
 /* ── Constellation responsive ───────────────────────────────────────────── */
 
 @media (max-width: 720px) {
-  .score-hero-top {
-    flex-direction: column;
-    text-align: center;
-  }
-
+  
   .score-hero-meta {
     align-items: center;
   }
 
-  .score-percent-badge {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .score-cat-legend {
-    grid-template-columns: 1fr;
-  }
-
+  
+  
   .score-verdict-line {
     font-size: 0.92rem;
   }
@@ -13989,10 +13943,7 @@ select {
 }
 
 @media (max-width: 560px) {
-  .score-constellation {
-    width: min(13rem, 74vw);
-  }
-
+  
   .score-rubric-weight-label {
     flex-basis: 6rem;
   }
@@ -14457,13 +14408,6 @@ select {
 
 
 /* Proof rail — quiet, single cluster, real values only. */
-
-
-
-
-
-
-
 
 
 /* Recent-scores — the real cohort leaders, hairline ledger rows. */
@@ -16669,8 +16613,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
     min-height: 2.75rem;
   }
   .score-category-chip,
-  .score-filter-tab,
-  .score-cat-legend-row {
+  .score-filter-tab {
     height: 2.75rem;
   }
   .score-check-group-header {

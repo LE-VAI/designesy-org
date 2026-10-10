@@ -74,7 +74,7 @@ export default async function ComparePage({ searchParams }: { searchParams?: Pro
         <EngineNext
           items={[
             { title: 'Watch one of them', desc: 'Monitor re-runs the drift checks on a site and flags tokens that change between runs.', route: '/monitor', carry: true },
-            { title: 'Score one of them', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one composite grade.`, route: '/score', carry: true },
+            { title: 'Score one of them', desc: `The ${ENGINE_CHECK_COUNT}-check contract score, drift and AI readiness on one URL, with one combined score.`, route: '/score', carry: true },
             { title: 'Freeze the one you trust', desc: "Guardrails turns a site's tokens into a build contract for AI coding agents.", route: '/guardrails', carry: true },
           ]}
         />

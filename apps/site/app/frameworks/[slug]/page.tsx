@@ -143,18 +143,18 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
               <h2 className="eg-h2" id="fw-scale-h">
                 {`Among the ${n}`}
               </h2>
-              <p className="eg-section-sub">composite score, weekly run of {SCORES_DATE}</p>
+              <p className="eg-section-sub">contract score, weekly run of {SCORES_DATE}</p>
             </div>
           </div>
           <DataFigure
             id="fw-strip"
             title={`${site.name} on the grade scale`}
-            note={`Every scored site at its composite score; ${site.name} is the larger dot, read out above. Sites a point or two apart stack.`}
+            note={`Every scored site at its contract score; ${site.name} is the larger dot, read out above. Sites a point or two apart stack.`}
             source={`Weekly run of ${SCORES_DATE}. Engine ${SCORES_ENGINE_VERSION}.`}
             tableLabel="Every site's score"
             table={
               <DataTable
-                caption={`Composite score of every site, weekly run of ${SCORES_DATE}.`}
+                caption={`Contract score of every site, weekly run of ${SCORES_DATE}.`}
                 head={['Site', 'Rank', 'Grade', 'Score']}
                 numeric={[1, 3]}
                 rows={COHORT.map((s) => [s.slug === slug ? `${s.name} (this page)` : s.name, s.rank, s.grade, fmt(s.score)])}

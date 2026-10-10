@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../../api/score/route';
+import { fmtScore } from '../verdict';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,13 +23,17 @@ const W = 220;
 const H = 44;
 
 // Grade → color. Mirrors opengraph-image.tsx GRADE_COLOR (A/B signal, C/D amber, F red).
+// The contract's grade colours (--grade-a to --grade-f, dark values): an SVG
+// served on its own has no CSS variables. The letter on them is the contract's
+// --paper, dark (white on lime measured 2:1).
 const GRADE_FILL: Record<string, string> = {
-  A: '#3358e8',
-  B: '#3358e8',
-  C: '#c9a227',
-  D: '#c9a227',
-  F: '#c4503e',
+  A: '#22c55e',
+  B: '#84cc16',
+  C: '#eab308',
+  D: '#fb923c',
+  F: '#ef4444',
 };
+const GRADE_INK = '#010102';
 
 type BadgeState =
   | { kind: 'scored'; grade: string; score: number; url: string }
@@ -57,7 +62,7 @@ function renderBadge(state: BadgeState): string {
   if (state.kind === 'scored') {
     gradeText = state.grade;
     gradeFill = GRADE_FILL[state.grade] || '#6b6b6b';
-    valueText = `${state.score}%`;
+    valueText = `${fmtScore(state.score)} /100`;
   } else if (state.kind === 'unreachable') {
     gradeText = '–';
     gradeFill = '#6b6b6b';
@@ -98,7 +103,7 @@ function renderBadge(state: BadgeState): string {
   <text x="${segLabel / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#a0a0a0" letter-spacing="0.04em">${escapeXml(label)}</text>
   <!-- grade segment -->
   <rect x="${segLabel}" y="0" width="${segGrade}" height="${H}" fill="${gradeFill}"/>
-  <text x="${segLabel + segGrade / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#ffffff">${escapeXml(gradeText)}</text>
+  <text x="${segLabel + segGrade / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="${state.kind === 'scored' ? GRADE_INK : '#ffffff'}">${escapeXml(gradeText)}</text>
   <!-- value segment: host · score% -->
   <text x="${segLabel + segGrade + 10}" y="${H / 2 - 6}" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="500" fill="#a0a0a0">${escapeXml(host)}</text>
   <text x="${segLabel + segGrade + 10}" y="${H / 2 + 7}" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#ffffff" font-variant-numeric="tabular-nums">${escapeXml(valueText)}</text>

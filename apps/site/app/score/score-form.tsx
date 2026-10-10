@@ -11,7 +11,6 @@ import {
   truncateUrl,
   type ScoreHistoryEntry,
 } from '../lib/score-history';
-import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { EngineBar, Segmented } from '../lib/engine/command-bar';
 import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
@@ -19,7 +18,22 @@ import { useSegmentIndicator } from '../lib/engine/use-segment-indicator';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
-import { CATEGORIES, categoryChips, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
+import {
+  categoryChips,
+  categoryLabel,
+  verdictLine,
+  isEmptyRun,
+  emptyRunReason,
+  readEvidence,
+  fmtScore,
+  fmtCategory,
+  scopeLabel,
+  statusCount,
+  statusCountWords,
+  STATUS_LABEL,
+  STATUS_GROUP,
+} from './verdict';
+import { ResultReadout, ResultScale, CategoryList } from './result-parts';
 import { ScoreEmptyRun } from './score-empty-run';
 
 /**
@@ -130,71 +144,15 @@ type RescoreResponse = Pick<
 
 type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
-// CATEGORIES, topCategories and verdictLine live in ./verdict, with the
-// empty-run guard, so a script can test them without a browser.
-
-// ── Constellation geometry ────────────────────────────────────────────────
-// The category constellation replaces the radar/wheel idiom (Observable's
-// 2025 radar critique: axis-order illusion undermines exactly the legitimacy
-// a scoring tool must earn). Categories sit on a FIXED ring indexed by
-// contract weight — heaviest (cadence) at 12 o'clock, descending clockwise.
-// Fixed order = no axis-order manipulation. The center circle r=26 leaves
-// room for the grade letter + percent; nodes render at r=48 as small arcs
-// whose fill length = category score.
-const CONSTELLATION_ORDER = [
-  'cadence', 'accessibility', 'semantic', 'motion', 'tokens',
-  'takt', 'poise', 'identity', 'interaction', 'performance', 'responsive',
-];
-const CONSTEL_C = 50;      // viewBox center (0 0 100 100)
-const CONSTEL_RING_R = 26; // main-score ring radius (circumference ≈ 163.36)
-const CONSTEL_NODE_R = 48; // category node ring radius
-const MAIN_CIRC = 2 * Math.PI * CONSTEL_RING_R; // 163.3628
-const NODE_ARC_R = 7;      // category micro-arc stroke radius
-const NODE_ARC_CIRC = 2 * Math.PI * NODE_ARC_R; // 43.9823
-
-function constellationPoint(index: number, total: number, r: number): { x: number; y: number } {
-  const angle = (index / total) * 2 * Math.PI - Math.PI / 2; // 12 o'clock start
-  return { x: CONSTEL_C + r * Math.cos(angle), y: CONSTEL_C + r * Math.sin(angle) };
-}
+// Words, formats and the verdict live in ./verdict, with the empty-run
+// guard, so a script can test them without a browser. The readout and the
+// category list are ./result-parts (owner-approved layout B′, 2026-10-10),
+// which replaced the ring.
 
 // Sort order for check cards — failures and warnings first, passes/skips last.
 // This surfaces "what to fix first" without a separate quick-wins block, per
 // the Lighthouse pattern (Opportunities/Diagnostics before Passed checks).
-// Central percentage formatter. Scores arrive as numbers that can carry
-// floating-point tails (weighted WARN paths produce e.g. 68.99999999999999,
-// or long-history/API values like 68.9). Always render through fmtPct so a
-// raw float never truncates mid-cell. Integers stay integers (100, not 100.0);
-// fractions keep one decimal (68.9). The "%" glyph is appended by the caller
-// where markup needs it as a separate node.
-function fmtPct(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-}
-
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
-
-// The engine's grade bands (computeGrade in api/score/route.ts), lowest first.
-const GRADE_BANDS: [string, number, number][] = [['F', 0, 59], ['D', 60, 69], ['C', 70, 79], ['B', 80, 89], ['A', 90, 100]];
-
-// The ring's percentage, one decimal, its punctuation set apart (.num-punct):
-// the digits keep tabular widths so the count-up does not wobble, and the
-// period and percent sign take their own narrow widths instead of a digit's.
-function PctFigure({ value }: { value: number }) {
-  const [whole, decimal] = String(Math.round(value * 10) / 10).split('.');
-  return (
-    <>
-      {whole}
-      {decimal !== undefined && (
-        <>
-          <span className="num-punct">.</span>
-          {decimal}
-        </>
-      )}
-      <span className="num-punct">%</span>
-    </>
-  );
-}
 
 function normalizeInput(input: string): string {
   let clean = input.trim();
@@ -207,17 +165,18 @@ function normalizeInput(input: string): string {
 
 type ScopeMode = 'auto' | 'universal' | 'contract';
 
-// The scope names are the API's (?scope=auto|universal|contract), so what the
-// page says is what a request sends. Each carries its reading, shown under the
-// control for the one selected and read with each option.
+// The rules a run is scored under. The values are the API's
+// (?scope=auto|universal|contract); the labels are their visitor names,
+// Standard and Strict (verdict.ts scopeLabel). Each carries its reading,
+// shown under the control for the one selected and read with each option.
 const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
-  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to the full contract; every other site gets the Universal reading.' },
+  { value: 'auto', label: 'Auto', hint: 'designesy.org is held to Strict rules; every other site gets Standard rules.' },
   {
     value: 'universal',
-    label: 'Universal',
-    hint: "Optional polish a site leaves out (sound, font synthesis, a selection color) is skipped instead of failed, as are the checks tied to Designesy's own token names.",
+    label: 'Standard',
+    hint: "Optional polish a site leaves out (sound, font synthesis, a selection color) does not apply instead of failing, and neither do the checks tied to Designesy's own token names.",
   },
-  { value: 'contract', label: 'Contract', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
+  { value: 'contract', label: 'Strict', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
 ];
 
 export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
@@ -539,24 +498,30 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const lines = [
       `# Designesy Verification Receipt`,
       `Site: ${scoredUrl}`,
-      `Scope: ${result.scope || 'contract'}`,
+      `Rules: ${scopeLabel(result.scope)}`,
       `Verdict: ${verdictLine(result)}`,
-      `Grade: ${result.grade} (${fmtPct(result.score)}%)`,
-      ...(delta !== null ? [`Delta: ${delta > 0 ? '+' : ''}${delta} pts vs previous score`] : []),
+      `Grade: ${result.grade}, ${typeof result.score === 'number' ? fmtScore(result.score) : '–'} /100`,
+      ...(delta !== null ? [`Change: ${delta > 0 ? '+' : ''}${fmtScore(delta)} against the previous score`] : []),
       `Assessed: ${new Date().toISOString()}`,
-      `Pass: ${result.pass} | Fail: ${result.fail} | Warn: ${result.warn} | Manual: ${result.manual || 0} | N/A: ${result.skip}`,
+      `Checks: ${[
+        statusCount('PASS', result.pass || 0),
+        statusCount('FAIL', result.fail || 0),
+        statusCount('WARN', result.warn || 0),
+        statusCount('MANUAL', result.manual || 0),
+        statusCount('SKIP', result.skip || 0),
+      ].join(' · ')}`,
       `Tokens Extracted: ${result.tokensExtracted || 0}`,
       `Contract: Designesy Design System Contract ${CONTRACT_VERSION}`,
-      `Scoring: weighted per category (PASS 1.0 / WARN 0.5 / FAIL 0, MANUAL and N/A excluded), weights below; accessibility < 60% caps grade at C.`,
+      `Scoring: weighted per category (pass 1.0, needs work 0.5, fail 0; checks that need a browser run or do not apply are left out), weights below; accessibility under 60 caps the grade at C.`,
     ];
     const cats = result.categoryScores || {};
-    const catKeys = CONSTELLATION_ORDER.filter((k) => cats[k]);
+    const catKeys = Object.keys(cats).sort((a, b) => (cats[b].weight || 0) - (cats[a].weight || 0));
     if (catKeys.length > 0) {
       lines.push(``, `## Category Breakdown`);
       for (const k of catKeys) {
         const v = cats[k];
-        const label = CATEGORIES.find((c) => c.key === k)?.label || k;
-        lines.push(`${label} (weight ${v.weight}%): ${v.score === null ? 'unscored' : fmtPct(v.score) + '%'} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.manual || 0}m/${v.skip}s`);
+        const label = categoryLabel(k);
+        lines.push(`${label} (weight ${v.weight}): ${v.score === null ? 'unscored' : fmtCategory(v.score)} — ${v.pass}p/${v.fail}f/${v.warn}w/${v.manual || 0}m/${v.skip}s`);
       }
     }
     lines.push(``, `## Check Summary`);
@@ -578,7 +543,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // in the text causes X's crawler to attach a card for the scored brand instead
   // of the Designesy grade card.
   const shareText = result?.grade
-    ? `Designesy score: Grade ${result.grade} (${fmtPct(result.score)}%). See the full design-system audit`
+    ? `Designesy contract score: Grade ${result.grade}, ${fmtScore(result.score ?? 0)} /100. See the full design-system audit`
     : `Score any site against the Designesy design system contract`;
 
   function copyShareLink() {
@@ -595,7 +560,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     ? `${window.location.origin}/score/badge?url=${encodeURIComponent(scoredUrl)}`
     : '';
   const badgeEmbed = badgeSrc
-    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Designesy design legitimacy score" /></a>`
+    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Designesy contract score" /></a>`
     : '';
 
   function copyBadgeEmbed() {
@@ -713,7 +678,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
       {status === 'loading' && (
         <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
-          <p className="score-verify-log-title">Legitimacy engine running</p>
+          <p className="score-verify-log-title">Contract score running</p>
           <ol className="score-verify-log-list">
             {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 14 categories', 'Composing verdict'].map((step, i) => (
               <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
@@ -747,184 +712,76 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <div className="score-results fade-up" ref={resultsRef}>
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
-            {/* Verdict line — leads before the number (PSI verdict-first pattern).
-                The LottieHint check draws a one-shot confirmation when results
-                arrive — subtle, 0.4s, removed under reduced-motion. */}
-            <p className="score-verdict-line" tabIndex={-1} ref={verdictRef}>
-              <LottieHint type="check" size={20} trigger="visible" className="score-verdict-check" />
-              <span className="sr-only">Grade {result.grade}, {result.score}%. </span>
-              {verdictLine(result)}
-            </p>
+            {/* B′ (owner-approved 2026-10-10): the readout and the grade scale,
+                the verdict, the meta line, then one category list. It replaced
+                the ring, whose eleven nodes had no names and repeated the bars
+                below, and the second readout (the same figure with a percent sign). */}
+            <div className="rs">
+              <div className="rs-layout">
+                <div className="rs-side">
+                  <div className="rs-head">
+                    <ResultReadout grade={result.grade || 'F'} score={result.score ?? 0} display={animatedScore} />
+                    <ResultScale score={result.score ?? 0} />
+                  </div>
 
-            <div className="score-hero-top">
-              {/* Constellation gauge — the contract's 10 categories as a fixed
-                  weight-ordered ring around the main score arc. NOT a radar
-                  chart: fixed axis order kills the axis-order illusion; the
-                  arcs decompose the composite like Lighthouse's explodey
-                  gauge. Categories with all checks skipped render unscored. */}
-              <div className="score-constellation" role="img" aria-label={`Grade ${result.grade}, ${result.score} percent legitimacy score. Category breakdown available in the feed below.`}>
-                <svg viewBox="0 0 100 100" aria-hidden="true">
-                  {/* connector spokes — faint, weight-indexed */}
-                  <g className="constel-spokes">
-                    {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((key, i, arr) => {
-                      const p = constellationPoint(i, arr.length, CONSTEL_NODE_R - NODE_ARC_R - 3);
-                      return <line key={key} x1={CONSTEL_C} y1={CONSTEL_C} x2={p.x} y2={p.y} className="constel-spoke" />;
-                    })}
-                  </g>
-                  {/* main score ring */}
-                  <circle className="constel-track" cx={CONSTEL_C} cy={CONSTEL_C} r={CONSTEL_RING_R} fill="none" />
-                  <circle
-                    className={`constel-main-fill is-${result.grade?.toLowerCase()}`}
-                    cx={CONSTEL_C}
-                    cy={CONSTEL_C}
-                    r={CONSTEL_RING_R}
-                    fill="none"
-                    strokeDasharray={`${(animatedScore / 100) * MAIN_CIRC} ${MAIN_CIRC}`}
-                    transform={`rotate(-90 ${CONSTEL_C} ${CONSTEL_C})`}
+                  {/* Verdict line. Focus lands here when a run the visitor
+                      started finishes, so it opens with the grade and score. */}
+                  <p className="score-verdict-line" tabIndex={-1} ref={verdictRef}>
+                    <span className="sr-only">Grade {result.grade}, {fmtScore(result.score ?? 0)} out of 100. </span>
+                    {verdictLine(result)}
+                  </p>
+
+                  <div className="score-site-url">
+                    <span className="score-url-dot" />
+                    <span className="score-url-text">{scoredUrl}</span>
+                    <span className="score-url-time">{new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
+                    {result.scope && (
+                      <span className="score-scope-badge" title={
+                        result.scope === 'universal'
+                          ? 'Standard rules: optional polish a site leaves out does not apply instead of failing. What every site needs (accessibility, semantics) still counts.'
+                          : `Strict rules: all ${ENGINE_CHECK_COUNT} checks count an absence against the site. Designesy's own patterns are required.`
+                      }>
+                        {scopeLabel(result.scope)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="score-scored-line">
+                    {(result.pass || 0) + (result.warn || 0) + (result.fail || 0)} of {result.total} checks scored{' '}
+                    {(() => {
+                      // History points for this URL only — sparkline needs >=2 points
+                      const sameUrl = history.filter((h) => h.url === scoredUrl).map((h) => h.score);
+                      const showSparkline = sameUrl.length >= 2;
+                      if (delta === null && !showSparkline) return null;
+                      return (
+                        <span className="score-delta-group">
+                          {showSparkline && <ScoreSparkline points={sameUrl} />}
+                          {delta !== null && delta !== 0 && (
+                            <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change against your previous score for this site (this browser)">
+                              {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{fmtScore(delta)}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
+                  </p>
+                </div>
+
+                {/* One category list. A row filters the checks below to its
+                    category, as the chips do. */}
+                {result.categoryScores && (
+                  <CategoryList
+                    scores={result.categoryScores}
+                    selected={selectedCategory}
+                    onSelect={(k) => setSelectedCategory(selectedCategory === k ? 'ALL' : k)}
+                    drawn={animatedCatScores}
                   />
-                  {/* category nodes */}
-                  {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((key, i, arr) => {
-                    const cat = result.categoryScores![key];
-                    const scored = cat.score !== null;
-                    const p = constellationPoint(i, arr.length, CONSTEL_NODE_R);
-                    const frac = scored ? cat.score! / 100 : 0;
-                    return (
-                      <g
-                        key={key}
-                        className={`constel-node ${scored ? '' : 'is-unscored'} ${selectedCategory === key ? 'is-active' : ''}`}
-                        onClick={() => setSelectedCategory(selectedCategory === key ? 'ALL' : key)}
-                        style={{ animationDelay: `${200 + i * 70}ms` }}
-                      >
-                        <circle className="constel-node-track" cx={p.x} cy={p.y} r={NODE_ARC_R} fill="none" />
-                        {scored && (
-                          <circle
-                            className="constel-node-fill"
-                            cx={p.x}
-                            cy={p.y}
-                            r={NODE_ARC_R}
-                            fill="none"
-                            strokeDasharray={`${frac * NODE_ARC_CIRC * (animatedScore / (result.score || 100))} ${NODE_ARC_CIRC}`}
-                            transform={`rotate(-90 ${p.x} ${p.y})`}
-                          />
-                        )}
-                        <text className="constel-node-label" x={p.x} y={p.y} textAnchor="middle" dominantBaseline="central">
-                          {scored ? Math.round(cat.score!) : '–'}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-                <div className="constel-center">
-                  <span className={`constel-grade is-${result.grade?.toLowerCase()}`}>{result.grade}</span>
-                  <span className="constel-pct"><PctFigure value={animatedScore} /></span>
-                </div>
+                )}
               </div>
-
-              <div className="score-hero-meta">
-                <div className="score-percent-badge">
-                  <span className="score-percent-value">{Math.round(animatedScore * 10) / 10}%</span>
-                  <span className="score-percent-label">Legitimacy Score</span>
-                  {(() => {
-                    // History points for this URL only — sparkline needs >=2 points
-                    const sameUrl = history.filter((h) => h.url === scoredUrl).map((h) => h.score);
-                    const showSparkline = sameUrl.length >= 2;
-                    if (delta === null && !showSparkline) return null;
-                    return (
-                      <span className="score-delta-group">
-                        {showSparkline && <ScoreSparkline points={sameUrl} />}
-                        {delta !== null && delta !== 0 && (
-                          <span className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`} title="Change vs your previous score for this site (this browser)">
-                            {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}{delta}
-                          </span>
-                        )}
-                      </span>
-                    );
-                  })()}
-                </div>
-
-                <p className="score-strong-weak">
-                  {(() => {
-                    const best = topCategories(result, 'best');
-                    const worst = topCategories(result, 'worst');
-                    if (!best.label) return null;
-                    return (
-                      <>
-                        Strongest: <strong>{best.label} {fmtPct(best.score)}%</strong>
-                        {worst.label && worst.label !== best.label && (
-                          <> · Weakest: <strong>{worst.label} {fmtPct(worst.score)}%</strong></>
-                        )}
-                      </>
-                    );
-                  })()}
-                </p>
-
-                <div className="score-site-url">
-                  <span className="score-url-dot" />
-                  <span className="score-url-text">{scoredUrl}</span>
-                  <span className="score-url-time">{new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC</span>
-                  {result.scope && (
-                    <span className="score-scope-badge" title={
-                      result.scope === 'universal'
-                        ? 'Universal scope: optional features SKIP on absence. Only universal requirements (accessibility, semantics) are penalized.'
-                        : `Contract scope: all ${ENGINE_CHECK_COUNT} checks penalize absence. Designesy patterns are mandatory.`
-                    }>
-                      {result.scope} scope
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Category legend — the accessible text mirror of the SVG
-                constellation (screen readers can navigate SVG text poorly).
-                Doubles as a second filter affordance: clicking a row filters
-                the feed, same as the nodes and chips. */}
-            <ul className="score-cat-legend">
-              {(result.categoryScores ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k]) : []).map((k, i) => {
-                const cat = result.categoryScores![k];
-                const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
-                const active = selectedCategory === k;
-                return (
-                  <li key={k}>
-                    <button
-                      type="button"
-                      className={`score-cat-legend-row ${active ? 'is-active' : ''} ${cat.score === null ? 'is-unscored' : ''}`}
-                      onClick={() => setSelectedCategory(active ? 'ALL' : k)}
-                      aria-pressed={active}
-                      data-cuelume-hover="tick"
-                    >
-                      <span className="score-cat-legend-name">{label}</span>
-                      <span className="score-cat-legend-bar" aria-hidden="true">
-                        <span
-                          className={`score-cat-legend-fill ${cat.score !== null && cat.score < 60 ? 'is-weak' : ''}`}
-                          style={{ width: `${Math.round(animatedCatScores[k] ?? 0)}%`, ['--bar-i' as string]: i }}
-                        />
-                      </span>
-                      <span className="score-cat-legend-score">{cat.score === null ? <><span aria-hidden="true">–</span><span className="sr-only">Not measured</span></> : `${Math.round(animatedCatScores[k] ?? 0)}`}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/* Score-scale legend — per Lighthouse PR #8121: never show a
-                colored gauge without a legend so users can verify the bands.
-                The bands are the grades' own (F under 60, then a grade every
-                ten points), in the grade colours the ring is drawn in. It read
-                Fail 0 to 49 and Needs work 50 to 69, so an F at 56.6 sat in
-                "Needs work" on its own card. */}
-            <div className="score-scale-legend" aria-hidden="true">
-              {GRADE_BANDS.map(([g, from, to]) => (
-                <span key={g} className={`score-scale-band is-${g.toLowerCase()}`}>
-                  <span className="score-scale-dot" />
-                  {g}: {from} to {to}
-                </span>
-              ))}
             </div>
 
             {/* Scoring rubric — Socket.dev published-math pattern. The exact
                 weight function is visible on the same page as the number so
-                the composite can never read as arbitrary. */}
+                the score can never read as arbitrary. */}
             <div className="score-rubric">
               <button
                 type="button"
@@ -943,17 +800,17 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 <div className="score-rubric-body" id="score-rubric-body">
                   <p className="score-rubric-formula">
                     score = Σ (category<sub>earned</sub> /
-                    category<sub>weight</sub>) × 100. PASS 1.0 · WARN 0.5 · FAIL
-                    0; MANUAL and N/A excluded. Each category contributes its
-                    full contract weight, split evenly across its checks. Accessibility &lt; 60% caps the grade at C.
+                    category<sub>weight</sub>) × 100. Pass 1.0 · Needs work 0.5 · Fail
+                    0; checks that need a browser run or do not apply are left out.
+                    Each category contributes its full contract weight, split evenly
+                    across its checks. Accessibility under 60 caps the grade at C.
                   </p>
                   <ol className="score-rubric-weights">
-                    {(result.categoryScores
-                      ? CONSTELLATION_ORDER.filter((k) => result.categoryScores![k])
-                      : CONSTELLATION_ORDER.slice(0, 11)
-                    ).map((k) => {
+                    {Object.keys(result.categoryScores || {})
+                      .sort((a, b) => (result.categoryScores![b].weight || 0) - (result.categoryScores![a].weight || 0))
+                      .map((k) => {
                       const cat = result.categoryScores?.[k];
-                      const label = CATEGORIES.find((c) => c.key === k)?.label || (k.charAt(0).toUpperCase() + k.slice(1));
+                      const label = categoryLabel(k);
                       const w = cat?.weight ?? 5;
                       return (
                         <li key={k} className="score-rubric-weight-row">
@@ -961,7 +818,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                           <span className="score-rubric-weight-bar" aria-hidden="true">
                             <span className="score-rubric-weight-fill" style={{ width: `${(w / 18) * 100}%` }} />
                           </span>
-                          <span className="score-rubric-weight-num">{w}%</span>
+                          <span className="score-rubric-weight-num">{w}</span>
                         </li>
                       );
                     })}
@@ -970,27 +827,27 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               )}
             </div>
 
-            {/* 4 Metrics Cell Grid */}
+            {/* Count tiles, one per status, in the shared status words */}
             <div className="score-metrics-grid">
               <div className="score-metric-tile is-pass">
                 <span className="score-metric-val">{animatedCounts.pass}</span>
-                <span className="score-metric-lbl">Passed</span>
+                <span className="score-metric-lbl">{statusCountWords('PASS', result.pass || 0)}</span>
               </div>
               <div className="score-metric-tile is-fail">
                 <span className="score-metric-val">{animatedCounts.fail}</span>
-                <span className="score-metric-lbl">Failed</span>
+                <span className="score-metric-lbl">{statusCountWords('FAIL', result.fail || 0)}</span>
               </div>
               <div className="score-metric-tile is-warn">
                 <span className="score-metric-val">{animatedCounts.warn}</span>
-                <span className="score-metric-lbl">Warnings</span>
+                <span className="score-metric-lbl">{statusCountWords('WARN', result.warn || 0)}</span>
               </div>
               <div className="score-metric-tile is-manual">
                 <span className="score-metric-val">{animatedCounts.manual}</span>
-                <span className="score-metric-lbl">Manual</span>
+                <span className="score-metric-lbl">{statusCountWords('MANUAL', result.manual || 0)}</span>
               </div>
               <div className="score-metric-tile is-skip">
                 <span className="score-metric-val">{animatedCounts.skip}</span>
-                <span className="score-metric-lbl">N/A</span>
+                <span className="score-metric-lbl">{statusCountWords('SKIP', result.skip || 0)}</span>
               </div>
             </div>
 
@@ -1241,7 +1098,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 onClick={() => setFilterStatus('PASS')}
                 aria-pressed={filterStatus === 'PASS'}
               >
-                Pass <span className="score-tab-count">{animatedCounts.pass}</span>
+                {STATUS_LABEL.PASS} <span className="score-tab-count">{animatedCounts.pass}</span>
               </button>
               {result.fail! > 0 && (
                 <button
@@ -1250,7 +1107,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   onClick={() => setFilterStatus('FAIL')}
                   aria-pressed={filterStatus === 'FAIL'}
                 >
-                  Fail <span className="score-tab-count">{animatedCounts.fail}</span>
+                  {STATUS_LABEL.FAIL} <span className="score-tab-count">{animatedCounts.fail}</span>
                 </button>
               )}
               {result.warn! > 0 && (
@@ -1260,7 +1117,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   onClick={() => setFilterStatus('WARN')}
                   aria-pressed={filterStatus === 'WARN'}
                 >
-                  Warn <span className="score-tab-count">{animatedCounts.warn}</span>
+                  {STATUS_LABEL.WARN} <span className="score-tab-count">{animatedCounts.warn}</span>
                 </button>
               )}
               {(result.manual || 0) > 0 && (
@@ -1270,17 +1127,21 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   onClick={() => setFilterStatus('MANUAL')}
                   aria-pressed={filterStatus === 'MANUAL'}
                 >
-                  Manual <span className="score-tab-count">{result.manual}</span>
+                  {STATUS_LABEL.MANUAL} <span className="score-tab-count">{result.manual}</span>
                 </button>
               )}
-              <button
-                type="button"
-                className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
-                onClick={() => setFilterStatus('SKIP')}
-                aria-pressed={filterStatus === 'SKIP'}
-              >
-                N/A <span className="score-tab-count">{result.skip}</span>
-              </button>
+              {/* Shown when some check does not apply, as on /score and as the
+                  other status tabs are; it was drawn with a 0 here. */}
+              {(result.skip || 0) > 0 && (
+                <button
+                  type="button"
+                  className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
+                  onClick={() => setFilterStatus('SKIP')}
+                  aria-pressed={filterStatus === 'SKIP'}
+                >
+                  {STATUS_LABEL.SKIP} <span className="score-tab-count">{result.skip}</span>
+                </button>
+              )}
             </div>
 
             <div className="score-search-wrapper">
@@ -1376,10 +1237,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                         aria-hidden="true"
                       />
                       <span className="score-check-group-label">
-                        {group.status === 'PASS' ? 'Passing' :
-                         group.status === 'FAIL' ? 'Failing' :
-                         group.status === 'WARN' ? 'Warnings' :
-                         group.status === 'MANUAL' ? 'Manual checks' : 'Not applicable'}
+                        {STATUS_GROUP[group.status]}
                       </span>
                       <span className="score-check-group-count">
                         {group.checks.length}
@@ -1426,12 +1284,10 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                               <div className="score-card-main">
                                 <div className="score-card-badge-group" id={`${cardId}-meta`}>
                                   <span className={`score-card-status-pill is-${check.status.toLowerCase()}`}>
-                                    {check.status === 'MANUAL' ? 'Manual' :
-                                     check.status === 'SKIP' ? 'N/A' :
-                                     check.status}
+                                    {STATUS_LABEL[check.status] || check.status}
                                   </span>
                                   <span className="score-card-id">{check.id}</span>
-                                  <span className="score-card-cat">{check.category}</span>
+                                  <span className="score-card-cat">{categoryLabel(check.category)}</span>
                                 </div>
                                 <h3 className="score-card-title">
                                   <button
@@ -1502,7 +1358,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
       {status === 'idle' && (
         <div className="score-welcome-card">
-          <p className="score-welcome-title">Legitimacy Audit Engine</p>
+          <p className="score-welcome-title">Contract score</p>
           <p className="score-hint">
             Enter any public website URL above (no https:// needed). We fetch its CSS,
             extract design tokens, and evaluate {ENGINE_CHECK_COUNT} verification checks against the Designesy
@@ -1539,7 +1395,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                     {truncateUrl(entry.url)}
                   </span>
                   <span className="score-history-meta">
-                    {fmtPct(entry.score)}% · {entry.pass} pass · {entry.fail} fail · {relativeTime(entry.scoredAt)}
+                    {fmtScore(entry.score)} /100 · {statusCount('PASS', entry.pass)} · {statusCount('FAIL', entry.fail)} · {relativeTime(entry.scoredAt)}
                   </span>
                 </div>
                 <button

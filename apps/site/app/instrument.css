@@ -21,9 +21,12 @@
   --lv-sheen: rgba(255, 255, 255, 0.3);
   --lv-well: rgba(255, 255, 255, 0.035);
   --lv-well-line: rgba(255, 255, 255, 0.1);
-  --lv-pass-a: #5b7cff;
-  --lv-pass-b: #2c50ec;
-  --lv-pass-glow: rgba(70, 105, 255, 0.55);
+  /* Pass is the contract's green (--ok, --grade-a): one colour for a passed
+     check on every result surface. It was signal blue here, and blue now
+     means selected and links. */
+  --lv-pass-a: var(--ok);
+  --lv-pass-b: var(--grade-a);
+  --lv-pass-glow: color-mix(in srgb, var(--ok) 55%, transparent);
   --lv-warn-a: #f7c948;
   --lv-warn-b: #d79a06;
   --lv-fail-a: #ff7f7f;
@@ -46,9 +49,9 @@
   --lv-sheen: rgba(255, 255, 255, 0.95);
   --lv-well: rgba(10, 20, 60, 0.035);
   --lv-well-line: rgba(10, 20, 60, 0.1);
-  --lv-pass-a: #3a63f5;
-  --lv-pass-b: #0133cb;
-  --lv-pass-glow: rgba(1, 51, 203, 0.22);
+  --lv-pass-a: color-mix(in srgb, var(--ok) 82%, var(--surface));
+  --lv-pass-b: var(--ok);
+  --lv-pass-glow: color-mix(in srgb, var(--ok) 22%, transparent);
   --lv-warn-a: #e0a917;
   --lv-warn-b: #b07d04;
   --lv-fail-a: #ef5b5b;

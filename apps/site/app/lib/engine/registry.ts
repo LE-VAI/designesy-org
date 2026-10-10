@@ -245,7 +245,7 @@ const REPORT = build(
     rp02: 'Contract score ran',
     rp03: 'Drift radar ran',
     rp04: 'Readiness ran',
-    rp05: 'Composite computed',
+    rp05: 'Combined score computed',
     rp06: 'Grade derived',
     rp07: 'Checks collected',
     rp08: 'Grades agree',
@@ -256,7 +256,7 @@ const REPORT = build(
   },
   [
     { id: 'run', label: 'Engines', hint: 'The URL, then three engines in parallel.' },
-    { id: 'synth', label: 'Synthesis', hint: 'The composite, its grade, and a coherence check.' },
+    { id: 'synth', label: 'Synthesis', hint: 'The combined score, its grade, and a coherence check.' },
   ],
 );
 

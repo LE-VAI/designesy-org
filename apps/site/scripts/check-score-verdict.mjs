@@ -14,7 +14,7 @@
  * WHAT IT ASSERTS
  *   1. verdict.ts: an empty run (total 0, or unreachable) is detected, its
  *      verdict says so, and the API's own reason is the reason line; the
- *      graded verdicts are unchanged.
+ *      graded verdicts name their failed checks' categories.
  *   2. Evidence: a raw declaration block is described in words and kept out of
  *      the plain list; names and values stay as they are.
  *   3. Render: score-empty-run.tsx, rendered on the server, carries the title,
@@ -97,14 +97,25 @@ check('the reason line is the API account when it gave one', () => {
   assert.match(fallback, /no checks ran/);
 });
 
-check('graded verdicts are unchanged', () => {
+check('graded verdicts: failed checks named by where they are, then what needs work', () => {
   assert.match(verdictLine({ total: 42, fail: 0, warn: 2 }), /^Strong conformance/);
-  assert.match(verdictLine({ total: 42, fail: 0, warn: 12 }), /^Partial conformance/);
+  assert.equal(verdictLine({ total: 42, fail: 0, warn: 12 }), 'No failed checks. 12 need work.');
   assert.equal(
-    verdictLine({ total: 42, fail: 3, warn: 1, categoryScores: { motion: { score: 40 }, tokens: { score: 90 } } }),
-    '3 contract violations, weakest in Motion.',
+    verdictLine({
+      total: 42, fail: 3, warn: 1,
+      checks: [{ category: 'motion', status: 'FAIL' }, { category: 'motion', status: 'FAIL' }, { category: 'cadence', status: 'FAIL' }, { category: 'tokens', status: 'WARN' }],
+    }),
+    '3 failed checks, in Motion and Typography, and 1 that needs work.',
   );
-  assert.equal(verdictLine({ total: 42, fail: 1, warn: 0 }), '1 contract violation.');
+  assert.equal(verdictLine({ total: 42, fail: 1, warn: 0 }), '1 failed check.');
+  // stripe.com, 2026-10-10: one failure, in accessibility, and twelve warnings.
+  assert.equal(
+    verdictLine({ total: 44, fail: 1, warn: 12, checks: [{ category: 'accessibility', status: 'FAIL' }] }),
+    '1 failed check, in Accessibility, and 12 that need work.',
+  );
+  for (const r of [{ total: 42, fail: 3, warn: 1 }, { total: 42, fail: 0, warn: 12 }]) {
+    assert.doesNotMatch(verdictLine(r), /contract violation|weakest/);
+  }
 });
 
 check('raw CSS evidence is described in words; names stay plain', () => {
@@ -132,7 +143,7 @@ check('category chips cover every evaluated category and sum to the check count'
   const chips = categoryChips(checks);
   assert.equal(chips.reduce((n, c) => n + c.count, 0), checks.length);
   assert.deepEqual(chips.map((c) => c.key), ['motion', 'accessibility', 'copywriting', 'spec', 'novel']);
-  assert.deepEqual(chips.map((c) => c.label), ['Motion', 'Accessibility', 'Copywriting', 'Spec', 'Novel']);
+  assert.deepEqual(chips.map((c) => c.label), ['Motion', 'Accessibility', 'Copywriting', 'DESIGN.md', 'Novel']);
 });
 
 // ── Render check ───────────────────────────────────────────────────────────
@@ -191,7 +202,7 @@ check('the report announces a finished run in the approved words', () => {
   assert.equal(resultAnnouncement({ grade: 'A', score: 100, fail: 0 }), 'Contract score A, 100.0 out of 100. No failed checks.');
   assert.equal(
     resultAnnouncement({ grade: 'F', score: 56.6, fail: 3, categoryScores: { motion: { score: 50, fail: 1, weight: 10 }, cadence: { score: 60, fail: 2, weight: 18 } } }),
-    'Contract score F, 56.6 out of 100. 3 failed checks, in Cadence and Motion.',
+    'Contract score F, 56.6 out of 100. 3 failed checks, in Typography and Motion.',
   );
   // The live region is mounted empty and written after paint, and the success
   // branch keeps it (it used to unmount there, so a finished report was silent).

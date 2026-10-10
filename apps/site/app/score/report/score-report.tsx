@@ -2,11 +2,23 @@
 
 
 import { useState, useEffect, useMemo } from 'react';
-import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
+import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
-import { isEmptyRun, emptyRunReason, resultAnnouncement } from '../verdict';
+import {
+  isEmptyRun,
+  emptyRunReason,
+  resultAnnouncement,
+  categoryLabel,
+  fmtScore,
+  fmtCategory,
+  scopeLabel,
+  statusCount,
+  verdictLine,
+  STATUS_LABEL,
+} from '../verdict';
+import { ResultReadout, ResultScale, CategoryList } from '../result-parts';
 import { ScoreEmptyRun } from '../score-empty-run';
 type CheckResult = {
   id: string;
@@ -55,6 +67,7 @@ type ScoreResponse = {
   skip?: number;
   manual?: number;
   total?: number;
+  scope?: 'contract' | 'universal';
   a11yFloorApplied?: boolean;
   hardFailCeilingApplied?: boolean;
   hardFailCeilingReason?: string | null;
@@ -67,36 +80,7 @@ type ScoreResponse = {
 
 type Status = 'loading' | 'ok' | 'error';
 
-const CATEGORIES: { key: string; label: string }[] = [
-  { key: 'tokens', label: 'Tokens' },
-  { key: 'responsive', label: 'Responsive' },
-  { key: 'interaction', label: 'Interaction' },
-  { key: 'poise', label: 'Poise' },
-  { key: 'motion', label: 'Motion' },
-  { key: 'accessibility', label: 'Accessibility' },
-  { key: 'identity', label: 'Identity' },
-  { key: 'takt', label: 'Takt' },
-  { key: 'cadence', label: 'Cadence' },
-  { key: 'performance', label: 'Performance' },
-  { key: 'semantic', label: 'Semantic' },
-  { key: 'copywriting', label: 'Copywriting' },
-  { key: 'security', label: 'Security' },
-  { key: 'spec', label: 'Spec' },
-];
-
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
-
-const GRADE_COLOR: Record<string, string> = {
-  A: 'var(--ok-ink)',
-  B: 'var(--signal-light)',
-  C: 'var(--warn-ink)',
-  D: 'var(--grade-d-ink)',
-  F: 'var(--error-ink)',
-};
-
-function gradeColor(grade: string | undefined): string {
-  return GRADE_COLOR[grade || 'F'] || GRADE_COLOR.F;
-}
 
 function normalizeInput(input: string): string {
   let clean = input.trim();
@@ -173,14 +157,13 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     // Sort categories by weight (heaviest first)
     return Array.from(map.entries())
       .map(([key, checks]) => {
-        const cat = CATEGORIES.find((c) => c.key === key);
         const catScore = result.categoryScores?.[key];
         const sortedChecks = [...checks].sort(
           (a, b) => (STATUS_ORDER[a.status] ?? 4) - (STATUS_ORDER[b.status] ?? 4)
         );
         return {
           key,
-          label: cat?.label || key.charAt(0).toUpperCase() + key.slice(1),
+          label: categoryLabel(key),
           score: catScore?.score ?? null,
           weight: catScore?.weight ?? 0,
           pass: catScore?.pass ?? 0,
@@ -193,15 +176,6 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       })
       .sort((a, b) => b.weight - a.weight);
   }, [result?.checks, result?.categoryScores]);
-
-  // Not-measured categories (Adobe Stardust pattern: show as null, not averaged)
-  const notMeasured = useMemo(() => {
-    if (!result?.categoryScores) return [];
-    return CATEGORIES.filter((c) => {
-      const cs = result.categoryScores?.[c.key];
-      return cs && cs.score === null && (cs.skip > 0 || (cs.manual ?? 0) > 0);
-    }).map((c) => c.label);
-  }, [result?.categoryScores]);
 
   // One polite region carries the run from first paint to its end: the
   // loading line, then the failure. The loading region used to unmount with
@@ -318,104 +292,45 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   const score = result.score;
   const grade = result.grade;
-  const pass = result.pass ?? 0;
-  const fail = result.fail ?? 0;
-  const warn = result.warn ?? 0;
-  const skip = result.skip ?? 0;
-  const manual = result.manual ?? 0;
   const total = result.total ?? 0;
-  const scored = pass + warn + fail;
+  const scored = (result.pass ?? 0) + (result.warn ?? 0) + (result.fail ?? 0);
 
   return (
     <>
     {live}
     <div key="report" className="report">
-      {/* ── HERO (Adobe Stardust: overall integer + letter + version label) ── */}
-      <div className="report-hero">
-        <div className="report-hero-score">
-          <div className="report-hero-grade" style={{ color: gradeColor(grade) }}>
-            {grade}
-          </div>
-          <div className="report-hero-number">
-            <span className="report-hero-value">{score.toFixed(1)}</span>
-            <span className="report-hero-pct">%</span>
-          </div>
-        </div>
-        <div className="report-hero-meta">
-          <p className="report-hero-url">{scoredUrl}</p>
-          <p className="report-hero-contract">Design system contract {CONTRACT_VERSION} · {total} checks</p>
-          <div className="report-hero-counts">
-            <span className="report-count report-count--pass">{pass} pass</span>
-            <span className="report-count report-count--fail">{fail} fail</span>
-            <span className="report-count report-count--warn">{warn} warn</span>
-            {manual > 0 && <span className="report-count report-count--manual">{manual} manual</span>}
-            {skip > 0 && <span className="report-count report-count--skip">{skip} N/A</span>}
-          </div>
-          {result.a11yFloorApplied && (
-            <p className="report-hero-floor">
-              Accessibility floor applied: overall capped at 70.
+      {/* ── RESULT (B′, owner-approved 2026-10-10): the readout and grade
+          scale, the verdict, the meta line, and one category list. A row opens
+          that category's checks below; selected again, every section shows. ── */}
+      <section className="report-result rs" aria-label="Result">
+        <div className="rs-layout">
+          <div className="rs-side">
+            <div className="rs-head">
+              <ResultReadout grade={grade} score={score} />
+              <ResultScale score={score} />
+            </div>
+            <p className="score-verdict-line">{verdictLine(result)}</p>
+            <div className="score-site-url">
+              <span className="score-url-dot" />
+              <span className="score-url-text">{scoredUrl}</span>
+              <span className="score-scope-badge">{scopeLabel(result.scope)}</span>
+            </div>
+            <p className="score-scored-line">
+              {scored} of {total} checks scored · design system contract {CONTRACT_VERSION}
             </p>
+            {result.a11yFloorApplied && (
+              <p className="report-hero-floor">Accessibility floor applied: the score is capped at 70.0 /100.</p>
+            )}
+          </div>
+          {result.categoryScores && (
+            <CategoryList
+              scores={result.categoryScores}
+              selected={expandedCategory}
+              onSelect={(k) => setExpandedCategory(expandedCategory === k ? null : k)}
+            />
           )}
-          <p className="report-hero-scored">
-            {scored} of {total} checks scored{manual > 0 ? ` · ${manual} require a live browser (Manual)` : ''}{skip > 0 ? ` · ${skip} not applicable (N/A)` : ''}
-          </p>
         </div>
-      </div>
-
-      {/* ── CATEGORY NAVIGATION (sticky) ── */}
-      {checksByCategory.length > 0 && (
-        <nav className="report-cat-nav" aria-label="Report sections">
-          {checksByCategory.map((cat) => (
-            <button
-              key={cat.key}
-              type="button"
-              className={`report-cat-chip${expandedCategory === cat.key ? ' expanded' : ''}`}
-              onClick={() =>
-                setExpandedCategory(
-                  expandedCategory === cat.key ? null : cat.key
-                )
-              }
-            >
-              <span className="report-cat-label">{cat.label}</span>
-              <span className="report-cat-weight">w{cat.weight}</span>
-              {cat.score !== null ? (
-                <span
-                  className="report-cat-score"
-                  style={{
-                    color:
-                      cat.score >= 90
-                        ? 'var(--ok-ink)'
-                        : cat.score >= 70
-                          ? 'var(--warn-ink)'
-                          : 'var(--error-ink)',
-                  }}
-                >
-                  {cat.score}%
-                </span>
-              ) : (
-                <span className="report-cat-score report-cat-score--null">
-                  <span aria-hidden="true">–</span>
-                  <span className="sr-only">Not measured</span>
-                </span>
-              )}
-              <span className="report-cat-detail">
-                {cat.pass}p/{cat.warn}w/{cat.fail}f/{cat.manual || 0}m/{cat.skip}s
-              </span>
-            </button>
-          ))}
-        </nav>
-      )}
-
-      {/* ── NOT MEASURED ── */}
-      {notMeasured.length > 0 && (
-        <div className="report-not-measured">
-          <p>
-            <strong>Not measured (–):</strong> {notMeasured.join(', ')}. These
-            categories require a live browser and were excluded from scoring.
-            A missing dimension stays visible instead of being silently averaged.
-          </p>
-        </div>
-      )}
+      </section>
 
       {/* ── HARD-FAIL CEILING ── */}
       {result.hardFailCeilingApplied && (
@@ -469,7 +384,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <h2 className="report-section-title">
                 {cat.label}
                 {cat.score !== null && (
-                  <span className="report-section-score">{cat.score}%</span>
+                  <span className="report-section-score">{fmtCategory(cat.score)}</span>
                 )}
               </h2>
               <div className="report-section-meta">
@@ -477,7 +392,13 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                   Weight {cat.weight}
                 </span>
                 <span className="report-section-counts">
-                  {cat.pass} pass · {cat.warn} warn · {cat.fail} fail{cat.manual ? ` · ${cat.manual} manual` : ''}{cat.skip ? ` · ${cat.skip} N/A` : ''}
+                  {[
+                    statusCount('PASS', cat.pass),
+                    cat.warn ? statusCount('WARN', cat.warn) : '',
+                    cat.fail ? statusCount('FAIL', cat.fail) : '',
+                    cat.manual ? statusCount('MANUAL', cat.manual) : '',
+                    cat.skip ? statusCount('SKIP', cat.skip) : '',
+                  ].filter(Boolean).join(' · ')}
                 </span>
               </div>
             </div>
@@ -494,7 +415,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span
                         className={`report-check-status report-check-status--${check.status.toLowerCase()}`}
                       >
-                        {check.status}
+                        {STATUS_LABEL[check.status] || check.status}
                       </span>
                       <span className="report-check-id">{check.id}</span>
                       <span className="report-check-item">{check.item}</span>
@@ -512,11 +433,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {cat.checks.some((c) => c.status === 'MANUAL') && (
               <details className="report-skipped">
                 <summary>
-                  {cat.checks.filter((c) => c.status === 'MANUAL').length} check
-                  {cat.checks.filter((c) => c.status === 'MANUAL').length !== 1
-                    ? 's'
-                    : ''}{' '}
-                  manual (require a live browser; run the audit)
+                  {statusCount('MANUAL', cat.checks.filter((c) => c.status === 'MANUAL').length)}
                 </summary>
                 <div className="report-check-list">
                   {cat.checks
@@ -527,7 +444,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                         className="report-check report-check--manual"
                       >
                         <span className="report-check-status report-check-status--manual">
-                          MANUAL
+                          {STATUS_LABEL.MANUAL}
                         </span>
                         <span className="report-check-id">{check.id}</span>
                         <span className="report-check-item">{check.item}</span>
@@ -542,11 +459,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
             {cat.checks.some((c) => c.status === 'SKIP') && (
               <details className="report-skipped">
                 <summary>
-                  {cat.checks.filter((c) => c.status === 'SKIP').length} check
-                  {cat.checks.filter((c) => c.status === 'SKIP').length !== 1
-                    ? 's'
-                    : ''}{' '}
-                  not applicable (convention not met)
+                  {statusCount('SKIP', cat.checks.filter((c) => c.status === 'SKIP').length)}
                 </summary>
                 <div className="report-check-list">
                   {cat.checks
@@ -557,7 +470,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
                         className="report-check report-check--skip"
                       >
                         <span className="report-check-status report-check-status--skip">
-                          N/A
+                          {STATUS_LABEL.SKIP}
                         </span>
                         <span className="report-check-id">{check.id}</span>
                         <span className="report-check-item">{check.item}</span>
@@ -591,7 +504,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <ShareButton
             url={`/score/report?url=${encodeURIComponent(scoredUrl)}`}
             text={result?.grade
-              ? `Designesy score: Grade ${result.grade} (${result.score}%) for ${scoredUrl}`
+              ? `Designesy contract score: Grade ${grade}, ${fmtScore(score)} /100 for ${scoredUrl}`
               : `Designesy design verification report for ${scoredUrl}`}
             label="Share this report"
             compact
@@ -605,8 +518,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </Link>
         </div>
         <p className="report-version">
-          Report generated against design system contract {CONTRACT_VERSION} · {ENGINE_CHECK_COUNT} checks ·{' '}
-          {total} checks evaluated
+          Report generated against design system contract {CONTRACT_VERSION} · {scored} of {total} checks scored
         </p>
         <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>
           A high score means the site ships the contract primitives the engine

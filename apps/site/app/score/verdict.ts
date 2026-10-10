@@ -1,6 +1,10 @@
-// Words for a score result: the one-line verdict, the empty-run state, and a
-// plain reading of raw CSS evidence. Pure functions with no imports, so
-// scripts/check-score-verdict.mjs runs them under Node as they ship.
+// Words and numbers for a score result: the one-line verdict, the empty-run
+// state, the plain names, the score format, the category tone, and a plain
+// reading of raw CSS evidence. Pure functions with no imports, so
+// scripts/check-score-verdict.mjs and scripts/check-results-language.mjs run
+// them under Node as they ship. Every result surface (the score form on / and
+// /score/{lovable,v0,bolt}, the four-engine view on /score, the report) takes
+// its words and formats from here, so one value reads one way everywhere.
 
 export type VerdictInput = {
   total?: number;
@@ -10,22 +14,27 @@ export type VerdictInput = {
   unreachable?: boolean;
   unreachableDetail?: string;
   categoryScores?: Record<string, { score: number | null; fail?: number; weight?: number }>;
+  /** The run's checks, so the verdict can name where the failures are. */
+  checks?: { category: string; status: string }[];
 };
 
+// Visitor-facing category names. The engine keys stay technical in the API,
+// the MCP and /methodology (cadence, takt, poise, semantic, identity, spec).
 export const CATEGORIES: { key: string; label: string }[] = [
   { key: 'tokens', label: 'Tokens' },
   { key: 'responsive', label: 'Responsive' },
   { key: 'interaction', label: 'Interaction' },
-  { key: 'poise', label: 'Poise' },
+  { key: 'poise', label: 'Control polish' },
   { key: 'motion', label: 'Motion' },
   { key: 'accessibility', label: 'Accessibility' },
-  { key: 'identity', label: 'Identity' },
-  { key: 'takt', label: 'Takt' },
-  { key: 'cadence', label: 'Cadence' },
+  { key: 'identity', label: 'Page basics' },
+  { key: 'takt', label: 'Interface feel' },
+  { key: 'cadence', label: 'Typography' },
   { key: 'performance', label: 'Performance' },
-  { key: 'semantic', label: 'Semantic' },
+  { key: 'semantic', label: 'Color roles' },
   { key: 'copywriting', label: 'Copywriting' },
-  { key: 'spec', label: 'Spec' },
+  { key: 'security', label: 'Security' },
+  { key: 'spec', label: 'DESIGN.md' },
 ];
 
 /** A category key's display label; keys outside the list read capitalised. */
@@ -46,16 +55,108 @@ export function categoryChips(checks: { category: string }[]): { key: string; la
   return [...known, ...extra].map((key) => ({ key, label: categoryLabel(key), count: counts.get(key) || 0 }));
 }
 
-// Strongest / weakest scored categories for the hero meta line.
-export function topCategories(r: VerdictInput, mode: 'best' | 'worst'): { label: string; score: number | null } {
-  const entries = Object.entries(r.categoryScores || {}).filter(([, v]) => v.score !== null);
-  if (entries.length === 0) return { label: '', score: null };
-  const sorted = entries.sort((a, b) => (mode === 'best' ? (b[1].score! - a[1].score!) : (a[1].score! - b[1].score!)));
-  const [key, val] = sorted[0];
-  const label = CATEGORIES.find((c) => c.key === key)?.label
-    || key.charAt(0).toUpperCase() + key.slice(1);
-  return { label, score: val.score };
+// ── Scores ─────────────────────────────────────────────────────────────────
+
+/** An overall score: one decimal, always ("67.9", "70.0"), printed with "/100"
+    beside it and never "%": the score is a weighted contract score, not the
+    share of checks passed (stripe.com scores 67.9 with 18 of 31 passed). */
+export function fmtScore(n: number): string {
+  return (Math.round(n * 10) / 10).toFixed(1);
 }
+
+/** A category score: a whole number ("88"). */
+export function fmtCategory(n: number): string {
+  return String(Math.round(n));
+}
+
+export type Tone = 'pass' | 'warn' | 'fail' | 'none';
+
+/** One three-step rule for a category's score, on the grade thresholds: 80
+    and up passes, 60 to 79 needs work, under 60 fails (lib/data/cohort.ts
+    scoreTone draws the leaderboard on the same steps). */
+export function categoryTone(score: number | null | undefined): Tone {
+  if (score === null || score === undefined || Number.isNaN(score)) return 'none';
+  return score >= 80 ? 'pass' : score >= 60 ? 'warn' : 'fail';
+}
+
+/** A check's status, as the same three steps (none for checks not scored). */
+export function statusTone(status: string): Tone {
+  return status === 'PASS' ? 'pass' : status === 'WARN' ? 'warn' : status === 'FAIL' ? 'fail' : 'none';
+}
+
+/** The engine's grade bands (computeGrade in api/score/route.ts), lowest first. */
+export const GRADE_BANDS: { grade: string; from: number; to: number }[] = [
+  { grade: 'F', from: 0, to: 60 },
+  { grade: 'D', from: 60, to: 70 },
+  { grade: 'C', from: 70, to: 80 },
+  { grade: 'B', from: 80, to: 90 },
+  { grade: 'A', from: 90, to: 100 },
+];
+
+/** Where a score sits on the grade scale, 0 to 1. F (under 60) takes the
+    first third of the strip, so the four bands above it have room for their
+    labels; D to A share the other two thirds, a sixth each. */
+export function scalePosition(score: number): number {
+  const s = Math.max(0, Math.min(100, score));
+  return s < 60 ? (s / 60) * (1 / 3) : 1 / 3 + ((s - 60) / 40) * (2 / 3);
+}
+
+// ── Status words ───────────────────────────────────────────────────────────
+// One word per status on every surface. The engine's statuses stay in the API.
+
+/** A status as a label: pills and filter tabs. */
+export const STATUS_LABEL: Record<string, string> = {
+  PASS: 'Pass',
+  FAIL: 'Fail',
+  WARN: 'Needs work',
+  MANUAL: 'Needs a browser run',
+  SKIP: 'Does not apply',
+};
+
+/** A status as the heading over its group of checks. */
+export const STATUS_GROUP: Record<string, string> = {
+  FAIL: 'Failed',
+  WARN: 'Needs work',
+  MANUAL: 'Needs a browser run',
+  SKIP: 'Does not apply',
+  PASS: 'Passed',
+};
+
+/** "1 failed", "3 need work", "1 needs a browser run", "10 do not apply". */
+export function statusCount(status: string, n: number): string {
+  const one = n === 1;
+  switch (status) {
+    case 'PASS': return `${n} passed`;
+    case 'FAIL': return `${n} failed`;
+    case 'WARN': return `${n} ${one ? 'needs' : 'need'} work`;
+    case 'MANUAL': return `${n} ${one ? 'needs' : 'need'} a browser run`;
+    case 'SKIP': return `${n} ${one ? 'does' : 'do'} not apply`;
+    default: return `${n} ${status.toLowerCase()}`;
+  }
+}
+
+/** The words after the number, for a tile that sets the number apart. */
+export function statusCountWords(status: string, n: number): string {
+  return statusCount(status, n).slice(String(n).length + 1);
+}
+
+/** A category's line under its name: only what needs attention. */
+export function attentionLine(c: { score: number | null; fail?: number; warn?: number; manual?: number; skip?: number }): string {
+  if (c.score === null) return `Not measured: ${c.manual ? 'needs a browser run' : 'does not apply'}`;
+  const parts: string[] = [];
+  if (c.fail) parts.push(statusCount('FAIL', c.fail));
+  if (c.warn) parts.push(statusCount('WARN', c.warn));
+  if (c.manual) parts.push(statusCount('MANUAL', c.manual));
+  return parts.length ? parts.join(' · ') : 'All passed';
+}
+
+/** The rules a run was scored under, by their visitor names (the API keeps
+    scope=universal and scope=contract). */
+export function scopeLabel(scope: string | undefined): string {
+  return scope === 'contract' ? 'Strict rules' : 'Standard rules';
+}
+
+// ── Verdict ────────────────────────────────────────────────────────────────
 
 // A run that read nothing is not a score. The API answers ok with total 0
 // when the site refused the fetch (lovable.dev returns 403 to every
@@ -74,22 +175,32 @@ export function emptyRunReason(r: VerdictInput, url: string): string {
   return `The engine reached ${url || 'the site'} but found no CSS it could check, so no checks ran. No score is reported for a page the engine could not read.`;
 }
 
+function joinWords(words: string[]): string {
+  if (words.length <= 1) return words.join('');
+  return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;
+}
+
 // Verdict line: PSI "Core Web Vitals Assessment: Passed" pattern. The
-// one-line human verdict leads, in words not color, before the number.
+// one-line human verdict, in words not color. A failing run names where its
+// failures are (the categories of its failed checks) rather than the
+// "weakest" category, which tied on most runs (stripe.com: Accessibility and
+// Color roles both at 50).
 export function verdictLine(r: VerdictInput): string {
   if (isEmptyRun(r)) {
     return 'Could not read this site: no checks ran, so no score is reported.';
   }
   const total = r.total ?? 0;
   const fails = r.fail ?? 0;
-  if (fails === 0 && (r.warn ?? 0) <= Math.max(1, Math.floor(total * 0.15))) {
+  const warns = r.warn ?? 0;
+  if (fails === 0 && warns <= Math.max(1, Math.floor(total * 0.15))) {
     return 'Strong conformance: this design system reads as engineered rather than assembled.';
   }
   if (fails > 0) {
-    const worst = topCategories(r, 'worst');
-    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
+    const where = [...new Set((r.checks || []).filter((c) => c.status === 'FAIL').map((c) => categoryLabel(c.category)))];
+    const head = `${fails} failed ${fails === 1 ? 'check' : 'checks'}${where.length ? `, in ${joinWords(where)}` : ''}`;
+    return warns > 0 ? `${head}, and ${warns} that ${warns === 1 ? 'needs' : 'need'} work.` : `${head}.`;
   }
-  return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
+  return `No failed checks. ${statusCount('WARN', warns)}.`;
 }
 
 // The sentence the report's live region reads when a run lands, in the
@@ -97,8 +208,7 @@ export function verdictLine(r: VerdictInput): string {
 // Accessibility." The categories named are those with a failed check, most
 // failures first (then the heavier weight).
 export function resultAnnouncement(r: VerdictInput & { grade?: string | null; score?: number | null }): string {
-  const value = (Math.round((r.score ?? 0) * 10) / 10).toFixed(1);
-  const head = `Contract score ${r.grade ?? 'F'}, ${value} out of 100.`;
+  const head = `Contract score ${r.grade ?? 'F'}, ${fmtScore(r.score ?? 0)} out of 100.`;
   const fails = r.fail ?? 0;
   if (fails === 0) return `${head} No failed checks.`;
   const where = Object.entries(r.categoryScores ?? {})

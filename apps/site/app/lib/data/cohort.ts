@@ -153,20 +153,20 @@ export function scoreTone(score: number): 'pass' | 'warn' | 'fail' {
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  cadence: 'Cadence',
+  cadence: 'Typography',
   accessibility: 'Accessibility',
-  semantic: 'Semantic',
+  semantic: 'Color roles',
   motion: 'Motion',
   tokens: 'Tokens',
-  takt: 'Takt',
-  poise: 'Poise',
-  identity: 'Identity',
+  takt: 'Interface feel',
+  poise: 'Control polish',
+  identity: 'Page basics',
   interaction: 'Interaction',
   performance: 'Performance',
   responsive: 'Responsive',
   copywriting: 'Copywriting',
   security: 'Security',
-  spec: 'Spec',
+  spec: 'DESIGN.md',
 };
 
 /** The engine's categories, heaviest first (lib/check-definitions, which

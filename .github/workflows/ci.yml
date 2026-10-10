@@ -124,6 +124,13 @@ jobs:
         if: always()
         run: node scripts/check-audit-rescore.mjs
 
+      # One value reads one way on every result surface: the words, the score
+      # format, the colour rules and the grade colours of the share card and
+      # badge (app/score/verdict.ts is the one source).
+      - name: Results language
+        if: always()
+        run: node scripts/check-results-language.mjs
+
       - name: Generate markdown
         if: always()
         run: node scripts/generate-markdown.js
@@ -603,6 +610,12 @@ jobs:
       # stripe.com score result, walked down and back up.
       - name: Dock clearance
         run: node scripts/check-dock-clearance.js --base http://127.0.0.1:3422 --channel chrome
+
+      # The result readout: the grade letter in the numeral's face, size and
+      # baseline, every count line on one line, no result text under 12px, on
+      # the score form, the report and the four-engine form at 390 and 1440.
+      - name: Results readout
+        run: node scripts/check-results-readout.js --base http://127.0.0.1:3422 --channel chrome
 
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,

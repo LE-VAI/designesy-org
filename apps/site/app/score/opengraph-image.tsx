@@ -1,10 +1,11 @@
 import { ImageResponse } from 'next/og';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../api/score/route';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { fmtScore, statusCount } from './verdict';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Score: design legitimacy grade';
+export const alt = 'Designesy contract score and grade';
 
 // Contract tokens — keep in sync with app/lib/og-card.tsx
 const T = {
@@ -21,14 +22,16 @@ const T = {
   signalDim: 'rgba(1, 51, 203, 0.14)',
 } as const;
 
-// Grade → color mapping. A/B get signal blue (legit); C/D get muted amber;
-// F gets a restrained red. All contract-restrained — no neon.
+// Grade colours: the contract's grade tokens (--grade-a to --grade-f, dark
+// values), as every result surface draws a grade. An image has no CSS
+// variables, so the values are written out; scripts/check-results-language.mjs
+// holds them to the contract.
 const GRADE_COLOR: Record<string, string> = {
-  A: T.signalLight,
-  B: T.signalLight,
-  C: '#c9a227',
-  D: '#c9a227',
-  F: '#c4503e',
+  A: '#22c55e',
+  B: '#84cc16',
+  C: '#eab308',
+  D: '#fb923c',
+  F: '#ef4444',
 };
 
 // Mirrors the engine's ScoreResult, but score/grade are nullable: an
@@ -78,11 +81,11 @@ export default async function ScoreOpenGraphImage({
     const result = await scoreUrl(url);
     return renderCard({
       eyebrow: 'Designesy Score',
-      title: result.score === null ? 'Not scored' : `Grade ${result.grade} · ${result.score}%`,
+      title: result.score === null ? 'Not scored' : `Grade ${result.grade} · ${fmtScore(result.score)} /100`,
       lede:
         result.score === null
           ? 'The target could not be read, so no score is reported.'
-          : `${result.pass} passed · ${result.fail} failed · ${result.warn} warnings · ${result.skip} skipped`,
+          : `${statusCount('PASS', result.pass)} · ${statusCount('FAIL', result.fail)} · ${statusCount('WARN', result.warn)} · ${statusCount('SKIP', result.skip)}`,
       siteUrl: url,
       score: result,
     });

@@ -937,6 +937,22 @@
   color: var(--muted-dim);
 }
 
+/* The grade in the contract's grade colour (its text token), as every result
+   surface draws it. */
+.eg-verdict-row[data-grade="a"] .eg-grade { color: var(--grade-a-ink); }
+.eg-verdict-row[data-grade="b"] .eg-grade { color: var(--grade-b-ink); }
+.eg-verdict-row[data-grade="c"] .eg-grade { color: var(--grade-c-ink); }
+.eg-verdict-row[data-grade="d"] .eg-grade { color: var(--grade-d-ink); }
+.eg-verdict-row[data-grade="f"] .eg-grade { color: var(--grade-f-ink); }
+
+/* What a named verdict is made of ("Contract, drift and readiness ..."). */
+.eg-verdict-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
 /* At rest the verdict row is drawn empty where the result will land: a
    hairline for the grade and a hairline with /100 for the score (the M3
    pipeline's empty figures use the same mark), sitting on the slot's floor,
@@ -2748,7 +2764,7 @@ button.mt-row {
 
 .eg-row[data-status="FAIL"] .eg-row-status { color: var(--error-ink); }
 .eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
-.eg-row[data-status="PASS"] .eg-row-status { color: var(--lv-ink-accent); }
+.eg-row[data-status="PASS"] .eg-row-status { color: var(--ok-ink); }
 
 .eg-chev {
   margin-top: 0.3rem;

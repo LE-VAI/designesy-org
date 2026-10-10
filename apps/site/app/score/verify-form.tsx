@@ -1,8 +1,8 @@
 // Unified Verification Dashboard — the /score power surface.
 //
-// Fires /api/report (score + drift + readiness in parallel, composite grade)
+// Fires /api/report (score + drift + readiness in parallel, combined score)
 // AND /api/guardrails (6-check emitter + bundle) in parallel — one URL,
-// four engines, one composite grade, one tabbed cockpit.
+// four engines, one combined score, one tabbed cockpit.
 //
 // The report API stores the full score JSON (slop, originality, categoryScores)
 // via `await scoreResp.value.json()` — even though its SubEngineResult type
@@ -30,6 +30,7 @@ import { Instrument, type EngineBlock } from '../lib/engine/instrument';
 import { toOutcomes, type Phase, type RegistryView } from '../lib/engine/types';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { categoryLabel, fmtScore, statusCount, STATUS_LABEL, STATUS_GROUP } from './verdict';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -168,14 +169,8 @@ function normalizeInput(input: string): string {
   return clean;
 }
 
-function fmtPct(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  const rounded = Math.round(value * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
-}
-
 function verdictLine(
-  composite: number,
+  combined: number,
   totalPass: number,
   totalFail: number,
   totalWarn: number,
@@ -185,9 +180,9 @@ function verdictLine(
     return 'Strong conformance. The design holds to its contract across all four engines.';
   }
   if (totalFail > 0) {
-    return `${totalFail} contract ${totalFail === 1 ? 'violation' : 'violations'} across 4 engines.`;
+    return `${totalFail} failed ${totalFail === 1 ? 'check' : 'checks'} across 4 engines.`;
   }
-  return 'Partial conformance. It clears the floor, with warnings left to resolve.';
+  return `No failed checks across 4 engines. ${statusCount('WARN', totalWarn)}.`;
 }
 
 // ── History (lightweight localStorage, separate namespace from score-form) ───
@@ -203,14 +198,6 @@ type VerifyHistoryEntry = {
 const HISTORY_KEY = 'designesy.verify.history.v1';
 const HISTORY_MAX = 5;
 const HISTORY_RETENTION = 90 * 24 * 60 * 60 * 1000; // 90 days
-
-// Status hues are mark colours (bars, dials). Text in a status takes the
-// hue's text token, which the light theme mixes toward --ink (globals.css).
-const STATUS_INK: Record<string, string> = {
-  'var(--ok)': 'var(--ok-ink)',
-  'var(--warn)': 'var(--warn-ink)',
-  'var(--error)': 'var(--error-ink)',
-};
 
 function readHistory(): VerifyHistoryEntry[] {
   if (typeof window === 'undefined') return [];
@@ -305,18 +292,11 @@ function EngineTile({
   const ok = result?.ok && typeof result.score === 'number';
   const score = ok ? result.score! : 0;
   const grade = ok ? result.grade || 'F' : '—';
-  const fill = !ok
-    ? 'var(--muted-dim)'
-    : score >= 90
-      ? 'var(--ok)'
-      : score >= 70
-        ? 'var(--warn)'
-        : 'var(--error)';
-  // The grade letter is text: each status hue has a text token (globals.css).
-  const ink = STATUS_INK[fill] || fill;
-  const pass = result?.pass || 0;
   const warn = result?.warn || 0;
   const fail = result?.fail || 0;
+  const pass = result?.pass || 0;
+  // What needs attention, as the category lines say it; "All passed" if nothing.
+  const attention = [fail ? statusCount('FAIL', fail) : '', warn ? statusCount('WARN', warn) : ''].filter(Boolean).join(' · ') || 'All passed';
 
   return (
     <button
@@ -325,23 +305,25 @@ function EngineTile({
       onClick={onClick}
       aria-selected={active}
       role="tab"
-      aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${score} out of 100, ${pass} pass, ${warn} warn, ${fail} fail` : 'not yet run'}`}
+      data-grade={ok ? grade.toLowerCase() : undefined}
+      aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${fmtScore(score)} out of 100, ${statusCount('PASS', pass)}, ${statusCount('WARN', warn)}, ${statusCount('FAIL', fail)}` : 'not yet run'}`}
     >
-      <span className="score-engine-tile-top" style={{ background: ok ? fill : 'var(--line)' }} />
+      <span className="score-engine-tile-top" />
       <span className="score-engine-tile-head">
         <span className="score-engine-tile-label">{label}</span>
         <span className="score-engine-tile-count">{checkCount}</span>
       </span>
       {ok ? (
         <>
-          <span className="score-engine-tile-grade" style={{ color: ink }}>
-            {grade}<span className="score-engine-tile-score"> · {score}</span>
+          <span className="score-engine-tile-grade">
+            {grade}
+            <span className="score-engine-tile-score">
+              {' '}
+              {fmtScore(score)}
+              <small>/100</small>
+            </span>
           </span>
-          <span className="score-engine-tile-pwf">
-            <b className="is-pass">{pass}</b>p{' · '}
-            <b className="is-warn">{warn}</b>w{' · '}
-            <b className="is-fail">{fail}</b>f
-          </span>
+          <span className="score-engine-tile-pwf">{attention}</span>
         </>
       ) : (
         <span className="score-engine-tile-grade is-empty">
@@ -483,7 +465,7 @@ export function VerifyForm({
     setReportResult(report);
     setGuardrailsResult(guardrails);
 
-    // Save to history using the composite score (or guardrails score if
+    // Save to history using the combined score (or guardrails score if
     // report failed but guardrails succeeded).
     const compositeScore = report?.ok
       ? report.compositeScore
@@ -599,24 +581,30 @@ export function VerifyForm({
     if (reportResult?.ok) {
       lines.push(
         ``,
-        `## Composite Score`,
-        `Grade: ${reportResult.compositeGrade} (${fmtPct(reportResult.compositeScore)}%)`,
-        `Formula: score×0.5 + drift×0.3 + readiness×0.2`,
-        `Totals: ${reportResult.totalPass || 0} pass · ${reportResult.totalWarn || 0} warn · ${reportResult.totalFail || 0} fail · ${reportResult.totalManual || 0} manual · ${reportResult.totalSkip || 0} N/A of ${reportResult.totalChecks || 0}`,
+        `## Combined score`,
+        `Grade: ${reportResult.compositeGrade}, ${typeof reportResult.compositeScore === 'number' ? fmtScore(reportResult.compositeScore) : '–'} /100`,
+        `Formula: contract score × 0.5 + drift × 0.3 + readiness × 0.2`,
+        `Totals: ${[
+          statusCount('PASS', reportResult.totalPass || 0),
+          statusCount('WARN', reportResult.totalWarn || 0),
+          statusCount('FAIL', reportResult.totalFail || 0),
+          statusCount('MANUAL', reportResult.totalManual || 0),
+          statusCount('SKIP', reportResult.totalSkip || 0),
+        ].join(' · ')}, of ${reportResult.totalChecks || 0} checks`,
       );
     }
     const engines: [string, SubEngineResult | null | undefined][] = [
-      [`Score (${ENGINE_CHECK_COUNT}-check)`, reportResult?.score],
-      ['Drift (12-check)', reportResult?.drift],
-      ['Readiness (10-check)', reportResult?.readiness],
-      ['Guardrails (6-check)', guardrailsResult],
+      [`Contract score (${ENGINE_CHECK_COUNT} checks)`, reportResult?.score],
+      ['Drift (12 checks)', reportResult?.drift],
+      ['Readiness (10 checks)', reportResult?.readiness],
+      ['Guardrails (6 checks)', guardrailsResult],
     ];
     for (const [label, res] of engines) {
       if (res?.ok && typeof res.score === 'number') {
         lines.push(
           ``,
           `## ${label}`,
-          `Grade: ${res.grade} · ${res.score}/100 — ${res.pass || 0}p · ${res.warn || 0}w · ${res.fail || 0}f`,
+          `Grade: ${res.grade}, ${fmtScore(res.score)} /100 · ${statusCount('PASS', res.pass || 0)} · ${statusCount('WARN', res.warn || 0)} · ${statusCount('FAIL', res.fail || 0)}`,
         );
       }
     }
@@ -757,7 +745,7 @@ export function VerifyForm({
         verdict={
           status === 'ok' && reportResult?.ok && typeof reportResult.compositeScore === 'number'
             ? {
-                score: Math.round(reportResult.compositeScore),
+                score: reportResult.compositeScore,
                 grade: reportResult.compositeGrade || 'F',
                 pass: reportResult.totalPass || 0,
                 warn: reportResult.totalWarn || 0,
@@ -785,10 +773,12 @@ export function VerifyForm({
         }
         errorText={failure}
         scoring="four engines in parallel · guardrails reports apart"
+        verdictLabel="Combined score"
+        verdictNote="Contract, drift and readiness together; guardrails reports beside it."
         restNote="Run a URL and all four engines light at once. Point at any cell to read the check behind it."
         restCard={
           <div className="eg-ref">
-            <span className="eg-label">What the composite weighs</span>
+            <span className="eg-label">What the combined score weighs</span>
             <dl className="eg-ref-rows">
               <div><dt>Contract score</dt><dd>50%</dd></div>
               <div><dt>Drift radar</dt><dd>30%</dd></div>
@@ -840,7 +830,7 @@ export function VerifyForm({
       {/* OK state — the unified dashboard */}
       {status === 'ok' && (reportResult?.ok || guardrailsResult?.ok) && (
         <div className="score-results">
-          {/* Composite hero card — grade dial, composite score, formula, totals */}
+          {/* Combined score card: grade, combined score, formula, totals */}
           {reportResult?.ok &&
             typeof reportResult.compositeScore === 'number' && (
               <div
@@ -860,7 +850,7 @@ export function VerifyForm({
                   {delta !== null && delta !== 0 && (
                     <span
                       className={`score-delta-chip ${delta > 0 ? 'is-up' : 'is-down'}`}
-                      title="Change against your previous composite score for this site"
+                      title="Change against your previous combined score for this site"
                     >
                       {delta > 0 ? '▲' : '▼'} {delta > 0 ? '+' : ''}
                       {delta} since your last run
@@ -988,7 +978,7 @@ export function VerifyForm({
                   {shareUrl && (
                     <a
                       href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                        `Designesy composite: Grade ${reportResult.compositeGrade} (${fmtPct(reportResult.compositeScore)}%) for ${scoredUrl}`,
+                        `Designesy combined score: Grade ${reportResult.compositeGrade}, ${fmtScore(reportResult.compositeScore)} /100 for ${scoredUrl}`,
                       )}&url=${encodeURIComponent(shareUrl)}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1020,8 +1010,8 @@ export function VerifyForm({
             aria-label="Verification engines"
           >
             <EngineTile
-              label="Score"
-              checkCount="(40)"
+              label="Contract score"
+              checkCount={`(${ENGINE_CHECK_COUNT})`}
               result={reportResult?.score || null}
               active={activeEngine === 'score'}
               onClick={() => {
@@ -1222,7 +1212,7 @@ export function VerifyForm({
                 onClick={() => setFilterStatus('PASS')}
                 aria-pressed={filterStatus === 'PASS'}
               >
-                Pass{' '}
+                {STATUS_LABEL.PASS}{' '}
                 <span className="score-tab-count">
                   {activeChecks.filter((c) => c.status === 'PASS').length}
                 </span>
@@ -1234,7 +1224,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('FAIL')}
                   aria-pressed={filterStatus === 'FAIL'}
                 >
-                  Fail{' '}
+                  {STATUS_LABEL.FAIL}{' '}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'FAIL').length}
                   </span>
@@ -1247,7 +1237,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('WARN')}
                   aria-pressed={filterStatus === 'WARN'}
                 >
-                  Warn{' '}
+                  {STATUS_LABEL.WARN}{' '}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'WARN').length}
                   </span>
@@ -1260,7 +1250,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('MANUAL')}
                   aria-pressed={filterStatus === 'MANUAL'}
                 >
-                  Manual{' '}
+                  {STATUS_LABEL.MANUAL}{' '}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'MANUAL').length}
                   </span>
@@ -1273,7 +1263,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('SKIP')}
                   aria-pressed={filterStatus === 'SKIP'}
                 >
-                  N/A{' '}
+                  {STATUS_LABEL.SKIP}{' '}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'SKIP').length}
                   </span>
@@ -1358,10 +1348,7 @@ export function VerifyForm({
                         aria-hidden="true"
                       />
                       <span className="score-check-group-label">
-                        {group.status === 'PASS' ? 'Passing' :
-                         group.status === 'FAIL' ? 'Failing' :
-                         group.status === 'WARN' ? 'Warnings' :
-                         group.status === 'MANUAL' ? 'Manual checks' : 'Not applicable'}
+                        {STATUS_GROUP[group.status]}
                       </span>
                       <span className="score-check-group-count">
                         {group.checks.length}
@@ -1405,14 +1392,12 @@ export function VerifyForm({
                                   <span
                                     className={`score-card-status-pill is-${check.status.toLowerCase()}`}
                                   >
-                                    {check.status === 'MANUAL' ? 'Manual' :
-                                     check.status === 'SKIP' ? 'N/A' :
-                                     check.status}
+                                    {STATUS_LABEL[check.status] || check.status}
                                   </span>
                                   <span className="score-card-id">{check.id}</span>
                                   {check.category && (
                                     <span className="score-card-cat">
-                                      {check.category}
+                                      {categoryLabel(check.category)}
                                     </span>
                                   )}
                                 </div>
@@ -1480,7 +1465,7 @@ export function VerifyForm({
           <p className="score-note">
             {activeChecks.length} {activeEngine} checks ·{' '}
             {activeEngineResult?.ok
-              ? `${activeEngineResult.grade}/${activeEngineResult.score}`
+              ? `${activeEngineResult.grade} ${fmtScore(activeEngineResult.score ?? 0)} /100`
               : 'engine failed'}{' '}
             · Designesy design system contract {CONTRACT_VERSION}
             {scoreData?.a11yFloorApplied && (
@@ -1538,7 +1523,7 @@ export function VerifyForm({
                     {truncateUrl(entry.url)}
                   </span>
                   <span className="score-history-meta">
-                    {fmtPct(entry.score)}% · {relativeTime(entry.scoredAt)}
+                    {fmtScore(entry.score)} /100 · {relativeTime(entry.scoredAt)}
                   </span>
                 </div>
                 <button
