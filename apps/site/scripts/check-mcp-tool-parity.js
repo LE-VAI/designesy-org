@@ -68,6 +68,27 @@
  *     file:// URL, all made up, plus a site URL that must stay), it returns
  *     exactly the clean text each fixture names.
  *
+ * MOTION SCORE OUTPUT (added for designesy-mcp 1.13.6)
+ * designesy_motion_score labelled its own ten checks with the motion
+ * contract's names by array position, so every verdict sat under another
+ * check's name. Both servers now run the contract's m01-m10, each under its
+ * own id: app/lib/motion-score.ts here, _motion_score in the PyPI server. This
+ * gate runs motion-score.ts on the Lottie fixtures in
+ * packages/designesy-mcp/test/fixtures/motion/ and compares the whole result
+ * with expected.json there, the golden test/test_motion_score.py checks the
+ * Python port against, and checks that contract.json there is the contract
+ * app/lib/motion-contract.ts serves.
+ *
+ * TRIMMED OUTPUT (added for designesy-mcp 1.13.6)
+ * designesy_report takes detail "summary" and designesy_guardrails takes
+ * parts, so a caller can ask for less than the 75 to 100 KB (report) or up to
+ * 500 KB (guardrails) a full result runs to. The hosted endpoint trims in
+ * app/lib/mcp-trim.ts, the PyPI server in its own Python. This gate runs
+ * mcp-trim.ts on the captured results in
+ * packages/designesy-mcp/test/fixtures/trim/ and compares with expected.json
+ * there (the golden test/test_trim.py checks), including the error text for
+ * unknown part names, and asserts both declare the same part names.
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -81,6 +102,11 @@ const REGISTRY = path.join(APP, 'app', 'lib', 'mcp-tool-registry.ts');
 const PYPI = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'designesy_mcp_server.py');
 const REFERENCE_LIB = path.join(APP, 'app', 'lib', 'mcp-reference.ts');
 const DOC_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'published-docs');
+const MOTION_LIB = path.join(APP, 'app', 'lib', 'motion-score.ts');
+const MOTION_CONTRACT_LIB = path.join(APP, 'app', 'lib', 'motion-contract.ts');
+const MOTION_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'motion');
+const TRIM_LIB = path.join(APP, 'app', 'lib', 'mcp-trim.ts');
+const TRIM_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'trim');
 // The origin both servers fetch from; part of the hashed design_review output.
 const BASE_URL = 'https://www.designesy.org';
 const ERROR_TEXT_LIB = path.join(APP, 'app', 'lib', 'error-text.ts');
@@ -750,6 +776,167 @@ async function errorTextFindings(routeSrc) {
   return { findings, evaluated: true, wrapped, fixtures: ERROR_TEXT_FIXTURES.length };
 }
 
+/**
+ * Run the hosted motion scorer on the shared Lottie fixtures and compare each
+ * whole result with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function motionFindings() {
+  const findings = [];
+  if (!fs.existsSync(MOTION_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, MOTION_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'motion-fixtures-missing',
+      why: `${MOTION_FIXTURES} is missing, so the two servers' designesy_motion_score output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  let contractLib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(MOTION_LIB).href);
+    contractLib = await import(require('node:url').pathToFileURL(MOTION_CONTRACT_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load motion-score.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'motion-lib-unloadable',
+      why: `Could not load app/lib/motion-score.ts or motion-contract.ts with Node's type stripping (${e.code || e.message}), so the hosted motion checks cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep both files free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  const read = (n) => fs.readFileSync(path.join(MOTION_FIXTURES, n), 'utf8');
+  const contract = JSON.parse(read('contract.json'));
+  if (canonical(contract) !== canonical(contractLib.motionContract)) {
+    findings.push({
+      id: 'motion-contract-fixture-stale',
+      why: 'packages/designesy-mcp/test/fixtures/motion/contract.json is not the contract app/lib/motion-contract.ts serves, so the golden scores a contract the site no longer publishes.',
+      fix: 'Write the module\'s motionContract to contract.json (JSON, two-space indent), then regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  const golden = JSON.parse(read('expected.json'));
+  const lotties = fs.readdirSync(MOTION_FIXTURES)
+    .filter((n) => n.endsWith('.json') && n !== 'contract.json' && n !== 'expected.json')
+    .sort();
+  if (JSON.stringify(lotties) !== JSON.stringify(Object.keys(golden).sort())) {
+    findings.push({
+      id: 'motion-golden-coverage',
+      why: `The motion golden covers ${JSON.stringify(Object.keys(golden).sort())} but the fixtures are ${JSON.stringify(lotties)}.`,
+      fix: 'Regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  let compared = 0;
+  for (const name of lotties) {
+    if (!golden[name]) continue;
+    const out = lib.scoreLottie(JSON.parse(read(name)), contract, '(inline lottie_file)');
+    compared++;
+    if (canonical(out) === canonical(golden[name])) continue;
+    const ids = (golden[name].checks || []).map((c) => c.id);
+    const differs = ids.filter((id, i) => canonical(out.checks[i]) !== canonical(golden[name].checks[i]));
+    findings.push({
+      id: `motion-golden:${name}`,
+      why: `The hosted designesy_motion_score result for ${name} differs from the golden the PyPI suite checks${differs.length ? ` (checks ${differs.join(', ')})` : ' (outside the checks)'}.`,
+      fix: 'Change app/lib/motion-score.ts and _motion_score in the PyPI server together, then regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  return { findings, evaluated: true, compared };
+}
+
+/** The quoted strings of a top-level Python tuple constant, or null. */
+function pypiTuple(src, name) {
+  const m = src.match(new RegExp(`^${name}\\s*=\\s*\\(([^)]*)\\)`, 'm'));
+  return m ? [...m[1].matchAll(/"([^"]*)"/g)].map((x) => x[1]) : null;
+}
+
+/**
+ * Run the hosted trimming on the captured report and guardrails results and
+ * compare with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function trimFindings(pypiSrc) {
+  const findings = [];
+  if (!fs.existsSync(TRIM_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, TRIM_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'trim-fixtures-missing',
+      why: `${TRIM_FIXTURES} is missing, so the two servers' trimmed report and guardrails output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(TRIM_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load mcp-trim.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'trim-lib-unloadable',
+      why: `Could not load app/lib/mcp-trim.ts with Node's type stripping (${e.code || e.message}), so the hosted trimming cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep mcp-trim.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  if (pypiSrc !== null) {
+    for (const name of ['GUARDRAILS_PARTS', 'REPORT_DETAILS', 'REPORT_ENGINES']) {
+      const py = pypiTuple(pypiSrc, name);
+      if (JSON.stringify(py) !== JSON.stringify([...lib[name]])) {
+        findings.push({
+          id: `trim-constant-disagrees:${name}`,
+          why: `${name} differs. Hosted: ${JSON.stringify(lib[name])}. PyPI: ${JSON.stringify(py)}.`,
+          fix: `Use the same ${name} in app/lib/mcp-trim.ts and designesy_mcp_server.py.`,
+        });
+      }
+    }
+  }
+
+  const read = (n) => JSON.parse(fs.readFileSync(path.join(TRIM_FIXTURES, n), 'utf8'));
+  const golden = read('expected.json');
+  const disagree = (what, expected, actual) => findings.push({
+    id: `trim-golden:${what}`,
+    why: `The hosted ${what} differs from the golden the PyPI suite checks (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}).`,
+    fix: 'Change app/lib/mcp-trim.ts and the PyPI server together, then regenerate the golden: python test/test_trim.py --write-golden.',
+  });
+  let compared = 0;
+  for (const [name, want] of Object.entries(golden.report_summary)) {
+    const out = lib.reportSummary(read(name));
+    if (canonical(out) !== canonical(want)) disagree(`report summary of ${name}`, sha256(want), sha256(out));
+    compared++;
+  }
+  for (const [name, cases] of Object.entries(golden.guardrails_parts)) {
+    const full = read(name);
+    for (const c of cases) {
+      const picked = lib.guardrailsPartNames(c.parts);
+      if (!picked.names || JSON.stringify(picked.names) !== JSON.stringify(c.names)) {
+        disagree(`guardrails part names for ${JSON.stringify(c.parts)}`, c.names, picked);
+        continue;
+      }
+      const out = lib.guardrailsParts(full, picked.names);
+      if (sha256(out) !== c.output_sha256) disagree(`guardrails ${JSON.stringify(c.parts)} output of ${name}`, c.output_sha256, sha256(out));
+      if (JSON.stringify(out, null, 2).length !== c.chars) disagree(`guardrails ${JSON.stringify(c.parts)} size of ${name}`, c.chars, JSON.stringify(out, null, 2).length);
+      compared++;
+    }
+  }
+  for (const c of golden.guardrails_part_errors) {
+    const picked = lib.guardrailsPartNames(c.parts);
+    if (picked.error !== c.error || JSON.stringify(picked.unknown) !== JSON.stringify(c.unknown)) {
+      disagree(`guardrails error for ${JSON.stringify(c.parts)}`, { error: c.error, unknown: c.unknown }, picked);
+    }
+    compared++;
+  }
+  return { findings, evaluated: true, compared };
+}
+
 async function main() {
   const asJson = process.argv.includes('--json');
 
@@ -839,6 +1026,13 @@ async function main() {
   // Error text: no tool result carries a path on the machine that ran it.
   const errorText = await errorTextFindings(routeSrc);
   findings.push(...errorText.findings);
+  // Motion score output: same checks, same fixtures, same golden.
+  const motion = await motionFindings();
+  findings.push(...motion.findings);
+
+  // Trimmed report and guardrails output: same rules, same captures, same golden.
+  const trim = await trimFindings(pypiSrc);
+  findings.push(...trim.findings);
 
   if (asJson) {
     console.log(
@@ -851,6 +1045,8 @@ async function main() {
           pypi,
           reference: { evaluated: reference.evaluated, compared: reference.compared ?? 0, reason: reference.reason },
           errorText: { evaluated: errorText.evaluated, wrapped: errorText.wrapped ?? 0, fixtures: errorText.fixtures ?? 0, reason: errorText.reason },
+          motion: { evaluated: motion.evaluated, compared: motion.compared ?? 0, reason: motion.reason },
+          trim: { evaluated: trim.evaluated, compared: trim.compared ?? 0, reason: trim.reason },
           findings,
         },
         null,
@@ -874,6 +1070,16 @@ async function main() {
       console.log(`mcp-tool-parity: OK — all ${errorText.wrapped} error(s) the route returns pass through sanitizeErrorText, the engines' function, which cleans ${errorText.fixtures} fixture error(s) as expected`);
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] error text: ${errorText.reason}`);
+    }
+    if (motion.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted motion checks match the shared golden on ${motion.compared} Lottie fixture(s), against the contract the site serves`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] motion-score agreement: ${motion.reason}`);
+    }
+    if (trim.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted report summary and guardrails parts match the shared golden on ${trim.compared} case(s), with the PyPI server's part names`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] trimmed-output agreement: ${trim.reason}`);
     }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);

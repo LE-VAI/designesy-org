@@ -26,6 +26,25 @@
  * hold is simpler and checkable statically: the reference list fed to d02 must
  * be built from more than one extraction source.
  *
+ * WHAT A REFERENCE NEEDS TO BE FABRICATED (added 2026-10-10)
+ * The opposite failure: d02 and d12 FAILed designesy.org on 13 properties it
+ * never fabricated. Of 29 undeclared names on the home page, 24 were always
+ * referenced with a fallback, var(--x, 4px), and 5 were declared in style
+ * attributes by React style objects; none was unguarded. So the routes now
+ * pass the style attributes to runDriftChecks as declarations too, and d02
+ * counts only a property referenced with no fallback and declared nowhere.
+ * Two kinds of assertion hold that:
+ *   - source clauses: both routes build attrCss with the shared
+ *     extractStyleAttributeCss(html) and pass it as runDriftChecks' fourth
+ *     argument;
+ *   - behaviour: the pages in scripts/fixtures/drift-references.json are run
+ *     through the shared checks, assembled the way /api/drift assembles them,
+ *     and each must return its stated d02 and d12 verdicts. They include true
+ *     positives (no fallback, declared nowhere) that must still FAIL, so the
+ *     fix cannot pass by excusing everything. The checks are loaded with Node's
+ *     type stripping; a Vercel build whose Node cannot strip types prints NOT
+ *     EVALUATED instead of passing.
+ *
  * Usage:  node scripts/check-d02-coverage.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -40,6 +59,7 @@ const SRC = path.join(APP, 'app', 'api', 'drift', 'route.ts');
 // assert an INVOCATION therefore have to look where the invocations now live,
 // while clauses about the route's own varRefs assembly stay on the route.
 const SHARED = path.join(APP, 'app', 'lib', 'drift-checks.ts');
+const FIXTURES = path.join(__dirname, 'fixtures', 'drift-references.json');
 
 /** Strip comments so an assertion cannot be satisfied by prose ABOUT the rule. */
 function stripComments(src) {
@@ -67,12 +87,22 @@ const CLAUSES = [
   {
     id: 'style-attributes-are-collected',
     // The HTML must actually be read for style="..." values, not just <style>.
-    test: (code) =>
-      /match\(\s*\/\s*\\sstyle=/i.test(code) ||
-      /style="\(\[\^"\]\*\)"/i.test(code) ||
-      /style=\\\\?"/i.test(code) && /style="([^"]*)"/i.test(code),
+    // The reading moved to the shared module on 2026-10-10, so both routes
+    // collect the attributes the same way; this clause asserts the route calls
+    // it, and the next one that the shared function reads the attributes.
+    test: (code) => /const\s+attrCss\s*=\s*extractStyleAttributeCss\s*\(\s*html\s*\)/.test(code),
     why: 'The route never extracts style="..." attribute values from the HTML, so React style-object tokens stay invisible regardless of how the reference list is assembled.',
-    fix: 'Collect attribute CSS from html, e.g. html.match(/\\sstyle="([^"]*)"/gi).join(\';\'), and feed it to extractVarRefs.',
+    fix: 'Collect attribute CSS with const attrCss = extractStyleAttributeCss(html), imported from app/lib/drift-checks.ts, and feed it to extractVarRefs and runDriftChecks.',
+  },
+  {
+    id: 'shared-reads-style-attributes',
+    sources: 'shared',
+    test: (code) => {
+      const fn = code.match(/export\s+function\s+extractStyleAttributeCss\s*\([\s\S]*?\n\}/);
+      return Boolean(fn) && fn[0].includes('\\sstyle="([^"]*)"');
+    },
+    why: 'extractStyleAttributeCss in app/lib/drift-checks.ts no longer reads style="..." attributes, so neither route sees the properties they declare or reference.',
+    fix: 'Restore (html.match(/\\sstyle="([^"]*)"/gi) || []).join(\';\') as its body.',
   },
   {
     id: 'd02-still-runs',
@@ -105,9 +135,9 @@ const CLAUSES = [
     // The route must CALL the shared implementation rather than re-listing
     // checks locally. Without this, both engines could drift back into
     // hand-maintained copies, which is the defect the extraction removed.
-    test: (code) => /runDriftChecks\s*\(\s*allCss\s*,\s*tokens\s*,\s*varRefs\s*\)/.test(code),
-    why: 'drift route does not call runDriftChecks(allCss, tokens, varRefs), so it is running its own check list again. Two implementations of d01-d12 is how the two engines came to disagree about 9 of 12 checks on the same page.',
-    fix: 'Replace any local checks array with runDriftChecks(allCss, tokens, varRefs) — and pass varRefs explicitly so the attribute-scanned references survive.',
+    test: (code) => /runDriftChecks\s*\(\s*allCss\s*,\s*tokens\s*,\s*varRefs\s*,\s*attrCss\s*\)/.test(code),
+    why: 'drift route does not call runDriftChecks(allCss, tokens, varRefs, attrCss), so it is running its own check list again, or not passing the style attributes that declare custom properties. Two implementations of d01-d12 is how the two engines came to disagree about 9 of 12 checks on the same page.',
+    fix: 'Replace any local checks array with runDriftChecks(allCss, tokens, varRefs, attrCss) — and pass varRefs explicitly so the attribute-scanned references survive.',
   },
   {
     id: 'monitor-runs-the-shared-checks',
@@ -115,9 +145,9 @@ const CLAUSES = [
     // The sibling route is the half that was wrong; assert it cannot go back.
     // Monitor is checked here rather than in its own gate because the pairing is
     // the invariant: these two routes must resolve their checks from one place.
-    test: (code) => /runDriftChecks\s*\(\s*allCss\s*,\s*tokens\s*,\s*varRefs\s*\)/.test(code),
-    why: 'monitor route does not call runDriftChecks, so it is running a separate copy of the drift checks. Its copy was drift\'s PRE-FIX code: it reported 149 distinct box-shadow values on radix-ui.com where drift reported 7, and published that reading on /contracts/monitor.',
-    fix: 'Call runDriftChecks(allCss, tokens, varRefs) instead of a local checks array.',
+    test: (code) => /runDriftChecks\s*\(\s*allCss\s*,\s*tokens\s*,\s*varRefs\s*,\s*attrCss\s*\)/.test(code),
+    why: 'monitor route does not call runDriftChecks(allCss, tokens, varRefs, attrCss), so it is running a separate copy of the drift checks, or not passing the style attributes, and would disagree with drift about a property a style attribute declares. Its copy was drift\'s PRE-FIX code: it reported 149 distinct box-shadow values on radix-ui.com where drift reported 7, and published that reading on /contracts/monitor.',
+    fix: 'Call runDriftChecks(allCss, tokens, varRefs, attrCss), with attrCss = extractStyleAttributeCss(html), instead of a local checks array.',
   },
 ];
 
@@ -128,7 +158,71 @@ const SOURCES = {
   monitor: path.join(APP, 'app', 'api', 'monitor', 'route.ts'),
 };
 
-function main() {
+/**
+ * Run each fixture page through the shared checks the way /api/drift does and
+ * compare the d02/d12 verdicts. Returns { findings, evaluated, reason, cases }.
+ */
+async function behaviourFindings() {
+  const findings = [];
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(SHARED).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load drift-checks.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'fixtures-lib-unloadable',
+      why: `Could not load app/lib/drift-checks.ts with Node's type stripping (${e.code || e.message}), so the reference fixtures cannot run.`,
+      fix: 'Run on Node 22.18 or later, and keep drift-checks.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+  const { cases } = JSON.parse(fs.readFileSync(FIXTURES, 'utf8'));
+  const ROOT = ':root{--a:1px;--b:2px;--c:3px;--d:4px;--e:5px}';
+  const styleTags = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  for (const c of cases) {
+    // The route's assembly: <style> bodies and linked sheets, then the <style>
+    // tags again (allCss), then the style attributes.
+    const html = c.html;
+    const css = [...[...html.matchAll(styleTags)].map((m) => m[1]), c.css.replace('ROOT', ROOT)].join('\n');
+    const allCss = css + (html.match(styleTags)?.join('\n') || '');
+    const tokens = lib.extractRootTokens(allCss);
+    const attrCss = lib.extractStyleAttributeCss(html);
+    const varRefs = [...lib.extractVarRefs(allCss), ...lib.extractVarRefs(attrCss)];
+    const got = Object.fromEntries(lib.runDriftChecks(allCss, tokens, varRefs, attrCss).map((r) => [r.id, r]));
+    for (const [id, status] of Object.entries(c.expect)) {
+      if (got[id]?.status !== status) {
+        findings.push({
+          id: `fixture:${c.name}:${id}`,
+          why: `On the fixture "${c.name}", ${id} returned ${got[id]?.status} (${got[id]?.detail}), expected ${status}.`,
+          fix: 'Fix the check in app/lib/drift-checks.ts, or the fixture in scripts/fixtures/drift-references.json if the expected verdict is wrong.',
+        });
+      }
+    }
+    for (const [id, text] of Object.entries(c.detail || {})) {
+      if (!String(got[id]?.detail).includes(text)) {
+        findings.push({
+          id: `fixture:${c.name}:${id}:detail`,
+          why: `On the fixture "${c.name}", ${id} said "${got[id]?.detail}", which does not contain "${text}".`,
+          fix: 'Fix the detail in app/lib/drift-checks.ts, or the fixture if the expected text is wrong.',
+        });
+      }
+    }
+  }
+  // The fixtures must include a true positive that FAILs d02, or the fix could
+  // pass by excusing every reference.
+  if (!cases.some((c) => c.expect.d02 === 'FAIL')) {
+    findings.push({
+      id: 'fixtures-without-true-positive',
+      why: 'No fixture expects d02 to FAIL, so these fixtures cannot tell a working check from one that excuses every reference.',
+      fix: 'Keep a fixture whose properties are referenced with no fallback and declared nowhere, expecting FAIL.',
+    });
+  }
+  return { findings, evaluated: true, cases: cases.length };
+}
+
+async function main() {
   const asJson = process.argv.includes('--json');
 
   const missing = Object.values(SOURCES).filter((p) => !fs.existsSync(p));
@@ -154,10 +248,18 @@ function main() {
     if (!pass) findings.push({ id: clause.id, why: clause.why, fix: clause.fix });
   }
 
+  const behaviour = await behaviourFindings();
+  findings.push(...behaviour.findings);
+
   if (asJson) {
-    console.log(JSON.stringify({ ok: findings.length === 0, checked: Object.values(SOURCES), findings }, null, 2));
+    console.log(JSON.stringify({ ok: findings.length === 0, checked: Object.values(SOURCES), fixtures: { evaluated: behaviour.evaluated, cases: behaviour.cases ?? 0, reason: behaviour.reason }, findings }, null, 2));
   } else if (findings.length === 0) {
     console.log(`d02-coverage: OK — ${CLAUSES.length} clause(s) hold across ${Object.keys(SOURCES).length} source file(s)`);
+    if (behaviour.evaluated) {
+      console.log(`d02-coverage: OK — ${behaviour.cases} fixture page(s) return their stated d02 and d12 verdicts, true positives included`);
+    } else {
+      console.log(`d02-coverage: [NOT EVALUATED] reference fixtures: ${behaviour.reason}`);
+    }
   } else {
     console.error(`d02-coverage: ${findings.length} finding(s)\n`);
     for (const f of findings) {
@@ -170,4 +272,7 @@ function main() {
   process.exit(findings.length === 0 ? 0 : 1);
 }
 
-main();
+main().catch((e) => {
+  console.error(`d02-coverage: ${e && e.stack ? e.stack : e}`);
+  process.exit(1);
+});

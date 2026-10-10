@@ -6,6 +6,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.6] — 2026-10-10
+
+**designesy-mcp 1.13.6** (PyPI, MCP registry, hosted `/api/mcp`): `designesy_motion_score` reports each verdict under its own check, `designesy_report` and `designesy_guardrails` take an option that returns less, and the drift engine stops counting fallbacks and style-attribute declarations as fabricated tokens (Anthropic Software Directory Policy 2B, 5B).
+
+### Fixed
+
+- **`designesy_motion_score` verdicts sit under the right check (policy 2B).**
+  The tool computed ten checks of its own (required fields, version, frame
+  rate, dimensions, layers, in/out points, markers, deprecated layers, a §16
+  placeholder, schema) and named them with the motion contract's m01-m10 by
+  array position. The contract's checks are different, so every verdict sat
+  under another check's name: on a file with zero layers, no markers and no
+  meta, "meta object present" FAILed with "layers: 0", "markers array present"
+  PASSed with "w: 100, h: 100", and m09 listed the ten standards as ", , , ,"
+  because it read fields the contract does not have. Both servers now run the
+  contract's ten checks, each under its own id and the contract's name for it:
+  m01 the schema's top-level animation object, m02 the required fields, m03 no
+  4.x Bodymovin version, m04 a markers array, m05 a meta object, m06 a
+  reduced-motion path (a marker or slot named for it, or a meta note of an
+  external wrapper), m07 keyframe easing (linear, ease and ease-in fail), m08
+  duration within 300 ms, and m09 and m10, which concern the page that embeds
+  the file. A check a file cannot settle returns SKIP with the reason, never a
+  PASS: m01 does not validate layer contents, so a clean file is SKIP, and m09
+  and m10 cite their standard by number and rule from the contract. The score
+  now follows the contract (WARN counts 0.5, SKIP is not scored), the result
+  adds `skip_count` and `scoring`, and `validator_note` points at the schema
+  URL that exists (the old one was a 404). The hosted tool reads the contract
+  this deployment serves instead of fetching it from production.
+- **The drift engine's d02 and d12 stop failing on properties nobody
+  fabricated.** On www.designesy.org d02 (No fabricated tokens) and d12 (Token
+  alias chains resolve) FAILed on 13 properties. Of the 29 undeclared names on
+  the home page, 24 are always referenced with a fallback, `var(--x, 4px)`,
+  and 5 are declared in `style` attributes by React style objects; none is
+  referenced bare and declared nowhere. d02 now counts a property as
+  fabricated only when it is referenced with no fallback and declared nowhere:
+  not in a stylesheet, a `<style>` block or a `style` attribute. d12 reads
+  each chain whole, so one that ends in a fallback (`var(--x, var(--y, 4px))`)
+  resolves and one that ends in an undeclared property still dangles; it also
+  no longer reads a reference inside another `var()`'s fallback as a chain of
+  its own. d11 counts a property set in a `style` attribute as declared. A
+  property referenced bare and declared nowhere still FAILs. `/api/drift` and
+  `/api/monitor` read the attributes through one shared function and pass them
+  to `runDriftChecks`, so the two engines agree. On the leaderboard cohort
+  (27 of 30 sites reachable), drift and monitor scores move on 5 sites and no
+  others: www.designesy.org 83 to 100, atlassian.design 67 to 88,
+  designesy.ai.studio 75 to 83, stitch.withgoogle.com 63 to 67, linear.app 42
+  to 46. The leaderboard ranks by `/api/score` alone and does not move; the
+  report composite moves by 0.3 of the drift change.
+
+### Added
+
+- **`designesy_report` takes `detail` (policy 5B).** The full result is about
+  75 to 100 KB of JSON on the ten sites measured (designesy.org 100,166
+  characters), because it carries each engine's whole result beside the merged
+  check list. `detail: "summary"` returns the same keys with fewer rows: the
+  composite, the totals, each engine's score, grade and counts, and only the
+  checks and synthesis entries that did not PASS, plus `omitted` counting what
+  was left out (designesy.org 3,773 characters; 4 to 31 KB across the ten
+  sites). `"full"`, the default, returns what the tool always returned.
+- **`designesy_guardrails` takes `parts` (policy 5B).** The full bundle grows
+  with a site's token count: about 10 KB to about 500 KB on the ten sites
+  measured (designesy.org 89,963 characters). `parts`, a list of bundle file
+  names (`tokens`, `lintConfig`, `agentRules`, `componentContract`,
+  `antiPatterns`, `designMd`), returns only those files and keeps the score,
+  grade, counts and checks. An unknown name, an empty list or a value that is
+  not a list of strings returns an error (`isError: true`) listing the valid
+  parts, before the engine runs, as `designesy_contract`'s `sections` does.
+- **The two servers' motion checks and trimming are gated.** The PyPI suite
+  (`test_motion_score.py`, `test_trim.py`) and `check-mcp-tool-parity.js` run
+  their own implementation on the same Lottie fixtures and captured results
+  and compare with one golden file each; the gate also checks that the
+  fixtures' contract is the one the site serves.
+- **d02 and d12 are checked on fixture pages.** `check-d02-coverage.js` runs
+  ten pages through the shared drift checks, assembled the way `/api/drift`
+  assembles them, including true positives that must still FAIL.
+
 ## [1.13.5] — 2026-10-10
 
 **designesy-mcp 1.13.5** (PyPI, MCP registry): no result or error the PyPI server returns carries a local file path.
