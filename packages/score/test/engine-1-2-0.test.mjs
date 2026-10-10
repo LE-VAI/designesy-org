@@ -11,6 +11,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { scoreFromParts } from '../dist/engine.js';
 
 const HTML = `<!doctype html><html lang="en"><head><title>Fixture</title>
@@ -183,12 +184,32 @@ describe('v44: status colors used as text meet contrast in every declared theme'
   });
 
   it('composites a translucent fill over the ancestor fill it sits on', async () => {
-    // primer.style's danger counter: white on #fff3 over #cf222e is white on #d94e58, 4.05:1.
+    // primer.style's danger counter: white on #fff3 over #cf222e is white on #d94e58, 4.05:1
+    // (a WARN: white is neutral text, see the next test).
     const css = ':root { --paper: #ffffff; --counter-danger-fg: #ffffff; } body { background: var(--paper); } .btn:hover { background: #cf222e; } .btn:hover .counter { background: #ffffff33; color: var(--counter-danger-fg); }';
     const c = await check('v44', { css });
-    assert.equal(c.status, 'FAIL');
     const [f] = c.evidence.findings;
     assert.deepEqual({ background: f.background, ratio: f.ratio }, { background: '#d94e58', ratio: 4.05 });
+  });
+
+  it('WARNs, never FAILs, neutral text under a status name, and keeps its ratio', async () => {
+    // White or grey (Oklch chroma under 0.06) named for a status is a general text-contrast
+    // miss, not a status color: primer.style's danger counter and keyboard hint.
+    const neutral = [
+      [':root { --paper: #ffffff; --counter-danger-fg: #ffffff; } body { background: var(--paper); } .btn:hover { background: #cf222e; } .btn:hover .counter { background: #ffffff33; color: var(--counter-danger-fg); }', 4.05],
+      [':root { --paper: #2a313c; --kbd-danger-fg: #9198a1; color-scheme: dark; } body { background: var(--paper); } .kbd { color: var(--kbd-danger-fg); }', 4.49],
+    ];
+    for (const [css, ratio] of neutral) {
+      const c = await check('v44', { css });
+      assert.equal(c.status, 'WARN', css);
+      const [f] = c.evidence.findings;
+      assert.deepEqual({ status: f.status, ratio: f.ratio }, { status: 'WARN', ratio }, css);
+      assert.equal(f.note, 'neutral text on a status fill: a general text-contrast miss, not a status color');
+      assert.match(c.detail, /neutral text on a status fill/);
+    }
+    // A hue under a status name at a similar ratio still FAILs.
+    const hue = await check('v44', { css: ':root { --paper: #ffffff; --error: #df342f; } body { background: var(--paper); } .err { color: var(--error); }' });
+    assert.equal(hue.status, 'FAIL');
   });
 
   it('never reads a hovered fill as the resting element\'s surface', async () => {
@@ -251,8 +272,8 @@ describe('v44: status colors used as text meet contrast in every declared theme'
   });
 
   it('shows a ratio that misses by less than a rounding step below the bar', async () => {
-    // primer.style dark: #9198a1 on #2a313c is 4.497:1; it reads 4.49, never 4.50 against 4.5.
-    const css = ':root { --paper: #2a313c; --kbd-danger-fg: #9198a1; color-scheme: dark; } body { background: var(--paper); } .kbd { color: var(--kbd-danger-fg); }';
+    // #df342f on white is 4.497:1; it reads 4.49, never 4.50 against 4.5.
+    const css = ':root { --paper: #ffffff; --error: #df342f; } body { background: var(--paper); } .err { color: var(--error); }';
     const c = await check('v44', { css });
     assert.equal(c.status, 'FAIL');
     assert.equal(c.evidence.findings[0].ratio, 4.49);
@@ -401,6 +422,35 @@ describe('S8: AI-pill text counts only in a pill', () => {
     ]) {
       assert.equal(await s8(page(body)), undefined, body);
     }
+  });
+});
+
+/** The shared score arithmetic as shipped: read from the built engine, since it is not exported. */
+function shippedScoreArithmetic() {
+  const src = readFileSync(new URL('../dist/engine.js', import.meta.url), 'utf8');
+  const start = src.indexOf('function scoreArithmetic(');
+  assert.ok(start >= 0, 'scoreArithmetic not found in dist/engine.js');
+  let depth = 0;
+  let i = src.indexOf('{', start);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) break;
+  }
+  return new Function(`${src.slice(start, i + 1)}\nreturn scoreArithmetic;`)();
+}
+
+describe('score arithmetic', () => {
+  it('rounds to one decimal after the slop deduction and the originality lift', () => {
+    // pentagram.com on 2026-10-09: weighted 72.6, slop 20 (the cap), originality +4.
+    const scoreArithmetic = shippedScoreArithmetic();
+    const checks = [
+      ...['PASS', 'PASS', 'FAIL'].map((status, i) => ({ id: `c${i}`, category: 'cadence', status })),
+      ...['PASS', 'PASS', 'WARN'].map((status, i) => ({ id: `m${i}`, category: 'motion', status })),
+    ];
+    assert.equal(72.6 - 20 + 4, 56.599999999999994, 'the float noise this test guards against');
+    assert.equal(scoreArithmetic(checks, 0, 0).score, 72.6);
+    assert.equal(scoreArithmetic(checks, 20, 4).score, 56.6);
+    assert.equal(scoreArithmetic(checks, 5.5, 0).score, 67.1);
   });
 });
 

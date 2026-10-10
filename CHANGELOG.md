@@ -50,7 +50,11 @@ the site's. Contract mode moves to engine 1.3.0.
     progress or meter bar, a color named for an icon (`--button-danger-iconColor`),
     or an element that paints its own background with `currentColor`. Only a
     color named as a status (ok, success, warn, warning, error, danger, fail,
-    destructive, info, grade-a to grade-f) can FAIL. A hue that counts only
+    destructive, info, grade-a to grade-f) can FAIL, and only where it
+    resolves to a hue (Oklch chroma 0.06 or more). White, grey or near-grey
+    text under a status name (a counter or a keyboard hint on a danger button)
+    WARNs at most, with its ratio kept: it is a general text-contrast miss, not
+    a status color. A hue that counts only
     because the stylesheet also paints it as a fill or border WARNs at most,
     because its real surface is often a fill on an ancestor that a static
     reading cannot see. Disabled states are exempt, as WCAG 1.4.3 exempts
@@ -104,6 +108,12 @@ the site's. Contract mode moves to engine 1.3.0.
   arithmetic is now one function, `scoreArithmetic`, in both copies, and the
   source-drift gate compares it and each orchestrator's call to it; a test
   re-introduces the old floor in one copy and requires a finding.
+- **Scores carry one decimal, without float noise.** The shared score
+  arithmetic subtracted a fractional slop total and added the originality lift
+  without rounding, so a page weighted 72.6 with 20 points of slop and a +4
+  lift scored 56.599999999999994 in both engines. It now rounds to one
+  decimal, the precision scores are shown at, after both steps. No cohort
+  score moves by more than that noise.
 - **`@designesy/score` reports the current contract.** `CONTRACT_VERSION` read
   `v0.4.1` in 0.6.0 while the site served v0.4.3. It reads `v0.4.3`, and a
   test now compares it with the site's contract source.
@@ -132,11 +142,11 @@ by engine 1.1.0 and engine 1.2.0 on the same bytes. The scores below use the
 site's arithmetic. The DESIGN.md probe (v37) was off in both runs, so a site
 that serves a DESIGN.md can differ from its live score by that check. 26 of 30
 sites were reachable; nytimes.com and cssdesignawards.com returned 403,
-getdesy.com refused the connection and awwwards.com timed out. v44: 2 FAIL,
-8 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
-alone move 8 sites by -3.6 to +1.2 (mean -0.09); the slop fixes alone move 11
-by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +12.3 (mean +2.13),
-and five change grade. The live leaderboard keeps its current scores until the
+getdesy.com refused the connection and awwwards.com timed out. v44: 1 FAIL,
+9 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
+alone move 8 sites by -1.8 to +1.2 (mean -0.02); the slop fixes alone move 11
+by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +12.3 (mean +2.2),
+and six change grade. The live leaderboard keeps its current scores until the
 re-score that runs on release.
 
   | Site | v44 | v45 | S2, S8 findings | Score: 1.1.0 → 1.2.0 | v44/v45 | S2/S8 | Delta | Grade |
@@ -154,7 +164,7 @@ re-score that runs on release.
   | zeroheight.com | WARN | SKIP | S8 3 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
   | roastbyai.com | SKIP | SKIP | S8 4 → 0 | 74.7 → 82.7 | 0 | +8 | +8 | C → B |
   | atlassian.design | PASS | SKIP | no change | 91.9 → 93.1 | +1.2 | 0 | +1.2 | A |
-  | primer.style | FAIL | SKIP | S2 2 → 0; S8 1 → 0 | 85.4 → 89.8 | -3.6 | +8 | +4.4 | B |
+  | primer.style | WARN | SKIP | S2 2 → 0; S8 1 → 0 | 85.4 → 91.6 | -1.8 | +8 | +6.2 | B → A |
   | carbondesignsystem.com | WARN | SKIP | S2 3 → 0; S8 2 → 0 | 69.3 → 81.6 | -0.7 | +13 | +12.3 | D → B |
   | spectrum.adobe.com | SKIP | SKIP | no change | 69.1 → 69.1 | 0 | 0 | 0 | D |
   | m3.material.io | WARN | SKIP | no change | 66.4 → 66.4 | 0 | 0 | 0 | D |
@@ -174,32 +184,33 @@ re-score that runs on release.
 
   A WARN carries half credit, so whether it raises or lowers a score depends on
   where the accessibility category already stands; on this cohort the v44 WARNs
-  move scores by -0.7 to +0.6. A score that holds at 70 (linear.app,
+  move scores by -1.8 to +0.6. A score that holds at 70 (linear.app,
   zeroheight.com, vam.ac.uk) is held by the accessibility floor. pentagram.com
   stays at 56.6 because its slop deduction is still at the 20-point cap without
   S8.
 
-  **The two v44 FAILs, read by hand**, each finding against the stylesheet
-  it came from. carbondesignsystem.com WARNs rather than FAILs: its progress
-  bar and status icon (`--cds-support-success`, 3.05:1) are graphics and clear
-  3:1, and a ghost-button color it also paints as a mark stays a WARN.
-  primer.style: the danger button's counter on hover, white on 20% white over
-  #cf222e (#d94e58), 4.05:1; and its keyboard hint in the dark theme, #9198a1
-  on #2a313c, 4.497:1. github.com, 95 in five groups. 46 are in the Dark
-  Dimmed theme, with both values from its `dark_dimmed` theme file:
-  `--fgColor-danger` #e5534b on #212830 (4.02:1) 33 times, and 13 danger
-  labels, buttons and counters on that theme's surfaces (2.84 to 4.36:1).
-  4 are Primer Brand's dark red #fa383d on the Dark Dimmed canvas (4.04:1).
-  27 are Primer Brand colors when the appearance follows the system and a dark
-  theme fills the day slot (`[data-color-mode=auto][data-light-theme=dark]`
-  and its dimmed and high-contrast variants): the brand declares only
-  `[data-color-mode=light]` and `[data-color-mode=dark]`, so it keeps its light
-  palette on the dark canvas (2.78 to 4.41:1). The cascade produces that as
-  written; only a signed-in visitor with those settings reaches it. 8 are
-  `--brand-color-success-emphasis` as text, 2.46:1 on white and 2.13 to 2.94:1
-  in the dark themes, under 3:1 even as a graphic. 10 are danger-button
-  counters and a keyboard hint in the light, colorblind, high-contrast and dark
-  themes, measured on the button's own fill (3.59 to 4.49:1).
+  **The one v44 FAIL, read by hand**, each finding against the stylesheet it
+  came from. carbondesignsystem.com WARNs: its progress bar and status icon
+  (`--cds-support-success`, 3.05:1) are graphics and clear 3:1, and a
+  ghost-button color it also paints as a mark stays a WARN. primer.style WARNs:
+  its two misses are neutral text under a danger name, the danger button's
+  counter on hover (white on 20% white over #cf222e, #d94e58, 4.05:1) and its
+  keyboard hint in the dark theme (#9198a1 on #2a313c, 4.497:1). github.com
+  FAILs on 83 hues, in five groups. 43 are in the Dark Dimmed theme, with both
+  values from its `dark_dimmed` theme file: `--fgColor-danger` #e5534b on
+  #212830 (4.02:1) 33 times, and 10 danger labels and buttons on that theme's
+  surfaces (3.30 to 4.36:1). 4 are Primer Brand's dark red #fa383d on the Dark
+  Dimmed canvas (4.04:1). 27 are Primer Brand colors when the appearance
+  follows the system and a dark theme fills the day slot
+  (`[data-color-mode=auto][data-light-theme=dark]` and its dimmed and
+  high-contrast variants): the brand declares only `[data-color-mode=light]`
+  and `[data-color-mode=dark]`, so it keeps its light palette on the dark
+  canvas (2.78 to 4.41:1). The cascade produces that as written; only a
+  signed-in visitor with those settings reaches it. 8 are
+  `--brand-color-success-emphasis` as text, 2.46:1 on white and 2.13 to
+  2.94:1 in the dark themes, under 3:1 even as a graphic. 1 is an alert
+  counter in the light colorblind theme, #bc4c00 on #f0f1f2 (4.45:1). Its 12
+  neutral counters and keyboard hints WARN.
 
 ## [1.13.2] — 2026-10-09
 

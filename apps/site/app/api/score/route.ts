@@ -1939,10 +1939,14 @@ function tokenNameSegments(name: string): string[] {
 // A text use is color or -webkit-text-fill-color reading a status hue
 // directly, through one alias, or at reduced alpha.
 //
-// Only a status-named colour can FAIL. A hue that qualifies only because the
-// sheet also paints it as a mark WARNs at most: across the leaderboard cohort
-// those were palette colours (utility classes, illustrations, links) whose real
-// surface is often an ancestor's fill the static model cannot see. Disabled and
+// Only a status-named colour can FAIL, and only where it resolves to a hue
+// (Oklch chroma 0.06 or more). A neutral value under a status name (white or
+// grey text for a counter or a hint on a danger button) WARNs at most: it is a
+// general text-contrast miss, not a status colour. A hue that qualifies only
+// because the sheet also paints it as a mark WARNs at most: across the
+// leaderboard cohort those were palette colours (utility classes,
+// illustrations, links) whose real surface is often an ancestor's fill the
+// static model cannot see. Disabled and
 // inactive states (:disabled, [disabled], [aria-disabled=true], .disabled) are
 // exempt, as WCAG 1.4.3 exempts inactive user interface components.
 //
@@ -1975,6 +1979,9 @@ function tokenNameSegments(name: string): string[] {
 // background with currentColor, so the colour is a fill measured against the
 // surface behind it.
 
+// Oklch chroma at or above which a colour has a hue; below it, white, black,
+// greys and near-greys are neutral.
+const V44_HUE_CHROMA = 0.06;
 const V44_STATUS_WORDS = ['ok', 'success', 'pass', 'positive', 'warn', 'warning', 'caution', 'error', 'danger', 'fail', 'negative', 'destructive', 'info'];
 const V44_ON_FILL_WORDS = ['on', 'foreground', 'contrast', 'inverse', 'inverted'];
 const V44_THEME_CLASS = /\.((?:theme-)?(?:dark|light)(?:-theme|-mode)?)(?![\w-])/gi;
@@ -2201,7 +2208,7 @@ function checkStatusTextContrast(css: string): CheckResult {
           const c = resolveThemeColor(`var(${name})`, scopeOf(key), t.dark);
           if (!c || c[3] <= 0) continue;
           const lab = srgbToOklab([c[0], c[1], c[2]]);
-          if (Math.hypot(lab[1], lab[2]) >= 0.06) kind = 'paint';
+          if (Math.hypot(lab[1], lab[2]) >= V44_HUE_CHROMA) kind = 'paint';
           break;
         }
       }
@@ -2444,6 +2451,8 @@ function checkStatusTextContrast(css: string): CheckResult {
           return { bg: base, attested: opaque || !stateAbove, stale: false, need: partNeed };
         });
         const solid: Rgba = [Math.round(fg[0]), Math.round(fg[1]), Math.round(fg[2]), 1];
+        const fgLab = srgbToOklab([solid[0], solid[1], solid[2]]);
+        const neutral = Math.hypot(fgLab[1], fgLab[2]) < V44_HUE_CHROMA;
         const value = toHexColor(solid) + (fg[3] < 1 ? ` at ${Math.round(fg[3] * 100)}%` : '');
         type Measured = { background: string; ratio: number | null; need: number; status: Finding['status']; note: string };
         const measured: Measured[] = [];
@@ -2465,6 +2474,9 @@ function checkStatusTextContrast(css: string): CheckResult {
           } else if (status === 'FAIL' && !byName) {
             status = 'WARN';
             note = 'is only a warning: the color is not named as a status, it counts because the stylesheet also paints it as a mark, and its real surface may be a fill this check cannot see';
+          } else if (status === 'FAIL' && neutral) {
+            status = 'WARN';
+            note = 'neutral text on a status fill: a general text-contrast miss, not a status color';
           }
           // Shown to two places; a miss that would round up to the bar is
           // rounded down instead, so 4.497 reads 4.49, never 4.50 against 4.5.
@@ -2500,7 +2512,7 @@ function checkStatusTextContrast(css: string): CheckResult {
   const status = fails.length ? 'FAIL' : warns.length ? 'WARN' : 'PASS';
   const say = (f: Finding) => (f.ratio === null
     ? `${f.selector} uses ${f.token} ${f.value} in ${f.theme}, and ${f.note}`
-    : `${f.selector} uses ${f.token} ${f.value} on ${f.background} in ${f.theme} at ${f.ratio.toFixed(2)}:1 (needs ${f.need}:1)${f.note ? `; this ${f.note}` : ''}`);
+    : `${f.selector} uses ${f.token} ${f.value} on ${f.background} in ${f.theme} at ${f.ratio.toFixed(2)}:1 (needs ${f.need}:1)${f.note ? `; ${/^(?:is|clears) /.test(f.note) ? 'this ' : ''}${f.note}` : ''}`);
   const lead = status === 'FAIL' ? fails : warns;
   const detail = status === 'PASS'
     ? `${findings.length} status-color text use(s) clear contrast in ${themes.size} theme(s); the closest: ${say(findings[0])}`
@@ -3978,6 +3990,10 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
   if (originalityPoints > 0) {
     score = Math.min(100, score + originalityPoints);
   }
+
+  // One decimal, the precision scores are shown at: subtracting a fractional
+  // slop total leaves float noise (72.6 - 20 + 4 is 56.599999999999994).
+  score = Math.round(score * 10) / 10;
 
   // ── Per-category sub-scores (the constellation) ─────────────────────────
   // Each category gets its own 0-100 score using the same weighting rule as
