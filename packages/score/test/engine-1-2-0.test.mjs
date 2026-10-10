@@ -133,6 +133,34 @@ describe('v44: status colors used as text meet contrast in every declared theme'
     assert.equal(c.status, 'SKIP');
   });
 
+  it('WARNs, never FAILs, a hue that counts only because the sheet also paints it as a mark', async () => {
+    // linear.app's approved chip on 2026-10-09: --color-green #27a644 on its own tint, 2.56:1.
+    const css = ':root { --paper: #ffffff; --color-green: #27a644; } body { background: var(--paper); } .dot { background: var(--color-green); } .chip { background: #d4edda; color: var(--color-green); }';
+    const c = await check('v44', { css });
+    assert.equal(c.status, 'WARN');
+    const [f] = c.evidence.findings;
+    assert.equal(f.ratio, 2.56);
+    assert.equal(f.status, 'WARN');
+    assert.match(f.note, /only a warning/);
+    assert.match(c.detail, /only a warning/);
+  });
+
+  it('still FAILs the same contrast on a status-named color', async () => {
+    const css = ':root { --paper: #ffffff; --success: #27a644; } body { background: var(--paper); } .chip { background: #d4edda; color: var(--success); }';
+    assert.equal((await check('v44', { css })).status, 'FAIL');
+  });
+
+  it('exempts disabled states (WCAG 1.4.3), but not a rule that excludes them', async () => {
+    for (const sel of ['.btn:disabled', '.btn[disabled]', '.btn[aria-disabled=true]', '.btn.disabled', '.a:disabled, .b[aria-disabled="true"]']) {
+      const c = await check('v44', { css: `${LIGHT} ${sel} { color: var(--warn); }` });
+      assert.equal(c.status, 'SKIP', sel);
+    }
+    for (const sel of ['.btn:not(:disabled)', '.btn:hover:not(:disabled, .inactive)', '.a, .b:disabled']) {
+      const c = await check('v44', { css: `${LIGHT} ${sel} { color: var(--warn); }` });
+      assert.equal(c.status, 'FAIL', sel);
+    }
+  });
+
   it('SKIPs a page with no status color used as text', async () => {
     const c = await check('v44', { css: `${LIGHT} .dot { background: var(--warn); } p { color: var(--ink); }` });
     assert.equal(c.status, 'SKIP');
@@ -282,5 +310,18 @@ describe('S8: AI-pill text counts only in a pill', () => {
     ]) {
       assert.equal(await s8(page(body)), undefined, body);
     }
+  });
+});
+
+describe('the package names the contract and engine it carries', () => {
+  it('CONTRACT_VERSION is the site contract version', async () => {
+    // 0.6.0 reported v0.4.1 while the site served v0.4.3: the constant is
+    // pinned by hand and nothing compared it. Read the site's contract source.
+    const { readFileSync } = await import('node:fs');
+    const { CONTRACT_VERSION } = await import('../dist/engine.js');
+    const src = readFileSync(new URL('../../../apps/site/app/lib/design-system-contract.ts', import.meta.url), 'utf8');
+    const m = /\n\s*version:\s*'([^']+)'/.exec(src);
+    assert.ok(m, 'could not read version from design-system-contract.ts');
+    assert.equal(CONTRACT_VERSION, `v${m[1]}`);
   });
 });

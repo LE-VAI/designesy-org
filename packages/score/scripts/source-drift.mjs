@@ -21,7 +21,8 @@
  *
  * WHAT IT COMPARES
  * Top-level functions and consts by name, plus each slop block (the statement
- * after a `// S<n>.` comment inside the orchestrator), in a canonical form built
+ * after a `// S<n>.` comment inside the orchestrator), plus each orchestrator
+ * statement that calls a shared step (SHARED_CALLS), in a canonical form built
  * from the TypeScript AST. Canonical means formatting cannot register as drift:
  * whitespace, comments, quote style, trailing commas, optional braces around a
  * single statement, redundant parentheses, `x => e` vs `x => { return e; }`, and
@@ -60,6 +61,34 @@ export const BASELINE = join(HERE, '..', 'test', 'fixtures', 'source-drift-basel
 
 /** The orchestrator in each file — where the slop blocks live. */
 const ORCHESTRATORS = new Set(['scoreUrlUncached', 'scoreFromParts']);
+
+/**
+ * Shared steps each orchestrator must call, compared at the call site too.
+ *
+ * scoreArithmetic holds everything between the verdicts and the grade. It sat
+ * inline in both orchestrators until engine 1.2.0, where nothing compared it,
+ * and the copies disagreed on the accessibility floor (the site capped at 70
+ * when the accessibility category was under 60%, the npm engine on any
+ * accessibility FAIL). The function is compared as `fn:scoreArithmetic`; the
+ * statement that calls it is compared as `call:scoreArithmetic`, so an engine
+ * that stops calling it, or calls it with other inputs, is a finding too.
+ */
+export const SHARED_CALLS = new Set(['scoreArithmetic']);
+
+/** The shared step a statement calls, if any. */
+function sharedCallIn(node) {
+  let found = null;
+  const visit = (n) => {
+    if (found) return;
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && SHARED_CALLS.has(n.expression.text)) {
+      found = n.expression.text;
+      return;
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(node);
+  return found;
+}
 
 const K = ts.SyntaxKind;
 
@@ -168,6 +197,8 @@ export function unitsOf(text, name) {
             const m = full.slice(r.pos, r.end).match(/^\/\/\s*(S\d+)\./);
             if (m) out.set(`slop:${m[1]}`, canonical(inner));
           }
+          const call = sharedCallIn(inner);
+          if (call) out.set(`call:${call}`, canonical(inner));
         }
       }
     } else if (ts.isVariableStatement(st)) {

@@ -51,7 +51,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.2"
+SERVER_VERSION = "1.13.3"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -249,8 +249,8 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.1.0"
-OFFLINE_CONTRACT_VERSION = "v0.4.1"
+OFFLINE_ENGINE_MIRRORS = "1.2.0"
+OFFLINE_CONTRACT_VERSION = "v0.4.3"
 
 # The live engine's checks that this engine does not run, in the live engine's
 # order. The parity test asserts that these and OFFLINE_CHECK_IDS together are
@@ -258,8 +258,8 @@ OFFLINE_CONTRACT_VERSION = "v0.4.1"
 # fails the test until it is ported or listed here with a reason.
 _NOT_PORTED = (
     "not ported: added to the live engine after this fallback's original "
-    "checklist (v01-v23, x01-x03), and engine 1.1.0 did not change it. The "
-    "live engine runs it."
+    "checklist (v01-v23, x01-x03), and engines 1.1.0 and 1.2.0 did not change "
+    "it. The live engine runs it."
 )
 _NOT_PORTED_V44_V45 = (
     "not ported: added to the live engine for 1.2.0, after this fallback's "

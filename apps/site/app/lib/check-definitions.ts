@@ -63,7 +63,7 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v11', item: 'No transition:all in the live stylesheet', category: 'motion', type: 'auto', threshold: 'no transition:all in CSS', pass: 'no transition:all found', fail: 'transition:all found', warn: 'n/a', ceiling: null },
   { id: 'v12', item: 'will-change restricted to transform and opacity only', category: 'motion', type: 'auto', threshold: 'will-change only on transform/opacity', pass: 'will-change restricted cleanly', fail: 'n/a (WARN only)', warn: 'will-change on non-transform/opacity property', ceiling: null },
   { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', type: 'auto', threshold: '5 duration tokens (--duration-quick through --duration-slow)', pass: 'all 5 duration tokens present', fail: 'fewer than 3/5 duration tokens', warn: '3-4/5 present', ceiling: null },
-  // v45 (pending engine 1.2.0): found on this site, where a site-wide pause
+  // v45 (engine 1.2.0): found on this site, where a site-wide pause
   // held the .fade-up entrance on its opacity-0 first frame. SKIPs when no rule
   // pauses every element.
   { id: 'v45', item: 'Pausing motion keeps content visible', category: 'motion', type: 'auto', threshold: 'under a pause that holds every element (animation-play-state: paused on *), each one-shot entrance whose first keyframe is opacity 0 ends or is removed', pass: 'every entrance that starts invisible ends or is removed under the pause', fail: 'an entrance that starts at opacity 0 is held invisible under the pause', warn: 'an override exists, but its selector or scope does not clearly match the entrance', ceiling: null },
@@ -95,9 +95,11 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', type: 'auto', threshold: '1 h1, no skipped heading levels', pass: 'single h1, no gaps', fail: 'multiple h1s or skipped levels', warn: 'n/a', ceiling: 75 },
   { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', type: 'auto', threshold: 'input font-size ≥ 16px', pass: 'inputs ≥ 16px', fail: 'inputs < 16px', warn: 'n/a', ceiling: null },
   { id: 'v35', item: 'Forced-colors readiness: @media (forced-colors: active) block present', category: 'accessibility', type: 'auto', threshold: '@media (forced-colors: active) + forced-color-adjust', pass: 'forced-colors media query present', fail: 'n/a (WARN only)', warn: 'no forced-colors media query', ceiling: null },
-  // v44 (pending engine 1.2.0): found on this site, where light --warn as text
-  // measured 3.51:1. SKIPs when no status color is used as text.
-  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, in every declared theme', pass: 'every status-color text use clears its threshold in every theme', fail: 'a status-color text use is under its threshold in a theme', warn: 'a background that cannot be resolved, or alpha-reduced status text that clears only at full alpha', ceiling: null },
+  // v44 (engine 1.2.0): found on this site, where light --warn as text
+  // measured 3.51:1. SKIPs when no status color is used as text. Only a color
+  // named as a status can FAIL; a hue that counts because the sheet also paints
+  // it as a mark WARNs at most.
+  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, in every declared theme; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) is under its threshold as text in a theme', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: null },
 
   // ── Identity (weight 6) ──
   { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', type: 'auto', threshold: 'h1, title, meta description, landmark element', pass: 'all semantic signals present', fail: '3+ missing signals', warn: '1-2 missing', ceiling: null },
@@ -178,10 +180,12 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      a page with no field to zoom into; v14 and v18 move to
  *                      Tier 2, so scope=universal skips their absence. The
  *                      CHANGELOG entry lists the leaderboard verdicts that move.
- *   1.2.0  (pending)   v44 (status colors used as text meet contrast in every
- *                      declared theme) and v45 (pausing motion keeps content
- *                      visible) are in the registry ahead of the release that
- *                      carries them with contract mode. That release sets this
- *                      constant to 1.2.0 and lists the score movement.
+ *   1.2.0  2026-10-09  two checks found on this site: v44 (status colors used
+ *                      as text meet contrast in every declared theme) and v45
+ *                      (pausing motion keeps content visible); legacy scores
+ *                      gain both (owner decision D10). The S2 and S8 anti-slop
+ *                      rules stop firing on components and prose, and the npm
+ *                      engine's accessibility floor matches this one. The
+ *                      CHANGELOG entry lists the leaderboard score movement.
  */
-export const ENGINE_VERSION = '1.1.0';
+export const ENGINE_VERSION = '1.2.0';

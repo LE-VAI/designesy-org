@@ -1823,6 +1823,13 @@ function tokenNameSegments(name: string): string[] {
 // A text use is color or -webkit-text-fill-color reading a status hue
 // directly, through one alias, or at reduced alpha.
 //
+// Only a status-named colour can FAIL. A hue that qualifies only because the
+// sheet also paints it as a mark WARNs at most: across the leaderboard cohort
+// those were palette colours (utility classes, illustrations, links) whose real
+// surface is often an ancestor's fill the static model cannot see. Disabled and
+// inactive states (:disabled, [disabled], [aria-disabled=true], .disabled) are
+// exempt, as WCAG 1.4.3 exempts inactive user interface components.
+//
 // Each text use is measured in every theme it applies to: the :root block and
 // every [data-theme]/.dark/.light block and prefers-color-scheme block, each
 // over the root. The background is the rule's own background when it declares
@@ -1988,27 +1995,30 @@ function checkStatusTextContrast(css: string): CheckResult {
       }
     }
   }
-  const hueCache = new Map<string, boolean>();
-  const isHue = (name: string): boolean => {
+  // 'name': a status colour by its name. 'paint': a hue the sheet also paints
+  // as a mark. null: not a status hue.
+  const hueCache = new Map<string, 'name' | 'paint' | null>();
+  const hueKind = (name: string): 'name' | 'paint' | null => {
     const hit = hueCache.get(name);
     if (hit !== undefined) return hit;
     const segs = tokenNameSegments(name);
-    let yes = false;
+    let kind: 'name' | 'paint' | null = null;
     if (!segs.some((s) => V44_ON_FILL_WORDS.includes(s))) {
-      if (segs.some((s) => V44_STATUS_WORDS.includes(s)) || /(?:^|-)grade-[a-f](?:-|$)/.test(segs.join('-'))) yes = true;
+      if (segs.some((s) => V44_STATUS_WORDS.includes(s)) || /(?:^|-)grade-[a-f](?:-|$)/.test(segs.join('-'))) kind = 'name';
       else if (paintRefs.has(name)) {
         for (const [key, t] of themes) {
           const c = resolveThemeColor(`var(${name})`, scopeOf(key), t.dark);
           if (!c || c[3] <= 0) continue;
           const lab = srgbToOklab([c[0], c[1], c[2]]);
-          yes = Math.hypot(lab[1], lab[2]) >= 0.06;
+          if (Math.hypot(lab[1], lab[2]) >= 0.06) kind = 'paint';
           break;
         }
       }
     }
-    hueCache.set(name, yes);
-    return yes;
+    hueCache.set(name, kind);
+    return kind;
   };
+  const isHue = (name: string): boolean => hueKind(name) !== null;
   const huesIn = (value: string) => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]).filter(isHue);
   const aliasOf = new Map<string, string>();
   type AliasDecl = { value: string; keyless: string; where: Where; subjects: string[][] };
@@ -2109,8 +2119,15 @@ function checkStatusTextContrast(css: string): CheckResult {
     const direct = refs.find(isHue);
     const alias = refs.find((r) => aliasOf.has(r));
     if (!direct && !alias) continue;
+    // Inactive controls carry no contrast requirement (WCAG 1.4.3). A rule is
+    // exempt when every selector in it names a disabled state; :not(:disabled)
+    // names the opposite and does not count.
+    const disabled = splitCssTopLevel(rule.selector, ',').every((p) =>
+      /:disabled\b|\[disabled\]|\[aria-disabled(?:=["']?true["']?)?\]|\.disabled(?![\w-])/i.test(p.replace(/:not\((?:[^()]|\([^()]*\))*\)/gi, '')));
+    if (disabled) continue;
     uses++;
     const token = direct ?? `${alias} -> ${aliasOf.get(alias as string)}`;
+    const byName = hueKind(direct ?? (aliasOf.get(alias as string) as string)) === 'name';
     const where = whereOf(rule);
     const replacedBy = themed(where) ? [] : themedColor.get(keylessSelector(rule.selector)) ?? [];
     const applies = [...themes.keys()].filter((k) => {
@@ -2188,11 +2205,15 @@ function checkStatusTextContrast(css: string): CheckResult {
         const full = contrastRatio([solid[0], solid[1], solid[2]], [bg[0], bg[1], bg[2]]);
         const shown = fg[3] < 1 ? v44Composite(fg, bg) : solid;
         const painted = contrastRatio([shown[0], shown[1], shown[2]], [bg[0], bg[1], bg[2]]);
-        const status = full < need ? 'FAIL' : painted < need ? 'WARN' : 'PASS';
+        let status: Finding['status'] = full < need ? 'FAIL' : painted < need ? 'WARN' : 'PASS';
+        let note = status === 'WARN' ? `clears ${need}:1 only at full alpha (${full.toFixed(2)}:1)` : '';
+        if (status === 'FAIL' && !byName) {
+          status = 'WARN';
+          note = 'is only a warning: the color is not named as a status, it counts because the stylesheet also paints it as a mark, and its real surface may be a fill this check cannot see';
+        }
         findings.push({
           selector: sel, token, theme: t.label, value, background: toHexColor(bg),
-          ratio: Math.round(painted * 100) / 100, need, status,
-          note: status === 'WARN' ? `clears ${need}:1 only at full alpha (${full.toFixed(2)}:1)` : '',
+          ratio: Math.round(painted * 100) / 100, need, status, note,
         });
       }
     }
@@ -2214,7 +2235,7 @@ function checkStatusTextContrast(css: string): CheckResult {
   const status = fails.length ? 'FAIL' : warns.length ? 'WARN' : 'PASS';
   const say = (f: Finding) => (f.ratio === null
     ? `${f.selector} uses ${f.token} ${f.value} in ${f.theme}, and ${f.note}`
-    : `${f.selector} uses ${f.token} ${f.value} on ${f.background} in ${f.theme} at ${f.ratio.toFixed(2)}:1 (needs ${f.need}:1)${f.note ? `; it ${f.note}` : ''}`);
+    : `${f.selector} uses ${f.token} ${f.value} on ${f.background} in ${f.theme} at ${f.ratio.toFixed(2)}:1 (needs ${f.need}:1)${f.note ? `; this ${f.note}` : ''}`);
   const lead = status === 'FAIL' ? fails : warns;
   const detail = status === 'PASS'
     ? `${findings.length} status-color text use(s) clear contrast in ${themes.size} theme(s); the closest: ${say(findings[0])}`
@@ -2222,7 +2243,7 @@ function checkStatusTextContrast(css: string): CheckResult {
   return {
     id: ID, item: ITEM, category: CATEGORY, status, detail,
     evidence: {
-      findings: findings.slice(0, 20).map((f) => ({ selector: f.selector, token: f.token, theme: f.theme, value: f.value, background: f.background, ratio: f.ratio, need: f.need, status: f.status })),
+      findings: findings.slice(0, 20).map((f) => ({ selector: f.selector, token: f.token, theme: f.theme, value: f.value, background: f.background, ratio: f.ratio, need: f.need, status: f.status, note: f.note || null })),
       truncated: Math.max(0, findings.length - 20),
     },
   };
@@ -3446,6 +3467,173 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   }
 }
 
+// ── Score arithmetic, shared by both engine copies ─────────────────────────
+// Everything between the check verdicts and the grade: category weights, the
+// weighted score, the slop deduction, the originality lift, the per-category
+// sub-scores, the accessibility floor and the hard-fail ceilings. It is one
+// function so the source-drift gate compares it as one unit. Until engine
+// 1.2.0 the arithmetic sat inline in each orchestrator, outside the gate, and
+// the copies disagreed on the floor: the site capped at 70 when the
+// accessibility category was under 60%, the npm engine on any accessibility
+// FAIL. The site's rule is the one documented on /methodology.
+function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPoints: number): {
+  score: number;
+  categoryWeights: Record<string, number>;
+  categoryCounts: Record<string, number>;
+  categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }>;
+  a11yFloorApplied: boolean;
+  hardFailCeilingApplied: boolean;
+  hardFailCeilingReason: string | null;
+} {
+  // ── Tier 2: per-category weighted scoring ──────────────────────────────────
+  // Weights follow the contract's section emphasis (the contract IS the scoring
+  // basis), with an accessibility floor so contract sections covering real-user
+  // harm cannot be drowned out by cadence's 8 checks. SKIPs fall out of BOTH
+  // numerator and denominator (Lighthouse precedent: manual/N/A audits excluded).
+  //
+  // Weight table (relative weights, sums to 117 — the scoring formula
+  // normalizes via Σ(points)/Σ(total). Derived from AnySearch research against
+  // Lighthouse axe user-impact, design-auditor category %, and DSAF 50/50):
+  //   cadence 18, accessibility 15, semantic 12, motion 10, tokens 9,
+  //   takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3
+  // v0.4.0 additions: copywriting 8, security 5, spec 4
+  const CATEGORY_WEIGHTS: Record<string, number> = {
+    cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
+    takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
+    security: 5, spec: 4, copywriting: 8,
+  };
+
+  // Per-check weight = category weight / number of checks in that category
+  // (so each category contributes its full weight, split evenly among its checks).
+  const categoryCounts: Record<string, number> = {};
+  for (const c of checks) {
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
+    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
+  }
+
+  let weightedPoints = 0;
+  let weightedTotal = 0;
+  for (const c of checks) {
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
+    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
+    const checkWeight = catWeight / (categoryCounts[c.category] || 1);
+    weightedTotal += checkWeight;
+    if (c.status === 'PASS') weightedPoints += checkWeight;
+    else if (c.status === 'WARN') weightedPoints += checkWeight * 0.5;
+    // FAIL = 0 points
+  }
+
+  let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
+
+  // ── Anti-slop deduction ─────────────────────────────────────────────────────
+  // Apply detected slop patterns as a direct subtraction from the weighted score.
+  // The deduction is flat (not percentage-scaled) so it cannot be gamed by making
+  // the site more minimal. Capped at 20 total.
+  if (slopTotal > 0) {
+    score = Math.max(0, score - slopTotal);
+  }
+
+  // ── Originality lift ─────────────────────────────────────────────────────────
+  // Reward positive craft signals. Applied after the slop deduction so a generic
+  // site with no distinctive signals stays at its (already-slop-deducted) score,
+  // while a distinctive site is lifted above the compliant-but-generic baseline.
+  // Capped at +8. Score clamped to ≤100 since this is a bonus on a 100-scale base.
+  if (originalityPoints > 0) {
+    score = Math.min(100, score + originalityPoints);
+  }
+
+  // ── Per-category sub-scores (the constellation) ─────────────────────────
+  // Each category gets its own 0-100 score using the same weighting rule as
+  // the composite (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded). Categories
+  // with zero scored checks report null so the client can render them as
+  // "unscored" rather than fabricating a 0 or 100. This is the same math the
+  // composite uses — one source of truth, no client-side re-derivation.
+  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
+  for (const c of checks) {
+    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
+    if (c.status === 'SKIP') { agg.skip += 1; continue; }
+    if (c.status === 'MANUAL') { agg.manual += 1; continue; }
+    const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
+    agg.wt += checkWeight;
+    if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
+    else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
+    else agg.fail += 1; // FAIL
+  }
+  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
+  for (const [cat, agg] of Object.entries(catAgg)) {
+    categoryScores[cat] = {
+      score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
+      weight: CATEGORY_WEIGHTS[cat] || 5,
+      pass: agg.pass,
+      fail: agg.fail,
+      warn: agg.warn,
+      skip: agg.skip,
+      manual: agg.manual,
+    };
+  }
+
+  // ── Tier 2: accessibility floor (DSAF enterprise-grade precedent) ──────────
+  // DSAF enforces A8 Accessibility ≥75% — a system can score 90% combined and
+  // still fail enterprise-grade if a11y is 73%. We apply a softer version: if
+  // the accessibility category scores below 60%, cap the overall grade at C.
+  // This prevents "perfect tokens, zero a11y = A" dishonesty.
+  const a11yChecks = checks.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP' && c.status !== 'MANUAL');
+  const a11yPass = a11yChecks.filter((c) => c.status === 'PASS').length;
+  const a11yWarn = a11yChecks.filter((c) => c.status === 'WARN').length;
+  const a11yScored = a11yChecks.length;
+  const a11yPct = a11yScored === 0 ? 100 : ((a11yPass + a11yWarn * 0.5) / a11yScored) * 100;
+  let a11yFloorApplied = false;
+  if (a11yScored > 0 && a11yPct < 60) {
+    // Cap at C (70). If the weighted score is already below 70, leave it.
+    if (score > 70) {
+      score = 70;
+      a11yFloorApplied = true;
+    }
+  }
+
+  // ── Hard-fail ceilings (PixelJury precedent) ────────────────────────────────
+  // Certain check FAILures are so severe they cap the score regardless of other
+  // strengths. These are design-integrity failures — a site that FAILs on
+  // contrast or horizontal overflow cannot be A-grade no matter how good its
+  // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
+  const hardFailChecks = checks.filter((c) => c.status === 'FAIL');
+  let hardFailCeilingApplied = false;
+  let hardFailCeilingReason: string | null = null;
+  for (const c of hardFailChecks) {
+    let cap: number | null = null;
+    let reason: string | null = null;
+
+    // v06 Contrast readable — fundamental legibility failure
+    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+    // v22 Contrast signal — CTA text unreadable on brand color
+    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
+    // v02 Horizontal overflow — broken layout on mobile
+    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
+    // v24 Touch targets — interactive elements too small to use
+    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target (WCAG 2.5.5 Enhanced): inaccessible on touch devices.'; }
+    // v25 Heading hierarchy — broken document outline
+    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: document outline is broken.'; }
+    // v16 Rem scale — root font-size under 16px (iOS zoom break)
+    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+
+    if (cap !== null && score > cap) {
+      score = cap;
+      hardFailCeilingApplied = true;
+      hardFailCeilingReason = reason;
+    }
+  }
+
+  return {
+    score,
+    categoryWeights: CATEGORY_WEIGHTS,
+    categoryCounts,
+    categoryScores,
+    a11yFloorApplied,
+    hardFailCeilingApplied,
+    hardFailCeilingReason,
+  };
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -4031,78 +4219,16 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     ? `${originalitySignals.length} craft signal${originalitySignals.length !== 1 ? 's' : ''} (+${originalityPoints}pts${rawOriginality > ORIGINALITY_CAP ? `, capped from +${rawOriginality}` : ''}${slopGateApplied ? ', slop-gated ×0.5' : ''})`
     : null;
 
-  // ── Weighted scoring ─────────────────────────────────────────────────────
-  const CATEGORY_WEIGHTS: Record<string, number> = {
-    cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9, takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3, security: 5, spec: 4, copywriting: 8,
-  };
-
-  const categoryCounts: Record<string, number> = {};
-  for (const c of checks) {
-    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
-    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
-  }
-
-  let weightedPoints = 0;
-  let weightedTotal = 0;
-  for (const c of checks) {
-    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
-    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
-    const checkWeight = catWeight / (categoryCounts[c.category] || 1);
-    weightedTotal += checkWeight;
-    if (c.status === 'PASS') weightedPoints += checkWeight;
-    else if (c.status === 'WARN') weightedPoints += checkWeight * 0.5;
-  }
-
-  let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
-
-  if (slopTotal > 0) score = Math.max(0, score - slopTotal);
-  if (originalityPoints > 0) score = Math.min(100, score + originalityPoints);
-
-  // Per-category sub-scores
-  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
-  for (const c of checks) {
-    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
-    if (c.status === 'SKIP') { agg.skip += 1; continue; }
-    if (c.status === 'MANUAL') { agg.manual += 1; continue; }
-    const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
-    agg.wt += checkWeight;
-    if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
-    else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
-    else agg.fail += 1;
-  }
-  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
-  for (const [cat, agg] of Object.entries(catAgg)) {
-    categoryScores[cat] = {
-      score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
-      weight: CATEGORY_WEIGHTS[cat] || 5,
-      pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip, manual: agg.manual,
-    };
-  }
-
-  // A11y floor: cap score at C (70) when any accessibility FAIL exists
-  let a11yFloorApplied = false;
-  for (const c of checks) {
-    if (c.category === 'accessibility' && c.status === 'FAIL') {
-      if (score > 70) { score = 70; a11yFloorApplied = true; }
-      break;
-    }
-  }
-
-  // Hard-fail ceilings for critical issues
-  let hardFailCeilingApplied = false;
-  let hardFailCeilingReason: string | null = null;
-  for (const c of checks) {
-    if (c.status !== 'FAIL') continue;
-    let cap: number | null = null;
-    let reason = '';
-    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
-    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
-    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
-    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target: inaccessible on touch devices.'; }
-    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: document outline is broken.'; }
-    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom, breaks mobile UX.'; }
-    if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
-  }
+  // The arithmetic is shared with the other engine copy; see scoreArithmetic.
+  const {
+    score,
+    categoryWeights: CATEGORY_WEIGHTS,
+    categoryCounts,
+    categoryScores,
+    a11yFloorApplied,
+    hardFailCeilingApplied,
+    hardFailCeilingReason,
+  } = scoreArithmetic(checks, slopTotal, originalityPoints);
 
   const grade = computeGrade(score);
 
@@ -4127,9 +4253,11 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
 /**
  * The contract revision these checks implement, reported by every emission.
  * The site derives its copy from the contract source; this standalone engine
- * pins it here, once, and each release moves it.
+ * pins it here, once, and each release moves it. 0.6.0 shipped v0.4.1 while
+ * the site served v0.4.3; test/engine-1-2-0.test.mjs now reads the site's
+ * contract source and fails when the two differ.
  */
-export const CONTRACT_VERSION = 'v0.4.1';
+export const CONTRACT_VERSION = 'v0.4.3';
 
 /**
  * The one verdict rule, shared by every emission format.

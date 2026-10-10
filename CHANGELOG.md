@@ -6,6 +6,168 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.3] — 2026-10-09
+
+Released together: **engine 1.2.0** (designesy.org, `/api/score`, the MCP
+endpoint), **@designesy/score 0.7.0** and **designesy-score 1.1.0** (npm), and
+**designesy-mcp 1.13.3** (PyPI, MCP registry). Headlines: two checks found on
+this site, v44 and v45, join every score; the S2 and S8 anti-slop rules stop
+firing on components and prose; the npm engine's accessibility floor matches
+the site's. Contract mode moves to engine 1.3.0.
+
+### Added
+
+- **Engine 1.2.0: v44 and v45, two defects this site shipped and fixed.**
+  `ENGINE_VERSION` is now `1.2.0`. Both engine copies carry the identical change
+  and the source-drift gate reports them in agreement.
+
+  - **v44 (accessibility): status colors used as text meet contrast in every
+    declared theme.** A color picked to mark a state (a dot or a bar, where 3:1
+    is enough) gets reused to write the word for that state, which needs 4.5:1.
+    On designesy.org the light `--warn` #b07d04 painted status words at 3.51:1
+    on #fbfbfc; mixed toward the ink, `color-mix(in oklab, var(--warn) 70%,
+    var(--ink))`, it paints #7f5e21 at 5.76:1. The check measures every
+    `color` that reads a status color (directly, through one alias, or at
+    reduced alpha) in every theme the stylesheet declares (`:root`,
+    `[data-theme]` and `.dark`/`.light` blocks, including attribute
+    combinations, and `prefers-color-scheme` blocks). It resolves `var()`
+    chains, `color-mix()` in srgb, oklab and oklch (rounded to the 8-bit color
+    a browser paints), `light-dark()` and relative color syntax, and measures
+    on the rule's own background or the theme's page background. Large text (24px,
+    or 18.66px bold) needs 3:1. Only a color named as a status (ok, success,
+    warn, warning, error, danger, fail, destructive, info, grade-a to grade-f)
+    can FAIL. A hue that counts only because the stylesheet also paints it as
+    a fill or border WARNs at most, because its real surface is often a fill on
+    an ancestor that a static reading cannot see. Disabled states are exempt,
+    as WCAG 1.4.3 exempts inactive controls. SKIP when no status color is used
+    as text. Results carry `evidence`: up to 20 measured uses (selector, token,
+    theme, color, background, ratio, threshold) and a count of the rest.
+  - **v45 (motion): pausing motion keeps content visible.** A site-level pause
+    (`animation-play-state: paused` on every element, under an attribute or
+    class on the document or inside `prefers-reduced-motion: reduce`) holds
+    each animation on its current frame. An entrance whose first keyframe is
+    opacity 0 is then held invisible; on designesy.org a paused visitor got
+    empty pages. Each one-shot entrance that the pause holds must end or be
+    removed under it: `animation: none`, `animation-play-state: running`, or a
+    negative `animation-delay` at least as long as the animation (the site uses
+    -3600s). FAIL without one, WARN when the override's selector or scope does
+    not clearly match, SKIP when no rule pauses every element.
+
+  **Owner decision D10: legacy scores gain both checks.** A request without a
+  contract returns what engine 1.1.0 returned except for v44 and v45. The
+  registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
+  Category weights are unchanged (accessibility 15, motion 10, of 117), so each
+  accessibility check now carries 15/7 = 2.14 points where it carried 2.5, and
+  each motion check 2.0 where it carried 2.5. A SKIP leaves a score where it
+  was.
+
+### Fixed
+
+- **S2 and S8 stopped deducting for components and prose.** designesy.org lost
+  10 points to them, every one a false positive.
+  - **S2, "Full-page gradient background"**, counted `inset: 0` as full-bleed,
+    but `inset: 0` fills the nearest positioned ancestor. All three hits on
+    designesy.org were components: a 1px window sheen, a cell fill and a heatmap
+    bar. A gradient now needs viewport evidence: it is painted on `html`, `body`
+    or `:root`, or the rule is `position: fixed` and pinned to all four edges,
+    or it is sized in viewport units. `border-radius: inherit` marks a
+    component, and a gradient sized to 1px by `background-size` is a hairline.
+  - **S8, "AI-pill badge text"**, matched the whole HTML with no word boundary,
+    so "Generate" matched "generates" and "AI-generated", and it read the
+    framework's `<script>` payload, counting each sentence twice. It now strips
+    `<script>`, `<style>`, `<template>` and comments, matches whole words, and
+    counts only the text of a pill: an element whose class or role names a
+    badge, pill, chip, tag or CTA, a button, or a link, holding 40 characters
+    or fewer. A real "AI-powered" badge still counts.
+- **The npm engine's accessibility floor matches the site's.** The site caps a
+  score at 70 when the accessibility category is under 60% (WARN counts half),
+  as /methodology documents. `@designesy/score` capped at 70 on any
+  accessibility FAIL, so the CLI scored some pages lower than the site (with
+  v44, primer.style 70 in the CLI against 89.8 on the site). The score
+  arithmetic is now one function, `scoreArithmetic`, in both copies, and the
+  source-drift gate compares it and each orchestrator's call to it; a test
+  re-introduces the old floor in one copy and requires a finding.
+- **`@designesy/score` reports the current contract.** `CONTRACT_VERSION` read
+  `v0.4.1` in 0.6.0 while the site served v0.4.3. It reads `v0.4.3`, and a
+  test now compares it with the site's contract source.
+
+### Changed
+
+- **`@designesy/score` 0.7.0 and `designesy-score` 1.1.0 (npm)** ship engine
+  1.2.0. The package exports one new type, `CheckEvidence`, and `CheckResult`
+  gains an optional `evidence` field (additive). The v24 hard-fail ceiling
+  reason now matches the site's wording.
+- **designesy-mcp 1.13.3 (PyPI).** The offline fallback mirrors engine 1.2.0
+  and contract v0.4.3. v44 and v45 are listed in `engine.not_run` with a reason,
+  so 27 of the 44 checks run offline. The tool descriptions state 44 checks,
+  and the remote-score note reads the check count from the engine's reply. The
+  offline engine's golden covers 118 cases and 229 runs.
+- **The four engines' check grid on /score follows the check count.** Its
+  lattice was written into the stylesheet for 42 cells (3 x 14 wide, 7 x 6
+  narrow) and left a last row of two at 44. It is derived from the contract
+  score's count: 4 x 11 wide and 11 x 4 narrow at 44.
+- **Calibration corpus 1.3.0**: seven fixtures for v44 and v45 (32 in all).
+  `test/engine-1-2-0.test.mjs` pins each rule's edges and both slop fixes.
+
+**Leaderboard impact, measured.** The HTML and CSS of the 30 seed sites were
+fetched once on 2026-10-09 with GET requests, one site at a time, and scored
+by engine 1.1.0 and engine 1.2.0 on the same bytes. The scores below use the
+site's arithmetic. The DESIGN.md probe (v37) was off in both runs, so a site
+that serves a DESIGN.md can differ from its live score by that check. 26 of 30
+sites were reachable; nytimes.com and cssdesignawards.com returned 403,
+getdesy.com refused the connection and awwwards.com timed out. v44: 3 FAIL,
+7 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
+alone move 8 sites by -3.6 to +1.2 (mean -0.15); the slop fixes alone move 11
+by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +10.8 (mean +2.07),
+and five change grade. The live leaderboard keeps its current scores until the
+re-score that runs on release.
+
+  | Site | v44 | v45 | S2, S8 findings | Score: 1.1.0 → 1.2.0 | v44/v45 | S2/S8 | Delta | Grade |
+  |---|---|---|---|---|---|---|---|---|
+  | linear.app | WARN | SKIP | S2 21 → 0; S8 9 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | vercel.com | SKIP | SKIP | S2 1 → 0 | 81.0 → 86.0 | 0 | +5 | +5 | B |
+  | stripe.com | WARN | SKIP | S2 1 → 0; S8 12 → 0 | 66.9 → 67.9 | 0 | +1 | +1 | D |
+  | apple.com | SKIP | SKIP | no change | 83.1 → 83.1 | 0 | 0 | 0 | B |
+  | nytimes.com | not reached | | | | | | | |
+  | mozaika.design | SKIP | SKIP | no change | 65.1 → 65.1 | 0 | 0 | 0 | D |
+  | www.designesy.org | PASS | PASS | S2 3 → 0; S8 6 → 0 | 98.0 → 100.0 | 0 | +2 | +2 | A |
+  | designesy.ai.studio | PASS | SKIP | no change | 77.7 → 78.5 | +0.8 | 0 | +0.8 | C |
+  | getdesy.com | not reached | | | | | | | |
+  | stitch.withgoogle.com | SKIP | SKIP | S8 4 → 0 | 64.4 → 69.4 | 0 | +5 | +5 | D |
+  | zeroheight.com | WARN | SKIP | S8 3 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | roastbyai.com | SKIP | SKIP | S8 4 → 0 | 74.7 → 82.7 | 0 | +8 | +8 | C → B |
+  | atlassian.design | PASS | SKIP | no change | 91.9 → 93.1 | +1.2 | 0 | +1.2 | A |
+  | primer.style | FAIL | SKIP | S2 2 → 0; S8 1 → 0 | 85.4 → 89.8 | -3.6 | +8 | +4.4 | B |
+  | carbondesignsystem.com | FAIL | SKIP | S2 3 → 0; S8 2 → 0 | 69.3 → 80.1 | -2.2 | +13 | +10.8 | D → B |
+  | spectrum.adobe.com | SKIP | SKIP | no change | 69.1 → 69.1 | 0 | 0 | 0 | D |
+  | m3.material.io | WARN | SKIP | no change | 66.4 → 66.4 | 0 | 0 | 0 | D |
+  | radix-ui.com | WARN | SKIP | S2 2 → 0 | 65.2 → 70.0 | +0.4 | +4.8 | +4.8 | D → C |
+  | geist.dev | SKIP | SKIP | no change | 64.4 → 64.4 | 0 | 0 | 0 | D |
+  | plex.ibm.com | SKIP | SKIP | no change | 57.1 → 57.1 | 0 | 0 | 0 | F |
+  | awwwards.com | not reached | | | | | | | |
+  | fwa.org | WARN | SKIP | S8 1 → 0 | 47.9 → 51.5 | +0.6 | +3 | +3.6 | F |
+  | cssdesignawards.com | not reached | | | | | | | |
+  | pentagram.com | SKIP | SKIP | S8 4 → 0 | 56.6 → 56.6 | 0 | 0 | 0 | F |
+  | vam.ac.uk | SKIP | SKIP | S2 7 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | github.com | FAIL | SKIP | S2 5 → 0; S8 6 → 0 | 68.5 → 70.0 | -1.8 | +10 | +1.5 | D → C |
+  | notion.so | WARN | SKIP | S2 2 → 1 | 65.5 → 65.5 | 0 | 0 | 0 | D |
+  | figma.com | SKIP | SKIP | S8 250 → 0 | 79.4 → 84.4 | 0 | +5 | +5 | C → B |
+  | x.com | SKIP | SKIP | no change | 90.2 → 90.2 | 0 | 0 | 0 | A |
+  | wikipedia.org | PASS | SKIP | no change | 83.0 → 83.8 | +0.8 | 0 | +0.8 | B |
+
+  A WARN carries half credit, so whether it raises or lowers a score depends on
+  where the accessibility category already stands; on this cohort the v44 WARNs
+  move scores by 0 to +0.6. A score that holds at 70 (linear.app,
+  zeroheight.com, vam.ac.uk) is held by the accessibility floor. pentagram.com
+  stays at 56.6 because its slop deduction is still at the 20-point cap without
+  S8. The three v44 FAILs need reading by hand. On github.com and primer.style
+  most findings are status-named colors for buttons and controls in a hover or
+  rest state whose red fill sits on the parent element (white on white,
+  1.00:1), which a static reading cannot see; github.com also paints
+  `--brand-color-success-emphasis` as text at 2.46:1 on white. On
+  carbondesignsystem.com the finding is `--cds-support-success` at 3.05:1 on a
+  progress bar and its status icon.
+
 ## [1.13.2] — 2026-10-09
 
 **designesy-mcp 1.13.2** (PyPI, MCP registry): every tool declares a title and the four MCP annotation hints.

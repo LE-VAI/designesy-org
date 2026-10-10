@@ -2137,36 +2137,34 @@
   color: var(--muted-dim);
 }
 
-/* One register lattice for the four engines. 42 is 3 x 14 and 7 x 6, so on
-   fourteen tracks the contract score closes as three full rows ending on the
-   face's edge (the auto-fill lattice ended 75px short at 1440 and left
-   10/10/10/10/2 at 390). A narrow face takes six tracks, the one count that
-   closes three of the four registers: contract 42 as 7 x 6, drift 12 as
-   2 x 6, guardrails 6 as one row (seven left drift at 7 + 5 and guardrails
-   one cell short of the edge). Readiness's ten close as two rows of five on
-   the same six-track cell width, so every cell still stands under a column
-   of the contract score and both rows are whole. Six across a phone face
-   keeps each target wider than the 24px floor; fourteen would not. The gap
-   is a property so the five-track column measure can read it (touch sets
-   4px, below). */
+/* One register lattice for the four engines, derived from the check counts
+   (lib/engine/lattice.ts), not written for one count. Each cell list carries
+   its lattice as custom properties: the tracks (a divisor of the contract
+   score's count, nearest fourteen on a wide face and six on a narrow one, so
+   the contract closes as whole rows ending on the face's edge) and its own
+   columns (all of its cells on one row when they fit, else the largest
+   column count that divides it). Every register keeps the lattice's cell
+   width, so each cell stands under a column of the contract score. At 44
+   checks that is 4 x 11 wide and 11 x 4 narrow; at 42 it was 3 x 14 and
+   7 x 6. The narrow lattice keeps each target wider than the 24px floor at
+   390. The fallbacks are the old 42-check values. The gap is a property so
+   the column measure can read it (touch sets 4px, below). */
 .eg-minicells {
   --mc-gap: 0px;
+  --mc-tracks: var(--mc-tracks-narrow, 6);
+  --mc-cols: var(--mc-cols-narrow, 6);
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--mc-cols), calc((100% - (var(--mc-tracks) - 1) * var(--mc-gap)) / var(--mc-tracks)));
   gap: var(--mc-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.eg-minicells:has(> li:nth-child(10):last-child) {
-  grid-template-columns: repeat(5, calc((100% - 5 * var(--mc-gap)) / 6));
-}
-
 @container face (width >= 34rem) {
-  .eg-minicells,
-  .eg-minicells:has(> li:nth-child(10):last-child) {
-    grid-template-columns: repeat(14, minmax(0, 1fr));
+  .eg-minicells {
+    --mc-tracks: var(--mc-tracks-wide, 14);
+    --mc-cols: var(--mc-cols-wide, 14);
   }
 }
 

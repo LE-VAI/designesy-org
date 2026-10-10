@@ -5,7 +5,7 @@ import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
-import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT, ENGINE_MANUAL_CHECK_COUNT, ENGINE_VERSION } from '../../lib/check-definitions';
 import { openIndex } from '../../lib/open-index';
 import '../docs.css';
 
@@ -355,6 +355,11 @@ export default function McpDocsPage() {
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 Contract score
               </p>
+              {/* designesy.org scored by engine 1.2.0 on 2026-10-09: every
+                  scored check passes, the browser-only checks read MANUAL, no
+                  slop is deducted, and the originality lift is clamped at 100.
+                  The counts are read from the registry so they always sum to
+                  the engine's total. */}
               <p
                 style={{
                   fontSize: '1.5rem',
@@ -363,10 +368,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                93% A
+                100% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                {ENGINE_CHECK_COUNT}-check engine · 38 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
+                {ENGINE_CHECK_COUNT}-check engine {ENGINE_VERSION} · {ENGINE_SCORED_CHECK_COUNT} PASS / 0 FAIL / 0 WARN / 0 SKIP / {ENGINE_MANUAL_CHECK_COUNT} MANUAL
               </p>
             </div>
           </div>
