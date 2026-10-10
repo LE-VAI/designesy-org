@@ -24,8 +24,9 @@
 // MCP Registry: io.github.LE-VAI/designesy-org (version: lib/mcp-version.ts; auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
-import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { CONTRACT_VERSION, designSystemContract } from '../../lib/design-system-contract';
 import { MCP_SERVER_VERSION } from '../../lib/mcp-version';
+import { designReviewRubric, publishedJson, publishedText } from '../../lib/mcp-reference';
 import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
 import { after } from 'next/server';
@@ -67,6 +68,32 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const data = asJson ? await res.json() : await res.text();
   cache.set(url, { ts: now, data });
   return data;
+}
+
+// The full contract's size and top-level keys, DERIVED from the contract this
+// deployment serves at /contracts/design-system.json, so designesy_contract's
+// description cannot drift from what the tool returns. The tool returns
+// JSON.stringify(contract, null, 2); tokens are estimated at 4 characters each.
+const CONTRACT_KEYS = Object.keys(designSystemContract);
+const CONTRACT_JSON_CHARS = JSON.stringify(designSystemContract, null, 2).length;
+const CONTRACT_SIZE = `about ${Math.round(CONTRACT_JSON_CHARS / 1000)} KB (roughly ${Math.round(CONTRACT_JSON_CHARS / 4000)}k tokens)`;
+
+/** One JSON text content block, the shape every tool here returns. */
+function jsonContent(value: unknown) {
+  return { content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] };
+}
+
+/** A tool error: isError set, with what went wrong and the values that would work. */
+function contractError(message: string, unknown: string[], valid: string[]) {
+  return {
+    ...jsonContent({
+      success: false,
+      error: `${message} Valid sections: ${valid.join(', ')}.`,
+      unknown_sections: unknown,
+      valid_sections: valid,
+    }),
+    isError: true,
+  };
 }
 
 // ── MCP Handler ────────────────────────────────────────────────────────────────
@@ -121,28 +148,40 @@ const handler = createMcpHandler(
       'designesy_contract',
       {
         ...mcpToolDisplay('designesy_contract'),
-        description: 'Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; cached ~24h server-side. Returns the full contract JSON, or a single section when "section" is provided. Pass section to get one slice (e.g. "motion" for just the motion tokens) instead of the full contract, which saves tokens when you only need one dimension.',
+        // The size and the key list are derived (CONTRACT_SIZE, CONTRACT_KEYS
+        // above). This read "cached ~24h server-side" while the server cached
+        // for 5 minutes, and offered no way to return less than ~25k tokens
+        // beyond a single named section.
+        description: `Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; this server caches the fetched contract for 5 minutes. With no arguments it returns the full contract JSON, ${CONTRACT_SIZE}. To return less, pass sections, a list of top-level keys such as ["motion", "colors"]: the result holds id, version, and only those keys. section (one name) is the older form and returns { section, data }. An unknown name returns an error that lists every valid key.`,
         inputSchema: z.object({
-          section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, verification_checks, open_tensions, components, interaction).'),
+          sections: z.array(z.string()).optional().describe(`Optional: top-level contract keys to return. The result holds id, version, and only these keys. Omit for the full contract. Valid keys: ${CONTRACT_KEYS.join(', ')}.`),
+          section: z.string().optional().describe('Optional, older form: one top-level key; returns { section, data }. Prefer sections.'),
         }),
       },
-      async ({ section }) => {
+      async ({ sections, section }) => {
         const data = await cachedFetch(`${BASE_URL}/contracts/design-system.json`, true) as Record<string, unknown>;
-        if (section && typeof section === 'string') {
-          const sectionKey = section as keyof typeof data;
-          if (sectionKey in data) {
-            return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ section, data: data[sectionKey] }, null, 2) }],
-            };
+        const valid = Object.keys(data);
+        // Own keys only: `in` would also accept inherited names such as "constructor".
+        const has = (k: string) => Object.prototype.hasOwnProperty.call(data, k);
+        if (sections !== undefined) {
+          // section, when also given, joins the list; duplicates are dropped.
+          const names = [...new Set([...(section ? [section] : []), ...sections])];
+          if (names.length === 0) {
+            return contractError('sections is empty; name at least one section, or omit it for the full contract.', [], valid);
           }
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: `Unknown section: ${section}`, available: Object.keys(data) }, null, 2) }],
-            isError: true,
-          };
+          const unknown = names.filter((n) => !has(n));
+          if (unknown.length > 0) {
+            return contractError(`Unknown contract section(s): ${unknown.join(', ')}.`, unknown, valid);
+          }
+          const slice: Record<string, unknown> = { id: data.id, version: data.version };
+          for (const n of names) slice[n] = data[n];
+          return jsonContent(slice);
         }
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        if (section) {
+          if (has(section)) return jsonContent({ section, data: data[section] });
+          return contractError(`Unknown contract section: ${section}.`, [section], valid);
+        }
+        return jsonContent(data);
       },
     );
 
@@ -151,7 +190,10 @@ const handler = createMcpHandler(
       'designesy_design_review',
       {
         ...mcpToolDisplay('designesy_design_review'),
-        description: 'Get the Designesy Design Review framework: an 8-dimension rubric (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility) plus the agent prompt, output format, and verification checklist for a qualitative design critique. Use this when you want a structured rubric to critique a design holistically, rather than a numeric compliance score. When NOT to use: for a deterministic numeric score, use designesy_score; this tool gives you a rubric, not a number. Read-only: returns the rubric + prompt. The calling agent performs the actual critique (this tool does not evaluate the design for you). Returns JSON: { rubric, dimensions[8], agent_prompt, output_format, verification_checklist }. Pass artifact/purpose/context/rules to get a pre-filled critique prompt; omit all four to get the blank framework.',
+        // Returns the kit's rubric without its agent_prompt (see
+        // designReviewRubric in lib/mcp-reference.ts for why). The Returns
+        // shape below is the object designReviewRubric builds.
+        description: 'Get the Designesy Design Review rubric for a qualitative design critique: eight dimensions (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility), the output format, and the verification checklist, from the published Design Review kit. Use this when you want a structured rubric to critique a design holistically, rather than a numeric compliance score. When NOT to use: for a deterministic numeric score, use designesy_score; this tool gives you a rubric, not a number. Read-only: it returns reference data and does not evaluate the design. Returns JSON: { kind: "review_rubric", source_url, note, inputs (only when passed), kit { id, title, version, status, purpose, quality_bar, permission }, when_to_use[], required_inputs[], dimensions[8] { num, title, desc }, output_format[], verification_checklist[], anti_patterns[], rationalizations[], kit_prompt_url, kit_prompt_note, omitted_fields[] }. The kit\'s copy-ready agent prompt is not included; kit_prompt_url is the page where a person can read it. Pass artifact, purpose, context, or rules to have them recorded in inputs (rules defaults to the current contract version).',
         inputSchema: z.object({
           artifact: z.string().optional().describe('URL or description of the artifact to review.'),
           purpose: z.string().optional().describe('What the design is trying to make possible.'),
@@ -160,31 +202,9 @@ const handler = createMcpHandler(
         }),
       },
       async ({ artifact, purpose, context, rules }) => {
-        const data = await cachedFetch(`${BASE_URL}/kits/design-review.json`, true) as Record<string, unknown>;
-        const hasArgs = artifact || purpose || context || rules;
-        if (hasArgs) {
-          const dimensions = (data.dimensions as Array<Record<string, unknown>>) || [];
-          const filledPrompt = {
-            artifact: artifact || 'Not specified',
-            purpose: purpose || 'Not specified',
-            context: context || 'Not specified',
-            rules: rules || 'designesy design system ' + CONTRACT_VERSION,
-            dimensions: dimensions.map((d) => ({
-              name: d.name,
-              question: d.question,
-              weight: d.weight,
-            })),
-            output_format: data.output_format,
-            verification_checklist: data.verification_checklist,
-            instructions: 'Review the artifact against each dimension. Score 0-5 per dimension. Provide evidence for each score. Submit the review as structured JSON.',
-          };
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify(filledPrompt, null, 2) }],
-          };
-        }
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        const source = `${BASE_URL}/kits/design-review.json`;
+        const kit = await cachedFetch(source, true) as Record<string, unknown>;
+        return jsonContent(designReviewRubric(kit, source, { artifact, purpose, context, rules }, 'designesy design system ' + CONTRACT_VERSION));
       },
     );
 
@@ -193,13 +213,12 @@ const handler = createMcpHandler(
       'designesy_skill_md',
       {
         ...mcpToolDisplay('designesy_skill_md'),
-        description: 'Get the Designesy SKILL.md: the agent-skill-format export of the design-system contract, written as behavioral rules an AI coding agent can drop into .agents/skills/ or a system prompt. Use this when you want the contract in a form that steers how an agent *builds* UI (tokens, anti-patterns, behavioral rules, verification). When NOT to use: for the raw contract JSON, use designesy_contract; for scoring, use designesy_score. Read-only: no side effects. Returns markdown text (SKILL.md format) to drop into .agents/skills/ or paste into a system prompt. No parameters.',
+        description: 'Get the Designesy SKILL.md: the agent-skill-format export of the design-system contract, for a user to save into .agents/skills/ or a system prompt so a coding agent builds UI to the contract (tokens, anti-patterns, rules, verification). Use this when the user wants the contract in that form. When NOT to use: for the raw contract JSON, use designesy_contract; for scoring, use designesy_score. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/markdown", note, omitted_sections[], content }, where content is the SKILL.md markdown (tens of thousands of characters) with any section written as steps or a prompt for an AI agent replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/contracts/skill`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/contracts/skill`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/markdown', text));
       },
     );
 
@@ -208,13 +227,15 @@ const handler = createMcpHandler(
       'designesy_agent_json',
       {
         ...mcpToolDisplay('designesy_agent_json'),
-        description: 'Get the Designesy agent discovery document (/.well-known/agent.json): the org identity, authority, ingest protocol, package index, machine-export list, permission policy, and citation templates. Use this when you are integrating with or enumerating Designesy as a machine agent and need the canonical discovery/manifest endpoint rather than one specific contract. When NOT to use: for the package list, use designesy_catalog (lighter); for the contract, use designesy_contract. Read-only: no side effects. Returns the /.well-known/agent.json object: { identity, authority, ingest_protocol, package_index, permission_policy, citation_templates }. No parameters.',
+        // The Returns shape named ingest_protocol, package_index,
+        // permission_policy and citation_templates; the published document's
+        // keys are ingest, packages, permission and cite.
+        description: 'Get the Designesy agent discovery document (/.well-known/agent.json) as reference data: the org identity, authority, discovery endpoints, package index, machine exports, permission policy, contact, and citation templates. Use this when integrating with or enumerating Designesy and need the canonical discovery manifest rather than one specific contract. When NOT to use: for the package list, use designesy_catalog (lighter); for the contract, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "application/json", note, omitted_fields[], document }, where document is the published object (schema, name, identity, authority, topics, discovery, ingest, packages, machine_exports, contact, permission, cite, and the rest) with any field written as steps for an AI agent (such as ingest.steps) removed and its path listed in omitted_fields. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/.well-known/agent.json`, true);
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        const source = `${BASE_URL}/.well-known/agent.json`;
+        const doc = await cachedFetch(source, true);
+        return jsonContent(publishedJson(source, doc));
       },
     );
 
@@ -223,13 +244,15 @@ const handler = createMcpHandler(
       'designesy_llms_txt',
       {
         ...mcpToolDisplay('designesy_llms_txt'),
-        description: 'Get the Designesy /llms.txt: a short agent-facing brief with the canonical reference, topic index, ingest steps, package list, and contact. Use this first when you don\'t know what Designesy is; it\'s the cheapest orientation path before pulling heavier artifacts. When NOT to use: for the full expanded brief, use designesy_llms_full_txt; for the contract itself, use designesy_contract. Read-only: no side effects. Returns text/plain (~500 tokens). No parameters.',
+        // The size is stated as a range that holds while the brief stays a
+        // short brief. It read "~500 tokens" while the file was ~6,900
+        // characters (~1,700 tokens).
+        description: 'Get the Designesy /llms.txt brief as reference data: what Designesy is, canonical links, topics, the published package list, machine exports, standing rules, and contact. Use this first when you don\'t know what Designesy is; at a few thousand characters it is the cheapest orientation path before pulling heavier artifacts. When NOT to use: for the longer brief, use designesy_llms_full_txt; for the contract itself, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/plain", note, omitted_sections[], content }, where content is the published text with any section written as steps for an AI agent (such as the ingest steps) replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/llms.txt`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/llms.txt`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/plain', text));
       },
     );
 
@@ -238,13 +261,15 @@ const handler = createMcpHandler(
       'designesy_llms_full_txt',
       {
         ...mcpToolDisplay('designesy_llms_full_txt'),
-        description: 'Get the Designesy /llms-full.txt, the complete agent-facing brief: ingest protocol, discovery endpoints, every package, standing rules, anti-patterns, and a paste-ready agent prompt. Use this for comprehensive onboarding to the Designesy ecosystem when the short /llms.txt is not enough. When NOT to use: for a quick orientation, use designesy_llms_txt first (~500 tokens vs ~3000). Read-only: no side effects. Returns text/plain (~3000 tokens, includes a paste-ready agent prompt). No parameters.',
+        // It read "~3000 tokens" while the file was ~16,000 characters
+        // (~4,000 tokens), and it promised the paste-ready agent prompt, which
+        // is now left out of tool output.
+        description: 'Get the Designesy /llms-full.txt brief as reference data: authority, discovery endpoints, topics, every published package with its links, standing rules, and anti-patterns. Use this for a fuller picture of the Designesy ecosystem when the short brief from designesy_llms_txt is not enough. When NOT to use: for a quick orientation, use designesy_llms_txt (a few thousand characters; this one runs over ten thousand); for the contract itself, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/plain", note, omitted_sections[], content }, where content is the published text with any section written as steps or a prompt for an AI agent (such as the ingest protocol and the paste-ready agent prompt) replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/llms-full.txt`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/llms-full.txt`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/plain', text));
       },
     );
 
@@ -309,7 +334,7 @@ const handler = createMcpHandler(
       'designesy_tokens_score',
       {
         ...mcpToolDisplay('designesy_tokens_score'),
-        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS/FAIL/WARN. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (t01-t10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { contract_id, contract_version, contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, fail_count, warn_count, checks[{id (t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], provenance, validator_note }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
           dtcg_file: z.string().optional().describe('Raw DTCG token JSON string to validate (alternative to url).'),
@@ -710,7 +735,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
       'designesy_motion_score',
       {
         ...mcpToolDisplay('designesy_motion_score'),
-        description: 'Validate a Lottie animation file against the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards, returning 10 checks (m01-m10) with PASS/FAIL/WARN. The DTCG 2025.10 spec leaves motion tokens as a second-class citizen: there is no standard for motion token structure, reduced-motion markers, or animation accessibility. Designesy\'s motion validator fills this gap: it checks required fields (v, fr, ip, op, w, h, layers), $version, a markers array for reduced-motion compliance, and no deprecated version. Use this to verify a motion/animation asset is well-formed AND accessible: the only validator that checks both. When NOT to use: for full-site motion scoring (not a single Lottie file), use designesy_score. Executable: fetches the URL or parses the raw Lottie JSON, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (m01-m10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate a Lottie animation file against the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards, returning 10 checks (m01-m10) with PASS, FAIL, WARN or SKIP. The DTCG 2025.10 spec leaves motion tokens as a second-class citizen: there is no standard for motion token structure, reduced-motion markers, or animation accessibility. Designesy\'s motion validator fills this gap: it checks required fields (v, fr, ip, op, w, h, layers), $version, a markers array for reduced-motion compliance, and no deprecated version. Use this to verify a motion/animation asset is well-formed AND accessible: the only validator that checks both. When NOT to use: for full-site motion scoring (not a single Lottie file), use designesy_score. Executable: fetches the URL or parses the raw Lottie JSON, runs 10 checks server-side. No browser needed. Returns JSON: { contract_id, contract_version, contract_status, url, lottie_version, layer_count, score (0-100), grade (A-F), pass_count, fail_count, warn_count, checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, provenance, validator_note }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a Lottie JSON file. The tool fetches and validates it.'),
           lottie_file: z.string().optional().describe('Raw Lottie JSON string to validate (alternative to url).'),

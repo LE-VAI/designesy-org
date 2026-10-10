@@ -6,6 +6,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp** (hosted endpoint `/api/mcp` and PyPI server): tool output
+reads as reference data, `designesy_contract` can return only the sections you
+need, and every description matches what its tool returns. Made for Anthropic's
+Software Directory Policy (sections 2B, 2F and 5B).
+
+### Changed
+
+- **The document tools return labeled reference data, never an agent prompt
+  (policy 2F).** `designesy_llms_txt`, `designesy_llms_full_txt`,
+  `designesy_agent_json` and `designesy_skill_md` now return JSON:
+  `{ kind: "published_document", source_url, media_type, note, ... }`, with
+  the published text in `content` (or the published object in `document`).
+  Any part written as steps or a prompt for an AI agent is left out and named:
+  a markdown section keeps its heading and its body becomes a one-line marker
+  (listed in `omitted_sections`), and a JSON field is removed (listed in
+  `omitted_fields`). Today that is the ingest steps of `/llms.txt`, the ingest
+  protocol, the "Agents:" usage line and the paste-ready agent prompt of
+  `/llms-full.txt`, and `ingest.steps` of `/.well-known/agent.json`. The
+  published files are unchanged; only what the tools return changed. Until
+  now a tool result could carry "You are working with Designesy..." and "If
+  machine_url is present, fetch it for structured rules", which, inside a
+  conversation, read as instructions to the assistant.
+- **`designesy_design_review` returns the rubric without the kit's agent
+  prompt.** The result is `{ kind: "review_rubric", source_url, note, kit,
+  when_to_use, required_inputs, dimensions[8], output_format,
+  verification_checklist, anti_patterns, rationalizations, kit_prompt_url,
+  kit_prompt_note, omitted_fields }`, plus `inputs` when artifact, purpose,
+  context or rules are passed. The prompt told its reader to fetch the machine
+  kit and contract "for structured rules"; everything a review needs from it
+  is already a field here, and a person can still copy it from
+  `kit_prompt_url`. This also fixes the hosted tool's filled form, which mapped
+  each dimension to fields the kit does not have (`name`, `question`,
+  `weight`) and returned eight empty objects, and the PyPI tool's, which
+  replaced placeholders the prompt does not contain and defaulted `rules` to
+  contract v0.3.0.
+
+### Added
+
+- **`designesy_contract` takes `sections` (policy 5B).** The full contract is
+  about 100 KB of JSON (roughly 25k tokens) and the only way to trim it was one
+  named section. `sections`, a list of top-level keys, returns `id`, `version`
+  and only those keys. The default is still the full contract, and `section`
+  still returns `{ section, data }`. An unknown name, an empty list, or a value
+  that is not a list of strings returns an error (`isError: true`) naming the
+  unknown keys and listing every valid one; the PyPI server's unknown-section
+  reply used to be a success.
+- **The two servers' reference-data output is gated.** The PyPI suite
+  (`test_reference_data.py`) and `check-mcp-tool-parity.js` run their own
+  implementation on the same published-document fixtures and compare with one
+  golden file, and both check that the two directive patterns are the same.
+
+### Fixed
+
+- **Descriptions match what the tools return (policy 2B).** `designesy_llms_txt`
+  said "~500 tokens" for a brief of about 6,900 characters (about 1,700
+  tokens), and `designesy_llms_full_txt` "~3000" for about 16,000 characters.
+  Both now state ranges that hold ("a few thousand characters", "over ten
+  thousand"). `designesy_contract` said "cached ~24h server-side" while the
+  servers cache it for 5 minutes; the hosted description now derives the
+  contract's size and key list from the contract it serves.
+  `designesy_agent_json` named keys the document does not have
+  (`ingest_protocol`, `package_index`, `permission_policy`,
+  `citation_templates`). `designesy_tokens_score` and `designesy_motion_score`
+  promised a `valid` field neither returns and left SKIP out of the statuses.
+- The docs page (`/docs/mcp`) and both READMEs describe the new output.
+
 ## [1.13.3] — 2026-10-09
 
 Released together: **engine 1.2.0** (designesy.org, `/api/score`, the MCP

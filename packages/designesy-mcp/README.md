@@ -83,13 +83,13 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Read-only discovery
 | Tool | What it does |
 |---|---|
-| `designesy_catalog` | Get the 23-package catalog (versions, URLs, statuses) from `/open.json` |
-| `designesy_contract` | Get the full design-system contract (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section. The version travels in the response, so none is pinned here |
-| `designesy_design_review` | Get the Design Review kit (8 dimensions, agent prompt, output format, verification checklist) |
-| `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns |
-| `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) — identity, authority, ingest protocol |
-| `designesy_llms_txt` | Get the short agent brief (`/llms.txt`) |
-| `designesy_llms_full_txt` | Get the full agent brief (`/llms-full.txt`) with ingest protocol, all packages, paste-ready prompt |
+| `designesy_catalog` | Get the package catalog (versions, URLs, statuses) from `/open.json` |
+| `designesy_contract` | Get the full design-system contract (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions), or pass `sections` (a list of top-level keys) to get only those parts plus `id` and `version`. The full contract is on the order of 100 KB. An unknown key returns the list of valid keys. The version travels in the response, so none is pinned here |
+| `designesy_design_review` | Get the Design Review rubric (8 dimensions, output format, verification checklist) as reference data. The kit's copy-ready prompt stays on the kit page, linked from the result |
+| `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns, as reference data with the markdown in `content` |
+| `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) as reference data: identity, authority, discovery endpoints, packages. Its ingest steps stay in the published file |
+| `designesy_llms_txt` | Get the short brief (`/llms.txt`) as reference data. Its ingest steps stay in the published file |
+| `designesy_llms_full_txt` | Get the full brief (`/llms-full.txt`) as reference data: authority, all packages, standing rules. Its ingest protocol and paste-ready agent prompt stay in the published file |
 
 ### Executable verification
 | Tool | What it does |
