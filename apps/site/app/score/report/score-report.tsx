@@ -6,6 +6,8 @@ import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-d
 import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { isEmptyRun, emptyRunReason } from '../verdict';
+import { ScoreEmptyRun } from '../score-empty-run';
 type CheckResult = {
   id: string;
   item: string;
@@ -42,8 +44,11 @@ type SlopResult = {
 
 type ScoreResponse = {
   ok: boolean;
-  score?: number;
-  grade?: string;
+  /** null when the target could not be read: there is no score to report. */
+  score?: number | null;
+  grade?: string | null;
+  unreachable?: boolean;
+  unreachableDetail?: string;
   pass?: number;
   fail?: number;
   warn?: number;
@@ -108,6 +113,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  // Bumped by "Try again" on the failure and empty-run states, to run again.
+  const [attempt, setAttempt] = useState(0);
+  const retry = () => setAttempt((a) => a + 1);
 
   useEffect(() => {
     if (!initialUrl) {
@@ -148,7 +156,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     }
 
     runScore();
-  }, [initialUrl]);
+  }, [initialUrl, attempt]);
 
   // Group checks by category
   const checksByCategory = useMemo(() => {
@@ -200,13 +208,19 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // the page being read. Its key keeps the one node across the two branches
   // below; the visible error block stays out of it, so the failure is read
   // once and without the block's link.
+  // A run that read nothing is not a score: the same empty-run card the score
+  // form shows, never a grade. The report used to default a missing score to 0
+  // and a missing grade to F, so a site that refused the fetch read "F 0.0%".
+  const emptyRun = status === 'ok' && !!result && (isEmptyRun(result) || result.score == null || !result.grade);
   const live = (
     <p key="live" className="sr-only" role="status" aria-live="polite">
       {status === 'loading'
         ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
         : status === 'error'
           ? `Score failed. ${error ?? ''}`
-          : ''}
+          : emptyRun && result
+            ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
+            : ''}
     </p>
   );
 
@@ -258,9 +272,14 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       <div key="error" className="report-error">
         <h2>Score failed</h2>
         <p>{error}</p>
-        <Link href="/score" className="score-action-btn">
-          Score a site →
-        </Link>
+        <div className="report-error-actions">
+          <button type="button" className="score-action-btn" onClick={retry} data-cuelume-press="tick">
+            Try again
+          </button>
+          <Link href="/score" className="score-action-btn">
+            Score a site →
+          </Link>
+        </div>
       </div>
       </>
     );
@@ -268,8 +287,19 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   if (!result) return null;
 
-  const score = result.score ?? 0;
-  const grade = result.grade ?? 'F';
+  if (emptyRun || result.score == null || !result.grade) {
+    return (
+      <>
+      {live}
+      <div key="empty" className="report-empty">
+        <ScoreEmptyRun url={scoredUrl} reason={emptyRunReason(result, scoredUrl)} onRetry={retry} />
+      </div>
+      </>
+    );
+  }
+
+  const score = result.score;
+  const grade = result.grade;
   const pass = result.pass ?? 0;
   const fail = result.fail ?? 0;
   const warn = result.warn ?? 0;

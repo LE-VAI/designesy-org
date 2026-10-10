@@ -2,7 +2,7 @@
 // v2026-07-25-history — free-tier local score history (5 most-recent per browser)
 'use client';
 
-import { useState, useRef, useMemo, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   readScoreHistory,
   saveScore,
@@ -15,6 +15,7 @@ import { LottieHint } from '../lib/lottie-hint';
 import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { EngineBar, Segmented } from '../lib/engine/command-bar';
 import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
+import { useSegmentIndicator } from '../lib/engine/use-segment-indicator';
 import { playGradeReveal, playExtended } from '../lib/cuelume-extend';
 import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
@@ -120,6 +121,13 @@ type AuditResponse = {
   error?: string;
 };
 
+/** /api/score/rescore: the run scored again by the engine with the audit's verdicts. */
+type RescoreResponse = Pick<
+  ScoreResponse,
+  'ok' | 'score' | 'grade' | 'pass' | 'fail' | 'warn' | 'skip' | 'manual' | 'total' | 'scope'
+  | 'a11yFloorApplied' | 'hardFailCeilingApplied' | 'hardFailCeilingReason' | 'categoryScores' | 'checks' | 'error'
+> & { url?: string };
+
 type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
 // CATEGORIES, topCategories and verdictLine live in ./verdict, with the
@@ -165,6 +173,28 @@ function fmtPct(value: number | null | undefined): string {
 }
 
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
+
+// The engine's grade bands (computeGrade in api/score/route.ts), lowest first.
+const GRADE_BANDS: [string, number, number][] = [['F', 0, 59], ['D', 60, 69], ['C', 70, 79], ['B', 80, 89], ['A', 90, 100]];
+
+// The ring's percentage, one decimal, its punctuation set apart (.num-punct):
+// the digits keep tabular widths so the count-up does not wobble, and the
+// period and percent sign take their own narrow widths instead of a digit's.
+function PctFigure({ value }: { value: number }) {
+  const [whole, decimal] = String(Math.round(value * 10) / 10).split('.');
+  return (
+    <>
+      {whole}
+      {decimal !== undefined && (
+        <>
+          <span className="num-punct">.</span>
+          {decimal}
+        </>
+      )}
+      <span className="num-punct">%</span>
+    </>
+  );
+}
 
 function normalizeInput(input: string): string {
   let clean = input.trim();
@@ -218,35 +248,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const verdictRef = useRef<HTMLParagraphElement | null>(null);
   const landRun = useRef<{ y: number } | null>(null);
+  // The URL of the last run, for "Try again" on a failure.
+  const lastTarget = useRef('');
   const [rubricOpen, setRubricOpen] = useState(false);
   const filterSegmentedRef = useRef<HTMLDivElement>(null);
 
-  // Sliding indicator: measure the active filter tab and position a
-  // highlight pill behind it. The ::before pseudo-element on
-  // .score-filter-segmented reads --indicator-x / --indicator-w.
-  // Runs on layout (before paint) so the indicator never flashes at 0,0.
-  // On a phone the tabs wrap into rows, so the pill follows offsetTop too, and
-  // it re-measures when the strip resizes (the tabs are flex: 1, so a resize
-  // moved every tab while the pill stayed where it was). It takes the tab's
-  // height as well: a coarse pointer makes the tabs 44px, and a fixed 36px
-  // pill sat short of the tab it marked.
-  useLayoutEffect(() => {
-    const container = filterSegmentedRef.current;
-    if (!container) return;
-    const place = () => {
-      const active = container.querySelector<HTMLElement>('.score-filter-tab.is-active');
-      if (!active) return;
-      container.style.setProperty('--indicator-x', `${active.offsetLeft}px`);
-      container.style.setProperty('--indicator-y', `${active.offsetTop}px`);
-      container.style.setProperty('--indicator-w', `${active.offsetWidth}px`);
-      container.style.setProperty('--indicator-h', `${active.offsetHeight}px`);
-    };
-    place();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(place);
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [filterStatus, result]);
+  // Sliding indicator behind the active filter tab (lib/engine/use-segment-indicator.ts).
+  useSegmentIndicator(filterSegmentedRef, filterStatus, result);
 
   // Load history on mount (client-only). SSR-safe via the guards inside
   // readScoreHistory.
@@ -391,6 +399,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     if (!targetUrl) return;
 
     setStatus('loading');
+    lastTarget.current = targetUrl;
     landRun.current = userJustActed() ? { y: window.scrollY } : null;
     setResult(null);
     setExpandedId(null);
@@ -605,17 +614,25 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   // Run the full browser audit: calls /api/score/audit which hits PageSpeed
   // Insights for Core Web Vitals (v21) and — when Playwright is enabled on
-  // the deployment — viewport overflow (v02) + sound toggle (v04). Results
-  // merge into the existing checks array, replacing the SKIP entries.
+  // the deployment — viewport overflow (v02) + sound toggle (v04). The audit
+  // returns those three verdicts only; /api/score/rescore then scores the run
+  // again on the server, with the engine's own arithmetic (scoreArithmetic in
+  // api/score/route.ts). The form keeps no copy of the math: the copy it used
+  // to carry left out the anti-slop deduction and the originality lift, so an
+  // audit that changed nothing moved stripe.com from D 67.9 to C 70.
+  // scripts/check-audit-rescore.mjs holds the line.
   async function handleRunAudit() {
-    if (auditStatus === 'loading' || !scoredUrl) return;
+    if (auditStatus === 'loading' || !scoredUrl || !result) return;
     setAuditStatus('loading');
     setAuditError(null);
+    // The scope the shown result was scored in, so the audit and the rescore
+    // read the same run even if the scope control changed since.
+    const scope = result.scope || scopeMode;
     try {
       const resp = await fetch('/api/score/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scoredUrl, scope: scopeMode }),
+        body: JSON.stringify({ url: scoredUrl, scope }),
       });
       const data: AuditResponse = await resp.json();
       if (!data.ok || !data.checks) {
@@ -623,74 +640,18 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         setAuditError(data.error || 'Audit failed.');
         return;
       }
-      // Merge audit checks into result.checks, replacing by id. Re-derives
-      // composite score + categoryScores client-side with the same weight
-      // table and a11y floor as the server (the audit endpoint returns
-      // checks only, so the merge recomputes — same math, one place in the
-      // file, verified against route.ts).
-      setResult((prev) => {
-        if (!prev) return prev;
-        const auditById = new Map(data.checks!.map((c) => [c.id, c]));
-        const merged = (prev.checks || []).map((c) => auditById.get(c.id) || c);
-        const pass = merged.filter((c) => c.status === 'PASS').length;
-        const fail = merged.filter((c) => c.status === 'FAIL').length;
-        const warn = merged.filter((c) => c.status === 'WARN').length;
-        const skip = merged.filter((c) => c.status === 'SKIP').length;
-        const manual = merged.filter((c) => c.status === 'MANUAL').length;
-        const total = merged.length;
-        // Weighted scoring (matches server-side CATEGORY_WEIGHTS in route.ts)
-        const CATEGORY_WEIGHTS: Record<string, number> = {
-          cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
-          takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
-        };
-        const catCounts: Record<string, number> = {};
-        for (const c of merged) {
-          if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
-          catCounts[c.category] = (catCounts[c.category] || 0) + 1;
-        }
-        let wp = 0, wt = 0;
-        const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
-        for (const c of merged) {
-          const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
-          if (c.status === 'SKIP') { agg.skip += 1; continue; }
-          if (c.status === 'MANUAL') { agg.manual += 1; continue; }
-          const cw = (CATEGORY_WEIGHTS[c.category] || 5) / (catCounts[c.category] || 1);
-          wt += cw; agg.wt += cw;
-          if (c.status === 'PASS') { wp += cw; agg.wp += cw; agg.pass += 1; }
-          else if (c.status === 'WARN') { wp += cw * 0.5; agg.wp += cw * 0.5; agg.warn += 1; }
-          else agg.fail += 1;
-        }
-        let score = wt === 0 ? 0 : Math.round((wp / wt) * 1000) / 10;
-        const categoryScores: Record<string, CategoryScore> = {};
-        for (const [cat, agg] of Object.entries(catAgg)) {
-          categoryScores[cat] = {
-            score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
-            weight: CATEGORY_WEIGHTS[cat] || 5,
-            pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip, manual: agg.manual,
-          };
-        }
-        // a11y floor (matches server)
-        const a11yChecks = merged.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP' && c.status !== 'MANUAL');
-        const a11yPct = a11yChecks.length === 0 ? 100 : ((a11yChecks.filter((c) => c.status === 'PASS').length + a11yChecks.filter((c) => c.status === 'WARN').length * 0.5) / a11yChecks.length) * 100;
-        let a11yFloorApplied = false;
-        if (a11yChecks.length > 0 && a11yPct < 60 && score > 70) { score = 70; a11yFloorApplied = true; }
-        // hard-fail ceilings (matches server)
-        let hardFailCeilingApplied = false;
-        let hardFailCeilingReason: string | null = null;
-        for (const c of merged.filter((c) => c.status === 'FAIL')) {
-          let cap: number | null = null;
-          let reason: string | null = null;
-          if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
-          if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
-          if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
-          if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target, which makes them inaccessible on touch devices.'; }
-          if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: the document outline is broken.'; }
-          if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom and breaks mobile UX.'; }
-          if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
-        }
-        const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-        return { ...prev, checks: merged, pass, fail, warn, skip, manual, total, score, grade, a11yFloorApplied, hardFailCeilingApplied, hardFailCeilingReason, categoryScores };
+      const rescoreResp = await fetch('/api/score/rescore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scoredUrl, scope, checks: data.checks }),
       });
+      const rescored: RescoreResponse = await rescoreResp.json();
+      if (!rescored.ok) {
+        setAuditStatus('error');
+        setAuditError(rescored.error || 'The browser audit finished, but the score could not be updated with it.');
+        return;
+      }
+      setResult((prev) => (prev ? { ...prev, ...rescored } : prev));
       setAuditStatus('ok');
     } catch {
       setAuditStatus('error');
@@ -720,21 +681,32 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
       {/* A failed run is the answer to the visitor's request, and nothing else
           says so: the loading log's live region leaves with the run. The card
-          is inserted on failure and removed when the next run starts, so
-          role=alert reads it once per failure, a repeated one included
-          (WCAG 4.1.3). It holds only the notice, no controls. */}
+          is inserted on failure and removed when the next run starts, so the
+          alert inside it reads once per failure, a repeated one included
+          (WCAG 4.1.3). The alert holds only the notice; "Try again" sits
+          beside it in the card, so its name is not read as part of the alert. */}
       {status === 'error' && result?.error && (
-        <div className="score-error-card" role="alert">
-          <span className="score-error-icon">
+        <div className="score-error-card">
+          <span className="score-error-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </span>
-          <div>
-            <p className="score-error-title">Verification Notice</p>
-            <p className="score-error-msg">{result.error}</p>
+          <div className="score-error-body">
+            <div role="alert">
+              <p className="score-error-title">Verification Notice</p>
+              <p className="score-error-msg">{result.error}</p>
+            </div>
+            <button
+              type="button"
+              className="score-action-btn score-error-retry"
+              onClick={() => void runScore(lastTarget.current || normalizeInput(url))}
+              data-cuelume-press="tick"
+            >
+              Try again
+            </button>
           </div>
         </div>
       )}
@@ -844,7 +816,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 </svg>
                 <div className="constel-center">
                   <span className={`constel-grade is-${result.grade?.toLowerCase()}`}>{result.grade}</span>
-                  <span className="constel-pct">{Math.round(animatedScore * 10) / 10}%</span>
+                  <span className="constel-pct"><PctFigure value={animatedScore} /></span>
                 </div>
               </div>
 
@@ -936,12 +908,18 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             </ul>
 
             {/* Score-scale legend — per Lighthouse PR #8121: never show a
-                colored gauge without a legend so users can verify the bands. */}
+                colored gauge without a legend so users can verify the bands.
+                The bands are the grades' own (F under 60, then a grade every
+                ten points), in the grade colours the ring is drawn in. It read
+                Fail 0 to 49 and Needs work 50 to 69, so an F at 56.6 sat in
+                "Needs work" on its own card. */}
             <div className="score-scale-legend" aria-hidden="true">
-              <span className="score-scale-band is-fail"><span className="score-scale-dot" />Fail: 0 to 49</span>
-              <span className="score-scale-band is-warn"><span className="score-scale-dot" />Needs work: 50 to 69</span>
-              <span className="score-scale-band is-pass"><span className="score-scale-dot" />Good: 70 to 89</span>
-              <span className="score-scale-band is-a"><span className="score-scale-dot" />Excellent: 90 to 100</span>
+              {GRADE_BANDS.map(([g, from, to]) => (
+                <span key={g} className={`score-scale-band is-${g.toLowerCase()}`}>
+                  <span className="score-scale-dot" />
+                  {g}: {from} to {to}
+                </span>
+              ))}
             </div>
 
             {/* Scoring rubric — Socket.dev published-math pattern. The exact
@@ -1425,25 +1403,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       >
                         {group.checks.map((check, idx) => {
                           const isExpanded = expandedId === check.id;
+                          // A disclosure: the title is a real button inside the
+                          // row's heading, named by the title alone, that says
+                          // whether it is open and which region it opens. The
+                          // whole row still opens it (.score-card-toggle::after).
+                          // It used to be a div role="button" around the drawer,
+                          // so an open row's name was the full finding and fix
+                          // (600 characters) and its state was never exposed.
+                          const cardId = `sf-${check.id}`;
                           return (
                             <div
                               key={check.id}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
                               data-category={check.category}
                               data-status={check.status.toLowerCase()}
-                              onClick={() => setExpandedId(isExpanded ? null : check.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  setExpandedId(isExpanded ? null : check.id);
-                                }
-                              }}
-                              role="button"
-                              tabIndex={0}
                               style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
                             >
                               <div className="score-card-main">
-                                <div className="score-card-badge-group">
+                                <div className="score-card-badge-group" id={`${cardId}-meta`}>
                                   <span className={`score-card-status-pill is-${check.status.toLowerCase()}`}>
                                     {check.status === 'MANUAL' ? 'Manual' :
                                      check.status === 'SKIP' ? 'N/A' :
@@ -1452,10 +1429,21 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                                   <span className="score-card-id">{check.id}</span>
                                   <span className="score-card-cat">{check.category}</span>
                                 </div>
-                                <h4 className="score-card-title">{check.item}</h4>
+                                <h4 className="score-card-title">
+                                  <button
+                                    type="button"
+                                    className="score-card-toggle"
+                                    aria-expanded={isExpanded}
+                                    aria-controls={`${cardId}-body`}
+                                    aria-describedby={`${cardId}-meta`}
+                                    onClick={() => setExpandedId(isExpanded ? null : check.id)}
+                                  >
+                                    {check.item}
+                                  </button>
+                                </h4>
                               </div>
 
-                              <span className="score-card-right">
+                              <span className="score-card-right" aria-hidden="true">
                                 <svg
                                   width="14"
                                   height="14"
@@ -1469,18 +1457,16 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                                 </svg>
                               </span>
 
-                              {isExpanded && (
-                                <div className="score-card-drawer">
-                                  <p className="score-drawer-heading">Technical Finding</p>
-                                  <p className="score-drawer-detail">{check.detail}</p>
-                                  {check.remediation && (check.status === 'FAIL' || check.status === 'WARN') && (
-                                    <>
-                                      <p className="score-drawer-heading score-drawer-remediation-heading">How to fix this</p>
-                                      <p className="score-drawer-detail score-drawer-remediation">{check.remediation}</p>
-                                    </>
-                                  )}
-                                </div>
-                              )}
+                              <div className="score-card-drawer" id={`${cardId}-body`} hidden={!isExpanded}>
+                                <p className="score-drawer-heading">Technical Finding</p>
+                                <p className="score-drawer-detail">{check.detail}</p>
+                                {check.remediation && (check.status === 'FAIL' || check.status === 'WARN') && (
+                                  <>
+                                    <p className="score-drawer-heading score-drawer-remediation-heading">How to fix this</p>
+                                    <p className="score-drawer-detail score-drawer-remediation">{check.remediation}</p>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           );
                         })}

@@ -21,6 +21,9 @@
  *      the reason and a real retry button, and no ring, percentage or verdict.
  *   4. Wiring: score-form.tsx renders that card for an empty run and gates the
  *      graded result (ring, counts, signals, filters, list) behind !isEmptyRun.
+ *   5. Wiring: the report (score-report.tsx) renders the same card for an
+ *      empty run and never defaults a missing score to 0 or a grade to F (it
+ *      read "F 0.0%" for lovable.dev); its failure block offers a retry.
  *
  * Usage:  node scripts/check-score-verdict.mjs
  * Exits 1 on any failure. Needs Node 22.18+ (type stripping for verdict.ts).
@@ -167,6 +170,16 @@ check('score-form renders the empty-run card and gates the graded result', () =>
   assert.equal((form.match(/className="score-results/g) || []).length, 2);
   // No history entry for a run that read nothing.
   assert.match(form, /if \(isEmptyRun\(data\)\) \{[\s\S]{0,120}return;\s*\}[\s\S]{0,400}saveScore\(/);
+});
+
+check('the report renders the empty-run card, never a defaulted F 0.0%', () => {
+  const report = fs.readFileSync(path.join(APP, 'app', 'score', 'report', 'score-report.tsx'), 'utf8');
+  assert.match(report, /import \{ ScoreEmptyRun \} from '\.\.\/score-empty-run';/);
+  assert.match(report, /isEmptyRun\(result\)/);
+  assert.match(report, /<ScoreEmptyRun url=\{scoredUrl\} reason=\{emptyRunReason\(result, scoredUrl\)\} onRetry=\{retry\} \/>/);
+  assert.doesNotMatch(report, /result\.score \?\? 0|result\.grade \?\? 'F'/, 'the report defaults a missing score or grade again');
+  // The failure block's retry runs the score again.
+  assert.match(report, /<h2>Score failed<\/h2>[\s\S]{0,300}onClick=\{retry\}[\s\S]{0,120}Try again/);
 });
 
 if (failures.length) {

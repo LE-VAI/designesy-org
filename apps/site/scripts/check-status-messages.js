@@ -211,7 +211,8 @@ const SURFACES = [
 const BREAK_SCRIPT = () => {
   const swap = () => {
     // Score form: its alert becomes a status region mounted with its text in it.
-    for (const el of document.querySelectorAll('.score-form:not(.eg-bench) .score-error-card[role="alert"]')) {
+    // The alert is the notice inside the card (the card also holds "Try again").
+    for (const el of document.querySelectorAll('.score-form:not(.eg-bench) .score-error-card [role="alert"]')) {
       el.setAttribute('role', 'status');
     }
     // Four-engine form: the visible card becomes a second announcer.
