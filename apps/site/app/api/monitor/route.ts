@@ -163,6 +163,7 @@ import {
   extractRootTokens,
   extractVarRefs,
   extractVarChains,
+  extractStyleAttributeCss,
   extractValuesByProperty,
   uniqueValues,
   type CheckResult,
@@ -551,6 +552,10 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   const allCss = css + (html.match(/<style[^>]*>([\s\S]*?)<\/style>/gi)?.join('\n') || '');
   const tokens = extractRootTokens(allCss);
   const varRefs = extractVarRefs(allCss);
+  // Custom properties a style="..." attribute declares count as declared for
+  // d02, d11 and d12, as they do in /api/drift, so the two engines agree about
+  // a property a React style object sets (designesy.org sets five that way).
+  const attrCss = extractStyleAttributeCss(html);
 
   // The 12 drift checks — the SAME implementation /api/drift runs.
   //
@@ -565,7 +570,7 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   // module returns PASS|FAIL|WARN|SKIP (drift can emit SKIP under scope
   // filtering). They are structurally identical apart from that, and the
   // narrower local type was only ever a copy of the wider one.
-  const driftChecks: CheckResult[] = runDriftChecks(allCss, tokens, varRefs);
+  const driftChecks: CheckResult[] = runDriftChecks(allCss, tokens, varRefs, attrCss);
 
   const { score, grade, pass, warn, fail } = computeDriftScore(driftChecks);
   const now = new Date().toISOString();

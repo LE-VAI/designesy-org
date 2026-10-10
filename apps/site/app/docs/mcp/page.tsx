@@ -96,14 +96,14 @@ const TOOLS = [
   {
     name: 'designesy_motion_score',
     kind: 'Executable',
-    desc: 'Validate a Lottie animation file against Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards. Fetches from a URL or accepts raw JSON. Runs 10 checks (m01-m10): required fields, version, frame rate, dimensions, layers, in/out points, markers for reduced-motion, deprecated layers, section 16 standards, JSON Schema conformance.',
+    desc: 'Validate a Lottie animation file against the motion contract: its ten checks (m01-m10), drawn from Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards, each under its own name. Fetches from a URL or accepts raw JSON. The checks: the schema\'s top-level animation object, required fields, no deprecated 4.x version, a markers array, a meta object, a reduced-motion path, keyframe easing, duration within 300 ms, and two that concern the embedding page (layout-property animation, keyboard-initiated motion), which return SKIP for a file.',
     args: 'url?: string, lottie_file?: string',
     source: '/contracts/motion.json',
   },
   {
     name: 'designesy_drift_score',
     kind: 'Executable',
-    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Fetches the URL, extracts all CSS, parses :root tokens and var() references.',
+    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/drift',
   },
@@ -117,8 +117,8 @@ const TOOLS = [
   {
     name: 'designesy_guardrails',
     kind: 'Executable',
-    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness.',
-    args: 'url?: string (defaults to designesy.org)',
+    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness. The full bundle grows with the site\'s token count, from about 10 KB to about 500 KB of JSON; pass parts to get only the files you need.',
+    args: 'url?: string (defaults to designesy.org), parts?: string[] (tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd)',
     source: '/api/guardrails',
   },
   {
@@ -138,8 +138,8 @@ const TOOLS = [
   {
     name: 'designesy_report',
     kind: 'Executable · MCP App',
-    desc: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.`,
-    args: 'url: string',
+    desc: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard. The full payload runs to about 75 to 100 KB of JSON; detail "summary" keeps the composite, each engine\'s score and grade, the totals and only the checks that did not PASS.`,
+    args: 'url: string, detail?: "summary" | "full" (default "full")',
     source: '/api/report + /api/report/app',
   },
 ];

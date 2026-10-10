@@ -39,6 +39,9 @@ import { buildReportAppHtml } from '../../lib/report-app-html';
 import { safeFetch } from '../../lib/url-guard';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
+import { motionContract } from '../../lib/motion-contract';
+import { scoreLottie } from '../../lib/motion-score';
+import { GUARDRAILS_PARTS, REPORT_DETAILS, guardrailsPartNames, guardrailsParts, reportSummary } from '../../lib/mcp-trim';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -94,6 +97,19 @@ function contractError(message: string, unknown: string[], valid: string[]) {
       error: sanitizeErrorText(`${message} Valid sections: ${valid.join(', ')}.`),
       unknown_sections: unknown,
       valid_sections: valid,
+    }),
+    isError: true,
+  };
+}
+
+/** A designesy_guardrails parts error: isError set, with the names that would work. */
+function partsError(message: string, unknown: string[]) {
+  return {
+    ...jsonContent({
+      success: false,
+      error: sanitizeErrorText(`${message} Valid parts: ${GUARDRAILS_PARTS.join(', ')}.`),
+      unknown_parts: unknown,
+      valid_parts: [...GUARDRAILS_PARTS],
     }),
     isError: true,
   };
@@ -731,36 +747,34 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     );
 
     // ── Tool 11: designesy_motion_score ───────────────────────────────────────
-    // Validates a Lottie file against LAC v1.0.1 JSON Schema + §16 standards.
-    // Can accept a URL (fetches and validates) or raw Lottie JSON string.
-    // Runs 10 conformance checks (m01-m10) from the motion contract.
+    // Runs the motion contract's ten checks (m01-m10) on one Lottie file. The
+    // checks live in app/lib/motion-score.ts: each computes its own verdict under
+    // its own id and the contract's name for that id. They used to be computed
+    // here as a different list of ten and labelled with the contract's names by
+    // array position, so every verdict sat under another check's name. The
+    // contract is the one this deployment serves at /contracts/motion.json.
     server.registerTool(
       'designesy_motion_score',
       {
         ...mcpToolDisplay('designesy_motion_score'),
-        description: 'Validate a Lottie animation file against the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards, returning 10 checks (m01-m10) with PASS, FAIL, WARN or SKIP. The DTCG 2025.10 spec leaves motion tokens as a second-class citizen: there is no standard for motion token structure, reduced-motion markers, or animation accessibility. Designesy\'s motion validator fills this gap: it checks required fields (v, fr, ip, op, w, h, layers), $version, a markers array for reduced-motion compliance, and no deprecated version. Use this to verify a motion/animation asset is well-formed AND accessible: the only validator that checks both. When NOT to use: for full-site motion scoring (not a single Lottie file), use designesy_score. Executable: fetches the URL or parses the raw Lottie JSON, runs 10 checks server-side. No browser needed. Returns JSON: { contract_id, contract_version, contract_status, url, lottie_version, layer_count, score (0-100), grade (A-F), pass_count, fail_count, warn_count, checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, provenance, validator_note }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate one Lottie animation file against the Designesy motion contract: its ten checks (m01-m10), drawn from the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards. Each check returns PASS, FAIL, WARN or SKIP under the contract\'s own name for its id: m01 the schema\'s top-level animation object (layer contents are not validated, so a clean file returns SKIP, not PASS), m02 the required fields (v, fr, ip, op, w, h, layers), m03 no deprecated 4.x Bodymovin version, m04 a markers array, m05 a meta object, m06 a reduced-motion path (a marker or slot named for it, or a meta note of an external prefers-reduced-motion wrapper), m07 keyframe easing (linear, ease and ease-in curves fail), m08 duration within 300 ms (longer returns WARN, since a justification cannot be read from a file), m09 layout-property animation and m10 keyboard-initiated motion (both SKIP: they concern the page that embeds the file). Use this to check that a motion asset is well formed and carries reduced-motion support. When NOT to use: for the motion CSS of a whole site, use designesy_score. Executable: fetches the URL or parses the inline JSON; no browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, lottie_version, layer_count, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, provenance, validator_note }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a Lottie JSON file. The tool fetches and validates it.'),
           lottie_file: z.string().optional().describe('Raw Lottie JSON string to validate (alternative to url).'),
         }),
       },
       async ({ url, lottie_file }) => {
-        // Fetch the motion contract for check definitions
-        const contract = await cachedFetch(`${BASE_URL}/contracts/motion.json`, true) as Record<string, unknown>;
-        const checks = (((contract.verification as Record<string, unknown> | undefined)?.checks as Array<Record<string, unknown>>) || []);
-        const tenStandards = (((contract.conformance as Record<string, unknown> | undefined)?.ten_non_negotiable as Array<Record<string, unknown>>) || []);
+        const failure = (message: string, extra: Record<string, unknown> = {}) => ({
+          ...jsonContent({ success: false, error: sanitizeErrorText(message), ...extra }),
+          isError: true,
+        });
 
         let lottieData: unknown = null;
-        let fetchError: string | null = null;
-
         if (lottie_file) {
           try {
             lottieData = JSON.parse(lottie_file);
           } catch {
-            return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Invalid JSON in lottie_file parameter') }, null, 2) }],
-              isError: true,
-            };
+            return failure('Invalid JSON in lottie_file parameter');
           }
         } else if (url) {
           try {
@@ -768,163 +782,19 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
             const res = await safeFetch(url, {
               headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
             });
-            if (!res.ok) {
-              return {
-                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Fetch failed: ${res.status} ${res.statusText}`) }, null, 2) }],
-                isError: true,
-              };
-            }
+            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
             lottieData = await res.json();
           } catch (e) {
-            fetchError = e instanceof Error ? e.message : String(e);
+            return failure(e instanceof Error ? e.message : String(e));
           }
         } else {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Either url or lottie_file is required'), contract_id: contract.id, contract_version: contract.version }, null, 2) }],
-            isError: true,
-          };
+          return failure('Either url or lottie_file is required', { contract_id: motionContract.id, contract_version: motionContract.version });
         }
 
-        if (fetchError) {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(fetchError) }, null, 2) }],
-            isError: true,
-          };
+        if (lottieData === null || typeof lottieData !== 'object' || Array.isArray(lottieData)) {
+          return failure('Lottie file is not a JSON object');
         }
-
-        const lottie = lottieData as Record<string, unknown>;
-        const results: Array<Record<string, unknown>> = [];
-
-        // m01: required fields present
-        const required = ['v', 'fr', 'ip', 'op', 'w', 'h', 'layers'];
-        const missing = required.filter((f) => !(f in lottie));
-        results.push({
-          id: 'm01',
-          name: checks[0]?.item || 'Required fields present',
-          status: missing.length === 0 ? 'PASS' : 'FAIL',
-          detail: missing.length === 0
-            ? `All required fields present: ${required.join(', ')}`
-            : `Missing: ${missing.join(', ')}. Lottie spec v1.0.1 requires: ${required.join(', ')}`,
-        });
-
-        // m02: version string ($version / v)
-        const version = lottie.v as string;
-        const versionNum = parseInt(version || '0', 10);
-        results.push({
-          id: 'm02',
-          name: checks[1]?.item || 'Lottie version',
-          status: versionNum >= 10001 ? 'PASS' : versionNum > 0 ? 'WARN' : 'FAIL',
-          detail: `Version: ${version || 'missing'}. Spec v1.0.1 uses $version: 10001. Versions below 1.0 (v < 5.0) are deprecated.`,
-        });
-
-        // m03: frame rate (fr) is positive number
-        const fr = lottie.fr as number;
-        results.push({
-          id: 'm03',
-          name: checks[2]?.item || 'Frame rate',
-          status: typeof fr === 'number' && fr > 0 ? 'PASS' : 'FAIL',
-          detail: `fr: ${fr}. Must be a positive number (typically 24, 30, 60).`,
-        });
-
-        // m04: dimensions (w, h) are positive
-        const w = lottie.w as number;
-        const h = lottie.h as number;
-        results.push({
-          id: 'm04',
-          name: checks[3]?.item || 'Composition dimensions',
-          status: typeof w === 'number' && w > 0 && typeof h === 'number' && h > 0 ? 'PASS' : 'FAIL',
-          detail: `w: ${w}, h: ${h}. Both must be positive numbers.`,
-        });
-
-        // m05: layers array is non-empty
-        const layers = lottie.layers as Array<unknown>;
-        results.push({
-          id: 'm05',
-          name: checks[4]?.item || 'Layers present',
-          status: Array.isArray(layers) && layers.length > 0 ? 'PASS' : 'FAIL',
-          detail: `layers: ${Array.isArray(layers) ? layers.length : 'not an array'}. At least one layer is required.`,
-        });
-
-        // m06: in/out points (ip, op) are valid
-        const ip = lottie.ip as number;
-        const op = lottie.op as number;
-        results.push({
-          id: 'm06',
-          name: checks[5]?.item || 'In/out points',
-          status: typeof ip === 'number' && typeof op === 'number' && op > ip ? 'PASS' : 'WARN',
-          detail: `ip: ${ip}, op: ${op}. op must be greater than ip for a non-empty animation.`,
-        });
-
-        // m07: markers array for reduced-motion
-        const markers = lottie.markers as Array<unknown>;
-        results.push({
-          id: 'm07',
-          name: checks[6]?.item || 'Markers for reduced-motion',
-          status: Array.isArray(markers) && markers.length > 0 ? 'PASS' : 'WARN',
-          detail: Array.isArray(markers)
-            ? `${markers.length} markers. Markers enable reduced-motion segments. Designesy §16 recommends named segments for accessibility.`
-            : 'No markers array. Designesy §16 recommends markers for reduced-motion accessibility.',
-        });
-
-        // m08: no deprecated layer types
-        let deprecatedCount = 0;
-        if (Array.isArray(layers)) {
-          for (const layer of layers) {
-            const l = layer as Record<string, unknown>;
-            if (l.ty === 13 || l.ty === 12) deprecatedCount++; // deprecated layer types
-          }
-        }
-        results.push({
-          id: 'm08',
-          name: checks[7]?.item || 'No deprecated layers',
-          status: deprecatedCount === 0 ? 'PASS' : 'WARN',
-          detail: `${deprecatedCount} deprecated layer types found. Types 12, 13 are deprecated in Lottie spec v1.0.1.`,
-        });
-
-        // m09: §16 non-negotiable standards (metadata-level check — SKIP, requires runtime preview)
-        results.push({
-          id: 'm09',
-          name: checks[8]?.item || '§16 Ten Non-Negotiable Standards',
-          status: 'SKIP',
-          detail: `Ten standards from contract: ${tenStandards.map((s) => s.id || s.name).join(', ')}. Full verification requires runtime preview against §16 criteria; this check reads metadata only.`,
-        });
-
-        // m10: JSON Schema Draft 2020-12 conformance
-        results.push({
-          id: 'm10',
-          name: checks[9]?.item || 'JSON Schema conformance',
-          status: missing.length === 0 ? 'PASS' : 'FAIL',
-          detail: 'Validate with ajv 8.20.0 (ajv/dist/2020) + ajv-formats 3.0.1 against lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json',
-        });
-
-        const passCount = results.filter((r) => r.status === 'PASS').length;
-        const failCount = results.filter((r) => r.status === 'FAIL').length;
-        const warnCount = results.filter((r) => r.status === 'WARN').length;
-        const score = Math.round((passCount / results.length) * 100);
-        const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              contract_id: contract.id,
-              contract_version: contract.version,
-              contract_status: contract.status,
-              url: url || '(inline lottie_file)',
-              lottie_version: version,
-              layer_count: Array.isArray(layers) ? layers.length : 0,
-              score,
-              grade,
-              pass_count: passCount,
-              fail_count: failCount,
-              warn_count: warnCount,
-              checks: results,
-              ten_non_negotiable: tenStandards,
-              provenance: 'Lottie spec v1.0.1 + JSON Schema Draft 2020-12 + designesy-core.v0.4.0 §7, §16',
-              validator_note: 'Canonical validator: ajv 8.20.0 (import Ajv from "ajv/dist/2020") + ajv-formats 3.0.1. Schema: lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json',
-            }, null, 2),
-          }],
-        };
+        return jsonContent(scoreLottie(lottieData as Record<string, unknown>, motionContract, url || '(inline lottie_file)'));
       },
     );
 
@@ -935,7 +805,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
       'designesy_drift_score',
       {
         ...mcpToolDisplay('designesy_drift_score'),
-        description: `Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full ${ENGINE_CHECK_COUNT}-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable: fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.`,
+        description: `Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full ${ENGINE_CHECK_COUNT}-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable: fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses custom property declarations (stylesheets, <style> blocks and style attributes) and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, scope, score (0-100), grade (A-F), pass, warn, fail, skip, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.`,
         inputSchema: z.object({
           url: z.string().optional().describe('URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.'),
         }),
@@ -997,16 +867,27 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     // ── Tool 14: designesy_guardrails ───────────────────────────────────────────
     // Emits a frozen build-contract bundle (DTCG tokens, Stylelint config,
     // AGENTS.md rules, component contract, anti-patterns, DESIGN.md) from a live URL.
+    // `parts` returns only the named bundle files (app/lib/mcp-trim.ts): the full
+    // bundle measured about 10 KB to about 500 KB across ten sites, and a client
+    // that caps tool output cut designesy.org's 90 KB off.
     server.registerTool(
       'designesy_guardrails',
       {
         ...mcpToolDisplay('designesy_guardrails'),
-        description: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation, (6) DESIGN.md file (Google open spec, google-labs-code/design.md), the de-facto AI-readable design-context standard: YAML front matter plus a markdown body. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable: fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd }, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+        description: `Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation, (6) DESIGN.md file (Google open spec, google-labs-code/design.md), the de-facto AI-readable design-context standard: YAML front matter plus a markdown body. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable: fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. The full bundle grows with the number of tokens a site declares: about 10 KB to about 500 KB of JSON on the ten sites measured (about 90 KB for designesy.org). To trim it, pass parts, a list of bundle file names such as ["designMd"] or ["tokens", "lintConfig"]: the result keeps score, grade, counts and checks, and its bundle holds only those files, in the order asked. Valid parts: ${GUARDRAILS_PARTS.join(', ')}. A single part can still be large on a site with many tokens. An unknown name returns an error that lists the valid parts. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd }, checks[{id, item, category, status, detail}] }; with parts it adds parts, and bundle holds only the named files. Results cached ~24h per URL.`,
         inputSchema: z.object({
           url: z.string().optional().describe('URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.'),
+          parts: z.array(z.string()).optional().describe(`Optional: the bundle files to return, by name. Omit for the whole bundle. Valid parts: ${GUARDRAILS_PARTS.join(', ')}.`),
         }),
       },
-      async ({ url }) => {
+      async ({ url, parts }) => {
+        // Bad names are refused before the engine runs.
+        let names: string[] | null = null;
+        if (parts !== undefined) {
+          const picked = guardrailsPartNames(parts);
+          if ('error' in picked) return partsError(picked.error, picked.unknown);
+          names = picked.names;
+        }
         const targetUrl = url || `${BASE_URL}/`;
         const res = await fetch(`${BASE_URL}/api/guardrails`, {
           method: 'POST',
@@ -1021,9 +902,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
           };
         }
         const data = await res.json();
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        return jsonContent(names ? guardrailsParts(data, names) : data);
       },
     );
 
@@ -1131,9 +1010,10 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
       'designesy_report',
       {
         ...mcpToolDisplay('designesy_report'),
-        description: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable: fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.`,
+        description: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable: fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. The full result is large: about 75 to 100 KB of JSON on the ten sites measured, on the order of 20,000 tokens or more, because it carries each engine's whole result beside the merged check list. To trim it, pass detail "summary": the same keys with fewer rows, about 4 to 31 KB on the same sites. It keeps the composite, the totals, each engine's score, grade and counts, and only the checks and synthesis entries that did not PASS; omitted counts what was left out. detail "full" (the default) returns everything. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, totalManual, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }; with detail "summary" it adds detail and omitted. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.`,
         inputSchema: z.object({
           url: z.string().describe('Public URL to generate a design-intelligence report for.'),
+          detail: z.enum(REPORT_DETAILS).optional().describe('Optional: "full" (the default) returns everything; "summary" returns the composite, the totals, each engine\'s score, grade and counts, and only the checks that did not PASS.'),
         }),
         // MCP Apps (SEP-1865) — declare the UI resource. Apps-capable hosts
         // fetch ui://designesy/report-app (served by /api/report/app) and
@@ -1146,7 +1026,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
           },
         },
       },
-      async ({ url }) => {
+      async ({ url, detail }) => {
         const res = await fetch(`${BASE_URL}/api/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1164,9 +1044,10 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         // the interactive dashboard in a browser. Apps-aware hosts ignore
         // this — they render the ui:// resource inline.
         const payload = { ...data, appUrl: `${BASE_URL}/api/report/app?url=${encodeURIComponent(url)}` };
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-        };
+        // detail "summary" (app/lib/mcp-trim.ts): the full report measured about
+        // 75 to 100 KB across ten sites, and a client that caps tool output cut
+        // designesy.org's 100 KB off.
+        return jsonContent(detail === 'summary' ? reportSummary(payload) : payload);
       },
     );
 

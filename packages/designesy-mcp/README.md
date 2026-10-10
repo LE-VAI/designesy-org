@@ -97,17 +97,17 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 | `designesy_score` | Run the 44-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 44 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
-| `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
+| `designesy_motion_score` | Validate a Lottie animation file against the motion contract's 10 checks (m01–m10), drawn from Lottie spec v1.0.1 and the Designesy 10 Non-Negotiable Motion Standards, each verdict under its own check's name. Checks a file cannot settle (full schema validation, layout-property and keyboard-initiated motion) return SKIP with the reason. |
 
 ### Executable engines (new in v1.10.0)
 | Tool | What it does |
 |---|---|
 | `designesy_drift_score` | 12-check AI-drift radar — detects token fabrication, within-session drift, between-session amnesia, and silent breaking changes. |
 | `designesy_readiness_score` | 10-check AI readiness probe — tests for DTCG tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots, OG meta. |
-| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. |
+| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. The full bundle runs from about 10 KB to about 500 KB of JSON; `parts` (for example `["designMd"]`) returns only the files named. |
 | `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas, trend slope, and email alerts via Resend. |
 | `designesy_compare` | Diff two design systems from live URLs — 8-dimension structured diff (added, removed, renamed, value-changed, scale, contrast, structure, score). |
-| `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. |
+| `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. The full result runs to about 75 to 100 KB of JSON; `detail: "summary"` keeps the composite, each engine's score and grade, the totals and only the checks that did not PASS. |
 
 ## Resources (7)
 
