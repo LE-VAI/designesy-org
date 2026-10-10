@@ -30,7 +30,10 @@ import { ScrollRegions } from './lib/scroll-regions';
   display:'swap' shows the fallback immediately and swaps when the real face
   arrives, so text is never invisible. The `fallback` arrays mirror the previous
   stacks exactly, and adjustFontFallback (on by default) sizes the fallback to
-  match, which keeps the swap from moving layout.
+  match, which keeps the swap from moving layout. Fraunces is the exception: its
+  generated fallback was sized for the default optical size, not the opsz-80
+  titles, so it is off here and 'Fraunces Fallback Tuned' (globals.css, top)
+  takes its place.
 
   `variable` exposes each face as a CSS custom property that the tokens in
   globals.css reference — the token layer stays the single source of truth and
@@ -41,7 +44,8 @@ const fraunces = Fraunces({
   display: 'swap',
   variable: '--font-display',
   axes: ['SOFT', 'WONK', 'opsz'],
-  fallback: ['Iowan Old Style', 'Palatino Linotype', 'Times New Roman', 'serif'],
+  adjustFontFallback: false,
+  fallback: ['Fraunces Fallback Tuned', 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', 'serif'],
 });
 
 /*

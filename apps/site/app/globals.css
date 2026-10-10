@@ -11,6 +11,43 @@
      no vague "modern/clean/premium" — just precise, purposeful structure.
    ========================================================================== */
 
+/* Fraunces fallback, matched to how the site sets Fraunces.
+   The fallback paints until the web face arrives (display: swap). next/font
+   sized it from Fraunces's default instance, at 115.45% of Times New Roman,
+   but the page titles set Fraunces at opsz 80, which is narrower: measured
+   on the titles, Fraunces is 101-104% of Times New Roman's width at weight
+   400. So the fallback title ran about 12% too wide, wrapped onto one more
+   line at 412 wide, and collapsed when Fraunces swapped in, moving all the
+   content below it: layout shift 0.237 on /work/designesy-org and 0.040 on
+   /pricing, /changelog and /badge with the fonts arriving after first paint.
+   Bold headings drew a synthetic bold of the regular face; they now use
+   Times New Roman Bold, which Fraunces 600-700 measures at 113-118% of.
+
+   Widths (size-adjust) are the measured ratios; the vertical overrides are
+   next/font's Fraunces values rescaled to each size-adjust. The settled page
+   is unchanged: these faces only draw before Fraunces loads, or if it fails.
+   Where neither local face exists (Android, most Linux) the stack falls
+   through to the next family, as before. */
+@font-face {
+  font-family: 'Fraunces Fallback Tuned';
+  src: local('Times New Roman'), local('TimesNewRomanPSMT');
+  font-weight: 100 549;
+  size-adjust: 103%;
+  ascent-override: 94.95%;
+  descent-override: 24.76%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Fraunces Fallback Tuned';
+  src: local('Times New Roman Bold'), local('TimesNewRomanPS-BoldMT');
+  font-weight: 550 900;
+  size-adjust: 114.4%;
+  ascent-override: 85.49%;
+  descent-override: 22.29%;
+  line-gap-override: 0%;
+}
+
 :root {
   color-scheme: dark;
 
@@ -7974,11 +8011,19 @@ html:not(.js-ready) .demo-stagger-bar {
    LCP lands with FCP. A transform moves no layout, so it adds no layout
    shift. Every other .fade-up keeps the full fadeUp.
 
+   The case-study summary is the same case one section down. On /work and
+   /review case studies, section#summary.doctrine-section.fade-up holds the
+   LCP paragraph wherever it outsizes the header's (/work/designesy-org,
+   /work/compile and /review/takt at 1440; /work/continuity, /work/tile,
+   /review/acoustics, /review/cadence and /review/poise at both widths), so
+   it rises without fading too. The sections after it keep the full fadeUp.
+
    Reduced motion: scoped to no-preference, so the reduce block below
    (.fade-up: animation none) is never outranked and the rise does not run.
    Paused motion: .fade-up is in "One-shot entrances end", so the rise jumps
    to its last frame. scripts/check-lcp-entrance.js (CI visual gates) fails
-   if the LCP element or a page header animates from opacity 0. */
+   if the LCP element or a page header animates from opacity 0, with no
+   exceptions. */
 @keyframes riseUp {
   from {
     transform: translateY(12px) scale(0.98);
@@ -7989,7 +8034,8 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .surface-header.fade-up {
+  .surface-header.fade-up,
+  #summary.doctrine-section.fade-up {
     animation-name: riseUp;
   }
 }
