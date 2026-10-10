@@ -8808,6 +8808,31 @@ html[data-motion="paused"] .copy-prompt-btn:active {
   box-shadow: 0 0 0 4px var(--signal-dim);
 }
 
+/* A link inside running text shows focus inside its own box: the box fills
+   with the access signal and its text turns to paper, the highlight pattern
+   for inline links. A ring cannot work there. It reaches past the box (the
+   house ring 5px out), a word space is about 4px at these sizes and
+   punctuation sits flush, so the ring painted into the next word: CI
+   measured 1.86:1 where the ring met the "t" after "Continuity waitlist" on
+   /pricing, and on Windows the same ring ran 1px into that letter's box.
+   The fill holds 5.71:1 on the dark paper (6.50 on the light) and the text
+   on it the same. The underline border goes transparent so the fill runs to
+   the box's foot (in paper it read as the fill stopping a pixel short). The
+   outline stays, transparent: forced colours paint it in the system colour
+   and drop the fill. a.text-link out-ranks the history foot's link colour;
+   the meta links come after their hover rule. */
+a.text-link:focus-visible,
+.lab-meta-item a:focus-visible,
+:is(p, li, dd) > a:not([class]):focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  background-color: var(--signal-access);
+  color: var(--paper);
+  text-decoration-color: currentColor;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+
 /* Card focus-visible — match hover state so keyboard focus is not second-class */
 a.field-card:focus-visible {
   border-color: var(--line-strong);

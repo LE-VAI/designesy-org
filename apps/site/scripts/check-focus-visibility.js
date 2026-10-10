@@ -40,7 +40,12 @@
  *               antialiased edge pixel is stepped over, never measured. A
  *               control hidden until focused (the skip link) appears whole
  *               over whatever lay there, so its band is found by its
- *               computed outline colour instead of by the diff.
+ *               computed outline colour instead of by the diff. A control
+ *               focused with a fill (no painted outline, an opaque focused
+ *               background: links in running text) is read as a fill: its
+ *               band is held to the colour outside it, its text to 4.5:1
+ *               on it, and every row along a side is read so a glyph that
+ *               touches the edge is not taken for the fill's edge.
  *     extends   the ring is present on all four sides and its furthest point
  *               on each reaches as far out as on its widest side (1px of
  *               tolerance; the furthest point, so a pill's curved ends read
@@ -52,7 +57,15 @@
  *               and on the dark theme is never rgb(1, 51, 203): --signal is a
  *               fill (2.32:1 on the dark page), and an outside site review
  *               found it drawn as the ring on 30 stops of /docs, /pricing
- *               and /review.
+ *               and /review. A transparent outline paints nothing (the
+ *               forced-colours fallback under a focus fill) and is skipped.
+ *     words     an inline control's painted ring stays out of the box of
+ *               any glyph beside it on its line (more than 0.5px in fails).
+ *               Read from layout, not pixels: a ring 5px out around a link
+ *               in running text ran 1px into the "t" after it on every
+ *               platform, but only CI's Linux text rendering put that
+ *               letter's ink under the ring (1.86:1), so a pixel check
+ *               alone passes on Windows and fails on Linux.
  *   A second sweep runs at that review's conditions: /docs, /pricing and
  *   /review, dark, 1280x800. A third takes the pages whose own sheets draw
  *   rings (/badge, /changelog, /labs/poise/orb, /open), dark and light at
@@ -72,15 +85,19 @@
  *   An inline link that wraps onto two lines draws its ring around each line
  *   fragment, so its box sides are not its ring's sides: it is listed as
  *   skipped (multi-line), never as passed. Controls that leave the viewport
- *   or sit under another layer are skipped the same way, and listed.
+ *   or sit under another layer are skipped the same way, and listed. The
+ *   words check reads the control's own line, not the lines above and below.
  *
  * PROVING IT CAN FAIL
- *   --break re-injects the three defects and the check must exit 1:
+ *   --break re-injects the defects and the check must exit 1:
  *     invalid  the old rule order: the amber shadow wins and no outline
  *     colour   the old ring colours (--signal-light, and --signal on the
  *              agent actions) and the capsule's old 3px offset
  *     clip     the scrollers lose the room they give the ring
- *   --break invalid (or colour, or clip) injects one alone.
+ *     neighbour  links in running text get the house ring back, 3px out
+ *   --break invalid (or colour, clip, neighbour) injects one alone.
+ *   --executable <path> runs a browser binary instead of a channel; a Linux
+ *   Chromium shows CI's text rendering on another host.
  *   --inject <file.css> appends any stylesheet after load.
  *
  * Usage:
@@ -88,6 +105,7 @@
  *   node scripts/check-focus-visibility.js --base ... --break           (must exit 1)
  *   node scripts/check-focus-visibility.js --base ... --routes /score --themes dark --widths 1440
  *   node scripts/check-focus-visibility.js --base ... --json --shots out/
+ *   node scripts/check-focus-visibility.js --base ... --executable /path/to/linux/chromium
  * Exit 1 on any failure, 2 on a fatal error (no browser, bad arguments).
  */
 
@@ -162,6 +180,13 @@ const DEFECTS = {
     .topbar .wordmark:focus-visible, .topbar .cmdk-trigger:focus-visible,
     .topbar .senses-trigger:focus-visible, .topbar .topbar-cta:focus-visible { outline-offset: 3px; }
     .footer-badge:focus-visible { opacity: 0.85; }`,
+  // Links in running text drawn with the house ring again, 3px out.
+  neighbour: `
+    a.text-link:focus-visible, .lab-meta-item a:focus-visible, :is(p, li, dd) > a:not([class]):focus-visible,
+    .orb-attr-link:focus-visible {
+      outline: 2px solid var(--signal-access); outline-offset: 3px;
+      background-color: transparent; color: var(--ink); box-shadow: 0 0 0 4px var(--signal-dim);
+    }`,
   // The scrollers without the room they give the ring.
   clip: `
     .nav-links { padding: 0; margin: 0; }
@@ -230,7 +255,7 @@ async function analyse(lab, a, b, box, conf) {
       const sides = {};
       for (const side of ['top', 'right', 'bottom', 'left']) {
         const lines = [];
-        for (const f of [0.25, 0.5, 0.75]) {
+        const lineAt = (f) => {
           const pts = [];
           const depth = side === 'left' || side === 'right' ? inH : inV;
           for (let d = -depth; d <= conf.PAD; d++) {
@@ -264,18 +289,29 @@ async function analyse(lab, a, b, box, conf) {
           // A run whose core moved less than the band ratio is a tint (the dim
           // halo the house ring lays under itself), not an indicator: it is
           // only taken when no stronger run reaches the edge.
+          // The core is the run's most-changed pixel at the edge (d >= -1)
+          // when one changed by the band ratio: an indicator drawn inside the
+          // box (a link's focus fill) also recolours the glyphs it holds, and
+          // a glyph is not the indicator's edge.
           const cands = [];
           for (const r of runs) {
             if (pts[r.e].d < -1) continue;
-            let core = r.s;
-            let coreChange = 0;
-            for (let i = r.s; i <= r.e; i++) {
-              const c = ratio(pts[i].pb, pts[i].pa);
-              if (c > coreChange) {
-                coreChange = c;
-                core = i;
+            const pick = (from) => {
+              let core = -1;
+              let coreChange = 0;
+              for (let i = from; i <= r.e; i++) {
+                const c = ratio(pts[i].pb, pts[i].pa);
+                if (c > coreChange) {
+                  coreChange = c;
+                  core = i;
+                }
               }
-            }
+              return { core, coreChange };
+            };
+            let edge = r.s;
+            while (edge < r.e && pts[edge].d < -1) edge++;
+            let { core, coreChange } = pick(edge);
+            if (coreChange < conf.BAND) ({ core, coreChange } = pick(r.s));
             cands.push({ ...r, core, coreChange, end: pts[r.e].d });
           }
           const strong = cands.filter((c) => c.coreChange >= conf.BAND);
@@ -309,10 +345,7 @@ async function analyse(lab, a, b, box, conf) {
               best = { ...best, core, coreChange: ratio(pts[core].pb, pts[core].pa) };
             }
           }
-          if (!best) {
-            lines.push(null);
-            continue;
-          }
+          if (!best) return null;
           let lo = best.core;
           let hi = best.core;
           const cpx = pts[best.core].pb;
@@ -332,11 +365,18 @@ async function analyse(lab, a, b, box, conf) {
           };
           const inner = beyond(lo - 1, -1);
           const outer = beyond(hi + 1, 1);
-          const adj = [inner, outer].filter(Boolean).map((p) => ratio(cpx, p));
+          // A band in the control's own focused background is a fill: its
+          // inner side is the content it holds (text, whose antialiased edges
+          // give any mid-tone at any depth), not a colour beside the
+          // indicator, so it is held to the colour outside it. The text on
+          // the fill is checked from computed style (4.5:1).
+          const isFill = !!conf.fill && Math.max(...cpx.map((v, k) => Math.abs(v - conf.fill[k]))) <= 24;
+          const adj = (isFill && outer ? [outer] : [inner, outer]).filter(Boolean).map((p) => ratio(cpx, p));
           let solid3 = 0;
           for (let i = best.s; i <= best.e; i++) if (ratio(pts[i].pb, pts[i].pa) >= 3) solid3++;
-          lines.push({
+          return {
             ring: hex(cpx),
+            fill: isFill,
             inner: inner ? hex(inner) : null,
             outer: outer ? hex(outer) : null,
             adjacent: adj.length ? Math.min(...adj) : null,
@@ -346,7 +386,30 @@ async function analyse(lab, a, b, box, conf) {
             reach: pts[hi].d,
             width: hi - lo + 1,
             solid3,
-          });
+          };
+        };
+        // Lines at 25, 50 and 75% along the side, for a ring. A control
+        // focused with a fill is read differently: its indicator is the box
+        // itself, and glyph ink meets the box edge on many rows (a t's stem
+        // down the whole left side, an M, an arrow's tip, more of them with
+        // fallback fonts). Those pixels are the text, not the fill's edge. So
+        // every row (or column) from 8 to 92% along the side is read, the ones
+        // where the fill itself meets the edge are kept, and three spread
+        // across them are measured. A parent that clips a fill cuts its whole
+        // side, which still leaves none, so the side still needs two.
+        if (conf.fill) {
+          const len = Math.max(1, Math.round(side === 'left' || side === 'right' ? box.h : box.w));
+          const found = [];
+          for (let k = 0; k < len; k++) {
+            const pos = (k + 0.5) / len;
+            if (pos < 0.08 || pos > 0.92) continue;
+            const line = lineAt(pos);
+            if (line && line.fill) found.push(line);
+          }
+          const pick = found.length <= 3 ? found : [found[0], found[Math.floor((found.length - 1) / 2)], found[found.length - 1]];
+          for (const line of pick) lines.push(line);
+        } else {
+          for (const pos of [0.25, 0.5, 0.75]) lines.push(lineAt(pos));
         }
         const got = lines.filter(Boolean);
         const med = (xs) => {
@@ -403,11 +466,24 @@ function contrast(p, q) {
 function colourReasons(info) {
   const out = [];
   const paper = parseColour(info.paper);
+  // Focus drawn as a fill (no painted outline, an opaque focused
+  // background): the text on it must still read, 4.5:1.
+  const painted = (info.outlines || []).some((o) => o.style !== 'none' && parseFloat(o.width) > 0 && (parseColour(o.color) || { a: 1 }).a > 0);
+  const bg = parseColour(info.fill);
+  const fg = parseColour(info.textColor);
+  if (!painted && bg && bg.a >= 0.99 && fg) {
+    const seen = fg.rgb.map((v, i) => v * fg.a + bg.rgb[i] * (1 - fg.a));
+    const r = contrast(seen, bg.rgb);
+    if (r < 4.5) out.push(`text ${info.textColor} on the focus fill ${info.fill} is ${r.toFixed(2)}:1, under 4.5:1`);
+  }
   for (const o of info.outlines || []) {
     if (o.style === 'none' || !(parseFloat(o.width) > 0)) continue;
     if (info.theme === 'dark' && FORBIDDEN_DARK_RING[o.color]) out.push(`${o.who} outline is ${o.color}, ${FORBIDDEN_DARK_RING[o.color]}, on the dark theme`);
     const c = parseColour(o.color);
-    if (!c || !paper) continue;
+    // A transparent outline paints nothing: it is the forced-colours fallback
+    // under an indicator drawn another way (a link's focus fill), which the
+    // pixel checks measure.
+    if (!c || !paper || c.a === 0) continue;
     const seen = c.rgb.map((v, i) => v * c.a + paper.rgb[i] * (1 - c.a));
     const r = contrast(seen, paper.rgb);
     if (r < CONTRAST_MIN) out.push(`${o.who} outline ${o.color} is ${r.toFixed(2)}:1 on the page paper ${info.paper}`);
@@ -495,6 +571,36 @@ async function describeFocused(page, idx) {
       probe.remove();
       const outlines = [{ who: 'control', style: s.outlineStyle, width: s.outlineWidth, color: s.outlineColor }];
       if (target !== el) outlines.push({ who: 'well', style: t.outlineStyle, width: t.outlineWidth, color: t.outlineColor });
+      // A ring round a link in running text must stay out of the words beside
+      // it. Layout boxes, not pixels: whether a ring that runs into the next
+      // glyph's box touches its ink depends on how the renderer places glyphs
+      // (CI's Linux fonts met the stem at 1.86:1 where Windows missed it), and
+      // the box overlap is the same everywhere. Same line only.
+      let neighbour = null;
+      const painted = s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0 && !/^(transparent|rgba\(.*,\s*0\)|color\(srgb .* \/ 0\))$/.test(s.outlineColor);
+      if (/^inline/.test(s.display) && painted) {
+        const reach = parseFloat(s.outlineOffset) + parseFloat(s.outlineWidth);
+        const ring = { l: r.left - reach, r: r.right + reach };
+        let blk = el.parentElement;
+        while (blk && /^(inline|inline-flex|inline-block|contents)$/.test(getComputedStyle(blk).display)) blk = blk.parentElement;
+        const walker = blk ? document.createTreeWalker(blk, NodeFilter.SHOW_TEXT) : null;
+        let seen = 0;
+        for (let n = walker && walker.nextNode(); n && seen < 4000; n = walker.nextNode()) {
+          if (el.contains(n)) continue;
+          const text = n.textContent;
+          for (let k = 0; k < text.length && seen < 4000; k++) {
+            if (/\s/.test(text[k])) continue;
+            seen++;
+            const rg = document.createRange();
+            rg.setStart(n, k);
+            rg.setEnd(n, k + 1);
+            const q = rg.getBoundingClientRect();
+            if (!q.width || q.bottom <= r.top + 2 || q.top >= r.bottom - 2) continue;
+            const over = q.left >= r.right ? ring.r - q.left : r.left >= q.right ? q.right - ring.l : 0;
+            if (over > 0.5 && (!neighbour || over > neighbour.over)) neighbour = { ch: text[k], side: q.left >= r.right ? 'after' : 'before', over: +over.toFixed(2), reach, gap: +(q.left >= r.right ? q.left - r.right : r.left - q.right).toFixed(2) };
+          }
+        }
+      }
       return {
         name,
         well: target !== el,
@@ -503,6 +609,9 @@ async function describeFocused(page, idx) {
         theme: document.documentElement.getAttribute('data-theme'),
         paper,
         outlines,
+        neighbour,
+        fill: s.backgroundColor,
+        textColor: s.color,
         outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} offset ${s.outlineOffset}`,
         boxShadow: (target !== el ? t.boxShadow : s.boxShadow).slice(0, 160),
         wellOutline: target !== el ? `${t.outlineStyle} ${t.outlineWidth} ${t.outlineColor} offset ${t.outlineOffset}` : null,
@@ -549,10 +658,20 @@ async function measureFocused(page, lab, info, shots, tag) {
   await page.evaluate(() => window.__fvEl && window.__fvEl.focus({ preventScroll: true }));
   const own = (info.outlines || []).find((o) => o.who === 'control' && o.style !== 'none' && parseFloat(o.width) > 0);
   const ring = revealed && own && parseColour(own.color) ? parseColour(own.color).rgb : null;
-  const m = await analyse(lab, blurred, focused, inClip, { TH, IN, PAD, BAND: BAND_RATIO, ring });
+  // Focus drawn as a fill: no painted outline, an opaque focused background.
+  // A control that draws a ring keeps the ring's measurement even when its
+  // own background is opaque.
+  const bg = parseColour(info.fill);
+  const ringPainted = (info.outlines || []).some((o) => o.style !== 'none' && parseFloat(o.width) > 0 && (parseColour(o.color) || { a: 1 }).a > 0);
+  const fill = !ringPainted && bg && bg.a >= 0.99 ? bg.rgb : null;
+  const m = await analyse(lab, blurred, focused, inClip, { TH, IN, PAD, BAND: BAND_RATIO, ring, fill });
   m.revealed = revealed;
   const v = verdict(m, info.box);
   const style = colourReasons(info);
+  if (info.neighbour) {
+    const n = info.neighbour;
+    style.push(`ring reaches ${n.over}px into the box of the glyph '${n.ch}' ${n.side} it on its line (reach ${n.reach}px, gap ${n.gap}px)`);
+  }
   if (style.length) {
     v.reasons.push(...style);
     v.ok = false;
@@ -714,9 +833,12 @@ async function main() {
   }
   let browser;
   try {
-    browser = await chromium.launch({ channel: CHANNEL, headless: true });
+    // --executable runs a given browser binary instead of a channel: a Linux
+    // Chromium reproduces the text metrics CI renders with, on any host.
+    const EXE = opt(args, '--executable');
+    browser = await chromium.launch(EXE ? { executablePath: EXE, args: ['--no-sandbox'], headless: true } : { channel: CHANNEL, headless: true });
   } catch (e) {
-    console.error(`[focus] cannot launch ${CHANNEL}: ${e.message}`);
+    console.error(`[focus] cannot launch ${opt(args, '--executable') || CHANNEL}: ${e.message}`);
     process.exit(2);
   }
 
