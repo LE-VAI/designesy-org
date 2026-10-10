@@ -11,27 +11,32 @@
  * six more routes: their LCP text sits in section.surface-header.fade-up,
  * whose fadeUp starts at opacity 0 and runs 0.6s, and LCP came 600-650ms
  * after FCP there and 0ms after it everywhere else. The header now rises
- * without fading (globals.css, "Page header first-paint"). Nothing failed
- * while it was broken: the page looked right once the fade had finished.
+ * without fading (globals.css, "Page header first-paint"). The case-study
+ * summary (section#summary.doctrine-section) held the LCP paragraph of
+ * /work and /review case studies the same way, wherever it outsizes the
+ * header's, and rises without fading too. Nothing failed while either was
+ * broken: the page looked right once the fade had finished.
  *
  * WHAT IT ASSERTS
  * Each route is loaded with motion on at a phone (412x823) and a desktop
  * (1440x900) viewport. Then:
  *   A. no element from the LCP element up to <html> declares an animation
  *      whose first keyframe sets opacity 0, and
- *   B. no section.surface-header declares one, whichever element won LCP.
+ *   B. no page header (section.surface-header) and no case-study summary
+ *      (section#summary.doctrine-section) declares one, whichever element
+ *      won LCP.
  * It reads the declared keyframes (computed animation-name, resolved
  * against the page's own @keyframes rules), not timings, so the verdict
  * does not depend on machine speed. The LCP - FCP gap is printed for
  * reading, never asserted. Only GET requests are allowed.
  *
- * KNOWN lists the LCP entrances left as designed, each with its reason. One
- * not listed fails; a listed one that no longer occurs is reported so the
- * entry can be dropped.
+ * There are no exceptions: any LCP element in an entrance from opacity 0
+ * fails, on every route below at both widths.
  *
  * PROVING IT CAN FAIL
- *   --break puts the page header back on the full fadeUp, as it shipped;
- *   the gate must then exit 1 on every surface route.
+ *   --break puts the page header and the case-study summary back on the
+ *   full fadeUp, as they shipped; the gate must then exit 1 on every
+ *   surface route.
  *
  * Usage:
  *   node scripts/check-lcp-entrance.js --base http://127.0.0.1:3422
@@ -41,20 +46,14 @@
 
 const ROUTES = [
   '/', '/score', '/leaderboard', '/drift', '/contracts', '/pricing',
-  '/learn/what-is-design-verification', '/work/designesy-org', '/changelog', '/badge',
+  '/learn/what-is-design-verification', '/work/designesy-org', '/work/tile', '/review/poise',
+  '/changelog', '/badge',
 ];
 const VIEWPORTS = [
   { name: '412', viewport: { width: 412, height: 823 }, deviceScaleFactor: 1.75, isMobile: true, hasTouch: true },
   { name: '1440', viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
 ];
 
-// Route @ width -> the element whose entrance holds LCP there, left as designed.
-const KNOWN = {
-  // At 1440 the first case-study section's paragraph outsizes the header's,
-  // so LCP is in #summary, a body entrance and not the page header. At 412
-  // the LCP is the header's and passes. (2026-10-10)
-  '/work/designesy-org @1440': 'section#summary.doctrine-section.fade-up',
-};
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -82,9 +81,9 @@ try {
   }
 }
 
-// The defect as it shipped: the page header on the full fadeUp. The repeated
-// class only raises specificity above the fix.
-const BROKEN = '.surface-header.fade-up.fade-up.fade-up { animation-name: fadeUp; }';
+// The defect as it shipped: the page header and the case-study summary on
+// the full fadeUp. The repeated class only raises specificity above the fix.
+const BROKEN = ':is(.surface-header, #summary.doctrine-section).fade-up.fade-up.fade-up { animation-name: fadeUp; }';
 
 // Runs before any page script, so the buffered LCP and paint entries are kept.
 function observe() {
@@ -152,8 +151,8 @@ function inspect() {
     lcp: g.lcp ? { t: g.lcp.startTime, el: el ? label(el) : null, text: el ? (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48) : null } : null,
     fcp: g.fcp,
     lcpChain: el ? chain(el) : [],
-    headers: [...document.querySelectorAll('section.surface-header')].flatMap(chain),
-    headerCount: document.querySelectorAll('section.surface-header').length,
+    headers: [...document.querySelectorAll('section.surface-header, section#summary.doctrine-section')].flatMap(chain),
+    headerCount: document.querySelectorAll('section.surface-header, section#summary.doctrine-section').length,
   };
 }
 
@@ -188,7 +187,6 @@ async function check(browser, route, vp) {
     process.exit(2);
   }
   const failures = [];
-  const seen = new Set();
   for (const route of ROUTES) {
     for (const vp of VIEWPORTS) {
       const r = await check(browser, route, vp);
@@ -197,26 +195,17 @@ async function check(browser, route, vp) {
       if (!r.keyframes) { failures.push(`${where}: no @keyframes readable, so nothing was checked`); continue; }
       if (!r.lcp) { failures.push(`${where}: no LCP entry was recorded, so the LCP element was not checked`); continue; }
       const gap = r.fcp != null ? `${Math.round(r.lcp.t - r.fcp)}ms after FCP` : 'no FCP entry';
-      console.log(`  ${where}: LCP ${r.lcp.el || '(removed)'} "${r.lcp.text || ''}" ${gap}; ${r.headerCount} page header(s)`);
-      for (const f of r.lcpChain) {
-        if (KNOWN[where] && f.startsWith(KNOWN[where] + ' ')) {
-          seen.add(where);
-          console.log(`    known, left as designed: ${f}`);
-        } else {
-          failures.push(`${where}: the LCP element sits in an entrance from opacity 0: ${f}`);
-        }
-      }
-      for (const f of new Set(r.headers)) failures.push(`${where}: the page header enters from opacity 0: ${f}`);
+      console.log(`  ${where}: LCP ${r.lcp.el || '(removed)'} "${r.lcp.text || ''}" ${gap}; ${r.headerCount} header or summary section(s)`);
+      for (const f of r.lcpChain) failures.push(`${where}: the LCP element sits in an entrance from opacity 0: ${f}`);
+      for (const f of new Set(r.headers)) failures.push(`${where}: a page header or case-study summary enters from opacity 0: ${f}`);
     }
   }
   await browser.close();
-  const gone = Object.keys(KNOWN).filter((k) => !seen.has(k));
-  if (gone.length) console.log(`  note: KNOWN entries that no longer occur (safe to drop): ${gone.join(', ')}`);
   if (failures.length) {
     console.error(`\nLCP entrance gate FAILED (${failures.length}):`);
     for (const f of failures) console.error(`  - ${f}`);
     console.error('An entrance on the LCP element must not start at opacity 0: animate transform only (globals.css, "Page header first-paint") or take the element out of the entrance (globals.css, "Hero first-paint").');
     process.exit(1);
   }
-  console.log(`LCP entrance gate passed: on ${ROUTES.length} routes at ${VIEWPORTS.length} widths, no page header and no LCP element outside ${seen.size} known case(s) enters from opacity 0.`);
+  console.log(`LCP entrance gate passed: on ${ROUTES.length} routes at ${VIEWPORTS.length} widths, no LCP element, page header or case-study summary enters from opacity 0.`);
 })();
