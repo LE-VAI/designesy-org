@@ -1316,6 +1316,10 @@ export function VerifyForm({
               each group collapsible. FAIL expanded by default; PASS collapsed.
               This mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. */}
           <div className="score-cards-feed">
+            {/* The list's own heading, so each card's title (an h3) sits one
+                level under it on every page that shows a result: on the
+                platform pages an auto-run put h4 titles straight under the h1. */}
+            <h2 className="sr-only">Checks</h2>
             {filteredChecks.length === 0 ? (
               <div className="score-empty-feed">
                 <p className="score-empty-title">No matching checks</p>
@@ -1412,7 +1416,7 @@ export function VerifyForm({
                                     </span>
                                   )}
                                 </div>
-                                <h4 className="score-card-title">
+                                <h3 className="score-card-title">
                                   <button
                                     type="button"
                                     className="score-card-toggle"
@@ -1423,7 +1427,7 @@ export function VerifyForm({
                                   >
                                     {check.item}
                                   </button>
-                                </h4>
+                                </h3>
                               </div>
 
                               <span className="score-card-right" aria-hidden="true">
