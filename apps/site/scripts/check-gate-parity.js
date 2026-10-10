@@ -92,6 +92,7 @@ function main() {
     'edge-contract.js',
     'check-glass-blur.js',
     'check-motion-pause.js',
+    'check-lcp-entrance.js',
     'qa-keyboard.js',
     'check-status-messages.js',
     'a11y-sweep.js',
