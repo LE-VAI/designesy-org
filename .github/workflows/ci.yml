@@ -569,6 +569,12 @@ jobs:
       - name: Keyboard QA
         run: node scripts/qa-keyboard.js --base http://127.0.0.1:3422
 
+      # A failed score run must be announced (WCAG 4.1.3): each score surface
+      # is failed on purpose, and the accessibility tree must carry the message
+      # in one live region that was there before it (or an alert).
+      - name: Status messages
+        run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
+
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,
       # layout, lib, next.config, public/) -> the full set, scripts-only

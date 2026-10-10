@@ -17,6 +17,7 @@
     "check-focus-rings": "node scripts/check-focus-rings.js",
     "check-motion-pause": "node scripts/check-motion-pause.js",
     "check-paused-entrances": "node scripts/check-paused-entrances.js",
+    "check-status-messages": "node scripts/check-status-messages.js",
     "check-contract-version": "node scripts/check-contract-version.js",
     "prose-lint": "node scripts/prose-lint.js",
     "dev": "next dev",

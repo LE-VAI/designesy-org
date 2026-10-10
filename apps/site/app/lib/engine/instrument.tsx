@@ -36,6 +36,10 @@ type Props = {
   outcomes?: Outcomes;
   verdict?: VerdictData | null;
   error?: ReactNode;
+  /** Why the run stopped, in words. The live line reads it after "stopped
+      without a result", so the reason is announced with the stop; the error
+      slot above is drawn, not announced. */
+  errorText?: string;
   /** One line under the legend: how a result is scored. */
   scoring: string;
   /** Side column copy before any run. */
@@ -519,7 +523,7 @@ export function Instrument(props: Props) {
     phase === 'done' && verdict
       ? `${name}: grade ${verdict.grade}, ${verdict.score} out of 100. ${verdict.pass} pass, ${verdict.warn} warn, ${verdict.fail} fail.`
       : phase === 'error'
-        ? `${name} stopped without a result.`
+        ? `${name} stopped without a result.${props.errorText ? ` ${props.errorText}` : ''}`
         : '';
 
   return (

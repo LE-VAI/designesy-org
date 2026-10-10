@@ -718,12 +718,17 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         note={`No login. ${ENGINE_CHECK_COUNT} checks, a grade in seconds.`}
       />
 
+      {/* A failed run is the answer to the visitor's request, and nothing else
+          says so: the loading log's live region leaves with the run. The card
+          is inserted on failure and removed when the next run starts, so
+          role=alert reads it once per failure, a repeated one included
+          (WCAG 4.1.3). It holds only the notice, no controls. */}
       {status === 'error' && result?.error && (
-        <div className="score-error-card">
+        <div className="score-error-card" role="alert">
           <span className="score-error-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" />
+              <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </span>
@@ -1151,8 +1156,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               </div>
             )}
 
+            {/* The audit's progress region leaves with the audit, and the
+                button's new label is not announced. The line is inserted only
+                on failure, into a flex column whose gap an always-mounted
+                empty region would widen, so it is an alert (WCAG 4.1.3). */}
             {auditStatus === 'error' && auditError && (
-              <p className="score-audit-error">{auditError}</p>
+              <p className="score-audit-error" role="alert">{auditError}</p>
             )}
           </div>
 

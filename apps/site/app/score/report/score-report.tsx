@@ -192,10 +192,29 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     }).map((c) => c.label);
   }, [result?.categoryScores]);
 
+  // One polite region carries the run from first paint to its end: the
+  // loading line, then the failure. The loading region used to unmount with
+  // the run, and a region mounted with its text already in it is not reliably
+  // read, so the failure was never announced (WCAG 4.1.3). The run starts on
+  // page load, not on a press, so it waits its turn rather than cutting into
+  // the page being read. Its key keeps the one node across the two branches
+  // below; the visible error block stays out of it, so the failure is read
+  // once and without the block's link.
+  const live = (
+    <p key="live" className="sr-only" role="status" aria-live="polite">
+      {status === 'loading'
+        ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
+        : status === 'error'
+          ? `Score failed. ${error ?? ''}`
+          : ''}
+    </p>
+  );
+
   if (status === 'loading') {
     return (
-      <div className="report-loading" role="status" aria-live="polite">
-        <span className="sr-only">Evaluating {ENGINE_SCORED_CHECK_COUNT} contract checks against {initialUrl}…</span>
+      <>
+      {live}
+      <div key="loading" className="report-loading">
         {/* Hero skeleton: grade circle + score number + meta lines */}
         <div className="report-skel-hero">
           <div className="report-skel-circle" aria-hidden="true" />
@@ -228,18 +247,22 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <div className="report-skel-row" />
         </div>
       </div>
+      </>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="report-error">
+      <>
+      {live}
+      <div key="error" className="report-error">
         <h2>Score failed</h2>
         <p>{error}</p>
         <Link href="/score" className="score-action-btn">
           Score a site →
         </Link>
       </div>
+      </>
     );
   }
 
