@@ -40,6 +40,20 @@
  * in a Vercel build (VERCEL=1), which may upload only apps/site; there the
  * agreement check prints NOT EVALUATED instead of passing silently.
  *
+ * REFERENCE-DATA OUTPUT (added for designesy-mcp 1.13.4)
+ * The document tools wrap what they return as labeled reference data and leave
+ * out any part written as steps or a prompt for an AI agent (Anthropic
+ * Software Directory Policy 2F). The hosted endpoint does it in
+ * app/lib/mcp-reference.ts, the PyPI server in its own Python. So this gate
+ * also:
+ *   - asserts both declare the same AGENT_DIRECTIVE_PATTERN_SOURCES;
+ *   - runs mcp-reference.ts (loaded with Node's type stripping) on the
+ *     published-document fixtures in packages/designesy-mcp/test/fixtures/
+ *     published-docs/ and compares its output with expected.json there, the
+ *     golden the Python suite checks its own output against. Same input, same
+ *     golden, two implementations: they agree or one of the two jobs fails.
+ * Outside a Vercel build the fixtures must be present.
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -51,6 +65,10 @@ const APP = path.join(__dirname, '..');
 const ROUTE = path.join(APP, 'app', 'api', 'mcp', 'route.ts');
 const REGISTRY = path.join(APP, 'app', 'lib', 'mcp-tool-registry.ts');
 const PYPI = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'designesy_mcp_server.py');
+const REFERENCE_LIB = path.join(APP, 'app', 'lib', 'mcp-reference.ts');
+const DOC_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'published-docs');
+// The origin both servers fetch from; part of the hashed design_review output.
+const BASE_URL = 'https://www.designesy.org';
 
 const HINTS = ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'];
 const TITLE_MAX_WORDS = 5;
@@ -485,7 +503,103 @@ function pypiFindings(remote, pypi) {
   return { findings, agreedTitles, agreedHints };
 }
 
-function main() {
+/** The r"..." sources in the PyPI AGENT_DIRECTIVE_PATTERN_SOURCES tuple, or null. */
+function pypiDirectiveSources(src) {
+  const m = src.match(/^AGENT_DIRECTIVE_PATTERN_SOURCES\s*=\s*\(\r?\n([\s\S]*?)^\)/m);
+  if (!m) return null;
+  return [...m[1].matchAll(/^\s*r"((?:[^"\\]|\\.)*)",?\s*$/gm)].map((x) => x[1]);
+}
+
+/** JSON with keys sorted and no spaces, as Python's json.dumps(sort_keys=True, separators=(",", ":")). */
+function canonical(v) {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
+  if (v !== null && typeof v === 'object') {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
+function sha256(v) {
+  return require('node:crypto').createHash('sha256').update(typeof v === 'string' ? v : canonical(v), 'utf8').digest('hex');
+}
+
+/**
+ * Run the hosted endpoint's reference-data rules on the shared fixtures and
+ * compare with the golden. Returns { findings, evaluated, reason, compared }.
+ */
+async function referenceFindings(pypiSrc) {
+  const findings = [];
+  if (!fs.existsSync(DOC_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, DOC_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'reference-fixtures-missing',
+      why: `${DOC_FIXTURES} is missing, so the two servers' reference-data output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(REFERENCE_LIB).href);
+  } catch (e) {
+    // A deploy is not the place to fail on the build image's Node version;
+    // CI runs this gate on a Node that strips types and fails there.
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load mcp-reference.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'reference-lib-unloadable',
+      why: `Could not load app/lib/mcp-reference.ts with Node's type stripping (${e.code || e.message}), so the hosted endpoint's reference-data rules cannot be checked.`,
+      fix: 'Run on Node 22.18 or later, and keep mcp-reference.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  const pySources = pypiSrc === null ? null : pypiDirectiveSources(pypiSrc);
+  if (pySources === null) {
+    findings.push({
+      id: 'reference-patterns-unreadable',
+      why: 'Could not read AGENT_DIRECTIVE_PATTERN_SOURCES from the PyPI server, so the two servers\' directive patterns cannot be compared.',
+      fix: 'Keep the tuple at the top level of designesy_mcp_server.py, one r"..." source per line.',
+    });
+  } else if (JSON.stringify(pySources) !== JSON.stringify([...lib.AGENT_DIRECTIVE_PATTERN_SOURCES])) {
+    findings.push({
+      id: 'reference-patterns-disagree',
+      why: `The directive patterns differ. Hosted: ${JSON.stringify(lib.AGENT_DIRECTIVE_PATTERN_SOURCES)}. PyPI: ${JSON.stringify(pySources)}.`,
+      fix: 'Use the same pattern sources in app/lib/mcp-reference.ts and designesy_mcp_server.py.',
+    });
+  }
+
+  const golden = JSON.parse(fs.readFileSync(path.join(DOC_FIXTURES, 'expected.json'), 'utf8'));
+  const readText = (n) => fs.readFileSync(path.join(DOC_FIXTURES, n), 'utf8');
+  const readJson = (n) => JSON.parse(readText(n));
+  const disagree = (what, expected, actual) => findings.push({
+    id: `reference-golden:${what}`,
+    why: `The hosted endpoint's ${what} differs from the golden the PyPI suite checks (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}).`,
+    fix: 'Change both servers together, then regenerate the golden: python test/test_reference_data.py --write-golden.',
+  });
+  let compared = 0;
+  for (const [name, want] of Object.entries(golden.text)) {
+    const out = lib.publishedText(`${BASE_URL}/${name}`, 'text/plain', readText(name));
+    if (JSON.stringify(out.omitted_sections) !== JSON.stringify(want.omitted_sections)) disagree(`${name} omitted_sections`, want.omitted_sections, out.omitted_sections);
+    if (sha256(out) !== want.output_sha256) disagree(`${name} output`, want.output_sha256, sha256(out));
+    compared++;
+  }
+  const agent = lib.publishedJson(`${BASE_URL}/.well-known/agent.json`, readJson('agent.json'));
+  if (JSON.stringify(agent.omitted_fields) !== JSON.stringify(golden.agent_json.omitted_fields)) disagree('agent.json omitted_fields', golden.agent_json.omitted_fields, agent.omitted_fields);
+  if (sha256(agent) !== golden.agent_json.output_sha256) disagree('agent.json output', golden.agent_json.output_sha256, sha256(agent));
+  compared++;
+  for (const c of golden.design_review) {
+    const out = lib.designReviewRubric(readJson('design-review.json'), `${BASE_URL}/kits/design-review.json`, c.inputs, golden.fixture_rules);
+    if (sha256(out) !== c.output_sha256) disagree(`design_review ${JSON.stringify(c.inputs)} output`, c.output_sha256, sha256(out));
+    compared++;
+  }
+  return { findings, evaluated: true, compared };
+}
+
+async function main() {
   const asJson = process.argv.includes('--json');
 
   for (const f of [ROUTE, REGISTRY]) {
@@ -546,12 +660,13 @@ function main() {
     : 0;
 
   // Agreement with the PyPI stdio server.
+  const pypiSrc = fs.existsSync(PYPI) ? fs.readFileSync(PYPI, 'utf8') : null;
   let pypi;
   if (fs.existsSync(PYPI)) {
     if (remoteAnn === null) {
       pypi = { evaluated: false, reason: 'the hosted registry table is unreadable (reported above)' };
     } else {
-      const res = pypiFindings(remoteAnn, pypiAnnotations(fs.readFileSync(PYPI, 'utf8')));
+      const res = pypiFindings(remoteAnn, pypiAnnotations(pypiSrc));
       findings.push(...res.findings);
       pypi = { evaluated: true, agreedTitles: res.agreedTitles, agreedHints: res.agreedHints };
     }
@@ -566,6 +681,10 @@ function main() {
     pypi = { evaluated: false, reason: 'file missing' };
   }
 
+  // Reference-data output: same rules, same fixtures, same golden.
+  const reference = await referenceFindings(pypiSrc);
+  findings.push(...reference.findings);
+
   if (asJson) {
     console.log(
       JSON.stringify(
@@ -575,6 +694,7 @@ function main() {
           declared: declared ? declared.size : null,
           annotated,
           pypi,
+          reference: { evaluated: reference.evaluated, compared: reference.compared ?? 0, reason: reference.reason },
           findings,
         },
         null,
@@ -589,6 +709,11 @@ function main() {
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] PyPI agreement: ${pypi.reason}`);
     }
+    if (reference.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted reference-data rules match the shared golden on ${reference.compared} output(s), with the PyPI server's directive patterns`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] reference-data agreement: ${reference.reason}`);
+    }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);
     for (const f of findings) {
@@ -601,4 +726,7 @@ function main() {
   process.exit(findings.length === 0 ? 0 : 1);
 }
 
-main();
+main().catch((e) => {
+  console.error(`mcp-tool-parity: ${e && e.stack ? e.stack : e}`);
+  process.exit(1);
+});
