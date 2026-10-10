@@ -230,6 +230,34 @@ jobs:
         if: always()
         run: node scripts/check-gate-parity.js
 
+      # The three "Visual gates" parts serve THIS build rather than each
+      # building again. It is uploaded before the cache step below, so it is
+      # exactly what this job's `next build` and gates produced from this
+      # commit, never a restored .next; and a run artifact belongs to this run
+      # alone, so it cannot be another commit's build (the stale-cache failure
+      # described below). The upload runs only when every build gate passed,
+      # which is also when the visual gates run.
+      #
+      # .next/cache (the compiler cache) is not needed to serve and is left
+      # out. The per-page markdown that generate-markdown.js writes into
+      # public/ is served by the site, so it travels with the build.
+      - name: Upload the build for the visual gates
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: site-build
+          path: |
+            apps/site/.next
+            !apps/site/.next/cache
+            apps/site/public/**/*.md
+            apps/site/public/.md-manifest.json
+          include-hidden-files: true
+          if-no-files-found: error
+          # Long enough to re-run a failed part on a PR without rebuilding.
+          retention-days: 3
+          # A re-run of this job replaces the build instead of failing on the
+          # name the first attempt already used.
+          overwrite: true
+
       # Cache the Next.js build output for faster re-runs on the same PR.
       #
       # Exact-SHA key only, no prefix fallback: a prefix restore made the build
@@ -469,27 +497,54 @@ jobs:
           echo "✗ Domain freshness: STALE — expected ${EXPECTED}, domain serves ${DOMAIN_SHA}"
           exit 1
 
-  # ── Job 5: Runtime visual gates ──────────────────────────────────────────
-  # The alignment, glass, keyboard and incremental a11y gates. Each needs a
-  # browser and a running site, so none of them can live in the build chain —
-  # that is exactly why the 280 edge violations and the dead capsule blur both
-  # survived the build gate. This job serves the build CI just made and
-  # measures it. The a11y sweep runs on the routes the commit touches
-  # (touched-routes.js maps the diff; shared surfaces mean the full set).
+  # ── Job 5: Runtime visual gates, in three parallel parts ─────────────────
+  # The alignment, glass, focus, motion, LCP, keyboard, status, dock and
+  # incremental a11y gates. Each needs a browser and a running site, so none
+  # of them can live in the build chain — that is exactly why the 280 edge
+  # violations and the dead capsule blur both survived the build gate. Each
+  # part serves the build CI just made and measures it. The a11y sweep runs on
+  # the routes the commit touches (touched-routes.js maps the diff; shared
+  # surfaces mean the full set).
+  #
+  # WHY THREE PARTS: as one job the gates ran one after another, and on
+  # 2026-10-10 that job grew from about 8 minutes to 17-25 as the focus, dock,
+  # status and LCP gates arrived; on a pull request it hit its 25-minute limit
+  # inside Dock clearance. The parts run side by side, balanced by the step
+  # times of a green run on main (38086271824):
+  #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17
+  #   part 2  focus visibility 187, a11y sweep 101 (the full set)
+  #   part 3  dock clearance 443 (304-443 across that day's green runs)
+  # Dock clearance is the longest single gate, so it runs alone and sets the
+  # wall time. Every part must pass. A new runtime gate goes in the part with
+  # the most room; scripts/check-gate-parity.js fails if a CI-only gate is no
+  # longer invoked anywhere in this file.
+  #
+  # Within a part the steps keep their order and stop at the first failing
+  # gate, as the single job did. The parts are independent, so a failure in
+  # one no longer hides the verdicts of the others.
+  #
+  # WHY ONE SHARED BUILD: the single job built the site a second time after
+  # build-site had built it. Each part now downloads build-site's build (the
+  # site-build artifact: .next without its compiler cache, plus the generated
+  # markdown), so a run builds the site once. It is still exactly this
+  # commit's build: the artifact belongs to this run, unlike the .next cache,
+  # whose prefix fallback once fed this job a stale build under an exact-SHA
+  # key. Each part prints the BUILD_ID it serves, so the logs show all three
+  # measured the same build.
   #
   # WHY AGAINST A LOCAL BUILD AND NOT THE VERCEL PREVIEW: preview deployments sit
   # behind deployment protection, so a CI runner without a bypass token gets a
-  # 302 and measures a login page. Testing the build this job produced is also
+  # 302 and measures a login page. Testing the build this run produced is also
   # the stronger assertion — it gates the commit, not a deployment of it.
   #
   # @sparticuz/chromium is already a dependency, so no browser install step is
   # needed on Linux; each script launches it itself.
-  visual-gates:
-    name: Visual gates (edges, glass, focus, keyboard, a11y)
+  visual-gates-1:
+    name: 'Visual gates (part 1: edges, glass, motion, LCP, keyboard, status)'
     runs-on: ubuntu-latest
-    # 25, not 20: the focus visibility sweep (~1,600 focusings) adds about
-    # five minutes to a job that ran eight.
-    timeout-minutes: 25
+    # About 6 minutes. 20, because Edge contract alone may spend two bounded
+    # 240 s attempts.
+    timeout-minutes: 20
     needs: build-site
     if: always() && needs.build-site.result == 'success'
     defaults:
@@ -506,25 +561,21 @@ jobs:
           node-version: '22'
           cache: 'npm'
           # setup-node resolves this path from the repo root, NOT from
-          # working-directory. Must be explicit even though defaults.run
-          # is set to apps/site above (same as the build-site job).
+          # working-directory (same as the build-site job).
           cache-dependency-path: apps/site/package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      # No .next cache participation at all. Runs 2 and 3 of this job measured
-      # pre-#174 geometry even under an exact-SHA key, because the key's writer
-      # (build-site) had itself restored an older .next via a prefix fallback
-      # and built incrementally on top, then saved the result under the new
-      # SHA. A runtime gate must measure exactly what this commit's source
-      # builds, so the build here is always fresh. Costs ~2 min per run; that
-      # is the price of measuring the right thing.
-      - name: Build the site (full production chain)
-        run: npm run build
+      - name: Download the build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site-build
+          path: apps/site
 
       - name: Serve the build
         run: |
+          echo "serving build $(cat .next/BUILD_ID)"
           npx next start -p 3422 > /tmp/next.log 2>&1 &
           for i in $(seq 1 40); do
             if curl -sf -o /dev/null http://127.0.0.1:3422/; then
@@ -563,14 +614,6 @@ jobs:
         # same everywhere.
         run: node scripts/check-glass-blur.js --base http://127.0.0.1:3422 --channel chrome
 
-      # Focus rings measured in pixels: every control's ring changes the page,
-      # holds 3:1 against what it sits beside, and is not cut off by a
-      # scroller; a refused (invalid) field still shows focus. The static
-      # focus-ring gate proves a rule resolves; only pixels show a rule that
-      # another rule overrides, a colour too faint, or a ring a parent clips.
-      - name: Focus visibility
-        run: node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel chrome
-
       # Pausing animations (WCAG 2.2.2) must never hide content: a paused
       # visitor once got empty surface pages (.fade-up held on its first frame).
       - name: Motion pause
@@ -591,12 +634,77 @@ jobs:
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
 
-      # A floating pill must never sit on what it floats over: the Studio pill
-      # came up on a scroll up, mid-page, and hid a phone's score values. Each
-      # route at 320, 390, 768 and 1440, dark and light, plus a mocked
-      # stripe.com score result, walked down and back up.
-      - name: Dock clearance
-        run: node scripts/check-dock-clearance.js --base http://127.0.0.1:3422 --channel chrome
+      - name: Summarize
+        if: always()
+        run: |
+          {
+            echo "## Visual gates"
+            echo ""
+            if [ -f /tmp/edge.json ]; then
+              node -e "
+                const d = JSON.parse(require('fs').readFileSync('/tmp/edge.json','utf8'));
+                const rows = d.pages || d.results || [];
+                const bad = rows.filter(r => !r.ok).length;
+                console.log('| edge-contract | ' + (rows.length - bad) + '/' + rows.length + ' rows |');
+              " >> $GITHUB_STEP_SUMMARY || true
+            fi
+          } >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+
+  visual-gates-2:
+    name: 'Visual gates (part 2: focus visibility, a11y sweep)'
+    runs-on: ubuntu-latest
+    # About 5 minutes; 15 leaves room for the full-set sweep on a slow runner.
+    timeout-minutes: 15
+    needs: build-site
+    if: always() && needs.build-site.result == 'success'
+    defaults:
+      run:
+        working-directory: apps/site
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          # setup-node resolves this path from the repo root, NOT from
+          # working-directory (same as the build-site job).
+          cache-dependency-path: apps/site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site-build
+          path: apps/site
+
+      - name: Serve the build
+        run: |
+          echo "serving build $(cat .next/BUILD_ID)"
+          npx next start -p 3422 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null http://127.0.0.1:3422/; then
+              echo "server up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server did not come up; log:"
+          cat /tmp/next.log
+          exit 1
+
+      # Focus rings measured in pixels: every control's ring changes the page,
+      # holds 3:1 against what it sits beside, and is not cut off by a
+      # scroller; a refused (invalid) field still shows focus. The static
+      # focus-ring gate proves a rule resolves; only pixels show a rule that
+      # another rule overrides, a colour too faint, or a ring a parent clips.
+      - name: Focus visibility
+        run: node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel chrome
 
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,
@@ -634,18 +742,59 @@ jobs:
             node scripts/a11y-sweep.js --base http://127.0.0.1:3422 --routes "$ROUTES"
           fi
 
-      - name: Summarize
-        if: always()
+  visual-gates-3:
+    name: 'Visual gates (part 3: dock clearance)'
+    runs-on: ubuntu-latest
+    # About 8 minutes. 20 gives the gate more than twice its slowest green
+    # time, and the whole 20 is now its own: in the single job it inherited
+    # whatever the eight gates before it had left of 25.
+    timeout-minutes: 20
+    needs: build-site
+    if: always() && needs.build-site.result == 'success'
+    defaults:
+      run:
+        working-directory: apps/site
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          # setup-node resolves this path from the repo root, NOT from
+          # working-directory (same as the build-site job).
+          cache-dependency-path: apps/site/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site-build
+          path: apps/site
+
+      - name: Serve the build
         run: |
-          {
-            echo "## Visual gates"
-            echo ""
-            if [ -f /tmp/edge.json ]; then
-              node -e "
-                const d = JSON.parse(require('fs').readFileSync('/tmp/edge.json','utf8'));
-                const rows = d.pages || d.results || [];
-                const bad = rows.filter(r => !r.ok).length;
-                console.log('| edge-contract | ' + (rows.length - bad) + '/' + rows.length + ' rows |');
-              " >> $GITHUB_STEP_SUMMARY || true
+          echo "serving build $(cat .next/BUILD_ID)"
+          npx next start -p 3422 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 40); do
+            if curl -sf -o /dev/null http://127.0.0.1:3422/; then
+              echo "server up after ${i}s"
+              exit 0
             fi
-          } >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            sleep 1
+          done
+          echo "server did not come up; log:"
+          cat /tmp/next.log
+          exit 1
+
+      # A floating pill must never sit on what it floats over: the Studio pill
+      # came up on a scroll up, mid-page, and hid a phone's score values. Each
+      # route at 320, 390, 768 and 1440, dark and light, plus a mocked
+      # stripe.com score result, walked down and back up.
+      - name: Dock clearance
+        run: node scripts/check-dock-clearance.js --base http://127.0.0.1:3422 --channel chrome
