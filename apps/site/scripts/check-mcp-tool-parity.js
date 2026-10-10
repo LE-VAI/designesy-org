@@ -54,6 +54,20 @@
  *     golden, two implementations: they agree or one of the two jobs fails.
  * Outside a Vercel build the fixtures must be present.
  *
+ * ERROR TEXT
+ * A caught error's message names paths on the machine that ran the code, and
+ * the hosted tools returned theirs raw (the tokens and motion tools passed a
+ * failed fetch's message straight into the result). Every error the route
+ * returns now passes through sanitizeErrorText from app/lib/error-text.ts, the
+ * engines' function. So this gate also asserts:
+ *   - every `error` property in the route is a sanitizeErrorText(...) call,
+ *     read from the TypeScript AST, and the route imports it from the module;
+ *   - the module's function is the score route's copy, word for word (source-
+ *     drift holds that copy to packages/score's), so the three cannot drift;
+ *   - run on ERROR_TEXT_FIXTURES (a Windows path, a POSIX home path and a
+ *     file:// URL, all made up, plus a site URL that must stay), it returns
+ *     exactly the clean text each fixture names.
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -69,6 +83,33 @@ const REFERENCE_LIB = path.join(APP, 'app', 'lib', 'mcp-reference.ts');
 const DOC_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'published-docs');
 // The origin both servers fetch from; part of the hashed design_review output.
 const BASE_URL = 'https://www.designesy.org';
+const ERROR_TEXT_LIB = path.join(APP, 'app', 'lib', 'error-text.ts');
+const SCORE_ROUTE = path.join(APP, 'app', 'api', 'score', 'route.ts');
+
+// Errors in the shapes the MCP tools return them, with made-up paths, and the
+// text each must come out as.
+const ERROR_TEXT_FIXTURES = [
+  {
+    what: 'a Windows path in a caught fetch error (tokens tool)',
+    raw: String.raw`ENOENT: no such file or directory, open 'C:\Users\Jane Doe\AppData\Local\Temp\tokens.json'`,
+    clean: "ENOENT: no such file or directory, open 'a local path'",
+  },
+  {
+    what: 'a POSIX home path in a failed engine response (score tool)',
+    raw: `Score API returned 500: {"ok":false,"error":"Cannot find module '/home/jane/.cache/designesy/engine.js'"}`,
+    clean: `Score API returned 500: {"ok":false,"error":"Cannot find module 'a local path'"}`,
+  },
+  {
+    what: 'a file:// URL in a caught fetch error (motion tool)',
+    raw: 'Cannot read file:///C:/Users/Jane%20Doe/motion/hero.json: permission denied',
+    clean: 'Cannot read a local file: permission denied',
+  },
+  {
+    what: 'a site URL, which stays as it is',
+    raw: 'Fetch failed: 404 Not Found for https://example.com/Users/jane/tokens.json',
+    clean: 'Fetch failed: 404 Not Found for https://example.com/Users/jane/tokens.json',
+  },
+];
 
 const HINTS = ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'];
 const TITLE_MAX_WORDS = 5;
@@ -599,6 +640,116 @@ async function referenceFindings(pypiSrc) {
   return { findings, evaluated: true, compared };
 }
 
+/**
+ * Every error the route returns passes through sanitizeErrorText, and the
+ * function is the engines'. Returns { findings, evaluated, reason, wrapped, fixtures }.
+ */
+async function errorTextFindings(routeSrc) {
+  const findings = [];
+  let ts;
+  try {
+    ts = require('typescript');
+  } catch (e) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `typescript is not installed in this Vercel build (${e.code || e.message})` };
+    findings.push({
+      id: 'error-text-typescript-missing',
+      why: 'typescript could not be loaded, so the route\'s error properties cannot be read.',
+      fix: 'Install apps/site\'s dev dependencies (npm ci).',
+    });
+    return { findings, evaluated: false, reason: 'typescript missing' };
+  }
+
+  // The route: every `error` property is a sanitizeErrorText(...) call.
+  const sf = ts.createSourceFile('route.ts', routeSrc, ts.ScriptTarget.Latest, true);
+  const nameOf = (n) => (ts.isIdentifier(n) || ts.isStringLiteral(n) ? n.text : null);
+  let imported = false;
+  let wrapped = 0;
+  let seen = 0;
+  const visit = (n) => {
+    if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier) && n.moduleSpecifier.text === '../../lib/error-text') {
+      const b = n.importClause?.namedBindings;
+      if (b && ts.isNamedImports(b) && b.elements.some((e) => e.name.text === 'sanitizeErrorText' && !e.propertyName)) imported = true;
+    }
+    if ((ts.isPropertyAssignment(n) || ts.isShorthandPropertyAssignment(n)) && nameOf(n.name) === 'error') {
+      seen++;
+      const v = ts.isPropertyAssignment(n) ? n.initializer : null;
+      if (v && ts.isCallExpression(v) && ts.isIdentifier(v.expression) && v.expression.text === 'sanitizeErrorText') {
+        wrapped++;
+      } else {
+        const line = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+        findings.push({
+          id: `error-text-raw:route.ts:${line}`,
+          why: `app/api/mcp/route.ts line ${line} returns an error that does not pass through sanitizeErrorText: ${n.getText(sf).slice(0, 120)}. A caught error's message can carry a path on the machine that ran it.`,
+          fix: 'Write it as error: sanitizeErrorText(...).',
+        });
+      }
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  if (!imported) {
+    findings.push({
+      id: 'error-text-not-imported',
+      why: 'app/api/mcp/route.ts does not import sanitizeErrorText from ../../lib/error-text, so its errors are not cleaned by the engines\' function.',
+      fix: "Add import { sanitizeErrorText } from '../../lib/error-text'; to the route.",
+    });
+  }
+  if (seen === 0) {
+    findings.push({
+      id: 'error-text-none-found',
+      why: 'No `error` property was found in the MCP route, so this check read nothing; it fails rather than pass on an empty sample.',
+      fix: 'Check that the tools still return { success: false, error: ... } and update this gate if the shape changed.',
+    });
+  }
+
+  // The module: the engines' function, word for word.
+  const fnText = (src) => {
+    const file = ts.createSourceFile('x.ts', src.replace(/\r\n/g, '\n'), ts.ScriptTarget.Latest, true);
+    const fn = file.statements.find((s) => ts.isFunctionDeclaration(s) && s.name?.text === 'sanitizeErrorText');
+    return fn ? fn.getText(file).replace(/^export\s+/, '') : null;
+  };
+  const libText = fs.existsSync(ERROR_TEXT_LIB) ? fnText(fs.readFileSync(ERROR_TEXT_LIB, 'utf8')) : null;
+  const scoreText = fnText(fs.readFileSync(SCORE_ROUTE, 'utf8'));
+  if (libText === null || scoreText === null) {
+    findings.push({
+      id: 'error-text-function-missing',
+      why: `sanitizeErrorText was not found in ${libText === null ? 'app/lib/error-text.ts' : 'app/api/score/route.ts'}.`,
+      fix: 'Keep the function at the top level of both files.',
+    });
+  } else if (libText !== scoreText) {
+    findings.push({
+      id: 'error-text-copies-disagree',
+      why: 'sanitizeErrorText in app/lib/error-text.ts differs from the copy in app/api/score/route.ts, so the MCP tools clean errors differently from the engines.',
+      fix: 'Change the copies together: app/lib/error-text.ts, app/api/score/route.ts and packages/score/src/engine.ts.',
+    });
+  }
+
+  // The fixtures, through the module as the route loads it.
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(ERROR_TEXT_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `this Node cannot load error-text.ts (${e.code || e.message})` };
+    findings.push({
+      id: 'error-text-lib-unloadable',
+      why: `Could not load app/lib/error-text.ts with Node's type stripping (${e.code || e.message}), so the fixtures cannot run.`,
+      fix: 'Run on Node 22.18 or later, and keep error-text.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+  for (const f of ERROR_TEXT_FIXTURES) {
+    const got = lib.sanitizeErrorText(f.raw);
+    if (got !== f.clean) {
+      findings.push({
+        id: `error-text-fixture:${f.what}`,
+        why: `sanitizeErrorText on ${f.what} returned ${JSON.stringify(got)}, expected ${JSON.stringify(f.clean)}.`,
+        fix: 'Fix the function in all three copies, or the fixture if the expected text is wrong.',
+      });
+    }
+  }
+  return { findings, evaluated: true, wrapped, fixtures: ERROR_TEXT_FIXTURES.length };
+}
+
 async function main() {
   const asJson = process.argv.includes('--json');
 
@@ -685,6 +836,10 @@ async function main() {
   const reference = await referenceFindings(pypiSrc);
   findings.push(...reference.findings);
 
+  // Error text: no tool result carries a path on the machine that ran it.
+  const errorText = await errorTextFindings(routeSrc);
+  findings.push(...errorText.findings);
+
   if (asJson) {
     console.log(
       JSON.stringify(
@@ -695,6 +850,7 @@ async function main() {
           annotated,
           pypi,
           reference: { evaluated: reference.evaluated, compared: reference.compared ?? 0, reason: reference.reason },
+          errorText: { evaluated: errorText.evaluated, wrapped: errorText.wrapped ?? 0, fixtures: errorText.fixtures ?? 0, reason: errorText.reason },
           findings,
         },
         null,
@@ -713,6 +869,11 @@ async function main() {
       console.log(`mcp-tool-parity: OK — the hosted reference-data rules match the shared golden on ${reference.compared} output(s), with the PyPI server's directive patterns`);
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] reference-data agreement: ${reference.reason}`);
+    }
+    if (errorText.evaluated) {
+      console.log(`mcp-tool-parity: OK — all ${errorText.wrapped} error(s) the route returns pass through sanitizeErrorText, the engines' function, which cleans ${errorText.fixtures} fixture error(s) as expected`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] error text: ${errorText.reason}`);
     }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);

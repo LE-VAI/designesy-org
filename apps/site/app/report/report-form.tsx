@@ -179,6 +179,7 @@ export function ReportForm({
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="re-weighted when an engine returns nothing"
         restNote="Build a report and each share of the bar fills to its engine's score. The composite is their weighted sum."
         restCard={

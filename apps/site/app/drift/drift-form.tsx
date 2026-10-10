@@ -84,6 +84,7 @@ export function DriftForm({ initialUrl, registry }: { initialUrl: string; regist
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="pass 1 · warn 0.5 · fail 0 · skipped checks leave the count"
         restNote="Scan a URL and its grade lands on this scale. Point at any cell to read what it checks."
         groupNotes={{
