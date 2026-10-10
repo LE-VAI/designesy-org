@@ -9,9 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.13.3] — 2026-10-09
 
 Released together: **engine 1.2.0** (designesy.org, `/api/score`, the MCP
-endpoint), **@designesy/score 0.7.0** and **designesy-score 1.1.0** (npm), and
-**designesy-mcp 1.13.3** (PyPI, MCP registry). Headlines: two checks found on
-this site, v44 and v45, join every score; the S2 and S8 anti-slop rules stop
+endpoint), **@designesy/score 0.7.0** (npm), and **designesy-mcp 1.13.3** (PyPI,
+MCP registry). Headlines: two checks found on this site, v44 and v45, join every score; the S2 and S8 anti-slop rules stop
 firing on components and prose; the npm engine's accessibility floor matches
 the site's. Contract mode moves to engine 1.3.0.
 
@@ -120,10 +119,13 @@ the site's. Contract mode moves to engine 1.3.0.
 
 ### Changed
 
-- **`@designesy/score` 0.7.0 and `designesy-score` 1.1.0 (npm)** ship engine
-  1.2.0. The package exports one new type, `CheckEvidence`, and `CheckResult`
-  gains an optional `evidence` field (additive). The v24 hard-fail ceiling
+- **`@designesy/score` 0.7.0 (npm)** ships engine 1.2.0. The package exports
+  one new type, `CheckEvidence`, and `CheckResult` gains an optional `evidence`
+  field (additive). The v24 hard-fail ceiling
   reason now matches the site's wording.
+- **`designesy-score` (npm) stays retired.** It is not republished; its
+  deprecation notice now points to `@designesy/score` with 44 checks and
+  contract v0.4.3.
 - **designesy-mcp 1.13.3 (PyPI).** The offline fallback mirrors engine 1.2.0
   and contract v0.4.3. v44 and v45 are listed in `engine.not_run` with a reason,
   so 27 of the 44 checks run offline. The tool descriptions state 44 checks,
