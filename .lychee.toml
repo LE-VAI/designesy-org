@@ -37,6 +37,13 @@ exclude_path = [
   # test data; checking them failed link-check on main from the commit that
   # added the file.
   "test/fixtures/offline-engine-golden\\.json",
+  # The published-document fixtures (2026-10-09) are byte-for-byte captures of
+  # /llms.txt, /llms-full.txt, agent.json, the Design Review kit and the
+  # contract, kept so both MCP servers' reference-data output can be compared
+  # offline. The minified JSON holds prompts with escaped newlines, which the
+  # link extractor reads as URLs such as ".../open.json/nOptional". Every URL
+  # in them is test data captured from the site, not a link this repo publishes.
+  "test/fixtures/published-docs/",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────

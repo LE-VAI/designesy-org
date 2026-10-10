@@ -11,13 +11,15 @@ resources/read, notifications/initialized, ping) — mirrors the
 factory_sessions_mcp_server scaffolding.
 
 Gives any agent the ability to:
-  - Get the full 23-package catalog (versions, URLs, statuses)
-  - Get the design-system contract (tokens, motion, acoustic, takt, cadence)
-  - Get a filtered contract section (colors, motion, acoustic, etc.)
-  - Get the Design Review kit (8 dimensions, agent prompt, output format)
+  - Get the package catalog (versions, URLs, statuses)
+  - Get the design-system contract (tokens, motion, acoustic, takt, cadence),
+    whole or only the named top-level sections
+  - Get the Design Review rubric (8 dimensions, output format, checklist)
   - Get the SKILL.md agent-skill-format export
   - Get the agent discovery document (agent.json)
-  - Get the llms.txt / llms-full.txt agent briefs
+  - Get the llms.txt / llms-full.txt briefs
+  The document tools return labeled reference data, leaving out any part
+  written as steps or a prompt for an AI agent (see _reference_text).
 
 PROVENANCE:
     All data is fetched live from https://www.designesy.org/ machine exports:
@@ -43,6 +45,7 @@ SAFETY:
 from __future__ import annotations
 
 import json
+import re
 import ssl
 import sys
 import time
@@ -51,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.3"
+SERVER_VERSION = "1.13.4"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -198,6 +201,217 @@ def _fetch_llms_txt() -> str:
 
 def _fetch_llms_full_txt() -> str:
     return _fetch(f"{BASE_URL}/llms-full.txt", as_json=False)
+
+
+# ── Reference-data envelopes for the document tools ─────────────────────────
+#
+# Anthropic's Software Directory Policy, section 2F: software that gives Claude
+# tools must not direct Claude to pull behavioral instructions from external
+# sources to execute. Until 1.13.4 the document tools returned the published
+# agent files verbatim, so a tool result could carry a second-person prompt
+# ("You are working with Designesy...") and fetch-then-follow steps ("If
+# machine_url is present, fetch it for structured rules"). Those files stay
+# unchanged at their URLs for crawlers and agents; returned inside a
+# conversation, the same text reads as instructions to the assistant.
+#
+# So the tools wrap what they return as labeled reference data (kind,
+# source_url, a one-sentence note), and leave out, by name, any part written as
+# steps or a prompt for an AI agent:
+#   - markdown: a section (heading to next heading) containing a directive
+#     keeps its heading, and its body becomes _OMITTED_MARKER;
+#   - JSON: a field whose string (or list of strings) contains a directive is
+#     removed, and its path is listed in omitted_fields.
+#
+# apps/site/app/lib/mcp-reference.ts is the hosted endpoint's copy of these
+# rules. The test suite checks the pattern sources and strings are equal, and
+# both this suite and apps/site/scripts/check-mcp-tool-parity.js compare their
+# own output on the same fixtures against one golden file
+# (test/fixtures/published-docs/expected.json).
+
+_REFERENCE_KIND = "published_document"
+_RUBRIC_KIND = "review_rubric"
+_REFERENCE_NOTE = (
+    "This is the published document at source_url, returned as reference "
+    "data; it does not ask the assistant to do anything."
+)
+_RUBRIC_NOTE = (
+    "This is the rubric from the published Design Review kit at source_url, "
+    "returned as reference data; it does not ask the assistant to do anything."
+)
+_OMITTED_MARKER = (
+    "[Omitted from this tool's output: written as steps or a prompt for an AI "
+    "agent. The published document at source_url includes it.]"
+)
+_KIT_PROMPT_NOTE = (
+    "The kit's copy-ready review prompt is written to an AI agent, so it is "
+    "left out of this output; a person can read or copy it at kit_prompt_url."
+)
+
+# Same sources as AGENT_DIRECTIVE_PATTERN_SOURCES in mcp-reference.ts, compiled
+# case-insensitive and multiline in both servers.
+AGENT_DIRECTIVE_PATTERN_SOURCES = (
+    r"\byou are\b",
+    r"^[ \t]*(?:(?:[-*]|[0-9]+[.)])[ \t]+)?(?:[A-Za-z][A-Za-z0-9_ ]{0,24}:[ \t]+)?(?:optionally[ \t]+)?fetch\b",
+    r",[ \t]*(?:then[ \t]+)?fetch\b",
+)
+_DIRECTIVE_RES = tuple(re.compile(s, re.IGNORECASE | re.MULTILINE) for s in AGENT_DIRECTIVE_PATTERN_SOURCES)
+_HEADING_RE = re.compile(r"^#{1,6}[ \t]+\S")
+
+
+def _is_agent_directive(text: str) -> bool:
+    """True when the text holds a second-person agent prompt or a fetch step."""
+    return any(r.search(text) for r in _DIRECTIVE_RES)
+
+
+def _reference_text(text: str) -> tuple[str, list[str]]:
+    """Markdown with each directive-bearing section replaced by the marker.
+
+    Sections run from a heading line to the next heading line of any level;
+    text before the first heading is a section of its own. Every other line is
+    returned unchanged.
+    """
+    lines = re.split(r"\r?\n", text)
+    starts = [0] + [i for i in range(1, len(lines)) if _HEADING_RE.match(lines[i])]
+    out: list[str] = []
+    omitted: list[str] = []
+    for n, start in enumerate(starts):
+        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        section = lines[start:end]
+        if not _is_agent_directive("\n".join(section)):
+            out.extend(section)
+            continue
+        heading = section[0] if _HEADING_RE.match(section[0]) else None
+        keep_heading = heading is not None and not _is_agent_directive(heading)
+        omitted.append(re.sub(r"^#{1,6}[ \t]+", "", heading).strip() if keep_heading else "(untitled section)")
+        if keep_heading:
+            out.extend([heading, ""])
+        out.append(_OMITTED_MARKER)
+        if len(section) > 1 and section[-1] == "":
+            out.append("")
+    return "\n".join(out), omitted
+
+
+_OMIT = object()
+
+
+def _strip_directives(value: Any, path: str, omitted: list[str]) -> Any:
+    if isinstance(value, str):
+        return _OMIT if _is_agent_directive(value) else value
+    if isinstance(value, list):
+        if all(not isinstance(v, (dict, list)) for v in value):
+            return _OMIT if any(isinstance(v, str) and _is_agent_directive(v) for v in value) else value
+        kept = []
+        for i, v in enumerate(value):
+            r = _strip_directives(v, f"{path}[{i}]", omitted)
+            if r is _OMIT:
+                omitted.append(f"{path}[{i}]")
+            else:
+                kept.append(r)
+        return kept
+    if isinstance(value, dict):
+        kept_obj: dict[str, Any] = {}
+        for k, v in value.items():
+            p = f"{path}.{k}" if path else k
+            r = _strip_directives(v, p, omitted)
+            if r is _OMIT:
+                omitted.append(p)
+            else:
+                kept_obj[k] = r
+        return kept_obj
+    return value
+
+
+def _reference_json(doc: Any) -> tuple[Any, list[str]]:
+    """JSON with each directive-bearing field removed.
+
+    A string, or a list of plain values holding such a string, is removed
+    whole, so a step list never comes back with gaps; lists of objects are
+    walked element by element.
+    """
+    omitted: list[str] = []
+    r = _strip_directives(doc, "", omitted)
+    return (None if r is _OMIT else r), omitted
+
+
+def _published_text(source_url: str, media_type: str, text: str) -> dict[str, Any]:
+    """A published text file (markdown or plain text) as labeled reference data."""
+    content, omitted = _reference_text(text)
+    return {
+        "kind": _REFERENCE_KIND,
+        "source_url": source_url,
+        "media_type": media_type,
+        "note": _REFERENCE_NOTE,
+        "omitted_sections": omitted,
+        "content": content,
+    }
+
+
+def _published_json(source_url: str, doc: Any) -> dict[str, Any]:
+    """A published JSON document as labeled reference data."""
+    document, omitted = _reference_json(doc)
+    return {
+        "kind": _REFERENCE_KIND,
+        "source_url": source_url,
+        "media_type": "application/json",
+        "note": _REFERENCE_NOTE,
+        "omitted_fields": omitted,
+        "document": document,
+    }
+
+
+def _design_review_rubric(
+    kit: dict[str, Any],
+    source_url: str,
+    inputs: dict[str, str | None],
+    default_rules: str,
+) -> dict[str, Any]:
+    """The Design Review kit as a rubric, without the kit's agent_prompt.
+
+    The dimensions, output format and checklist are the tool's purpose and
+    stay. Each part of the prompt a review needs is already a field here (the
+    eight dimensions, observation/judgment/action in output_format, the
+    checklist). The prompt itself is addressed to an AI agent and tells it to
+    fetch the machine kit and contract "for structured rules"; a person can
+    still copy it from kit_prompt_url. When any of the four review inputs is
+    passed they are recorded in `inputs`, `rules` defaulting to default_rules.
+    """
+    kit_page = kit.get("public_url") if isinstance(kit.get("public_url"), str) else None
+
+    def listed(key: str) -> Any:  # a missing or null list reads as [] (TS `?? []`)
+        v = kit.get(key)
+        return [] if v is None else v
+
+    from_kit, omitted = _reference_json({
+        "kit": {
+            "id": kit.get("id"),
+            "title": kit.get("title"),
+            "version": kit.get("version"),
+            "status": kit.get("status"),
+            "purpose": kit.get("purpose"),
+            "quality_bar": kit.get("quality_bar"),
+            "permission": kit.get("permission"),
+        },
+        "when_to_use": listed("when_to_use"),
+        "required_inputs": listed("required_inputs"),
+        "dimensions": listed("dimensions"),
+        "output_format": listed("output_format"),
+        "verification_checklist": listed("verification"),
+        "anti_patterns": listed("anti_patterns"),
+        "rationalizations": listed("rationalizations"),
+    })
+    result: dict[str, Any] = {"kind": _RUBRIC_KIND, "source_url": source_url, "note": _RUBRIC_NOTE}
+    if any(inputs.get(k) for k in ("artifact", "purpose", "context", "rules")):
+        result["inputs"] = {
+            "artifact": inputs.get("artifact") or None,
+            "purpose": inputs.get("purpose") or None,
+            "context": inputs.get("context") or None,
+            "rules": inputs.get("rules") or default_rules,
+        }
+    result.update(from_kit)
+    result["kit_prompt_url"] = kit_page
+    result["kit_prompt_note"] = _KIT_PROMPT_NOTE
+    result["omitted_fields"] = omitted
+    return result
 
 
 # ── designesy_score: the offline engine ──────────────────────────────────────
@@ -1726,13 +1940,47 @@ def _catalog_impl() -> dict[str, Any]:
     }
 
 
-def _contract_impl(section: str | None = None) -> dict[str, Any]:
-    """Return the full design-system contract or a filtered section."""
+def _contract_error(message: str, unknown: list[str], valid: list[str]) -> dict[str, Any]:
+    return {
+        "success": False,
+        "error": f"{message} Valid sections: {', '.join(valid)}.",
+        "unknown_sections": unknown,
+        "valid_sections": valid,
+    }
+
+
+def _contract_impl(section: str | None = None, sections: Any = None) -> dict[str, Any]:
+    """Return the full design-system contract, or only the requested parts.
+
+    sections (a list of top-level keys) returns {id, version} plus exactly
+    those keys, in the order asked. section (one name) is the older form: it
+    returns {section, data} and accepts a few aliases (color, tensions,
+    poise). Unknown names return an error listing every valid key.
+    """
     data = _fetch_contract()
+    valid = list(data.keys())
+
+    if sections is not None:
+        if not isinstance(sections, list) or not all(isinstance(s, str) for s in sections):
+            return _contract_error("sections must be a list of strings.", [], valid)
+        names: list[str] = []
+        for name in ([section] if section else []) + sections:
+            if name not in names:
+                names.append(name)
+        if not names:
+            return _contract_error("sections is empty; name at least one section, or omit it for the full contract.", [], valid)
+        unknown = [n for n in names if n not in data]
+        if unknown:
+            return _contract_error(f"Unknown contract section(s): {', '.join(unknown)}.", unknown, valid)
+        result: dict[str, Any] = {"id": data.get("id"), "version": data.get("version")}
+        for n in names:
+            result[n] = data[n]
+        return result
+
     if not section:
         return data
 
-    # Map section names to contract keys
+    # Older single-section form, kept as it was, aliases included.
     section_map = {
         "colors": "colors",
         "color": "colors",
@@ -1751,11 +1999,7 @@ def _contract_impl(section: str | None = None) -> dict[str, Any]:
     key = section_map.get(section.lower(), section.lower())
     if key in data:
         return {"section": key, "data": data[key]}
-    else:
-        return {
-            "section": section,
-            "error": f"Section '{section}' not found in contract. Available: {list(data.keys())}",
-        }
+    return _contract_error(f"Unknown contract section: {section}.", [section], valid)
 
 
 def _design_review_impl(
@@ -1764,78 +2008,45 @@ def _design_review_impl(
     context: str | None = None,
     rules: str | None = None,
 ) -> dict[str, Any]:
-    """Return the Design Review kit — 8 dimensions, agent prompt, output format.
+    """Return the Design Review kit's rubric as reference data.
 
-    This is read-only: it returns the kit framework for the calling agent to
-    execute. It does not run a live review. The agent uses the returned
-    dimensions, prompt, and output format to conduct the review itself.
+    Read-only: it returns the eight dimensions, output format and checklist
+    and does not run a review. The kit's agent_prompt is left out (see
+    _design_review_rubric); kit_prompt_url points a person at it.
     """
-    data = _fetch_kit()
-    dimensions = data.get("dimensions", [])
-    agent_prompt = data.get("agent_prompt", "")
-    output_format = data.get("output_format", [])
-    verification = data.get("verification", [])
-
-    # If the caller provided inputs, fill in the agent prompt placeholders
-    filled_prompt = agent_prompt
-    if artifact or purpose or context or rules:
-        replacements = {
-            "{{ARTIFACT}}": artifact or "(not provided)",
-            "{{PURPOSE}}": purpose or "(not provided)",
-            "{{CONTEXT}}": context or "(not provided)",
-            "{{RULES}}": rules or "Designesy design system contract v0.3.0",
-        }
-        for placeholder, value in replacements.items():
-            filled_prompt = filled_prompt.replace(placeholder, value)
-
-    return {
-        "kit_id": data.get("id"),
-        "kit_version": data.get("version"),
-        "quality_bar": data.get("quality_bar"),
-        "permission": data.get("permission"),
-        "dimensions": dimensions,
-        "agent_prompt": filled_prompt if (artifact or purpose or context or rules) else agent_prompt,
-        "output_format": output_format,
-        "verification": verification,
-        "anti_patterns": data.get("anti_patterns", []),
-        "rationalizations": data.get("rationalizations", []),
-        "note": "Read-only: this returns the review framework. The calling agent executes the review using these dimensions, prompt, and output format.",
-    }
+    kit = _fetch_kit()
+    default_rules = "designesy design system (latest published contract)"
+    if not rules and (artifact or purpose or context):
+        try:
+            default_rules = f"designesy design system v{_fetch_contract().get('version')}"
+        except Exception:  # the rubric does not depend on the contract
+            pass
+    return _design_review_rubric(
+        kit,
+        f"{BASE_URL}/kits/design-review.json",
+        {"artifact": artifact, "purpose": purpose, "context": context, "rules": rules},
+        default_rules,
+    )
 
 
 def _skill_md_impl() -> dict[str, Any]:
-    """Return the SKILL.md agent-skill-format export."""
-    content = _fetch_skill_md()
-    return {
-        "content_type": "text/markdown",
-        "source": f"{BASE_URL}/contracts/skill",
-        "content": content,
-    }
+    """Return the SKILL.md export as reference data."""
+    return _published_text(f"{BASE_URL}/contracts/skill", "text/markdown", _fetch_skill_md())
 
 
 def _agent_json_impl() -> dict[str, Any]:
-    """Return the agent discovery document (agent.json)."""
-    return _fetch_agent_json()
+    """Return the agent discovery document (agent.json) as reference data."""
+    return _published_json(f"{BASE_URL}/.well-known/agent.json", _fetch_agent_json())
 
 
 def _llms_txt_impl() -> dict[str, Any]:
-    """Return the short llms.txt agent brief."""
-    content = _fetch_llms_txt()
-    return {
-        "content_type": "text/plain",
-        "source": f"{BASE_URL}/llms.txt",
-        "content": content,
-    }
+    """Return the short llms.txt brief as reference data."""
+    return _published_text(f"{BASE_URL}/llms.txt", "text/plain", _fetch_llms_txt())
 
 
 def _llms_full_txt_impl() -> dict[str, Any]:
-    """Return the full llms-full.txt agent brief."""
-    content = _fetch_llms_full_txt()
-    return {
-        "content_type": "text/plain",
-        "source": f"{BASE_URL}/llms-full.txt",
-        "content": content,
-    }
+    """Return the full llms-full.txt brief as reference data."""
+    return _published_text(f"{BASE_URL}/llms-full.txt", "text/plain", _fetch_llms_full_txt())
 
 
 # ── Tool definitions ────────────────────────────────────────────────────────
@@ -1865,26 +2076,45 @@ TOOLS = [
     {
         "name": "designesy_contract",
         "description": (
-            "Get the Designesy design-system contract — the canonical "
+            "Get the Designesy design-system contract: the canonical "
             "tokens, motion, acoustic, takt, cadence, typography, "
             "components, and verification rules that define what the "
             "Designesy org considers legitimate design. Use this when you "
-            "need the actual contract values (token names and values, motion "
-            "timings, accessibility rules) to author, check, or bind a "
-            "design. When NOT to use: for a pass/fail score of a live site, "
-            "use designesy_score; for an agent-skill-format export, use "
-            "designesy_skill_md. Read-only — cached ~24h server-side. "
-            "Returns the full contract JSON, or a single section when "
-            "'section' is provided. Pass section to get one slice (e.g. "
-            "'motion' for just the motion tokens) instead of the full "
-            "contract — saves tokens when you only need one dimension."
+            "need the actual contract values (token names and values, "
+            "motion timings, accessibility rules) to author, check, or bind "
+            "a design. When NOT to use: for a pass/fail score of a live "
+            "site, use designesy_score; for an agent-skill-format export, "
+            "use designesy_skill_md. Read-only; this server caches the "
+            "fetched contract for 5 minutes. With no arguments it returns "
+            "the full contract JSON, which is large (on the order of 100 "
+            "KB, tens of thousands of tokens). To return less, pass "
+            "sections, a list of top-level keys such as [\"motion\", "
+            "\"colors\"]: the result holds id, version, and only those keys. "
+            "section (one name) is the older form and returns { section, "
+            "data }. An unknown name returns an error that lists every "
+            "valid key."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
+                "sections": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Optional: top-level contract keys to return, for example "
+                        "[\"motion\", \"colors\", \"verification_checks\"]. The result "
+                        "holds id, version, and only these keys. Omit for the full "
+                        "contract. An unknown key returns an error that lists every "
+                        "valid key."
+                    ),
+                },
                 "section": {
                     "type": "string",
-                    "description": "Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction).",
+                    "description": (
+                        "Optional, older form: one section name; returns { section, "
+                        "data }. Accepts the aliases color, tensions and poise. "
+                        "Prefer sections."
+                    ),
                 },
             },
         },
@@ -1892,21 +2122,27 @@ TOOLS = [
     {
         "name": "designesy_design_review",
         "description": (
-            "Get the Designesy Design Review framework — an 8-dimension "
-            "rubric (Purpose, Clarity, Context, Inclusion, System "
-            "coherence, Durability, Delight, Responsibility) plus the "
-            "agent prompt, output format, and verification checklist for a "
-            "qualitative design critique. Use this when you want a "
-            "structured rubric to critique a design holistically, rather "
-            "than a numeric compliance score. When NOT to use: for a "
-            "deterministic numeric score, use designesy_score; this tool "
-            "gives you a rubric, not a number. Read-only — returns the "
-            "rubric + prompt. The calling agent performs the actual "
-            "critique (this tool does not evaluate the design for you). "
-            "Returns JSON: { rubric, dimensions[8], agent_prompt, "
-            "output_format, verification_checklist }. Pass "
-            "artifact/purpose/context/rules to get a pre-filled critique "
-            "prompt; omit all four to get the blank framework."
+            "Get the Designesy Design Review rubric for a qualitative "
+            "design critique: eight dimensions (Purpose, Clarity, Context, "
+            "Inclusion, System coherence, Durability, Delight, "
+            "Responsibility), the output format, and the verification "
+            "checklist, from the published Design Review kit. Use this when "
+            "you want a structured rubric to critique a design "
+            "holistically, rather than a numeric compliance score. When NOT "
+            "to use: for a deterministic numeric score, use "
+            "designesy_score; this tool gives you a rubric, not a number. "
+            "Read-only: it returns reference data and does not evaluate the "
+            "design. Returns JSON: { kind: \"review_rubric\", source_url, "
+            "note, inputs (only when passed), kit { id, title, version, "
+            "status, purpose, quality_bar, permission }, when_to_use[], "
+            "required_inputs[], dimensions[8] { num, title, desc }, "
+            "output_format[], verification_checklist[], anti_patterns[], "
+            "rationalizations[], kit_prompt_url, kit_prompt_note, "
+            "omitted_fields[] }. The kit's copy-ready agent prompt is not "
+            "included; kit_prompt_url is the page where a person can read "
+            "it. Pass artifact, purpose, context, or rules to have them "
+            "recorded in inputs (rules defaults to the current contract "
+            "version)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1914,23 +2150,26 @@ TOOLS = [
                 "artifact": {"type": "string", "description": "URL or description of the artifact to review."},
                 "purpose": {"type": "string", "description": "What the design is trying to make possible."},
                 "context": {"type": "string", "description": "Audience, device, environment, and constraints."},
-                "rules": {"type": "string", "description": "Governing rules or contract version (default: designesy design system v0.3.0)."},
+                "rules": {"type": "string", "description": "Governing rules or contract version (default: the current designesy design system contract version)."},
             },
         },
     },
     {
         "name": "designesy_skill_md",
         "description": (
-            "Get the Designesy SKILL.md — the agent-skill-format export of "
-            "the design-system contract, written as behavioral rules an AI "
-            "coding agent can drop into .agents/skills/ or a system prompt. "
-            "Use this when you want the contract in a form that steers how "
-            "an agent *builds* UI (tokens, anti-patterns, behavioral rules, "
-            "verification). When NOT to use: for the raw contract JSON, use "
-            "designesy_contract; for scoring, use designesy_score. "
-            "Read-only — no side effects. Returns markdown text (SKILL.md "
-            "format) — drop into .agents/skills/ or paste into a system "
-            "prompt. No parameters."
+            "Get the Designesy SKILL.md: the agent-skill-format export of "
+            "the design-system contract, for a user to save into "
+            ".agents/skills/ or a system prompt so a coding agent builds UI "
+            "to the contract (tokens, anti-patterns, rules, verification). "
+            "Use this when the user wants the contract in that form. When "
+            "NOT to use: for the raw contract JSON, use designesy_contract; "
+            "for scoring, use designesy_score. Read-only: no side effects. "
+            "Returns JSON: { kind: \"published_document\", source_url, "
+            "media_type: \"text/markdown\", note, omitted_sections[], content "
+            "}, where content is the SKILL.md markdown (tens of thousands "
+            "of characters) with any section written as steps or a prompt "
+            "for an AI agent replaced by a one-line marker and named in "
+            "omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
@@ -1938,46 +2177,62 @@ TOOLS = [
         "name": "designesy_agent_json",
         "description": (
             "Get the Designesy agent discovery document "
-            "(/.well-known/agent.json) — the org identity, authority, "
-            "ingest protocol, package index, machine-export list, "
-            "permission policy, and citation templates. Use this when you "
-            "are integrating with or enumerating Designesy as a machine "
-            "agent and need the canonical discovery/manifest endpoint "
-            "rather than one specific contract. When NOT to use: for the "
-            "package list, use designesy_catalog (lighter); for the "
-            "contract, use designesy_contract. Read-only — no side "
-            "effects. Returns the /.well-known/agent.json object: "
-            "{ identity, authority, ingest_protocol, package_index, "
-            "permission_policy, citation_templates }. No parameters."
+            "(/.well-known/agent.json) as reference data: the org identity, "
+            "authority, discovery endpoints, package index, machine "
+            "exports, permission policy, contact, and citation templates. "
+            "Use this when integrating with or enumerating Designesy and "
+            "need the canonical discovery manifest rather than one specific "
+            "contract. When NOT to use: for the package list, use "
+            "designesy_catalog (lighter); for the contract, use "
+            "designesy_contract. Read-only: no side effects. Returns JSON: "
+            "{ kind: \"published_document\", source_url, media_type: "
+            "\"application/json\", note, omitted_fields[], document }, where "
+            "document is the published object (schema, name, identity, "
+            "authority, topics, discovery, ingest, packages, "
+            "machine_exports, contact, permission, cite, and the rest) with "
+            "any field written as steps for an AI agent (such as "
+            "ingest.steps) removed and its path listed in omitted_fields. "
+            "No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "designesy_llms_txt",
         "description": (
-            "Get the Designesy /llms.txt — a short agent-facing brief with "
-            "the canonical reference, topic index, ingest steps, package "
-            "list, and contact. Use this first when you don't know what "
-            "Designesy is — it's the cheapest orientation path before "
-            "pulling heavier artifacts. When NOT to use: for the full "
-            "expanded brief, use designesy_llms_full_txt; for the contract "
-            "itself, use designesy_contract. Read-only — no side effects. "
-            "Returns text/plain (~500 tokens). No parameters."
+            "Get the Designesy /llms.txt brief as reference data: what "
+            "Designesy is, canonical links, topics, the published package "
+            "list, machine exports, standing rules, and contact. Use this "
+            "first when you don't know what Designesy is; at a few thousand "
+            "characters it is the cheapest orientation path before pulling "
+            "heavier artifacts. When NOT to use: for the longer brief, use "
+            "designesy_llms_full_txt; for the contract itself, use "
+            "designesy_contract. Read-only: no side effects. Returns JSON: "
+            "{ kind: \"published_document\", source_url, media_type: "
+            "\"text/plain\", note, omitted_sections[], content }, where "
+            "content is the published text with any section written as "
+            "steps for an AI agent (such as the ingest steps) replaced by a "
+            "one-line marker and named in omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "designesy_llms_full_txt",
         "description": (
-            "Get the Designesy /llms-full.txt — the complete agent-facing "
-            "brief: ingest protocol, discovery endpoints, every package, "
-            "standing rules, anti-patterns, and a paste-ready agent "
-            "prompt. Use this for comprehensive onboarding to the "
-            "Designesy ecosystem when the short /llms.txt is not enough. "
-            "When NOT to use: for a quick orientation, use "
-            "designesy_llms_txt first (~500 tokens vs ~3000). Read-only — "
-            "no side effects. Returns text/plain (~3000 tokens, includes "
-            "a paste-ready agent prompt). No parameters."
+            "Get the Designesy /llms-full.txt brief as reference data: "
+            "authority, discovery endpoints, topics, every published "
+            "package with its links, standing rules, and anti-patterns. Use "
+            "this for a fuller picture of the Designesy ecosystem when the "
+            "short brief from designesy_llms_txt is not enough. When NOT to "
+            "use: for a quick orientation, use designesy_llms_txt (a few "
+            "thousand characters; this one runs over ten thousand); for the "
+            "contract itself, use designesy_contract. Read-only: no side "
+            "effects. Returns JSON: { kind: \"published_document\", "
+            "source_url, media_type: \"text/plain\", note, "
+            "omitted_sections[], content }, where content is the published "
+            "text with any section written as steps or a prompt for an AI "
+            "agent (such as the ingest protocol and the paste-ready agent "
+            "prompt) replaced by a one-line marker and named in "
+            "omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
@@ -2062,7 +2317,7 @@ TOOLS = [
             "Community Group (DTCG) 2025.10 Final Community Group Report "
             "(the spec's first stable version, published Oct 28 2025 — "
             "Candidate Recommendation, considered stable). Returns 10 "
-            "conformance checks (t01-t10) with PASS/FAIL/WARN. Use this "
+            "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
             "structurally correct — $type/$value/$description present, "
             "structured colors (colorSpace + components rather than bare "
@@ -2073,8 +2328,11 @@ TOOLS = [
             "scoring a whole live site (not just its token file), use "
             "designesy_score. Executable — fetches the URL or parses the "
             "raw JSON you provide, runs 10 checks server-side. No "
-            "browser needed. Returns JSON: { checks[{id (t01–t10), name, "
-            "status (PASS/FAIL/WARN), detail}], valid, score }. Pass url "
+            "browser needed. Returns JSON: { contract_id, contract_version, "
+            "contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, "
+            "fail_count, warn_count, checks[{id (t01-t10), name, status "
+            "(PASS, FAIL, WARN or SKIP), detail}], provenance, "
+            "validator_note }. Pass url "
             "to fetch a remote token file, or dtcg_file to validate an "
             "inline JSON string. Provide exactly one."
         ),
@@ -2136,7 +2394,7 @@ TOOLS = [
             "Validate a Lottie animation file against the Lottie spec "
             "v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion "
             "Standards, returning 10 checks (m01-m10) with "
-            "PASS/FAIL/WARN. The DTCG 2025.10 spec leaves motion tokens "
+            "PASS, FAIL, WARN or SKIP. The DTCG 2025.10 spec leaves motion tokens "
             "as a second-class citizen — there is no standard for motion "
             "token structure, reduced-motion markers, or animation "
             "accessibility. Designesy's motion validator fills this gap: "
@@ -2148,8 +2406,12 @@ TOOLS = [
             "scoring (not a single Lottie file), use designesy_score. "
             "Executable — fetches the URL or parses the raw Lottie JSON, "
             "runs 10 checks server-side. No browser needed. Returns "
-            "JSON: { checks[{id (m01–m10), name, status (PASS/FAIL/WARN), "
-            "detail}], valid, score }. Pass url to fetch a remote Lottie "
+            "JSON: { contract_id, contract_version, contract_status, url, "
+            "lottie_version, "
+            "layer_count, score (0-100), grade (A-F), pass_count, "
+            "fail_count, warn_count, checks[{id (m01-m10), name, status "
+            "(PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, "
+            "provenance, validator_note }. Pass url to fetch a remote Lottie "
             "file, or lottie_file to validate an inline JSON string. "
             "Provide exactly one."
         ),
@@ -2492,7 +2754,7 @@ TOOL_MAP = {t["name"]: t for t in TOOLS}
 # ── Resource definitions ────────────────────────────────────────────────────
 
 RESOURCES = [
-    {"uri": "designesy://open", "name": "Package catalog", "description": "23-package catalog from /open.json", "mimeType": "application/json"},
+    {"uri": "designesy://open", "name": "Package catalog", "description": "Package catalog from /open.json", "mimeType": "application/json"},
     {"uri": "designesy://contract", "name": "Design system contract", "description": "Full contract from /contracts/design-system.json", "mimeType": "application/json"},
     {"uri": "designesy://kit/design-review", "name": "Design Review kit", "description": "Review kit from /kits/design-review.json", "mimeType": "application/json"},
     {"uri": "designesy://skill", "name": "SKILL.md", "description": "Agent-skill-format export from /contracts/skill", "mimeType": "text/markdown"},
@@ -3056,7 +3318,7 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     if name == "designesy_catalog":
         return _catalog_impl()
     elif name == "designesy_contract":
-        return _contract_impl(section=args.get("section"))
+        return _contract_impl(section=args.get("section"), sections=args.get("sections"))
     elif name == "designesy_design_review":
         return _design_review_impl(
             artifact=args.get("artifact"),

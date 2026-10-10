@@ -1,0 +1,45 @@
+{
+  "_about": "Golden output of the reference-data rules for the fixtures in this folder. Checked by packages/designesy-mcp/test/test_reference_data.py and apps/site/scripts/check-mcp-tool-parity.js. Regenerate: python test/test_reference_data.py --write-golden",
+  "fixture_rules": "fixture rules",
+  "text": {
+    "llms.txt": {
+      "omitted_sections": [
+        "How agents should ingest"
+      ],
+      "output_sha256": "4375762e9994ceb2ffd4f9356d455c7c3eb4da5ccd7ac24f0f72582889a08fcb"
+    },
+    "llms-full.txt": {
+      "omitted_sections": [
+        "Ingest protocol (designesy.ingest.v1)",
+        "How to use",
+        "Agent prompt (paste-ready)"
+      ],
+      "output_sha256": "bb3cefc112dbb83bd26e130e110be54d1f7ec8d6fa2b3ae636544c3e633856ef"
+    }
+  },
+  "agent_json": {
+    "omitted_fields": [
+      "ingest.steps"
+    ],
+    "output_sha256": "365a0164b2bfa5085b32a92e07e6a740715dfd1dea40ad060026df91996e04b1"
+  },
+  "design_review": [
+    {
+      "inputs": {},
+      "output_sha256": "4ca941ef47ccd54237499600dcc9b1f4cf885e12b6faad041515c6d3b4a9e771"
+    },
+    {
+      "inputs": {
+        "artifact": "https://example.com/",
+        "purpose": "Book a table in two taps."
+      },
+      "output_sha256": "d9614dba4ef8c68273cb1e3499730278f1cc704bb2368224182cbbc2a8ce3a91"
+    },
+    {
+      "inputs": {
+        "rules": "house style v2"
+      },
+      "output_sha256": "05e47ea265eac79c54f55427b515b1eaf59e294053e1ff1f3b0e6de75f8ae4f3"
+    }
+  ]
+}

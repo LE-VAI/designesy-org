@@ -56,13 +56,13 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a zero-d
 - `designesy_tokens_score` — Validate a DTCG design-token file. 10 conformance checks against W3C DTCG 2025.10.
 - `designesy_a11y_score` — Get the WCAG 2.2 AA accessibility framework and Playwright/axe-core script template.
 - `designesy_motion_score` — Validate a Lottie animation file. 10 checks against Lottie spec v1.0.1 and §16 motion standards.
-- `designesy_contract` — Get the design-system contract (tokens, motion, takt, cadence, typography, verification).
+- `designesy_contract` — Get the design-system contract (tokens, motion, takt, cadence, typography, verification), whole or only the top-level `sections` you name.
 - `designesy_catalog` — List the published Designesy packages with versions and URLs (the count comes back in `package_count`).
 - `designesy_design_review` — Get the 8-dimension qualitative design review rubric.
 - `designesy_skill_md` — Get the contract as an agent-skill-format SKILL.md for Cursor, Claude Code, or Replit.
 - `designesy_agent_json` — Get the /.well-known/agent.json discovery document.
 - `designesy_llms_txt` — Get the short /llms.txt agent brief.
-- `designesy_llms_full_txt` — Get the full /llms-full.txt agent brief with paste-ready prompt.
+- `designesy_llms_full_txt` — Get the full /llms-full.txt brief as reference data (its ingest steps and paste-ready agent prompt stay in the published file).
 
 ### Tool reference table
 
@@ -72,13 +72,13 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a zero-d
 | `designesy_tokens_score` | Validate a DTCG design-token file (10 conformance checks, W3C DTCG 2025.10) |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility framework + Playwright/axe-core script template |
 | `designesy_motion_score` | Validate a Lottie animation file (10 checks, Lottie spec v1.0.1 + §16 motion standards) |
-| `designesy_contract` | Get the design-system contract (tokens, motion, takt, cadence, typography, verification) |
+| `designesy_contract` | Get the design-system contract (tokens, motion, takt, cadence, typography, verification), whole or only the top-level `sections` you name |
 | `designesy_catalog` | List the published Designesy packages with versions and URLs |
 | `designesy_design_review` | Get the 8-dimension qualitative design review rubric |
 | `designesy_skill_md` | Get the contract as an agent-skill-format SKILL.md (for Cursor/Claude Code/Replit) |
 | `designesy_agent_json` | Get the /.well-known/agent.json discovery document |
 | `designesy_llms_txt` | Get the short /llms.txt agent brief |
-| `designesy_llms_full_txt` | Get the full /llms-full.txt agent brief with paste-ready prompt |
+| `designesy_llms_full_txt` | Get the full /llms-full.txt brief as reference data (its ingest steps and paste-ready agent prompt stay in the published file) |
 
 ## Live
 
