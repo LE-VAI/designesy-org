@@ -37,6 +37,13 @@ export const REVIEW_OFFER_PATH = '/pricing/review';
 /** The one call-to-action label, shared by every Review button. */
 export const REVIEW_CTA_LABEL = `Get the full Review · ${REVIEW_PRICE}`;
 
+/**
+ * Refunds, as approved for the offer spec: a full refund until the Review
+ * starts; after delivery the 30-day re-score is the guarantee.
+ */
+export const REVIEW_REFUND_POLICY =
+  'Full refund any time before work starts. After delivery, the 30-day re-score is guaranteed.';
+
 export const REVIEW_CONTACT_EMAIL = 'hello@designesy.org';
 
 /** A question before buying goes to a person, with the subject filled in. */

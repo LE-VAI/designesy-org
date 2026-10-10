@@ -14,6 +14,7 @@ import {
   REVIEW_DISCLOSURE,
   REVIEW_PRICE,
   REVIEW_QUESTION_URL,
+  REVIEW_REFUND_POLICY,
   REVIEW_SAMPLE_URL,
 } from '../../lib/review-offer';
 
@@ -226,6 +227,10 @@ export default function ReviewOfferPage() {
               <div>
                 <dt>Re-score</dt>
                 <dd>1, within 30 days</dd>
+              </div>
+              <div>
+                <dt>Refunds</dt>
+                <dd>{REVIEW_REFUND_POLICY}</dd>
               </div>
               <div>
                 <dt>Contact</dt>
