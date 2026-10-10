@@ -673,6 +673,12 @@ export function VerifyForm({
   // The instrument: four engines' registries as cells, lit by this run.
   const phase: Phase =
     status === 'loading' ? 'running' : status === 'ok' ? 'done' : status === 'error' ? 'error' : 'idle';
+  // Why a run stopped: drawn in the notice card, and read by the instrument's
+  // live line, which already announces the stop.
+  const failure =
+    reportResult?.error ||
+    guardrailsResult?.error ||
+    'All engines failed. Check that the URL is correct and publicly accessible.';
   const outcomes = toOutcomes([
     ...(reportResult?.score?.checks ?? []),
     ...(reportResult?.drift?.checks ?? []),
@@ -766,6 +772,7 @@ export function VerifyForm({
             <p>{reportResult?.error || guardrailsResult?.error || 'Check the URL and run it again.'}</p>
           </>
         }
+        errorText={failure}
         scoring="four engines in parallel · guardrails reports apart"
         restNote="Run a URL and all four engines light at once. Point at any cell to read the check behind it."
         restCard={
@@ -782,7 +789,9 @@ export function VerifyForm({
         onOpen={openCheck}
       />
 
-      {/* Error state */}
+      {/* Error state. Not a live region: the instrument's live line, mounted
+          since the page loaded, announces the stop with this reason, so a
+          role here would read the failure twice (WCAG 4.1.3). */}
       {status === 'error' && (
         <div className="score-error-card">
           <span className="score-error-icon">
@@ -793,19 +802,16 @@ export function VerifyForm({
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
+              strokeLinecap="round"
             >
               <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" />
+              <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </span>
           <div>
             <p className="score-error-title">Verification Notice</p>
-            <p className="score-error-msg">
-              {reportResult?.error ||
-                guardrailsResult?.error ||
-                'All engines failed. Check that the URL is correct and publicly accessible.'}
-            </p>
+            <p className="score-error-msg">{failure}</p>
           </div>
         </div>
       )}

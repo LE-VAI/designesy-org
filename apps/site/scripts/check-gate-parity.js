@@ -93,6 +93,7 @@ function main() {
     'check-glass-blur.js',
     'check-motion-pause.js',
     'qa-keyboard.js',
+    'check-status-messages.js',
     'a11y-sweep.js',
     'touched-routes.js',
     'check-readme-facts.js',
