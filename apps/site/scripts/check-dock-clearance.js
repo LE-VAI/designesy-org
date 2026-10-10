@@ -242,16 +242,17 @@ const RESULT_STATES = [
       const field = page.getByRole('textbox', { name: 'Site URL to score' });
       await field.fill('stripe.com');
       await field.press('Enter');
-      await page.locator('.score-cat-legend-row').first().waitFor({ timeout: 20000 });
+      await page.locator('.rs-row').first().waitFor({ timeout: 20000 });
       await page.locator('.score-check-group').first().waitFor({ timeout: 20000 });
     },
-    anchors: '.score-cat-legend-row',
+    // The category list's rows (the B′ result): each brought to the corner.
+    anchors: '.rs-row',
   },
   {
     route: '/score/report?url=https%3A%2F%2Fstripe.com',
     label: '/score/report [stripe.com result]',
     ready: async (page) => {
-      await page.locator('.report-hero').waitFor({ timeout: 20000 });
+      await page.locator('.report-result .rs-row').first().waitFor({ timeout: 20000 });
     },
     anchors: null,
   },
