@@ -38,13 +38,13 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.3',
+  version: '0.4.4',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-10-04',
+  updated: '2026-10-11',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -275,7 +275,12 @@ export const designSystemContract = {
     paper_on_signal: {
       token: '--paper-on-signal',
       value: '#010102',
-      role: 'Text on signal fill: ink, 6.65:1 on Azure. White on Azure is 3.14:1 and is not used',
+      role: 'Text on an Azure fill, and only that: ink, 6.65:1 on Azure. White on Azure is 3.14:1 and is not used',
+    },
+    paper_white: {
+      token: '--paper-white',
+      value: '#FFFFFF',
+      role: 'The constant white, the same in both themes: the dark increase-contrast ink, text on red fills (5.56:1 on #ca2323), shimmer and shine highlights',
     },
     signal_deep: {
       token: '--signal-deep',
@@ -375,7 +380,7 @@ export const designSystemContract = {
     grade_d_ink: {
       token: '--grade-d-ink',
       value: 'var(--grade-d)',
-      role: 'Grade D used as text: --grade-d on dark (7.75:1 on paper, 6.70:1 on lifted); light #C7216B (5.26:1 on paper, 4.62:1 on lifted). Light --grade-d itself (#C9216C, 4.55:1 on lifted) is for arcs, borders and tints',
+      role: 'Grade D used as text: --grade-d on dark (7.75:1 on paper, 6.70:1 on lifted); light #BE1F67 (5.67:1 on paper, 4.98:1 on lifted, 4.67:1 on its own 12% emblem tint). Light --grade-d itself (#C9216C, 4.55:1 on lifted) is for arcs, borders and tints',
     },
     grade_f_ink: {
       token: '--grade-f-ink',
@@ -668,29 +673,29 @@ export const designSystemContract = {
       lv_sheen: { token: '--lv-sheen', value: 'rgba(255, 255, 255, 0.3) · light: rgba(255, 255, 255, 0.95)', role: 'The single specular sheen line on an instrument' },
       lv_well: { token: '--lv-well', value: 'rgba(255, 255, 255, 0.035) · light: rgba(0, 25, 51, 0.035)', role: 'Recessed well fill (inputs, tracks)' },
       lv_well_line: { token: '--lv-well-line', value: 'rgba(255, 255, 255, 0.1) · light: rgba(0, 25, 51, 0.1)', role: 'Recessed well outline' },
-      lv_pass_a: { token: '--lv-pass-a', value: '#5b7cff · light: #3a63f5', role: 'Pass fill, light stop' },
-      lv_pass_b: { token: '--lv-pass-b', value: '#2c50ec · light: #0133cb', role: 'Pass fill, deep stop' },
+      lv_pass_a: { token: '--lv-pass-a', value: '#36A7FF', role: 'Pass fill, light stop (both themes)' },
+      lv_pass_b: { token: '--lv-pass-b', value: '#0A94FF', role: 'Pass fill, deep stop (both themes); ink on the gradient 6.65 to 8.08:1' },
       lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)', role: 'Pass glow' },
       lv_warn_a: { token: '--lv-warn-a', value: '#f7c948 · light: #e0a917', role: 'Warn fill, light stop' },
       lv_warn_b: { token: '--lv-warn-b', value: '#d79a06 · light: #b07d04', role: 'Warn fill, deep stop' },
       lv_fail_a: { token: '--lv-fail-a', value: '#ff7f7f · light: #ef5b5b', role: 'Fail fill, light stop' },
       lv_fail_b: { token: '--lv-fail-b', value: '#e0454a · light: #c62828', role: 'Fail fill, deep stop' },
       lv_hatch: { token: '--lv-hatch', value: 'rgba(255, 255, 255, 0.2) · light: rgba(0, 25, 51, 0.22)', role: 'Hatching for skipped or person-checked cells: the drawing convention for a different material' },
-      lv_head: { token: '--lv-head', value: '#8aa0ff · light: #0133cb', role: 'Inspection highlight: the element outline and tag fill in the inspection demo' },
+      lv_head: { token: '--lv-head', value: '#36A7FF · light: #0A94FF', role: 'Inspection highlight: the element outline and tag fill in the inspection demo' },
       lv_head_ink: {
         token: '--lv-head-ink',
-        value: '#010102 · light: var(--paper-on-signal)',
-        role: 'Text on a --lv-head fill (8.5:1 dark; white on #0133cb is 8.99:1 light)',
+        value: '#010102',
+        role: 'Text on a --lv-head fill: 8.08:1 on the dark head, 6.65:1 on the light head',
       },
       lv_ink_accent: { token: '--lv-ink-accent', value: 'var(--signal-access)', role: 'Accent text on an instrument' },
       lv_shine: {
         token: '--lv-shine',
-        value: 'color-mix(in srgb, var(--paper-on-signal) 34%, transparent)',
+        value: 'color-mix(in srgb, var(--paper-white) 34%, transparent)',
         role: 'The one specular highlight on lit cells',
       },
       lv_shine_soft: {
         token: '--lv-shine-soft',
-        value: 'color-mix(in srgb, var(--paper-on-signal) 26%, transparent)',
+        value: 'color-mix(in srgb, var(--paper-white) 26%, transparent)',
         role: 'Softer specular highlight on lit cells',
       },
     },
@@ -1421,6 +1426,15 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/changelog',
+      ],
+    },
+    {
+      version: '0.4.4',
+      date: '2026-10-11',
+      summary:
+        'Identity v1 colour system. Azure #0A94FF replaces #0133cb as --signal; light text, links, focus and selected states take Deep Azure #016ABB (--signal-access, --signal-deep); text on an Azure fill is ink #010102 (--paper-on-signal, 6.65:1); --paper-white #FFFFFF is the constant white for the increase-contrast ink, text on red fills and highlights. Activated Orange #F56B00 replaces #fecc34 (light text #B04D00). New tokens: --signal-deep, --signal-teal, --action, --on-action, --action-pressed, --paper-white. Grade D moves to rose (#FB7185 dark, #C9216C light; light text #BE1F67); the light grade text tokens are measured values, each at least 4.6:1 on paper, surface, raised and lifted. The instrument pass gradient and inspection head move to the Azure family. Shimmer stops, glows and light navy shadows move to Azure\'s 251 degree hue. No check, weight or verdict changed.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
       ],
     },
   ],
