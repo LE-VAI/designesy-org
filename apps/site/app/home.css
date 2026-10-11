@@ -149,7 +149,7 @@
 }
 
 .section-heading-badge-numeral {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -246,7 +246,7 @@
 }
 
 .field-card-title {
-  font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);
+  font-size: var(--text-h3);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -254,14 +254,14 @@
 }
 
 .field-card-lede {
-  font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
+  font-size: var(--text-body);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
 }
 
 .field-card-desc {
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.55;
   max-width: 28rem;
@@ -269,7 +269,7 @@
 
 .field-card-arrow {
   margin-top: var(--space-fine-65);
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--muted-dim);
   transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
@@ -698,7 +698,7 @@
 /* Statement: the page's largest claim after the hero. */
 .home .home-statement-lede {
   max-width: 44rem;
-  font-size: clamp(1.1rem, 1rem + 0.45vw, 1.35rem);
+  font-size: var(--text-lead);
   line-height: 1.55;
   color: var(--muted);
   margin-bottom: var(--space-48);
@@ -710,7 +710,7 @@
    carried its citation inline and ran eight lines against the others' four. */
 .home .home-pillar-note {
   margin: var(--grid-gutter) 0 0;
-  font: 400 0.8rem/1.45 var(--sans);
+  font: 400 var(--text-body)/1.5 var(--sans);
   color: var(--muted);
 }
 
@@ -916,7 +916,7 @@
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-size: var(--text-h2);
   line-height: 1.08;
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
   color: var(--ink);
