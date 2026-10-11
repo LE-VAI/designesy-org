@@ -12794,6 +12794,16 @@ html[data-motion="paused"] .pricing-card::after {
   padding: var(--space-32) 0;
 }
 
+/* Its title is a subhead in the body's size: the report page's own title above
+   it is a 1.25rem sans heading, and a display-face h2 drew larger than it. */
+.report-start h2 {
+  font-family: var(--sans);
+  font-size: inherit;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: normal;
+}
+
 .report-start p {
   color: var(--muted);
 }
