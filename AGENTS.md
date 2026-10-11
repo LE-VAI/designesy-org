@@ -62,6 +62,20 @@ sources → principles → contracts → tools → systems → better designed w
   provenance, addresses, the engine's check registry), is listed with reasons
   at the top of the gate.
 
+## Global Stylesheet
+
+- `apps/site/app/globals.css` does not block first paint in production. The
+  root layout inlines the rules the pages use and loads the whole sheet after
+  paint; `apps/site/scripts/critical-css.mjs` explains how and why.
+- Which rules are inlined is listed in `apps/site/app/critical-css.manifest.json`
+  (rule keys, never bodies, so a changed body ships as written).
+- The build holds the line: `scripts/check-critical-css.mjs` fails when a page
+  uses a global rule the list lacks. After changing markup or selectors, build,
+  then refresh from `apps/site`: `npm run update-critical-css`.
+- Deleting rules needs no refresh: a listed rule that no longer exists is
+  skipped, and a full refresh (`--update --base <url> --hydrated`, with
+  `next start` running) drops it from the list.
+
 ## Workflow Expectation
 
 1. Understand the system layer (docs/designesy)

@@ -95,6 +95,13 @@ jobs:
       #
       # The `npm run build` script still chains them for Vercel, which is where
       # the real deploy gate lives. This mirrors it, step for step.
+      # globals.css is built outside Next (scripts/critical-css.mjs says why):
+      # the whole sheet under a content hash in public/_css/, and the subset the
+      # root layout inlines for first paint. `next build` bundles the subset, so
+      # this runs first.
+      - name: Critical CSS
+        run: node scripts/build-critical-css.mjs
+
       - name: Next build
         run: npx next build
 
@@ -282,6 +289,15 @@ jobs:
         if: always()
         run: node scripts/check-badge-grade-tokens.js
 
+      # Every globals.css rule a prerendered page uses is in the inlined subset
+      # (app/critical-css.manifest.json), no Next CSS chunk carries globals.css
+      # again (it would block first paint), and every page has the inline subset
+      # and the loader. After changing markup or globals.css selectors: build,
+      # then `npm run update-critical-css` in apps/site.
+      - name: Critical CSS coverage
+        if: always()
+        run: node scripts/check-critical-css.mjs
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
@@ -296,7 +312,8 @@ jobs:
       #
       # .next/cache (the compiler cache) is not needed to serve and is left
       # out. The per-page markdown that generate-markdown.js writes into
-      # public/ is served by the site, so it travels with the build.
+      # public/ is served by the site, so it travels with the build, and so does
+      # public/_css/ (the whole globals.css, written by build-critical-css.mjs).
       - name: Upload the build for the visual gates
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -306,6 +323,7 @@ jobs:
             !apps/site/.next/cache
             apps/site/public/**/*.md
             apps/site/public/.md-manifest.json
+            apps/site/public/_css
           include-hidden-files: true
           if-no-files-found: error
           # Long enough to re-run a failed part on a PR without rebuilding.

@@ -246,6 +246,13 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: securityHeaders,
       },
+      // The whole globals.css, built by scripts/build-critical-css.mjs under a
+      // content hash: the name changes whenever the bytes do, so it can be
+      // cached for a year like Next's own /_next/static files.
+      {
+        source: '/_css/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         source: '/',
         headers: agentLinkHeaders.home,
