@@ -118,6 +118,12 @@ jobs:
         if: always()
         run: node scripts/check-score-verdict.mjs
 
+      # The browser audit cannot move a grade it did not change: the score
+      # after an audit is the engine's own arithmetic (/api/score/rescore).
+      - name: Audit rescore
+        if: always()
+        run: node scripts/check-audit-rescore.mjs
+
       - name: Generate markdown
         if: always()
         run: node scripts/generate-markdown.js

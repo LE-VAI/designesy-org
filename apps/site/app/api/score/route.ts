@@ -127,7 +127,7 @@ function applyScopeFilter(
 
 // Auto-detect scope: designesy.org gets contract scope (self-scoring),
 // everything else gets universal scope (fair to external sites).
-function autoDetectScope(targetUrl: string): ScoreScope {
+export function autoDetectScope(targetUrl: string): ScoreScope {
   try {
     const host = new URL(targetUrl).hostname.toLowerCase();
     if (host === 'designesy.org' || host === 'www.designesy.org') {
@@ -3955,7 +3955,12 @@ function sanitizeCheckDetails(checks: CheckResult[]): CheckResult[] {
 // the copies disagreed on the floor: the site capped at 70 when the
 // accessibility category was under 60%, the npm engine on any accessibility
 // FAIL. The site's rule is the one documented on /methodology.
-function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPoints: number): {
+//
+// Exported for /api/score/rescore, which scores a run again after the browser
+// audit settles its three live-page checks: the same arithmetic, on the
+// engine's own verdicts, so no other copy of the math exists (the score form
+// used to carry one, without the slop deduction or the originality lift).
+export function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPoints: number): {
   score: number;
   categoryWeights: Record<string, number>;
   categoryCounts: Record<string, number>;
@@ -4117,7 +4122,7 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
   };
 }
 
-function computeGrade(score: number): string {
+export function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
   if (score >= 70) return 'C';
