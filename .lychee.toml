@@ -54,6 +54,13 @@ exclude_path = [
   # not links this repo publishes.
   "test/fixtures/motion/",
   "test/fixtures/trim/",
+  # The tokens fixtures (2026-10-10, designesy-mcp 1.13.7) are the same kind of
+  # test data: hand-written token files whose $schema URLs are made up on
+  # purpose (t01 must WARN on a wrong one), the tokens contract and the
+  # /export/dtcg file captured from the site, and the file designesy_guardrails
+  # emits for a made-up site. The first run failed on the made-up
+  # https://wrong-schema.com/schema.json, which is the input under test.
+  "test/fixtures/tokens/",
 ]
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────

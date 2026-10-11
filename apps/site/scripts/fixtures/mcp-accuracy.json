@@ -1,0 +1,63 @@
+{
+  "about": "Inputs for scripts/check-mcp-accuracy.js. A small made-up site (fixture.test) whose :root declares the token shapes the guardrails DTCG emitter has to convert (hex, rgba, aliases, a group with a root token, px dimensions, durations, easings, a font stack, a weight, a z-index, a shadow, and values DTCG cannot type), plus the var() references the fabricated-token definition has to sort: three referenced bare and declared nowhere (the true positives), one guarded by a fallback, one declared on a component, one declared in a style attribute, and one runtime token set by script.",
+  "site": {
+    "url": "https://fixture.test/",
+    "html": "<!doctype html><html lang=\"en\"><head><title>Fixture</title><link rel=\"stylesheet\" href=\"https://fixture.test/app.css\"><style>.inline-block { color: var(--ink); }</style></head><body><main><div class=\"card\" style=\"--ds-seg:7;color:var(--ink)\">card</div><p class=\"hint\">hint</p><p class=\"x\">x</p></main></body></html>",
+    "stylesheets": {
+      "https://fixture.test/app.css": ":root{--ink:#f5f5f7;--muted:rgba(245, 245, 247, 0.62);--muted-dim:var(--muted);--surface:#0b0b0f;--surface-raised:#16161c;--signal:#2563eb;--line:#ffffff1f;--paper:#fff;--space-1:4px;--space-2:8px;--space-3:1rem;--radius:8px;--radius-pill:999px;--duration:0.6s;--duration-fast:150ms;--ease:cubic-bezier(0.22, 0.61, 0.36, 1);--ease-linear:linear;--sans:\"Inter\", system-ui, sans-serif;--font-weight-bold:600;--z-modal:100;--shadow-1:0 1px 3px rgba(0, 0, 0, 0.4);--elev-1:0 1px 1px rgb(0 0 0/0.3),0 4px 8px -2px rgb(0 0 0/0.22);--gutter:clamp(16px, 4vw, 48px);--glow:color-mix(in srgb, var(--signal) 40%, transparent);--border-accent:var(--signal)}\n.card{--card-pad:12px;padding:var(--card-pad);color:var(--ink);background:var(--surface-raised);border:1px solid var(--line)}\n.hint{color:var(--hint-color, #999999)}\n.x{margin:var(--made-up-space);color:var(--made-up-ink);border-color:var(--made-up-line)}\n.y{transform:translateY(var(--scroll-y))}\n.z{width:calc(var(--ds-seg) * 10px)}\n"
+    },
+    "agentJson": {
+      "version": "0.1.7",
+      "name": "Fixture"
+    },
+    "expectFabricated": [
+      "--made-up-space",
+      "--made-up-ink",
+      "--made-up-line"
+    ]
+  },
+  "compare": {
+    "urlB": "https://reference.test/",
+    "htmlB": "<!doctype html><html><head><style>:root{--ink:#111111;--paper:#ffffff;--space-1:4px}</style></head><body>reference</body></html>",
+    "scores": {
+      "https://fixture.test/": {
+        "ok": true,
+        "score": 100,
+        "grade": "A"
+      },
+      "https://reference.test/": {
+        "ok": true,
+        "score": 84.6,
+        "grade": "B"
+      }
+    },
+    "expectDelta": 15.4
+  },
+  "tokensSkip": {
+    "about": "Nine checks PASS and t07 SKIPs (no custom types): the score must be 100, not 90.",
+    "file": {
+      "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+      "color": {
+        "ink": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.96,
+              0.96,
+              0.97
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "space": {
+        "md": {
+          "$type": "dimension",
+          "$value": "16px"
+        }
+      }
+    },
+    "expectScore": 100
+  }
+}
