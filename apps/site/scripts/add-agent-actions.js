@@ -55,6 +55,7 @@ const ROUTES = {
   'learn/the-pause-button-that-emptied-our-pages': ['/learn/the-pause-button-that-emptied-our-pages.md', 'the pause case study'],
   'review': ['/review.md', 'the review index'],
   'pricing': ['/pricing.md', 'the pricing page'],
+  'pricing/review': ['/pricing/review.md', 'the Designesy Review offer'],
   'graph': ['/graph.md', 'the graph page'],
   'labs': ['/labs.md', 'the labs index'],
   'maturity': ['/maturity.md', 'the maturity assessment'],

@@ -36,6 +36,7 @@ import {
 } from './verdict';
 import { ResultReadout, ResultScale, CategoryList } from './result-parts';
 import { ScoreEmptyRun } from './score-empty-run';
+import { ReviewPrompt } from '../lib/review-prompt';
 import { BrandIcon } from '../lib/brand-icons';
 
 /**
@@ -1337,6 +1338,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <span className="score-originality-notice"> · Originality: {result.originality.summary}</span>
             )}
           </p>
+
+          {/* The one quiet line after a free result: a person can go further. */}
+          <ReviewPrompt />
         </div>
       )}
 
