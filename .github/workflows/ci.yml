@@ -282,6 +282,14 @@ jobs:
         if: always()
         run: node scripts/check-badge-grade-tokens.js
 
+      # Analytics never receive a query string or fragment: /score?url=… sent
+      # the address a visitor scored to Web Analytics and Speed Insights. Runs
+      # the shipped beforeSend hook on a table of addresses and checks that
+      # every <Analytics> and <SpeedInsights> passes it.
+      - name: Analytics redaction
+        if: always()
+        run: node scripts/check-analytics-redaction.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
