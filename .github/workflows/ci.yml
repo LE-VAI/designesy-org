@@ -106,6 +106,16 @@ jobs:
         if: always()
         run: node scripts/check-catalog-version-binding.js
 
+      # The design-system contract's values, roles and rules hash to the value
+      # scripts/design-system-contract.lock.json records for its version. A
+      # change under an unchanged version fails: main publishes on merge, so the
+      # same number would name different content. Reads no git history, so the
+      # shallow checkout is enough on pull_request and push alike. After a
+      # bump: `npm run update-contract-lock` in apps/site.
+      - name: Contract lock (values move with the version)
+        if: always()
+        run: node scripts/check-contract-lock.js
+
       - name: Pagefind index
         if: always()
         run: node scripts/postbuild-pagefind.js
