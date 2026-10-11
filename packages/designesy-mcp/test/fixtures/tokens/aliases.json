@@ -1,0 +1,18 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "space": {
+    "$root": { "$type": "dimension", "$value": { "value": 4, "unit": "px" } },
+    "16": { "$type": "dimension", "$value": "16px" },
+    "md": { "$type": "dimension", "$value": "{space.16}" },
+    "lg": { "$type": "dimension", "$value": { "value": 1.5, "unit": "rem" } },
+    "gutter": { "$type": "dimension", "$value": "{space.md}" },
+    "base": { "$type": "dimension", "$value": "{space.$root}" }
+  },
+  "color": {
+    "surface": {
+      "$root": { "$type": "color", "$value": { "colorSpace": "srgb", "components": [0.02, 0.02, 0.03], "alpha": 1 } },
+      "raised": { "$type": "color", "$value": { "colorSpace": "srgb", "components": [0.05, 0.05, 0.07], "alpha": 1 } }
+    },
+    "focus": { "$type": "color", "$value": "{color.surface.$root}" }
+  }
+}

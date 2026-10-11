@@ -1,6 +1,6 @@
 import { CONTRACT_VERSION } from './design-system-contract';
 /**
- * Designesy Tokens Contract v0.1.1 — machine-readable form.
+ * Designesy Tokens Contract v0.1.2 — machine-readable form.
  * Sibling contract governing W3C DTCG 2025.10 token-format conformance.
  * Source: internal contract markdown (not for public distribution).
  *
@@ -10,13 +10,13 @@ import { CONTRACT_VERSION } from './design-system-contract';
 
 export const tokensContract = {
   id: 'designesy.tokens',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'provisional',
   name: 'Designesy Tokens Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/tokens',
   machine_url: 'https://www.designesy.org/contracts/tokens.json',
-  updated: '2026-10-10',
+  updated: '2026-10-11',
   purpose:
     'Token-format conformance is the foundation of portable design intelligence. If tokens are not structurally valid, every downstream tool inherits the rot.',
   source_authority: {
@@ -71,7 +71,7 @@ export const tokensContract = {
       { id: 't09', item: 'Token naming hierarchy: tokens organized into nested groups', pass: 'Groups with hierarchy', warn: 'Flat token set', fail: 'No tokens' },
       { id: 't10', item: 'No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)', pass: 'Clean', warn: 'Deprecated patterns found', fail: 'n/a' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = (PASS / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90). A≥90, B≥80, C≥70, D≥60, F<60.',
+    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = ((PASS + 0.5 × WARN) / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90; until v0.1.2 a WARN counted 0, where the motion contract, the score engine and the npm validator count it half). A {group.token} alias is a reference: t08 checks the dimension it resolves to, and a $root token is checked like any other. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
       primary: '@terrazzo/parser 2.4.0: tz check [file]',
       secondary: 'ajv 8.20.0 + ajv-formats 3.0.1 against DTCG JSON Schema URL',
@@ -82,7 +82,7 @@ export const tokensContract = {
       checks: [
         'Semantic tokens have $description: recommended, required on semantic tokens; custom validator needed',
         'Color tokens use OKLCH or Display-P3 (mandatory for new semantic tokens): color-space check not wired',
-        'Aliases resolve to valid typed tokens: resolver validation not wired',
+        'Aliases resolve to valid typed tokens: t08 resolves aliases on dimension tokens (v0.1.2); resolving every alias and checking its target type is not wired',
         'Full DTCG 2025.10 JSON Schema validation via @terrazzo/parser (tz check): external, not wired',
         'No type drift between themes: multi-theme comparison not wired',
       ],
@@ -94,7 +94,7 @@ export const tokensContract = {
     '§6 Economy Is Intelligence': 'Fewer, stronger tokens',
     '§6 Systems Enable Freedom': 'Portable, validated tokens',
     '§17 Verification': 'Machine-checkable verification layer for tokens',
-    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract ' + CONTRACT_VERSION + ' and scores 100 (Grade A) on designesy_tokens_score: 9 PASS, and t07 SKIP because it declares no custom types (springs and sound cues sit in $extensions.designesy); verified 2026-10-10.',
+    'live_export': 'The DTCG export (/export/dtcg) is generated from the design-system contract ' + CONTRACT_VERSION + ' and scores 100 (Grade A) on designesy_tokens_score: 9 PASS, 0 WARN, 0 FAIL, and t07 SKIP because it declares no custom types (springs and sound cues sit in $extensions.designesy). Every $value is a DTCG value: no var(), dimensions as { value, unit }, font stacks as arrays of family names, and {group.token} aliases where the contract names another token; verified 2026-10-11.',
   },
   open_questions: [
     'DTCG custom types proposal: should spring and sound be proposed to W3C DTCG?',

@@ -1,17 +1,173 @@
 {
+  "alias-unresolved.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.2",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 8,
+    "score": 94,
+    "grade": "A",
+    "pass_count": 8,
+    "fail_count": 0,
+    "warn_count": 1,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "2 token groups found: space, color"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "8/8 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "8/8 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "1 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 2 unique type(s) are DTCG 2025.10 standard: color, dimension"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "WARN",
+        "detail": "6/7 dimension token(s) have missing/unrecognized units: space.md='{space.missing} (unresolved alias)', space.lg='{color.ink} -> a color token', space.xl='{space.loop} (unresolved alias)', space.loop='{space.xl} (unresolved alias)', space.odd='{value: 2, unit: furlong}'"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "2 token group(s) with nested hierarchy: space, color"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "aliases.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.2",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 9,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "2 token groups found: space, color"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "9/9 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "9/9 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "2 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 2 unique type(s) are DTCG 2025.10 standard: color, dimension"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "PASS",
+        "detail": "All 6 dimension token(s) use valid units (px, rem, em, %, etc.)"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "2 token group(s) with nested hierarchy: space, color"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
   "bare-hex-ref.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 1,
-    "score": 75,
-    "grade": "C",
+    "score": 81,
+    "grade": "B",
     "pass_count": 6,
     "fail_count": 1,
     "warn_count": 1,
     "skip_count": 2,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -79,7 +235,7 @@
   },
   "empty.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 0,
@@ -89,7 +245,7 @@
     "fail_count": 4,
     "warn_count": 0,
     "skip_count": 4,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -157,17 +313,17 @@
   },
   "guardrails-emitted.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
-    "total_tokens": 18,
+    "total_tokens": 23,
     "score": 100,
     "grade": "A",
     "pass_count": 9,
     "fail_count": 0,
     "warn_count": 0,
     "skip_count": 1,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -185,19 +341,19 @@
         "id": "t03",
         "name": "Every token has $type (direct or inherited)",
         "status": "PASS",
-        "detail": "18/18 tokens have $type"
+        "detail": "23/23 tokens have $type"
       },
       {
         "id": "t04",
         "name": "Every token has $value",
         "status": "PASS",
-        "detail": "18/18 tokens have $value"
+        "detail": "23/23 tokens have $value"
       },
       {
         "id": "t05",
         "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
         "status": "PASS",
-        "detail": "5 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+        "detail": "7 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
       },
       {
         "id": "t06",
@@ -215,7 +371,7 @@
         "id": "t08",
         "name": "Dimension units are valid CSS length units (px, rem preferred)",
         "status": "PASS",
-        "detail": "All 4 dimension token(s) use valid units (px, rem, em, %, etc.)"
+        "detail": "All 5 dimension token(s) use valid units (px, rem, em, %, etc.)"
       },
       {
         "id": "t09",
@@ -235,17 +391,17 @@
   },
   "invalid.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 4,
-    "score": 33,
-    "grade": "F",
+    "score": 61,
+    "grade": "D",
     "pass_count": 3,
     "fail_count": 1,
     "warn_count": 5,
     "skip_count": 1,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -313,17 +469,17 @@
   },
   "js-key-order.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 12,
-    "score": 30,
-    "grade": "F",
+    "score": 65,
+    "grade": "D",
     "pass_count": 3,
     "fail_count": 0,
     "warn_count": 7,
     "skip_count": 0,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -391,7 +547,7 @@
   },
   "nine-pass-one-skip.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 2,
@@ -401,7 +557,7 @@
     "fail_count": 0,
     "warn_count": 0,
     "skip_count": 1,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -469,7 +625,7 @@
   },
   "site-export.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 45,
@@ -479,7 +635,7 @@
     "fail_count": 0,
     "warn_count": 0,
     "skip_count": 1,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",
@@ -547,7 +703,7 @@
   },
   "valid.json": {
     "contract_id": "designesy.tokens",
-    "contract_version": "0.1.1",
+    "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 6,
@@ -557,7 +713,7 @@
     "fail_count": 0,
     "warn_count": 0,
     "skip_count": 1,
-    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
       {
         "id": "t01",

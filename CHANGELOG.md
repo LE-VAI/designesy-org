@@ -6,6 +6,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.8] — 2026-10-11
+
+**designesy-mcp 1.13.8** (PyPI, MCP registry, hosted `/api/mcp`): `designesy_tokens_score` counts a warning the way every other Designesy score does and reads DTCG aliases as references, and the site's own `/export/dtcg` holds DTCG values only.
+
+### Changed
+
+- **`designesy_tokens_score` counts a WARN as half a point.** It counted 0,
+  while `designesy_motion_score`, the score engine and the npm
+  `@designesy/tokens` validator count 0.5, so one file graded differently
+  depending on which tool read it. The rule is now PASS=1, WARN=0.5, FAIL=0,
+  SKIP not scored, stated in the result's `scoring`, the tool description and
+  the tokens contract, which moves to 0.1.2 because its published rule
+  changed. A file with 8 PASS, 1 WARN and 1 SKIP scores 94 (it scored 89).
+
+### Fixed
+
+- **Aliases are references, not values.** The validator read a DTCG alias
+  such as `{space.16}` on a dimension token as a literal with no unit, so a
+  file that aliased its dimensions got a WARN in t08 and another in t10. t08
+  now checks the value an alias resolves to (through chains, `$root`
+  included); an alias that resolves to nothing, loops, or names a token of
+  another type is reported as such in t08, and an alias is never a deprecated
+  pattern in t10. On www.designesy.org the token file `designesy_guardrails`
+  emits goes from 78 (t08 and t10 WARN on `grid.gutter = {space.16}`) to 100.
+- **`$root` tokens are checked.** The validator skipped every `$`-key, so a
+  group's `$root` token (the 2025.10 name for a group's own value) was never
+  counted. It is now a token at `group.$root`; the guardrails file for the
+  test site counts 23 tokens where it counted 18.
+- **The 2025.10 dimension form is read.** A dimension written
+  `{ "value": 16, "unit": "px" }` was not looked at by t08; it is now, and
+  its unit is checked.
+- **`/export/dtcg` holds DTCG values only.** Seven `$value`s were CSS `var()`
+  (the three interaction colors, such as `focus_ring = var(--signal-light)`,
+  and the four font stacks), the five radii were strings such as `"6px"`, and
+  each shadow held a CSS color string and lengths such as `"0"`. A var() that
+  names a token the file exports is now the alias to it
+  (`{color.signal.light}`, `{fontFamily.serif}`); font stacks are arrays of
+  family names, with `var(--font-*)` replaced by the face next/font loads
+  under it (checked against the contract's role text); dimensions and shadow
+  lengths are `{ value, unit }`; shadow colors are structured. A contract
+  value with no DTCG form now fails the build instead of shipping. The export
+  still scores 100 (9 PASS, 0 WARN, 0 FAIL, t07 SKIP). Contract data the
+  format cannot type stays verbatim in `$extensions.designesy`, as before.
+- **Design-system contract header.** The comment named v0.4.2 and `updated`
+  read 2026-10-04, before the 0.4.3 entry of 2026-10-09; both now match 0.4.3.
+  Neither is hashed by the contract lock, and no contract value changed.
+
+### Gates
+
+- `scripts/check-mcp-accuracy.js` adds `tokens-warn-half`, `tokens-alias`
+  and `export-dtcg`; on the previous main they report 20 findings.
+- The shared tokens golden gains `aliases.json` and `alias-unresolved.json`,
+  and `site-export.json` and `contract.json` are regenerated from the site.
+
 ## [1.13.7] — 2026-10-10
 
 **designesy-mcp 1.13.7** (PyPI, MCP registry, hosted `/api/mcp`): six tools now return what their descriptions promise, and two tools no longer disagree about one page. Found by a tool-by-tool re-test of 1.13.6.

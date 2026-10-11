@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.2: machine + human source.
+ * Designesy design system contract v0.4.3: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -44,7 +44,7 @@ export const designSystemContract = {
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-10-04',
+  updated: '2026-10-09',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
