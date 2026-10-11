@@ -476,7 +476,7 @@ async function sendAlertEmail(
     </tr>
     <tr>
       <td style="padding:1.5rem 0;">
-        <a href="https://www.designesy.org/monitor?url=${encodeURIComponent(targetUrl)}" style="display:inline-block;padding:0.75rem 1.5rem;background:#3358e8;color:#ffffff;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
+        <a href="https://www.designesy.org/monitor?url=${encodeURIComponent(targetUrl)}" style="display:inline-block;padding:0.75rem 1.5rem;background:#0A94FF;color:#010102;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
       </td>
     </tr>
     <tr>

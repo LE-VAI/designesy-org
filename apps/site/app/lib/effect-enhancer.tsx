@@ -148,7 +148,7 @@ export function EffectEnhancer() {
       ring.setAttribute('cy', String(cy));
       ring.setAttribute('r', String(r0));
       ring.setAttribute('fill', 'none');
-      ring.setAttribute('stroke', '#3358e8');
+      ring.setAttribute('stroke', '#36A7FF');
       ring.setAttribute('stroke-width', '2');
       ring.setAttribute('opacity', '0.7');
       ring.setAttribute('pointer-events', 'none');
@@ -220,7 +220,7 @@ export function EffectEnhancer() {
       // the centroid, so the element feels grabbed, not shoved.
       shapes.forEach(shape => {
         if (shape === closest) {
-          shape.style.setProperty('fill', '#3358e8', 'important');
+          shape.style.setProperty('fill', '#36A7FF', 'important');
           if (!reducedMotion) {
             const sr = shape.getBoundingClientRect();
             const sx = sr.x + sr.width / 2;
