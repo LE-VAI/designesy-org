@@ -31,6 +31,9 @@ export const DTCG_SCHEMA_URL = 'https://www.designtokens.org/schemas/2025.10/for
 
 export type DtcgColor = { colorSpace: 'srgb'; components: number[]; alpha: number };
 
+/** A DTCG 2025.10 dimension: a number and a unit, px or rem. */
+export type DtcgDimension = { value: number; unit: 'px' | 'rem' };
+
 const NUM = String.raw`(-?(?:\d+\.?\d*|\.\d+))`;
 const HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const CHANNEL = /^(\d+\.?\d*|\.\d+)(%?)$/;
@@ -122,7 +125,7 @@ function shadowLength(s: string): string | null {
 }
 
 /** Split on commas that are not inside parentheses or quotes. */
-function splitTopLevel(value: string): string[] {
+export function splitTopLevel(value: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let quote: string | null = null;
@@ -147,8 +150,26 @@ function splitTopLevel(value: string): string[] {
 // first word of the color ("rgba(0,").
 const SHADOW = new RegExp(`^(${NUM.slice(1, -1)}(?:px|rem)?)\\s+(${NUM.slice(1, -1)}(?:px|rem)?)\\s+(${NUM.slice(1, -1)}(?:px|rem)?)(?:\\s+(${NUM.slice(1, -1)}(?:px|rem)?))?\\s+(.+)$`);
 
-/** One shadow ("0 1px 3px rgba(0,0,0,.4)") as a DTCG shadow object, or null. */
-function parseShadow(s: string): Record<string, unknown> | null {
+/**
+ * A CSS length as a DTCG 2025.10 dimension object ("6px" -> { value: 6, unit:
+ * 'px' }), or null. A unitless 0 is { value: 0, unit: 'px' }; any other
+ * unitless number, and any unit but px or rem, is null: 2025.10 defines those
+ * two units only.
+ */
+export function parseDimension(raw: string): DtcgDimension | null {
+  const m = raw.trim().match(LENGTH);
+  if (!m) return null;
+  const value = parseFloat(m[1]);
+  if (m[2]) return { value, unit: m[2] as 'px' | 'rem' };
+  return value === 0 ? { value: 0, unit: 'px' } : null;
+}
+
+/**
+ * One shadow ("0 1px 3px rgba(0,0,0,.4)") as a DTCG shadow object, or null.
+ * Lengths stay strings ("1px"), the form designesy_guardrails emits;
+ * /export/dtcg turns them into dimension objects with parseDimension.
+ */
+export function parseShadow(s: string): Record<string, unknown> | null {
   const m = s.trim().match(SHADOW);
   if (!m) return null;
   const [offsetX, offsetY, blur] = [m[1], m[2], m[3]].map(shadowLength);

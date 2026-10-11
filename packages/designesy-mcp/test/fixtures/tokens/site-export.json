@@ -294,27 +294,42 @@
   },
   "radius": {
     "default": {
-      "$value": "6px",
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      },
       "$type": "dimension",
       "$description": "Default corner radius"
     },
     "sm": {
-      "$value": "4px",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
       "$type": "dimension",
       "$description": "Compact controls / nav chips"
     },
     "md": {
-      "$value": "8px",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
       "$type": "dimension",
       "$description": "Intermediate corner radius (a documented 8px tier outside the 4-step public scale)"
     },
     "lg": {
-      "$value": "12px",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
       "$type": "dimension",
       "$description": "Cards / panels / large surfaces"
     },
     "xl": {
-      "$value": "16px",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
       "$type": "dimension",
       "$description": "Hero / modal / flagship surfaces"
     }
@@ -322,31 +337,91 @@
   "shadow": {
     "sm": {
       "$value": {
-        "offsetX": "0",
-        "offsetY": "1px",
-        "blur": "3px",
-        "spread": "0",
-        "color": "rgba(0, 0, 0, 0.4)"
+        "color": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0.4
+        },
+        "offsetX": {
+          "value": 0,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 1,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 3,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
       },
       "$type": "shadow"
     },
     "md": {
       "$value": {
-        "offsetX": "0",
-        "offsetY": "8px",
-        "blur": "30px",
-        "spread": "0",
-        "color": "rgba(0, 0, 0, 0.35)"
+        "color": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0.35
+        },
+        "offsetX": {
+          "value": 0,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 8,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 30,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
       },
       "$type": "shadow"
     },
     "lg": {
       "$value": {
-        "offsetX": "0",
-        "offsetY": "24px",
-        "blur": "80px",
-        "spread": "0",
-        "color": "rgba(0, 0, 0, 0.5)"
+        "color": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0.5
+        },
+        "offsetX": {
+          "value": 0,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 24,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 80,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
       },
       "$type": "shadow"
     }
@@ -439,39 +514,62 @@
   },
   "interaction": {
     "hover_fill": {
-      "$value": "var(--surface-hover)",
+      "$value": "{color.surface_effects.hover}",
       "$type": "color",
       "$description": "Interactive hover wash"
     },
     "press_fill": {
-      "$value": "var(--surface-soft)",
+      "$value": "{color.surface_effects.soft}",
       "$type": "color",
       "$description": "Press / active fill"
     },
     "focus_ring": {
-      "$value": "var(--signal-access)",
+      "$value": "{color.signal.access}",
       "$type": "color",
       "$description": "Keyboard focus indicator color"
     }
   },
   "fontFamily": {
     "sans": {
-      "$value": "var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+      "$value": [
+        "Schibsted Grotesk",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Arial",
+        "Helvetica",
+        "sans-serif"
+      ],
       "$type": "fontFamily",
       "$description": "Primary UI and body stack: Schibsted Grotesk, self-hosted at build time via next/font (--font-sans). A newsroom-commissioned grotesque drawn for sustained reading, chosen to share Fraunces's editorial register. Replaced Geist 2026-09-16 (anti-slop rule S1 flags geist as an overused family). System fonts cover fallback."
     },
     "serif": {
-      "$value": "var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
+      "$value": [
+        "Fraunces",
+        "Iowan Old Style",
+        "Palatino Linotype",
+        "Times New Roman",
+        "serif"
+      ],
       "$type": "fontFamily",
       "$description": "Editorial serif for headlines, the cue for trust and authority. Fraunces, self-hosted at build time via next/font (--font-display), with opsz + SOFT + WONK axes."
     },
     "display": {
-      "$value": "var(--serif)",
+      "$value": "{fontFamily.serif}",
       "$type": "fontFamily",
       "$description": "Display/headline face: Fraunces (aliased to --serif). Hybrid system: serif headlines + sans UI."
     },
     "mono": {
-      "$value": "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+      "$value": [
+        "Geist Mono",
+        "ui-monospace",
+        "SF Mono",
+        "Cascadia Code",
+        "Source Code Pro",
+        "Menlo",
+        "Consolas",
+        "monospace"
+      ],
       "$type": "fontFamily",
       "$description": "Mono stack for check IDs, score readouts, token names: Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face."
     }
