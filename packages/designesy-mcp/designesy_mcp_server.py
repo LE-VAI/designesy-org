@@ -54,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.6"
+SERVER_VERSION = "1.13.7"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -2353,24 +2353,26 @@ TOOLS = [
         "description": (
             "Validate a design token file against the W3C Design Tokens "
             "Community Group (DTCG) 2025.10 Final Community Group Report "
-            "(the spec's first stable version, published Oct 28 2025 — "
-            "Candidate Recommendation, considered stable). Returns 10 "
+            "(the spec's first stable version, published Oct 28 2025 as a "
+            "Candidate Recommendation and considered stable). Returns 10 "
             "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct — $type/$value/$description present, "
+            "structurally correct: $type/$value/$description present, "
             "structured colors (colorSpace + components rather than bare "
             "hex), a valid $schema pointer to designtokens.org, and "
             "correct dimension units. With 84% of teams now using design "
             "tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, "
             "every adopting team needs a validator. When NOT to use: for "
             "scoring a whole live site (not just its token file), use "
-            "designesy_score. Executable — fetches the URL or parses the "
+            "designesy_score. Executable: fetches the URL or parses the "
             "raw JSON you provide, runs 10 checks server-side. No "
-            "browser needed. Returns JSON: { contract_id, contract_version, "
-            "contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, "
-            "fail_count, warn_count, checks[{id (t01-t10), name, status "
-            "(PASS, FAIL, WARN or SKIP), detail}], provenance, "
-            "validator_note }. Pass url "
+            "browser needed. Score: PASS=1, WARN=0, FAIL=0, SKIP is not "
+            "scored; points / scored checks x 100. Returns JSON: { "
+            "contract_id, contract_version, contract_status, url, "
+            "total_tokens, score (0-100), grade (A-F), pass_count, "
+            "fail_count, warn_count, skip_count, scoring, checks[{id "
+            "(t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], "
+            "provenance, validator_note }. Pass url "
             "to fetch a remote token file, or dtcg_file to validate an "
             "inline JSON string. Provide exactly one."
         ),
@@ -2397,15 +2399,15 @@ TOOLS = [
             "targeting your URL. Use this to audit a site for "
             "accessibility violations. When NOT to use: for a full "
             "design-contract score (not just a11y), use designesy_score. "
-            "Does NOT run the scan — axe-core needs a real browser DOM. "
+            "Does NOT run the scan: axe-core needs a real browser DOM. "
             "Returns the 11 checks + a Playwright script you execute "
             "locally (npm i -D @axe-core/playwright). The score comes "
             "from your local run, not from this tool. Returns JSON: { "
-            "checks[{id (a01–a11), name, status: 'PENDING_EXECUTION'}], "
+            'checks[{id (a01-a11), name, status: "PENDING_EXECUTION"}], '
             "playwright_script, install_command, run_command }. Pass "
-            "config (JSON string) to customize axe.configure() — e.g. "
-            "branding overrides, rule disables. Omit for standard WCAG "
-            "2.2 AA."
+            "config (JSON string) to customize axe.configure(), for "
+            "example with branding overrides or rule disables. Omit for "
+            "standard WCAG 2.2 AA."
         ),
         "inputSchema": {
             "type": "object",
@@ -2553,8 +2555,8 @@ TOOLS = [
             "designesy_drift_score. Executable: fetches the URL, extracts CSS + "
             ":root custom properties, generates the bundle. No browser needed. "
             "The full bundle grows with the number of tokens a site declares: "
-            "about 10 KB to about 500 KB of JSON on the ten sites measured "
-            "(about 90 KB for designesy.org). To trim it, pass parts, a list of "
+            "about 7 KB to about 530 KB of JSON on the 26 sites measured "
+            "(about 110 KB for designesy.org). To trim it, pass parts, a list of "
             "bundle file names such as [\"designMd\"] or [\"tokens\", "
             "\"lintConfig\"]: the result keeps score, grade, counts and checks, "
             "and its bundle holds only those files, in the order asked. Valid "
@@ -2854,7 +2856,7 @@ _RESOURCE_FETCHERS = {
 # this list lacked cubicBezier and carried seven names the format does not
 # define (string, boolean, link, borderStyle, borderWeight, radius, spacing),
 # so t06 WARNed on a conformant easing token and passed those names as
-# standard. apps/site/app/api/mcp/route.ts carries the same list; the test
+# standard. apps/site/app/lib/tokens-score.ts carries the same list; the test
 # suite asserts the two stay equal.
 DTCG_STANDARD_TYPES = frozenset({
     "color", "dimension", "fontFamily", "fontWeight", "duration",
@@ -2864,13 +2866,13 @@ DTCG_STANDARD_TYPES = frozenset({
 
 
 def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> dict[str, Any]:
-    """Validate a design token file against W3C DTCG 2025.10 format."""
+    """Run the tokens contract's ten checks on one DTCG token file (see _tokens_score)."""
     contract = _fetch("https://www.designesy.org/contracts/tokens.json", as_json=True)
 
     token_data: Any = None
     if dtcg_file:
         try:
-            token_data = json.loads(dtcg_file)
+            token_data = json.loads(dtcg_file, parse_constant=_reject_json_constant)
         except json.JSONDecodeError:
             return {"success": False, "error": "Invalid JSON in dtcg_file parameter"}
     elif url:
@@ -2885,217 +2887,239 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 
     if not isinstance(token_data, dict):
         return {"success": False, "error": "Token file is not a JSON object"}
+    return _tokens_score(token_data, contract, url or "(inline dtcg_file)")
 
-    tokens = token_data
-    token_groups = tokens.get("$tokens", tokens.get("tokens", tokens))
 
+# ── designesy_tokens_score: the tokens contract's ten checks ─────────────────
+#
+# A line-for-line port of apps/site/app/lib/tokens-score.ts. The score used to
+# be PASS / all ten checks x 100, so a check that could not apply counted as a
+# zero (a clean file whose t07 had no custom types scored 90, not 100). It is
+# now PASS / scored checks x 100: SKIP is not scored, WARN and FAIL earn
+# nothing. Check names are the contract's own, looked up by id. Both
+# implementations run on test/fixtures/tokens/ and must produce expected.json
+# there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
+#
+# Object keys are walked in JavaScript's order (_js_keys), truthiness follows
+# JavaScript (_js_truthy), numbers print as JavaScript prints them (_js_num)
+# and rounding follows Math.round (_js_round), so the two servers write the
+# same result for the same file.
+
+TOKENS_CHECK_NAMES = {
+    "t01": "$schema declaration",
+    "t02": "Token groups present",
+    "t03": "$type on all tokens",
+    "t04": "$value on all tokens",
+    "t05": "Structured color format",
+    "t06": "Standard type names",
+    "t07": "Custom type extension",
+    "t08": "Dimension units",
+    "t09": "Token naming hierarchy",
+    "t10": "No deprecated patterns",
+}
+
+TOKENS_SCORING = (
+    "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. "
+    "A>=90, B>=80, C>=70, D>=60, F<60."
+)
+
+_DIMENSION_UNITS = sorted(
+    ["px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
+     "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
+     "cm", "mm", "in", "pt", "pc", "fr"],
+    key=len, reverse=True,
+)
+
+
+def _js_truthy(x: Any) -> bool:
+    """JavaScript truthiness for a JSON value: objects and arrays are truthy."""
+    if isinstance(x, (dict, list)):
+        return True
+    return bool(x)
+
+
+def _js_keys(d: dict[str, Any]) -> list[str]:
+    """Object.keys order: array-index keys ascending, then the rest as inserted."""
+    def is_index(k: str) -> bool:
+        return k.isascii() and k.isdigit() and (k == "0" or not k.startswith("0")) and int(k) < 4294967295
+    index = sorted((k for k in d if is_index(k)), key=int)
+    return index + [k for k in d if not is_index(k)]
+
+
+def _dimension_unit(v: str) -> str:
+    for unit in _DIMENSION_UNITS:
+        if v.endswith(unit):
+            return unit
+    return ""
+
+
+def _tokens_check_names(contract: dict[str, Any]) -> dict[str, str]:
+    names = dict(TOKENS_CHECK_NAMES)
+    verification = contract.get("verification") if isinstance(contract, dict) else None
+    rows = verification.get("checks") if isinstance(verification, dict) else None
+    for row in rows if isinstance(rows, list) else []:
+        if isinstance(row, dict) and isinstance(row.get("id"), str) and isinstance(row.get("item"), str) and row["id"] in names:
+            names[row["id"]] = row["item"]
+    return names
+
+
+def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) -> dict[str, Any]:
+    """Run t01-t10 on one parsed token file (a JSON object)."""
+    names = _tokens_check_names(contract)
     results: list[dict[str, Any]] = []
 
+    def add(cid: str, status: str, detail: str) -> None:
+        results.append({"id": cid, "name": names[cid], "status": status, "detail": detail})
+
+    # tokens.$tokens || tokens.tokens || tokens
+    picked: Any = tokens
+    for key in ("$tokens", "tokens"):
+        if _js_truthy(tokens.get(key)):
+            picked = tokens[key]
+            break
+    token_groups: dict[str, Any] = picked if isinstance(picked, dict) else {}
+
     # t01: $schema present and points to designtokens.org
-    has_schema = "$schema" in tokens and isinstance(tokens["$schema"], str)
-    schema_valid = has_schema and "designtokens.org" in tokens["$schema"]
-    results.append({
-        "id": "t01",
-        "name": "$schema declaration",
-        "status": "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
-        "detail": (
-            f"Schema: {tokens.get('$schema')}"
-            if has_schema
-            else "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json"
-        ),
-    })
+    schema = tokens.get("$schema")
+    has_schema = isinstance(schema, str) and schema != ""
+    schema_valid = has_schema and "designtokens.org" in schema
+    add("t01", "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
+        f"Schema: {schema}" if has_schema else
+        "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json")
 
     # t02: token groups exist
-    group_keys = [k for k in token_groups if not k.startswith("$")] if isinstance(token_groups, dict) else []
-    results.append({
-        "id": "t02",
-        "name": "Token groups present",
-        "status": "PASS" if len(group_keys) > 0 else "FAIL",
-        "detail": f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}",
-    })
+    group_keys = [k for k in _js_keys(token_groups) if not k.startswith("$")]
+    add("t02", "PASS" if group_keys else "FAIL",
+        f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
 
-    # Walk tokens for t03-t10
-    type_pass_count = 0
-    value_pass_count = 0
-    color_structured_count = 0
-    color_bare_hex_count = 0
-    total_tokens = 0
-    all_types: set[str] = set()
-    dimension_values: list[tuple[str, str]] = []  # (token_path, $value)
-    deprecated_patterns: list[str] = []
+    # t03-t10: one walk over the tokens
+    counts = {"type": 0, "value": 0, "structured": 0, "bare_hex": 0, "total": 0}
+    all_types: list[str] = []  # insertion-ordered, as a JS Set
+    dimension_values: list[tuple[str, str]] = []
+    deprecated: list[str] = []
 
-    VALID_DIMENSION_UNITS = {
-        "px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
-        "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
-        "cm", "mm", "in", "pt", "pc", "fr",
-    }
-
-    def _extract_unit(v: str) -> str:
-        """Extract the unit suffix from a dimension value string."""
-        for unit in sorted(VALID_DIMENSION_UNITS, key=len, reverse=True):
-            if v.endswith(unit):
-                return unit
-        return ""
-
-    def _walk(obj: dict[str, Any], path: str = "") -> None:
-        nonlocal type_pass_count, value_pass_count, color_structured_count, color_bare_hex_count, total_tokens
-        for key, val in obj.items():
+    def walk(obj: dict[str, Any], path: str) -> None:
+        for key in _js_keys(obj):
             if key.startswith("$"):
                 continue
-            if isinstance(val, dict):
-                if "$value" in val:
-                    total_tokens += 1
-                    token_path = f"{path}.{key}" if path else key
-                    t = val.get("$type")
-                    v = val.get("$value")
+            val = obj[key]
+            current = f"{path}.{key}" if path else key
+            if not isinstance(val, dict):
+                continue
+            if "$value" not in val:
+                walk(val, current)
+                continue
+            counts["total"] += 1
+            t = val.get("$type")
+            v = val["$value"]
+            if _js_truthy(t):
+                counts["type"] += 1
+                if isinstance(t, str) and t not in all_types:
+                    all_types.append(t)
+            counts["value"] += 1
+            if t == "color":
+                if isinstance(v, dict) and "colorSpace" in v:
+                    counts["structured"] += 1
+                elif isinstance(v, str) and v.startswith("#"):
+                    counts["bare_hex"] += 1
+                    deprecated.append(f"Color token '{current}' uses bare hex (pre-2025.10 pattern)")
+            if t == "dimension":
+                if isinstance(v, str):
+                    dimension_values.append((current, v))
+                    if not _dimension_unit(v):
+                        deprecated.append(f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
+                elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                    dimension_values.append((current, _js_num(v)))
+                    deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+            if "$ref" in val:
+                deprecated.append(f"Token '{current}' uses deprecated $ref syntax (use {{path}} in $value)")
 
-                    if "$type" in val:
-                        type_pass_count += 1
-                        if isinstance(t, str):
-                            all_types.add(t)
-                    value_pass_count += 1
-
-                    if t == "color":
-                        if isinstance(v, dict) and "colorSpace" in v:
-                            color_structured_count += 1
-                        elif isinstance(v, str) and v.startswith("#"):
-                            color_bare_hex_count += 1
-                            deprecated_patterns.append(f"Color token '{token_path}' uses bare hex (pre-2025.10 pattern)")
-
-                    if t == "dimension":
-                        if isinstance(v, str):
-                            dimension_values.append((token_path, v))
-                            if not _extract_unit(v):
-                                deprecated_patterns.append(f"Dimension token '{token_path}' has unrecognized or missing unit: '{v}'")
-                        elif isinstance(v, (int, float)):
-                            dimension_values.append((token_path, str(v)))
-                            deprecated_patterns.append(f"Dimension token '{token_path}' uses bare number (should include unit string)")
-
-                    # Check for deprecated $ref syntax (DTCG 2025.10 uses {path} references)
-                    if "$ref" in val:
-                        deprecated_patterns.append(f"Token '{token_path}' uses deprecated $ref syntax (use {{path}} in $value)")
-                else:
-                    _walk(val, f"{path}.{key}" if path else key)
-
-    if isinstance(token_groups, dict):
-        _walk(token_groups)
+    walk(token_groups, "")
+    total, typed = counts["total"], counts["type"]
 
     # t03: $type on all tokens
-    results.append({
-        "id": "t03",
-        "name": "$type on all tokens",
-        "status": "PASS" if total_tokens > 0 and type_pass_count == total_tokens else ("WARN" if type_pass_count > 0 else "FAIL"),
-        "detail": f"{type_pass_count}/{total_tokens} tokens have $type",
-    })
+    add("t03", "PASS" if total > 0 and typed == total else ("WARN" if typed > 0 else "FAIL"),
+        f"{typed}/{total} tokens have $type")
 
     # t04: $value on all tokens
-    results.append({
-        "id": "t04",
-        "name": "$value on all tokens",
-        "status": "PASS" if total_tokens > 0 and value_pass_count == total_tokens else "FAIL",
-        "detail": f"{value_pass_count}/{total_tokens} tokens have $value",
-    })
+    add("t04", "PASS" if total > 0 and counts["value"] == total else "FAIL",
+        f"{counts['value']}/{total} tokens have $value")
 
-    # t05: structured color format
-    if color_structured_count + color_bare_hex_count > 0:
-        results.append({
-            "id": "t05",
-            "name": "Structured color format",
-            "status": "PASS" if color_bare_hex_count == 0 else ("WARN" if color_structured_count > 0 else "FAIL"),
-            "detail": f"{color_structured_count} structured, {color_bare_hex_count} bare hex. DTCG 2025.10 prefers colorSpace + components over bare hex.",
-        })
+    # t05: structured color format (colorSpace + components)
+    structured, bare_hex = counts["structured"], counts["bare_hex"]
+    if structured + bare_hex > 0:
+        add("t05", "PASS" if bare_hex == 0 else ("WARN" if structured > 0 else "FAIL"),
+            f"{structured} structured, {bare_hex} bare hex. DTCG 2025.10 prefers {{colorSpace, components}} over bare hex strings.")
     else:
-        results.append({"id": "t05", "name": "Structured color format", "status": "SKIP", "detail": "No color tokens found"})
+        add("t05", "SKIP", "No color tokens found")
 
-    # t06: Standard type names — verify all $type values are in the DTCG 2025.10 set
-    non_standard_types = all_types - DTCG_STANDARD_TYPES
-    if total_tokens == 0:
-        t06_status = "SKIP"
-        t06_detail = "No tokens found"
-    elif type_pass_count == 0:
-        t06_status = "FAIL"
-        t06_detail = "No tokens have $type — cannot verify standard type names"
-    elif not non_standard_types:
-        t06_status = "PASS"
-        t06_detail = f"All {len(all_types)} unique type(s) are DTCG 2025.10 standard: {', '.join(sorted(all_types))}"
+    # t06: standard type names
+    non_standard = sorted(t for t in all_types if t not in DTCG_STANDARD_TYPES)
+    if total == 0:
+        add("t06", "SKIP", "No tokens found")
+    elif typed == 0:
+        add("t06", "FAIL", "No tokens have $type: cannot verify standard type names")
+    elif not non_standard:
+        add("t06", "PASS", f"All {len(all_types)} unique type(s) are DTCG 2025.10 standard: {', '.join(sorted(all_types))}")
     else:
-        t06_status = "WARN"
-        t06_detail = f"Non-standard type(s) found: {', '.join(sorted(non_standard_types))}. These may be valid custom types (see t07)."
-    results.append({"id": "t06", "name": "Standard type names", "status": t06_status, "detail": t06_detail})
+        add("t06", "WARN", f"Non-standard type(s) found: {', '.join(non_standard)}. These may be valid custom types (see t07).")
 
-    # t07: Custom type extension — non-standard types should follow namespacing convention
-    custom_types = [t for t in all_types if t not in DTCG_STANDARD_TYPES]
-    if not custom_types:
-        t07_status = "SKIP"
-        t07_detail = "No custom types found"
+    # t07: custom types follow the dot-namespacing convention
+    custom = sorted(t for t in all_types if t not in DTCG_STANDARD_TYPES)
+    if not custom:
+        add("t07", "SKIP", "No custom types found")
     else:
-        bare_customs = [t for t in custom_types if "." not in t]
+        bare_customs = [t for t in custom if "." not in t]
         if not bare_customs:
-            t07_status = "PASS"
-            t07_detail = f"All {len(custom_types)} custom type(s) use dot-namespacing: {', '.join(sorted(custom_types))}"
+            add("t07", "PASS", f"All {len(custom)} custom type(s) use dot-namespacing: {', '.join(custom)}")
         else:
-            t07_status = "WARN"
-            t07_detail = f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(sorted(bare_customs))}"
-    results.append({"id": "t07", "name": "Custom type extension", "status": t07_status, "detail": t07_detail})
+            add("t07", "WARN", f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(bare_customs)}")
 
-    # t08: Dimension units — verify dimension tokens have valid CSS length units
+    # t08: dimension tokens have valid CSS length units
     if not dimension_values:
-        t08_status = "SKIP"
-        t08_detail = "No dimension tokens found"
+        add("t08", "SKIP", "No dimension tokens found")
     else:
-        bad_units: list[str] = []
-        for token_path, v in dimension_values:
-            unit = _extract_unit(v)
-            if not unit:
-                bad_units.append(f"{token_path}='{v}'")
+        bad_units = [f"{p}='{v}'" for p, v in dimension_values if not _dimension_unit(v)]
         if not bad_units:
-            t08_status = "PASS"
-            t08_detail = f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)"
+            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)")
         else:
-            t08_status = "WARN" if len(bad_units) < len(dimension_values) else "FAIL"
-            t08_detail = f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}"
-    results.append({"id": "t08", "name": "Dimension units", "status": t08_status, "detail": t08_detail})
+            add("t08", "WARN" if len(bad_units) < len(dimension_values) else "FAIL",
+                f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}")
 
-    # t09: Token naming hierarchy — groups should exist (dot-notation is implicit in nesting)
-    if total_tokens == 0:
-        t09_status = "FAIL"
-        t09_detail = "No tokens found — cannot assess naming hierarchy"
-    elif len(group_keys) > 0:
-        t09_status = "PASS"
-        t09_detail = f"{len(group_keys)} token group(s) with nested hierarchy: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}"
+    # t09: tokens are organised into groups (nesting is the dot hierarchy)
+    if total == 0:
+        add("t09", "FAIL", "No tokens found: cannot assess naming hierarchy")
+    elif group_keys:
+        add("t09", "PASS", f"{len(group_keys)} token group(s) with nested hierarchy: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
     else:
-        t09_status = "WARN"
-        t09_detail = "No token groups found — tokens should be organized into groups (e.g., color, spacing, typography)"
-    results.append({"id": "t09", "name": "Token naming hierarchy", "status": t09_status, "detail": t09_detail})
+        add("t09", "WARN", "No token groups found: tokens should be organized into groups (e.g., color, spacing, typography)")
 
-    # t10: No deprecated patterns — check for pre-2025.10 patterns
-    if not deprecated_patterns:
-        t10_status = "PASS"
-        t10_detail = "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+    # t10: no pre-2025.10 patterns
+    if not deprecated:
+        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)")
     else:
-        t10_status = "WARN"
-        t10_detail = f"{len(deprecated_patterns)} deprecated pattern(s) found: {'; '.join(deprecated_patterns[:3])}{'...' if len(deprecated_patterns) > 3 else ''}"
-    results.append({"id": "t10", "name": "No deprecated patterns", "status": t10_status, "detail": t10_detail})
+        add("t10", "WARN", f"{len(deprecated)} deprecated pattern(s) found: {'; '.join(deprecated[:3])}{'...' if len(deprecated) > 3 else ''}")
 
-    pass_count = sum(1 for r in results if r["status"] == "PASS")
-    fail_count = sum(1 for r in results if r["status"] == "FAIL")
-    warn_count = sum(1 for r in results if r["status"] == "WARN")
-    score = round((pass_count / len(results)) * 100) if results else 0
+    tally = {s: sum(1 for r in results if r["status"] == s) for s in ("PASS", "WARN", "FAIL", "SKIP")}
+    scored = tally["PASS"] + tally["WARN"] + tally["FAIL"]
+    score = _js_round(tally["PASS"] / scored * 100) if scored > 0 else 0
     grade = "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else ("D" if score >= 60 else "F")))
 
     return {
         "contract_id": contract.get("id"),
         "contract_version": contract.get("version"),
         "contract_status": contract.get("status"),
-        "url": url or "(inline dtcg_file)",
-        "total_tokens": total_tokens,
+        "url": url,
+        "total_tokens": total,
         "score": score,
         "grade": grade,
-        "pass_count": pass_count,
-        "fail_count": fail_count,
-        "warn_count": warn_count,
+        "pass_count": tally["PASS"],
+        "fail_count": tally["FAIL"],
+        "warn_count": tally["WARN"],
+        "skip_count": tally["SKIP"],
+        "scoring": TOKENS_SCORING,
         "checks": results,
-        "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.3.0 section 8",
+        "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
         "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)",
     }
 

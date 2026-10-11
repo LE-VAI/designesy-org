@@ -1,5 +1,5 @@
 /**
- * Designesy Monitor Contract v0.1.0 — machine-readable form.
+ * Designesy Monitor Contract v0.1.1 — machine-readable form.
  * Sibling contract governing continuous design-drift monitoring.
  * Source: Into Design Systems 2026 (Morales Achiardi / Enara),
  *          Design Systems Collective 2026, Lollypop agentic governance,
@@ -19,13 +19,13 @@
 
 export const monitorContract = {
   id: 'designesy.monitor',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Monitor Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/monitor',
   machine_url: 'https://www.designesy.org/contracts/monitor.json',
-  updated: '2026-09-28',
+  updated: '2026-10-10',
   purpose:
     'Monitor is the continuous-governance layer: re-score a URL on a cadence, store snapshots, compute drift deltas against the baseline, and surface regressions before they compound. Every prior designesy surface is a snapshot: monitor turns them into a watched series.',
   source_authority: {
@@ -75,7 +75,7 @@ export const monitorContract = {
       { id: 'm06', item: 'Resolved since last run: checks that newly pass', pass: 'N checks newly passed since the previous run (the system is healing)', fail: 'No checks resolved since the previous run', warn: '1 check improved from FAIL to WARN' },
       { id: 'm07', item: 'Score degradation threshold: alert if score drops > N points', pass: 'Score drop within threshold since previous run', fail: 'Score dropped beyond the alert threshold (alert fired)' },
       { id: 'm08', item: 'Token-set mutation: tokens added/removed/renamed since baseline', pass: 'Token set is stable vs baseline', fail: 'Token set mutated; tokens added, removed, or renamed (silent breaking changes)', warn: '1-2 token changes since baseline' },
-      { id: 'm09', item: 'Contract version drift: the site own DTCG/agent.json changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run (verify the change is intentional)', warn: 'Contract metadata changed (not version)' },
+      { id: 'm09', item: 'Contract version drift: the design contract version this run is scored against (the version designesy_score reports) changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run (verify the change is intentional)', warn: 'Contract metadata changed (not version)' },
       { id: 'm10', item: 'Alert delivered: email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered (check the email address or RESEND_API_KEY)', warn: 'Alert surfaced in-UI only (no email provided or Resend key not set)' },
     ],
     scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/10) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
@@ -97,6 +97,6 @@ export const monitorContract = {
     'Scheduled cadence (daily/weekly/monthly) requires a cron runner (Vercel Cron Jobs): v0.1.0 monitors on manual trigger only',
     'Cross-page drift (drift mode 2) requires crawling multiple pages: the monitor currently watches the single registered URL',
     'The 3-run trend slope (m04) needs 3 snapshots: the first 2 runs will show insufficient data',
-    'Contract version drift (m09) probes for agent.json version field: not all sites expose one',
+    'Contract version drift (m09) reports the design contract version a run is scored against; snapshots do not record it yet, so a change between runs is stated rather than compared (until v0.1.1 m09 read the scanned site agent.json version, which on designesy.org is the catalog version)',
   ],
 } as const;
