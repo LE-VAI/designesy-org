@@ -835,6 +835,19 @@ a {
   text-decoration: none;
 }
 
+/* Code takes the site's mono face. The browser's own rule sets code, kbd,
+   samp and pre in the generic monospace, which outranks the inherited face,
+   so they drew in the OS mono (Consolas on Windows): 116 code elements on
+   /contracts, the page whose typography rules allow three faces with Geist
+   Mono for data (live audit 2026-10-11, V06). A component that sets its own
+   face still wins. */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--mono);
+}
+
 h1,
 h2,
 h3,
