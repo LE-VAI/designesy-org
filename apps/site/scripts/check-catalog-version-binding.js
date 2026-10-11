@@ -55,14 +55,30 @@
  *   * `--self-test` feeds each clause an input built to break it and exits
  *     non-zero if any clause lets it through.
  *
- * Usage:  node scripts/check-catalog-version-binding.js [--json] [--self-test]
+ * THE MACHINE-EXPORT LIST STATES VERSIONS TOO (added 2026-10-10)
+ * The catalog's `machine_exports` entries carry a `meta` line that agents read
+ * alongside the packages, and five of them stated a version as a literal. One
+ * was stale: the acoustic-tokens export read "Acoustic token system v0.1.1"
+ * while acoustic-tokens.ts and /acoustic-tokens.json served 0.2.0, the same
+ * drift the package entry had until 2026-09-30. The clause above binds
+ * `version:` fields only, so it could not see a version written in prose.
+ * This clause evaluates the catalog (loaded with scripts/lib/route-harness.js)
+ * and, for every machine export whose route serves a versioned module, requires
+ * a meta line that names any version at all to name the one the export serves.
+ * A meta line may also cite another product's version (the motion export cites
+ * "Lottie spec v1.0.1"); it must still state its own. In a Vercel build whose
+ * install lacks typescript this clause prints NOT EVALUATED.
+ *
+ * Usage:  node scripts/check-catalog-version-binding.js [--json] [--self-test] [--app <dir>]
  * Exits 1 on any finding, so it can gate CI.
  */
 
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SITE = path.resolve(__dirname, '..');
+// --app <dir> reads another checkout's apps/site (to see how other code fares).
+const APP_ARG = process.argv.indexOf('--app');
+const SITE = APP_ARG >= 0 ? path.resolve(process.argv[APP_ARG + 1]) : path.resolve(__dirname, '..');
 const APP = path.join(SITE, 'app');
 const CATALOG_PATH = path.join(APP, 'lib', 'open-index.ts');
 
@@ -183,6 +199,56 @@ function findingsFor(src) {
   return findings;
 }
 
+/**
+ * Findings for the machine-export meta lines. `exports` is the evaluated
+ * openIndex.machine_exports; `versionOf(path)` is the version the route at that
+ * path serves, or null when it serves no versioned module.
+ */
+function metaFindings(exports, versionOf) {
+  const findings = [];
+  let checked = 0;
+  for (const e of exports) {
+    const stated = [...String(e.meta || '').matchAll(/\bv(\d+(?:\.\d+)+)\b/g)].map((m) => m[1]);
+    if (stated.length === 0) continue;
+    const served = versionOf(e.path);
+    if (served === null || served === undefined) continue;
+    checked++;
+    if (!stated.includes(String(served))) {
+      findings.push({
+        id: 'meta-version-stale',
+        detail: `machine export ${e.path}: meta states ${stated.map((v) => `v${v}`).join(', ')} but the export serves version ${served} ("${e.meta}")`,
+      });
+    }
+  }
+  return { findings, checked };
+}
+
+/** The evaluated machine exports and the version each export's route serves. */
+function servedExports() {
+  const { createHarness } = require('./lib/route-harness');
+  const h = createHarness({ app: SITE });
+  const { openIndex } = h.load('app/lib/open-index.ts');
+  const versionOf = (exportPath) => {
+    const routePath = path.join(APP, ...exportPath.split('/').filter(Boolean), 'route.ts');
+    if (!fs.existsSync(routePath)) return null;
+    const src = fs.readFileSync(routePath, 'utf8');
+    const sym = routeSymbol(src);
+    if (!sym) return null;
+    const root = sym.split('.')[0];
+    const imp = [...src.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)';/g)]
+      .find((m) => m[1].split(',').some((p) => p.trim().split(/\s+as\s+/).pop().trim() === root));
+    if (!imp) return null;
+    const base = path.resolve(path.dirname(routePath), imp[2]);
+    const file = [`${base}.ts`, `${base}.tsx`, base].find((f) => fs.existsSync(f) && fs.statSync(f).isFile());
+    if (!file) return null;
+    const mod = h.load(file);
+    let value = mod[root];
+    for (const part of sym.split('.').slice(1)) value = value && value[part];
+    return value && typeof value.version === 'string' ? value.version : null;
+  };
+  return { exports: openIndex.machine_exports, versionOf };
+}
+
 /** Feed each clause an input built to break it. */
 function selfTest() {
   const real = fs.readFileSync(CATALOG_PATH, 'utf8');
@@ -232,6 +298,24 @@ function selfTest() {
     console.log('  [self-test] ok — the real catalog is clean');
   }
 
+  // The meta clause, on the evaluated catalog and on copies built to break it.
+  const served = servedExports();
+  const metaCases = [
+    ['a stale version in a meta line is caught', (e) => (e.path === '/acoustic-tokens.json' ? { ...e, meta: 'Acoustic token system v0.1.1: nineteen cues' } : e), true],
+    ['a meta line citing only another product\'s version is caught', (e) => (e.path === '/contracts/motion.json' ? { ...e, meta: 'Lottie spec v1.0.1 JSON Schema' } : e), true],
+    ['the evaluated catalog is clean', (e) => e, false],
+  ];
+  for (const [name, edit, expectFinding] of metaCases) {
+    const { findings, checked } = metaFindings(served.exports.map(edit), served.versionOf);
+    const hit = findings.some((f) => f.id === 'meta-version-stale');
+    if (hit !== expectFinding || checked < 5) {
+      console.error(`  [self-test] FAIL — ${name}: ${findings.length} finding(s) over ${checked} checked meta line(s)`);
+      failed++;
+    } else {
+      console.log(`  [self-test] ok — ${name}`);
+    }
+  }
+
   return failed;
 }
 
@@ -256,12 +340,32 @@ function main() {
 
   const findings = findingsFor(fs.readFileSync(CATALOG_PATH, 'utf8'));
 
+  // Machine-export meta lines, read from the evaluated catalog.
+  let meta;
+  try {
+    require.resolve('typescript', { paths: [SITE, __dirname] });
+    const served = servedExports();
+    meta = metaFindings(served.exports, served.versionOf);
+    findings.push(...meta.findings);
+    if (meta.checked < 5) {
+      findings.push({ id: 'too-few-meta-lines', detail: `only ${meta.checked} machine-export meta line(s) stating a version were checked; expected at least 5` });
+    }
+  } catch (e) {
+    if (process.env.VERCEL === '1' && e && e.code === 'MODULE_NOT_FOUND') {
+      meta = { evaluated: false, reason: `typescript is not installed in this Vercel build (${e.message})` };
+    } else {
+      throw e;
+    }
+  }
+
   if (asJson) {
     console.log(JSON.stringify({ ok: findings.length === 0, findings }, null, 2));
   } else if (findings.length === 0) {
     console.log(
       'catalog-version-binding: OK — every catalog entry with a machine export reads its version from the module that export serves',
     );
+    if (meta && meta.evaluated === false) console.log(`catalog-version-binding: [NOT EVALUATED] machine-export meta lines: ${meta.reason}`);
+    else console.log(`catalog-version-binding: OK — ${meta.checked} machine-export meta line(s) state the version their export serves`);
   } else {
     console.error(`catalog-version-binding: ${findings.length} finding(s)\n`);
     for (const f of findings) {

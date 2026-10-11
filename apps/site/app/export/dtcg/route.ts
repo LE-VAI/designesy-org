@@ -1,5 +1,8 @@
 import { designSystemContract } from '../../lib/design-system-contract';
 import { CATEGORY_WEIGHTS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+// The $schema and the color form are shared with designesy_guardrails' token
+// file (app/lib/dtcg.ts), so the two DTCG files this site emits agree.
+import { DTCG_SCHEMA_URL, parseColorValue } from '../../lib/dtcg';
 
 export const dynamic = 'force-static';
 
@@ -30,9 +33,9 @@ export function GET() {
   const interaction = c.interaction as Record<string, unknown>;
   const typography = c.typography as Record<string, unknown>;
 
-  // ── Color value parser ──────────────────────────────────────────────────
-  // Converts hex (#rrggbb), #rgb, and rgba() strings to DTCG structured
-  // color format.
+  // ── Color values ────────────────────────────────────────────────────────
+  // parseColorValue (app/lib/dtcg.ts) converts hex (#rrggbb), #rgb and rgba()
+  // strings to the DTCG structured color.
   //
   // COMPONENTS IS AN ARRAY, NOT AN OBJECT. DTCG 2025.10 defines a color as
   // { colorSpace, components: [...] } and the validator enforces it: the
@@ -43,53 +46,10 @@ export function GET() {
   // That mattered beyond the score: any DTCG-compliant consumer other than our
   // own validator would have rejected these colors too, so the export was not
   // actually interoperable with the format it claimed.
-  function parseColorValue(value: string): { colorSpace: string; components: number[]; alpha: number } {
-    // Handle #rrggbb
-    const hexMatch = value.match(/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/);
-    if (hexMatch) {
-      return {
-        colorSpace: 'srgb',
-        components: [
-          parseInt(hexMatch[1], 16) / 255,
-          parseInt(hexMatch[2], 16) / 255,
-          parseInt(hexMatch[3], 16) / 255,
-        ],
-        alpha: 1,
-      };
-    }
-    // Handle #rgb (short)
-    const hexShortMatch = value.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
-    if (hexShortMatch) {
-      return {
-        colorSpace: 'srgb',
-        components: [
-          parseInt(hexShortMatch[1] + hexShortMatch[1], 16) / 255,
-          parseInt(hexShortMatch[2] + hexShortMatch[2], 16) / 255,
-          parseInt(hexShortMatch[3] + hexShortMatch[3], 16) / 255,
-        ],
-        alpha: 1,
-      };
-    }
-    // Handle rgba(r, g, b, a)
-    const rgbaMatch = value.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
-    if (rgbaMatch) {
-      return {
-        colorSpace: 'srgb',
-        components: [
-          parseFloat(rgbaMatch[1]) / 255,
-          parseFloat(rgbaMatch[2]) / 255,
-          parseFloat(rgbaMatch[3]) / 255,
-        ],
-        alpha: rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1,
-      };
-    }
-    // Fallback: return as-is in a minimal structure (should not happen for valid colors)
-    return { colorSpace: 'srgb', components: [0, 0, 0], alpha: 1 };
-  }
 
   // ── Build DTCG document ─────────────────────────────────────────────────
   const dtcg: Record<string, unknown> = {
-    $schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
+    $schema: DTCG_SCHEMA_URL,
     $description: `Designesy design system contract v${c.version}: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.`,
     // $version is NOT a DTCG 2025.10 property. Verified against the shipped
     // schema: its root permits exactly $schema, $type, $description,

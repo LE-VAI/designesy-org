@@ -1,0 +1,1331 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "Designesy design system contract v0.4.3: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.",
+  "color": {
+    "text": {
+      "primary": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9607843137254902,
+            0.9607843137254902,
+            0.9686274509803922
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Primary text / foreground"
+      },
+      "secondary": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6274509803921569,
+            0.6274509803921569,
+            0.6274509803921569
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Secondary text"
+      },
+      "muted_dim": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.49019607843137253,
+            0.49019607843137253,
+            0.49019607843137253
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Tertiary / meta text: 5.07:1 on paper and 4.54:1 on raised in dark (on lifted planes the dim tier rides --muted); light #686872, 5.33:1 on paper and 4.68:1 on lifted"
+      }
+    },
+    "foundation": {
+      "black": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.00392156862745098,
+            0.00392156862745098,
+            0.00784313725490196
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Page background"
+      }
+    },
+    "surface": {
+      "black": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0392156862745098,
+            0.0392156862745098,
+            0.047058823529411764
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Card / panel base"
+      },
+      "raised": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.07058823529411765,
+            0.07058823529411765,
+            0.08627450980392157
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Elevated surface"
+      },
+      "lifted": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.08627450980392157,
+            0.08627450980392157,
+            0.10588235294117647
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Lifted / hover panel"
+      }
+    },
+    "signal": {
+      "blue": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.00392156862745098,
+            0.2,
+            0.796078431372549
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Brand accent (internal token name; public products avoid this vocabulary)"
+      },
+      "light": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.2,
+            0.34509803921568627,
+            0.9098039215686274
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Accent hover / focus lift"
+      },
+      "access": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.36470588235294116,
+            0.4823529411764706,
+            1
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Accessible signal (AA contrast on dark surfaces)"
+      },
+      "on_blue": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Text on signal fill"
+      }
+    },
+    "activation": {
+      "yellow": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.996078431372549,
+            0.8,
+            0.20392156862745098
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Activation highlight (reserved)"
+      }
+    },
+    "status": {
+      "ok": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.2901960784313726,
+            0.8705882352941177,
+            0.5019607843137255
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Verification status: pass"
+      },
+      "warn": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9803921568627451,
+            0.8,
+            0.08235294117647059
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Verification status: warn"
+      },
+      "error": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9725490196078431,
+            0.44313725490196076,
+            0.44313725490196076
+          ],
+          "alpha": 1
+        },
+        "$type": "color",
+        "$description": "Verification status: fail"
+      }
+    },
+    "border": {
+      "subtle": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.12
+        },
+        "$type": "color",
+        "$description": "Default border"
+      },
+      "strong": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.22
+        },
+        "$type": "color",
+        "$description": "Emphasized border"
+      },
+      "faint": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.06
+        },
+        "$type": "color",
+        "$description": "Subtle divider"
+      }
+    },
+    "surface_effects": {
+      "soft": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.03
+        },
+        "$type": "color",
+        "$description": "Soft fill / note background"
+      },
+      "hover": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            1,
+            1,
+            1
+          ],
+          "alpha": 0.06
+        },
+        "$type": "color",
+        "$description": "Hover wash"
+      },
+      "wash": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.00392156862745098,
+            0.2,
+            0.796078431372549
+          ],
+          "alpha": 0.14
+        },
+        "$type": "color",
+        "$description": "Accent wash / badge fill"
+      }
+    }
+  },
+  "radius": {
+    "default": {
+      "$value": "6px",
+      "$type": "dimension",
+      "$description": "Default corner radius"
+    },
+    "sm": {
+      "$value": "4px",
+      "$type": "dimension",
+      "$description": "Compact controls / nav chips"
+    },
+    "md": {
+      "$value": "8px",
+      "$type": "dimension",
+      "$description": "Intermediate corner radius (a documented 8px tier outside the 4-step public scale)"
+    },
+    "lg": {
+      "$value": "12px",
+      "$type": "dimension",
+      "$description": "Cards / panels / large surfaces"
+    },
+    "xl": {
+      "$value": "16px",
+      "$type": "dimension",
+      "$description": "Hero / modal / flagship surfaces"
+    }
+  },
+  "shadow": {
+    "sm": {
+      "$value": {
+        "offsetX": "0",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "0",
+        "color": "rgba(0, 0, 0, 0.4)"
+      },
+      "$type": "shadow"
+    },
+    "md": {
+      "$value": {
+        "offsetX": "0",
+        "offsetY": "8px",
+        "blur": "30px",
+        "spread": "0",
+        "color": "rgba(0, 0, 0, 0.35)"
+      },
+      "$type": "shadow"
+    },
+    "lg": {
+      "$value": {
+        "offsetX": "0",
+        "offsetY": "24px",
+        "blur": "80px",
+        "spread": "0",
+        "color": "rgba(0, 0, 0, 0.5)"
+      },
+      "$type": "shadow"
+    }
+  },
+  "motion": {
+    "duration": {
+      "default": {
+        "$value": {
+          "value": 0.6,
+          "unit": "s"
+        },
+        "$type": "duration",
+        "$description": "Primary entrance duration"
+      },
+      "quick": {
+        "$value": {
+          "value": 150,
+          "unit": "ms"
+        },
+        "$type": "duration",
+        "$description": "Close, swap, tooltip (transitions.dev cross-ref)"
+      },
+      "fast": {
+        "$value": {
+          "value": 250,
+          "unit": "ms"
+        },
+        "$type": "duration",
+        "$description": "Open, hover transition, icon swap"
+      },
+      "medium": {
+        "$value": {
+          "value": 350,
+          "unit": "ms"
+        },
+        "$type": "duration",
+        "$description": "Panel close, toast"
+      },
+      "slow": {
+        "$value": {
+          "value": 400,
+          "unit": "ms"
+        },
+        "$type": "duration",
+        "$description": "Panel open, skeleton reveal"
+      }
+    },
+    "ease": {
+      "default": {
+        "$value": [
+          0.22,
+          0.61,
+          0.36,
+          1
+        ],
+        "$type": "cubicBezier",
+        "$description": "Default ease"
+      },
+      "out": {
+        "$value": [
+          0.23,
+          1,
+          0.32,
+          1
+        ],
+        "$type": "cubicBezier",
+        "$description": "Exit / settle"
+      },
+      "in_out": {
+        "$value": [
+          0.77,
+          0,
+          0.175,
+          1
+        ],
+        "$type": "cubicBezier",
+        "$description": "Symmetric motion"
+      },
+      "drawer": {
+        "$value": [
+          0.32,
+          0.72,
+          0,
+          1
+        ],
+        "$type": "cubicBezier",
+        "$description": "Drawer / panel slide"
+      }
+    }
+  },
+  "interaction": {
+    "hover_fill": {
+      "$value": "var(--surface-hover)",
+      "$type": "color",
+      "$description": "Interactive hover wash"
+    },
+    "press_fill": {
+      "$value": "var(--surface-soft)",
+      "$type": "color",
+      "$description": "Press / active fill"
+    },
+    "focus_ring": {
+      "$value": "var(--signal-light)",
+      "$type": "color",
+      "$description": "Keyboard focus indicator color"
+    }
+  },
+  "fontFamily": {
+    "sans": {
+      "$value": "var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif",
+      "$type": "fontFamily",
+      "$description": "Primary UI and body stack: Schibsted Grotesk, self-hosted at build time via next/font (--font-sans). A newsroom-commissioned grotesque drawn for sustained reading, chosen to share Fraunces's editorial register. Replaced Geist 2026-09-16 (anti-slop rule S1 flags geist as an overused family). System fonts cover fallback."
+    },
+    "serif": {
+      "$value": "var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif",
+      "$type": "fontFamily",
+      "$description": "Editorial serif for headlines, the cue for trust and authority. Fraunces, self-hosted at build time via next/font (--font-display), with opsz + SOFT + WONK axes."
+    },
+    "display": {
+      "$value": "var(--serif)",
+      "$type": "fontFamily",
+      "$description": "Display/headline face: Fraunces (aliased to --serif). Hybrid system: serif headlines + sans UI."
+    },
+    "mono": {
+      "$value": "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
+      "$type": "fontFamily",
+      "$description": "Mono stack for check IDs, score readouts, token names: Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face."
+    }
+  },
+  "$extensions": {
+    "designesy": {
+      "version": "0.4.3",
+      "typography": {
+        "source_lab": "Cadence",
+        "adopted_in": "0.1.3",
+        "rules": [
+          "Font smoothing on root: -webkit-font-smoothing: antialiased + -moz-osx-font-smoothing: grayscale",
+          "Rem-based scale: every text size is a rem multiple of the 16px root (never px)",
+          "Line-height by role: headings 1.05 to 1.1, body 1.5 to 1.6, display 1 (never a single global line-height)",
+          "Tracking by size: negative for headings (-0.02 to -0.04em), positive for labels (0.03 to 0.18em), zero for body",
+          "Cap the measure: body text 520 to 580px max, layout shell 1080px (text wider than 75ch loses readers)",
+          "Wrap deliberately: text-wrap: balance on headings, text-wrap: pretty on body",
+          "Tabular numbers: font-variant-numeric: tabular-nums for all data, stats, and numerical tables",
+          "Selection: ::selection styled with a token color (never default browser blue)",
+          "user-select: none on UI chrome (buttons, labels, meta); body text stays selectable",
+          "16px input floor on mobile: inputs never below 16px to avoid iOS auto-zoom",
+          "Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data (amended from the v0.1.3 system-stack rule)"
+        ],
+        "verified_against": "Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed",
+        "verification": [
+          "https://www.designesy.org/labs/cadence",
+          "https://www.designesy.org/review/cadence"
+        ],
+        "unverified": [
+          "Block-axis logical properties (margin-block-start/end) not yet migrated; only inline-axis (margin-inline, padding-inline) is done",
+          "border-left decorative accents not yet migrated to border-inline-start; the visual regression risk needs testing",
+          "inset left/right positioning not yet migrated to inset-inline; absolute positioning needs case-by-case review"
+        ]
+      },
+      "takt": {
+        "source_lab": "Takt",
+        "adopted_in": "0.1.2",
+        "rules": [
+          "Concentric border radius: outerRadius = innerRadius + padding on every nested pair",
+          "Press scale 0.96 on cells and buttons and 0.985 on cards and rows, never below 0.95",
+          "Image outlines: 1px at 0.1 opacity, pure black in light mode, pure white in dark mode (never tinted neutrals)",
+          "Minimum hit area: 44px for touch, 40px for desktop (extend with pseudo-element when needed)",
+          "Stagger enter animations: ~80 to 100ms per semantic chunk; skip animation on page load",
+          "Soften exits: small fixed translateY, softer than enter (no full-height collapse)",
+          "Never use transition: all (every transition names its specific properties)",
+          "Spare will-change: only transform, opacity, or filter (only when a stutter was observed)"
+        ],
+        "verified_against": "Live CSS audit (47,680 bytes): all transitions, scales, will-change, radii, outlines parsed",
+        "verification": [
+          "https://www.designesy.org/labs/takt",
+          "https://www.designesy.org/review/takt"
+        ],
+        "unverified": [
+          "Image outline rule: no image surfaces on designesy.org yet",
+          "Mobile hit area 44px unverified; desktop 40px confirmed"
+        ]
+      },
+      "layout": {
+        "max_width": {
+          "token": "--maxw",
+          "value": "1080px",
+          "role": "Content shell max width"
+        },
+        "max_width_wide": {
+          "token": "--maxw-wide",
+          "value": "1180px",
+          "role": "Wider shell for hero / section chrome (additive only)"
+        },
+        "max_width_shell": {
+          "token": "--maxw-shell",
+          "value": "clamp(var(--maxw-wide), calc(var(--maxw-wide) + (100vw - 1440px) / 2), 1560px)",
+          "role": "Shell chrome on very large viewports: exactly --maxw-wide up to a 1440px viewport, then grows at half the viewport rate to 1560px. Header, main and footer share it so their edges agree. Prose never rides it: body copy keeps --maxw and its measure caps (additive only)"
+        },
+        "shell_gutter": {
+          "token": "--shell-gutter",
+          "value": "clamp(var(--space-16), 4vw, var(--space-24))",
+          "role": "The one outer gutter: page wrappers pad by it and the header pill insets by it, so pill edges equal content edges at every width (16px on a phone, 24px from a 600px viewport)"
+        },
+        "shell_outer": {
+          "token": "--shell-outer",
+          "value": "calc(var(--maxw-shell) + 2 * var(--shell-gutter))",
+          "role": "max-width of every page wrapper, so its content box equals --maxw-shell equals the header pill"
+        },
+        "grid_gutter": {
+          "token": "--grid-gutter",
+          "value": "var(--space-16)",
+          "role": "Column gap of the 12-column grid; the same 16px the Four ways and pillar grids use"
+        },
+        "grid_12": {
+          "token": "--grid-12",
+          "value": "[full-start] repeat(5, minmax(0, 1fr)) [mirror] repeat(2, minmax(0, 1fr)) [split] repeat(5, minmax(0, 1fr)) [full-end]",
+          "role": "The one track list. split is line 8 (the 7|5 seam, the 7-line); mirror is line 6 (the 5|7 seam). Spans switch at @container g12 (width >= 64rem), a literal because custom properties are invalid in query conditions"
+        },
+        "track_split": {
+          "token": "--track-split",
+          "value": "calc((100% - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter))",
+          "role": "First track of a face/side card or title bar: 7 columns and 6 gaps of its own content box, so the side pane divider lands on the 7-line. Its element carries no horizontal padding or border"
+        },
+        "z_index": {
+          "z_content": {
+            "token": "--z-content",
+            "value": "1",
+            "role": "In-flow content lifted above the page background layers"
+          },
+          "z_sticky": {
+            "token": "--z-sticky",
+            "value": "10",
+            "role": "Sticky elements inside content"
+          },
+          "z_chrome": {
+            "token": "--z-chrome",
+            "value": "100",
+            "role": "Site chrome: the header capsule"
+          },
+          "z_popover": {
+            "token": "--z-popover",
+            "value": "120",
+            "role": "Popovers anchored to chrome (senses panel)"
+          },
+          "z_scrim": {
+            "token": "--z-scrim",
+            "value": "150",
+            "role": "Dim layer under a drawer or dialog"
+          },
+          "z_drawer": {
+            "token": "--z-drawer",
+            "value": "200",
+            "role": "Mobile navigation drawer"
+          },
+          "z_modal": {
+            "token": "--z-modal",
+            "value": "300",
+            "role": "Modal dialogs and the find palette: always above the chrome"
+          },
+          "z_toast": {
+            "token": "--z-toast",
+            "value": "400",
+            "role": "Transient notices above everything"
+          }
+        },
+        "shell_horizontal": "var(--shell-gutter): clamp(1rem, 4vw, 1.5rem), outside the --maxw-shell content box",
+        "section_vertical": "clamp(2.5rem, 5vw, 3.5rem) doctrine · clamp(3.5rem, 8vw, 6.5rem) bands",
+        "card_padding": "1 to 1.5rem",
+        "grid_gap": "1rem (--grid-gutter), one gutter",
+        "control_min_height": "44px buttons, sense toggles and preference switches",
+        "breakpoints": {
+          "grids": "@container 64rem (mid tiers 34 to 48rem; 57rem for the inspection demo)",
+          "topbar": "720px",
+          "single_column": "560px viewport on older blocks; layouts stack on their own container width"
+        },
+        "spacing_scale": {
+          "space_0": {
+            "token": "--space-0",
+            "value": "0",
+            "role": "Zero spacing"
+          },
+          "space_1": {
+            "token": "--space-1",
+            "value": "0.0625rem",
+            "role": "1px: hairline borders, micro adjustments"
+          },
+          "space_2": {
+            "token": "--space-2",
+            "value": "0.125rem",
+            "role": "2px"
+          },
+          "space_3": {
+            "token": "--space-3",
+            "value": "0.1875rem",
+            "role": "3px"
+          },
+          "space_4": {
+            "token": "--space-4",
+            "value": "0.25rem",
+            "role": "4px: tight badge/card padding"
+          },
+          "space_5": {
+            "token": "--space-5",
+            "value": "0.3125rem",
+            "role": "5px"
+          },
+          "space_6": {
+            "token": "--space-6",
+            "value": "0.375rem",
+            "role": "6px"
+          },
+          "space_7": {
+            "token": "--space-7",
+            "value": "0.4375rem",
+            "role": "7px: off-grid, badge padding"
+          },
+          "space_8": {
+            "token": "--space-8",
+            "value": "0.5rem",
+            "role": "8px: default tight gap, small padding"
+          },
+          "space_9": {
+            "token": "--space-9",
+            "value": "0.5625rem",
+            "role": "9px: off-grid"
+          },
+          "space_10": {
+            "token": "--space-10",
+            "value": "0.625rem",
+            "role": "10px"
+          },
+          "space_11": {
+            "token": "--space-11",
+            "value": "0.6875rem",
+            "role": "11px: off-grid"
+          },
+          "space_12": {
+            "token": "--space-12",
+            "value": "0.75rem",
+            "role": "12px: medium padding, card padding"
+          },
+          "space_13": {
+            "token": "--space-13",
+            "value": "0.8125rem",
+            "role": "13px: off-grid"
+          },
+          "space_14": {
+            "token": "--space-14",
+            "value": "0.875rem",
+            "role": "14px"
+          },
+          "space_15": {
+            "token": "--space-15",
+            "value": "0.9375rem",
+            "role": "15px: off-grid"
+          },
+          "space_16": {
+            "token": "--space-16",
+            "value": "1rem",
+            "role": "16px: base spacing unit, standard padding"
+          },
+          "space_17": {
+            "token": "--space-17",
+            "value": "1.0625rem",
+            "role": "17px: off-grid"
+          },
+          "space_18": {
+            "token": "--space-18",
+            "value": "1.125rem",
+            "role": "18px"
+          },
+          "space_19": {
+            "token": "--space-19",
+            "value": "1.1875rem",
+            "role": "19px: off-grid"
+          },
+          "space_20": {
+            "token": "--space-20",
+            "value": "1.25rem",
+            "role": "20px: large padding, section gaps"
+          },
+          "space_21": {
+            "token": "--space-21",
+            "value": "1.3125rem",
+            "role": "21px: off-grid"
+          },
+          "space_22": {
+            "token": "--space-22",
+            "value": "1.375rem",
+            "role": "22px"
+          },
+          "space_24": {
+            "token": "--space-24",
+            "value": "1.5rem",
+            "role": "24px: section padding, large gaps"
+          },
+          "space_28": {
+            "token": "--space-28",
+            "value": "1.75rem",
+            "role": "28px"
+          },
+          "space_32": {
+            "token": "--space-32",
+            "value": "2rem",
+            "role": "32px: big section gaps"
+          },
+          "space_35": {
+            "token": "--space-35",
+            "value": "2.1875rem",
+            "role": "35px: off-grid, layout spacing"
+          },
+          "space_36": {
+            "token": "--space-36",
+            "value": "2.25rem",
+            "role": "36px"
+          },
+          "space_40": {
+            "token": "--space-40",
+            "value": "2.5rem",
+            "role": "40px"
+          },
+          "space_44": {
+            "token": "--space-44",
+            "value": "2.75rem",
+            "role": "44px: off-grid, large section spacing"
+          },
+          "space_48": {
+            "token": "--space-48",
+            "value": "3rem",
+            "role": "48px: hero spacing, major section breaks"
+          },
+          "space_56": {
+            "token": "--space-56",
+            "value": "3.5rem",
+            "role": "56px"
+          },
+          "space_64": {
+            "token": "--space-64",
+            "value": "4rem",
+            "role": "64px: large vertical rhythm"
+          },
+          "space_72": {
+            "token": "--space-72",
+            "value": "4.5rem",
+            "role": "72px: extra-large vertical rhythm"
+          },
+          "space_88": {
+            "token": "--space-88",
+            "value": "5.5rem",
+            "role": "88px: major hero spacing"
+          },
+          "space_104": {
+            "token": "--space-104",
+            "value": "6.5rem",
+            "role": "104px: large hero section padding"
+          },
+          "space_112": {
+            "token": "--space-112",
+            "value": "7rem",
+            "role": "112px: maximum vertical rhythm"
+          },
+          "space_fine_02": {
+            "token": "--space-fine-02",
+            "value": "0.02rem",
+            "role": "Fine micro-adjustment (0.32px)"
+          },
+          "space_fine_10": {
+            "token": "--space-fine-10",
+            "value": "0.1rem",
+            "role": "Fine micro-adjustment (1.6px)"
+          },
+          "space_fine_12": {
+            "token": "--space-fine-12",
+            "value": "0.12rem",
+            "role": "Fine micro-adjustment (1.92px)"
+          },
+          "space_fine_15": {
+            "token": "--space-fine-15",
+            "value": "0.15rem",
+            "role": "Fine micro-adjustment (2.4px)"
+          },
+          "space_fine_20": {
+            "token": "--space-fine-20",
+            "value": "0.2rem",
+            "role": "Fine micro-adjustment (3.2px)"
+          },
+          "space_fine_30": {
+            "token": "--space-fine-30",
+            "value": "0.3rem",
+            "role": "Fine micro-adjustment (4.8px)"
+          },
+          "space_fine_32": {
+            "token": "--space-fine-32",
+            "value": "0.32rem",
+            "role": "Fine micro-adjustment (5.12px)"
+          },
+          "space_fine_35": {
+            "token": "--space-fine-35",
+            "value": "0.35rem",
+            "role": "Fine micro-adjustment (5.6px)"
+          },
+          "space_fine_40": {
+            "token": "--space-fine-40",
+            "value": "0.4rem",
+            "role": "Fine micro-adjustment (6.4px)"
+          },
+          "space_fine_42": {
+            "token": "--space-fine-42",
+            "value": "0.42rem",
+            "role": "Fine micro-adjustment (6.72px)"
+          },
+          "space_fine_45": {
+            "token": "--space-fine-45",
+            "value": "0.45rem",
+            "role": "Fine micro-adjustment (7.2px)"
+          },
+          "space_fine_55": {
+            "token": "--space-fine-55",
+            "value": "0.55rem",
+            "role": "Fine micro-adjustment (8.8px)"
+          },
+          "space_fine_60": {
+            "token": "--space-fine-60",
+            "value": "0.6rem",
+            "role": "Fine micro-adjustment (9.6px)"
+          },
+          "space_fine_65": {
+            "token": "--space-fine-65",
+            "value": "0.65rem",
+            "role": "Fine micro-adjustment (10.4px)"
+          },
+          "space_fine_68": {
+            "token": "--space-fine-68",
+            "value": "0.68rem",
+            "role": "Fine micro-adjustment (10.88px)"
+          },
+          "space_fine_70": {
+            "token": "--space-fine-70",
+            "value": "0.7rem",
+            "role": "Fine micro-adjustment (11.2px)"
+          },
+          "space_fine_80": {
+            "token": "--space-fine-80",
+            "value": "0.8rem",
+            "role": "Fine micro-adjustment (12.8px)"
+          },
+          "space_fine_85": {
+            "token": "--space-fine-85",
+            "value": "0.85rem",
+            "role": "Fine micro-adjustment (13.6px)"
+          },
+          "space_fine_95": {
+            "token": "--space-fine-95",
+            "value": "0.95rem",
+            "role": "Fine micro-adjustment (15.2px)"
+          },
+          "space_fine_110": {
+            "token": "--space-fine-110",
+            "value": "1.1rem",
+            "role": "Fine micro-adjustment (17.6px)"
+          },
+          "space_fine_120": {
+            "token": "--space-fine-120",
+            "value": "1.2rem",
+            "role": "Fine micro-adjustment (19.2px)"
+          },
+          "space_fine_130": {
+            "token": "--space-fine-130",
+            "value": "1.3rem",
+            "role": "Fine micro-adjustment (20.8px)"
+          },
+          "space_fine_135": {
+            "token": "--space-fine-135",
+            "value": "1.35rem",
+            "role": "Fine micro-adjustment (21.6px)"
+          },
+          "space_fine_140": {
+            "token": "--space-fine-140",
+            "value": "1.4rem",
+            "role": "Fine micro-adjustment (22.4px)"
+          },
+          "space_fine_220": {
+            "token": "--space-fine-220",
+            "value": "2.2rem",
+            "role": "Fine micro-adjustment (35.2px)"
+          },
+          "space_fine_03": {
+            "token": "--space-fine-03",
+            "value": "0.03rem",
+            "role": "Fine micro-adjustment (0.48px)"
+          },
+          "space_fine_05": {
+            "token": "--space-fine-05",
+            "value": "0.05rem",
+            "role": "Fine micro-adjustment (0.8px)"
+          },
+          "space_fine_22": {
+            "token": "--space-fine-22",
+            "value": "0.22rem",
+            "role": "Fine micro-adjustment (3.52px)"
+          },
+          "space_fine_34": {
+            "token": "--space-fine-34",
+            "value": "0.34rem",
+            "role": "Fine micro-adjustment (5.44px)"
+          },
+          "space_fine_105": {
+            "token": "--space-fine-105",
+            "value": "1.05rem",
+            "role": "Fine micro-adjustment (16.8px): clamp min"
+          },
+          "space_fine_115": {
+            "token": "--space-fine-115",
+            "value": "1.15rem",
+            "role": "Fine micro-adjustment (18.4px)"
+          },
+          "space_fine_160": {
+            "token": "--space-fine-160",
+            "value": "1.6rem",
+            "role": "Fine micro-adjustment (25.6px)"
+          },
+          "space_fine_28": {
+            "token": "--space-fine-28",
+            "value": "0.28rem",
+            "role": "Fine micro-adjustment (4.48px): off-grid component gap"
+          },
+          "space_fine_90": {
+            "token": "--space-fine-90",
+            "value": "0.9rem",
+            "role": "Fine micro-adjustment (14.4px): off-grid component gap"
+          },
+          "space_96": {
+            "token": "--space-96",
+            "value": "6rem",
+            "role": "96px: large vertical spacing"
+          },
+          "space_144": {
+            "token": "--space-144",
+            "value": "9rem",
+            "role": "144px: extra-large vertical spacing"
+          }
+        }
+      },
+      "materials": {
+        "mat_base": {
+          "token": "--mat-base",
+          "value": "var(--paper)",
+          "role": "Tier 0: the page plane and the ambient field"
+        },
+        "mat_reading": {
+          "token": "--mat-reading",
+          "value": "var(--surface)",
+          "role": "Tier 1, opaque reading surface: principle cells, pillars, surface cards, history and state panels"
+        },
+        "mat_instrument": {
+          "token": "--mat-instrument",
+          "value": "linear-gradient(180deg, var(--surface-lifted), var(--surface-raised)) · light: linear-gradient(180deg, #ffffff, var(--surface-raised))",
+          "role": "Tier 2, opaque instrument body: the score console, the Drift instrument, the health panel, the inspection window"
+        },
+        "mat_float": {
+          "token": "--mat-float",
+          "value": "var(--surface-lifted) · light: #ffffff",
+          "role": "Tier 3, opaque floating element over static content; also the reduced-transparency fallback for all glass"
+        },
+        "glass_thin": {
+          "token": "--glass-thin",
+          "value": "color-mix(in srgb, var(--surface-raised) 80%, transparent) · light: color-mix(in srgb, var(--surface) 84%, transparent)",
+          "role": "Thin glass tint, header capsule only. Text on it is --ink only (7.2:1 worst case)"
+        },
+        "glass_regular": {
+          "token": "--glass-regular",
+          "value": "color-mix(in srgb, var(--surface-raised) 88%, transparent) · light: color-mix(in srgb, var(--surface) 92%, transparent)",
+          "role": "Regular glass tint for every text-bearing glass surface: command slab, palette, drawer, popovers, dock pills, verdict HUD. --muted is allowed on it (5.2:1 worst case)"
+        },
+        "glass_filter_thin": {
+          "token": "--glass-filter-thin",
+          "value": "blur(16px) saturate(140%) · light: blur(16px)",
+          "role": "Backdrop recipe for thin glass; the light theme drops saturate"
+        },
+        "glass_filter_regular": {
+          "token": "--glass-filter-regular",
+          "value": "blur(24px) saturate(140%) · light: blur(24px) · coarse pointer: blur(16px)",
+          "role": "Backdrop recipe for regular glass. Blur is capped at 24px (cost scales with radius times area) and steps down on coarse pointers"
+        },
+        "glass_grain": {
+          "token": "--glass-grain",
+          "value": "static SVG feTurbulence noise (data URI), used at opacity .035 with mix-blend-mode: overlay",
+          "role": "Grain on a glass ::after: kills banding and turns a blur into a material. Glass only, never animated"
+        },
+        "rim": {
+          "token": "--rim",
+          "value": "linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05) 38%, rgb(255 255 255 / 0.03)) · light: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(10 20 60 / 0.08) 40%, rgb(10 20 60 / 0.11))",
+          "role": "The 1px top-lit edge on every tier-1+ surface, painted on a masked ::before"
+        },
+        "rim_hot": {
+          "token": "--rim-hot",
+          "value": "linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.08) 38%, rgb(255 255 255 / 0.05)) · light: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(10 20 60 / 0.12) 40%, rgb(10 20 60 / 0.16))",
+          "role": "Rim on hover and focus-visible, on a second pre-rendered layer whose opacity crossfades"
+        },
+        "specular": {
+          "token": "--specular",
+          "value": "inset 0 1px 0 rgb(255 255 255 / 0.07) · light: inset 0 1px 0 rgb(255 255 255 / 0.9)",
+          "role": "Inner top highlight that pairs with --rim"
+        },
+        "elev_1": {
+          "token": "--elev-1",
+          "value": "0 1px 1px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.22) · light: rgb(20 32 90) at 0.06 / 0.05",
+          "role": "Elevation 1: reading cards. Every x offset is 0 (one light, straight down)"
+        },
+        "elev_2": {
+          "token": "--elev-2",
+          "value": "0 1px 1px rgb(0 0 0 / 0.28), 0 4px 8px -2px rgb(0 0 0 / 0.3), 0 12px 24px -8px rgb(0 0 0 / 0.36) · light: rgb(20 32 90) at 0.06 / 0.07 / 0.09",
+          "role": "Elevation 2: instruments and paired panels"
+        },
+        "elev_3": {
+          "token": "--elev-3",
+          "value": "0 2px 2px rgb(0 0 0 / 0.26), 0 8px 16px -4px rgb(0 0 0 / 0.32), 0 24px 48px -12px rgb(0 0 0 / 0.42), 0 48px 96px -32px rgb(0 0 0 / 0.55) · light: rgb(20 32 90) at 0.05 / 0.07 / 0.1 / 0.14",
+          "role": "Elevation 3: floating controls and objects (command slab, popovers, verdict HUD)"
+        },
+        "elev_4": {
+          "token": "--elev-4",
+          "value": "0 2px 4px rgb(0 0 0 / 0.3), 0 16px 32px -8px rgb(0 0 0 / 0.4), 0 40px 80px -16px rgb(0 0 0 / 0.5), 0 80px 140px -40px rgb(0 0 0 / 0.6) · light: rgb(20 32 90) at 0.06 / 0.1 / 0.14 / 0.18",
+          "role": "Elevation 4: transient overlays only (find palette, mobile drawer)"
+        },
+        "floor_pool": {
+          "token": "--floor-pool",
+          "value": "radial-gradient(closest-side, oklch(0.55 0.2 265 / 0.16), transparent) · light: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent)",
+          "role": "Floor under a standing object, one per viewport. Luminous in dark mode, where a dark pool cannot be seen; a navy shadow in light mode"
+        },
+        "glow_signal": {
+          "token": "--glow-signal",
+          "value": "0 18px 44px -26px var(--signal-light)",
+          "role": "Coloured light meaning \"this surface is active\" (focused or running); faded in on a layer, gone at rest"
+        },
+        "glow_contact": {
+          "token": "--glow-contact",
+          "value": "radial-gradient(240px circle at var(--spot-x, 50%) var(--spot-y, 0%), color-mix(in srgb, var(--signal-access) 12%, transparent), transparent 62%) · light: 8%",
+          "role": "Hover light at the point of contact. A surface re-declares it on itself so its own --spot-x / --spot-y apply"
+        },
+        "mat_t_in": {
+          "token": "--mat-t-in",
+          "value": "var(--duration-quick) var(--ease-out)",
+          "role": "Material state entry (150ms), under the 200ms reduced-motion opacity allowance"
+        },
+        "mat_t_out": {
+          "token": "--mat-t-out",
+          "value": "var(--duration-fast) var(--ease-out)",
+          "role": "Material state exit (250ms)"
+        },
+        "instrument_palette": {
+          "lv_glass": {
+            "token": "--lv-glass",
+            "value": "var(--mat-instrument)",
+            "role": "Deprecated alias of --mat-instrument (no rule paints with it); kept so older references resolve to the opaque instrument body, not the old translucent fill"
+          },
+          "lv_glass_ring": {
+            "token": "--lv-glass-ring",
+            "value": "rgba(255, 255, 255, 0.09) · light: rgba(10, 20, 60, 0.09)",
+            "role": "Instrument outer ring"
+          },
+          "lv_glass_edge": {
+            "token": "--lv-glass-edge",
+            "value": "rgba(255, 255, 255, 0.07) · light: rgba(255, 255, 255, 0.9)",
+            "role": "Instrument inner top edge"
+          },
+          "lv_glass_shadow": {
+            "token": "--lv-glass-shadow",
+            "value": "0 44px 110px -44px rgba(0, 0, 0, 0.85), 0 14px 36px -16px rgba(0, 0, 0, 0.55) · light: 0 36px 80px -36px rgba(20, 32, 90, 0.28), 0 10px 26px -14px rgba(20, 32, 90, 0.16)",
+            "role": "Instrument drop shadow"
+          },
+          "lv_sheen": {
+            "token": "--lv-sheen",
+            "value": "rgba(255, 255, 255, 0.3) · light: rgba(255, 255, 255, 0.95)",
+            "role": "The single specular sheen line on an instrument"
+          },
+          "lv_well": {
+            "token": "--lv-well",
+            "value": "rgba(255, 255, 255, 0.035) · light: rgba(10, 20, 60, 0.035)",
+            "role": "Recessed well fill (inputs, tracks)"
+          },
+          "lv_well_line": {
+            "token": "--lv-well-line",
+            "value": "rgba(255, 255, 255, 0.1) · light: rgba(10, 20, 60, 0.1)",
+            "role": "Recessed well outline"
+          },
+          "lv_pass_a": {
+            "token": "--lv-pass-a",
+            "value": "#5b7cff · light: #3a63f5",
+            "role": "Pass fill, light stop"
+          },
+          "lv_pass_b": {
+            "token": "--lv-pass-b",
+            "value": "#2c50ec · light: #0133cb",
+            "role": "Pass fill, deep stop"
+          },
+          "lv_pass_glow": {
+            "token": "--lv-pass-glow",
+            "value": "rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)",
+            "role": "Pass glow"
+          },
+          "lv_warn_a": {
+            "token": "--lv-warn-a",
+            "value": "#f7c948 · light: #e0a917",
+            "role": "Warn fill, light stop"
+          },
+          "lv_warn_b": {
+            "token": "--lv-warn-b",
+            "value": "#d79a06 · light: #b07d04",
+            "role": "Warn fill, deep stop"
+          },
+          "lv_fail_a": {
+            "token": "--lv-fail-a",
+            "value": "#ff7f7f · light: #ef5b5b",
+            "role": "Fail fill, light stop"
+          },
+          "lv_fail_b": {
+            "token": "--lv-fail-b",
+            "value": "#e0454a · light: #c62828",
+            "role": "Fail fill, deep stop"
+          },
+          "lv_hatch": {
+            "token": "--lv-hatch",
+            "value": "rgba(255, 255, 255, 0.2) · light: rgba(10, 20, 60, 0.22)",
+            "role": "Hatching for skipped or person-checked cells: the drawing convention for a different material"
+          },
+          "lv_head": {
+            "token": "--lv-head",
+            "value": "#8aa0ff · light: #0133cb",
+            "role": "Inspection highlight: the element outline and tag fill in the inspection demo"
+          },
+          "lv_head_ink": {
+            "token": "--lv-head-ink",
+            "value": "#010102 · light: var(--paper-on-signal)",
+            "role": "Text on a --lv-head fill (8.5:1 dark; white on #0133cb is 8.99:1 light)"
+          },
+          "lv_ink_accent": {
+            "token": "--lv-ink-accent",
+            "value": "var(--signal-access)",
+            "role": "Accent text on an instrument"
+          },
+          "lv_shine": {
+            "token": "--lv-shine",
+            "value": "color-mix(in srgb, var(--paper-on-signal) 34%, transparent)",
+            "role": "The one specular highlight on lit cells"
+          },
+          "lv_shine_soft": {
+            "token": "--lv-shine-soft",
+            "value": "color-mix(in srgb, var(--paper-on-signal) 26%, transparent)",
+            "role": "Softer specular highlight on lit cells"
+          }
+        }
+      },
+      "acoustic": {
+        "adopted_in": "0.3.0",
+        "engine": "Cuelume v0.2.2 (MIT)",
+        "preference_key": "designesy:sound",
+        "reduced_motion_proxy": true,
+        "token_type": "Custom $type: sound via $extensions.designesy; net-new relative to W3C DTCG 2025.10",
+        "cues": [
+          {
+            "token": "--cue:brand",
+            "cue": "sparkle",
+            "role": "Brand wordmark contact"
+          },
+          {
+            "token": "--cue:nav",
+            "cue": "tick",
+            "role": "Navigation and wayfinding"
+          },
+          {
+            "token": "--cue:invite",
+            "cue": "chime",
+            "role": "Primary invitation / machine surfaces"
+          },
+          {
+            "token": "--cue:action",
+            "cue": "press",
+            "role": "Pointer-down on actionable surfaces"
+          },
+          {
+            "token": "--cue:resolve",
+            "cue": "release",
+            "role": "Pointer-up default resolve"
+          },
+          {
+            "token": "--cue:complete",
+            "cue": "success",
+            "role": "High-value resolve"
+          },
+          {
+            "token": "--cue:reveal",
+            "cue": "bloom",
+            "role": "Content / experiment reveal"
+          },
+          {
+            "token": "--cue:list",
+            "cue": "whisper",
+            "role": "Dense list / surface scan"
+          },
+          {
+            "token": "--cue:switch",
+            "cue": "toggle",
+            "role": "State toggle"
+          },
+          {
+            "token": "--cue:contact",
+            "cue": "droplet",
+            "role": "Contact / outbound mail"
+          }
+        ],
+        "mapping_rules": [
+          "Brand marks earn sparkle: hero wordmark, topbar logo, footer mark",
+          "One primary cue family per role: do not randomize per page",
+          "Hover sounds are fine-pointer only; touch maps hover cue to single tap",
+          "No ambient audio: Cuelume is interaction-only",
+          "No focus sounds: sounds fire on pointer and click, never on focus",
+          "Every cue must trace to the acoustic token document"
+        ]
+      },
+      "springs": {
+        "default": {
+          "response_s": 0.4,
+          "damping": 1,
+          "description": "Default spring physics for natural motion"
+        },
+        "momentum": {
+          "response_s": 0.3,
+          "damping": 0.8,
+          "description": "Momentum spring for continued motion"
+        }
+      },
+      "sound_cues": {
+        "brand": {
+          "cue": "sparkle",
+          "role": "Brand wordmark contact"
+        },
+        "nav": {
+          "cue": "tick",
+          "role": "Navigation and wayfinding"
+        },
+        "invite": {
+          "cue": "chime",
+          "role": "Primary invitation / machine surfaces"
+        },
+        "action": {
+          "cue": "press",
+          "role": "Pointer-down on actionable surfaces"
+        },
+        "resolve": {
+          "cue": "release",
+          "role": "Pointer-up default resolve"
+        },
+        "complete": {
+          "cue": "success",
+          "role": "High-value resolve"
+        },
+        "reveal": {
+          "cue": "bloom",
+          "role": "Content / experiment reveal"
+        },
+        "list": {
+          "cue": "whisper",
+          "role": "Dense list / surface scan"
+        },
+        "switch": {
+          "cue": "toggle",
+          "role": "State toggle"
+        },
+        "contact": {
+          "cue": "droplet",
+          "role": "Contact / outbound mail"
+        }
+      },
+      "verification": {
+        "checks": 44,
+        "categories": 14,
+        "a11y_floor": "60% (a11y < 60% caps score at C/70)",
+        "standards": "WCAG 2.1 AA + APCA + DTCG 2025.10 + EU AI Act Art 50"
+      }
+    }
+  }
+}

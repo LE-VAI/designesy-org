@@ -1,0 +1,24 @@
+{
+  "$schema": "https://wrong-schema.com/schema.json",
+  "$tokens": {
+    "colors": {
+      "primary": {
+        "$type": "myCustomGlow",
+        "$value": "#3b82f6"
+      },
+      "secondary": {
+        "$value": "#ff0000"
+      }
+    },
+    "spacing": {
+      "md": {
+        "$type": "dimension",
+        "$value": 16
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": "2parsangs"
+      }
+    }
+  }
+}
