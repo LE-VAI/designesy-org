@@ -2,7 +2,7 @@ import { designSystemContract } from '../../lib/design-system-contract';
 import { CATEGORY_WEIGHTS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 // The $schema and the color form are shared with designesy_guardrails' token
 // file (app/lib/dtcg.ts), so the two DTCG files this site emits agree.
-import { DTCG_SCHEMA_URL, parseColorValue } from '../../lib/dtcg';
+import { DTCG_SCHEMA_URL, parseColorValue, parseCssColor, parseDimension, parseShadow, splitTopLevel } from '../../lib/dtcg';
 
 export const dynamic = 'force-static';
 
@@ -24,6 +24,40 @@ export const dynamic = 'force-static';
 // enforced by scripts/check-contract-drift.js at build time.
 //
 // Self-referential conformance: this export passes designesy_tokens_score at 100%.
+//
+// EVERY $value IS A DTCG VALUE (since 1.13.8). The export used to copy some
+// contract values verbatim, and they were CSS, not DTCG (measured 2026-10-10):
+// seven $values held var() (the three interaction state colors, such as
+// focus_ring = var(--signal-light), and the four font stacks), the five radii
+// were "6px" strings where 2025.10 defines a dimension as { value, unit }, and
+// each shadow held a CSS color string and lengths such as "0". A consumer that
+// reads the format could resolve none of them. Now:
+//   - a var() naming a token this file exports is the DTCG alias to it,
+//     {group.token} (focus_ring is {color.signal.light}, display is
+//     {fontFamily.serif});
+//   - a font stack is the array of its family names, its var(--font-*) being
+//     the family next/font loads under that variable;
+//   - dimensions, shadow lengths included, are { value, unit } objects, and
+//     shadow colors are structured colors.
+// A value with no DTCG form throws while the file is generated, so the build
+// fails rather than ship CSS in a $value. scripts/check-mcp-accuracy.js
+// (export-dtcg) holds the file to this and to the server's own validator.
+
+/**
+ * The families app/layout.tsx loads with next/font, by the CSS variable each
+ * is exposed as. The contract's font stacks start with these variables and
+ * name the face in each stack's role; GET checks the role names this family
+ * and this variable, so the map cannot drift from the contract unnoticed.
+ */
+const NEXT_FONT_FAMILIES: Readonly<Record<string, string>> = {
+  '--font-sans': 'Schibsted Grotesk',
+  '--font-display': 'Fraunces',
+  '--font-mono': 'Geist Mono',
+};
+
+/** A value that is exactly one var() with no fallback. */
+const VAR = /^var\(\s*(--[\w-]+)\s*\)$/;
+
 export function GET() {
   const c = designSystemContract;
   const colors = c.colors as Record<string, { token: string; value: string; role: string }>;
@@ -86,6 +120,11 @@ export function GET() {
     error: { group: 'status', name: 'error' },
   };
 
+  // CSS custom property (--signal-light) -> the DTCG alias to the token this
+  // file exports for it ({color.signal.light}), so a contract value that is a
+  // var() is written as a reference.
+  const aliasOf = new Map<string, string>();
+
   for (const [key, spec] of Object.entries(colors)) {
     const mapping = colorMap[key];
     if (!mapping) continue;
@@ -95,70 +134,62 @@ export function GET() {
       $type: 'color',
       $description: spec.role,
     };
+    aliasOf.set(spec.token, `{color.${mapping.group}.${mapping.name}}`);
   }
 
   // Border + surface-depth tokens from surfaces_and_lines (colors only —
   // gradient/glow tokens are effect values, not DTCG color tokens).
   const borderGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
   const surfaceGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
+  const surfacePlaces: Record<string, [typeof borderGroup, string, string]> = {
+    line: [borderGroup, 'border', 'subtle'],
+    line_strong: [borderGroup, 'border', 'strong'],
+    line_faint: [borderGroup, 'border', 'faint'],
+    signal_dim: [surfaceGroup, 'surface_effects', 'wash'],
+    surface_soft: [surfaceGroup, 'surface_effects', 'soft'],
+    surface_hover: [surfaceGroup, 'surface_effects', 'hover'],
+  };
   for (const [key, spec] of Object.entries(surfaces)) {
-    if (key === 'line') borderGroup.subtle = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
-    if (key === 'line_strong') borderGroup.strong = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
-    if (key === 'line_faint') borderGroup.faint = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
-    if (key === 'signal_dim') surfaceGroup.wash = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
-    if (key === 'surface_soft') surfaceGroup.soft = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
-    if (key === 'surface_hover') surfaceGroup.hover = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    const place = surfacePlaces[key];
+    if (!place) continue;
+    const [group, groupName, name] = place;
+    group[name] = { $value: parseColorValue(spec.value), $type: 'color', $description: spec.role };
+    aliasOf.set(spec.token, `{color.${groupName}.${name}}`);
   }
   if (Object.keys(borderGroup).length > 0) colorGroup.border = borderGroup;
   if (Object.keys(surfaceGroup).length > 0) colorGroup.surface_effects = surfaceGroup;
 
-  // Radius tokens (dimension type)
-  const radiusGroup: Record<string, { $value: string; $type: string; $description?: string }> = {};
+  /** A contract length as a DTCG dimension; anything else stops the build. */
+  const dimension = (where: string, value: string) => {
+    const d = parseDimension(value);
+    if (!d) throw new Error(`/export/dtcg: ${where} is ${JSON.stringify(value)}, which has no DTCG dimension form ({ value, unit: px | rem }).`);
+    return d;
+  };
+
+  // Radius tokens (dimension type): { value, unit }, not the CSS string.
+  const radiusGroup: Record<string, { $value: unknown; $type: string; $description?: string }> = {};
   for (const [key, spec] of Object.entries(rounded)) {
-    if (key === 'default') radiusGroup.default = { $value: spec.value, $type: 'dimension', $description: spec.role };
-    else radiusGroup[key] = { $value: spec.value, $type: 'dimension', $description: spec.role };
+    radiusGroup[key] = { $value: dimension(`radius.${key}`, spec.value), $type: 'dimension', $description: spec.role };
   }
   if (Object.keys(radiusGroup).length > 0) dtcg.radius = radiusGroup;
 
   // Shadow tokens
-  // ── Shadow value parser ─────────────────────────────────────────────────
-  // "0 1px 3px rgba(0, 0, 0, 0.4)" -> the DTCG composite form.
-  //
   // DTCG 2025.10 defines a shadow as an object (or array of objects) with
-  // color / offsetX / offsetY / blur / spread. A CSS shorthand string failed
-  // t16 on all three shadows ("shadow[0] must be an object"). Like the colour
-  // fix, this is an INTEROP defect and not just a score: a spec-compliant
-  // consumer could not read these shadows at all.
-  //
-  // spread is absent from the source shorthand, so it is emitted as 0 — the
-  // spec requires the FIELD to exist, and 0 is the CSS default when omitted.
-  function parseShadowValue(value: string): {
-    color: string;
-    offsetX: string;
-    offsetY: string;
-    blur: string;
-    spread: string;
-  } | null {
-    const m = value
-      .trim()
-      .match(/^(-?[\d.]+[a-z%]*)\s+(-?[\d.]+[a-z%]*)\s+(-?[\d.]+[a-z%]*)(?:\s+(-?[\d.]+[a-z%]*))?\s+(.+)$/i);
-    if (!m) return null;
-    return {
-      offsetX: m[1],
-      offsetY: m[2],
-      blur: m[3],
-      // If a 4th length is present it is spread, otherwise spread defaults to 0.
-      spread: m[4] ?? '0',
-      color: m[5].trim(),
-    };
-  }
-
+  // color / offsetX / offsetY / blur / spread, where color is a color and the
+  // four lengths are dimensions. A CSS shorthand string failed t16 on all
+  // three shadows ("shadow[0] must be an object"); until 1.13.8 the object
+  // still held the CSS color string and lengths such as "0" and "1px". The
+  // shorthand is read by the parser designesy_guardrails uses (app/lib/
+  // dtcg.ts); spread is absent from it, so it is 0, the CSS default.
   const shadowGroup: Record<string, { $value: unknown; $type: string }> = {};
   for (const [key, spec] of Object.entries(shadows)) {
-    const parsed = parseShadowValue(spec.value);
-    // Fall back to the raw string rather than emit a malformed object: a
-    // partially-built shadow is worse than an obviously-unparsed one.
-    shadowGroup[key] = { $value: parsed ?? spec.value, $type: 'shadow' };
+    const parsed = parseShadow(spec.value);
+    if (!parsed) throw new Error(`/export/dtcg: shadow.${key} is ${JSON.stringify(spec.value)}, which does not parse as one CSS shadow.`);
+    const length = (field: string) => dimension(`shadow.${key}.${field}`, String(parsed[field]));
+    shadowGroup[key] = {
+      $value: { color: parsed.color, offsetX: length('offsetX'), offsetY: length('offsetY'), blur: length('blur'), spread: length('spread') },
+      $type: 'shadow',
+    };
   }
   if (Object.keys(shadowGroup).length > 0) dtcg.shadow = shadowGroup;
 
@@ -253,9 +284,14 @@ export function GET() {
   // Interaction state tokens (hover-fill / press-fill / focus-ring)
   const stateTokens = (interaction as { state_tokens?: Record<string, { token: string; value: string; role: string }> })?.state_tokens;
   if (stateTokens) {
-    const interactionGroup: Record<string, { $value: string; $type: string; $description: string }> = {};
+    // Each state color is a var() of a color this file exports, so it is the
+    // DTCG alias to that token; a literal color is converted as the others are.
+    const interactionGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
     for (const [key, spec] of Object.entries(stateTokens)) {
-      interactionGroup[key] = { $value: spec.value, $type: 'color', $description: spec.role };
+      const ref = spec.value.trim().match(VAR);
+      const value = ref ? aliasOf.get(ref[1]) : parseCssColor(spec.value);
+      if (!value) throw new Error(`/export/dtcg: interaction.${key} is ${JSON.stringify(spec.value)}, which is not a color and names no color this file exports.`);
+      interactionGroup[key] = { $value: value, $type: 'color', $description: spec.role };
     }
     if (Object.keys(interactionGroup).length > 0) dtcg.interaction = interactionGroup;
   }
@@ -263,9 +299,28 @@ export function GET() {
   // Font stacks (fontFamily type)
   const fontStacks = (typography as { font_stacks?: Record<string, { token: string; value: string; role: string }> })?.font_stacks;
   if (fontStacks) {
-    const fontGroup: Record<string, { $value: string; $type: string; $description: string }> = {};
+    // A stack that is one var() of another stack is the alias to it (display
+    // is {fontFamily.serif}). Any other stack is the array of its family
+    // names, its var(--font-*) replaced by the family next/font loads under
+    // that variable, which the stack's role in the contract must name.
+    const stackAlias = new Map(Object.entries(fontStacks).map(([key, spec]) => [spec.token, `{fontFamily.${key}}`]));
+    const fontGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
     for (const [key, spec] of Object.entries(fontStacks)) {
-      fontGroup[key] = { $value: spec.value, $type: 'fontFamily', $description: spec.role };
+      const whole = spec.value.trim().match(VAR);
+      if (whole && stackAlias.has(whole[1])) {
+        fontGroup[key] = { $value: stackAlias.get(whole[1]), $type: 'fontFamily', $description: spec.role };
+        continue;
+      }
+      const families = splitTopLevel(spec.value).map((part) => {
+        const ref = part.match(VAR);
+        if (!ref) return part.replace(/^(['"])(.*)\1$/, '$2').trim();
+        const family = NEXT_FONT_FAMILIES[ref[1]];
+        if (!family || !spec.role.includes(family) || !spec.role.includes(ref[1])) {
+          throw new Error(`/export/dtcg: fontFamily.${key} uses ${ref[1]}, and its role in the contract does not name ${family ? `${family} as the face loaded under it` : 'the face loaded under it'}.`);
+        }
+        return family;
+      });
+      fontGroup[key] = { $value: families, $type: 'fontFamily', $description: spec.role };
     }
     if (Object.keys(fontGroup).length > 0) dtcg.fontFamily = fontGroup;
   }

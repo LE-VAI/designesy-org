@@ -59,5 +59,104 @@
       }
     },
     "expectScore": 100
+  },
+  "tokensWarnHalf": {
+    "about": "Eight checks PASS, t01 WARNs (a $schema off designtokens.org) and t07 SKIPs: a WARN counts half, so the score is (8 + 0.5) / 9 = 94, not 8 / 9 = 89.",
+    "file": {
+      "$schema": "https://example.com/tokens.schema.json",
+      "color": {
+        "ink": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.96,
+              0.96,
+              0.97
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "space": {
+        "md": {
+          "$type": "dimension",
+          "$value": "16px"
+        }
+      }
+    },
+    "expectScore": 94
+  },
+  "tokensAlias": {
+    "about": "Dimension tokens that alias other dimensions ({space.16}, {space.$root}), a $root token in each group, and the 2025.10 {value, unit} form. Every alias resolves to a valid dimension, so t08 and t10 PASS, and the two $root tokens are counted.",
+    "file": {
+      "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+      "space": {
+        "$root": {
+          "$type": "dimension",
+          "$value": {
+            "value": 4,
+            "unit": "px"
+          }
+        },
+        "16": {
+          "$type": "dimension",
+          "$value": "16px"
+        },
+        "md": {
+          "$type": "dimension",
+          "$value": "{space.16}"
+        },
+        "lg": {
+          "$type": "dimension",
+          "$value": {
+            "value": 1.5,
+            "unit": "rem"
+          }
+        },
+        "gutter": {
+          "$type": "dimension",
+          "$value": "{space.md}"
+        },
+        "base": {
+          "$type": "dimension",
+          "$value": "{space.$root}"
+        }
+      },
+      "color": {
+        "surface": {
+          "$root": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.02,
+                0.02,
+                0.03
+              ],
+              "alpha": 1
+            }
+          },
+          "raised": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.05,
+                0.05,
+                0.07
+              ],
+              "alpha": 1
+            }
+          }
+        },
+        "focus": {
+          "$type": "color",
+          "$value": "{color.surface.$root}"
+        }
+      }
+    },
+    "expectTotalTokens": 9,
+    "expectDimensions": 6
   }
 }

@@ -8,10 +8,27 @@
 //     counted as a zero: a clean file with no custom types (t07 SKIP) scored 90,
 //     while designesy_motion_score states "SKIP is not scored" and the score
 //     engine leaves MANUAL out. The score is now PASS / scored checks x 100;
-//     WARN and FAIL still earn nothing, as the tokens contract has always said.
+//     WARN and FAIL earned nothing until 1.13.8 (see below).
 //   - The two copies wrote different check names (the hosted one read the
 //     contract by array position, the PyPI one hard-coded short names) and
 //     different detail text. Names are now the contract's own, looked up by id.
+//
+// Since 1.13.8 (tokens contract 0.1.2), three more defects are fixed:
+//   - A WARN counts half, as it does in designesy_motion_score, the score
+//     engine and the npm @designesy/tokens validator (owner decision
+//     2026-10-10). It counted zero here alone, so the same file graded
+//     differently depending on which Designesy tool read it.
+//   - A DTCG alias such as {space.16} was read as a literal dimension with no
+//     unit, so a file that aliased its dimensions WARNed twice (t08 and t10)
+//     for doing what the format asks. An alias is now a reference: t08 checks
+//     the value it resolves to, and one that resolves to nothing is reported
+//     as unresolved rather than as a missing unit.
+//   - A token named $root (the 2025.10 name for a group's own value) was
+//     skipped with the other $-properties, so it was never checked. It is now
+//     a token like any other, at the path group.$root, and an alias may name
+//     it ({surface.$root}).
+//   The 2025.10 dimension form, { value, unit }, was not read at all (only
+//   strings and bare numbers were), so it is now checked in t08 too.
 //
 // The PyPI server (packages/designesy-mcp, _tokens_score) ports this module line
 // for line. Both run on the token files in
@@ -68,7 +85,7 @@ export const TOKENS_CHECK_NAMES: Readonly<Record<string, string>> = {
 
 /** The scoring rule, stated in every result. */
 export const TOKENS_SCORING =
-  'PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.';
+  'PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.';
 
 const VALID_DIMENSION_UNITS = [
   'px', 'rem', 'em', '%', 'vw', 'vh', 'vmin', 'vmax',
@@ -85,6 +102,64 @@ function extractUnit(v: string): string {
     if (v.endsWith(unit)) return unit;
   }
   return '';
+}
+
+/** A DTCG alias: the whole value is one {path.to.token} reference. */
+const ALIAS = /^\{[^{}]+\}$/;
+
+function isAlias(v: Json): v is string {
+  return typeof v === 'string' && ALIAS.test(v);
+}
+
+/**
+ * Follow an alias to the literal value it names, through any chain of aliases,
+ * with the $type of the token that holds it (null when that token has none).
+ * Path segments are group and token names, $root included. Returns undefined
+ * when a segment is missing, the target is not a token, or the chain loops.
+ */
+function resolveAlias(alias: string, root: Obj): { value: Json; type: string | null } | undefined {
+  const seen = new Set<string>();
+  let ref = alias;
+  while (isAlias(ref)) {
+    if (seen.has(ref)) return undefined;
+    seen.add(ref);
+    let node: Json = root;
+    for (const part of ref.slice(1, -1).split('.')) {
+      node = isObj(node) && Object.prototype.hasOwnProperty.call(node, part) ? node[part] : undefined;
+    }
+    if (!isObj(node) || node.$value === undefined) return undefined;
+    if (!isAlias(node.$value)) return { value: node.$value, type: typeof node.$type === 'string' ? node.$type : null };
+    ref = node.$value;
+  }
+  return undefined;
+}
+
+/**
+ * The unit of a dimension value, or '' when it has none the checks accept: a
+ * string ending in a CSS length unit, or the 2025.10 object form
+ * { value: number, unit }.
+ */
+function dimensionUnit(v: Json): string {
+  if (typeof v === 'string') return extractUnit(v);
+  if (isObj(v) && typeof v.value === 'number' && typeof v.unit === 'string' && VALID_DIMENSION_UNITS.includes(v.unit)) return v.unit;
+  return '';
+}
+
+/** How a dimension value prints in a detail line. */
+function dimensionText(v: Json): string {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number') return String(v);
+  if (isObj(v)) {
+    const value = typeof v.value === 'number' ? String(v.value) : typeOf(v.value);
+    const unit = typeof v.unit === 'string' ? v.unit : typeOf(v.unit);
+    return `{value: ${value}, unit: ${unit}}`;
+  }
+  return typeOf(v);
+}
+
+/** JavaScript's typeof for a JSON value (null and arrays are 'object'). */
+function typeOf(v: Json): string {
+  return v === undefined ? 'undefined' : v === null || typeof v === 'object' ? 'object' : typeof v;
 }
 
 function checkNames(contract: TokensContractLike): Record<string, string> {
@@ -123,12 +198,13 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   let colorBareHexCount = 0;
   let totalTokens = 0;
   const allTypes = new Set<string>();
-  const dimensionValues: Array<{ path: string; value: string }> = [];
+  const dimensionValues: Array<{ path: string; value: string; ok: boolean }> = [];
   const deprecatedPatterns: string[] = [];
 
   const walk = (obj: Obj, path: string): void => {
     for (const [key, val] of Object.entries(obj)) {
-      if (key.startsWith('$')) continue;
+      // $root is a token (a group's own value), not a property of the group.
+      if (key.startsWith('$') && key !== '$root') continue;
       const currentPath = path ? `${path}.${key}` : key;
       if (!isObj(val)) continue;
       if (val.$value === undefined) {
@@ -150,14 +226,27 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
         }
       }
       if (val.$type === 'dimension') {
-        if (typeof val.$value === 'string') {
-          dimensionValues.push({ path: currentPath, value: val.$value });
+        if (isAlias(val.$value)) {
+          // A reference: its unit is the unit of the value it resolves to, and
+          // the target, if it is a dimension token, answers t10 for itself. A
+          // target of another type is named as such.
+          const target = resolveAlias(val.$value, tokenGroups);
+          const otherType = target && target.type !== null && target.type !== 'dimension';
+          dimensionValues.push(!target
+            ? { path: currentPath, value: `${val.$value} (unresolved alias)`, ok: false }
+            : otherType
+              ? { path: currentPath, value: `${val.$value} -> a ${target.type} token`, ok: false }
+              : { path: currentPath, value: `${val.$value} -> ${dimensionText(target.value)}`, ok: !!dimensionUnit(target.value) });
+        } else if (typeof val.$value === 'string') {
+          dimensionValues.push({ path: currentPath, value: val.$value, ok: !!extractUnit(val.$value) });
           if (!extractUnit(val.$value)) {
             deprecatedPatterns.push(`Dimension token '${currentPath}' has unrecognized or missing unit: '${val.$value}'`);
           }
         } else if (typeof val.$value === 'number') {
-          dimensionValues.push({ path: currentPath, value: String(val.$value) });
+          dimensionValues.push({ path: currentPath, value: String(val.$value), ok: false });
           deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (should include unit string)`);
+        } else if (isObj(val.$value)) {
+          dimensionValues.push({ path: currentPath, value: dimensionText(val.$value), ok: !!dimensionUnit(val.$value) });
         }
       }
       if ('$ref' in val) {
@@ -204,7 +293,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   if (dimensionValues.length === 0) {
     add('t08', 'SKIP', 'No dimension tokens found');
   } else {
-    const badUnits = dimensionValues.filter((d) => !extractUnit(d.value)).map((d) => `${d.path}='${d.value}'`);
+    const badUnits = dimensionValues.filter((d) => !d.ok).map((d) => `${d.path}='${d.value}'`);
     if (badUnits.length === 0) {
       add('t08', 'PASS', `All ${dimensionValues.length} dimension token(s) use valid units (px, rem, em, %, etc.)`);
     } else {
@@ -228,7 +317,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   const count = (s: TokensStatus) => results.filter((r) => r.status === s).length;
   const pass = count('PASS'), warn = count('WARN'), fail = count('FAIL'), skip = count('SKIP');
   const scored = pass + warn + fail;
-  const score = scored > 0 ? Math.round((pass / scored) * 100) : 0;
+  const score = scored > 0 ? Math.round(((pass + warn * 0.5) / scored) * 100) : 0;
   const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
 
   return {

@@ -54,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.7"
+SERVER_VERSION = "1.13.8"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -2366,7 +2366,7 @@ TOOLS = [
             "scoring a whole live site (not just its token file), use "
             "designesy_score. Executable: fetches the URL or parses the "
             "raw JSON you provide, runs 10 checks server-side. No "
-            "browser needed. Score: PASS=1, WARN=0, FAIL=0, SKIP is not "
+            "browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not "
             "scored; points / scored checks x 100. Returns JSON: { "
             "contract_id, contract_version, contract_status, url, "
             "total_tokens, score (0-100), grade (A-F), pass_count, "
@@ -2895,8 +2895,14 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 # A line-for-line port of apps/site/app/lib/tokens-score.ts. The score used to
 # be PASS / all ten checks x 100, so a check that could not apply counted as a
 # zero (a clean file whose t07 had no custom types scored 90, not 100). It is
-# now PASS / scored checks x 100: SKIP is not scored, WARN and FAIL earn
-# nothing. Check names are the contract's own, looked up by id. Both
+# now PASS / scored checks x 100: SKIP is not scored. Since 1.13.8 a WARN
+# counts half (it counted zero), as in designesy_motion_score, the score engine
+# and the npm @designesy/tokens validator; a {group.token} alias on a dimension
+# token is a reference, checked by the value it resolves to (it was read as a
+# literal with no unit, a spurious WARN in t08 and t10); a $root token (a
+# group's own value) is checked like any other (it was skipped); and the
+# 2025.10 dimension form {value, unit} is checked in t08 (it was not read).
+# Check names are the contract's own, looked up by id. Both
 # implementations run on test/fixtures/tokens/ and must produce expected.json
 # there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
 #
@@ -2919,7 +2925,7 @@ TOKENS_CHECK_NAMES = {
 }
 
 TOKENS_SCORING = (
-    "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. "
+    "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. "
     "A>=90, B>=80, C>=70, D>=60, F<60."
 )
 
@@ -2951,6 +2957,76 @@ def _dimension_unit(v: str) -> str:
         if v.endswith(unit):
             return unit
     return ""
+
+
+_ALIAS = re.compile(r"\{[^{}]+\}")
+
+
+def _is_alias(v: Any) -> bool:
+    """A DTCG alias: the whole value is one {path.to.token} reference."""
+    return isinstance(v, str) and _ALIAS.fullmatch(v) is not None
+
+
+def _resolve_alias(alias: str, root: dict[str, Any]) -> tuple[Any, str | None] | None:
+    """(value, $type): the literal value an alias names, through any chain of
+    aliases, with the $type of the token that holds it (None when it has none);
+    None when a segment is missing, the target is not a token, or the chain
+    loops. Path segments are group and token names, $root included."""
+    seen: set[str] = set()
+    ref = alias
+    while _is_alias(ref):
+        if ref in seen:
+            return None
+        seen.add(ref)
+        node: Any = root
+        for part in ref[1:-1].split("."):
+            node = node.get(part) if isinstance(node, dict) else None
+        if not isinstance(node, dict) or "$value" not in node:
+            return None
+        if not _is_alias(node["$value"]):
+            t = node.get("$type")
+            return (node["$value"], t if isinstance(t, str) else None)
+        ref = node["$value"]
+    return None
+
+
+def _js_typeof(v: Any) -> str:
+    """JavaScript's typeof for a JSON value (null and arrays are 'object')."""
+    if isinstance(v, bool):
+        return "boolean"
+    if isinstance(v, (int, float)):
+        return "number"
+    if isinstance(v, str):
+        return "string"
+    return "object"
+
+
+def _is_js_number(v: Any) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _dimension_unit_of(v: Any) -> str:
+    """The unit of a dimension value, or '' when it has none the checks accept:
+    a string ending in a CSS length unit, or the 2025.10 object form
+    {value: number, unit}."""
+    if isinstance(v, str):
+        return _dimension_unit(v)
+    if isinstance(v, dict) and _is_js_number(v.get("value")) and isinstance(v.get("unit"), str) and v["unit"] in _DIMENSION_UNITS:
+        return v["unit"]
+    return ""
+
+
+def _dimension_text(v: Any) -> str:
+    """How a dimension value prints in a detail line."""
+    if isinstance(v, str):
+        return v
+    if _is_js_number(v):
+        return _js_num(v)
+    if isinstance(v, dict):
+        value = _js_num(v["value"]) if _is_js_number(v.get("value")) else ("undefined" if "value" not in v else _js_typeof(v["value"]))
+        unit = v["unit"] if isinstance(v.get("unit"), str) else ("undefined" if "unit" not in v else _js_typeof(v["unit"]))
+        return f"{{value: {value}, unit: {unit}}}"
+    return _js_typeof(v)
 
 
 def _tokens_check_names(contract: dict[str, Any]) -> dict[str, str]:
@@ -2995,12 +3071,13 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     # t03-t10: one walk over the tokens
     counts = {"type": 0, "value": 0, "structured": 0, "bare_hex": 0, "total": 0}
     all_types: list[str] = []  # insertion-ordered, as a JS Set
-    dimension_values: list[tuple[str, str]] = []
+    dimension_values: list[tuple[str, str, bool]] = []
     deprecated: list[str] = []
 
     def walk(obj: dict[str, Any], path: str) -> None:
         for key in _js_keys(obj):
-            if key.startswith("$"):
+            # $root is a token (a group's own value), not a property of the group.
+            if key.startswith("$") and key != "$root":
                 continue
             val = obj[key]
             current = f"{path}.{key}" if path else key
@@ -3024,13 +3101,26 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                     counts["bare_hex"] += 1
                     deprecated.append(f"Color token '{current}' uses bare hex (pre-2025.10 pattern)")
             if t == "dimension":
-                if isinstance(v, str):
-                    dimension_values.append((current, v))
+                if _is_alias(v):
+                    # A reference: its unit is the unit of the value it resolves
+                    # to, and the target, if it is a dimension token, answers t10
+                    # for itself. A target of another type is named as such.
+                    target = _resolve_alias(v, token_groups)
+                    if target is None:
+                        dimension_values.append((current, f"{v} (unresolved alias)", False))
+                    elif target[1] is not None and target[1] != "dimension":
+                        dimension_values.append((current, f"{v} -> a {target[1]} token", False))
+                    else:
+                        dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", bool(_dimension_unit_of(target[0]))))
+                elif isinstance(v, str):
+                    dimension_values.append((current, v, bool(_dimension_unit(v))))
                     if not _dimension_unit(v):
                         deprecated.append(f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
-                elif isinstance(v, (int, float)) and not isinstance(v, bool):
-                    dimension_values.append((current, _js_num(v)))
+                elif _is_js_number(v):
+                    dimension_values.append((current, _js_num(v), False))
                     deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+                elif isinstance(v, dict):
+                    dimension_values.append((current, _dimension_text(v), bool(_dimension_unit_of(v))))
             if "$ref" in val:
                 deprecated.append(f"Token '{current}' uses deprecated $ref syntax (use {{path}} in $value)")
 
@@ -3079,7 +3169,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     if not dimension_values:
         add("t08", "SKIP", "No dimension tokens found")
     else:
-        bad_units = [f"{p}='{v}'" for p, v in dimension_values if not _dimension_unit(v)]
+        bad_units = [f"{p}='{v}'" for p, v, ok in dimension_values if not ok]
         if not bad_units:
             add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)")
         else:
@@ -3102,7 +3192,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
 
     tally = {s: sum(1 for r in results if r["status"] == s) for s in ("PASS", "WARN", "FAIL", "SKIP")}
     scored = tally["PASS"] + tally["WARN"] + tally["FAIL"]
-    score = _js_round(tally["PASS"] / scored * 100) if scored > 0 else 0
+    score = _js_round((tally["PASS"] + tally["WARN"] * 0.5) / scored * 100) if scored > 0 else 0
     grade = "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else ("D" if score >= 60 else "F")))
 
     return {

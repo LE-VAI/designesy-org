@@ -1,0 +1,15 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "space": {
+    "sm": { "$type": "dimension", "$value": { "value": 8, "unit": "px" } },
+    "md": { "$type": "dimension", "$value": "{space.missing}" },
+    "lg": { "$type": "dimension", "$value": "{color.ink}" },
+    "xl": { "$type": "dimension", "$value": "{space.loop}" },
+    "loop": { "$type": "dimension", "$value": "{space.xl}" },
+    "odd": { "$type": "dimension", "$value": { "value": 2, "unit": "furlong" } },
+    "half": { "$type": "dimension", "$value": { "value": "8", "unit": "px" } }
+  },
+  "color": {
+    "ink": { "$type": "color", "$value": { "colorSpace": "srgb", "components": [0.96, 0.96, 0.97], "alpha": 1 } }
+  }
+}
