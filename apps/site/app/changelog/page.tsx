@@ -361,6 +361,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'Both defects shipped on this site and passed every check the engine had: the CSS was valid and the default view looked right. The light warning color wrote status words at 3.51 to 1, and the pause control emptied whole pages for the visitors who had asked for less motion. A check that catches its own author is the one worth publishing.',
     source: 'WCAG 2.2 SC 1.4.3 and 2.2.2, CSS Animations Level 1 (animation-play-state), engine 1.2.0 entry in CHANGELOG.md',
   },
+
+  // ── v0.4.4 (engine 1.3.0): no A beside a failing check ──
+  {
+    version: 'v0.4.4 · engine 1.3.0',
+    date: '2026-10-11',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.3.0: no A while any check fails',
+    description:
+      'A page with a failing check can no longer score an A: any FAIL caps the score at 89.9, a B, and every cap applies after the originality lift, which can carry a score up to a cap but never past it. v44, status colors used as text, caps at 65 as v06 does. v34 fails only a chat surface that names itself a chatbot or an AI assistant; a live-chat widget, an ad tag or page text about AI is at most a review item, and its text cites California SB 1001 and Colorado SB 26-189 and names Article 50(1) as a duty on the provider of the AI system. v06 and v22 read oklch(), space-syntax rgb() and hsl(), 8-digit hex, and tokens declared as :root, :host.',
+    checks: ['v06', 'v22', 'v34', 'v44'],
+    rationale:
+      'The engine could report its own failing WCAG contrast check and an A for the same page, and its review printed Block and Grade A together. A grade beside its own failing verdict says two things at once, so the owner chose the stricter reading.',
+    source: 'Owner decision (2026-10-11), WCAG 2.2 SC 1.4.3 and 1.4.11, EU AI Act Article 50, California Bus. & Prof. Code §17940-17943, Colorado SB 26-189, CSS Color 4, engine 1.3.0 entry in CHANGELOG.md',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -390,6 +405,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.3', date: '2026-10-09', checks: 42, title: 'Text-contrast pass', summary: 'Every status, grade and activation colour gains a text token that reads at 4.5 to 1 or better in both themes; light --muted-dim darkens. No check or verdict changed.' },
   { version: 'v0.4.2 · engine 1.1.0', date: '2026-10-08', checks: 42, title: 'Engine baseline fixes', summary: 'v05 accepts opt-in motion, v27 skips pages with no field, v14 and v18 become optional for external sites, and the token validator uses the 13 DTCG types. The contract is unchanged.' },
   { version: 'v0.4.3 · engine 1.2.0', date: '2026-10-09', checks: 44, title: 'Status text and paused entrances', summary: 'v44 status colors used as text meet contrast in every theme; v45 pausing motion keeps content visible. S2 and S8 stop firing on components and prose. The contract is unchanged.' },
+  { version: 'v0.4.4 · engine 1.3.0', date: '2026-10-11', checks: 44, title: 'No A beside a failing check', summary: 'Any FAIL caps the score at 89.9 and a v44 FAIL at 65; v34 fails only a named AI chat surface; v06 and v22 read CSS Color 4. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

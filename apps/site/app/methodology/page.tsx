@@ -419,7 +419,7 @@ const CATEGORY_NOTES: Record<string, string> = {
 };
 
 const BAND_NOTES: Record<string, string> = {
-  A: 'Ships the contract’s primitives and passes nearly every check the engine can run.',
+  A: 'Ships the contract’s primitives and passes nearly every check the engine can run, with none failing.',
   B: 'A solid foundation, with a few checks missing or warned.',
   C: 'Clear gaps in cadence, motion or accessibility. The accessibility floor caps a site here.',
   D: 'Gaps across several categories.',
@@ -453,8 +453,9 @@ const FORMULA: string[] = [
   '# Step 4: accessibility floor',
   'if (a11yPct < 60) score = min( score, 70 )',
   '',
-  '# Step 5: hard-fail ceilings',
-  'if (v06 FAIL) score = min( score, 65 )              # contrast',
+  '# Step 5: hard-fail ceilings, after the lift (it never carries a score past one)',
+  'if (any check FAILs) score = min( score, 89.9 )     # no A beside a FAIL',
+  'if (v06 | v44 FAIL) score = min( score, 65 )        # contrast, status text',
   'if (v22 | v02 | v16 FAIL) score = min( score, 70 )  # CTA contrast, overflow, rem',
   'if (v24 | v25 FAIL) score = min( score, 75 )        # touch targets, headings',
   '',
@@ -467,7 +468,7 @@ const STEPS = [
   { title: 'Subtract slop', text: 'Twelve anti-slop rules take up to 20 points off for recognisable template patterns.' },
   { title: 'Add originality', text: 'Seven kinds of craft add up to 8 points, halved when the slop is heavy.' },
   { title: 'Apply the floor', text: 'Accessibility under 60 caps the score at 70, a C.' },
-  { title: 'Apply the ceilings', text: 'Six severe failures cap the score at 65, 70 or 75.' },
+  { title: 'Apply the ceilings', text: 'Any failing check caps the score at 89.9, a B. Seven severe failures cap it at 65, 70 or 75.' },
 ];
 
 // Validation reports (scripts/*.json), with their own dates.
@@ -532,7 +533,9 @@ const ORIGINALITY = [
 ];
 
 const CEILINGS = [
+  { id: 'any', name: 'Any failing check', cap: 89.9, why: 'A check the page fails cannot stand beside an A, so the grade is a B at most (engine 1.3.0).' },
   { id: 'v06', name: 'Contrast readable', cap: 65, why: 'Text many readers cannot read: a failure of basic legibility.' },
+  { id: 'v44', name: 'Status text contrast', cap: 65, why: 'The words that report errors, warnings and success fall below WCAG contrast (engine 1.3.0).' },
   { id: 'v22', name: 'CTA contrast', cap: 70, why: 'The primary call to action is hard to read.' },
   { id: 'v02', name: 'Horizontal overflow', cap: 70, why: 'Content is cut off or scrolls sideways on small viewports.' },
   { id: 'v16', name: 'Rem scale', cap: 70, why: 'A root font size under 16px sets off iOS Safari’s auto-zoom.' },
@@ -738,7 +741,8 @@ export default function MethodologyPage() {
                   Grade bands
                 </h2>
                 <p className="dx-lead">
-                  The letter is a threshold on the number: F under 60, then a grade every ten points. An A needs 90.
+                  The letter is a threshold on the number: F under 60, then a grade every ten points. An A needs 90 and no failing
+                  check: any FAIL caps the score at 89.9.
                 </p>
                 <div className="dx-scale" aria-hidden="true">
                   <GradeScale />
@@ -879,12 +883,14 @@ export default function MethodologyPage() {
                   Hard-fail ceilings
                 </h2>
                 <p className="dx-lead">
-                  Some failures cap the score whatever else is strong: a site that fails on contrast or overflows its viewport cannot
-                  be an A. These are failures of integrity, and they apply after the accessibility floor.
+                  A page with a failing check is never an A: any FAIL caps the score at 89.9, a B. Some failures cap it lower,
+                  whatever else is strong: a site that fails on contrast or overflows its viewport is held to a C or a D. Every cap
+                  applies after the originality lift and the accessibility floor, so the lift can carry a score up to a cap but
+                  never past it.
                 </p>
                 <div className="dx-table-box">
                   <DataTable
-                    caption="The six hard-fail ceilings: the failing check, the cap, and why."
+                    caption="The hard-fail ceilings: the failing check, the cap, and why."
                     head={['Check', 'Cap', 'Why']}
                     numeric={[1]}
                     rows={CEILINGS.map((c) => [
@@ -1214,7 +1220,7 @@ export default function MethodologyPage() {
                 </dl>
                 <p className="dx-src">
                   Contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · {ENGINE_CHECK_COUNT} checks in{' '}
-                  {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · 6 hard-fail
+                  {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · {CEILINGS.length} hard-fail
                   ceilings · engine at <a href="/api/score">/api/score</a> · contract at{' '}
                   <a href="/contracts/design-system.json">/contracts/design-system.json</a>
                 </p>

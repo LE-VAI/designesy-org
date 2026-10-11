@@ -6,6 +6,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.3.0 and @designesy/score 0.8.0** (npm, not yet published). A page
+with a failing check can no longer score an A. The hosted MCP tools and
+/api/monitor change when the site deploys; the PyPI server's own code (the
+offline engine, the accessibility kit's Python twin) ships with the next
+designesy-mcp release. Contract v0.4.4 is unchanged.
+
+### Changed (engine 1.3.0)
+
+- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+  the score at 89.9, a B at most, and `hardFailCeilingReason` says which
+  checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
+  ceilings stay lower and win where they apply. Every cap runs after the
+  originality lift, so the lift can carry a score up to a cap and never past
+  one. Before, a page could score 100 / A beside its own FAIL verdicts, and
+  the review printed **Block** and **Grade A** together.
+- **v44 caps at 65**, as v06 does: both are measured WCAG contrast failures
+  on text. The status-text page the core-logic audit built (status word
+  `#b07d04` on white at 3.63:1) scored 100 / A; it scores 65 / D.
+- **v34 FAILs only a positively identified AI chat surface**: a container or
+  input that names itself a chatbot or an AI assistant, or a chatbot,
+  AI-widget or Dialogflow script, with no disclosure. Live-chat vendors
+  (Intercom, Drift, Zendesk, LiveChat, Tawk, Crisp), a generic chat container
+  or "assistant" script, and page text about AI WARN "possible AI surface:
+  review". The word "gpt" no longer counts, so Google Publisher Tag
+  (`gpt.js`, an ad tag) is not an AI surface. The detail says Article 50(1)
+  "may require" a disclosure and names the duty as the AI system provider's.
+- **v06 and v22 read CSS Color 4**, through the parser v44 already used:
+  `oklch()`, `oklab()`, space-syntax `rgb()` and `hsl()`, hex of 4 and 8
+  digits, `color-mix()`, `light-dark()` (light side) and `var()` fallbacks.
+  Translucent text is composited over the paper under it. Before, a sheet
+  written in `oklch()` SKIPped both checks, and a page with text at 1.58:1
+  scored 100 / A. Where a sheet declares `--muted-foreground`, v06 measures
+  it as the muted text: in the shadcn convention `--muted` is a surface.
+- **Tokens declared as `:root, :host { }`** (the block Tailwind v4 writes its
+  theme into) are extracted. Before, such a sheet extracted no tokens.
+
+### Fixed (engine 1.3.0)
+
+- **v34 citations.** California's bot-disclosure law is SB 1001 (Bus. & Prof.
+  Code §§17940-17943); AB 2659 (2023-24), cited before, is a salvageable
+  personal property bill. Colorado SB 24-205 was repealed and re-enacted by
+  SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs
+  automated decision-making in consequential decisions; "Colorado AI Act (Feb
+  2026)" was stale. EU AI Act Article 50 applies from 2026-08-02.
+- **A colour value named like an Object.prototype key** (`constructor`,
+  `toString`) threw inside the colour parser and failed the whole score; it
+  now reads as unresolvable.
+
+### MCP tools and the offline engine
+
+- **The offline engine grades on the live bands**, A 90, B 80, C 70, D 60
+  (it used 95, 85, 75, 60: 92% read B), applies the 89.9 cap on a FAIL, and
+  reads colour and `:root, :host` tokens as the live engine does.
+- **`designesy_a11y_score`** (hosted and PyPI): the generated Playwright
+  script runs `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa`; `wcag22aa`
+  alone selected one axe-core rule (`target-size`). A page where no rule
+  applied is "not scored" instead of grade F. With a `config` the script
+  threw "axe is not defined"; it now passes axe-core's source with the
+  `axe.configure()` call to AxeBuilder as `axeSource`. The accessibility
+  contract moves to 0.1.2 (a01 and the ruleset text).
+- **`designesy_monitor_score`**: m01 is "History supplied" (PASS with at
+  least one earlier run, SKIP on a first run, which is then not scored)
+  instead of an unconditional PASS; the alert email no longer says the URL
+  was registered. The monitor contract moves to 0.1.2.
+
+### Measured (engine 1.3.0)
+
+The 30 leaderboard URLs, each fetched once on 2026-10-11 and scored by the
+1.2.0 build and this one on the same bytes (scope auto-detected; 27 fetched,
+nytimes.com, getdesy.com and cssdesignawards.com did not answer). Grades move
+on three sites, scores on six:
+
+| Site | 1.2.0 | 1.3.0 | Why |
+|---|---|---|---|
+| primer.style | 90.4 A | 89.9 B | v11 and v13 FAIL: the 89.9 cap |
+| github.com | 70 C | 65 D | v44 FAIL (status text): the new 65 ceiling |
+| x.com | 90.2 A | 86.7 B | its theme is a `:root, :host` block; 297 tokens are read where 0 were, and v42 (5 role-named against 215 hue-named colour tokens) and v43 (no ok/warn/error/info) WARN on them |
+| vercel.com | 84.6 B | 81.1 B | the same: v42 and v43 SKIP to WARN on its `:root, :host` theme |
+| designesy.ai.studio | 77.5 C | 74.5 C | the same: v42 PASS to WARN once the Tailwind palette is read |
+| carbondesignsystem.com | 81.6 B | 82.8 B | v06 and v22 SKIP to PASS: its `oklch()` tokens are measured (`--muted-foreground` 4.73:1) |
+
+The other 21 scores are unchanged. No v34 status changes on any of the 27.
+
+---
+
 **@designesy/score 0.7.2** (npm), released on its own (`score-v0.7.2`). The
 engine reports design contract v0.4.4, the version designesy.org serves; 0.7.1
 reports v0.4.3. Engine 1.2.0 and its 44 checks keep their number.

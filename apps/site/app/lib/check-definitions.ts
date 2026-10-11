@@ -191,5 +191,12 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      rules stop firing on components and prose, and the npm
  *                      engine's accessibility floor matches this one. The
  *                      CHANGELOG entry lists the leaderboard score movement.
+ *   1.3.0  2026-10-11  no A while any check FAILs (owner decision): any FAIL
+ *                      caps the score at 89.9, after the originality lift,
+ *                      and v44 caps at 65 as v06 does. v34 FAILs only a
+ *                      positively identified AI chat surface and cites SB
+ *                      1001 and Colorado SB 26-189; v06 and v22 read CSS
+ *                      Color 4 and :root, :host tokens. The CHANGELOG entry
+ *                      lists the leaderboard score movement.
  */
-export const ENGINE_VERSION = '1.2.0';
+export const ENGINE_VERSION = '1.3.0';
