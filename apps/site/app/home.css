@@ -10,7 +10,10 @@
    weight and colour, not from more sizes. Display titles keep their clamps
    (D58). Declared on the home root and not on :root: these names join :root
    and the contract with the next contract bump, and this block is deleted
-   then. Every size this page sets below the lead step reads one of these. */
+   then. Every size this page sets below the lead step reads one of these.
+   The two role="img" instrument drawings (the verify console's face and the
+   inspection window) are exempt from the floor as images, like the D61
+   badge: their aria-labels carry what they show (D72). */
 .home {
   --text-label: 0.8rem;
   --text-body: 1rem;
@@ -1208,17 +1211,27 @@
   color: var(--ink);
 }
 
-.home .home-ledger-fact a {
+/* The site's quiet link (D72): no underline at rest, one on hover or focus.
+   A row whose proof is several pages links them in its evidence, set the
+   same way. */
+.home .home-ledger-fact a,
+.home .home-ledger-evidence a {
   color: inherit;
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--line-strong);
+  text-decoration-color: transparent;
   text-underline-offset: 0.22em;
   transition: text-decoration-color var(--duration-quick) var(--ease);
 }
 
+.home .home-ledger-fact a:focus-visible,
+.home .home-ledger-evidence a:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 @media (hover: hover) {
-  .home .home-ledger-fact a:hover {
+  .home .home-ledger-fact a:hover,
+  .home .home-ledger-evidence a:hover {
     text-decoration-color: var(--signal-access);
   }
 }

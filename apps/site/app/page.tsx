@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import './instrument.css';
 import './home.css';
@@ -259,15 +260,26 @@ function FieldIcon({ name }: { name: 'contract' | 'review' | 'studio' | 'continu
   return <BrandIcon name="continuity" size={18} />;
 }
 
-// System state (D60): one ledger. Each fact appears once, with its evidence
-// and its state as a word beside a check, because every fact here is already
-// true: no numerals, no empty checkboxes, and no flame, which means "happening
-// now" and nothing else (D57). It merges the old register (twelve rows with a
-// checkbox each) and the status pane beside it (twelve pills, seven of them
-// repeating a row); the pane's links stay on the facts they named.
+// System state (D60, D72): one ledger. Each fact appears once, with its
+// evidence and its state as a word beside a check, because every fact here is
+// already true: no numerals, no empty checkboxes, and no flame, which means
+// "happening now" and nothing else (D57). It merges the old register (twelve
+// rows with a checkbox each) and the status pane beside it (twelve pills, seven
+// of them repeating a row). Every row names its public evidence: the fact links
+// to the page that proves it, and a row whose proof is several pages links
+// them in its evidence. A fact with no public proof page is not listed (the
+// multi-surface stress log waits for one), and nothing says "verified" without
+// a link to the proof.
 type LedgerState = 'published' | 'available' | 'adopted' | 'verified' | 'active';
 
-const LEDGER: { fact: string; evidence: string; state: LedgerState; href?: string }[] = [
+type LedgerRow = {
+  fact: string;
+  evidence: ReactNode;
+  state: LedgerState;
+  href?: string;
+};
+
+const LEDGER: LedgerRow[] = [
   {
     fact: 'Design system contract ' + CONTRACT_VERSION,
     evidence: 'Human home, full tables, machine export · Poise, Takt, Cadence, and Acoustics adopted',
@@ -286,21 +298,18 @@ const LEDGER: { fact: string; evidence: string; state: LedgerState; href?: strin
     state: 'available',
     href: '/score',
   },
-  { fact: 'Lab One · Poise', evidence: 'Restrained interaction, rules adopted into v0.1.1', state: 'adopted', href: '/labs/poise' },
-  { fact: 'Lab Two · Takt', evidence: 'Interface feel, rules adopted into v0.1.2', state: 'adopted', href: '/labs/takt' },
-  { fact: 'Lab Three · Cadence', evidence: 'Text rhythm, rules adopted into v0.1.3', state: 'adopted', href: '/labs/cadence' },
-  { fact: 'Lab Four · Acoustics', evidence: 'Interaction sound, rules adopted into v0.3.0', state: 'adopted', href: '/labs/acoustics' },
+  {
+    fact: 'Poise · Takt · Cadence · Acoustics',
+    evidence: 'Lab rules adopted into the contract',
+    state: 'adopted',
+    href: '/labs',
+  },
   { fact: 'Cuelume', evidence: 'Sound on', state: 'active', href: '/labs/acoustics' },
   {
     fact: 'Use Kit One · Design Review',
     evidence: 'Portable review package · human and machine export',
     state: 'published',
     href: '/kits/design-review',
-  },
-  {
-    fact: 'Multi-surface stress log',
-    evidence: 'v0.dev, Lovable, Bolt, Framer, and Stripe scored against the contract',
-    state: 'verified',
   },
   {
     fact: 'Keyboard path',
@@ -328,11 +337,25 @@ const LEDGER: { fact: string; evidence: string; state: LedgerState; href?: strin
   },
   {
     fact: 'Evidentiary surfaces',
-    evidence: 'Methodology, Benchmarks, Badge, Specs, Acoustic tokens, and Graph, all open and documented',
+    evidence: (
+      <>
+        <Link href="/methodology">Methodology</Link>, <Link href="/benchmarks">Benchmarks</Link>,{' '}
+        <Link href="/badge">Badge</Link>, <Link href="/specs">Specs</Link>,{' '}
+        <Link href="/acoustic-tokens">Acoustic tokens</Link>, and <Link href="/graph">Graph</Link>, all open
+        and documented
+      </>
+    ),
     state: 'published',
   },
-  { fact: 'open.json', evidence: 'Machine feed', state: 'published', href: '/open.json' },
-  { fact: 'llms.txt', evidence: 'Agent brief', state: 'published', href: '/llms.txt' },
+  {
+    fact: 'Machine feeds',
+    evidence: (
+      <>
+        <Link href="/open.json">open.json</Link> and <Link href="/llms.txt">llms.txt</Link>
+      </>
+    ),
+    state: 'published',
+  },
 ];
 
 /** The ledger's confirmed-state mark: a drawn check, never a box to tick. */
