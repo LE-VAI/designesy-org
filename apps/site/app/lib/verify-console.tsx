@@ -290,10 +290,7 @@ export function VerifyConsole({
             </svg>
             {host}
           </span>
-          <span className="vc-bar-contract">
-            <span className="vc-live" />
-            Contract {contract}
-          </span>
+          <span className="vc-bar-contract">Contract {contract}</span>
         </div>
 
         <div className="vc-body" aria-hidden="true">

@@ -5144,261 +5144,10 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-/*
-  State marquee — sits beside the row-stack on desktop, filling the
-  right-side negative space with an auto-scrolling vertical marquee
-  of status pills. Pure CSS animation, no JS. Duplicated content for
-  seamless loop. Respects prefers-reduced-motion.
-*/
-
-
-.state-marquee {
-  display: none;
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--surface);
-  position: relative;
-  /* Vertical drag is owned by JS (initScrollPause 'vertical'); let the
-     browser handle only horizontal page pan so touch drags don't get
-     hijacked into page scroll. Mirrors the footer dock's pan-y. */
-  touch-action: pan-x;
-  /* Bottom fade only. The top fade ran 6% of a ~1300px column, so it veiled
-     the "System status" label and the pause toggle to a fraction of their
-     contrast. The header's own --surface gradient now does the top fade:
-     pills slide under a solid title band and dissolve at its lower edge. */
-  mask-image: linear-gradient(
-    180deg,
-    var(--paper) 0%,
-    var(--paper) 94%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    180deg,
-    var(--paper) 0%,
-    var(--paper) 94%,
-    transparent 100%
-  );
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-}
-
-.state-marquee-header {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: var(--space-fine-85) var(--space-16) var(--space-8);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  background: linear-gradient(to bottom, var(--surface) 60%, transparent);
-  pointer-events: none;
-}
-
-/* Two identical groups and no padding inside the track: half its height is
-   exactly one period, so the -50% loop has no seam (state-marquee.tsx). The
-   top offset is a margin, which the percentage does not count. */
-.state-marquee-track {
-  display: flex;
-  flex-direction: column;
-  margin-top: var(--space-36);
-  padding: 0 var(--space-16);
-  animation: state-marquee-scroll 36s linear infinite;
-}
-
-.state-marquee-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-55);
-  padding-bottom: var(--space-fine-55);
-}
-
-.state-marquee:hover .state-marquee-track {
-  animation-play-state: paused;
-}
-
-/* User-controlled pause (WCAG 2.2.2) — the toggle button adds
-   .state-marquee--user-paused to the aside. This freezes the
-   track regardless of hover state, giving the user full control. */
-.state-marquee--user-paused .state-marquee-track {
-  animation-play-state: paused;
-}
-
-/* A drawn 24px control at full strength. It was a 9px text glyph at opacity
-   .5 (about 2:1, under the 3:1 non-text floor). Now the icon is an SVG in
-   --muted (over 7:1 on --surface in both themes) inside a --muted-dim frame
-   (4.8:1 dark, 4.9:1 light), so both the mark and the boundary clear 3:1.
-   Its right edge sits on the pills' 16px inset, opposite the label's. */
-.state-marquee-toggle {
-  position: absolute;
-  top: var(--space-8);
-  right: var(--space-16);
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid var(--muted-dim);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
-}
-.state-marquee-toggle svg {
-  display: block;
-  width: var(--space-12);
-  height: var(--space-12);
-  fill: currentColor;
-}
-
-.state-marquee-toggle:focus-visible {
-  border-color: var(--muted);
-  color: var(--ink);
-  outline: 2px solid var(--signal-access);
-  outline-offset: 1px;
-}
-
-@media (hover: hover) {
-  .state-marquee-toggle:hover {
-    border-color: var(--muted);
-    color: var(--ink);
-    outline: 2px solid var(--signal-light);
-    outline-offset: 1px;
-  }
-}
-
-/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
-.state-marquee::-webkit-scrollbar {
-  width: 3px;
-}
-.state-marquee::-webkit-scrollbar-track {
-  background: transparent;
-}
-.state-marquee::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 3px;
-}
-.state-marquee:hover {
-  cursor: grab;
-}
-
-/* During an active drag, suppress hover effects and transitions on all
-   pills so they don't flicker as the pointer passes over them. Also
-   disable pointer events on pills so drag pointermove never gets
-   interrupted by a child element stealing the pointer. Mirrors the
-   footer dock's --dragging behavior. */
-.state-marquee--dragging {
-  cursor: grabbing !important;
-  user-select: none;
-}
-.state-marquee--dragging .state-marquee-pill {
-  pointer-events: none;
-  transition: none;
-  transform: none !important;
-}
-
-@keyframes state-marquee-scroll {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
-}
-
-.state-marquee-pill {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  flex-shrink: 0;
-  /* 44px minimum. Measured 447x37px: wide, but 7px short. These are real
-     <a> links with pointer-events: auto -- no inline exception applies. */
-  min-height: 44px;
-  padding: var(--space-8) var(--space-fine-80);
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  transition: transform 160ms var(--ease-out),
-    background 160ms var(--ease),
-    border-color 160ms var(--ease),
-    color 160ms var(--ease);
-}
-
-/* Pills are links — hover lifts and brightens like the footer dock */
-@media (hover: hover) {
-  .state-marquee-pill:hover {
-    transform: scale(1.04);
-    border-color: var(--line-strong);
-  }
-  .state-marquee-pill--live:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-  .state-marquee-pill--adopted:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-  .state-marquee-pill--info:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-}
-
-/* Keyboard path: the house ring, --signal-access, as every focus rule takes
-   it (see :focus-visible). --focus-ring resolves to the same token in both
-   themes (#0A94FF dark, #016ABB light), so a ring drawn with either is the
-   same ring. Offset outside the pill so the ring never clips against the
-   marquee's mask gradient. */
-.state-marquee-pill:focus-visible {
-  outline: 2px solid var(--signal-access);
-  outline-offset: 2px;
-  border-color: var(--signal-access);
-}
-
-/* Live (D31): a neutral pill in the text colour; the small pulsing dot in
-   --activation is its only orange. */
-.state-marquee-pill--live {
-  color: var(--ink);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--live::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--activation);
-  flex-shrink: 0;
-  animation: marquee-pulse 2s var(--ease-in-out) infinite;
-}
-@keyframes marquee-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* Live dot, light theme (D35): the flame alone is 2.55 to 3.01:1 on the
-   light surfaces, so the dot carries a 1px --activation-ink rim (4.56 to
-   5.37:1). The heartbeat is an outer halo; the dot and its rim never fade.
-   Static under reduced motion. Dark keeps its dot as it is. */
-[data-theme="light"] .state-marquee-pill--live::before,
-[data-theme="light"] .field-card-status.is-live::before {
-  opacity: 1;
-  box-shadow: 0 0 0 1px var(--activation-ink);
-}
-[data-theme="light"] .state-marquee-pill--live::before {
-  animation: live-halo 2s var(--ease-in-out) infinite;
-}
-[data-theme="light"] .field-card-status.is-live::before {
-  animation: live-halo 3.2s var(--ease-in-out) infinite;
-}
+/* The live heartbeat (D35, D57): an outer halo in the flame, the dot and its
+   rim never fade. Its first consumers (the status marquee and the Four ways
+   LIVE dots on the home page) were retired with D60; it stays for the next
+   thing that is happening now. */
 @keyframes live-halo {
   0%, 100% {
     box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 1px color-mix(in srgb, var(--activation) 0%, transparent);
@@ -5407,50 +5156,8 @@ html[data-motion="paused"] .docs-card-grid .row::before {
     box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 5px color-mix(in srgb, var(--activation) 28%, transparent);
   }
 }
-/* Static under reduced motion in both themes (D36): no halo in light, and
-   no ambient opacity pulse on the dark field-card dot. The light rim stays. */
-@media (prefers-reduced-motion: reduce) {
-  .state-marquee-pill--live::before,
-  .field-card-status.is-live::before {
-    animation: none !important;
-    opacity: 1;
-  }
-}
 
-/* Adopted — filled with checkmark */
-.state-marquee-pill--adopted {
-  color: var(--ink);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--adopted::before {
-  content: "✓";
-  color: var(--signal-text);
-  font-weight: 700;
-  font-size: 0.72rem;
-  flex-shrink: 0;
-}
-
-/* Info — outline only, muted */
-.state-marquee-pill--info {
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--info::before {
-  content: "·";
-  color: var(--signal-text);
-  font-weight: 700;
-  font-size: 0.9rem;
-  line-height: 0;
-  flex-shrink: 0;
-}
-
-/* Desktop enhancement for .state-layout and .state-marquee was migrated to
-   home.css (it must load AFTER the desktop-default .state-layout rule in
-   home.css to avoid the cascade-order bug — home.css loads after globals.css).
-   .row-stack width constraint moved to home.css too; .layer-stack width
-   stays here since it's a docs-only class not affected by home.css. */
+/* .layer-stack is a docs-only class; its width cap lives here. */
 @media (min-width: 860px) {
   .layer-stack {
     width: min(100%, 640px);
@@ -5458,24 +5165,6 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* Stopped, not slowed. A 120s crawl is still continuous motion, and the
-     a11y contract's a10 asks reduce to DISABLE animation. The track becomes
-     a plain scrollable list: the aria-hidden duplicate that only existed to
-     make the loop seamless is dropped, so nothing reads twice. */
-  .state-marquee-track {
-    animation: none;
-  }
-  .state-marquee {
-    overflow-y: auto;
-  }
-  .state-marquee-group[aria-hidden="true"] {
-    display: none;
-  }
-  .state-marquee-pill--live::before {
-    animation: none;
-  }
-}
 
 .row,
 .layer-item {
@@ -8362,7 +8051,9 @@ html:not(.js-ready) .demo-stagger-bar {
 
 /*
   Field card kind language (existing tokens only):
-  - contract = structure / agreement → square mark, steadier breath, signal edge
+  - contract = structure / agreement → square mark, steadier breath; on the
+    home page the featured card's full border is the set's one accent, and no
+    card carries a one-sided edge stripe (D60, D62)
   - lab      = living experiment    → circle mark, full wordmark breath, signal-light lift
 */
 .field-card {
@@ -8371,7 +8062,6 @@ html:not(.js-ready) .demo-stagger-bar {
   gap: var(--space-fine-45);
   padding: var(--space-fine-135) var(--space-fine-135) var(--space-20);
   border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   text-decoration: none;
@@ -8380,42 +8070,11 @@ html:not(.js-ready) .demo-stagger-bar {
     background 0.2s var(--ease);
 }
 
-.field-card--open {
-  border-left-color: var(--signal);
-}
-
-.field-card--contract {
-  border-left-color: var(--signal);
-}
-
-/* The non-featured kit cards carry no edge accent. A one-sided colour stripe
-   is the side-stripe card pattern the anti-generic check targets, and it also
-   weakened the featured contract card below it, whose full signal border is
-   the deliberate accent of the set. The eyebrow chip and the icon tile mark
-   these cards; nothing needs the stripe. (Judge round 3, 2026-10-04.) */
-.field-card--kit {
-  border-left-color: var(--line);
-}
 
 @media (hover: hover) {
   .field-card:hover {
     border-color: var(--line-strong);
     background: var(--surface-raised);
-  }
-  .field-card--open:hover,
-.field-card--contract:hover {
-    border-left-color: var(--signal);
-    border-color: var(--line-strong);
-  }
-  .field-card--lab:hover {
-    border-left-color: var(--signal-light);
-    border-color: var(--line-strong);
-  }
-  /* The kit card's hover keeps the border lift and drops the edge colour with
-     its resting stripe (see the .field-card--kit note above). */
-  .field-card--kit:hover {
-    border-left-color: var(--line-strong);
-    border-color: var(--line-strong);
   }
 }
 
@@ -8430,37 +8089,6 @@ a.field-card:active {
       rotateY(var(--tilt-ry, 0deg))
       translateY(-2px);
   }
-}
-
-
-.field-card-status {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.field-card-status.is-live {
-  display: flex;
-  align-items: center;
-  gap: 0.45em;
-  color: var(--ink);
-}
-
-/* The heartbeat lives on a dot, never on the word. signalPulse fades to 0.55
-   opacity, and on the word "Live" that took 5.41:1 down to #384892 on #0a0a0c,
-   under 4.5:1 at the dim end of every beat (axe 4.13.0, 2026-10-02). Same
-   shape as the status marquee's live pill: solid text, pulsing dot. */
-.field-card-status.is-live::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--activation);
-  flex-shrink: 0;
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
 
@@ -9817,9 +9445,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   .poise-reduced-bar--on {
     animation-duration: 8s !important;
     opacity: 0.35 !important;
-  }
-  .state-marquee-pill--live::before {
-    animation-duration: 4s !important;
   }
   .wordmark .dot {
     animation-duration: 12s !important;
@@ -15414,7 +15039,7 @@ button.rs-row:focus-visible {
 }
 
 /* The house ring, --signal-access (--focus-ring resolves to the same token;
-   see .state-marquee-pill:focus-visible). */
+   see :focus-visible). */
 .listen-btn:focus-visible {
   outline: 2px solid var(--signal-access);
   outline-offset: 2px;
@@ -16925,13 +16550,6 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
   }
   /* In-text links: see the block after this one, which covers tablets (touch
      screens wider than the phone block's 720px) and phones together. */
-  /* The marquee's pause toggle is a drawn 24px square: its hit area grows,
-     its drawing does not. */
-  .state-marquee-toggle::after {
-    content: "";
-    position: absolute;
-    inset: -10px;
-  }
 }
 
 /* In-text links on touch (2026-10-03). The 44px target used to come from

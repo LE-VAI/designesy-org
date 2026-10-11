@@ -2,7 +2,7 @@
 // v2026-07-25-history — free-tier local score history (5 most-recent per browser)
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, type ReactNode } from 'react';
 import {
   readScoreHistory,
   saveScore,
@@ -191,8 +191,17 @@ const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
  * use prefillUrl: they used to pass their example as initialUrl, so every visit
  * spent an engine run on a site the visitor had not asked about, under copy
  * that called the example "prefilled".
+ *
+ * noteAfter is a clause the page adds to the bar's resting note, after "No
+ * login. N checks, a grade in seconds.": the home page puts its contract line
+ * there (brand D60), so the version line sits under the form as plain text
+ * instead of in a pill above the headline.
  */
-export function ScoreForm({ initialUrl = '', prefillUrl = '' }: { initialUrl?: string; prefillUrl?: string } = {}) {
+export function ScoreForm({
+  initialUrl = '',
+  prefillUrl = '',
+  noteAfter,
+}: { initialUrl?: string; prefillUrl?: string; noteAfter?: ReactNode } = {}) {
   const [status, setStatus] = useState<Status>('idle');
   const [url, setUrl] = useState(initialUrl || prefillUrl);
   const [scopeMode, setScopeMode] = useState<ScopeMode>('auto');
@@ -667,7 +676,17 @@ export function ScoreForm({ initialUrl = '', prefillUrl = '' }: { initialUrl?: s
             disabled={status === 'loading'}
           />
         }
-        note={`No login. ${ENGINE_CHECK_COUNT} checks, a grade in seconds.`}
+        note={
+          <>
+            No login. {ENGINE_CHECK_COUNT} checks, a grade in seconds.
+            {noteAfter && (
+              <>
+                {' '}
+                <span aria-hidden="true">·</span> {noteAfter}
+              </>
+            )}
+          </>
+        }
       />
 
       {/* A failed run is the answer to the visitor's request, and nothing else

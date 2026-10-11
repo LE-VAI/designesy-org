@@ -106,33 +106,6 @@
   }
 }
 
-.home .home-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0 0 1.35rem;
-  padding: 0.42rem 0.8rem 0.42rem 0.62rem;
-  border-radius: 999px;
-  background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--lv-well-line);
-  font: 500 0.78rem/1 var(--sans);
-  color: var(--muted);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.home .home-kicker b {
-  color: var(--ink);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* A version is a name, not a column of figures: tabular slots set each
-   period a digit wide, and "v0.4.3" read as "v0 . 4 . 3". */
-.home .home-kicker .home-kicker-version {
-  font-variant-numeric: normal;
-  font-feature-settings: normal;
-}
 
 /* The premise and the claim. Both lines keep the ink; the weight carries
    the hierarchy, so "AI makes execution free." reads as the setup and
@@ -142,14 +115,6 @@
   font-weight: 450;
 }
 
-.home-kicker-live {
-  position: relative;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 20%, transparent);
-}
 
 /* The claim is a couplet: one sentence per line at every width from 721px.
    The old 12.61em measure was sized for the rotating word, and once the
@@ -402,13 +367,6 @@
   font: 500 0.72rem/1 var(--mono);
 }
 
-.vc-live {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 18%, transparent);
-}
 
 /* --- Body --- */
 
@@ -1307,16 +1265,7 @@ html[data-motion="paused"] .vc-glow {
   .home .hero-display-line {
     text-wrap: balance;
   }
-  .home .home-kicker {
-    font-size: 0.72rem;
-  }
+
 }
 
-/* Narrow phones: the kicker keeps to one line (at line-height 1 in a round
-   capsule, two lines looked pinched). The clause that goes, "rescored
-   weekly", is also the console's caption just below. */
-@media (max-width: 480px) {
-  .home-kicker-more {
-    display: none;
-  }
-}
+
