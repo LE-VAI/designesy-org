@@ -326,9 +326,11 @@ class TestContractSections:
         assert json.loads(_call("designesy_contract", {"section": "tensions"})["content"][0]["text"])["section"] == "open_tensions"
 
     def test_schema_offers_sections_as_a_string_array(self):
+        # Since 1.13.9 both take only the contract's top-level keys (an enum).
         props = mcp.TOOL_MAP["designesy_contract"]["inputSchema"]["properties"]
-        assert props["sections"] == {**props["sections"], "type": "array", "items": {"type": "string"}}
-        assert "section" in props
+        assert props["sections"] == {**props["sections"], "type": "array", "items": {"type": "string", "enum": list(mcp.CONTRACT_KEYS)}}
+        assert props["section"]["enum"] == list(mcp.CONTRACT_KEYS)
+        assert list(mcp.CONTRACT_KEYS) == list(_json("design-system.json"))
 
 
 # ── 4. Descriptions match what the tools return (2B) ────────────────────────
@@ -343,13 +345,23 @@ class TestDescriptionClaims:
         for tool in mcp.TOOLS:
             assert not re.search(r"~\s?\d+\s*tokens|~500|~3000", tool["description"]), tool["name"]
 
-    def test_llms_size_bands_hold_for_the_published_files(self):
-        short = mcp._published_text("u", "text/plain", _text("llms.txt"))["content"]
-        full = mcp._published_text("u", "text/plain", _text("llms-full.txt"))["content"]
-        assert "a few thousand characters" in _desc("designesy_llms_txt")
-        assert 1_000 <= len(short) < 10_000
-        assert "over ten thousand" in _desc("designesy_llms_full_txt")
-        assert len(full) > 10_000
+    def test_document_sizes_hold_for_the_published_files(self):
+        # Each document tool states the size of what it returns ("about N
+        # characters"); on the captured documents the result is within 20%.
+        size = lambda out: len(json.dumps(out, indent=2, ensure_ascii=False))
+        measured = {
+            "designesy_llms_txt": size(mcp._published_text("https://www.designesy.org/llms.txt", "text/plain", _text("llms.txt"))),
+            "designesy_llms_full_txt": size(mcp._published_text("https://www.designesy.org/llms-full.txt", "text/plain", _text("llms-full.txt"))),
+            "designesy_agent_json": size(mcp._published_json("https://www.designesy.org/.well-known/agent.json", _json("agent.json"))),
+        }
+        for tool, chars in measured.items():
+            stated = int(re.search(r"about ([\d,]+) characters", _desc(tool)).group(1).replace(",", ""))
+            assert abs(stated - chars) <= chars * 0.2, (tool, stated, chars)
+        # Where one description cites another document's size, it is that size too.
+        for tool in measured:
+            for m in re.finditer(r"(designesy_\w+) \(about ([\d,]+) characters\)", _desc(tool)):
+                if m.group(1) in measured:
+                    assert abs(int(m.group(2).replace(",", "")) - measured[m.group(1)]) <= measured[m.group(1)] * 0.2, (tool, m.group(0))
 
     def test_contract_size_band_holds_for_the_published_contract(self):
         assert "on the order of 100 KB, tens of thousands of tokens" in _desc("designesy_contract")
@@ -377,8 +389,11 @@ class TestDescriptionClaims:
 
     @pytest.mark.parametrize("tool", ["designesy_tokens_score", "designesy_motion_score"])
     def test_scoring_shapes_drop_the_missing_valid_field(self, tool):
+        # The shape lives in the output schema since 1.13.9.
         d = _desc(tool)
-        assert "valid," not in d and "SKIP" in d and "pass_count" in d
+        props = mcp.TOOL_MAP[tool]["outputSchema"]["properties"]
+        assert "valid" not in props and "pass_count" in props and "skip_count" in props
+        assert "valid," not in d and "SKIP" in d
 
     def test_no_em_dashes_in_changed_descriptions(self):
         for tool in ("designesy_contract", "designesy_design_review", "designesy_skill_md",

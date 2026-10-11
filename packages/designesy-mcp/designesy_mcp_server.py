@@ -8,7 +8,8 @@ SAFETY below).
 Zero external dependencies (stdlib only). Implements the MCP JSON-RPC 2.0
 protocol over stdio (initialize, tools/list, tools/call, resources/list,
 resources/read, notifications/initialized, ping) — mirrors the
-factory_sessions_mcp_server scaffolding.
+factory_sessions_mcp_server scaffolding. initialize negotiates the protocol
+revision (SUPPORTED_PROTOCOL_VERSIONS) and returns the server instructions.
 
 Gives any agent the ability to:
   - Get the package catalog (versions, URLs, statuses)
@@ -1894,44 +1895,52 @@ def _score_impl(
     fmt = "designesy" if format is None else format
 
     if fmt not in SCORE_FORMATS:
-        return {
-            "success": False,
-            "error": f"Unknown format {fmt!r}. Supported: {', '.join(SCORE_FORMATS)}.",
-            "url": url,
-        }
+        return _failure(f"Unknown format {fmt!r}. Supported: {', '.join(SCORE_FORMATS)}.", False, url=url)
     if scope is not None and scope not in SCORE_SCOPES:
-        return {
-            "success": False,
-            "error": (
-                f"Unknown scope {scope!r}. Supported: {', '.join(SCORE_SCOPES)}; "
-                "omit it to let the engine auto-detect."
-            ),
-            "url": url,
-        }
+        return _failure(
+            f"Unknown scope {scope!r}. Supported: {', '.join(SCORE_SCOPES)}; omit it to let the engine auto-detect.",
+            False,
+            url=url,
+        )
 
     if fmt == "designesy":
         remote = _score_remote(url, scope)
         if remote is not None:
             return remote
-        return _score_local_impl(url, scope)
+        try:
+            return _score_local_impl(url, scope)
+        except Exception as exc:
+            f = _file_fetch_failure(url, exc, None)
+            raise _ToolFailure(
+                f"The score engine at {BASE_URL}/api/score could not be used, and the offline engine could not read the page: {f.what}",
+                f.retryable,
+                f.next_step,
+                {"url": url},
+            ) from exc
 
     try:
         body = _post_score_api(url, fmt, scope)
         if fmt == "review":
             return body
-        return json.loads(body)
+        data = json.loads(body)
+        if not isinstance(data, dict):
+            raise ValueError("the reply is not a JSON object")
+        return data
     except Exception as exc:
-        return {
-            "success": False,
-            "error": (
-                f"format={fmt!r} needs the live scoring engine at "
-                f"{BASE_URL}/api/score, and the call failed "
-                f"({_score_api_failure(exc)}). The local offline engine "
-                "produces only the default designesy format."
-            ),
-            "url": url,
-            "format": fmt,
-        }
+        # _score_api_failure reads an HTTP error's body, so the status alone
+        # decides retryable here.
+        said = _score_api_failure(exc)
+        _, retryable, next_step = _engine_exception_failure("score", exc)
+        if isinstance(exc, ValueError):
+            retryable, next_step = True, None
+        return _failure(
+            f"format={fmt!r} needs the live scoring engine at {BASE_URL}/api/score, and the call failed ({said}). "
+            "The local offline engine produces only the default designesy format.",
+            retryable,
+            next_step,
+            url=url,
+            format=fmt,
+        )
 
 
 def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
@@ -1961,12 +1970,162 @@ def _score_grade(score: float) -> str:
     return "F"
 
 
+# ── Errors: what happened, whether one retry can help, what to do next ──────
+#
+# A port of the error helpers in apps/site/app/api/mcp/route.ts (toolError,
+# engineStatusFailure, fileFetchFailure, fileStatusFailure), worded the same,
+# so a client gets the same guidance from either server. Every error a tool
+# returns is a result with isError set and no structuredContent (MCP
+# 2025-11-25, server/tools: API failures are tool execution errors, reported
+# in the result so the model can self-correct), and it carries retryable
+# (true or false) and says the same in its text. The three answers come from
+# the failure itself: an engine's HTTP status and the error it wrote, a file
+# host's HTTP status, or the exception a fetch raised.
+
+
+class _ToolFailure(Exception):
+    """A tool failure: what happened, whether one retry can help, and what to do next."""
+
+    def __init__(self, what: str, retryable: bool, next_step: str | None = None, extra: dict[str, Any] | None = None):
+        super().__init__(what)
+        self.what = what
+        self.retryable = retryable
+        self.next_step = next_step
+        self.extra = extra or {}
+
+
+def _sentence(s: str) -> str:
+    return s if s[-1:] in ".!?" else f"{s}."
+
+
+def _failure(what: str, retryable: bool, next_step: str | None = None, **extra: Any) -> dict[str, Any]:
+    """A tool error result body: success false, the text, and retryable."""
+    text = f"{_sentence(what)} Retryable: {'yes, once' if retryable else 'no'}."
+    if next_step:
+        text += f" {_sentence(next_step)}"
+    return {"success": False, "error": _scrub_local_paths(text), "retryable": retryable, **extra}
+
+
+def _failure_of(f: _ToolFailure) -> dict[str, Any]:
+    return _failure(f.what, f.retryable, f.next_step, **f.extra)
+
+
+def _engine_said(body: str) -> str:
+    """The error text an engine wrote ({ ok: false, error }), else its body, clipped."""
+    said = body.strip()
+    try:
+        parsed = json.loads(body)
+        if isinstance(parsed, dict) and isinstance(parsed.get("error"), str):
+            said = parsed["error"]
+    except Exception:
+        pass  # not JSON (a platform error page): keep the text
+    return f"{said[:300]}..." if len(said) > 300 else said
+
+
+def _engine_status_failure(engine: str, status: int, body: str, retry_after: str | None) -> tuple[str, bool, str | None]:
+    """Why a call to one of designesy.org's engines failed, from its HTTP status and body."""
+    said = _engine_said(body)
+    what = f"The {engine} engine returned HTTP {status}" + (f": {said}" if said else "")
+    if status == 429:
+        wait = f"Wait {retry_after} seconds first" if retry_after and retry_after.isdigit() else "Wait for the rate-limit window to pass first"
+        return what, True, wait
+    if status == 408:
+        return what, True, None
+    if 400 <= status < 500:
+        return what, False, "Correct the input as the message says: a URL must be a public http(s) address with a domain name"
+    if status == 502 and re.search(r"could not (?:fetch|read|generate)", said, re.IGNORECASE):
+        return what, True, "If it fails again, the page probably blocks automated requests or needs a login, or the URL is mistyped: check the URL with the user"
+    return what, True, "The engine failed or timed out; if the retry fails too, try again later"
+
+
+def _is_timeout(exc: BaseException) -> bool:
+    import socket
+    reason = getattr(exc, "reason", None)
+    return isinstance(exc, (TimeoutError, socket.timeout, ConnectionError)) or isinstance(reason, (TimeoutError, socket.timeout, ConnectionError))
+
+
+def _is_dns_failure(exc: BaseException) -> bool:
+    import socket
+    return isinstance(getattr(exc, "reason", None), socket.gaierror)
+
+
+def _engine_exception_failure(engine: str, exc: BaseException) -> tuple[str, bool, str | None]:
+    """Why a call to one of designesy.org's engines raised."""
+    if isinstance(exc, urllib.error.HTTPError):
+        try:
+            body = exc.read().decode("utf-8", "replace")
+        except Exception:
+            body = ""
+        return _engine_status_failure(engine, exc.code, body or str(exc.reason), exc.headers.get("Retry-After") if exc.headers else None)
+    if isinstance(exc, (urllib.error.URLError, OSError)):
+        return f"Could not reach the {engine} engine at www.designesy.org ({getattr(exc, 'reason', exc)})", True, None
+    if isinstance(exc, (json.JSONDecodeError, UnicodeDecodeError)):
+        return f"The {engine} engine returned a body that is not a JSON object", True, None
+    return f"The {engine} engine call failed ({type(exc).__name__}: {exc})", False, None
+
+
+def _file_fetch_failure(url: str, exc: BaseException, inline: str | None) -> _ToolFailure:
+    """Why reading the caller's file (a token or Lottie file), or with inline None a page, failed."""
+    extra = {"url": url}
+    thing = "file" if inline else "page"
+    or_inline = f", or pass its contents as {inline}" if inline else ""
+    if isinstance(exc, ValueError) and str(exc).startswith("Blocked:"):
+        return _ToolFailure(f"{url} is not a public http(s) URL ({exc})", False,
+                            f"Private, loopback and internal addresses and non-http(s) schemes are refused; use the {thing}'s public address", extra)
+    if isinstance(exc, urllib.error.HTTPError):
+        what = f"{url} returned HTTP {exc.code}" + (f" {exc.reason}" if exc.reason else "")
+        if exc.code == 429:
+            ra = exc.headers.get("Retry-After") if exc.headers else None
+            return _ToolFailure(what, True, f"Wait {ra} seconds first" if ra and ra.isdigit() else None, extra)
+        if exc.code == 408 or exc.code >= 500:
+            return _ToolFailure(what, True, None, extra)
+        if exc.code in (401, 403):
+            return _ToolFailure(what, False, f"The {thing} needs a login or blocks automated requests: ask the user for a public copy{or_inline}", extra)
+        return _ToolFailure(what, False, "Check the URL with the user", extra)
+    if _is_dns_failure(exc):
+        return _ToolFailure(f"The host in {url} did not resolve", False,
+                            "The name may be mistyped or may not exist: check the URL with the user", extra)
+    if _is_timeout(exc):
+        return _ToolFailure(f"Could not read {url} ({getattr(exc, 'reason', exc)})", True, None, extra)
+    if isinstance(exc, json.JSONDecodeError):
+        return _ToolFailure(f"{url} did not return JSON", False, f"Check that the URL points at the raw JSON file{or_inline}", extra)
+    if isinstance(exc, UnicodeDecodeError):
+        return _ToolFailure(f"{url} did not return text", False, f"Check that the URL points at the raw {thing}{or_inline}", extra)
+    return _ToolFailure(f"Could not read {url} ({type(exc).__name__}: {exc})", False, f"Check the URL with the user{or_inline}", extra)
+
+
+def _document_failure(source: str, exc: BaseException) -> _ToolFailure:
+    """Why reading a published document from www.designesy.org failed."""
+    if isinstance(exc, urllib.error.HTTPError) and 400 <= exc.code < 500 and exc.code not in (408, 429):
+        return _ToolFailure(f"Could not read {source} (HTTP {exc.code})", False,
+                            "The published document is missing; the tool cannot work until the site serves it again")
+    return _ToolFailure(f"Could not read {source} ({getattr(exc, 'reason', None) or exc})", True)
+
+
+def _read_document(source: str, as_json: bool = True) -> Any:
+    """_fetch for a designesy.org document, with a failure that says whether to retry."""
+    try:
+        return _fetch(source, as_json=as_json)
+    except Exception as exc:
+        raise _document_failure(source, exc) from exc
+
+
+def _unexpected_failure(exc: BaseException) -> dict[str, Any]:
+    """An exception no tool classified: the request it came from, if any, and whether to retry."""
+    if isinstance(exc, urllib.error.HTTPError):
+        retryable = exc.code in (408, 429) or exc.code >= 500
+        return _failure(f"{exc.url or 'A request'} returned HTTP {exc.code}", retryable)
+    if isinstance(exc, urllib.error.URLError) or _is_timeout(exc):
+        return _failure(f"A request failed ({getattr(exc, 'reason', exc)})", True)
+    return _failure(f"Tool execution failed ({type(exc).__name__}: {exc})", False)
+
+
 # ── Tool implementations ────────────────────────────────────────────────────
 
 
 def _catalog_impl() -> dict[str, Any]:
-    """Return the 23-package catalog with versions, URLs, and statuses."""
-    data = _fetch_open_index()
+    """Return the package catalog with versions, URLs, and statuses."""
+    data = _read_document(f"{BASE_URL}/open.json")
     packages = data.get("packages", [])
     machine_exports = data.get("machine_exports", [])
     return {
@@ -1996,12 +2155,7 @@ def _catalog_impl() -> dict[str, Any]:
 
 
 def _contract_error(message: str, unknown: list[str], valid: list[str]) -> dict[str, Any]:
-    return {
-        "success": False,
-        "error": f"{message} Valid sections: {', '.join(valid)}.",
-        "unknown_sections": unknown,
-        "valid_sections": valid,
-    }
+    return _failure(f"{message} Valid sections: {', '.join(valid)}.", False, unknown_sections=unknown, valid_sections=valid)
 
 
 def _contract_impl(section: str | None = None, sections: Any = None) -> dict[str, Any]:
@@ -2010,9 +2164,10 @@ def _contract_impl(section: str | None = None, sections: Any = None) -> dict[str
     sections (a list of top-level keys) returns {id, version} plus exactly
     those keys, in the order asked. section (one name) is the older form: it
     returns {section, data} and accepts a few aliases (color, tensions,
-    poise). Unknown names return an error listing every valid key.
+    poise), which the schema's enum no longer advertises. Unknown names return
+    an error listing every valid key.
     """
-    data = _fetch_contract()
+    data = _read_document(f"{BASE_URL}/contracts/design-system.json")
     valid = list(data.keys())
 
     if sections is not None:
@@ -2069,7 +2224,7 @@ def _design_review_impl(
     and does not run a review. The kit's agent_prompt is left out (see
     _design_review_rubric); kit_prompt_url points a person at it.
     """
-    kit = _fetch_kit()
+    kit = _read_document(f"{BASE_URL}/kits/design-review.json")
     default_rules = "designesy design system (latest published contract)"
     if not rules and (artifact or purpose or context):
         try:
@@ -2086,90 +2241,929 @@ def _design_review_impl(
 
 def _skill_md_impl() -> dict[str, Any]:
     """Return the SKILL.md export as reference data."""
-    return _published_text(f"{BASE_URL}/contracts/skill", "text/markdown", _fetch_skill_md())
+    return _published_text(f"{BASE_URL}/contracts/skill", "text/markdown", _read_document(f"{BASE_URL}/contracts/skill", as_json=False))
 
 
 def _agent_json_impl() -> dict[str, Any]:
     """Return the agent discovery document (agent.json) as reference data."""
-    return _published_json(f"{BASE_URL}/.well-known/agent.json", _fetch_agent_json())
+    return _published_json(f"{BASE_URL}/.well-known/agent.json", _read_document(f"{BASE_URL}/.well-known/agent.json"))
 
 
 def _llms_txt_impl() -> dict[str, Any]:
     """Return the short llms.txt brief as reference data."""
-    return _published_text(f"{BASE_URL}/llms.txt", "text/plain", _fetch_llms_txt())
+    return _published_text(f"{BASE_URL}/llms.txt", "text/plain", _read_document(f"{BASE_URL}/llms.txt", as_json=False))
 
 
 def _llms_full_txt_impl() -> dict[str, Any]:
     """Return the full llms-full.txt brief as reference data."""
-    return _published_text(f"{BASE_URL}/llms-full.txt", "text/plain", _fetch_llms_full_txt())
+    return _published_text(f"{BASE_URL}/llms-full.txt", "text/plain", _read_document(f"{BASE_URL}/llms-full.txt", as_json=False))
 
 
 # ── Tool definitions ────────────────────────────────────────────────────────
+#
+# What a client reads about the tools: the server instructions, each tool's
+# description and input schema, and the ten scoring tools' output schemas.
+# The hosted endpoint (apps/site/app/api/mcp/route.ts) serves the same
+# definitions, and both are compared with one golden,
+# test/fixtures/tool-definitions.json (test/test_tool_definitions.py here,
+# scripts/check-mcp-tool-parity.js and check-mcp-accuracy.js there). Three
+# descriptions differ from the hosted ones on purpose, and the test names
+# them: designesy_catalog (the hosted one states the package count, which this
+# package cannot read at build time), designesy_contract (the hosted one
+# states the size of the contract it bundles) and designesy_score (this
+# package reshapes the default format and has an offline fallback).
+#
+# Each description states, in order: what the tool does, "Use this when",
+# when not to use it (naming the sibling tool), behaviour, errors, and the
+# return shape. Each runs to at most 2,048 characters, where Claude Code
+# truncates a description, and so do the instructions.
+#
+# A scoring tool that declares an outputSchema returns structuredContent on
+# every success (MCP 2025-11-25, server/tools: "Servers MUST provide
+# structured results that conform to this schema"), beside the text block it
+# always returned; an error carries isError and no structuredContent.
+
+# The input schema of a tool that takes no parameters (the spec's recommended form).
+NO_PARAMETER_INPUT_SCHEMA: dict[str, Any] = {"type": "object", "additionalProperties": False}
+
+# The design-system contract's top-level keys: designesy_contract's section
+# and sections enums. The hosted endpoint derives them from the contract it
+# bundles; this package fetches the contract live, so it carries the list,
+# and the golden holds it to the hosted one. A key the served contract lacks
+# still returns the error that lists the valid keys.
+CONTRACT_KEYS = (
+    "id",
+    "version",
+    "status",
+    "name",
+    "public_url",
+    "full_contract_url",
+    "machine_url",
+    "updated",
+    "schema_hints",
+    "provenance",
+    "colors",
+    "surfaces_and_lines",
+    "shadows",
+    "materials",
+    "rounded",
+    "layout",
+    "motion",
+    "interaction",
+    "takt",
+    "cadence",
+    "typography",
+    "acoustic",
+    "semantic",
+    "copywriting",
+    "components",
+    "accessibility",
+    "anti_patterns",
+    "implementation",
+    "verification",
+    "verification_checks",
+    "open_tensions",
+    "adoption_history",
+    "promotion_candidates",
+)
+
+# The server instructions, returned by initialize.
+SERVER_INSTRUCTIONS = "\n".join((
+    (
+        "Designesy (designesy.org) publishes a design-system contract and rule-based "
+        "engines that check web pages and design files against it. The tools fall "
+        "into seven groups."
+    ),
+    "Score a page: designesy_score, the full contract audit (0-100 and A-F).",
+    (
+        "Check a design file: designesy_tokens_score (a DTCG token file) and "
+        "designesy_motion_score (a Lottie file). designesy_a11y_score returns the "
+        "WCAG 2.2 AA checks with a Playwright and axe-core script to run locally; it "
+        "scans nothing itself."
+    ),
+    (
+        "Check a site's own system: designesy_drift_score (drift in its tokens), "
+        "designesy_readiness_score (machine-readable files for AI tools) and "
+        "designesy_guardrails (a token file, lint config, agent rules and DESIGN.md "
+        "generated from its tokens)."
+    ),
+    (
+        "Watch over time: designesy_monitor_score (drift against earlier snapshots "
+        "passed as history; can send an alert email when given an address)."
+    ),
+    "Compare two sites: designesy_compare (their tokens diffed).",
+    (
+        "Combine: designesy_report (score, drift and readiness in one composite "
+        "grade)."
+    ),
+    (
+        "Reference: designesy_contract (the contract JSON), designesy_catalog (the "
+        "published packages) and designesy_design_review (a critique rubric); "
+        "designesy_llms_txt, designesy_llms_full_txt, designesy_agent_json and "
+        "designesy_skill_md return published documents. Rubric and documents come "
+        "back as reference data, leaving out any part written as instructions for an "
+        "AI agent."
+    ),
+    (
+        "Scores come from fixed rules applied to the page or file: no language model "
+        "takes part, so the same input gives the same verdict. The page engines "
+        "behind score, drift, readiness, guardrails, monitor, compare and report "
+        "cache each result for about 24 hours. Tools that read a URL refuse "
+        "non-http(s) URLs, localhost and private IP addresses. An error from a page, "
+        "file or engine that cannot be reached or read says whether one retry can "
+        "help."
+    ),
+))
+
+# The output schema of each scoring tool, by tool name. Each documents only
+# what the code returns on a success path, marks as required only what every
+# success carries, and allows additional properties, so a field an engine
+# adds later does not make a result non-conforming.
+OUTPUT_SCHEMAS: dict[str, dict[str, Any]] = {
+    "designesy_score": {
+        "type": "object",
+        "description": (
+            "One score result. Which fields appear depends on format and on the server: "
+            "no field is required, and fields not listed here may appear."
+        ),
+        "properties": {
+            "ok": {
+                "type": "boolean",
+                "description": "format designesy from the engine: true when the engine ran.",
+            },
+            "score": {
+                "type": ["number", "null"],
+                "description": (
+                    "format designesy: weighted score 0-100 after the slop deduction; null when "
+                    "the page could not be read."
+                ),
+            },
+            "grade": {
+                "type": ["string", "null"],
+                "description": "Letter grade A-F; null when the page could not be read.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "skip": {"type": "integer", "minimum": 0},
+            "manual": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "scope": {
+                "type": "string",
+                "enum": ["contract", "universal"],
+                "description": "The scoring scope the engine applied.",
+            },
+            "contractVersion": {
+                "type": "string",
+                "description": "The design contract version scored against (engine JSON).",
+            },
+            "checks": {
+                "type": "array",
+                "description": (
+                    "Every check with its verdict; engine JSON also carries remediation and "
+                    "weight."
+                ),
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+            "categoryScores": {"type": "object", "description": "Per category: score, weight and counts."},
+            "slop": {
+                "type": "object",
+                "description": (
+                    "The slop deduction: generic, template-like patterns found on the page "
+                    "(findings with id S1-S12, label, instances, evidence and deduction) and "
+                    "total, the points subtracted from the score (at most 5 per pattern, 20 in "
+                    "all)."
+                ),
+                "properties": {
+                    "total": {"type": "number", "minimum": 0, "maximum": 20},
+                    "findings": {"type": "array", "items": {"type": "object"}},
+                    "convergences": {"type": ["string", "null"]},
+                },
+            },
+            "receipt": {
+                "type": "object",
+                "description": (
+                    "Reproducibility receipt: subject, retrieved_at, contract and engine "
+                    "versions, scope, and a digest of the verdict set (null when nothing was "
+                    "measured)."
+                ),
+            },
+            "unreachable": {
+                "type": "boolean",
+                "description": "true when the page could not be read; score and grade are then null.",
+            },
+            "unreachableReason": {"type": "string", "description": "http_error, timeout, network or empty_body."},
+            "unreachableDetail": {"type": "string"},
+            "url": {
+                "type": "string",
+                "description": "The scored URL (the stdio package's designesy format).",
+            },
+            "contract_version": {
+                "type": "string",
+                "description": "The stdio package's designesy format: the contract version scored against.",
+            },
+            "summary": {
+                "type": "object",
+                "description": (
+                    "Counts, score and grade: format canonical and google, and the stdio "
+                    "package's designesy format (score 0-1, score_percent 0-100)."
+                ),
+            },
+            "tokens_extracted": {"type": "integer", "minimum": 0},
+            "tokensExtracted": {"type": "integer", "minimum": 0},
+            "note": {
+                "type": "string",
+                "description": "The stdio package's designesy format: how the result was produced.",
+            },
+            "engine": {
+                "type": "object",
+                "description": (
+                    "Present when the stdio package's offline engine produced the result: which "
+                    "checks it ran and did not run."
+                ),
+            },
+            "findings": {
+                "type": "array",
+                "description": "format canonical and google: the checks as findings.",
+                "items": {"type": "object"},
+            },
+            "verdict": {
+                "type": "string",
+                "description": "format canonical: pass, needs-changes, fail or not-scored.",
+            },
+            "format": {
+                "type": "string",
+                "enum": ["review"],
+                "description": "Present only for format review.",
+            },
+            "markdown": {
+                "type": "string",
+                "description": (
+                    "format review: the engine's markdown report, the same text as the content "
+                    "block."
+                ),
+            },
+        },
+        "additionalProperties": True,
+    },
+    "designesy_tokens_score": {
+        "type": "object",
+        "description": "The tokens contract's ten checks (t01-t10) on one DTCG token file.",
+        "properties": {
+            "contract_id": {"type": ["string", "null"], "description": "The contract the checks come from."},
+            "contract_version": {"type": ["string", "null"]},
+            "contract_status": {"type": ["string", "null"]},
+            "url": {"type": "string", "description": "The token file's URL, or (inline dtcg_file)."},
+            "total_tokens": {"type": "integer", "minimum": 0},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored; points / scored checks x 100.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass_count": {"type": "integer", "minimum": 0},
+            "fail_count": {"type": "integer", "minimum": 0},
+            "warn_count": {"type": "integer", "minimum": 0},
+            "skip_count": {"type": "integer", "minimum": 0},
+            "scoring": {"type": "string"},
+            "checks": {
+                "type": "array",
+                "description": "One entry per check (t01-t10), named by the contract.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
+                        "detail": {"type": "string"},
+                    },
+                    "required": ["id", "name", "status"],
+                },
+            },
+            "provenance": {"type": "string"},
+            "validator_note": {"type": "string"},
+        },
+        "required": [
+            "url",
+            "total_tokens",
+            "score",
+            "grade",
+            "pass_count",
+            "fail_count",
+            "warn_count",
+            "skip_count",
+            "checks",
+        ],
+        "additionalProperties": True,
+    },
+    "designesy_a11y_score": {
+        "type": "object",
+        "description": (
+            "The accessibility contract's checks and a Playwright + axe-core script to "
+            "run locally; nothing is scanned by this tool."
+        ),
+        "properties": {
+            "contract_id": {"type": ["string", "null"], "description": "The contract the checks come from."},
+            "contract_version": {"type": ["string", "null"]},
+            "contract_status": {"type": ["string", "null"]},
+            "url": {"type": "string", "description": "The URL written into the script."},
+            "ruleset": {"type": "string", "description": "The axe-core tag the script filters on."},
+            "brand_config": {"type": ["object", "null"], "description": "The parsed config, or null."},
+            "summary": {"type": "string"},
+            "checks": {
+                "type": "array",
+                "description": (
+                    "The contract's checks (a01-a11), each PENDING_EXECUTION until the script "
+                    "runs."
+                ),
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PENDING_EXECUTION"]},
+                    },
+                    "required": ["id", "name", "status"],
+                },
+            },
+            "playwright_script": {
+                "type": "string",
+                "description": "A Playwright test that runs axe-core on url and prints a score.",
+            },
+            "install_command": {"type": "string"},
+            "run_command": {"type": "string"},
+            "provenance": {"type": "string"},
+            "priority": {"type": "string"},
+        },
+        "required": ["url", "ruleset", "checks", "playwright_script", "install_command", "run_command"],
+        "additionalProperties": True,
+    },
+    "designesy_motion_score": {
+        "type": "object",
+        "description": "The motion contract's ten checks (m01-m10) on one Lottie file.",
+        "properties": {
+            "contract_id": {"type": ["string", "null"], "description": "The contract the checks come from."},
+            "contract_version": {"type": ["string", "null"]},
+            "contract_status": {"type": ["string", "null"]},
+            "url": {
+                "type": "string",
+                "description": "The Lottie file's URL, or (inline lottie_file).",
+            },
+            "lottie_version": {"type": ["string", "null"], "description": "The file's v field."},
+            "layer_count": {"type": "integer", "minimum": 0},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored; points / scored checks x 100.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass_count": {"type": "integer", "minimum": 0},
+            "fail_count": {"type": "integer", "minimum": 0},
+            "warn_count": {"type": "integer", "minimum": 0},
+            "skip_count": {"type": "integer", "minimum": 0},
+            "scoring": {"type": "string"},
+            "checks": {
+                "type": "array",
+                "description": "One entry per check (m01-m10), named by the contract.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
+                        "detail": {"type": "string"},
+                    },
+                    "required": ["id", "name", "status"],
+                },
+            },
+            "ten_non_negotiable": {"type": "array", "description": "The contract's ten motion standards."},
+            "provenance": {"type": "string"},
+            "validator_note": {"type": "string"},
+        },
+        "required": [
+            "url",
+            "layer_count",
+            "score",
+            "grade",
+            "pass_count",
+            "fail_count",
+            "warn_count",
+            "skip_count",
+            "checks",
+        ],
+        "additionalProperties": True,
+    },
+    "designesy_drift_score": {
+        "type": "object",
+        "description": "The drift engine's twelve checks (d01-d12) on one page.",
+        "properties": {
+            "ok": {"type": "boolean"},
+            "url": {"type": "string"},
+            "scope": {
+                "type": "string",
+                "enum": ["contract", "universal"],
+                "description": "universal turns d01 into SKIP when the page declares no custom properties.",
+            },
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "PASS=1, WARN=0.5, FAIL=0 over the checks that are not SKIP.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "skip": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "tokensExtracted": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Custom properties declared in :root.",
+            },
+            "checks": {
+                "type": "array",
+                "description": "d01-d12.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+        },
+        "required": ["ok", "url", "score", "grade", "checks"],
+        "additionalProperties": True,
+    },
+    "designesy_readiness_score": {
+        "type": "object",
+        "description": "The readiness engine's ten probes (r01-r10) of one origin.",
+        "properties": {
+            "ok": {"type": "boolean"},
+            "url": {"type": "string"},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "PASS=1, WARN=0.5, FAIL=0 over all ten checks.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "checks": {
+                "type": "array",
+                "description": "r01-r10.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+        },
+        "required": ["ok", "url", "score", "grade", "checks"],
+        "additionalProperties": True,
+    },
+    "designesy_guardrails": {
+        "type": "object",
+        "description": (
+            "The build-contract bundle generated from one page's :root custom properties,"
+            " with six emission checks (g01-g06)."
+        ),
+        "properties": {
+            "ok": {"type": "boolean"},
+            "url": {"type": "string"},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Emission completeness, not design quality.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "tokensExtracted": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Custom properties found in :root.",
+            },
+            "parts": {
+                "type": "array",
+                "description": (
+                    "Present when parts was passed: the bundle files returned, in the order "
+                    "asked."
+                ),
+                "items": {
+                    "type": "string",
+                    "enum": [
+                        "tokens",
+                        "lintConfig",
+                        "agentRules",
+                        "componentContract",
+                        "antiPatterns",
+                        "designMd",
+                    ],
+                },
+            },
+            "bundle": {
+                "type": "object",
+                "description": (
+                    "tokens (DTCG token file), lintConfig (Stylelint config), agentRules "
+                    "(AGENTS.md text), componentContract, antiPatterns and designMd (DESIGN.md "
+                    "text); with parts, only the named files."
+                ),
+            },
+            "checks": {
+                "type": "array",
+                "description": "g01-g06.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+        },
+        "required": ["ok", "url", "score", "grade", "bundle", "checks"],
+        "additionalProperties": True,
+    },
+    "designesy_monitor_score": {
+        "type": "object",
+        "description": (
+            "One monitor run: the twelve drift checks on the page and ten governance "
+            "checks (m01-m10) against the history passed in."
+        ),
+        "properties": {
+            "ok": {"type": "boolean"},
+            "url": {"type": "string"},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Governance health from the monitor checks, not design quality.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "currentSnapshot": {
+                "type": "object",
+                "description": (
+                    "This run as a snapshot (timestamp, score, grade, tokensExtracted, checks); "
+                    "pass it back in history next time."
+                ),
+            },
+            "baseline": {
+                "type": ["object", "null"],
+                "description": "The first snapshot in history, or null.",
+            },
+            "previous": {
+                "type": ["object", "null"],
+                "description": "The last snapshot in history, or null.",
+            },
+            "driftChecks": {
+                "type": "array",
+                "description": "d01-d12 for this run.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+            "monitorChecks": {
+                "type": "array",
+                "description": "m01-m10.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+            "alerts": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "The alert conditions this run raised.",
+            },
+            "emailAlert": {
+                "type": "object",
+                "description": (
+                    "Present when an email was given and alerts fired: attempted, delivered, "
+                    "recipient and error."
+                ),
+            },
+        },
+        "required": ["ok", "url", "score", "grade", "monitorChecks", "alerts"],
+        "additionalProperties": True,
+    },
+    "designesy_compare": {
+        "type": "object",
+        "description": (
+            "The diff of two pages' :root custom properties, with eight diff checks "
+            "(c01-c08)."
+        ),
+        "properties": {
+            "ok": {"type": "boolean"},
+            "urlA": {"type": "string"},
+            "urlB": {"type": "string"},
+            "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Diff completeness, not design quality.",
+            },
+            "grade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "pass": {"type": "integer", "minimum": 0},
+            "warn": {"type": "integer", "minimum": 0},
+            "fail": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0},
+            "tokensA": {"type": "integer", "minimum": 0},
+            "tokensB": {"type": "integer", "minimum": 0},
+            "added": {
+                "type": "array",
+                "description": "Tokens in A and not in B.",
+                "items": {"type": "object"},
+            },
+            "removed": {
+                "type": "array",
+                "description": "Tokens in B and not in A.",
+                "items": {"type": "object"},
+            },
+            "renamed": {
+                "type": "array",
+                "description": (
+                    "Likely renames (name distance 2 or less): from, to, distance, valueA, "
+                    "valueB."
+                ),
+                "items": {"type": "object"},
+            },
+            "valueChanged": {
+                "type": "array",
+                "description": "Same name, different value.",
+                "items": {"type": "object"},
+            },
+            "scaleDiff": {
+                "type": "object",
+                "description": "Spacing, radius and color scale sizes in A and B.",
+            },
+            "structureDelta": {
+                "type": "object",
+                "description": "Token counts and category distribution in A and B.",
+            },
+            "contrastDrift": {
+                "type": "array",
+                "description": "Contrast ratio change for shared color tokens.",
+                "items": {"type": "object"},
+            },
+            "scoreDelta": {
+                "type": ["object", "null"],
+                "description": (
+                    "Both pages' designesy_score scores and grades and their difference; null "
+                    "when either could not be scored."
+                ),
+            },
+            "checks": {
+                "type": "array",
+                "description": "c01-c08.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+        },
+        "required": ["ok", "urlA", "urlB", "score", "grade", "checks"],
+        "additionalProperties": True,
+    },
+    "designesy_report": {
+        "type": "object",
+        "description": (
+            "The composite report: the score, drift and readiness engines run on one URL "
+            "and weighted into one grade."
+        ),
+        "properties": {
+            "ok": {"type": "boolean"},
+            "url": {"type": "string"},
+            "compositeScore": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": (
+                    "score x 0.5 + drift x 0.3 + readiness x 0.2, re-weighted when an engine "
+                    "returned no score."
+                ),
+            },
+            "compositeGrade": {
+                "type": "string",
+                "enum": ["A", "B", "C", "D", "F"],
+                "description": "Letter grade from the score: A>=90, B>=80, C>=70, D>=60, F below.",
+            },
+            "score": {
+                "type": "object",
+                "description": "The score engine's result (with detail summary: its single values only).",
+            },
+            "drift": {
+                "type": "object",
+                "description": "The drift engine's result (with detail summary: its single values only).",
+            },
+            "readiness": {
+                "type": "object",
+                "description": "The readiness engine's result (with detail summary: its single values only).",
+            },
+            "totalChecks": {"type": "integer", "minimum": 0},
+            "totalPass": {"type": "integer", "minimum": 0},
+            "totalWarn": {"type": "integer", "minimum": 0},
+            "totalFail": {"type": "integer", "minimum": 0},
+            "totalSkip": {"type": "integer", "minimum": 0},
+            "totalManual": {"type": "integer", "minimum": 0},
+            "checks": {
+                "type": "array",
+                "description": (
+                    "Every engine's checks, each tagged with engine; with detail summary, only "
+                    "those that did not PASS."
+                ),
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+            "synthesis": {
+                "type": "array",
+                "description": (
+                    "rp01-rp08: whether each engine ran and the composite holds; with detail "
+                    "summary, only those that did not PASS."
+                ),
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "item": {"type": "string", "description": "What the check verifies."},
+                        "category": {"type": "string"},
+                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP", "MANUAL"]},
+                        "detail": {"type": "string", "description": "What the engine found."},
+                    },
+                    "required": ["id", "status"],
+                },
+            },
+            "appUrl": {
+                "type": "string",
+                "description": "The interactive dashboard for this URL in a browser.",
+            },
+            "detail": {
+                "type": "string",
+                "enum": ["summary"],
+                "description": "Present only with detail summary.",
+            },
+            "omitted": {
+                "type": "object",
+                "description": "With detail summary: how many PASS rows were left out, and what else.",
+            },
+        },
+        "required": ["ok", "url", "checks", "synthesis", "appUrl"],
+        "additionalProperties": True,
+    },
+}
 
 TOOLS = [
     {
         "name": "designesy_catalog",
-        # The package count is deliberately NOT restated here. This description
-        # said "23 published Designesy packages" while the catalog had reached 24,
-        # so the description and the payload disagreed about the same fact. The
-        # tool returns `package_count` derived from the catalog at call time, and
-        # this Python package cannot import the TypeScript catalog to interpolate
-        # it at build time. Rather than freeze a second copy of a number that
-        # changes, the count lives only in the response.
         "description": (
-            "List the published Designesy packages with versions, URLs, "
-            "and statuses. Use this to discover what Designesy publishes "
-            "before fetching a specific contract. When NOT to use: if you "
-            "already know which package you need, skip this and call "
-            "designesy_contract directly. Read-only — no side effects. "
-            "Returns JSON: { package_count, packages[{id, kind, title, "
-            "version, status, human_url, machine_url}], standing_rules[], "
-            "machine_exports[] }. No parameters — accepts empty input."
+            "List the packages Designesy publishes (contracts, kits, labs, reviews and "
+            "tools), each with its version, status, and human and machine URLs. Use this "
+            "when you need to see what Designesy publishes before reading one item. When "
+            "not to use: for the design-system contract itself, use designesy_contract; "
+            "for the org's discovery manifest, use designesy_agent_json. Behaviour: reads"
+            " https://www.designesy.org/open.json, cached for 5 minutes by this server; "
+            "takes no parameters. If designesy.org cannot be reached, the error says "
+            "whether a retry can help. Returns JSON: { package_count, packages[{ id, "
+            "kind, number, title, version, status, lede, human_url, machine_url }], "
+            "machine_exports[], standing_rules[], catalog_version, updated, identity, "
+            "thesis, public_url }."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": dict(NO_PARAMETER_INPUT_SCHEMA),
     },
     {
         "name": "designesy_contract",
         "description": (
-            "Get the Designesy design-system contract: the canonical "
-            "tokens, motion, acoustic, takt, cadence, typography, "
-            "components, and verification rules that define what the "
-            "Designesy org considers legitimate design. Use this when you "
-            "need the actual contract values (token names and values, "
-            "motion timings, accessibility rules) to author, check, or bind "
-            "a design. When NOT to use: for a pass/fail score of a live "
-            "site, use designesy_score; for an agent-skill-format export, "
-            "use designesy_skill_md. Read-only; this server caches the "
-            "fetched contract for 5 minutes. With no arguments it returns "
-            "the full contract JSON, which is large (on the order of 100 "
-            "KB, tens of thousands of tokens). To return less, pass "
-            "sections, a list of top-level keys such as [\"motion\", "
-            "\"colors\"]: the result holds id, version, and only those keys. "
-            "section (one name) is the older form and returns { section, "
-            "data }. An unknown name returns an error that lists every "
-            "valid key."
+            "Get the Designesy design-system contract: its top-level sections such as "
+            "colors, motion, typography, takt, cadence, acoustic, components, "
+            "accessibility and verification. Use this when you need the contract's actual"
+            " values (token names and values, motion timings, accessibility rules) to "
+            "build, check or cite a design. When not to use: for a pass/fail score of a "
+            "live page, use designesy_score; for the same rules as an agent skill file, "
+            "use designesy_skill_md. Behaviour: reads "
+            "https://www.designesy.org/contracts/design-system.json, cached for 5 minutes"
+            " by this server. With no arguments it returns the whole contract, on the "
+            "order of 100 KB, tens of thousands of tokens. To return less, pass sections,"
+            " a list of top-level keys such as [\"motion\", \"colors\"]: the result holds id,"
+            " version and only those keys. section (one key) is the older form and "
+            "returns { section, data }. Both take only the contract's top-level keys, "
+            "listed in the parameter's enum; an unknown key returns an error that lists "
+            "every valid key. Returns JSON: the contract object, or the slice asked for."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "sections": {
-                    "type": "array",
-                    "items": {"type": "string"},
                     "description": (
-                        "Optional: top-level contract keys to return, for example "
-                        "[\"motion\", \"colors\", \"verification_checks\"]. The result "
-                        "holds id, version, and only these keys. Omit for the full "
-                        "contract. An unknown key returns an error that lists every "
-                        "valid key."
+                        "Optional: the top-level keys to return, for example [\"motion\", \"colors\"]. "
+                        "The result holds id, version and only these keys. Omit for the whole "
+                        "contract."
                     ),
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(CONTRACT_KEYS)},
                 },
                 "section": {
-                    "type": "string",
                     "description": (
-                        "Optional, older form: one section name; returns { section, "
-                        "data }. Accepts the aliases color, tensions and poise. "
-                        "Prefer sections."
+                        "Optional, older form: one top-level key, for example \"motion\"; returns { "
+                        "section, data }. Prefer sections."
                     ),
+                    "type": "string",
+                    "enum": list(CONTRACT_KEYS),
                 },
             },
         },
@@ -2177,470 +3171,510 @@ TOOLS = [
     {
         "name": "designesy_design_review",
         "description": (
-            "Get the Designesy Design Review rubric for a qualitative "
-            "design critique: eight dimensions (Purpose, Clarity, Context, "
-            "Inclusion, System coherence, Durability, Delight, "
-            "Responsibility), the output format, and the verification "
-            "checklist, from the published Design Review kit. Use this when "
-            "you want a structured rubric to critique a design "
-            "holistically, rather than a numeric compliance score. When NOT "
-            "to use: for a deterministic numeric score, use "
-            "designesy_score; this tool gives you a rubric, not a number. "
-            "Read-only: it returns reference data and does not evaluate the "
-            "design. Returns JSON: { kind: \"review_rubric\", source_url, "
-            "note, inputs (only when passed), kit { id, title, version, "
-            "status, purpose, quality_bar, permission }, when_to_use[], "
-            "required_inputs[], dimensions[8] { num, title, desc }, "
-            "output_format[], verification_checklist[], anti_patterns[], "
-            "rationalizations[], kit_prompt_url, kit_prompt_note, "
-            "omitted_fields[] }. The kit's copy-ready agent prompt is not "
-            "included; kit_prompt_url is the page where a person can read "
-            "it. Pass artifact, purpose, context, or rules to have them "
-            "recorded in inputs (rules defaults to the current contract "
-            "version)."
+            "Get the Designesy Design Review rubric for a qualitative critique: eight "
+            "dimensions (Purpose, Clarity, Context, Inclusion, System coherence, "
+            "Durability, Delight, Responsibility), the output format, the verification "
+            "checklist, anti-patterns and rationalizations, from the published Design "
+            "Review kit. Use this when a design needs a structured, holistic critique "
+            "rather than a numeric score. When not to use: for a deterministic score of a"
+            " live page, use designesy_score. Behaviour: reads "
+            "https://www.designesy.org/kits/design-review.json, cached for 5 minutes by "
+            "this server, and returns it as reference data; it evaluates nothing. The "
+            "kit's copy-ready review prompt is left out; kit_prompt_url is the page where"
+            " a person can read it. artifact, purpose, context and rules are optional and"
+            " are only recorded in inputs (rules defaults to the current contract "
+            "version). Returns JSON: { kind: \"review_rubric\", source_url, note, inputs "
+            "(only when one is passed), kit { id, title, version, status, purpose, "
+            "quality_bar, permission }, when_to_use[], required_inputs[], dimensions[8] {"
+            " num, title, desc }, output_format[], verification_checklist[], "
+            "anti_patterns[], rationalizations[], kit_prompt_url, kit_prompt_note, "
+            "omitted_fields[] }."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
-                "artifact": {"type": "string", "description": "URL or description of the artifact to review."},
-                "purpose": {"type": "string", "description": "What the design is trying to make possible."},
-                "context": {"type": "string", "description": "Audience, device, environment, and constraints."},
-                "rules": {"type": "string", "description": "Governing rules or contract version (default: the current designesy design system contract version)."},
+                "artifact": {
+                    "description": (
+                        "Optional: the URL or a short description of the design to review, for "
+                        "example \"https://example.com/pricing\"."
+                    ),
+                    "type": "string",
+                },
+                "purpose": {
+                    "description": (
+                        "Optional: what the design is meant to make possible, for example \"let a "
+                        "visitor compare plans and start a trial\"."
+                    ),
+                    "type": "string",
+                },
+                "context": {
+                    "description": (
+                        "Optional: audience, device, environment and constraints, for example "
+                        "\"first-time visitors on mobile, slow networks\"."
+                    ),
+                    "type": "string",
+                },
+                "rules": {
+                    "description": (
+                        "Optional: the governing rules or contract version, for example \"WCAG 2.2 AA "
+                        "and the team style guide\". Defaults to the current Designesy contract "
+                        "version."
+                    ),
+                    "type": "string",
+                },
             },
         },
     },
     {
         "name": "designesy_skill_md",
         "description": (
-            "Get the Designesy SKILL.md: the agent-skill-format export of "
-            "the design-system contract, for a user to save into "
-            ".agents/skills/ or a system prompt so a coding agent builds UI "
-            "to the contract (tokens, anti-patterns, rules, verification). "
-            "Use this when the user wants the contract in that form. When "
-            "NOT to use: for the raw contract JSON, use designesy_contract; "
-            "for scoring, use designesy_score. Read-only: no side effects. "
-            "Returns JSON: { kind: \"published_document\", source_url, "
-            "media_type: \"text/markdown\", note, omitted_sections[], content "
-            "}, where content is the SKILL.md markdown (tens of thousands "
-            "of characters) with any section written as steps or a prompt "
-            "for an AI agent replaced by a one-line marker and named in "
-            "omitted_sections. No parameters."
+            "Get the Designesy SKILL.md: the design-system contract written as an agent "
+            "skill file in markdown (tokens, rules, anti-patterns and verification), for "
+            "a person to save into a project's skills folder or a system prompt so a "
+            "coding agent builds UI to the contract. Use this when the user wants the "
+            "contract in that form; it is about the design rules, not about Designesy as "
+            "an org, and runs to about 31,000 characters. When not to use: for the "
+            "contract's raw values as JSON, use designesy_contract; for an overview of "
+            "Designesy, use designesy_llms_txt; for a score, use designesy_score. "
+            "Behaviour: Takes no parameters; reads the file from www.designesy.org, "
+            "cached for 5 minutes by this server. Any section written as steps or a "
+            "prompt for an AI agent is replaced by a one-line marker and named in "
+            "omitted_sections. Returns JSON: { kind: \"published_document\", source_url, "
+            "media_type: \"text/markdown\", note, omitted_sections[], content }."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": dict(NO_PARAMETER_INPUT_SCHEMA),
     },
     {
         "name": "designesy_agent_json",
         "description": (
-            "Get the Designesy agent discovery document "
-            "(/.well-known/agent.json) as reference data: the org identity, "
-            "authority, discovery endpoints, package index, machine "
-            "exports, permission policy, contact, and citation templates. "
-            "Use this when integrating with or enumerating Designesy and "
-            "need the canonical discovery manifest rather than one specific "
-            "contract. When NOT to use: for the package list, use "
-            "designesy_catalog (lighter); for the contract, use "
-            "designesy_contract. Read-only: no side effects. Returns JSON: "
-            "{ kind: \"published_document\", source_url, media_type: "
-            "\"application/json\", note, omitted_fields[], document }, where "
-            "document is the published object (schema, name, identity, "
-            "authority, topics, discovery, ingest, packages, "
-            "machine_exports, contact, permission, cite, and the rest) with "
-            "any field written as steps for an AI agent (such as "
-            "ingest.steps) removed and its path listed in omitted_fields. "
-            "No parameters."
+            "Get the Designesy agent discovery document (/.well-known/agent.json): the "
+            "org's identity, authority, discovery endpoints, package index, machine "
+            "exports, permission policy, contact and citation templates, as JSON. Use "
+            "this when a program or integration needs those facts as structured fields; "
+            "the result is about 13,000 characters. When not to use: for the package list"
+            " alone, use designesy_catalog; for a prose overview, use designesy_llms_txt "
+            "or designesy_llms_full_txt; for the design rules, use designesy_contract. "
+            "Behaviour: Takes no parameters; reads the file from www.designesy.org, "
+            "cached for 5 minutes by this server. Any field written as steps for an AI "
+            "agent (such as ingest.steps) is removed and its path listed in "
+            "omitted_fields. Returns JSON: { kind: \"published_document\", source_url, "
+            "media_type: \"application/json\", note, omitted_fields[], document }."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": dict(NO_PARAMETER_INPUT_SCHEMA),
     },
     {
         "name": "designesy_llms_txt",
         "description": (
-            "Get the Designesy /llms.txt brief as reference data: what "
-            "Designesy is, canonical links, topics, the published package "
-            "list, machine exports, standing rules, and contact. Use this "
-            "first when you don't know what Designesy is; at a few thousand "
-            "characters it is the cheapest orientation path before pulling "
-            "heavier artifacts. When NOT to use: for the longer brief, use "
-            "designesy_llms_full_txt; for the contract itself, use "
-            "designesy_contract. Read-only: no side effects. Returns JSON: "
-            "{ kind: \"published_document\", source_url, media_type: "
-            "\"text/plain\", note, omitted_sections[], content }, where "
-            "content is the published text with any section written as "
-            "steps for an AI agent (such as the ingest steps) replaced by a "
-            "one-line marker and named in omitted_sections. No parameters."
+            "Get the Designesy /llms.txt brief: a short plain-text overview of what "
+            "Designesy is, its canonical links, topics, published packages, machine "
+            "exports, standing rules and contact. Use this when you know little about "
+            "Designesy and want the cheapest orientation, about 7,000 characters. When "
+            "not to use: for more depth in prose, use designesy_llms_full_txt (about "
+            "14,000 characters); for the same facts as structured JSON (endpoints, "
+            "permission policy, citation templates), use designesy_agent_json; for the "
+            "design rules themselves, use designesy_contract or designesy_skill_md. "
+            "Behaviour: Takes no parameters; reads the file from www.designesy.org, "
+            "cached for 5 minutes by this server. Any section written as steps for an AI "
+            "agent (such as the ingest steps) is replaced by a one-line marker and named "
+            "in omitted_sections. Returns JSON: { kind: \"published_document\", source_url,"
+            " media_type: \"text/plain\", note, omitted_sections[], content }."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": dict(NO_PARAMETER_INPUT_SCHEMA),
     },
     {
         "name": "designesy_llms_full_txt",
         "description": (
-            "Get the Designesy /llms-full.txt brief as reference data: "
-            "authority, discovery endpoints, topics, every published "
-            "package with its links, standing rules, and anti-patterns. Use "
-            "this for a fuller picture of the Designesy ecosystem when the "
-            "short brief from designesy_llms_txt is not enough. When NOT to "
-            "use: for a quick orientation, use designesy_llms_txt (a few "
-            "thousand characters; this one runs over ten thousand); for the "
-            "contract itself, use designesy_contract. Read-only: no side "
-            "effects. Returns JSON: { kind: \"published_document\", "
-            "source_url, media_type: \"text/plain\", note, "
-            "omitted_sections[], content }, where content is the published "
-            "text with any section written as steps or a prompt for an AI "
-            "agent (such as the ingest protocol and the paste-ready agent "
-            "prompt) replaced by a one-line marker and named in "
-            "omitted_sections. No parameters."
+            "Get the Designesy /llms-full.txt brief: the long plain-text overview, with "
+            "authority, discovery endpoints, topics, every published package with its "
+            "links, standing rules and anti-patterns. Use this when the short brief is "
+            "not enough and prose suits the task better than JSON; it is about 14,000 "
+            "characters. When not to use: for a quick orientation, use designesy_llms_txt"
+            " (about 7,000 characters); for structured fields, use designesy_agent_json; "
+            "for the design rules themselves, use designesy_contract or "
+            "designesy_skill_md. Behaviour: Takes no parameters; reads the file from "
+            "www.designesy.org, cached for 5 minutes by this server. Any section written "
+            "as steps or a prompt for an AI agent (such as the ingest protocol and the "
+            "paste-ready agent prompt) is replaced by a one-line marker and named in "
+            "omitted_sections. Returns JSON: { kind: \"published_document\", source_url, "
+            "media_type: \"text/plain\", note, omitted_sections[], content }."
         ),
-        "inputSchema": {"type": "object", "properties": {}},
+        "inputSchema": dict(NO_PARAMETER_INPUT_SCHEMA),
     },
     {
         "name": "designesy_score",
         "description": (
-            "Score a live URL against the Designesy design contract with "
-            "the deterministic 44-check verification engine at "
-            "https://www.designesy.org/api/score. Returns a numeric score, "
-            "a letter grade (A-F), and the check results. "
-            "Use this to audit whether a website or AI-generated UI "
-            "complies with a real design contract (tokens, motion, "
-            "accessibility, cadence, takt, typography, copywriting). When "
-            "NOT to use: for token-file validation only, use "
-            "designesy_tokens_score; for a Lottie file, use "
-            "designesy_motion_score; for a qualitative critique, use "
-            "designesy_design_review. The engine fetches the URL "
-            "server-side, extracts its CSS, and runs 44 checks. Results "
-            "are cached ~24h server-side per URL and scope. Checks that "
-            "need a live browser (Core Web Vitals, sound toggle, overflow) "
-            "return MANUAL; the full audit (/api/score/audit) resolves "
-            "them. Checks that do not apply to the site (no tokens, no "
-            "buttons, no DESIGN.md) return SKIP (N/A). "
-            "format selects the output. designesy (the default) returns "
-            "JSON: { url, contract_version, summary { total, pass, fail, "
-            "warn, skip, manual, score (0-1), score_percent (0-100), "
-            "grade }, tokens_extracted, checks[{ id, item, category, "
-            "status, detail }], note }. canonical returns the engine's "
-            "review-findings.json schema JSON unchanged. review returns "
-            "the engine's markdown report unchanged (coverage by category, "
-            "a findings table of the FAIL and WARN checks, and a verdict). "
-            "google returns the "
-            "engine's @google/design.md-compatible JSON unchanged. "
-            "scope sets the scoring scope: contract or universal. Omit it "
-            "and the engine auto-detects: contract for designesy.org, "
-            "universal for every other site. If the engine is "
-            "unreachable, format designesy falls back to the offline "
-            "engine: 27 of the 44 checks run locally, each mirroring the "
-            "live engine's verdict, under the same scope. Its result adds "
-            "engine (kind offline, the engine version it mirrors, and the "
-            "checks it did not run) and scope, and its note says so. The "
-            "other three formats return an error, because only the live "
-            "engine produces them."
+            "Score a live web page against the Designesy design contract with the "
+            "44-check rule engine at www.designesy.org: a score, an A-F grade, and each "
+            "check's verdict. Use this when a website or AI-built UI needs a numeric, "
+            "repeatable audit (tokens, motion, accessibility, cadence, takt, typography, "
+            "copywriting). When not to use: for a token file, use designesy_tokens_score;"
+            " for a Lottie file, designesy_motion_score; for drift within a site's own "
+            "tokens, designesy_drift_score; for a qualitative critique, "
+            "designesy_design_review. Behaviour: the engine reads the page and its "
+            "stylesheets and caches the result for about 24 hours per URL and scope "
+            "(contract or universal, auto-detected when omitted). MANUAL and SKIP checks "
+            "are not scored, and the engine's score includes its slop deduction for "
+            "generic, template-like patterns (at most 20 points). format designesy (the "
+            "default) returns this package's JSON: url, contract_version, summary "
+            "(counts, score 0-1, score_percent 0-100, grade), tokens_extracted, checks "
+            "and note; canonical and google return the engine's JSON, and review its "
+            "markdown report. If the engine cannot be reached, format designesy falls "
+            "back to an offline engine that runs 27 of the 44 checks and says so in "
+            "engine and note (a Chrome DevTools endpoint on 127.0.0.1:9222, if one "
+            "answers, measures the two browser checks in a temporary tab); the other "
+            "formats return an error. Errors: a timeout, HTTP 5xx or HTTP 429 (the score "
+            "engine allows 100 scores an hour per address) is worth one retry; HTTP 400 "
+            "(not a public http(s) URL) is final. Returns JSON described by the output "
+            "schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "The page to score, for example \"https://example.com/\". Defaults to "
+                        "https://www.designesy.org/."
+                    ),
                     "type": "string",
-                    "description": "URL to score. Defaults to https://www.designesy.org/ if not provided.",
                 },
                 "format": {
-                    "type": "string",
-                    "enum": list(SCORE_FORMATS),
                     "default": "designesy",
                     "description": (
-                        "Output format. designesy (default): the native "
-                        "JSON. canonical: the review-findings.json schema. "
-                        "review: a markdown report. google: the "
-                        "@google/design.md-compatible JSON."
+                        "Output format, for example \"canonical\". designesy (the default): the "
+                        "engine's JSON. canonical: the review-findings.json schema. review: a "
+                        "markdown report. google: findings and a summary in the design.md linter's "
+                        "shape."
                     ),
+                    "type": "string",
+                    "enum": list(SCORE_FORMATS),
                 },
                 "scope": {
+                    "description": (
+                        "Scoring scope, for example \"universal\". contract: every check counts absence"
+                        " against the site. universal: optional features and Designesy-specific token"
+                        " checks return SKIP when absent. Omit to auto-detect: contract for "
+                        "designesy.org, universal for every other site."
+                    ),
                     "type": "string",
                     "enum": list(SCORE_SCOPES),
-                    "description": (
-                        "Scoring scope. contract: every check counts "
-                        "absence against the site. universal: optional "
-                        "features and Designesy-specific token checks "
-                        "return SKIP when absent. Omit to auto-detect: "
-                        "contract for designesy.org, universal for every "
-                        "other site."
-                    ),
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_score"],
     },
     {
         "name": "designesy_tokens_score",
         "description": (
-            "Validate a design token file against the W3C Design Tokens "
-            "Community Group (DTCG) 2025.10 Final Community Group Report "
-            "(the spec's first stable version, published Oct 28 2025 as a "
-            "Candidate Recommendation and considered stable). Returns 10 "
-            "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
-            "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct: $type/$value/$description present, "
-            "structured colors (colorSpace + components rather than bare "
-            "hex), a valid $schema pointer to designtokens.org, and "
-            "correct dimension units. With 84% of teams now using design "
-            "tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, "
-            "every adopting team needs a validator. When NOT to use: for "
-            "scoring a whole live site (not just its token file), use "
-            "designesy_score. Executable: fetches the URL or parses the "
-            "raw JSON you provide, runs 10 checks server-side. No "
-            "browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not "
-            "scored; points / scored checks x 100. Returns JSON: { "
-            "contract_id, contract_version, contract_status, url, "
-            "total_tokens, score (0-100), grade (A-F), pass_count, "
-            "fail_count, warn_count, skip_count, scoring, checks[{id "
-            "(t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], "
-            "provenance, validator_note }. Pass url "
-            "to fetch a remote token file, or dtcg_file to validate an "
-            "inline JSON string. Provide exactly one."
+            "Validate one design token file against the W3C Design Tokens Community Group"
+            " format (DTCG 2025.10, the first stable version) with the tokens contract's "
+            "ten checks (t01-t10): a $schema pointing at designtokens.org, groups, $type "
+            "and $value on every token, structured colors (colorSpace and components, not"
+            " bare hex), standard types, namespaced custom types, dimension units, a "
+            "nested naming hierarchy, and no pre-2025.10 patterns. Use this when you have"
+            " a tokens.json or any DTCG export and need to know whether it is well "
+            "formed. When not to use: for a whole live site rather than its token file, "
+            "use designesy_score; for drift in a site's CSS tokens, use "
+            "designesy_drift_score. Behaviour: pass url (the file is read from that "
+            "address) or dtcg_file (the JSON text); if both are given, dtcg_file is used."
+            " No browser. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / "
+            "scored checks x 100. Errors: a timeout, HTTP 429 or 5xx from the file's host"
+            " is worth one retry; a private or non-http(s) URL, a host name that does not"
+            " resolve, a 404, or a reply that is not a JSON object is final; HTTP 401 or "
+            "403 needs the user (pass the file's contents as dtcg_file instead). Returns "
+            "JSON described by the output schema: score, grade, the four counts "
+            "(pass_count, fail_count, warn_count, skip_count), scoring and checks[{ id, "
+            "name, status, detail }]."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "URL of a DTCG token file (JSON), for example "
+                        "\"https://example.com/tokens.json\". Use this or dtcg_file."
+                    ),
                     "type": "string",
-                    "description": "URL to a DTCG token file (JSON). The tool fetches and validates it.",
                 },
                 "dtcg_file": {
+                    "description": (
+                        "The token file's JSON as a string, for example \"{\\\"color\\\": {\\\"ink\\\": "
+                        "{\\\"$type\\\": \\\"color\\\", \\\"$value\\\": {\\\"colorSpace\\\": \\\"srgb\\\", "
+                        "\\\"components\\\": [0, 0, 0]}}}}\". Used instead of url when both are given."
+                    ),
                     "type": "string",
-                    "description": "Raw DTCG token JSON string to validate (alternative to url).",
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_tokens_score"],
     },
     {
         "name": "designesy_a11y_score",
         "description": (
-            "Get the Designesy WCAG 2.2 AA accessibility verification "
-            "framework: 11 conformance checks (a01-a11) plus a "
-            "ready-to-run Playwright + axe-core 4.13.0 script template "
-            "targeting your URL. Use this to audit a site for "
-            "accessibility violations. When NOT to use: for a full "
-            "design-contract score (not just a11y), use designesy_score. "
-            "Does NOT run the scan: axe-core needs a real browser DOM. "
-            "Returns the 11 checks + a Playwright script you execute "
-            "locally (npm i -D @axe-core/playwright). The score comes "
-            "from your local run, not from this tool. Returns JSON: { "
-            'checks[{id (a01-a11), name, status: "PENDING_EXECUTION"}], '
-            "playwright_script, install_command, run_command }. Pass "
-            "config (JSON string) to customize axe.configure(), for "
-            "example with branding overrides or rule disables. Omit for "
-            "standard WCAG 2.2 AA."
+            "Get the Designesy WCAG 2.2 AA accessibility kit: the contract's eleven "
+            "checks (a01-a11) and a ready-to-run Playwright test that scans a URL with "
+            "axe-core 4.13.0 and prints a score. Use this when a page needs an "
+            "accessibility audit and a browser test can run locally (npm i -D "
+            "@axe-core/playwright). When not to use: for a full design-contract score of "
+            "a live page, use designesy_score. Behaviour: this tool scans nothing; "
+            "axe-core needs a real browser, so every check comes back PENDING_EXECUTION "
+            "and the score comes from running the script. url is written into the script "
+            "and is not fetched here; ruleset picks the axe-core tag (default wcag22aa); "
+            "config is JSON written into the script as an axe.configure() call. Errors: "
+            "config that is not valid JSON is final (correct it and call again). Returns "
+            "JSON described by the output schema: checks[{id (a01-a11), name, status: "
+            "\"PENDING_EXECUTION\"}], playwright_script, install_command and run_command."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "URL to scan for accessibility. The returned script template will target this URL.",
+                    "description": (
+                        "The page the generated script will scan, for example \"https://example.com/\"."
+                        " Written into the script; not fetched by this tool."
+                    ),
                 },
                 "ruleset": {
+                    "description": "The axe-core tag the script runs, for example \"wcag21aa\". Default wcag22aa.",
                     "type": "string",
-                    "description": "Ruleset tag (default: wcag22aa). Options: wcag2a, wcag2aa, wcag21aa, wcag22aa, best-practice.",
+                    "enum": ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa", "best-practice"],
                 },
                 "config": {
+                    "description": (
+                        "Optional JSON, as a string, for an axe.configure() call in the script, for "
+                        "example \"{\\\"rules\\\": [{\\\"id\\\": \\\"color-contrast\\\", \\\"enabled\\\": false}]}\". "
+                        "Omit for the standard WCAG 2.2 AA run."
+                    ),
                     "type": "string",
-                    "description": "Brand customization JSON for axe.configure() - branding, checks, rules, disableOtherRules.",
                 },
             },
             "required": ["url"],
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_a11y_score"],
     },
     {
         "name": "designesy_motion_score",
         "description": (
-            "Validate one Lottie animation file against the Designesy motion "
-            "contract: its ten checks (m01-m10), drawn from the Lottie spec "
-            "v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards. "
-            "Each check returns PASS, FAIL, WARN or SKIP under the contract's "
-            "own name for its id: m01 the schema's top-level animation object "
-            "(layer contents are not validated, so a clean file returns SKIP, "
-            "not PASS), m02 the required fields (v, fr, ip, op, w, h, layers), "
-            "m03 no deprecated 4.x Bodymovin version, m04 a markers array, m05 "
-            "a meta object, m06 a reduced-motion path (a marker or slot named "
-            "for it, or a meta note of an external prefers-reduced-motion "
-            "wrapper), m07 keyframe easing (linear, ease and ease-in curves "
-            "fail), m08 duration within 300 ms (longer returns WARN, since a "
-            "justification cannot be read from a file), m09 layout-property "
-            "animation and m10 keyboard-initiated motion (both SKIP: they "
-            "concern the page that embeds the file). Use this to check that a "
-            "motion asset is well formed and carries reduced-motion support. "
-            "When NOT to use: for the motion CSS of a whole site, use "
-            "designesy_score. Executable: fetches the URL or parses the inline "
-            "JSON; no browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is "
-            "not scored; points / scored checks x 100. Returns JSON: { "
-            "contract_id, contract_version, contract_status, url, "
-            "lottie_version, layer_count, score (0-100), grade (A-F), "
-            "pass_count, fail_count, warn_count, skip_count, scoring, "
-            "checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), "
-            "detail}], ten_non_negotiable, provenance, validator_note }. Pass "
-            "url to fetch a remote Lottie file, or lottie_file to validate an "
-            "inline JSON string. Provide exactly one."
+            "Validate one Lottie animation file against the Designesy motion contract: "
+            "its ten checks (m01-m10), drawn from the Lottie spec v1.0.1 and the "
+            "Designesy Ten Non-Negotiable Motion Standards, each PASS, FAIL, WARN or SKIP"
+            " under the contract's own name: m01 the top-level animation object (layer "
+            "contents are not validated, so a clean file returns SKIP), m02 required "
+            "fields (v, fr, ip, op, w, h, layers), m03 no deprecated 4.x Bodymovin "
+            "version, m04 a markers array, m05 a meta object, m06 a reduced-motion path, "
+            "m07 keyframe easing (linear, ease and ease-in fail), m08 duration within 300"
+            " ms (longer is WARN), and m09 and m10 SKIP (they concern the embedding "
+            "page). Use this when a motion asset must be well formed and carry "
+            "reduced-motion support. When not to use: for the motion CSS of a whole site,"
+            " use designesy_score. Behaviour: pass url (read from that address) or "
+            "lottie_file (the JSON text); if both are given, lottie_file is used. No "
+            "browser. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / "
+            "scored checks x 100. Errors: a timeout, HTTP 429 or 5xx from the file's host"
+            " is worth one retry; a private or non-http(s) URL, an unresolvable host, a "
+            "404, or a reply that is not a JSON object is final; HTTP 401 or 403 needs "
+            "the user (pass the file's contents as lottie_file). Returns JSON described "
+            "by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "URL of a Lottie JSON file, for example \"https://example.com/hero.json\". Use "
+                        "this or lottie_file."
+                    ),
                     "type": "string",
-                    "description": "URL to a Lottie JSON file. The tool fetches and validates it.",
                 },
                 "lottie_file": {
+                    "description": (
+                        "The Lottie JSON as a string, for example \"{\\\"v\\\": \\\"5.12.0\\\", \\\"fr\\\": 60, "
+                        "\\\"ip\\\": 0, \\\"op\\\": 18, \\\"w\\\": 100, \\\"h\\\": 100, \\\"layers\\\": []}\". Used "
+                        "instead of url when both are given."
+                    ),
                     "type": "string",
-                    "description": "Raw Lottie JSON string to validate (alternative to url).",
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_motion_score"],
     },
     {
         "name": "designesy_drift_score",
         "description": (
-            "Score a live URL for AI-generated UI drift. Its 12 checks detect "
-            "the four documented 2026 drift failure modes: token fabrication "
-            "(var() references with no fallback to custom properties declared "
-            "nowhere: not in a stylesheet, a <style> block or a style "
-            "attribute), within-session drift (spacing/color/radius value "
-            "variance), between-session amnesia (inconsistent font stacks, "
-            "shadows, transitions), and silent breaking changes (z-index chaos, "
-            "alias chains that end in an undeclared property). Use this when "
-            "you need to verify whether a site (especially an AI-generated one) "
-            "is drifting off its own declared token system. When NOT to use: "
-            "for a full 44-check design-contract score, use designesy_score; "
-            "for token-file format validation, use designesy_tokens_score. "
-            "Executable: fetches the URL server-side, extracts all CSS (inline "
-            "+ linked stylesheets), parses custom property declarations "
-            "(stylesheets, <style> blocks and style attributes) and var() "
-            "references, runs 12 drift checks. No browser needed. Returns JSON: "
-            "{ ok, url, scope, score (0-100), grade (A-F), pass, warn, fail, "
-            "skip, total, tokensExtracted, checks[{id, item, category, status, "
-            "detail}] }. Results cached ~24h per URL."
+            "Score a live page for AI-generated UI drift: twelve checks (d01-d12) on its "
+            "CSS for the four drift failure modes: token fabrication (var() references, "
+            "with no fallback, to custom properties declared nowhere), within-session "
+            "drift (spacing, color and radius value variance), between-session amnesia "
+            "(inconsistent font stacks, shadows and transitions), and silent breaking "
+            "changes (z-index chaos, alias chains that end in an undeclared property). "
+            "Use this when a site, especially an AI-built one, may be drifting off its "
+            "own declared tokens. When not to use: for the full 44-check contract score, "
+            "use designesy_score; for a token file's format, use designesy_tokens_score; "
+            "for drift over time against earlier runs, use designesy_monitor_score. "
+            "Behaviour: the engine at www.designesy.org reads the page, its <style> "
+            "blocks, linked stylesheets and style attributes, and caches the result for "
+            "about 24 hours per URL. No browser. Errors: a timeout, HTTP 5xx or HTTP 429 "
+            "(the drift engine allows 50 scans an hour per address) is worth one retry; "
+            "HTTP 400 (not a public http(s) URL) is final; a page the engine could not "
+            "fetch is worth one retry, after which it needs the user: the page may block "
+            "automated requests or need a login, or the URL may be mistyped. Returns JSON"
+            " described by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "The page to scan for drift, for example \"https://example.com/\". Defaults to "
+                        "https://www.designesy.org/."
+                    ),
                     "type": "string",
-                    "description": "URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.",
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_drift_score"],
     },
     {
         "name": "designesy_readiness_score",
         "description": (
-            "Score a URL for design-system AI readiness — the 6th "
-            "maturity axis (zeroheight 2026). 10 checks probe the "
-            "target origin for machine-readable artifacts: DTCG token "
-            "files, llms.txt, agent.json, MCP endpoint (tools/list), "
-            "DESIGN.md, token $description, component schemas, "
-            "sitemap.xml, robots.txt, and Open Graph/Twitter meta. Use "
-            "this to verify whether a design system is the default "
-            "context AI tools build from, or whether AI is silently "
-            "working around it. When NOT to use: for full "
-            "design-contract scoring, use designesy_score; for AI-drift "
-            "detection, use designesy_drift_score. Executable — fetches "
-            "the URL and probes the origin via HEAD/GET for each "
-            "artifact. No browser needed. Returns JSON: { ok, url, "
-            "score (0-100), grade (A-F), pass, warn, fail, total, "
-            "checks[{id, item, category, status, detail}] }. Results "
-            "cached ~24h server-side per URL."
+            "Score a site for design-system AI readiness: ten probes (r01-r10) of its "
+            "origin for machine-readable files: a DTCG token file, llms.txt, agent.json, "
+            "an MCP endpoint answering tools/list, DESIGN.md, token $description, a "
+            "component schema, sitemap.xml, robots.txt, and Open Graph and Twitter meta. "
+            "Use this when you need to know whether AI tools can find and read a design "
+            "system, rather than how the page is designed. When not to use: for the "
+            "contract score of the page, use designesy_score; for drift in its tokens, "
+            "use designesy_drift_score. Behaviour: the engine at www.designesy.org "
+            "requests each path on the URL's origin and caches the result for about 24 "
+            "hours per URL. No browser. Errors: a timeout, HTTP 5xx or HTTP 429 (the "
+            "readiness engine allows 50 scans an hour per address) is worth one retry; "
+            "HTTP 400 (not a public http(s) URL) is final; a page the engine could not "
+            "fetch is worth one retry, after which it needs the user: the page may block "
+            "automated requests or need a login, or the URL may be mistyped. Returns JSON"
+            " described by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "A page on the site to probe, for example \"https://example.com/\". Defaults to"
+                        " https://www.designesy.org/."
+                    ),
                     "type": "string",
-                    "description": "URL to score for AI readiness. Defaults to https://www.designesy.org/ if not provided.",
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_readiness_score"],
     },
     {
         "name": "designesy_guardrails",
         "description": (
-            "Generate a frozen build-contract bundle for AI coding agents from "
-            "any design system URL (the product layer). Ingests a site, "
-            "extracts its :root tokens, and emits 6 outputs: (1) DTCG-format "
-            "token file, (2) Stylelint config generated from token values, (3) "
-            "AGENTS.md-format rules with token allowlist, (4) component "
-            "contract with allowed prop patterns, (5) anti-pattern "
-            "documentation, (6) DESIGN.md file (Google open spec, "
-            "google-labs-code/design.md), the de-facto AI-readable "
-            "design-context standard: YAML front matter plus a markdown body. "
-            "Use this when you need to turn a design system into the file AI "
-            "agents read and the lint that enforces it. When NOT to use: for "
-            "design-contract scoring, use designesy_score; for token-file "
-            "validation, use designesy_tokens_score; for drift detection, use "
-            "designesy_drift_score. Executable: fetches the URL, extracts CSS + "
-            ":root custom properties, generates the bundle. No browser needed. "
-            "The full bundle grows with the number of tokens a site declares: "
-            "about 7 KB to about 530 KB of JSON on the 26 sites measured "
-            "(about 110 KB for designesy.org). To trim it, pass parts, a list of "
-            "bundle file names such as [\"designMd\"] or [\"tokens\", "
-            "\"lintConfig\"]: the result keeps score, grade, counts and checks, "
-            "and its bundle holds only those files, in the order asked. Valid "
-            "parts: tokens, lintConfig, agentRules, componentContract, "
-            "antiPatterns, designMd. A single part can still be large on a site "
-            "with many tokens. An unknown name returns an error that lists the "
-            "valid parts. Returns JSON: { ok, url, score (0-100, emission "
-            "completeness), grade, pass, warn, fail, total, tokensExtracted, "
-            "bundle: { tokens, lintConfig, agentRules, componentContract, "
-            "antiPatterns, designMd }, checks[{id, item, category, status, "
-            "detail}] }; with parts it adds parts, and bundle holds only the "
-            "named files. Results cached ~24h per URL."
+            "Generate a build-contract bundle for AI coding agents from a live page's "
+            ":root custom properties: tokens (a DTCG token file), lintConfig (a Stylelint"
+            " config), agentRules (AGENTS.md rules with a token allowlist), "
+            "componentContract (allowed prop patterns), antiPatterns (fabricated tokens "
+            "included) and designMd (a DESIGN.md: YAML front matter and a markdown body)."
+            " Use this when a design system must become the files AI agents read and the "
+            "lint that enforces them. When not to use: for a contract score, use "
+            "designesy_score; for token-file validation, use designesy_tokens_score; for "
+            "drift, use designesy_drift_score. Behaviour: the engine at www.designesy.org"
+            " reads the page and its stylesheets and caches the result for about 24 hours"
+            " per URL. No browser. The full bundle grows with the number of tokens a site"
+            " declares: about 7 KB to about 530 KB of JSON on the 26 sites measured "
+            "(about 110 KB for designesy.org). To trim it, pass parts, a list of bundle "
+            "file names such as [\"designMd\"]: the result keeps score, grade, counts and "
+            "checks, and its bundle holds only those files, in the order asked. Valid "
+            "parts: tokens, lintConfig, agentRules, componentContract, antiPatterns, "
+            "designMd. Errors: a timeout, HTTP 5xx or HTTP 429 (the guardrails engine "
+            "allows 50 bundles an hour per address) is worth one retry; HTTP 400 (not a "
+            "public http(s) URL) is final; a page the engine could not fetch is worth one"
+            " retry, after which it needs the user: the page may block automated requests"
+            " or need a login, or the URL may be mistyped. Returns JSON described by the "
+            "output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "The page whose tokens to turn into the bundle, for example "
+                        "\"https://example.com/\". Defaults to https://www.designesy.org/."
+                    ),
                     "type": "string",
-                    "description": "URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.",
                 },
                 "parts": {
+                    "description": (
+                        "Optional: the bundle files to return, for example [\"designMd\"] or [\"tokens\","
+                        " \"lintConfig\"]. Omit for the whole bundle."
+                    ),
                     "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Optional: the bundle files to return, by name. Omit for the whole bundle. Valid parts: tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd.",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "tokens",
+                            "lintConfig",
+                            "agentRules",
+                            "componentContract",
+                            "antiPatterns",
+                            "designMd",
+                        ],
+                    },
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_guardrails"],
     },
     {
         "name": "designesy_monitor_score",
         "description": (
-            "Score a URL for continuous design-drift governance — the "
-            "temporal layer over the drift radar. Re-runs the 12 drift "
-            "checks (d01-d12) on the URL and computes 10 monitor checks "
-            "(m01-m10): schedule registered, last run fresh, drift "
-            "delta vs baseline, trend slope (3-run trajectory), new "
-            "violations since last run, resolved since last run (the "
-            "healing signal), score degradation threshold, token-set "
-            "mutation, contract version drift, and alert delivered. "
-            "When alerts fire and an email address is provided, sends "
-            "an HTML drift-alert email via Resend (requires "
-            "RESEND_API_KEY env var). Pass a history array of prior "
-            "snapshots to compute deltas; omit it for a first-run "
-            "baseline. Use this to watch a design system over time — "
-            "'weekly audits at cents per report' (Into Design Systems "
-            "2026). When NOT to use: for a single point-in-time drift "
-            "check, use designesy_drift_score; for design-contract "
-            "scoring, use designesy_score. Executable — fetches the "
-            "URL, extracts CSS + :root tokens, runs checks, computes "
-            "deltas. No browser needed. Returns JSON: { ok, url, score "
-            "(0-100, governance health), grade (A-F), pass, warn, fail, "
-            "total, currentSnapshot, baseline, previous, driftChecks, "
-            "monitorChecks, alerts, emailAlert }. Results cached ~24h "
-            "server-side per URL."
+            "Score one monitoring run of a live page: the twelve drift checks (d01-d12) "
+            "plus ten governance checks (m01-m10), most of them comparing this run with "
+            "the snapshots passed in history: drift since the baseline, the 3-run trend, "
+            "new and resolved violations, score degradation, token-set changes, the "
+            "contract version, and whether an alert was delivered. Use this when a design"
+            " system is watched over time: each call is one run, and the caller keeps the"
+            " snapshots (pass each run's currentSnapshot back in history, oldest first). "
+            "When not to use: for a single point-in-time drift check, use "
+            "designesy_drift_score; for a contract score, use designesy_score. Behaviour:"
+            " nothing is scheduled or stored by this tool. The engine at "
+            "www.designesy.org reads the page and caches the result for about 24 hours "
+            "per URL and history. Side effect: when email is given, an alert fires (it "
+            "needs a non-empty history) and a Resend key is configured on "
+            "www.designesy.org, an HTML alert email goes to that address; a repeat of the"
+            " same alerts within an hour is suppressed only per server instance, so a "
+            "repeated call can send another. Errors: a timeout, HTTP 5xx or HTTP 429 (the"
+            " monitor engine allows 50 runs an hour per address) is worth one retry; HTTP"
+            " 400 (not a public http(s) URL) is final; a page the engine could not fetch "
+            "is worth one retry, after which it needs the user: the page may block "
+            "automated requests or need a login, or the URL may be mistyped. Returns JSON"
+            " described by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
+                    "description": (
+                        "The page to monitor, for example \"https://example.com/\". Defaults to "
+                        "https://www.designesy.org/."
+                    ),
                     "type": "string",
-                    "description": "URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.",
                 },
                 "email": {
+                    "description": (
+                        "Optional: an address for the alert email, for example "
+                        "\"design-team@example.com\". Mail is sent only when an alert fires and a "
+                        "Resend key is configured on www.designesy.org; without an address, alerts "
+                        "appear only in the result."
+                    ),
                     "type": "string",
-                    "description": "Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional — without it, alerts surface in-UI only.",
                 },
                 "history": {
+                    "description": (
+                        "Optional: earlier runs' currentSnapshot objects, oldest first, for example "
+                        "[{\"timestamp\": \"2026-10-01T09:00:00.000Z\", \"score\": 92, \"grade\": \"A\", "
+                        "\"tokensExtracted\": 120, \"checks\": [...]}]. Omit for a first run, which sets "
+                        "the baseline."
+                    ),
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -2660,105 +3694,102 @@ TOOLS = [
                                         "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN"]},
                                         "detail": {"type": "string"},
                                     },
+                                    "required": ["id", "item", "category", "status", "detail"],
                                 },
                             },
                         },
+                        "required": ["timestamp", "score", "grade", "tokensExtracted", "checks"],
                     },
-                    "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
                 },
             },
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_monitor_score"],
     },
     {
         "name": "designesy_compare",
         "description": (
-            "Diff two design systems from live URLs — the only "
-            "URL-scoped design-token diff engine. Fetches both URLs in "
-            "parallel, extracts their :root custom properties, and "
-            "produces a structured diff across 8 dimensions: tokens "
-            "added (in A not B), removed (in B not A), renamed "
-            "(heuristic Levenshtein ≤ 2), value-changed (same name, "
-            "different value), scale-stop-changed (spacing/radius/color "
-            "scale steps), contrast-drift-per-pair (WCAG contrast ratio "
-            "change for shared color tokens), structure-delta (token "
-            "count + category distribution), and score-delta (runs "
-            "/score on both URLs and diffs). Use this to answer 'what "
-            "actually changed between two design systems' or 'how does "
-            "our design system differ from a reference'. When NOT to "
-            "use: for single-site drift detection, use "
-            "designesy_drift_score; for continuous monitoring, use "
-            "designesy_monitor_score. Executable — fetches both URLs, "
-            "extracts CSS + tokens, computes diff. No browser needed. "
-            "Returns JSON: { ok, urlA, urlB, score (0-100, diff "
-            "completeness), grade, pass, warn, fail, total, tokensA, "
-            "tokensB, added[], removed[], renamed[], valueChanged[], "
-            "scaleDiff, structureDelta, contrastDrift[], scoreDelta, "
-            "checks[] }. Results cached ~24h server-side per URL pair."
+            "Diff the design tokens of two live pages: reads both, extracts their :root "
+            "custom properties, and reports tokens added (in A, not B), removed (in B, "
+            "not A), likely renamed (name distance 2 or less), changed in value, scale "
+            "size changes (spacing, radius, color), contrast change for shared color "
+            "tokens, structure (counts and categories), and the score difference "
+            "(designesy_score on both). Use this when you need to know what changed "
+            "between two design systems, or how one differs from a reference. When not to"
+            " use: for drift within one site, use designesy_drift_score; for one site "
+            "over time, use designesy_monitor_score. Behaviour: the engine at "
+            "www.designesy.org reads both pages and caches the result for about 24 hours "
+            "per URL pair; the two URLs must differ. No browser. Errors: a timeout, HTTP "
+            "5xx or HTTP 429 (the compare engine allows 30 comparisons an hour per "
+            "address) is worth one retry; HTTP 400 (not a public http(s) URL) is final; a"
+            " page the engine could not fetch is worth one retry, after which it needs "
+            "the user: the page may block automated requests or need a login, or the URL "
+            "may be mistyped. Returns JSON described by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "urlA": {
                     "type": "string",
-                    "description": "First URL to compare (e.g. your design system).",
+                    "description": (
+                        "The first page, for example \"https://example.com/\" (the design system under "
+                        "review)."
+                    ),
                 },
                 "urlB": {
                     "type": "string",
-                    "description": "Second URL to compare (e.g. a reference or competitor).",
+                    "description": (
+                        "The second page, for example \"https://www.designesy.org/\" (a reference); it "
+                        "must differ from urlA."
+                    ),
                 },
             },
             "required": ["urlA", "urlB"],
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_compare"],
     },
     {
         "name": "designesy_report",
         "description": (
-            "Generate a unified design-intelligence report for a single URL, "
-            "the synthesis capstone. Fires /score (44-check audit), /drift "
-            "(12-check drift radar), and /readiness (10-check AI readiness) in "
-            "parallel, then computes a weighted composite: score × 0.5 + drift "
-            "× 0.3 + readiness × 0.2. One input, one output, one composite "
-            "grade. Use this when you need a single holistic assessment instead "
-            "of three separate scans, or when sharing a design-intelligence "
-            "verdict (the report is the most shareable surface). When NOT to "
-            "use: for just the audit score, use designesy_score; for just "
-            "drift, use designesy_drift_score; for just AI readiness, use "
-            "designesy_readiness_score. Executable: fires 3 internal APIs in "
-            "parallel, each fetches the target URL. No browser needed. The full "
-            "result is large: about 75 to 100 KB of JSON on the ten sites "
-            "measured, on the order of 20,000 tokens or more, because it "
-            "carries each engine's whole result beside the merged check list. "
-            "To trim it, pass detail \"summary\": the same keys with fewer rows, "
-            "about 4 to 31 KB on the same sites. It keeps the composite, the "
-            "totals, each engine's score, grade and counts, and only the checks "
-            "and synthesis entries that did not PASS; omitted counts what was "
-            "left out. detail \"full\" (the default) returns everything. Returns "
-            "JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), "
-            "score { sub-result }, drift { sub-result }, readiness { sub-result "
-            "}, totalChecks, totalPass, totalWarn, totalFail, totalSkip, "
-            "totalManual, checks[] (all checks across all engines, tagged with "
-            "engine), synthesis[] (8 synthesis checks verifying the report ran "
-            "correctly), appUrl (standalone interactive dashboard URL) }; with "
-            "detail \"summary\" it adds detail and omitted. Results cached ~24h "
-            "per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui "
-            "render an interactive dashboard inline; others get the JSON plus "
-            "an appUrl link."
+            "Build one design-intelligence report for a live page: runs the score "
+            "(44-check), drift (12-check) and readiness (10-check) engines and weights "
+            "them into a composite: score x 0.5 + drift x 0.3 + readiness x 0.2. Use this"
+            " when one holistic verdict is wanted instead of three separate calls, or to "
+            "share a result. When not to use: for one engine's result alone, use "
+            "designesy_score, designesy_drift_score or designesy_readiness_score. "
+            "Behaviour: the engines at www.designesy.org each read the page, and the "
+            "result is cached for about 24 hours per URL. The full result is large: about"
+            " 75 to 100 KB of JSON on the ten sites measured, because it carries each "
+            "engine's whole result beside the merged check list. detail \"summary\" keeps "
+            "the composite, the totals, each engine's score, grade and counts, and only "
+            "the checks and synthesis entries that did not PASS: about 4 to 31 KB on the "
+            "same sites. Hosts that support MCP Apps (io.modelcontextprotocol/ui) show an"
+            " interactive dashboard; appUrl opens it in a browser. Errors: a timeout, "
+            "HTTP 5xx or HTTP 429 (the report engine allows 20 reports an hour per "
+            "address) is worth one retry; HTTP 400 (not a public http(s) URL) is final; a"
+            " page the engine could not fetch is worth one retry, after which it needs "
+            "the user: the page may block automated requests or need a login, or the URL "
+            "may be mistyped. Returns JSON described by the output schema."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "Public URL to generate a design-intelligence report for.",
+                    "description": "The page to report on, for example \"https://example.com/\".",
                 },
                 "detail": {
+                    "description": (
+                        "Optional, for example \"summary\". \"full\" (the default) returns everything; "
+                        "\"summary\" returns the composite, the totals, each engine's score, grade and "
+                        "counts, and only the checks that did not PASS."
+                    ),
                     "type": "string",
                     "enum": ["summary", "full"],
-                    "description": "Optional: \"full\" (the default) returns everything; \"summary\" returns the composite, the totals, each engine's score, grade and counts, and only the checks that did not PASS.",
                 },
             },
             "required": ["url"],
         },
+        "outputSchema": OUTPUT_SCHEMAS["designesy_report"],
     },
 ]
 
@@ -2884,26 +3915,31 @@ DTCG_STANDARD_TYPES = frozenset({
 
 def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> dict[str, Any]:
     """Run the tokens contract's ten checks on one DTCG token file (see _tokens_score)."""
-    contract = _fetch("https://www.designesy.org/contracts/tokens.json", as_json=True)
+    contract = _read_document("https://www.designesy.org/contracts/tokens.json")
 
     token_data: Any = None
     if dtcg_file:
         try:
             token_data = json.loads(dtcg_file, parse_constant=_reject_json_constant)
         except json.JSONDecodeError:
-            return {"success": False, "error": "Invalid JSON in dtcg_file parameter"}
+            return _failure("Invalid JSON in dtcg_file parameter", False, "Pass the token file as valid JSON text")
+        if not isinstance(token_data, dict):
+            return _failure("Token file is not a JSON object", False, "The file must be a JSON object")
     elif url:
-        token_data = _fetch(url, as_json=True)
+        try:
+            token_data = _fetch(url, as_json=True)
+        except Exception as exc:
+            raise _file_fetch_failure(url, exc, "dtcg_file") from exc
+        if not isinstance(token_data, dict):
+            return _failure(f"{url} returned JSON that is not an object", False, "The file must be a JSON object", url=url)
     else:
-        return {
-            "success": False,
-            "error": "Either url or dtcg_file is required",
-            "contract_id": contract.get("id"),
-            "contract_version": contract.get("version"),
-        }
-
-    if not isinstance(token_data, dict):
-        return {"success": False, "error": "Token file is not a JSON object"}
+        return _failure(
+            "Either url or dtcg_file is required",
+            False,
+            "Pass the token file's URL as url, or its JSON text as dtcg_file",
+            contract_id=contract.get("id"),
+            contract_version=contract.get("version"),
+        )
     return _tokens_score(token_data, contract, url or "(inline dtcg_file)")
 
 
@@ -3233,7 +4269,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
 
 def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = None) -> dict[str, Any]:
     """Return the accessibility contract + Playwright script template for axe-core."""
-    contract = _fetch("https://www.designesy.org/contracts/a11y.json", as_json=True)
+    contract = _read_document("https://www.designesy.org/contracts/a11y.json")
     tag = ruleset or "wcag22aa"
 
     brand_config: dict[str, Any] | None = None
@@ -3241,7 +4277,7 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
         try:
             brand_config = json.loads(config)
         except json.JSONDecodeError:
-            return {"success": False, "error": "Invalid JSON in config parameter"}
+            return _failure("Invalid JSON in config parameter", False, "Pass config as valid JSON text, or omit it")
 
     config_line = ""
     if brand_config:
@@ -3291,26 +4327,31 @@ def _reject_json_constant(name: str) -> Any:
 
 def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -> dict[str, Any]:
     """Run the motion contract's ten checks on one Lottie file (see _motion_score)."""
-    contract = _fetch("https://www.designesy.org/contracts/motion.json", as_json=True)
+    contract = _read_document("https://www.designesy.org/contracts/motion.json")
 
     lottie_data: Any = None
     if lottie_file:
         try:
             lottie_data = json.loads(lottie_file, parse_constant=_reject_json_constant)
         except json.JSONDecodeError:
-            return {"success": False, "error": "Invalid JSON in lottie_file parameter"}
+            return _failure("Invalid JSON in lottie_file parameter", False, "Pass the Lottie file as valid JSON text")
+        if not isinstance(lottie_data, dict):
+            return _failure("Lottie file is not a JSON object", False, "The file must be a JSON object")
     elif url:
-        lottie_data = _fetch(url, as_json=True)
+        try:
+            lottie_data = _fetch(url, as_json=True)
+        except Exception as exc:
+            raise _file_fetch_failure(url, exc, "lottie_file") from exc
+        if not isinstance(lottie_data, dict):
+            return _failure(f"{url} returned JSON that is not an object", False, "The file must be a JSON object", url=url)
     else:
-        return {
-            "success": False,
-            "error": "Either url or lottie_file is required",
-            "contract_id": contract.get("id"),
-            "contract_version": contract.get("version"),
-        }
-
-    if not isinstance(lottie_data, dict):
-        return {"success": False, "error": "Lottie file is not a JSON object"}
+        return _failure(
+            "Either url or lottie_file is required",
+            False,
+            "Pass the Lottie file's URL as url, or its JSON text as lottie_file",
+            contract_id=contract.get("id"),
+            contract_version=contract.get("version"),
+        )
     return _motion_score(lottie_data, contract, url or "(inline lottie_file)")
 
 
@@ -3676,7 +4717,12 @@ def _motion_score(lottie: dict[str, Any], contract: dict[str, Any], url: str) ->
 
 
 def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
-    """POST to a designesy.org API endpoint and return the JSON result."""
+    """POST to a designesy.org API endpoint and return the JSON result.
+
+    A failure raises _ToolFailure, which says whether one retry can help (from
+    the engine's HTTP status and the error it wrote) and becomes an isError
+    result carrying the request's url, urlA and urlB.
+    """
     url = f"{BASE_URL}/api/{endpoint}"
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
@@ -3690,15 +4736,25 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
         method="POST",
     )
     try:
-        opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
-    except Exception as exc:
-        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
-            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
-            opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
-        else:
+        try:
+            opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
+        except urllib.error.HTTPError:
             raise
-    with opener as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:
+            if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
+                sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
+                opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
+            else:
+                raise
+        with opener as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:
+        what, retryable, next_step = _engine_exception_failure(endpoint, exc)
+        raise _ToolFailure(what, retryable, next_step, {k: body[k] for k in ("url", "urlA", "urlB") if k in body}) from exc
+    if not isinstance(result, dict):
+        raise _ToolFailure(f"The {endpoint} engine returned a body that is not a JSON object", True, None,
+                           {k: body[k] for k in ("url", "urlA", "urlB") if k in body})
+    return result
 
 
 def _drift_score_impl(url: str | None = None) -> dict[str, Any]:
@@ -3757,7 +4813,7 @@ def _report_impl(url: str, detail: Any = None) -> dict[str, Any]:
     default) returns all of it.
     """
     if detail is not None and detail not in REPORT_DETAILS:
-        return {"success": False, "error": 'detail must be "summary" or "full".'}
+        return _failure('detail must be "summary" or "full".', False)
     data = _post_api("report", {"url": url})
     # Attach the standalone app URL (same as the TS endpoint does)
     data["appUrl"] = f"{BASE_URL}/api/report/app?url={urllib.parse.quote(url, safe='')}"
@@ -3836,12 +4892,7 @@ def _guardrails_part_names(parts: list[str]) -> list[str] | tuple[str, list[str]
 
 
 def _parts_error(message: str, unknown: list[str]) -> dict[str, Any]:
-    return {
-        "success": False,
-        "error": f"{message} Valid parts: {', '.join(GUARDRAILS_PARTS)}.",
-        "unknown_parts": unknown,
-        "valid_parts": list(GUARDRAILS_PARTS),
-    }
+    return _failure(f"{message} Valid parts: {', '.join(GUARDRAILS_PARTS)}.", False, unknown_parts=unknown, valid_parts=list(GUARDRAILS_PARTS))
 
 
 def _guardrails_parts(result: Any, names: list[str]) -> Any:
@@ -3921,10 +4972,27 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     elif name == "designesy_report":
         return _report_impl(url=args.get("url", ""), detail=args.get("detail"))
     else:
-        return {"success": False, "error": f"Unknown tool: {name}"}
+        return _failure(f"Unknown tool: {name}", False)
 
 
 # ── MCP JSON-RPC protocol ──────────────────────────────────────────────────
+
+# The protocol revisions this server speaks, newest first. MCP 2025-11-25,
+# basic/lifecycle, Version Negotiation: "If the server supports the requested
+# protocol version, it MUST respond with the same version. Otherwise, the
+# server MUST respond with another protocol version it supports. This SHOULD
+# be the latest version supported by the server." Until 1.13.9 initialize
+# answered 2024-11-05 whatever the client asked for, a revision that has no
+# outputSchema, structuredContent or tool title, so a strict client could
+# ignore all three. The stateless 2026-07-28 revision (server/discover, no
+# initialize) is not served here; the hosted endpoint serves it.
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
+
+
+def _negotiate_protocol_version(requested: Any) -> str:
+    """The requested revision when this server speaks it, else the newest it speaks."""
+    return requested if requested in SUPPORTED_PROTOCOL_VERSIONS else SUPPORTED_PROTOCOL_VERSIONS[0]
+
 
 
 def _send(msg: dict[str, Any]) -> None:
@@ -3947,10 +5015,12 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
     params = msg.get("params", {})
 
     if method == "initialize":
+        requested = params.get("protocolVersion") if isinstance(params, dict) else None
         return _result(req_id, {
-            "protocolVersion": "2024-11-05",
+            "protocolVersion": _negotiate_protocol_version(requested),
             "capabilities": {"tools": {}, "resources": {}},
             "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
+            "instructions": SERVER_INSTRUCTIONS,
         })
     elif method == "notifications/initialized":
         return None
@@ -3959,22 +5029,31 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
     elif method == "tools/call":
         name = params.get("name", "")
         args = params.get("arguments", {})
+        # An unknown tool is a protocol error, -32602 (invalid params), as in
+        # the 2025-11-25 tools page's example and the hosted endpoint's SDK.
         if name not in TOOL_MAP:
-            return _error(req_id, -32601, f"Unknown tool: {name}")
+            return _error(req_id, -32602, f"Unknown tool: {name}")
+        # A failure while the tool runs is a tool execution error: a result
+        # with isError set, which the model can read and act on, not a
+        # JSON-RPC error.
         try:
-            res = _dispatch(name, args)
-        except urllib.error.URLError as e:
-            return _error(req_id, -32000, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
+            res = _dispatch(name, args if isinstance(args, dict) else {})
+        except _ToolFailure as f:
+            res = _failure_of(f)
         except Exception as e:
-            return _error(req_id, -32000, f"Tool execution failed: {_scrub_local_paths(str(e))}")
+            res = _unexpected_failure(e)
         # A str result (designesy_score format=review) is already the text
         # the tool returns, so it is sent as written; JSON-encoding it would
         # wrap the markdown in quotes and escape every newline.
         text = res if isinstance(res, str) else json.dumps(res, indent=2, default=str)
-        return _result(req_id, {
-            "content": [{"type": "text", "text": text}],
-            "isError": not res.get("success", True) if isinstance(res, dict) and "success" in res else False,
-        })
+        is_error = isinstance(res, dict) and res.get("success") is False
+        result: dict[str, Any] = {"content": [{"type": "text", "text": text}], "isError": is_error}
+        # A tool with an outputSchema returns structuredContent on every
+        # success: the same JSON as the text block, or, for the markdown
+        # review format, { format: "review", markdown }.
+        if not is_error and "outputSchema" in TOOL_MAP[name]:
+            result["structuredContent"] = {"format": "review", "markdown": res} if isinstance(res, str) else res
+        return _result(req_id, result)
     elif method == "resources/list":
         return _result(req_id, {"resources": RESOURCES})
     elif method == "resources/read":

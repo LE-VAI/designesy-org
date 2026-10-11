@@ -210,7 +210,10 @@ class TestToolEdges:
     def test_not_an_object(self):
         res = _call({"lottie_file": "[1, 2]"})
         assert res["isError"] is True
-        assert json.loads(res["content"][0]["text"])["error"] == "Lottie file is not a JSON object"
+        out = json.loads(res["content"][0]["text"])
+        assert out["error"].startswith("Lottie file is not a JSON object. Retryable: no.")
+        assert out["retryable"] is False
+        assert "structuredContent" not in res
 
     @pytest.mark.parametrize("bad", ["{", '{"fr": NaN}'])
     def test_invalid_json(self, bad):
@@ -228,10 +231,14 @@ class TestToolEdges:
         assert "specs/schema/lottie.schema.json" not in json.dumps(res)  # the old URL is a 404
 
     def test_description_matches_the_output(self):
-        d = next(t for t in mcp.TOOLS if t["name"] == "designesy_motion_score")["description"]
+        # The fields are documented in the output schema, which the
+        # description points at (1.13.9); every key the tool returns is there.
+        tool = next(t for t in mcp.TOOLS if t["name"] == "designesy_motion_score")
+        d = tool["description"]
         out = _score("conformant.json")
         for key in out:
-            assert key in d, key
+            assert key in tool["outputSchema"]["properties"], key
+        assert "output schema" in d
         assert "SKIP is not scored" in d and "WARN=0.5" in d
         assert "$version" not in d  # the file has no $version; that is the schema's
         assert "the only validator" not in d
