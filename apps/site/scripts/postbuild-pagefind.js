@@ -273,6 +273,27 @@ function main() {
     } catch (e) {
       console.warn(`[postbuild-pagefind] could not write pagefind-version.json: ${e.message}`);
     }
+
+    // Deployment-adapter layout. Vercel builds Next >= 16.2 with its adapter,
+    // which copies .next/static into .next/output/static when `next build`
+    // finishes, before this step runs, and deploys that copy. The index written
+    // above would never ship: /_next/static/chunks/app/pagefind/pagefind.js
+    // would answer 404 and Find would fall back to the curated INDEX, with no
+    // error anywhere. The adapter's static directory mirrors the URL path, so
+    // the index is added there too. check-search-coverage.js fails the build if
+    // that copy is missing. Without an adapter there is no .next/output and
+    // nothing happens.
+    try {
+      const adapterStatic = path.join(SITE_DIR, 'output', 'static');
+      if (fs.existsSync(adapterStatic)) {
+        const dest = path.join(adapterStatic, '_next', 'static', 'chunks', 'app', 'pagefind');
+        fs.rmSync(dest, { recursive: true, force: true });
+        fs.cpSync(OUT_DIR, dest, { recursive: true });
+        console.log(`[postbuild-pagefind] adapter output present: copied the index to ${path.relative(ROOT, dest)}`);
+      }
+    } catch (e) {
+      console.error(`[postbuild-pagefind] could not copy the index into the adapter output: ${e.message}`);
+    }
   } catch (err) {
     // A Pagefind failure must not break the deploy — search degrades to the
     // curated INDEX. Surface the error loudly but exit 0.
