@@ -641,7 +641,7 @@ const REMEDIATION: Record<string, string> = {
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
   v44: 'Give each status hue a text token for words and keep the hue itself for marks. A color that marks a state (a dot, a bar, a tint) needs 3:1, while the word for that state needs 4.5:1 (3:1 at 24px, or 18.66px bold) in every theme the site declares. Mix the hue toward your ink for text, for example --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)), measure it on the page and on each surface it sits on in every theme, and paint status words with it.',
   v45: 'Let every entrance that starts invisible run to its end when motion is paused. Under the pause rule, give one-shot entrances whose first keyframe is opacity 0 a negative delay longer than the animation, for example html[data-motion="paused"] :is(.fade-up, .reveal) { animation-delay: -3600s !important; }, or remove them with animation: none. Loops can stay held. Test by pausing motion and reloading: every page should still show its content.',
-  v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
+  v34: 'If the page hosts an AI chatbot or agent, tell people they are talking to an AI no later than their first interaction, in a form assistive technology announces. EU AI Act Article 50(1), which applies from 2026-08-02, places this duty on the provider of the AI system (the organisation that develops it and places it on the market or puts it into service under its own name); it does not apply where the AI nature is obvious from the context, and Article 50(5) asks for the information to be clear and accessible. The check reads any one of: visible "AI assistant" or "Chatbot" text, aria-label="AI assistant" on the chat container, or a data-ai-disclosure attribute on the widget. A live chat answered by people needs no AI disclosure: if the check flagged one for review, confirm who answers. US laws differ in scope: California\'s bot-disclosure law (SB 1001, Bus. & Prof. Code §§17940-17943) covers bots that mislead people about being bots to drive a sale or influence a vote; Colorado SB 24-205 was repealed and re-enacted by SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs automated decision-making in consequential decisions. This is not legal advice.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
   v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 44-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
@@ -3081,17 +3081,25 @@ function checkTaktFeelRules(css: string): CheckResult {
   };
 }
 
-// v34 — AI-Disclosure Readiness (EU AI Act Article 50, effective 2026-08-02).
-// Static-only v1: scans fetched HTML for AI-interactive surfaces (chatbots,
-// AI agents, AI-generated content) and disclosure signals (visible labels,
-// aria-label, C2PA meta, generator meta, JSON-LD, data-ai-disclosure).
-// Four conditions:
-//   A — no AI surface detected → PASS (disclosure not required)
-//   B — AI surface + disclosure signal → PASS
-//   C — AI surface + NO disclosure → FAIL (Art 50 violation)
-//   D — uncertain (possible AI surface) → WARN (manual review)
-// Green-field check: no competitor (Mozaika, Lighthouse, axe, WAVE, DESIGN.md)
-// has an AI-disclosure check. Designesy can be first.
+// v34 — AI-Disclosure Readiness (EU AI Act Article 50, which applies from
+// 2026-08-02). Static, from the fetched HTML: it looks for an AI chat surface
+// and for a disclosure signal (visible text, aria-label, data-ai-disclosure,
+// generator meta, C2PA, JSON-LD).
+//
+// Article 50(1) puts the duty on the PROVIDER of an AI system that talks with
+// people: they must be told it is an AI, unless that is obvious from the
+// context, at the latest at the first interaction (50(5)). A site that embeds
+// a vendor's assistant may not be that provider, so the check says "may
+// require", never "requires", and it is not a legal finding.
+//
+// Only a positively identified AI chat surface with no disclosure FAILs: a
+// container or input that names itself a chatbot or an AI assistant, or a
+// script from a chatbot, AI-widget or Dialogflow path. Anything weaker WARNs
+// "possible AI surface: review": live-chat vendors (Intercom, Drift, Zendesk,
+// LiveChat, Tawk, Crisp), which are often answered by people; a generic chat
+// container or an "assistant" script; page text about AI, which is not a chat
+// surface. Until engine 1.3.0 those FAILed, and so did Google Publisher Tag,
+// an ad tag, because its gpt.js matched the word "gpt".
 function checkAiDisclosure(html: string): CheckResult {
   const ITEM = 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)';
   const CATEGORY = 'identity';
@@ -3106,17 +3114,27 @@ function checkAiDisclosure(html: string): CheckResult {
   // content between tags, not class/id/aria attribute values.
   const textOnly = visibleHtml.replace(/<[^>]+>/g, ' ');
 
-  // ── AI-surface detection ────────────────────────────────────────────────
-  const chatbotContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat|assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
-  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|assistant|ai-widget|gpt|claude|gemini|dialogflow|rasa|intercom|drift|tawk|crisp|livechat|chatbot\.ai|conversational)\b/i;
-  const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
+  // ── AI chat surfaces, positively identified ─────────────────────────────
+  const aiContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat)\b/i;
+  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|ai-widget|dialogflow)\b/i;
   const aiInputRe = /<(?:input|textarea|form)\b[^>]*(?:placeholder|aria-label)\s*=\s*["'][^"']*\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/i;
 
+  // ── Possible AI surfaces: a review item, never a FAIL ───────────────────
+  const chatContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
+  const chatScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:assistant|claude|gemini|rasa|intercom|drift|tawk|crisp|livechat|conversational)\b/i;
+  const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
+  const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
+
   const surfaceSignals: string[] = [];
-  if (chatbotContainerRe.test(html)) surfaceSignals.push('chatbot container');
+  if (aiContainerRe.test(html)) surfaceSignals.push('chatbot container');
   if (aiScriptRe.test(html)) surfaceSignals.push('AI widget script');
-  if (aiTextRe.test(textOnly)) surfaceSignals.push('AI prompt text');
   if (aiInputRe.test(html)) surfaceSignals.push('AI input');
+
+  const possibleSignals: string[] = [];
+  if (chatContainerRe.test(html)) possibleSignals.push('chat widget container');
+  if (chatScriptRe.test(html)) possibleSignals.push('chat or assistant script');
+  if (aiTextRe.test(textOnly)) possibleSignals.push('AI prompt text');
+  if (ambiguousRe.test(html)) possibleSignals.push('ambiguous widget');
 
   // ── Disclosure detection ────────────────────────────────────────────────
   const disclosureTextRe = /\b(?:ai\s+assistant|ai\s+chatbot|ai-powered|powered\s+by\s+ai|automated\s+assistant|virtual\s+assistant|chatbot)\b/i;
@@ -3135,19 +3153,20 @@ function checkAiDisclosure(html: string): CheckResult {
   if (dataAiRe.test(html)) disclosureSignals.push('data-ai-disclosure');
 
   // ── Condition evaluation ────────────────────────────────────────────────
-  if (surfaceSignals.length === 0) {
-    const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
-    if (ambiguousRe.test(html)) {
-      return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'possible AI-interactive surface (ambiguous widget): manual review recommended for Art 50 compliance' };
-    }
+  if (surfaceSignals.length === 0 && possibleSignals.length === 0) {
     return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'no AI-interactive surface detected: disclosure not required' };
   }
 
   if (disclosureSignals.length > 0) {
-    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `AI surface detected (${surfaceSignals.join(', ')}); disclosure present (${disclosureSignals.join(', ')})` };
+    const found = surfaceSignals.length > 0 ? `AI surface detected (${surfaceSignals.join(', ')})` : `possible AI surface (${possibleSignals.join(', ')})`;
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${found}; disclosure present (${disclosureSignals.join(', ')})` };
   }
 
-  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found: EU AI Act Art 50(1) requires disclosure at first interaction` };
+  if (surfaceSignals.length > 0) {
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI chat surface detected (${surfaceSignals.join(', ')}) and no AI disclosure found: EU AI Act Art. 50(1) may require telling people at their first interaction that they are talking to an AI (a duty on the AI system's provider, applying from 2026-08-02)` };
+  }
+
+  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: `possible AI surface (${possibleSignals.join(', ')}): review. If it is an AI system and no disclosure is shown, EU AI Act Art. 50(1) may require one (a duty on the AI system's provider); a chat answered by people needs none` };
 }
 
 // v35 — Forced-colors readiness (Windows High Contrast Mode / Chrome forced-colors).

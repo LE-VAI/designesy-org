@@ -107,7 +107,7 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
 
   // ── Identity (weight 6) ──
   { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', type: 'auto', threshold: 'h1, title, meta description, landmark element', pass: 'all semantic signals present', fail: '3+ missing signals', warn: '1-2 missing', ceiling: null },
-  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction if AI surface present', pass: 'no AI surface or disclosure present', fail: 'AI surface detected but no disclosure', warn: 'ambiguous AI surface (manual review)', ceiling: null },
+  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction where an AI chat surface is present (EU AI Act Art. 50(1) is a duty on the provider of the AI system)', pass: 'no AI surface, or a disclosure present', fail: 'a positively identified AI chat surface (a chatbot container, an AI input, a chatbot, AI-widget or Dialogflow script) with no disclosure', warn: 'a possible AI surface to review (a live-chat vendor, a generic chat container or assistant script, page text about AI) with no disclosure', ceiling: null },
 
   // ── Security (weight 5) ──
   { id: 'v36', item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers', category: 'security', type: 'auto', threshold: 'no confusable Unicode in CSS identifiers', pass: 'no confusables detected', fail: 'confusable characters found', warn: 'n/a', ceiling: null },

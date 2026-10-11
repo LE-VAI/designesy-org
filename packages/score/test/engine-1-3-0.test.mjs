@@ -192,3 +192,79 @@ describe('v44 joins the contrast ceilings at 65', () => {
     assert.equal(r.hardFailCeilingApplied, false);
   });
 });
+
+describe('v34: only a positively identified AI chat surface can FAIL', () => {
+  const v34 = async (html) => (await run({ html, css: '' })).checks.find((c) => c.id === 'v34');
+  const withHead = (tag) => HTML.replace('</head>', `${tag}</head>`);
+  const withBody = (tag) => HTML.replace('</main>', `</main>${tag}`);
+
+  it('PASSes Google Publisher Tag (gpt.js), an ad tag, which FAILed as an "AI widget" before 1.3.0', async () => {
+    const c = await v34(withHead('<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>'));
+    assert.equal(c.status, 'PASS');
+  });
+
+  it('WARNs, never FAILs, a live-chat vendor with no AI evidence (audit: zendesk-chat FAILed)', async () => {
+    for (const tag of [
+      '<div id="zendesk-chat" class="chat-widget"></div>',
+      '<div id="intercom-container"></div>',
+      '<script src="https://js.driftt.com/include/drift.js"></script>',
+      '<script async src="https://embed.tawk.to/abc123/default"></script>',
+    ]) {
+      const c = await v34(withBody(tag));
+      assert.equal(c.status, 'WARN', tag);
+      assert.match(c.detail, /^possible AI surface \(.+\): review\./, tag);
+      assert.match(c.detail, /may require/);
+      assert.doesNotMatch(c.detail, /\brequires\b/);
+    }
+  });
+
+  it('WARNs page text about AI, which is not a chat surface', async () => {
+    const c = await v34(HTML.replace('<p>Body copy.</p>', '<p>Ask AI about your reports.</p>'));
+    assert.equal(c.status, 'WARN');
+    assert.match(c.detail, /AI prompt text/);
+  });
+
+  it('FAILs a chatbot container with no disclosure, as "may require", naming the provider duty', async () => {
+    const c = await v34(withBody('<div class="chatbot-launcher"></div>'));
+    assert.equal(c.status, 'FAIL');
+    assert.match(c.detail, /^AI chat surface detected \(chatbot container\)/);
+    assert.match(c.detail, /Art\. 50\(1\) may require/);
+    assert.match(c.detail, /provider/);
+    assert.doesNotMatch(c.detail, /\brequires\b/);
+  });
+
+  it('FAILs an AI input and a Dialogflow script with no disclosure', async () => {
+    assert.equal((await v34(withBody('<form><input placeholder="Ask AI anything"></form>'))).status, 'FAIL');
+    assert.equal((await v34(withHead('<script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>'))).status, 'FAIL');
+  });
+
+  it('PASSes either kind of surface once a disclosure is present', async () => {
+    const strong = await v34(withBody('<div class="chatbot" aria-label="AI assistant"></div>'));
+    assert.equal(strong.status, 'PASS');
+    assert.match(strong.detail, /^AI surface detected \(chatbot container\); disclosure present/);
+    const possible = await v34(withBody('<div id="intercom-container" data-ai-disclosure="true"></div>'));
+    assert.equal(possible.status, 'PASS');
+    assert.match(possible.detail, /^possible AI surface \(chat widget container\); disclosure present/);
+  });
+
+  it('cites the laws correctly: SB 1001 (not AB 2659), Colorado SB 26-189, Art. 50 as a provider duty', async () => {
+    const r = await run({ html: withBody('<div class="chatbot"></div>'), css: '' });
+    const rem = r.checks.find((c) => c.id === 'v34').remediation;
+    assert.match(rem, /SB 1001, Bus\. & Prof\. Code §§17940-17943/);
+    assert.doesNotMatch(rem, /AB 2659/);
+    assert.match(rem, /SB 24-205 was repealed and re-enacted by SB 26-189/);
+    assert.match(rem, /2027-01-01/);
+    assert.doesNotMatch(rem, /Feb 2026/);
+    assert.match(rem, /provider of the AI system/);
+    assert.match(rem, /not legal advice/);
+  });
+
+  it('the audit H2 page (gpt.js plus a user-select false positive) scores 89.9 / B, not 100 / A', async () => {
+    const html = withHead('<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>');
+    const r = await run({ html, css: `${STRONG_CSS}.a{user-select:none}.caption{font-size:12px}`, scope: 'universal' });
+    assert.equal(r.checks.find((c) => c.id === 'v34').status, 'PASS');
+    assert.deepEqual(r.checks.filter((c) => c.status === 'FAIL').map((c) => c.id), ['v27']);
+    assert.equal(r.score, 89.9);
+    assert.equal(r.grade, 'B');
+  });
+});
