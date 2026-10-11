@@ -151,6 +151,7 @@ const INDEX: SearchItem[] = [
   { title: 'lovable.dev case study', href: '/work/lovable-dev', group: 'Company', keywords: 'lovable A on arrival ai built site snapshot case study work', meta: 'case study' },
   { title: 'designesy.org case study', href: '/work/designesy-org', group: 'Company', keywords: 'self score D to A before after publisher case study work', meta: 'case study' },
   { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost price how much plans continuity free subscribe upgrade tiers', meta: '' },
+  { title: 'Designesy Review', href: '/pricing/review', group: 'Company', keywords: 'full review human audit accessibility wcag store ecommerce shop fix list one-time cost price how much buy order', meta: 'one-time' },
   { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current monitoring alerts scheduled scans recurring paid subscription cost price how much', meta: 'waitlist' },
   { title: 'Badge', href: '/badge', group: 'Company', keywords: 'verified badge embed svg', meta: '' },
   { title: 'Privacy', href: '/privacy', group: 'Company', keywords: 'data policy', meta: '' },

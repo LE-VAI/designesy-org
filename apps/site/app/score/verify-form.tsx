@@ -30,6 +30,7 @@ import { Instrument, type EngineBlock } from '../lib/engine/instrument';
 import { toOutcomes, type Phase, type RegistryView } from '../lib/engine/types';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { ReviewPrompt } from '../lib/review-prompt';
 import { readEvidence } from './verdict';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1507,6 +1508,9 @@ export function VerifyForm({
               </span>
             )}
           </p>
+
+          {/* The one quiet line after a free result: a person can go further. */}
+          <ReviewPrompt />
         </div>
       )}
 

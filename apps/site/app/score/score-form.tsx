@@ -20,6 +20,7 @@ import { ScoreSparkline } from '../lib/score-sparkline';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { CATEGORIES, categoryChips, categoryOrder, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
 import { ScoreEmptyRun } from './score-empty-run';
+import { ReviewPrompt } from '../lib/review-prompt';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -1489,6 +1490,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
               <span className="score-originality-notice"> · Originality: {result.originality.summary}</span>
             )}
           </p>
+
+          {/* The one quiet line after a free result: a person can go further. */}
+          <ReviewPrompt />
         </div>
       )}
 

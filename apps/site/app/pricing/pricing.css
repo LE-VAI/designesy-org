@@ -160,14 +160,16 @@
    featured tier keeps the fill, Continuity is a secondary (raised surface and
    a rim) and the Enterprise mailto a tertiary (text and an arrow). Three
    identical filled buttons on one row is the stock pricing table. */
-.pricing-card:not(.pricing-card--primary) .pricing-cta-link {
+.pricing-card:not(.pricing-card--primary) .pricing-cta-link,
+.pricing-review .pricing-cta-link {
   background: var(--surface-raised);
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line-strong), var(--specular);
 }
 
 @media (hover: hover) {
-  .pricing-card:not(.pricing-card--primary) .pricing-cta-link:hover {
+  .pricing-card:not(.pricing-card--primary) .pricing-cta-link:hover,
+  .pricing-review .pricing-cta-link:hover {
     background: var(--surface-lifted);
   }
 }
@@ -500,7 +502,8 @@ html[data-motion="paused"] .pricing-faq-q::after {
    the material system reserves for state), and its paragraph ended at x 747
    in a 1180px box. Now it takes the tiers' and FAQ's reading recipe, and
    the mono eyebrow alone names it. */
-.pricing-firewall {
+.pricing-firewall,
+.pricing-review {
   position: relative;
   margin: 0;
   border-radius: var(--radius);
@@ -508,7 +511,8 @@ html[data-motion="paused"] .pricing-faq-q::after {
   box-shadow: var(--elev-1);
 }
 
-.pricing-firewall::before {
+.pricing-firewall::before,
+.pricing-review::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -522,11 +526,13 @@ html[data-motion="paused"] .pricing-faq-q::after {
   pointer-events: none;
 }
 
-.pricing-firewall .definition-face {
+.pricing-firewall .definition-face,
+.pricing-review .definition-face {
   padding: var(--space-24) var(--space-28);
 }
 
-.pricing-firewall .definition-side {
+.pricing-firewall .definition-side,
+.pricing-review .definition-side {
   padding: var(--space-24) var(--space-28);
 }
 
@@ -554,13 +560,16 @@ html[data-motion="paused"] .pricing-faq-q::after {
 
 @media (max-width: 560px) {
   .pricing-firewall .definition-face,
-  .pricing-firewall .definition-side {
+  .pricing-firewall .definition-side,
+  .pricing-review .definition-face,
+  .pricing-review .definition-side {
     padding: var(--space-20);
   }
 }
 
 @media (prefers-contrast: more) {
   .pricing-firewall::before,
+  .pricing-review::before,
   .pricing-compare-wrap::before {
     background: var(--line-strong);
   }
@@ -568,8 +577,35 @@ html[data-motion="paused"] .pricing-faq-q::after {
 
 @media (forced-colors: active) {
   .pricing-firewall,
+  .pricing-review,
   .pricing-compare-wrap {
     outline: 1px solid CanvasText;
     outline-offset: -1px;
   }
+}
+
+/* The Designesy Review, the one-time offer under the tiers (and the terms
+   card on /pricing/review, which imports this sheet). It shares the
+   firewall's reading card and face/side split above, and the tier card's
+   head inside its face: the name is the card's heading, so the <h2> takes
+   the tier name's mono caps and gives back the heading defaults (weight,
+   leading) that the tier cards' <span> never had. The call to action sits
+   the card's 24px row gap under the head, the tier cards' step. */
+.pricing-review .pricing-card-name {
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.pricing-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12) var(--space-20);
+  margin-top: var(--space-24);
+}
+
+/* The disclosure under the card, on the prose measure, one step below it. */
+.pricing-review-note {
+  max-width: 66ch;
+  margin-top: var(--space-16);
 }
