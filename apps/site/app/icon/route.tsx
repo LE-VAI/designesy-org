@@ -1,10 +1,18 @@
 import { ImageResponse } from 'next/og';
 
-export const size = { width: 32, height: 32 };
-export const contentType = 'image/png';
+// A plain route, not the app/icon.tsx metadata convention (brand D55). As a
+// metadata icon it put <link rel="icon" href="/icon" sizes="32x32"> in every
+// page head, and Chrome then showed this PNG in the tab at every scale, 100%
+// included, so the hand-hinted 16px frame in app/favicon.ico never appeared
+// (tested with Chrome 154 at device scale 1, 1.25 and 1.5). Without the link,
+// the tab uses favicon.ico: its 16 frame at 100%, its 32 frame above that.
+// The URL stays for anything outside the site that still links to /icon.
+export const dynamic = 'force-static';
+
+const size = { width: 32, height: 32 };
 
 /**
- * Tab mark: the Designesy mark, favicon variant (identity v1, D3 and D23).
+ * The 32px mark: the Designesy mark, favicon variant (identity v1, D3 and D23).
  * Four body shapes in white and the Azure dot, on --paper #010102. The favicon
  * variant widens the gutters to m/3 and enlarges the body so the figure holds
  * at 16 to 48px; its corners are rounded at r 7.5. The dot is flat Azure at
@@ -12,7 +20,7 @@ export const contentType = 'image/png';
  * Paths are the master designesy-mark.v1.favicon.on-dark.svg, unchanged; its
  * 512 box already contains the dot (x 276 to 396), so nothing is cropped.
  */
-export default function Icon() {
+export function GET() {
   return new ImageResponse(
     (
       <div
