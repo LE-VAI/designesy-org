@@ -26,6 +26,7 @@
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { separateWords } = require('./lib/word-boundaries');
 
 const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
@@ -91,7 +92,7 @@ function buildStageIndex() {
   fs.mkdirSync(STAGE_DIR, { recursive: true });
 
   const files = walkFiles(srcDir);
-  let copied = 0, skipped = 0;
+  let copied = 0, skipped = 0, separated = 0;
   for (const rel of files) {
     // Only stage HTML documents (skip .txt/.json/.png route-handler outputs).
     if (!rel.endsWith('.html')) continue;
@@ -117,10 +118,17 @@ function buildStageIndex() {
 
     const dest = path.join(STAGE_DIR, routeRel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(path.join(srcDir, rel), dest);
+    // Pagefind reads text across inline elements, table cells and dt/dd as one
+    // run, and React writes no whitespace between elements: "Score it again"
+    // and "Visit" became "againVisit". The staged copy gets one space wherever
+    // a word meets a word across tags (scripts/lib/word-boundaries.js); the
+    // page served to readers is untouched.
+    const { html, inserted } = separateWords(fs.readFileSync(path.join(srcDir, rel), 'utf8'));
+    fs.writeFileSync(dest, html);
+    separated += inserted;
     copied++;
   }
-  console.log(`[postbuild-pagefind] staged ${copied} route HTML(s) to ${path.relative(ROOT, STAGE_DIR)} (${skipped} internal skipped)`);
+  console.log(`[postbuild-pagefind] staged ${copied} route HTML(s) to ${path.relative(ROOT, STAGE_DIR)} (${skipped} internal skipped; ${separated} word boundaries separated)`);
 
   // Also stage the public JSON endpoints as searchable HTML wrappers, so their
   // keys and values reach Find. Pagefind only indexes HTML, so each body is

@@ -84,6 +84,10 @@ function main() {
   // touched-routes.js is the sweep's route mapper, invoked by the CI step, not
   // a gate of its own.
   //
+  // check-word-boundaries-render.js measures the served pages in a browser,
+  // so it runs with the other runtime gates; the build-time half of the same
+  // rule (the index holds the words apart) is in check-palette-excerpts.js.
+  //
   // check-readme-facts.js reads the repo-root and PyPI READMEs, which sit
   // outside apps/site and are not part of the deployed site: a stale README
   // cannot change what the deploy serves, so the build has nothing to gate.
@@ -106,6 +110,7 @@ function main() {
     'check-results-readout.js',
     'a11y-sweep.js',
     'check-dock-clearance.js',
+    'check-word-boundaries-render.js',
     'touched-routes.js',
     'check-readme-facts.js',
     'check-retired-literals-packages.js',
