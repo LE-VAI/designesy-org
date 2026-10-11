@@ -181,8 +181,9 @@ function rateLimited(ip: string): boolean {
 
 // ── URL Normalization & Validation ─────────────────────────────────────────
 // Shared hardened guard in app/lib/url-guard.ts — imported above and re-
-// exported here for backwards compatibility with app/score/opengraph-image.tsx
-// and app/score/badge/route.ts, which import from '../api/score/route'.
+// exported here for backwards compatibility with app/score/opengraph-image.tsx,
+// which imports from '../api/score/route'. The live badge
+// (app/lib/badge/live-badge-route.ts) imports the guard directly.
 
 export { normalizeInputUrl, isValidUrl };
 

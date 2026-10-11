@@ -12179,16 +12179,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   border-radius: var(--radius-sm);
 }
 
-.badge-grade-row.is-qualifying {
-  border-color: color-mix(in srgb, var(--ok) 25%, transparent);
-  background: color-mix(in srgb, var(--grade-a) 4%, transparent);
-}
-
-
-.badge-grade-row.is-qualifying .badge-grade-status {
-  color: var(--ok-ink);
-}
-
 
 /* ── /badge mobile responsive ───────────────────────────────────────────── */
 

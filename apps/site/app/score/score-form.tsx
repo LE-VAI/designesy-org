@@ -567,12 +567,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   // Copy the embeddable badge snippet — an <a><img></a> block ready to paste
   // into a README, docs page, or site footer. Each embed is a backlink to
-  // designesy.org and carries the live grade.
+  // designesy.org and draws the live badge (/api/badge, "Scored by Designesy"):
+  // the site's cached grade, score and the date of its run.
   const badgeSrc = typeof window !== 'undefined' && scoredUrl
-    ? `${window.location.origin}/score/badge?url=${encodeURIComponent(scoredUrl)}`
+    ? `${window.location.origin}/api/badge?url=${encodeURIComponent(scoredUrl)}`
     : '';
   const badgeEmbed = badgeSrc
-    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Designesy contract score" /></a>`
+    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Scored by Designesy: live score for ${scoredUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}" height="44" /></a>`
     : '';
 
   function copyBadgeEmbed() {

@@ -62,9 +62,9 @@ export async function generateMetadata({
     // they had arrived where they aimed. Aligned to the majority term its own
     // URL already uses.
     //
-    // "Verify/Verified" is NOT retired — it is the badge product's name
-    // ("Verified by Designesy"), a different artifact from the scoring engine,
-    // and it keeps that vocabulary.
+    // The badge product is worded "Scored by Designesy" since 2026-10-11
+    // (owner decision): "Verified by Designesy" read as a seal on every site,
+    // F included.
     title: 'Score',
     description:
       `Four engines. One combined score. Contract score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6), all on one URL. Real-time. No login.`,

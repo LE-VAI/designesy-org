@@ -305,6 +305,14 @@ jobs:
         if: always()
         run: node scripts/check-analytics-redaction.js
 
+      # The static badge images match their renderer, and the renderer still
+      # draws the live badge set the brand review approved
+      # (scripts/fixtures/live-badge, ledger D61). A meant change rewrites the
+      # set with `npm run badge-renders` and goes back for review.
+      - name: Badge renders
+        if: always()
+        run: node scripts/badge-renders.mjs --check
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
