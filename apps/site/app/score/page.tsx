@@ -67,7 +67,7 @@ export async function generateMetadata({
     // and it keeps that vocabulary.
     title: 'Score',
     description:
-      `Four engines. One composite grade. Score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6), all on one URL. Real-time. No login.`,
+      `Four engines. One combined score. Contract score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6), all on one URL. Real-time. No login.`,
     path: '/score',
     ogTitle: 'Score any site · Designesy',
     // The total is COMPUTED from the four engines' own check lists. This string
@@ -75,7 +75,7 @@ export async function generateMetadata({
     // (42+12+10+6) — a literal that had drifted from the engines it described,
     // on the page whose job is to count them. Deriving it means adding a check
     // to any engine updates this line automatically.
-    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines: score, drift, AI readiness, guardrails. Enter a URL, get a composite grade.`,
+    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines: score, drift, AI readiness, guardrails. Enter a URL, get a combined score.`,
   });
 
   // When a URL is being scored, explicitly point social images to the dynamic
@@ -88,11 +88,11 @@ export async function generateMetadata({
       ...base,
       openGraph: {
         ...base.openGraph,
-        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy Score: design legitimacy grade' }],
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: 'Designesy contract score and grade' }],
       },
       twitter: {
         ...base.twitter,
-        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy Score: design legitimacy grade' }],
+        images: [{ url: twImageUrl, width: 1200, height: 630, alt: 'Designesy contract score and grade' }],
       },
     };
   }
@@ -128,7 +128,7 @@ export default function ScorePage() {
         <EngineHead
           route="/score"
           name="Score any site"
-          thesis={`All four engines on one URL: the ${ENGINE_CHECK_COUNT}-check contract score, drift, AI readiness and guardrails, with one composite grade and every finding a click away.`}
+          thesis={`All four engines on one URL: the ${ENGINE_CHECK_COUNT}-check contract score, drift, AI readiness and guardrails, with one combined score and every finding a click away.`}
           facts={['4 engines', `${total} checks`, 'no login']}
           contract={{ href: '/contracts/design-system', label: `contract ${CONTRACT_VERSION}` }}
         />
@@ -138,15 +138,15 @@ export default function ScorePage() {
         <EngineMethod
           steps={[
             { title: 'Fire four engines', text: 'In parallel, each fetching the page itself: contract score, drift, readiness, guardrails.' },
-            { title: 'Weigh three', text: 'The composite is the contract score at 50%, drift at 30% and readiness at 20%.' },
-            { title: 'Keep one apart', text: 'Guardrails grades the bundle it writes for agents, so it reports beside the composite.' },
-            { title: 'Remember the last run', text: 'Your previous composite for the site is kept in this browser, and the change shows on the next run.' },
+            { title: 'Weigh three', text: 'The combined score is the contract score at 50%, drift at 30% and readiness at 20%.' },
+            { title: 'Keep one apart', text: 'Guardrails grades the bundle it writes for agents, so it reports beside the combined score.' },
+            { title: 'Remember the last run', text: 'Your previous combined score for the site is kept in this browser, and the change shows on the next run.' },
           ]}
           formula={
             <>
-              <span><b>composite</b> = score × 0.5 + drift × 0.3 + readiness × 0.2</span>
+              <span><b>combined score</b> = contract score × 0.5 + drift × 0.3 + readiness × 0.2</span>
               <GradeLine />
-              <span>Checks a person must confirm are left out of every score.</span>
+              <span>Checks that need a browser run are left out of every score.</span>
             </>
           }
         />

@@ -2,10 +2,11 @@ import { ImageResponse } from 'next/og';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../api/score/route';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { OG_ENDORSEMENT, OG_T as T, OgLockup, ogFonts, renderOgCard } from '../lib/og-card';
+import { fmtScore, scopeLabel } from './verdict';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = 'Designesy Score: design legitimacy grade';
+export const alt = 'Designesy contract score and grade';
 
 // Grade inks on the dark surfaces (identity v1, D5 and D18): a data palette
 // that never borrows the brand's colours. Order is the band's, F to A.
@@ -87,7 +88,7 @@ function renderScoreCard(siteUrl: string, score: ScoreResult) {
   const band = BANDS.find((b) => b.grade === grade);
   const gradeColor = band ? band.color : T.muted;
   const displayUrl = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').slice(0, 40);
-  const reading = score.scope === 'contract' ? 'Contract rules' : 'Universal rules';
+  const reading = scopeLabel(score.scope);
   const { lead, rest } = summary(score);
 
   return new ImageResponse(
@@ -116,7 +117,7 @@ function renderScoreCard(siteUrl: string, score: ScoreResult) {
         <div style={{ display: 'flex', alignItems: 'baseline', marginTop: 64, fontFamily: 'Fraunces' }}>
           <div style={{ display: 'flex', fontSize: 150, fontWeight: 700, lineHeight: 1, color: gradeColor }}>{grade}</div>
           <div style={{ display: 'flex', marginLeft: 22, fontSize: 150, fontWeight: 700, lineHeight: 1, color: T.ink }}>
-            {String(score.score)}
+            {fmtScore(score.score ?? 0)}
           </div>
           <div style={{ display: 'flex', marginLeft: 22, fontFamily: '"Geist Mono"', fontSize: 34, color: T.muted }}>/100</div>
         </div>
