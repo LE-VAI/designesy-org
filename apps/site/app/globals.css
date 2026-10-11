@@ -10695,7 +10695,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile[data-grade="c"] { --tile-hue: var(--grade-c); --tile-ink: var(--grade-c-ink); }
 .score-engine-tile[data-grade="d"] { --tile-hue: var(--grade-d); --tile-ink: var(--grade-d-ink); }
 .score-engine-tile[data-grade="f"] { --tile-hue: var(--grade-f); --tile-ink: var(--grade-f-ink); }
-[data-theme="light"] .score-engine-tile[data-grade="b"] { --tile-hue: color-mix(in srgb, var(--grade-b) 80%, var(--ink)); }
 .score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
 .score-engine-tile-score small {
   margin-left: var(--space-2);
@@ -10741,10 +10740,12 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 /* Proportional figures: the score is a standalone decimal (see .num-punct). */
+/* The score beside the grade, in the grade's ink at full strength: at
+   opacity 0.7 the figure measured 3.93:1 on the tile in dark (R22). A lighter
+   weight keeps it a step under the grade letter. */
 .score-engine-tile-score {
   font-size: 0.85rem;
-  font-weight: 600;
-  opacity: 0.7;
+  font-weight: 500;
   font-variant-numeric: proportional-nums;
 }
 
@@ -13803,12 +13804,11 @@ select {
 :is(.rs-row, .rs-legend i)[data-tone="fail"] { --tone: var(--error); --tone-ink: var(--error-ink); }
 :is(.rs-row, .rs-legend i)[data-tone="none"] { --tone: var(--line-strong); --tone-ink: var(--muted); }
 
-/* Marks hold 3:1 on the light theme too (WCAG 1.4.11). The contract's light
-   --warn and --grade-b read as inks, but as fills they measured 2.62:1 on a
-   selected row's bar track, 2.81:1 on the plain track and 2.84 to 2.95:1 on
-   the paper. A mark takes the hue mixed toward ink (3.29 and 3.9:1). */
+/* Marks hold 3:1 on the light theme too (WCAG 1.4.11). The light --warn is a
+   status colour (not a grade); as a bar it measured 2.62:1 on a selected
+   row's track and 2.81:1 on the plain track, so the mark takes it mixed
+   toward ink (3.29 and 3.52:1). */
 [data-theme="light"] :is(.rs-row, .rs-legend i)[data-tone="warn"] { --tone: color-mix(in srgb, var(--warn) 85%, var(--ink)); }
-[data-theme="light"] .rs-track > span[data-grade="b"] { --tone: color-mix(in srgb, var(--grade-b) 80%, var(--ink)); }
 
 /* A row: name, bar, score; the count line under the name, never a narrow
    fourth column (7 of 14 wrapped there at 1440 in the first mock). */
@@ -13884,17 +13884,21 @@ button.rs-row:focus-visible {
   color: var(--muted);
 }
 
-/* Wide cards (the report, the platform pages): readout left, list right,
-   the readout held in view while the longer list scrolls. */
-@container (min-width: 56rem) {
-  .rs-layout {
-    grid-template-columns: 5fr 7fr;
-    align-items: start;
-    gap: var(--space-40);
-  }
-  .rs-side {
-    position: sticky;
-    top: var(--space-96);
+/* From 900px wide (the approved B′): readout left, list right, the readout
+   held in view while the longer list scrolls. The card must also be wide
+   enough for both columns (36rem), so a narrow card at a wide viewport keeps
+   one column rather than squeezing the list. */
+@media (min-width: 900px) {
+  @container (min-width: 36rem) {
+    .rs-layout {
+      grid-template-columns: 5fr 7fr;
+      align-items: start;
+      gap: var(--space-32);
+    }
+    .rs-side {
+      position: sticky;
+      top: var(--space-96);
+    }
   }
 }
 
@@ -14012,13 +14016,13 @@ button.rs-row:focus-visible {
   gap: var(--space-16);
 }
 
+/* The loading title says what is being scored, in ink and sentence case (it
+   was uppercase signal blue; blue means selected and links). */
 .score-verify-log-title {
   margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--signal-access);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .score-verify-log-list {

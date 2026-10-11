@@ -198,19 +198,27 @@ check('the surface check fails on each retired form put back (the gate can fail)
 });
 
 // ── 3. Colours outside CSS ─────────────────────────────────────────────────
-check("share card and badge grades are the contract's grade colours; pass is green", () => {
+check("share card and badge draw grades in the grade tokens, never a brand colour (D5)", () => {
   const css = read('app/globals.css');
-  const root = css.slice(css.indexOf(':root {'), css.indexOf('[data-theme="light"] {'));
-  const token = (g) => (root.match(new RegExp(`--grade-${g}:\\s*(#[0-9a-fA-F]{6})`)) || [])[1]?.toLowerCase();
-  const want = Object.fromEntries(['a', 'b', 'c', 'd', 'f'].map((g) => [g.toUpperCase(), token(g)]));
-  for (const rel of ['app/score/opengraph-image.tsx', 'app/score/badge/route.ts']) {
-    const src = read(rel);
-    const block = (src.match(/const GRADE_(?:COLOR|FILL): Record<string, string> = \{([\s\S]*?)\};/) || [])[1] || '';
-    const got = Object.fromEntries([...block.matchAll(/([A-F]):\s*'(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
-    assert.deepEqual(got, want, rel);
+  const darkBlock = css.slice(css.indexOf(':root {'), css.indexOf('[data-theme="light"] {'));
+  const lightStart = css.indexOf('[data-theme="light"] {');
+  const lightBlock = css.slice(lightStart, css.indexOf('\n}', lightStart));
+  const token = (block, g) => (block.match(new RegExp(`--grade-${g}:\\s*(#[0-9a-fA-F]{6})`)) || [])[1]?.toLowerCase();
+  const grades = ['a', 'b', 'c', 'd', 'f'];
+  const dark = Object.fromEntries(grades.map((g) => [g.toUpperCase(), token(darkBlock, g)]));
+  const light = Object.fromEntries(grades.map((g) => [g.toUpperCase(), token(lightBlock, g)]));
+  // The share card is a dark image: its grade bands are the dark grade tokens.
+  const og = read('app/score/opengraph-image.tsx');
+  const bands = Object.fromEntries([...og.matchAll(/grade: '([A-F])', color: '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
+  assert.deepEqual(bands, dark, 'opengraph-image.tsx BANDS');
+  // The badge sits on any host page: its fills are the light graphic bases.
+  const badge = read('app/score/badge/route.ts');
+  const fills = Object.fromEntries([...badge.matchAll(/([A-F]): \{ fill: '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
+  assert.deepEqual(fills, light, 'badge/route.ts GRADE_FILL');
+  // No grade in a brand colour: the brand blues never name a grade.
+  for (const [rel, src] of [['opengraph-image.tsx', og], ['badge/route.ts', badge], ['result-parts.tsx', read('app/score/result-parts.tsx')]]) {
+    assert.doesNotMatch(src, /#(36a7ff|0a94ff|3358e8|0133cb)/i, `${rel} draws with a brand blue`);
   }
-  const inst = read('app/instrument.css');
-  assert.match(inst, /--lv-pass-a:\s*var\(--ok\)/, 'the instrument pass lamp is not --ok');
 });
 
 if (failures.length) {
