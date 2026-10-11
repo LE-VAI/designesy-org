@@ -97,6 +97,15 @@ jobs:
       - name: Next build
         run: npx next build
 
+      # Vercel builds Next 16 with its deployment adapter, which leaves the
+      # prerendered HTML under .next/server/route-cache instead of
+      # .next/server/app, where every gate below reads it. This copies it back
+      # (see the header of the script); on this plain build it finds no
+      # route-cache and does nothing, so CI runs the same step the deploy does.
+      - name: Stage prerender output
+        if: always()
+        run: node scripts/stage-prerender-output.js
+
       - name: Contract drift
         if: always()
         run: node scripts/check-contract-drift.js
