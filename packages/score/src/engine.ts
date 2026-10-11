@@ -3809,15 +3809,36 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
   // strengths. These are design-integrity failures — a site that FAILs on
   // contrast or horizontal overflow cannot be A-grade no matter how good its
   // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
+  //
+  // No A while any check FAILs (engine 1.3.0, owner decision 2026-10-11). A
+  // FAIL is the engine's own finding that the page breaks a rule, so any FAIL
+  // caps the score at 89.9, a B at most. Until 1.3.0 a page could score 100, an
+  // A, beside FAIL verdicts, including the engine's own WCAG contrast FAIL
+  // (v44). The specific ceilings below are lower and win where they apply.
+  // Every cap here runs after the originality lift, so the lift can carry a
+  // score up to a cap but never past one.
   const hardFailChecks = checks.filter((c) => c.status === 'FAIL');
   let hardFailCeilingApplied = false;
   let hardFailCeilingReason: string | null = null;
+  const ANY_FAIL_CAP = 89.9;
+  if (hardFailChecks.length > 0 && score > ANY_FAIL_CAP) {
+    const ids = hardFailChecks.map((c) => c.id);
+    const named = ids.length === 1 ? `${ids[0]} fails` : `${ids.slice(0, -1).join(', ')} and ${ids[ids.length - 1]} fail`;
+    score = ANY_FAIL_CAP;
+    hardFailCeilingApplied = true;
+    hardFailCeilingReason = `A FAIL caps the grade at B: ${named}, and the score cannot exceed 89.9 while any check fails.`;
+  }
   for (const c of hardFailChecks) {
     let cap: number | null = null;
     let reason: string | null = null;
 
     // v06 Contrast readable — fundamental legibility failure
     if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+    // v44 Status text contrast — the words that report a state fail WCAG
+    // 1.4.3 (or 1.4.11 for a graphic) on a surface the stylesheet attests.
+    // Same cap as v06 (engine 1.3.0, owner decision 2026-10-11): both are
+    // measured WCAG contrast failures on text.
+    if (c.id === 'v44') { cap = 65; reason = 'Status text below WCAG contrast (4.5:1, or 3:1 for large text and graphics): the words that report errors, warnings and success are hard to read.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
     if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
     // v02 Horizontal overflow — broken layout on mobile

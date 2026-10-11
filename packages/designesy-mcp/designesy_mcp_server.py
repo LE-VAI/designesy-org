@@ -1712,6 +1712,14 @@ def _offline_result(
     # PASS=1, WARN=0.5, FAIL=0; SKIP and MANUAL reach no verdict and are excluded.
     scored = total - counts["SKIP"] - counts["MANUAL"]
     score = (counts["PASS"] + 0.5 * counts["WARN"]) / scored if scored > 0 else 0.0
+    # No A while any check FAILs, as the live engine rules from 1.3.0
+    # (scoreArithmetic): any FAIL caps the score at 89.9%, a B at most.
+    ceiling = ""
+    if counts["FAIL"] > 0 and score > _ANY_FAIL_CAP:
+        score = _ANY_FAIL_CAP
+        failed = [c["id"] for c in checks if c["status"] == "FAIL"]
+        named = f"{failed[0]} fails" if len(failed) == 1 else f"{', '.join(failed[:-1])} and {failed[-1]} fail"
+        ceiling = f" A FAIL caps the grade at B: {named}, and the score cannot exceed 89.9% while any check fails."
     grade = _score_grade(score)
     not_run = list(_OFFLINE_NOT_IMPLEMENTED)
     in_engine = total + len(not_run)
@@ -1750,7 +1758,7 @@ def _offline_result(
             f"engine's weighted score. {counts['PASS']} passed, {counts['FAIL']} "
             f"failed, {counts['WARN']} warned, {counts['SKIP']} skipped, "
             f"{counts['MANUAL']} manual (need a browser). Score "
-            f"{round(score * 100, 1)}% ({grade})."
+            f"{round(score * 100, 1)}% ({grade}).{ceiling}"
         ),
     }
 
@@ -1946,6 +1954,11 @@ def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
     """
     html, css = _fetch_page_parts(url)
     return _offline_result(url, html, css, scope, browser_probes=True)
+
+
+# The live engine's cap on a page with any FAIL (scoreArithmetic, engine
+# 1.3.0), as a 0-1 score: 89.9%, the top of the B band.
+_ANY_FAIL_CAP = 0.899
 
 
 def _score_grade(score: float) -> str:

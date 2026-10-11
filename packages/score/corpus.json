@@ -4,7 +4,7 @@
   "fixtures": 32,
   "pinned_checks": 45,
   "pinned_checks_matching": 45,
-  "digest": "4cf8e4d6d803403b4340ccd2db3f4cf62370e386cc7eb014eb208d2700a5b308",
+  "digest": "d1271f916173991dfd2f0d8fa803721b3c396e56a5abde8ea84f6f3adf4c5767",
   "note": "Known-answer fixtures for the Designesy scoring engine. Each fixture pins expected verdicts for named checks, and `observed` records what the engine actually returned. A mismatch between expected and observed means the engine changed behavior for a known input — either a regression, or an intentional change whose pin was not yet updated. Fixtures whose name starts with \"broken-\" are deliberately defective pages; they exist so the corpus can catch a check that stopped detecting something, which a corpus of well-formed pages alone cannot do.",
   "fixtures_detail": [
     {
@@ -121,8 +121,8 @@
       "referent": "The single most common CSS performance anti-pattern: transition:all on every interactive element.",
       "scope": "universal",
       "observed": {
-        "score": 94.4,
-        "grade": "A",
+        "score": 89.9,
+        "grade": "B",
         "counts": {
           "pass": 23,
           "fail": 1,
@@ -466,8 +466,8 @@
       "referent": "Inputs styled below the 16px iOS floor — the shape that causes Safari to auto-zoom on focus and break mobile layout.",
       "scope": "universal",
       "observed": {
-        "score": 94.4,
-        "grade": "A",
+        "score": 89.9,
+        "grade": "B",
         "counts": {
           "pass": 23,
           "fail": 1,
@@ -773,7 +773,7 @@
       "referent": "A status hue picked for marks (a dot at 3:1) reused to paint the status word: designesy.org light --warn #b07d04 on --paper #fbfbfc, 2026-10-08.",
       "scope": "universal",
       "observed": {
-        "score": 69.4,
+        "score": 65,
         "grade": "D",
         "counts": {
           "pass": 13,
@@ -834,8 +834,8 @@
       "referent": "A dark scheme declared with prefers-color-scheme whose error red, fine on the light page, falls under contrast on the dark one.",
       "scope": "universal",
       "observed": {
-        "score": 70,
-        "grade": "C",
+        "score": 65,
+        "grade": "D",
         "counts": {
           "pass": 13,
           "fail": 2,

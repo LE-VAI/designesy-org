@@ -316,7 +316,10 @@ class TestOfflineResult:
         assert s["pass"] + s["fail"] + s["warn"] + s["skip"] + s["manual"] == s["total"]
         assert s["manual"] == 3  # v02, v04, v21 without a browser
         scored = s["total"] - s["skip"] - s["manual"]
-        assert s["score"] == round((s["pass"] + 0.5 * s["warn"]) / scored, 4)
+        raw = (s["pass"] + 0.5 * s["warn"]) / scored
+        # Any FAIL caps the score at 89.9%, as the live engine does from 1.3.0.
+        expected = min(raw, mcp._ANY_FAIL_CAP) if s["fail"] > 0 else raw
+        assert s["score"] == round(expected, 4)
 
 
 class TestScoreLocalImpl:
