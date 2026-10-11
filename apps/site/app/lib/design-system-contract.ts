@@ -675,7 +675,7 @@ export const designSystemContract = {
       lv_well_line: { token: '--lv-well-line', value: 'rgba(255, 255, 255, 0.1) · light: rgba(0, 25, 51, 0.1)', role: 'Recessed well outline' },
       lv_pass_a: { token: '--lv-pass-a', value: '#36A7FF', role: 'Pass fill, light stop (both themes)' },
       lv_pass_b: { token: '--lv-pass-b', value: '#0A94FF', role: 'Pass fill, deep stop (both themes); ink on the gradient 6.65 to 8.08:1' },
-      lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)', role: 'Pass glow' },
+      lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(54, 167, 255, 0.55) · light: rgba(1, 106, 187, 0.22)', role: 'Pass glow' },
       lv_warn_a: { token: '--lv-warn-a', value: '#f7c948 · light: #e0a917', role: 'Warn fill, light stop' },
       lv_warn_b: { token: '--lv-warn-b', value: '#d79a06 · light: #b07d04', role: 'Warn fill, deep stop' },
       lv_fail_a: { token: '--lv-fail-a', value: '#ff7f7f · light: #ef5b5b', role: 'Fail fill, light stop' },

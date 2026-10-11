@@ -5367,6 +5367,36 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   50% { opacity: 0.4; }
 }
 
+/* Live dot, light theme (D35): the flame alone is 2.55 to 3.01:1 on the
+   light surfaces, so the dot carries a 1px --activation-ink rim (4.56 to
+   5.37:1). The heartbeat is an outer halo; the dot and its rim never fade.
+   Static under reduced motion. Dark keeps its dot as it is. */
+[data-theme="light"] .state-marquee-pill--live::before,
+[data-theme="light"] .field-card-status.is-live::before {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--activation-ink);
+}
+[data-theme="light"] .state-marquee-pill--live::before {
+  animation: live-halo 2s var(--ease-in-out) infinite;
+}
+[data-theme="light"] .field-card-status.is-live::before {
+  animation: live-halo 3.2s var(--ease-in-out) infinite;
+}
+@keyframes live-halo {
+  0%, 100% {
+    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 1px color-mix(in srgb, var(--activation) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 5px color-mix(in srgb, var(--activation) 28%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="light"] .state-marquee-pill--live::before,
+  [data-theme="light"] .field-card-status.is-live::before {
+    animation: none !important;
+  }
+}
+
 /* Adopted — filled with checkmark */
 .state-marquee-pill--adopted {
   color: var(--ink);
@@ -8388,7 +8418,7 @@ a.field-card:active {
   display: flex;
   align-items: center;
   gap: 0.45em;
-  color: var(--signal-text);
+  color: var(--ink);
 }
 
 /* The heartbeat lives on a dot, never on the word. signalPulse fades to 0.55
@@ -8400,7 +8430,7 @@ a.field-card:active {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--signal-text);
+  background: var(--activation);
   flex-shrink: 0;
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
@@ -10484,8 +10514,8 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-audit-btn {
   background: var(--signal);
   border-color: var(--signal);
-  /* --paper-on-signal (additive) — white text on var(--signal) is 8.59:1 (AAA);
-     the previous --paper value read as near-black against the signal fill. */
+  /* --paper-on-signal: ink on the Azure fill, 6.65:1 (D19, D33). White on
+     Azure is 3.14:1 and is not used. */
   color: var(--paper-on-signal);
 }
 @media (hover: hover) {

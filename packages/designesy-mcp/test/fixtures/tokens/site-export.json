@@ -1144,7 +1144,7 @@
           },
           "lv_pass_glow": {
             "token": "--lv-pass-glow",
-            "value": "rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)",
+            "value": "rgba(54, 167, 255, 0.55) · light: rgba(1, 106, 187, 0.22)",
             "role": "Pass glow"
           },
           "lv_warn_a": {
