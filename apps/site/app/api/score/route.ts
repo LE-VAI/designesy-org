@@ -1417,38 +1417,86 @@ function classifyColorToken(name: string): 'role' | 'hue' | 'neutral' {
   return 'neutral';
 }
 
+/**
+ * The color tokens v42 and v43 read, and the palette layer among them
+ * (engine 1.3.0).
+ *
+ * A token is a color token when its value is written as a color, or when,
+ * with var() aliases followed through the token set, it is one. Until 1.3.0 only a literal counted, so a
+ * role token that aliases a primitive (--error: var(--red-700), the structure
+ * v42's own remediation recommends) was dropped before classification and the
+ * verdict inverted: a site that did what the check asks scored worse.
+ *
+ * The palette layer is every hue-named color token that a role-named token
+ * reaches through its aliases. That is the two-tier structure the token
+ * standards describe: DTCG 2025.10 §3.8 defines an alias as a token whose
+ * value references another (its example is $color-text-primary aliasing
+ * $color-palette-black); Spectrum's primitive tokens "are typically used
+ * indirectly through semantic tokens as an alias"; Primer's base tokens are
+ * "generally used as a reference for functional tokens"; Material's reference
+ * tokens hold the concrete values that system tokens give roles to. A palette
+ * used that way is not a hue vocabulary, so it leaves v42's denominator. A
+ * hue-named token that no role token reaches is consumed directly, or not at
+ * all, and still counts against the role share.
+ */
+function colorTokenTiers(tokens: Record<string, string>): { color: string[]; palette: Set<string> } {
+  const refs = (value: string): string[] => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
+  // A value written as a color counts as one, as before 1.3.0, even when its
+  // var() cannot be followed (hsl(var(--x)) whose --x refers back to itself);
+  // anything else counts when its aliases resolve to a color.
+  const color = Object.keys(tokens).filter((name) => {
+    if (isColorValue(tokens[name])) return true;
+    const resolved = substituteCssVars(tokens[name], [tokens]);
+    return resolved !== null && isColorValue(resolved);
+  });
+  const reached = new Set<string>();
+  const queue = color.filter((name) => classifyColorToken(name) === 'role').flatMap((name) => refs(tokens[name]));
+  while (queue.length > 0) {
+    const name = queue.pop() as string;
+    if (reached.has(name) || !Object.prototype.hasOwnProperty.call(tokens, name)) continue;
+    reached.add(name);
+    queue.push(...refs(tokens[name]));
+  }
+  return { color, palette: new Set(color.filter((name) => reached.has(name) && classifyColorToken(name) === 'hue')) };
+}
+
 function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResult {
   const item = 'Semantic color vocabulary: tokens named by role rather than hue';
-  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
-  if (colorTokens.length < 4) {
-    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${colorTokens.length})` };
+  const { color, palette } = colorTokenTiers(tokens);
+  if (color.length < 4) {
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${color.length})` };
   }
   let role = 0;
   let hue = 0;
-  for (const [name] of colorTokens) {
+  for (const name of color) {
+    if (palette.has(name)) continue;
     const c = classifyColorToken(name);
     if (c === 'role') role++;
     else if (c === 'hue') hue++;
   }
   const named = role + hue;
   if (named === 0) {
-    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named: vocabulary unclassifiable` };
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${color.length} color tokens, all neutrally named: vocabulary unclassifiable` };
   }
   const share = Math.round((role / named) * 100);
+  const layer = palette.size > 0 ? `; ${palette.size} hue-named primitive(s) that role tokens alias are the palette layer, not counted` : '';
   if (role >= 3 && share >= 60) {
-    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): colors are named by role` };
+    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): colors are named by role${layer}` };
   }
-  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): color vocabulary leans on hue names` };
+  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): color vocabulary leans on hue names${layer}` };
 }
 
+// v43 reads the same color tokens as v42, aliases followed, so --error:
+// var(--red-700) is an error family. The palette layer needs no exclusion
+// here: v43 counts families, and a hue-named primitive is never one.
 function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
   const item = 'Semantic status colors: ok/warn/error/info state roles present';
-  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
-  if (colorTokens.length === 0) {
+  const { color } = colorTokenTiers(tokens);
+  if (color.length === 0) {
     return { id: 'v43', item, category: 'semantic', status: 'SKIP', detail: 'no color tokens in :root' };
   }
   const families: Record<string, boolean> = { ok: false, warn: false, error: false, info: false };
-  for (const [name] of colorTokens) {
+  for (const name of color) {
     const segments = name.toLowerCase().split(/[-_]/);
     if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
     if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;

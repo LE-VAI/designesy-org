@@ -324,3 +324,74 @@ describe('v06 and v22 read CSS Color 4, and tokens declared as :root, :host', ()
     assert.equal(pick(r, 'v22').status, 'SKIP');
   });
 });
+
+describe('v42 and v43 follow aliases, and a palette that role tokens alias is not a hue vocabulary', () => {
+  const pick = (r, id) => r.checks.find((c) => c.id === id);
+
+  // The audit's H7: role tokens aliased to hue primitives, as v42's own
+  // remediation instructs. Before 1.3.0: v42 WARN "0 role-named vs 6
+  // hue-named", v43 WARN "0/4 status families".
+  const H7 = `:root{--blue-600:#1d4ed8;--gray-900:#111111;--gray-50:#fafafa;--red-700:#b3261e;--green-700:#0a7a32;--amber-800:#8a5a00;
+    --ink:var(--gray-900);--paper:var(--gray-50);--signal:var(--blue-600);--error:var(--red-700);--ok:var(--green-700);--warn:var(--amber-800)}`;
+
+  it('counts role tokens that alias primitives as role-named (audit H7)', async () => {
+    const r = await run({ css: H7 });
+    const v42 = pick(r, 'v42');
+    assert.equal(v42.status, 'PASS');
+    assert.match(v42.detail, /^6 role-named vs 0 hue-named/);
+    assert.match(v42.detail, /6 hue-named primitive\(s\) that role tokens alias are the palette layer/);
+    const v43 = pick(r, 'v43');
+    assert.equal(v43.status, 'PASS');
+    assert.match(v43.detail, /3\/4 status families present \(ok, warn, error\)/);
+  });
+
+  it('scores a two-tier system no worse than the same roles holding literals', async () => {
+    const literal = `:root{--ink:#111111;--paper:#fafafa;--signal:#1d4ed8;--error:#b3261e;--ok:#0a7a32;--warn:#8a5a00}`;
+    const [two, one] = [await run({ css: H7 }), await run({ css: literal })];
+    assert.equal(pick(two, 'v42').status, pick(one, 'v42').status);
+    assert.equal(pick(two, 'v43').status, pick(one, 'v43').status);
+    assert.ok(two.score >= one.score, `two-tier ${two.score} < literal ${one.score}`);
+  });
+
+  // Tailwind v4 shape: the theme's palette in :root, :host, role tokens that
+  // alias it in :root.
+  const PALETTE = ['red', 'green', 'amber', 'sky', 'blue', 'gray'].flatMap((hue, i) =>
+    [50, 500, 600, 950].map((step) => `--color-${hue}-${step}:oklch(${(0.97 - step / 1100).toFixed(3)} ${(0.02 + i / 100).toFixed(3)} ${i * 50})`));
+  const ROLES = '--background:var(--color-gray-50);--foreground:var(--color-gray-950);--primary:var(--color-blue-600);--danger:var(--color-red-600);--success:var(--color-green-600);--warning:var(--color-amber-500);--info:var(--color-sky-600)';
+
+  it('treats a Tailwind-style palette that role tokens alias as the palette layer, not hue names', async () => {
+    const referenced = ['gray-50', 'gray-950', 'blue-600', 'red-600', 'green-600', 'amber-500', 'sky-600'];
+    const palette = PALETTE.filter((d) => referenced.some((n) => d.startsWith(`--color-${n}:`)));
+    const r = await run({ css: `:root, :host {${palette.join(';')}} :root{${ROLES}}` });
+    const v42 = pick(r, 'v42');
+    assert.equal(v42.status, 'PASS', v42.detail);
+    assert.match(v42.detail, /7 hue-named primitive\(s\) that role tokens alias are the palette layer/);
+    assert.equal(pick(r, 'v43').status, 'PASS');
+  });
+
+  it('still counts hue-named tokens that no role token aliases against the role share', async () => {
+    // 24 palette entries, 7 of them aliased: 17 unreferenced hue names. (The
+    // role count also holds the --paper/--ink/--signal the engine infers from
+    // --background/--foreground/--primary, as it did before 1.3.0.)
+    const r = await run({ css: `:root, :host {${PALETTE.join(';')}} :root{${ROLES}}` });
+    const v42 = pick(r, 'v42');
+    assert.equal(v42.status, 'WARN', v42.detail);
+    assert.match(v42.detail, /role-named vs 17 hue-named/);
+  });
+
+  it('a palette with no role tokens at all leans on hue names', async () => {
+    const r = await run({ css: `:root, :host {${PALETTE.join(';')}}` });
+    assert.equal(pick(r, 'v42').status, 'WARN');
+    assert.equal(pick(r, 'v43').status, 'WARN');
+  });
+});
+
+describe('v42 keeps a token written as a color, even when its alias cannot be followed', () => {
+  it('counts hsl(var(--x)) whose --x refers back to itself, as before 1.3.0', async () => {
+    // The shape x.com ships: role tokens wrapped as hsl(var(--same-name)).
+    const css = ':root, :host {--color-text:hsl(var(--color-text));--color-brand-foreground:hsl(var(--color-brand-foreground));--color-nested-border:hsl(var(--color-nested-border));--color-gray-50:oklch(0.98 0 0)}';
+    const v42 = (await run({ css })).checks.find((c) => c.id === 'v42');
+    assert.equal(v42.status, 'PASS', v42.detail);
+    assert.match(v42.detail, /role-named vs 1 hue-named/);
+  });
+});
