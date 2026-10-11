@@ -15048,40 +15048,12 @@ button.rs-row:focus-visible {
   margin-top: var(--space-fine-30);
 }
 
-/* The 3px spine on a check row says its STATUS, never its category: fail
-   in --error, warn in --warn, manual and not-applicable in --muted-dim, and
-   a pass carries none. It used to take a hue per category from the state
-   tokens (accessibility --ok, identity --error, cadence and copywriting
-   grade hues), so a FAIL accessibility check wore the pass green beside its
-   red FAIL pill and every passing identity check wore red. The category is
-   named by the mono chip; the status by the pill, which the spine repeats
-   at a glance (colour never carries alone). The row's data-status is the
-   status (score-form.tsx); a row without one reads it from its pill. */
+/* A check row carries no edge stripe (brand ledger D62, no coloured edge
+   stripes anywhere). The 3px status spine on fail, warn, manual and skip rows
+   repeated what the row's status pill and its group header already say, in
+   the side-stripe pattern. */
 .score-card-item::before {
   content: none;
-}
-
-.score-card-item:is(
-  [data-status='fail'], [data-status='warn'], [data-status='manual'], [data-status='skip'],
-  :not([data-status]):has(> .score-card-main .score-card-status-pill:is(.is-fail, .is-warn, .is-manual, .is-skip))
-)::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: var(--space-8);
-  bottom: var(--space-8);
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--muted-dim);
-  pointer-events: none;
-}
-
-.score-card-item:is([data-status='fail'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-fail))::before {
-  background: var(--error);
-}
-
-.score-card-item:is([data-status='warn'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-warn))::before {
-  background: var(--warn);
 }
 
 /* --------------------------------------------------------------------------
