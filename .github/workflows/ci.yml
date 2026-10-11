@@ -134,6 +134,13 @@ jobs:
         if: always()
         run: node scripts/check-audit-rescore.mjs
 
+      # One value reads one way on every result surface: the words, the score
+      # format, the colour rules and the grade colours of the share card and
+      # badge (app/score/verdict.ts is the one source).
+      - name: Results language
+        if: always()
+        run: node scripts/check-results-language.mjs
+
       - name: Generate markdown
         if: always()
         run: node scripts/generate-markdown.js
@@ -260,6 +267,14 @@ jobs:
         if: always()
         run: node scripts/check-retired-literals.js
 
+      # The score badge is an SVG string, so its grade colours are literals a
+      # token swap cannot see. Each fill must equal its light --grade-* base,
+      # the letter must hold 4.5:1 on it, and the fill 3:1 on a white and a
+      # near-black host page (brand ledger D37).
+      - name: Badge grade tokens
+        if: always()
+        run: node scripts/check-badge-grade-tokens.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js
@@ -339,6 +354,30 @@ jobs:
         run: python -m pytest test/ -v
 
   # ── Job 3: npm package test gate ─────────────────────────────────────────
+  # No retired brand colour ships from any package (brand ledger D44, D46).
+  # The site has its own step above ("Retired literals"); this one reads what
+  # every package publishes: each npm package's manifest-declared files (dist/
+  # read from the source it compiles from), the PyPI package's sdist and wheel
+  # files, the root package and the GitHub Action. Both gates read the one list
+  # in apps/site/scripts/retired-literals.json. Zero dependencies, so no
+  # install step.
+  retired-literals-packages:
+    name: Retired literals (every package)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+
+      - name: Retired literals, every package
+        run: node scripts/check-retired-literals-packages.js
+
   # Both @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens have
   # test suites that only ran at publish time. This job runs them on every PR
   # so a broken test can't merge. The pretest hook runs `npm run build`
@@ -761,6 +800,12 @@ jobs:
       # that did not take.
       - name: A11y modes (contrast, transparency)
         run: node scripts/check-a11y-modes.js --base http://127.0.0.1:3422 --channel chrome
+
+      # The result readout: the grade letter in the numeral's face, size and
+      # baseline, every count line on one line, no result text under 12px, on
+      # the score form, the report and the four-engine form at 390 and 1440.
+      - name: Results readout
+        run: node scripts/check-results-readout.js --base http://127.0.0.1:3422 --channel chrome
 
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,

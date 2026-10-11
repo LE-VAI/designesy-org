@@ -3,18 +3,18 @@
  * retired literals: no retired brand colour ships.
  *
  * WHY THIS EXISTS
- * Identity v1 retired the old signal blue, the old activation yellow, the
- * indigo pass and head hues and the orange grade D (brand ledger D4, D5, D19,
- * D33). The token swap moved every token, but a token swap cannot see a
- * literal: a hard-coded hex in a share card, a favicon, a badge, a demo
- * swatch or a lab preset kept painting the retired colour after the tokens
- * had moved. Before this gate the site carried the old blue 16 times in 12
+ * Identity v1 retired the old signal blue and its light tint, the old
+ * activation yellow, the indigo pass and head hues and the orange grade D
+ * (brand ledger D4, D5, D19, D33, D37). The token swap moved every token,
+ * but a token swap cannot see a literal: a hard-coded hex in a share card,
+ * a favicon, a badge, a demo swatch or a lab preset kept painting the
+ * retired colour after the tokens had moved. Before this gate the site carried the old blue 16 times in 12
  * files, its rgb() form 9 times and the old yellow 5 times. Migration exits
  * only when this reads 0 (brand verdict, ruling H).
  *
  * WHAT IT MATCHES
  * Each retired colour as a hex (#rrggbb, or #rrggbbaa with an alpha), case
- * insensitive, and the old blue's rgb()/rgba() form with commas or spaces.
+ * insensitive, and the old blues' rgb()/rgba() forms with commas or spaces.
  * A longer hex that merely starts with the same digits does not match.
  *
  * WHAT IT READS
@@ -23,6 +23,13 @@
  * middleware.ts and next.config.ts. Not scripts/: the gates are not shipped,
  * and several of them quote a retired value on purpose to explain what they
  * guard against.
+ *
+ * THE LIST
+ * The colours are not written here. They live in retired-literals.json next
+ * to this script, the one list every retired-literal gate reads (this one,
+ * scripts/check-retired-literals-packages.js at the repo root for every
+ * package, and designesy/score-action at a pinned commit), so the copies
+ * cannot drift. The list carries its own self-test vectors.
  *
  * THE ALLOWLIST
  * Explicit, per file and per line, each with its reason. An entry that no
@@ -37,39 +44,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-/** The retired colours, with the decision that retired each. */
-const RETIRED_HEX = [
-  { hex: '0133cb', why: 'old signal blue (D19)' },
-  { hex: 'fecc34', why: 'old activation yellow (D4, retired)' },
-  { hex: 'fecc35', why: 'the share-card yellow asterisk (D24)' },
-  { hex: '2c50ec', why: 'old indigo pass hue (D33)' },
-  { hex: '5b7cff', why: 'old indigo pass hue (D33)' },
-  { hex: '3a63f5', why: 'old indigo pass hue (D33)' },
-  { hex: '8aa0ff', why: 'old indigo head hue (D33)' },
-  { hex: 'ea580c', why: 'old grade D orange, light (D5)' },
-  { hex: 'fb923c', why: 'old grade D orange, dark (D5)' },
-  { hex: 'f97316', why: 'old grade D glow (D5)' },
-];
-
-function buildPatterns() {
-  const pats = RETIRED_HEX.map(({ hex, why }) => ({
-    label: `#${hex}`,
-    why,
-    // #rrggbb or #rrggbbaa, and not the first six digits of a longer hex.
-    re: new RegExp(`#${hex}(?:[0-9a-f]{2})?(?![0-9a-f])`, 'gi'),
-  }));
-  pats.push({
-    label: 'rgb(1,51,203)',
-    why: 'old signal blue, rgb form (D19)',
-    // rgb(1,51,203) rgba(1, 51, 203, .2) rgb(1 51 203 / .4)
-    re: /rgba?\(\s*1\s*[,\s]\s*51\s*[,\s]\s*203(?![0-9])/gi,
-  });
-  for (const p of pats) {
-    // A pattern that cannot match anything is a gate that cannot fail.
-    if (!(p.re instanceof RegExp)) throw new Error(`pattern for ${p.label} did not compile`);
-  }
-  return pats;
-}
+// The retired colours, their patterns and the self-test vectors come from
+// the one canonical list (retired-literals.json, brand ledger D44), shared
+// with the packages gate and with designesy/score-action.
+const { buildPatterns, selfTest, matchLine } = require('./lib/retired-literals');
 
 /**
  * Lines allowed to carry a retired literal. `file` is relative to the site
@@ -95,6 +73,12 @@ const ALLOWLIST = [
     reason:
       'The same v0.4.4 history entry, as /contracts/design-system lists the adoption history in its generated markdown. Present only after a build.',
     optional: true,
+  },
+  {
+    file: 'app/globals.css',
+    includes: 'It was --signal-light (#3358e8), which on the dark theme measured',
+    reason:
+      'A comment, not a paint: the focus-ring note records which value --signal-access replaced and the contrast it measured, so a later reader knows why the ring moved. History states what was.',
   },
 ];
 
@@ -131,12 +115,8 @@ function scan(siteRoot, patterns) {
     const rel = path.relative(siteRoot, full).split(path.sep).join('/');
     const lines = fs.readFileSync(full, 'utf8').split(/\r?\n/);
     lines.forEach((line, i) => {
-      for (const p of patterns) {
-        p.re.lastIndex = 0;
-        let m;
-        while ((m = p.re.exec(line))) {
-          findings.push({ file: rel, line: i + 1, literal: m[0], retired: p.label, why: p.why, text: line.trim().slice(0, 160) });
-        }
+      for (const m of matchLine(line, patterns)) {
+        findings.push({ file: rel, line: i + 1, literal: m.literal, retired: m.retired, why: m.why, text: line.trim().slice(0, 160) });
       }
     });
   }
@@ -157,24 +137,6 @@ function classify(findings) {
   }
   const stale = ALLOWLIST.filter((a, i) => !used.has(i) && !a.optional);
   return { blocked, allowed, stale };
-}
-
-function selfTest(patterns) {
-  // Every form the gate claims to catch, and the near misses it must not.
-  const must = [
-    '#0133CB', '#0133cb', '#0133cb24', '#FECC34', '#fecc35', '#2c50ec', '#5B7CFF', '#3a63f5',
-    '#8aa0ff', '#EA580C', '#fb923c', '#F97316', 'rgb(1,51,203)', 'rgba(1, 51, 203, 0.14)',
-    'rgb(1 51 203 / .42)', 'RGB( 1 , 51 , 203 )',
-  ];
-  const mustNot = ['#0133cb2', '#0133cbab12', '#0A94FF', '#FFC400', 'rgb(1,51,2030)', 'rgb(11,51,203)', '#fecc3', '#36A7FF'];
-  const hit = (s) => patterns.some((p) => { p.re.lastIndex = 0; return p.re.test(s); });
-  const missed = must.filter((s) => !hit(s));
-  const falsePos = mustNot.filter((s) => hit(s));
-  const ok = missed.length === 0 && falsePos.length === 0;
-  console.log(`retired-literals self-test: ${must.length - missed.length}/${must.length} caught, ${falsePos.length} false positives`);
-  if (missed.length) console.log('  missed: ' + missed.join(', '));
-  if (falsePos.length) console.log('  false positives: ' + falsePos.join(', '));
-  return ok;
 }
 
 function main() {

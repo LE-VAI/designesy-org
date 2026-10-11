@@ -490,45 +490,22 @@ type Row = {
 type Group = { name: string; rows: Row[] };
 
 function Icon({ kind }: { kind: RowIcon }) {
-  const common = {
-    width: 16,
-    height: 16,
-    viewBox: '0 0 16 16',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.5,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-  };
   switch (kind) {
     case 'score':
       // Icon family v2: the gauge, its dot the active grade.
       return <BrandIcon name="score" size={16} />;
     case 'theme':
-      return (
-        <svg {...common}>
-          <path d="M13 9.6A5.5 5.5 0 1 1 6.4 3a4.3 4.3 0 0 0 6.6 6.6z" />
-        </svg>
-      );
+      // v2.1: the moon, its dot the active choice.
+      return <BrandIcon name="theme" size={16} />;
     case 'motion':
-      return (
-        <svg {...common}>
-          <path d="M1.5 8c1.1-2.4 2.2-2.4 3.3 0s2.2 2.4 3.3 0 2.2-2.4 3.3 0 2.2 2.4 3.1 0" />
-        </svg>
-      );
+      // v2.1: an easing curve, its dot the landing.
+      return <BrandIcon name="motion" size={16} />;
     case 'mention':
-      return (
-        <svg {...common}>
-          <path d="M3 4.5h10M3 8h10M3 11.5h6" />
-        </svg>
-      );
+      // v2.1: lines of text, its dot the match.
+      return <BrandIcon name="mention" size={16} />;
     case 'machine':
-      return (
-        <svg {...common}>
-          <path d="M6 3.5C4.5 3.5 4.5 5 4.5 6S3.5 8 3 8c.5 0 1.5 1 1.5 2s0 2.5 1.5 2.5M10 3.5c1.5 0 1.5 1.5 1.5 2.5s1 2 1.5 2c-.5 0-1.5 1-1.5 2s0 2.5-1.5 2.5" />
-        </svg>
-      );
+      // v2.1: braces around a dot, the machine reading.
+      return <BrandIcon name="machine" size={16} />;
     default:
       // A page: icon family v2, docs.
       return <BrandIcon name="docs" size={16} />;

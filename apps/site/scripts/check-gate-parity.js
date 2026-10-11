@@ -87,6 +87,12 @@ function main() {
   // check-readme-facts.js reads the repo-root and PyPI READMEs, which sit
   // outside apps/site and are not part of the deployed site: a stale README
   // cannot change what the deploy serves, so the build has nothing to gate.
+  //
+  // check-retired-literals-packages.js (repo-root scripts/) reads every
+  // package under packages/, the root package and the GitHub Action. None of
+  // them deploys with the site, and a Vercel build may upload only apps/site,
+  // so the build has nothing of theirs to gate. The site's own retired-literal
+  // gate stays in both lists.
   const CI_ONLY = new Set([
     'check-gate-parity.js',
     'edge-contract.js',
@@ -97,10 +103,12 @@ function main() {
     'qa-keyboard.js',
     'check-status-messages.js',
     'check-a11y-modes.js',
+    'check-results-readout.js',
     'a11y-sweep.js',
     'check-dock-clearance.js',
     'touched-routes.js',
     'check-readme-facts.js',
+    'check-retired-literals-packages.js',
   ]);
 
   const onlyInBuild = inBuild.filter((g) => !inCi.includes(g));

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { BrandIcon } from './brand-icons';
 
 /**
  * ShareButton — a portable share affordance for any page.
@@ -93,13 +94,7 @@ export function ShareButton({
         disabled
         aria-label={label}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
+        <BrandIcon name="share" size={14} />
         Share
       </button>
     );
@@ -114,13 +109,7 @@ export function ShareButton({
       title={canWebShare ? label : 'Copy link to clipboard'}
       aria-label={canWebShare ? label : 'Copy link'}
     >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="18" cy="5" r="3" />
-        <circle cx="6" cy="12" r="3" />
-        <circle cx="18" cy="19" r="3" />
-        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-      </svg>
+      <BrandIcon name="share" size={14} />
       {canWebShare ? 'Share' : linkCopied ? 'Link copied!' : 'Copy link'}
     </button>
   );

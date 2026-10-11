@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**@designesy/score 0.7.2** (npm), released on its own (`score-v0.7.2`). The
+engine reports design contract v0.4.4, the version designesy.org serves; 0.7.1
+reports v0.4.3. Engine 1.2.0 and its 44 checks keep their number.
+
+### Changed
+
+- **The engine reports contract v0.4.4.** `contractVersion` in the default
+  output and `tool.version` in `--format canonical` read `v0.4.4`. v0.4.4 is
+  the identity v1 colour system: Azure `#0A94FF` as `--signal`, Deep Azure
+  `#016ABB` for light-theme text, links and focus, and ink `#010102` on an
+  Azure fill; a new `--paper-white` (`#FFFFFF`, both themes) for every use
+  that means white; the instrument pass gradient and inspection head
+  (`--lv-pass-a` `#36A7FF`, `--lv-pass-b` `#0A94FF`, `--lv-head` `#36A7FF`
+  dark and `#0A94FF` light) in the Azure family; grade D in rose, with light
+  `--grade-d-ink` `#BE1F67`. The contract changes token values only: no
+  check, weight or verdict.
+- **v22 measures a declared primary action pair.** Merged with identity v1
+  and first published here: a contract that declares both `--action` (the
+  fill) and `--on-action` (the label) is measured on that pair, the one the
+  button paints, so a better-contrast token elsewhere cannot stand in for a
+  label that fails. Without both tokens v22 keeps the 0.7.1 reading, the
+  better of `--paper` or `--ink` on `--signal`, so a site that declares
+  neither scores as before. The site engine has run the same rule since the
+  identity v1 merge; the engine version stays 1.2.0. For designesy.org the
+  packed 0.7.2 and the published 0.7.1 agree on every verdict: v22 PASS at
+  6.65:1 (now read as `--on-action` on `--action`), 40 PASS, 1 WARN, 3 MANUAL.
+
 ## [1.13.8] — 2026-10-11
 
 **designesy-mcp 1.13.8** (PyPI, MCP registry, hosted `/api/mcp`): `designesy_tokens_score` counts a warning the way every other Designesy score does and reads DTCG aliases as references, and the site's own `/export/dtcg` holds DTCG values only.

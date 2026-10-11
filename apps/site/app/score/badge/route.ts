@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { scoreUrl, normalizeInputUrl, isValidUrl } from '../../api/score/route';
+import { fmtScore } from '../verdict';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,21 +15,38 @@ export const dynamic = 'force-dynamic';
 // can drift as it evolves; badges should stay reasonably current).
 //
 // Three render paths:
-//   - valid url + scored → grade letter + score% in grade color
+//   - valid url + scored → grade letter + score% on the grade's token fill
 //   - valid url + score error → grey "unreachable" badge
 //   - missing/invalid url → grey "enter a URL" badge
 
 const W = 220;
 const H = 44;
 
-// Grade → color. Mirrors opengraph-image.tsx GRADE_COLOR (A/B signal, C/D amber, F red).
-const GRADE_FILL: Record<string, string> = {
-  A: '#3358e8',
-  B: '#3358e8',
-  C: '#c9a227',
-  D: '#c9a227',
-  F: '#c4503e',
+// Grade → fill and letter colour. A grade takes only its grade token, never a
+// brand colour (brand ledger D5, D37). The badge renders on other people's
+// pages and does not follow their theme, so each fill is the light-theme
+// graphic base from globals.css (--grade-a … --grade-f under
+// [data-theme="light"]), the set built to hold 3:1 against white, and the
+// letter takes whichever of white and ink (#010102) clears 4.5:1 on it.
+// WCAG 2.x ratios:
+//
+//   grade  fill      letter   letter/fill  fill/#ffffff  fill/#010102
+//   A      #15803d   #ffffff  5.02         5.02          4.16
+//   B      #5d960c   #010102  5.80         3.60          5.80
+//   C      #b07d04   #010102  5.74         3.63          5.74
+//   D      #c9216c   #ffffff  5.36         5.36          3.89
+//   F      #dc2626   #ffffff  4.83         4.83          4.32
+//
+// Every fill holds 3:1 against a white and a near-black host page, and the
+// letter holds 4.5:1 on its fill.
+const GRADE_FILL: Record<string, { fill: string; text: string }> = {
+  A: { fill: '#15803d', text: '#ffffff' },
+  B: { fill: '#5d960c', text: '#010102' },
+  C: { fill: '#b07d04', text: '#010102' },
+  D: { fill: '#c9216c', text: '#ffffff' },
+  F: { fill: '#dc2626', text: '#ffffff' },
 };
+const NEUTRAL_FILL = { fill: '#6b6b6b', text: '#ffffff' };
 
 type BadgeState =
   | { kind: 'scored'; grade: string; score: number; url: string }
@@ -51,20 +69,20 @@ function truncate(s: string, max: number): string {
 function renderBadge(state: BadgeState): string {
   const label = 'designesy';
   let gradeText: string;
-  let gradeFill: string;
+  let gradeColor: { fill: string; text: string };
   let valueText: string;
 
   if (state.kind === 'scored') {
     gradeText = state.grade;
-    gradeFill = GRADE_FILL[state.grade] || '#6b6b6b';
-    valueText = `${state.score}%`;
+    gradeColor = GRADE_FILL[state.grade] || NEUTRAL_FILL;
+    valueText = `${fmtScore(state.score)} /100`;
   } else if (state.kind === 'unreachable') {
     gradeText = '–';
-    gradeFill = '#6b6b6b';
+    gradeColor = NEUTRAL_FILL;
     valueText = 'unreachable';
   } else {
     gradeText = '–';
-    gradeFill = '#6b6b6b';
+    gradeColor = NEUTRAL_FILL;
     valueText = 'enter a URL';
   }
 
@@ -81,7 +99,7 @@ function renderBadge(state: BadgeState): string {
     : 'designesy.org';
 
   // Badge layout: [label | grade | host · score%]
-  // Three segments. The grade segment is colored by GRADE_FILL.
+  // Three segments. The grade segment takes its fill and letter from GRADE_FILL.
   const segLabel = 70;
   const segGrade = 36;
   const segValue = W - segLabel - segGrade;
@@ -97,8 +115,8 @@ function renderBadge(state: BadgeState): string {
   <rect x="0" y="0" width="${segLabel}" height="${H}" rx="6" fill="rgba(255,255,255,0.04)"/>
   <text x="${segLabel / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="600" fill="#a0a0a0" letter-spacing="0.04em">${escapeXml(label)}</text>
   <!-- grade segment -->
-  <rect x="${segLabel}" y="0" width="${segGrade}" height="${H}" fill="${gradeFill}"/>
-  <text x="${segLabel + segGrade / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#ffffff">${escapeXml(gradeText)}</text>
+  <rect x="${segLabel}" y="0" width="${segGrade}" height="${H}" fill="${gradeColor.fill}"/>
+  <text x="${segLabel + segGrade / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="${gradeColor.text}">${escapeXml(gradeText)}</text>
   <!-- value segment: host · score% -->
   <text x="${segLabel + segGrade + 10}" y="${H / 2 - 6}" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="500" fill="#a0a0a0">${escapeXml(host)}</text>
   <text x="${segLabel + segGrade + 10}" y="${H / 2 + 7}" dominant-baseline="central" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" fill="#ffffff" font-variant-numeric="tabular-nums">${escapeXml(valueText)}</text>
