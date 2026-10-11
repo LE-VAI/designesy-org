@@ -517,13 +517,13 @@ jobs:
           exit 1
 
   # ── Job 5: Runtime visual gates, in three parallel parts ─────────────────
-  # The alignment, glass, focus, motion, LCP, keyboard, status, dock and
-  # incremental a11y gates. Each needs a browser and a running site, so none
-  # of them can live in the build chain — that is exactly why the 280 edge
-  # violations and the dead capsule blur both survived the build gate. Each
-  # part serves the build CI just made and measures it. The a11y sweep runs on
-  # the routes the commit touches (touched-routes.js maps the diff; shared
-  # surfaces mean the full set).
+  # The alignment, glass, focus, motion, LCP, keyboard, status, dock,
+  # accessibility-mode and incremental a11y gates. Each needs a browser and a
+  # running site, so none of them can live in the build chain — that is
+  # exactly why the 280 edge violations and the dead capsule blur both
+  # survived the build gate. Each part serves the build CI just made and
+  # measures it. The a11y sweep runs on the routes the commit touches
+  # (touched-routes.js maps the diff; shared surfaces mean the full set).
   #
   # WHY THREE PARTS: as one job the gates ran one after another, and on
   # 2026-10-10 that job grew from about 8 minutes to 17-25 as the focus, dock,
@@ -531,7 +531,8 @@ jobs:
   # inside Dock clearance. The parts run side by side, balanced by the step
   # times of a green run on main (38086271824):
   #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17
-  #   part 2  focus visibility 187, a11y sweep 101 (the full set)
+  #   part 2  focus visibility 187, a11y sweep 101 (the full set), and
+  #           a11y modes 59 (added later; its first run, 38099424155)
   #   part 3  dock clearance 443 (304-443 across that day's green runs)
   # Dock clearance is the longest single gate, so it runs alone and sets the
   # wall time. Every part must pass. A new runtime gate goes in the part with
@@ -680,9 +681,9 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
 
   visual-gates-2:
-    name: 'Visual gates (part 2: focus visibility, a11y sweep)'
+    name: 'Visual gates (part 2: focus visibility, a11y modes, a11y sweep)'
     runs-on: ubuntu-latest
-    # About 5 minutes; 15 leaves room for the full-set sweep on a slow runner.
+    # About 6 minutes; 15 leaves room for the full-set sweep on a slow runner.
     timeout-minutes: 15
     needs: build-site
     if: always() && needs.build-site.result == 'success'
@@ -734,6 +735,17 @@ jobs:
       # another rule overrides, a colour too faint, or a ring a parent clips.
       - name: Focus visibility
         run: node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel chrome
+
+      # Text contrast under the preferences that repaint the palette: dark and
+      # light, each with prefers-contrast: more, with
+      # prefers-reduced-transparency: reduce, and with neither. A brand test
+      # turned every dark-theme line to 1.00:1 under "Increase contrast", and
+      # ink on light soft surfaces to 1.20:1 under "Reduce transparency", and
+      # every gate passed, because no gate rendered either mode. The gate sets
+      # each mode through CDP, reads it back with matchMedia, and fails a mode
+      # that did not take.
+      - name: A11y modes (contrast, transparency)
+        run: node scripts/check-a11y-modes.js --base http://127.0.0.1:3422 --channel chrome
 
       # The incremental a11y sweep (handoff item #10): measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,
