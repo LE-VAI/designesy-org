@@ -293,15 +293,19 @@ class TestDtcgTypeList:
         assert type_name in t06["detail"]
 
     def test_site_mcp_route_carries_the_same_list(self):
-        """The hosted MCP endpoint (apps/site) validates with its own copy."""
+        """The hosted MCP endpoint (apps/site) validates with its own copy.
+
+        The checks moved from the route into apps/site/app/lib/tokens-score.ts
+        (designesy-mcp 1.13.7), and the list moved with them.
+        """
         import re
 
-        route = Path(__file__).resolve().parents[3] / "apps" / "site" / "app" / "api" / "mcp" / "route.ts"
-        if not route.exists():
+        lib = Path(__file__).resolve().parents[3] / "apps" / "site" / "app" / "lib" / "tokens-score.ts"
+        if not lib.exists():
             pytest.skip("apps/site is not present (sdist build); the repo checkout runs this test")
-        src = route.read_text(encoding="utf-8")
-        m = re.search(r"const DTCG_STANDARD_TYPES = new Set\(\[(.*?)\]\)", src, re.S)
-        assert m, "DTCG_STANDARD_TYPES not found in apps/site/app/api/mcp/route.ts"
+        src = lib.read_text(encoding="utf-8")
+        m = re.search(r"const DTCG_STANDARD_TYPES\b[^=]*= new Set\(\[(.*?)\]\)", src, re.S)
+        assert m, "DTCG_STANDARD_TYPES not found in apps/site/app/lib/tokens-score.ts"
         assert set(re.findall(r"'([A-Za-z]+)'", m.group(1))) == DTCG_2025_10_TYPES
 
 
