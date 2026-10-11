@@ -78,3 +78,43 @@ class TestNoAWhileAnyCheckFails:
         assert raw < 0.899
         assert s["score"] == round(raw, 4)
         assert "caps the grade" not in r["note"]
+
+
+def _bands(path: Path) -> list[tuple[float, str]]:
+    """computeGrade's thresholds, read from a TypeScript engine copy."""
+    src = path.read_text(encoding="utf-8")
+    start = src.index("function computeGrade(")
+    body = src[start : src.index("\n}", start)]
+    bands = [(float(t), g) for t, g in re.findall(r"if \(score >= (\d+(?:\.\d+)?)\) return '([A-F])';", body)]
+    assert re.search(r"return 'F';", body), f"computeGrade in {path.name} has no F fallthrough"
+    return bands
+
+
+class TestGradeBands:
+    def test_both_typescript_copies_use_90_80_70_60(self):
+        expected = [(90.0, "A"), (80.0, "B"), (70.0, "C"), (60.0, "D")]
+        for path in (ENGINE_TS, ROUTE_TS):
+            assert _bands(path) == expected, path.name
+
+    def test_the_offline_engine_grades_on_the_same_bands(self):
+        bands = _bands(ENGINE_TS)
+        for threshold, grade in bands:
+            assert mcp._score_grade(threshold / 100) == grade, threshold
+            below = round(threshold - 0.1, 1)
+            expected_below = next((g for t, g in bands if below >= t), "F")
+            assert mcp._score_grade(below / 100) == expected_below, below
+        assert mcp._score_grade(0.0) == "F"
+        assert mcp._score_grade(1.0) == "A"
+
+    def test_the_audit_counter_examples(self):
+        # The 2026-10-11 core-logic audit: 0.92 read B and 0.72 read D here,
+        # A and C in every TypeScript engine.
+        assert mcp._score_grade(0.92) == "A"
+        assert mcp._score_grade(0.72) == "C"
+        assert mcp._score_grade(0.88) == "B"
+
+    def test_the_letter_matches_the_percentage_shown(self):
+        # 0.8996 is shown as 90.0%; the letter must be the one 90.0 earns.
+        assert round(0.8996 * 100, 1) == 90.0
+        assert mcp._score_grade(0.8996) == "A"
+        assert mcp._score_grade(mcp._ANY_FAIL_CAP) == "B"

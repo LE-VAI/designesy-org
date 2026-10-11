@@ -1962,14 +1962,21 @@ _ANY_FAIL_CAP = 0.899
 
 
 def _score_grade(score: float) -> str:
-    """Convert score to letter grade."""
-    if score >= 0.95:
+    """Letter grade for a 0-1 score, on the live engine's bands (computeGrade).
+
+    A 90 and up, B 80, C 70, D 60, F under 60, read on the percentage at one
+    decimal, the number score_percent reports, so the letter always matches the
+    number shown. Until 1.3.0 this used A 95, B 85, C 75, so 92% read B here and
+    A everywhere else; test/test_grade_parity.py reads the bands from engine.ts.
+    """
+    pct = round(score * 100, 1)
+    if pct >= 90:
         return "A"
-    if score >= 0.85:
+    if pct >= 80:
         return "B"
-    if score >= 0.75:
+    if pct >= 70:
         return "C"
-    if score >= 0.60:
+    if pct >= 60:
         return "D"
     return "F"
 
