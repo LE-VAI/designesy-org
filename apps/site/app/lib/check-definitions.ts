@@ -196,7 +196,9 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      and v44 caps at 65 as v06 does. v34 FAILs only a
  *                      positively identified AI chat surface and cites SB
  *                      1001 and Colorado SB 26-189; v06 and v22 read CSS
- *                      Color 4 and :root, :host tokens. The CHANGELOG entry
+ *                      Color 4 and :root, :host tokens; v42 and v43 follow
+ *                      var() aliases, and a palette that role tokens alias
+ *                      is not counted as hue names. The CHANGELOG entry
  *                      lists the leaderboard score movement.
  */
 export const ENGINE_VERSION = '1.3.0';

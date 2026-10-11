@@ -41,6 +41,16 @@ designesy-mcp release. Contract v0.4.4 is unchanged.
   it as the muted text: in the shadcn convention `--muted` is a surface.
 - **Tokens declared as `:root, :host { }`** (the block Tailwind v4 writes its
   theme into) are extracted. Before, such a sheet extracted no tokens.
+- **v42 and v43 follow `var()` aliases**, and a palette that role tokens alias
+  is not a hue vocabulary. `--error: var(--red-700)` counts as a role-named
+  colour token (it was dropped, which inverted the verdict for the structure
+  v42's own remediation recommends). Hue-named primitives that a role token
+  reaches through its aliases are the palette layer and leave v42's role
+  share; a hue-named token no role token references still counts against it.
+  This is the two-tier structure DTCG 2025.10 (§3.8 aliases), Spectrum
+  (primitive tokens "are typically used indirectly through semantic tokens as
+  an alias") and Primer (base tokens "are generally used as a reference for
+  functional tokens") describe.
 
 ### Fixed (engine 1.3.0)
 
@@ -66,6 +76,8 @@ designesy-mcp release. Contract v0.4.4 is unchanged.
   threw "axe is not defined"; it now passes axe-core's source with the
   `axe.configure()` call to AxeBuilder as `axeSource`. The accessibility
   contract moves to 0.1.2 (a01 and the ruleset text).
+  The `url` argument is written into the script as a string literal; a quote
+  in it used to end the literal and turn the rest into code.
 - **`designesy_monitor_score`**: m01 is "History supplied" (PASS with at
   least one earlier run, SKIP on a first run, which is then not scored)
   instead of an unconditional PASS; the alert email no longer says the URL
@@ -76,18 +88,20 @@ designesy-mcp release. Contract v0.4.4 is unchanged.
 The 30 leaderboard URLs, each fetched once on 2026-10-11 and scored by the
 1.2.0 build and this one on the same bytes (scope auto-detected; 27 fetched,
 nytimes.com, getdesy.com and cssdesignawards.com did not answer). Grades move
-on three sites, scores on six:
+on four sites, scores on eight:
 
 | Site | 1.2.0 | 1.3.0 | Why |
 |---|---|---|---|
 | primer.style | 90.4 A | 89.9 B | v11 and v13 FAIL: the 89.9 cap |
 | github.com | 70 C | 65 D | v44 FAIL (status text): the new 65 ceiling |
-| x.com | 90.2 A | 86.7 B | its theme is a `:root, :host` block; 297 tokens are read where 0 were, and v42 (5 role-named against 215 hue-named colour tokens) and v43 (no ok/warn/error/info) WARN on them |
-| vercel.com | 84.6 B | 81.1 B | the same: v42 and v43 SKIP to WARN on its `:root, :host` theme |
-| designesy.ai.studio | 77.5 C | 74.5 C | the same: v42 PASS to WARN once the Tailwind palette is read |
+| x.com | 90.2 A | 86.7 B | its theme is a `:root, :host` block, read for the first time: v42 finds 5 role-named against 226 hue-named colour tokens, and no role token aliases any of them (197 are referenced straight from the stylesheet's rules); v43 finds no ok/warn/error/info |
+| stripe.com | 67.9 D | 70 C | v42 WARN to PASS: with aliases followed it counts 226 role-named against 59 hue-named colour tokens; 39 hue primitives that role tokens alias are the palette layer |
+| vercel.com | 84.6 B | 81.1 B | as x.com: 1 role-named against 12 hue-named, v43 no status families |
+| designesy.ai.studio | 77.5 C | 74.5 C | its 25 Tailwind hue tokens are read, no role token aliases them, all 25 are used straight from its rules |
 | carbondesignsystem.com | 81.6 B | 82.8 B | v06 and v22 SKIP to PASS: its `oklch()` tokens are measured (`--muted-foreground` 4.73:1) |
+| fwa.org | 51.5 F | 54.6 F | v42 SKIP to PASS: 13 role tokens that alias colours now count |
 
-The other 21 scores are unchanged. No v34 status changes on any of the 27.
+The other 19 scores are unchanged. No v34 status changes on any of the 27.
 
 ---
 
