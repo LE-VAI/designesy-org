@@ -716,7 +716,7 @@
 
 .home .home-points sup,
 .home .home-pillar-note sup {
-  font-size: 0.7em;
+  font-size: var(--text-label);
   line-height: 0;
   color: var(--ink);
 }
@@ -785,6 +785,7 @@
    so the panel's small caps label and its unit step up to --muted (6.89:1). */
 .home .home-health .section-heading-badge-label,
 .home .home-health .section-heading-badge-unit {
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -907,7 +908,7 @@
 }
 
 .home-contract-facts dt {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 

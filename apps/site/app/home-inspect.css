@@ -196,7 +196,7 @@
 }
 
 .inspect-step-n {
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   letter-spacing: 0.06em;
   color: var(--muted-dim);
 }
