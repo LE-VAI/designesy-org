@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { BrandIcon } from './brand-icons';
 import { usePathname } from 'next/navigation';
 import { useDockPacing } from './director-dock';
 
@@ -52,19 +53,8 @@ export function BackButton() {
       data-cuelume-press="tick"
       aria-label="Go back"
     >
-      <svg
-        viewBox="0 0 16 16"
-        width="15"
-        height="15"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M10 4L6 8l4 4" />
-      </svg>
+      {/* v2.1 chevron, drawn pointing right, turned to point back. */}
+      <BrandIcon name="chevron" size={15} style={{ transform: 'rotate(180deg)' }} />
       <span className="back-button-label">Back</span>
     </button>
   );

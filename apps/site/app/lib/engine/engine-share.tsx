@@ -5,6 +5,7 @@
 // copy button and two icon links, each with its own accessible name.
 
 import { useEffect, useState } from 'react';
+import { BrandIcon } from '../brand-icons';
 
 export function EngineShare({ path, text, label }: { path: string; text: string; label: string }) {
   const [native, setNative] = useState(false);
@@ -76,11 +77,7 @@ export function EngineShare({ path, text, label }: { path: string; text: string;
   );
 }
 
+/** Icon family v2.1: share. */
 function ShareGlyph() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" />
-      <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />
-    </svg>
-  );
+  return <BrandIcon name="share" size={14} />;
 }
