@@ -61,6 +61,11 @@ const FILES = [
   path.join('action', 'README.md'),
   path.join('action', 'dist', 'index.js'),
   path.join('apps', 'site', 'app', 'export', 'designmd', 'route.ts'),
+  // The one-line listing every MCP registry and directory copies (2026-10-11):
+  // server.json, which the official registry publishes, and the Server Card
+  // builder, which check-mcp-tool-parity.js holds to the same words.
+  'server.json',
+  path.join('apps', 'site', 'app', 'lib', 'mcp-server-card.ts'),
 ];
 
 const RULES = [
