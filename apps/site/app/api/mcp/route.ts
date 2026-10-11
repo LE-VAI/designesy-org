@@ -24,8 +24,12 @@
 // MCP Registry: io.github.LE-VAI/designesy-org (version: lib/mcp-version.ts; auto-republished on tag via OIDC)
 // Endpoint:     https://www.designesy.org/api/mcp
 
-import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { CONTRACT_VERSION, designSystemContract } from '../../lib/design-system-contract';
 import { MCP_SERVER_VERSION } from '../../lib/mcp-version';
+import { designReviewRubric, publishedJson, publishedText } from '../../lib/mcp-reference';
+// Every error a tool returns passes through sanitizeErrorText, so no result
+// carries a path on the machine that ran it (check-mcp-tool-parity.js).
+import { sanitizeErrorText } from '../../lib/error-text';
 import { openIndex } from '../../lib/open-index';
 import { createMcpHandler } from 'mcp-handler';
 import { after } from 'next/server';
@@ -35,6 +39,12 @@ import { buildReportAppHtml } from '../../lib/report-app-html';
 import { safeFetch } from '../../lib/url-guard';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
+import { motionContract } from '../../lib/motion-contract';
+import { scoreLottie } from '../../lib/motion-score';
+import { a11yContract } from '../../lib/a11y-contract';
+import { tokensContract } from '../../lib/tokens-contract';
+import { scoreTokens } from '../../lib/tokens-score';
+import { GUARDRAILS_PARTS, REPORT_DETAILS, guardrailsPartNames, guardrailsParts, reportSummary } from '../../lib/mcp-trim';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -67,6 +77,45 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
   const data = asJson ? await res.json() : await res.text();
   cache.set(url, { ts: now, data });
   return data;
+}
+
+// The full contract's size and top-level keys, DERIVED from the contract this
+// deployment serves at /contracts/design-system.json, so designesy_contract's
+// description cannot drift from what the tool returns. The tool returns
+// JSON.stringify(contract, null, 2); tokens are estimated at 4 characters each.
+const CONTRACT_KEYS = Object.keys(designSystemContract);
+const CONTRACT_JSON_CHARS = JSON.stringify(designSystemContract, null, 2).length;
+const CONTRACT_SIZE = `about ${Math.round(CONTRACT_JSON_CHARS / 1000)} KB (roughly ${Math.round(CONTRACT_JSON_CHARS / 4000)}k tokens)`;
+
+/** One JSON text content block, the shape every tool here returns. */
+function jsonContent(value: unknown) {
+  return { content: [{ type: 'text' as const, text: JSON.stringify(value, null, 2) }] };
+}
+
+/** A tool error: isError set, with what went wrong and the values that would work. */
+function contractError(message: string, unknown: string[], valid: string[]) {
+  return {
+    ...jsonContent({
+      success: false,
+      error: sanitizeErrorText(`${message} Valid sections: ${valid.join(', ')}.`),
+      unknown_sections: unknown,
+      valid_sections: valid,
+    }),
+    isError: true,
+  };
+}
+
+/** A designesy_guardrails parts error: isError set, with the names that would work. */
+function partsError(message: string, unknown: string[]) {
+  return {
+    ...jsonContent({
+      success: false,
+      error: sanitizeErrorText(`${message} Valid parts: ${GUARDRAILS_PARTS.join(', ')}.`),
+      unknown_parts: unknown,
+      valid_parts: [...GUARDRAILS_PARTS],
+    }),
+    isError: true,
+  };
 }
 
 // ── MCP Handler ────────────────────────────────────────────────────────────────
@@ -121,28 +170,40 @@ const handler = createMcpHandler(
       'designesy_contract',
       {
         ...mcpToolDisplay('designesy_contract'),
-        description: 'Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; cached ~24h server-side. Returns the full contract JSON, or a single section when "section" is provided. Pass section to get one slice (e.g. "motion" for just the motion tokens) instead of the full contract, which saves tokens when you only need one dimension.',
+        // The size and the key list are derived (CONTRACT_SIZE, CONTRACT_KEYS
+        // above). This read "cached ~24h server-side" while the server cached
+        // for 5 minutes, and offered no way to return less than ~25k tokens
+        // beyond a single named section.
+        description: `Get the Designesy design-system contract: the canonical tokens, motion, acoustic, takt, cadence, typography, components, and verification rules that define what the Designesy org considers legitimate design. Use this when you need the actual contract values (token names and values, motion timings, accessibility rules) to author, check, or bind a design. When NOT to use: for a pass/fail score of a live site, use designesy_score; for an agent-skill-format export, use designesy_skill_md. Read-only; this server caches the fetched contract for 5 minutes. With no arguments it returns the full contract JSON, ${CONTRACT_SIZE}. To return less, pass sections, a list of top-level keys such as ["motion", "colors"]: the result holds id, version, and only those keys. section (one name) is the older form and returns { section, data }. An unknown name returns an error that lists every valid key.`,
         inputSchema: z.object({
-          section: z.string().optional().describe('Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, verification_checks, open_tensions, components, interaction).'),
+          sections: z.array(z.string()).optional().describe(`Optional: top-level contract keys to return. The result holds id, version, and only these keys. Omit for the full contract. Valid keys: ${CONTRACT_KEYS.join(', ')}.`),
+          section: z.string().optional().describe('Optional, older form: one top-level key; returns { section, data }. Prefer sections.'),
         }),
       },
-      async ({ section }) => {
+      async ({ sections, section }) => {
         const data = await cachedFetch(`${BASE_URL}/contracts/design-system.json`, true) as Record<string, unknown>;
-        if (section && typeof section === 'string') {
-          const sectionKey = section as keyof typeof data;
-          if (sectionKey in data) {
-            return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ section, data: data[sectionKey] }, null, 2) }],
-            };
+        const valid = Object.keys(data);
+        // Own keys only: `in` would also accept inherited names such as "constructor".
+        const has = (k: string) => Object.prototype.hasOwnProperty.call(data, k);
+        if (sections !== undefined) {
+          // section, when also given, joins the list; duplicates are dropped.
+          const names = [...new Set([...(section ? [section] : []), ...sections])];
+          if (names.length === 0) {
+            return contractError('sections is empty; name at least one section, or omit it for the full contract.', [], valid);
           }
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ error: `Unknown section: ${section}`, available: Object.keys(data) }, null, 2) }],
-            isError: true,
-          };
+          const unknown = names.filter((n) => !has(n));
+          if (unknown.length > 0) {
+            return contractError(`Unknown contract section(s): ${unknown.join(', ')}.`, unknown, valid);
+          }
+          const slice: Record<string, unknown> = { id: data.id, version: data.version };
+          for (const n of names) slice[n] = data[n];
+          return jsonContent(slice);
         }
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        if (section) {
+          if (has(section)) return jsonContent({ section, data: data[section] });
+          return contractError(`Unknown contract section: ${section}.`, [section], valid);
+        }
+        return jsonContent(data);
       },
     );
 
@@ -151,7 +212,10 @@ const handler = createMcpHandler(
       'designesy_design_review',
       {
         ...mcpToolDisplay('designesy_design_review'),
-        description: 'Get the Designesy Design Review framework: an 8-dimension rubric (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility) plus the agent prompt, output format, and verification checklist for a qualitative design critique. Use this when you want a structured rubric to critique a design holistically, rather than a numeric compliance score. When NOT to use: for a deterministic numeric score, use designesy_score; this tool gives you a rubric, not a number. Read-only: returns the rubric + prompt. The calling agent performs the actual critique (this tool does not evaluate the design for you). Returns JSON: { rubric, dimensions[8], agent_prompt, output_format, verification_checklist }. Pass artifact/purpose/context/rules to get a pre-filled critique prompt; omit all four to get the blank framework.',
+        // Returns the kit's rubric without its agent_prompt (see
+        // designReviewRubric in lib/mcp-reference.ts for why). The Returns
+        // shape below is the object designReviewRubric builds.
+        description: 'Get the Designesy Design Review rubric for a qualitative design critique: eight dimensions (Purpose, Clarity, Context, Inclusion, System coherence, Durability, Delight, Responsibility), the output format, and the verification checklist, from the published Design Review kit. Use this when you want a structured rubric to critique a design holistically, rather than a numeric compliance score. When NOT to use: for a deterministic numeric score, use designesy_score; this tool gives you a rubric, not a number. Read-only: it returns reference data and does not evaluate the design. Returns JSON: { kind: "review_rubric", source_url, note, inputs (only when passed), kit { id, title, version, status, purpose, quality_bar, permission }, when_to_use[], required_inputs[], dimensions[8] { num, title, desc }, output_format[], verification_checklist[], anti_patterns[], rationalizations[], kit_prompt_url, kit_prompt_note, omitted_fields[] }. The kit\'s copy-ready agent prompt is not included; kit_prompt_url is the page where a person can read it. Pass artifact, purpose, context, or rules to have them recorded in inputs (rules defaults to the current contract version).',
         inputSchema: z.object({
           artifact: z.string().optional().describe('URL or description of the artifact to review.'),
           purpose: z.string().optional().describe('What the design is trying to make possible.'),
@@ -160,31 +224,9 @@ const handler = createMcpHandler(
         }),
       },
       async ({ artifact, purpose, context, rules }) => {
-        const data = await cachedFetch(`${BASE_URL}/kits/design-review.json`, true) as Record<string, unknown>;
-        const hasArgs = artifact || purpose || context || rules;
-        if (hasArgs) {
-          const dimensions = (data.dimensions as Array<Record<string, unknown>>) || [];
-          const filledPrompt = {
-            artifact: artifact || 'Not specified',
-            purpose: purpose || 'Not specified',
-            context: context || 'Not specified',
-            rules: rules || 'designesy design system ' + CONTRACT_VERSION,
-            dimensions: dimensions.map((d) => ({
-              name: d.name,
-              question: d.question,
-              weight: d.weight,
-            })),
-            output_format: data.output_format,
-            verification_checklist: data.verification_checklist,
-            instructions: 'Review the artifact against each dimension. Score 0-5 per dimension. Provide evidence for each score. Submit the review as structured JSON.',
-          };
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify(filledPrompt, null, 2) }],
-          };
-        }
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        const source = `${BASE_URL}/kits/design-review.json`;
+        const kit = await cachedFetch(source, true) as Record<string, unknown>;
+        return jsonContent(designReviewRubric(kit, source, { artifact, purpose, context, rules }, 'designesy design system ' + CONTRACT_VERSION));
       },
     );
 
@@ -193,13 +235,12 @@ const handler = createMcpHandler(
       'designesy_skill_md',
       {
         ...mcpToolDisplay('designesy_skill_md'),
-        description: 'Get the Designesy SKILL.md: the agent-skill-format export of the design-system contract, written as behavioral rules an AI coding agent can drop into .agents/skills/ or a system prompt. Use this when you want the contract in a form that steers how an agent *builds* UI (tokens, anti-patterns, behavioral rules, verification). When NOT to use: for the raw contract JSON, use designesy_contract; for scoring, use designesy_score. Read-only: no side effects. Returns markdown text (SKILL.md format) to drop into .agents/skills/ or paste into a system prompt. No parameters.',
+        description: 'Get the Designesy SKILL.md: the agent-skill-format export of the design-system contract, for a user to save into .agents/skills/ or a system prompt so a coding agent builds UI to the contract (tokens, anti-patterns, rules, verification). Use this when the user wants the contract in that form. When NOT to use: for the raw contract JSON, use designesy_contract; for scoring, use designesy_score. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/markdown", note, omitted_sections[], content }, where content is the SKILL.md markdown (tens of thousands of characters) with any section written as steps or a prompt for an AI agent replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/contracts/skill`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/contracts/skill`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/markdown', text));
       },
     );
 
@@ -208,13 +249,15 @@ const handler = createMcpHandler(
       'designesy_agent_json',
       {
         ...mcpToolDisplay('designesy_agent_json'),
-        description: 'Get the Designesy agent discovery document (/.well-known/agent.json): the org identity, authority, ingest protocol, package index, machine-export list, permission policy, and citation templates. Use this when you are integrating with or enumerating Designesy as a machine agent and need the canonical discovery/manifest endpoint rather than one specific contract. When NOT to use: for the package list, use designesy_catalog (lighter); for the contract, use designesy_contract. Read-only: no side effects. Returns the /.well-known/agent.json object: { identity, authority, ingest_protocol, package_index, permission_policy, citation_templates }. No parameters.',
+        // The Returns shape named ingest_protocol, package_index,
+        // permission_policy and citation_templates; the published document's
+        // keys are ingest, packages, permission and cite.
+        description: 'Get the Designesy agent discovery document (/.well-known/agent.json) as reference data: the org identity, authority, discovery endpoints, package index, machine exports, permission policy, contact, and citation templates. Use this when integrating with or enumerating Designesy and need the canonical discovery manifest rather than one specific contract. When NOT to use: for the package list, use designesy_catalog (lighter); for the contract, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "application/json", note, omitted_fields[], document }, where document is the published object (schema, name, identity, authority, topics, discovery, ingest, packages, machine_exports, contact, permission, cite, and the rest) with any field written as steps for an AI agent (such as ingest.steps) removed and its path listed in omitted_fields. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/.well-known/agent.json`, true);
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        const source = `${BASE_URL}/.well-known/agent.json`;
+        const doc = await cachedFetch(source, true);
+        return jsonContent(publishedJson(source, doc));
       },
     );
 
@@ -223,13 +266,15 @@ const handler = createMcpHandler(
       'designesy_llms_txt',
       {
         ...mcpToolDisplay('designesy_llms_txt'),
-        description: 'Get the Designesy /llms.txt: a short agent-facing brief with the canonical reference, topic index, ingest steps, package list, and contact. Use this first when you don\'t know what Designesy is; it\'s the cheapest orientation path before pulling heavier artifacts. When NOT to use: for the full expanded brief, use designesy_llms_full_txt; for the contract itself, use designesy_contract. Read-only: no side effects. Returns text/plain (~500 tokens). No parameters.',
+        // The size is stated as a range that holds while the brief stays a
+        // short brief. It read "~500 tokens" while the file was ~6,900
+        // characters (~1,700 tokens).
+        description: 'Get the Designesy /llms.txt brief as reference data: what Designesy is, canonical links, topics, the published package list, machine exports, standing rules, and contact. Use this first when you don\'t know what Designesy is; at a few thousand characters it is the cheapest orientation path before pulling heavier artifacts. When NOT to use: for the longer brief, use designesy_llms_full_txt; for the contract itself, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/plain", note, omitted_sections[], content }, where content is the published text with any section written as steps for an AI agent (such as the ingest steps) replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/llms.txt`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/llms.txt`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/plain', text));
       },
     );
 
@@ -238,18 +283,20 @@ const handler = createMcpHandler(
       'designesy_llms_full_txt',
       {
         ...mcpToolDisplay('designesy_llms_full_txt'),
-        description: 'Get the Designesy /llms-full.txt, the complete agent-facing brief: ingest protocol, discovery endpoints, every package, standing rules, anti-patterns, and a paste-ready agent prompt. Use this for comprehensive onboarding to the Designesy ecosystem when the short /llms.txt is not enough. When NOT to use: for a quick orientation, use designesy_llms_txt first (~500 tokens vs ~3000). Read-only: no side effects. Returns text/plain (~3000 tokens, includes a paste-ready agent prompt). No parameters.',
+        // It read "~3000 tokens" while the file was ~16,000 characters
+        // (~4,000 tokens), and it promised the paste-ready agent prompt, which
+        // is now left out of tool output.
+        description: 'Get the Designesy /llms-full.txt brief as reference data: authority, discovery endpoints, topics, every published package with its links, standing rules, and anti-patterns. Use this for a fuller picture of the Designesy ecosystem when the short brief from designesy_llms_txt is not enough. When NOT to use: for a quick orientation, use designesy_llms_txt (a few thousand characters; this one runs over ten thousand); for the contract itself, use designesy_contract. Read-only: no side effects. Returns JSON: { kind: "published_document", source_url, media_type: "text/plain", note, omitted_sections[], content }, where content is the published text with any section written as steps or a prompt for an AI agent (such as the ingest protocol and the paste-ready agent prompt) replaced by a one-line marker and named in omitted_sections. No parameters.',
       },
       async () => {
-        const data = await cachedFetch(`${BASE_URL}/llms-full.txt`, false) as string;
-        return {
-          content: [{ type: 'text' as const, text: data }],
-        };
+        const source = `${BASE_URL}/llms-full.txt`;
+        const text = await cachedFetch(source, false) as string;
+        return jsonContent(publishedText(source, 'text/plain', text));
       },
     );
 
     // ── Tool 8: designesy_score ───────────────────────────────────────────────
-    // Calls the internal /api/score endpoint — the 42-check verification engine
+    // Calls the internal /api/score endpoint — the contract verification engine
     // that already runs natively on this same Vercel project. No Python needed.
     server.registerTool(
       'designesy_score',
@@ -281,7 +328,7 @@ const handler = createMcpHandler(
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Score API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Score API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -302,35 +349,35 @@ const handler = createMcpHandler(
     );
 
     // ── Tool 9: designesy_tokens_score ─────────────────────────────────────────
-    // Validates a design token file against the W3C DTCG 2025.10 format.
-    // Can accept either a URL (fetches and parses) or a raw token JSON string.
-    // Runs 10 conformance checks (t01-t10) from the tokens contract.
+    // Validates a design token file against the W3C DTCG 2025.10 format: the
+    // tokens contract's ten checks (t01-t10), run by app/lib/tokens-score.ts.
+    // The checks used to be computed here; the PyPI server ports the module,
+    // and scripts/check-mcp-tool-parity.js holds the two to one golden. The
+    // contract is the one this deployment serves at /contracts/tokens.json.
+    // A SKIP is not scored: a clean file whose t07 has no custom types to
+    // check used to score 90, not 100.
     server.registerTool(
       'designesy_tokens_score',
       {
         ...mcpToolDisplay('designesy_tokens_score'),
-        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS/FAIL/WARN. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (t01-t10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Score: PASS=1, WARN=0, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], provenance, validator_note }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
           dtcg_file: z.string().optional().describe('Raw DTCG token JSON string to validate (alternative to url).'),
         }),
       },
       async ({ url, dtcg_file }) => {
-        // Fetch the tokens contract for check definitions
-        const contract = await cachedFetch(`${BASE_URL}/contracts/tokens.json`, true) as Record<string, unknown>;
-        const checks = (((contract.verification as Record<string, unknown> | undefined)?.checks as Array<Record<string, unknown>>) || []);
+        const failure = (message: string, extra: Record<string, unknown> = {}) => ({
+          ...jsonContent({ success: false, error: sanitizeErrorText(message), ...extra }),
+          isError: true,
+        });
 
         let tokenData: unknown = null;
-        let fetchError: string | null = null;
-
         if (dtcg_file) {
           try {
             tokenData = JSON.parse(dtcg_file);
           } catch {
-            return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in dtcg_file parameter' }, null, 2) }],
-              isError: true,
-            };
+            return failure('Invalid JSON in dtcg_file parameter');
           }
         } else if (url) {
           try {
@@ -338,260 +385,19 @@ const handler = createMcpHandler(
             const res = await safeFetch(url, {
               headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
             });
-            if (!res.ok) {
-              return {
-                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Fetch failed: ${res.status} ${res.statusText}` }, null, 2) }],
-                isError: true,
-              };
-            }
+            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
             tokenData = await res.json();
           } catch (e) {
-            fetchError = e instanceof Error ? e.message : String(e);
+            return failure(e instanceof Error ? e.message : String(e));
           }
         } else {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Either url or dtcg_file is required', contract_id: contract.id, contract_version: contract.version }, null, 2) }],
-            isError: true,
-          };
+          return failure('Either url or dtcg_file is required', { contract_id: tokensContract.id, contract_version: tokensContract.version });
         }
 
-        if (fetchError) {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: fetchError }, null, 2) }],
-            isError: true,
-          };
+        if (tokenData === null || typeof tokenData !== 'object' || Array.isArray(tokenData)) {
+          return failure('Token file is not a JSON object');
         }
-
-        // Run the 10 DTCG conformance checks (t01-t10)
-        const results: Array<Record<string, unknown>> = [];
-        const tokens = tokenData as Record<string, unknown>;
-        const tokenGroups = tokens.$tokens || tokens.tokens || tokens;
-
-        // t01: $schema present and points to designtokens.org
-        const hasSchema = !!tokens.$schema && typeof tokens.$schema === 'string';
-        const schemaValid = hasSchema && (tokens.$schema as string).includes('designtokens.org');
-        results.push({
-          id: 't01',
-          name: checks[0]?.item || '$schema declaration',
-          status: schemaValid ? 'PASS' : hasSchema ? 'WARN' : 'FAIL',
-          detail: hasSchema ? `Schema: ${tokens.$schema}` : 'No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json',
-        });
-
-        // t02: token groups exist
-        const groupKeys = Object.keys(tokenGroups).filter((k) => !k.startsWith('$'));
-        results.push({
-          id: 't02',
-          name: checks[1]?.item || 'Token groups present',
-          status: groupKeys.length > 0 ? 'PASS' : 'FAIL',
-          detail: `${groupKeys.length} token groups found: ${groupKeys.slice(0, 5).join(', ')}${groupKeys.length > 5 ? '...' : ''}`,
-        });
-
-        // t03-t10: iterate through tokens checking $type/$value structure
-        let typePassCount = 0;
-        let valuePassCount = 0;
-        let colorStructureCount = 0;
-        let colorBareHexCount = 0;
-        let totalTokens = 0;
-        const allTypes = new Set<string>();
-        const dimensionValues: Array<{ path: string; value: string }> = [];
-        const deprecatedPatterns: string[] = [];
-
-        // The 13 types DTCG 2025.10 defines: seven in its Types section and six
-        // in its Composite types section. Until 2026-10-08 (shipped with engine
-        // 1.1.0) this list lacked cubicBezier and carried seven names the format
-        // does not define (string, boolean, link, borderStyle, borderWeight,
-        // radius, spacing), so t06 WARNed on a conformant easing token and passed
-        // those names as standard. packages/designesy-mcp carries the same list,
-        // and its test suite asserts the two stay equal.
-        const DTCG_STANDARD_TYPES = new Set([
-          'color', 'dimension', 'fontFamily', 'fontWeight', 'duration',
-          'cubicBezier', 'number',
-          'strokeStyle', 'border', 'transition', 'shadow', 'gradient', 'typography',
-        ]);
-
-        const VALID_DIMENSION_UNITS = [
-          'px', 'rem', 'em', '%', 'vw', 'vh', 'vmin', 'vmax',
-          'ch', 'ex', 'svh', 'lvh', 'dvh', 'svw', 'lvw', 'dvw',
-          'cm', 'mm', 'in', 'pt', 'pc', 'fr',
-        ].sort((a, b) => b.length - a.length); // longest first for suffix matching
-
-        function extractUnit(v: string): string {
-          for (const unit of VALID_DIMENSION_UNITS) {
-            if (v.endsWith(unit)) return unit;
-          }
-          return '';
-        }
-
-        function walkTokens(obj: Record<string, unknown>, path: string = ''): void {
-          for (const [key, val] of Object.entries(obj)) {
-            if (key.startsWith('$')) continue;
-            const currentPath = path ? `${path}.${key}` : key;
-            if (val && typeof val === 'object' && !Array.isArray(val)) {
-              const v = val as Record<string, unknown>;
-              if (v.$value !== undefined) {
-                totalTokens++;
-                if (v.$type) {
-                  typePassCount++;
-                  if (typeof v.$type === 'string') allTypes.add(v.$type);
-                }
-                if (v.$value !== undefined) valuePassCount++;
-                // Check color tokens for structured format
-                if (v.$type === 'color') {
-                  if (v.$value && typeof v.$value === 'object' && 'colorSpace' in (v.$value as Record<string, unknown>)) {
-                    colorStructureCount++;
-                  } else if (typeof v.$value === 'string' && (v.$value as string).startsWith('#')) {
-                    colorBareHexCount++;
-                    deprecatedPatterns.push(`Color token '${currentPath}' uses bare hex (pre-2025.10 pattern)`);
-                  }
-                }
-                // Check dimension tokens for valid units
-                if (v.$type === 'dimension') {
-                  if (typeof v.$value === 'string') {
-                    dimensionValues.push({ path: currentPath, value: v.$value });
-                    if (!extractUnit(v.$value)) {
-                      deprecatedPatterns.push(`Dimension token '${currentPath}' has unrecognized or missing unit: '${v.$value}'`);
-                    }
-                  } else if (typeof v.$value === 'number') {
-                    dimensionValues.push({ path: currentPath, value: String(v.$value) });
-                    deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (should include unit string)`);
-                  }
-                }
-                // Check for deprecated $ref syntax
-                if ('$ref' in v) {
-                  deprecatedPatterns.push(`Token '${currentPath}' uses deprecated $ref syntax (use {path} in $value)`);
-                }
-              } else {
-                // Recurse into groups
-                walkTokens(v, currentPath);
-              }
-            }
-          }
-        }
-        walkTokens(tokenGroups as Record<string, unknown>);
-
-        // t03: $type on all tokens
-        results.push({
-          id: 't03',
-          name: checks[2]?.item || '$type on all tokens',
-          status: totalTokens > 0 && typePassCount === totalTokens ? 'PASS' : typePassCount > 0 ? 'WARN' : 'FAIL',
-          detail: `${typePassCount}/${totalTokens} tokens have $type`,
-        });
-
-        // t04: $value on all tokens
-        results.push({
-          id: 't04',
-          name: checks[3]?.item || '$value on all tokens',
-          status: totalTokens > 0 && valuePassCount === totalTokens ? 'PASS' : 'FAIL',
-          detail: `${valuePassCount}/${totalTokens} tokens have $value`,
-        });
-
-        // t05: structured color format (colorSpace + components)
-        if (colorStructureCount + colorBareHexCount > 0) {
-          results.push({
-            id: 't05',
-            name: checks[4]?.item || 'Structured color format',
-            status: colorBareHexCount === 0 ? 'PASS' : colorStructureCount > 0 ? 'WARN' : 'FAIL',
-            detail: `${colorStructureCount} structured, ${colorBareHexCount} bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings.`,
-          });
-        } else {
-          results.push({
-            id: 't05',
-            name: checks[4]?.item || 'Structured color format',
-            status: 'SKIP',
-            detail: 'No color tokens found',
-          });
-        }
-
-        // t06: Standard type names — verify all $type values are in the DTCG 2025.10 set
-        const nonStandardTypes = [...allTypes].filter((t) => !DTCG_STANDARD_TYPES.has(t));
-        let t06Status: string, t06Detail: string;
-        if (totalTokens === 0) {
-          t06Status = 'SKIP'; t06Detail = 'No tokens found';
-        } else if (typePassCount === 0) {
-          t06Status = 'FAIL'; t06Detail = 'No tokens have $type: cannot verify standard type names';
-        } else if (nonStandardTypes.length === 0) {
-          t06Status = 'PASS'; t06Detail = `All ${allTypes.size} unique type(s) are DTCG 2025.10 standard: ${[...allTypes].sort().join(', ')}`;
-        } else {
-          t06Status = 'WARN'; t06Detail = `Non-standard type(s) found: ${nonStandardTypes.sort().join(', ')}. These may be valid custom types (see t07).`;
-        }
-        results.push({ id: 't06', name: checks[5]?.item || 'Standard type names', status: t06Status, detail: t06Detail });
-
-        // t07: Custom type extension — non-standard types should follow namespacing convention
-        const customTypes = [...allTypes].filter((t) => !DTCG_STANDARD_TYPES.has(t));
-        let t07Status: string, t07Detail: string;
-        if (customTypes.length === 0) {
-          t07Status = 'SKIP'; t07Detail = 'No custom types found';
-        } else {
-          const bareCustoms = customTypes.filter((t) => !t.includes('.'));
-          if (bareCustoms.length === 0) {
-            t07Status = 'PASS'; t07Detail = `All ${customTypes.length} custom type(s) use dot-namespacing: ${customTypes.sort().join(', ')}`;
-          } else {
-            t07Status = 'WARN'; t07Detail = `Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): ${bareCustoms.sort().join(', ')}`;
-          }
-        }
-        results.push({ id: 't07', name: checks[6]?.item || 'Custom type extension', status: t07Status, detail: t07Detail });
-
-        // t08: Dimension units — verify dimension tokens have valid CSS length units
-        let t08Status: string, t08Detail: string;
-        if (dimensionValues.length === 0) {
-          t08Status = 'SKIP'; t08Detail = 'No dimension tokens found';
-        } else {
-          const badUnits = dimensionValues.filter((d) => !extractUnit(d.value)).map((d) => `${d.path}='${d.value}'`);
-          if (badUnits.length === 0) {
-            t08Status = 'PASS'; t08Detail = `All ${dimensionValues.length} dimension token(s) use valid units (px, rem, em, %, etc.)`;
-          } else {
-            t08Status = badUnits.length < dimensionValues.length ? 'WARN' : 'FAIL';
-            t08Detail = `${badUnits.length}/${dimensionValues.length} dimension token(s) have missing/unrecognized units: ${badUnits.slice(0, 5).join(', ')}`;
-          }
-        }
-        results.push({ id: 't08', name: checks[7]?.item || 'Dimension units', status: t08Status, detail: t08Detail });
-
-        // t09: Token naming hierarchy — groups should exist (dot-notation is implicit in nesting)
-        let t09Status: string, t09Detail: string;
-        if (totalTokens === 0) {
-          t09Status = 'FAIL'; t09Detail = 'No tokens found: cannot assess naming hierarchy';
-        } else if (groupKeys.length > 0) {
-          t09Status = 'PASS'; t09Detail = `${groupKeys.length} token group(s) with nested hierarchy: ${groupKeys.slice(0, 5).join(', ')}${groupKeys.length > 5 ? '...' : ''}`;
-        } else {
-          t09Status = 'WARN'; t09Detail = 'No token groups found: tokens should be organized into groups (e.g., color, spacing, typography)';
-        }
-        results.push({ id: 't09', name: checks[8]?.item || 'Token naming hierarchy', status: t09Status, detail: t09Detail });
-
-        // t10: No deprecated patterns — check for pre-2025.10 patterns
-        let t10Status: string, t10Detail: string;
-        if (deprecatedPatterns.length === 0) {
-          t10Status = 'PASS'; t10Detail = 'No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)';
-        } else {
-          t10Status = 'WARN'; t10Detail = `${deprecatedPatterns.length} deprecated pattern(s) found: ${deprecatedPatterns.slice(0, 3).join('; ')}${deprecatedPatterns.length > 3 ? '...' : ''}`;
-        }
-        results.push({ id: 't10', name: checks[9]?.item || 'No deprecated patterns', status: t10Status, detail: t10Detail });
-
-        const passCount = results.filter((r) => r.status === 'PASS').length;
-        const failCount = results.filter((r) => r.status === 'FAIL').length;
-        const warnCount = results.filter((r) => r.status === 'WARN').length;
-        const score = Math.round((passCount / results.length) * 100);
-        const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              contract_id: contract.id,
-              contract_version: contract.version,
-              contract_status: contract.status,
-              url: url || '(inline dtcg_file)',
-              total_tokens: totalTokens,
-              score,
-              grade,
-              pass_count: passCount,
-              fail_count: failCount,
-              warn_count: warnCount,
-              checks: results,
-              provenance: 'W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8',
-              validator_note: 'Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)',
-            }, null, 2),
-          }],
-        };
+        return jsonContent(scoreTokens(tokenData as Record<string, unknown>, tokensContract, url || '(inline dtcg_file)'));
       },
     );
 
@@ -600,6 +406,12 @@ const handler = createMcpHandler(
     // axe-core requires a real DOM (browser), so this tool returns the
     // contract checks + a Playwright script template the calling agent runs
     // locally. The agent executes axe-core 4.13.0 via @axe-core/playwright.
+    //
+    // Each check is { id, name, status }, the name being the contract's own
+    // (its `item`). The route used to fetch the contract untyped and read
+    // c.name, which the contract rows do not have, so every check came back
+    // as { id, status }. It now reads the contract this deployment serves at
+    // /contracts/a11y.json, typed, so a field the rows lack does not compile.
     server.registerTool(
       'designesy_a11y_score',
       {
@@ -612,9 +424,7 @@ const handler = createMcpHandler(
         }),
       },
       async ({ url, ruleset, config }) => {
-        // Fetch the a11y contract for check definitions
-        const contract = await cachedFetch(`${BASE_URL}/contracts/a11y.json`, true) as Record<string, unknown>;
-        const checks = (((contract.verification as Record<string, unknown> | undefined)?.checks as Array<Record<string, unknown>>) || []);
+        const contract = a11yContract;
         const tag = ruleset || 'wcag22aa';
 
         // Parse config if provided
@@ -624,7 +434,7 @@ const handler = createMcpHandler(
             brandConfig = JSON.parse(config);
           } catch {
             return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in config parameter' }, null, 2) }],
+              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText('Invalid JSON in config parameter') }, null, 2) }],
               isError: true,
             };
           }
@@ -685,10 +495,9 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
               ruleset: tag,
               brand_config: brandConfig,
               summary: 'axe-core requires a real DOM. This tool returns the contract checks + a Playwright script. Execute the script locally with @axe-core/playwright 4.13.0 to get the actual score.',
-              checks: checks.map((c) => ({
+              checks: contract.verification.checks.map((c) => ({
                 id: c.id,
-                name: c.name,
-                description: c.description,
+                name: c.item,
                 status: 'PENDING_EXECUTION',
               })),
               playwright_script: playwrightScript,
@@ -703,36 +512,34 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     );
 
     // ── Tool 11: designesy_motion_score ───────────────────────────────────────
-    // Validates a Lottie file against LAC v1.0.1 JSON Schema + §16 standards.
-    // Can accept a URL (fetches and validates) or raw Lottie JSON string.
-    // Runs 10 conformance checks (m01-m10) from the motion contract.
+    // Runs the motion contract's ten checks (m01-m10) on one Lottie file. The
+    // checks live in app/lib/motion-score.ts: each computes its own verdict under
+    // its own id and the contract's name for that id. They used to be computed
+    // here as a different list of ten and labelled with the contract's names by
+    // array position, so every verdict sat under another check's name. The
+    // contract is the one this deployment serves at /contracts/motion.json.
     server.registerTool(
       'designesy_motion_score',
       {
         ...mcpToolDisplay('designesy_motion_score'),
-        description: 'Validate a Lottie animation file against the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards, returning 10 checks (m01-m10) with PASS/FAIL/WARN. The DTCG 2025.10 spec leaves motion tokens as a second-class citizen: there is no standard for motion token structure, reduced-motion markers, or animation accessibility. Designesy\'s motion validator fills this gap: it checks required fields (v, fr, ip, op, w, h, layers), $version, a markers array for reduced-motion compliance, and no deprecated version. Use this to verify a motion/animation asset is well-formed AND accessible: the only validator that checks both. When NOT to use: for full-site motion scoring (not a single Lottie file), use designesy_score. Executable: fetches the URL or parses the raw Lottie JSON, runs 10 checks server-side. No browser needed. Returns JSON: { checks[{id (m01-m10), name, status (PASS/FAIL/WARN), detail}], valid, score }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate one Lottie animation file against the Designesy motion contract: its ten checks (m01-m10), drawn from the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards. Each check returns PASS, FAIL, WARN or SKIP under the contract\'s own name for its id: m01 the schema\'s top-level animation object (layer contents are not validated, so a clean file returns SKIP, not PASS), m02 the required fields (v, fr, ip, op, w, h, layers), m03 no deprecated 4.x Bodymovin version, m04 a markers array, m05 a meta object, m06 a reduced-motion path (a marker or slot named for it, or a meta note of an external prefers-reduced-motion wrapper), m07 keyframe easing (linear, ease and ease-in curves fail), m08 duration within 300 ms (longer returns WARN, since a justification cannot be read from a file), m09 layout-property animation and m10 keyboard-initiated motion (both SKIP: they concern the page that embeds the file). Use this to check that a motion asset is well formed and carries reduced-motion support. When NOT to use: for the motion CSS of a whole site, use designesy_score. Executable: fetches the URL or parses the inline JSON; no browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, lottie_version, layer_count, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, provenance, validator_note }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a Lottie JSON file. The tool fetches and validates it.'),
           lottie_file: z.string().optional().describe('Raw Lottie JSON string to validate (alternative to url).'),
         }),
       },
       async ({ url, lottie_file }) => {
-        // Fetch the motion contract for check definitions
-        const contract = await cachedFetch(`${BASE_URL}/contracts/motion.json`, true) as Record<string, unknown>;
-        const checks = (((contract.verification as Record<string, unknown> | undefined)?.checks as Array<Record<string, unknown>>) || []);
-        const tenStandards = (((contract.conformance as Record<string, unknown> | undefined)?.ten_non_negotiable as Array<Record<string, unknown>>) || []);
+        const failure = (message: string, extra: Record<string, unknown> = {}) => ({
+          ...jsonContent({ success: false, error: sanitizeErrorText(message), ...extra }),
+          isError: true,
+        });
 
         let lottieData: unknown = null;
-        let fetchError: string | null = null;
-
         if (lottie_file) {
           try {
             lottieData = JSON.parse(lottie_file);
           } catch {
-            return {
-              content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Invalid JSON in lottie_file parameter' }, null, 2) }],
-              isError: true,
-            };
+            return failure('Invalid JSON in lottie_file parameter');
           }
         } else if (url) {
           try {
@@ -740,163 +547,19 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
             const res = await safeFetch(url, {
               headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
             });
-            if (!res.ok) {
-              return {
-                content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Fetch failed: ${res.status} ${res.statusText}` }, null, 2) }],
-                isError: true,
-              };
-            }
+            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
             lottieData = await res.json();
           } catch (e) {
-            fetchError = e instanceof Error ? e.message : String(e);
+            return failure(e instanceof Error ? e.message : String(e));
           }
         } else {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: 'Either url or lottie_file is required', contract_id: contract.id, contract_version: contract.version }, null, 2) }],
-            isError: true,
-          };
+          return failure('Either url or lottie_file is required', { contract_id: motionContract.id, contract_version: motionContract.version });
         }
 
-        if (fetchError) {
-          return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: fetchError }, null, 2) }],
-            isError: true,
-          };
+        if (lottieData === null || typeof lottieData !== 'object' || Array.isArray(lottieData)) {
+          return failure('Lottie file is not a JSON object');
         }
-
-        const lottie = lottieData as Record<string, unknown>;
-        const results: Array<Record<string, unknown>> = [];
-
-        // m01: required fields present
-        const required = ['v', 'fr', 'ip', 'op', 'w', 'h', 'layers'];
-        const missing = required.filter((f) => !(f in lottie));
-        results.push({
-          id: 'm01',
-          name: checks[0]?.item || 'Required fields present',
-          status: missing.length === 0 ? 'PASS' : 'FAIL',
-          detail: missing.length === 0
-            ? `All required fields present: ${required.join(', ')}`
-            : `Missing: ${missing.join(', ')}. Lottie spec v1.0.1 requires: ${required.join(', ')}`,
-        });
-
-        // m02: version string ($version / v)
-        const version = lottie.v as string;
-        const versionNum = parseInt(version || '0', 10);
-        results.push({
-          id: 'm02',
-          name: checks[1]?.item || 'Lottie version',
-          status: versionNum >= 10001 ? 'PASS' : versionNum > 0 ? 'WARN' : 'FAIL',
-          detail: `Version: ${version || 'missing'}. Spec v1.0.1 uses $version: 10001. Versions below 1.0 (v < 5.0) are deprecated.`,
-        });
-
-        // m03: frame rate (fr) is positive number
-        const fr = lottie.fr as number;
-        results.push({
-          id: 'm03',
-          name: checks[2]?.item || 'Frame rate',
-          status: typeof fr === 'number' && fr > 0 ? 'PASS' : 'FAIL',
-          detail: `fr: ${fr}. Must be a positive number (typically 24, 30, 60).`,
-        });
-
-        // m04: dimensions (w, h) are positive
-        const w = lottie.w as number;
-        const h = lottie.h as number;
-        results.push({
-          id: 'm04',
-          name: checks[3]?.item || 'Composition dimensions',
-          status: typeof w === 'number' && w > 0 && typeof h === 'number' && h > 0 ? 'PASS' : 'FAIL',
-          detail: `w: ${w}, h: ${h}. Both must be positive numbers.`,
-        });
-
-        // m05: layers array is non-empty
-        const layers = lottie.layers as Array<unknown>;
-        results.push({
-          id: 'm05',
-          name: checks[4]?.item || 'Layers present',
-          status: Array.isArray(layers) && layers.length > 0 ? 'PASS' : 'FAIL',
-          detail: `layers: ${Array.isArray(layers) ? layers.length : 'not an array'}. At least one layer is required.`,
-        });
-
-        // m06: in/out points (ip, op) are valid
-        const ip = lottie.ip as number;
-        const op = lottie.op as number;
-        results.push({
-          id: 'm06',
-          name: checks[5]?.item || 'In/out points',
-          status: typeof ip === 'number' && typeof op === 'number' && op > ip ? 'PASS' : 'WARN',
-          detail: `ip: ${ip}, op: ${op}. op must be greater than ip for a non-empty animation.`,
-        });
-
-        // m07: markers array for reduced-motion
-        const markers = lottie.markers as Array<unknown>;
-        results.push({
-          id: 'm07',
-          name: checks[6]?.item || 'Markers for reduced-motion',
-          status: Array.isArray(markers) && markers.length > 0 ? 'PASS' : 'WARN',
-          detail: Array.isArray(markers)
-            ? `${markers.length} markers. Markers enable reduced-motion segments. Designesy §16 recommends named segments for accessibility.`
-            : 'No markers array. Designesy §16 recommends markers for reduced-motion accessibility.',
-        });
-
-        // m08: no deprecated layer types
-        let deprecatedCount = 0;
-        if (Array.isArray(layers)) {
-          for (const layer of layers) {
-            const l = layer as Record<string, unknown>;
-            if (l.ty === 13 || l.ty === 12) deprecatedCount++; // deprecated layer types
-          }
-        }
-        results.push({
-          id: 'm08',
-          name: checks[7]?.item || 'No deprecated layers',
-          status: deprecatedCount === 0 ? 'PASS' : 'WARN',
-          detail: `${deprecatedCount} deprecated layer types found. Types 12, 13 are deprecated in Lottie spec v1.0.1.`,
-        });
-
-        // m09: §16 non-negotiable standards (metadata-level check — SKIP, requires runtime preview)
-        results.push({
-          id: 'm09',
-          name: checks[8]?.item || '§16 Ten Non-Negotiable Standards',
-          status: 'SKIP',
-          detail: `Ten standards from contract: ${tenStandards.map((s) => s.id || s.name).join(', ')}. Full verification requires runtime preview against §16 criteria; this check reads metadata only.`,
-        });
-
-        // m10: JSON Schema Draft 2020-12 conformance
-        results.push({
-          id: 'm10',
-          name: checks[9]?.item || 'JSON Schema conformance',
-          status: missing.length === 0 ? 'PASS' : 'FAIL',
-          detail: 'Validate with ajv 8.20.0 (ajv/dist/2020) + ajv-formats 3.0.1 against lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json',
-        });
-
-        const passCount = results.filter((r) => r.status === 'PASS').length;
-        const failCount = results.filter((r) => r.status === 'FAIL').length;
-        const warnCount = results.filter((r) => r.status === 'WARN').length;
-        const score = Math.round((passCount / results.length) * 100);
-        const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
-
-        return {
-          content: [{
-            type: 'text' as const,
-            text: JSON.stringify({
-              contract_id: contract.id,
-              contract_version: contract.version,
-              contract_status: contract.status,
-              url: url || '(inline lottie_file)',
-              lottie_version: version,
-              layer_count: Array.isArray(layers) ? layers.length : 0,
-              score,
-              grade,
-              pass_count: passCount,
-              fail_count: failCount,
-              warn_count: warnCount,
-              checks: results,
-              ten_non_negotiable: tenStandards,
-              provenance: 'Lottie spec v1.0.1 + JSON Schema Draft 2020-12 + designesy-core.v0.4.0 §7, §16',
-              validator_note: 'Canonical validator: ajv 8.20.0 (import Ajv from "ajv/dist/2020") + ajv-formats 3.0.1. Schema: lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json',
-            }, null, 2),
-          }],
-        };
+        return jsonContent(scoreLottie(lottieData as Record<string, unknown>, motionContract, url || '(inline lottie_file)'));
       },
     );
 
@@ -907,7 +570,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
       'designesy_drift_score',
       {
         ...mcpToolDisplay('designesy_drift_score'),
-        description: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full 42-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable: fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses :root custom properties and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, score (0-100), grade (A-F), pass, warn, fail, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+        description: `Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Use this when you need to verify whether a site (especially an AI-generated one) is drifting off its own declared token system. When NOT to use: for a full ${ENGINE_CHECK_COUNT}-check design-contract score, use designesy_score; for token-file format validation, use designesy_tokens_score. Executable: fetches the URL server-side, extracts all CSS (inline + linked stylesheets), parses custom property declarations (stylesheets, <style> blocks and style attributes) and var() references, runs 12 drift checks. No browser needed. Returns JSON: { ok, url, scope, score (0-100), grade (A-F), pass, warn, fail, skip, total, tokensExtracted, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.`,
         inputSchema: z.object({
           url: z.string().optional().describe('URL to scan for drift. Defaults to https://www.designesy.org/ if not provided.'),
         }),
@@ -922,7 +585,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Drift API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Drift API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -955,7 +618,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Readiness API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Readiness API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -969,16 +632,27 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
     // ── Tool 14: designesy_guardrails ───────────────────────────────────────────
     // Emits a frozen build-contract bundle (DTCG tokens, Stylelint config,
     // AGENTS.md rules, component contract, anti-patterns, DESIGN.md) from a live URL.
+    // `parts` returns only the named bundle files (app/lib/mcp-trim.ts): the full
+    // bundle measured about 10 KB to about 500 KB across ten sites, and a client
+    // that caps tool output cut designesy.org's 90 KB off.
     server.registerTool(
       'designesy_guardrails',
       {
         ...mcpToolDisplay('designesy_guardrails'),
-        description: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation, (6) DESIGN.md file (Google open spec, google-labs-code/design.md), the de-facto AI-readable design-context standard: YAML front matter plus a markdown body. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable: fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd }, checks[{id, item, category, status, detail}] }. Results cached ~24h per URL.',
+        description: `Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: (1) DTCG-format token file, (2) Stylelint config generated from token values, (3) AGENTS.md-format rules with token allowlist, (4) component contract with allowed prop patterns, (5) anti-pattern documentation, (6) DESIGN.md file (Google open spec, google-labs-code/design.md), the de-facto AI-readable design-context standard: YAML front matter plus a markdown body. Use this when you need to turn a design system into the file AI agents read and the lint that enforces it. When NOT to use: for design-contract scoring, use designesy_score; for token-file validation, use designesy_tokens_score; for drift detection, use designesy_drift_score. Executable: fetches the URL, extracts CSS + :root custom properties, generates the bundle. No browser needed. The full bundle grows with the number of tokens a site declares: about 7 KB to about 530 KB of JSON on the 26 sites measured (about 110 KB for designesy.org). To trim it, pass parts, a list of bundle file names such as ["designMd"] or ["tokens", "lintConfig"]: the result keeps score, grade, counts and checks, and its bundle holds only those files, in the order asked. Valid parts: ${GUARDRAILS_PARTS.join(', ')}. A single part can still be large on a site with many tokens. An unknown name returns an error that lists the valid parts. Returns JSON: { ok, url, score (0-100, emission completeness), grade, pass, warn, fail, total, tokensExtracted, bundle: { tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd }, checks[{id, item, category, status, detail}] }; with parts it adds parts, and bundle holds only the named files. Results cached ~24h per URL.`,
         inputSchema: z.object({
           url: z.string().optional().describe('URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.'),
+          parts: z.array(z.string()).optional().describe(`Optional: the bundle files to return, by name. Omit for the whole bundle. Valid parts: ${GUARDRAILS_PARTS.join(', ')}.`),
         }),
       },
-      async ({ url }) => {
+      async ({ url, parts }) => {
+        // Bad names are refused before the engine runs.
+        let names: string[] | null = null;
+        if (parts !== undefined) {
+          const picked = guardrailsPartNames(parts);
+          if ('error' in picked) return partsError(picked.error, picked.unknown);
+          names = picked.names;
+        }
         const targetUrl = url || `${BASE_URL}/`;
         const res = await fetch(`${BASE_URL}/api/guardrails`, {
           method: 'POST',
@@ -988,14 +662,12 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Guardrails API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Guardrails API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
         const data = await res.json();
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }],
-        };
+        return jsonContent(names ? guardrailsParts(data, names) : data);
       },
     );
 
@@ -1039,7 +711,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Monitor API returned ${res.status}: ${errText}`, url: targetUrl }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Monitor API returned ${res.status}: ${errText}`), url: targetUrl }, null, 2) }],
             isError: true,
           };
         }
@@ -1073,7 +745,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Compare API returned ${res.status}: ${errText}`, urlA, urlB }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Compare API returned ${res.status}: ${errText}`), urlA, urlB }, null, 2) }],
             isError: true,
           };
         }
@@ -1103,9 +775,10 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
       'designesy_report',
       {
         ...mcpToolDisplay('designesy_report'),
-        description: 'Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable: fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.',
+        description: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict (the report is the most shareable surface). When NOT to use: for just the audit score, use designesy_score; for just drift, use designesy_drift_score; for just AI readiness, use designesy_readiness_score. Executable: fires 3 internal APIs in parallel, each fetches the target URL. No browser needed. The full result is large: about 75 to 100 KB of JSON on the ten sites measured, on the order of 20,000 tokens or more, because it carries each engine's whole result beside the merged check list. To trim it, pass detail "summary": the same keys with fewer rows, about 4 to 31 KB on the same sites. It keeps the composite, the totals, each engine's score, grade and counts, and only the checks and synthesis entries that did not PASS; omitted counts what was left out. detail "full" (the default) returns everything. Returns JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), score { sub-result }, drift { sub-result }, readiness { sub-result }, totalChecks, totalPass, totalWarn, totalFail, totalSkip, totalManual, checks[] (all checks across all engines, tagged with engine), synthesis[] (8 synthesis checks verifying the report ran correctly), appUrl (standalone interactive dashboard URL) }; with detail "summary" it adds detail and omitted. Results cached ~24h per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui render an interactive dashboard inline; others get the JSON plus an appUrl link.`,
         inputSchema: z.object({
           url: z.string().describe('Public URL to generate a design-intelligence report for.'),
+          detail: z.enum(REPORT_DETAILS).optional().describe('Optional: "full" (the default) returns everything; "summary" returns the composite, the totals, each engine\'s score, grade and counts, and only the checks that did not PASS.'),
         }),
         // MCP Apps (SEP-1865) — declare the UI resource. Apps-capable hosts
         // fetch ui://designesy/report-app (served by /api/report/app) and
@@ -1118,7 +791,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
           },
         },
       },
-      async ({ url }) => {
+      async ({ url, detail }) => {
         const res = await fetch(`${BASE_URL}/api/report`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1127,7 +800,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);
           return {
-            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: `Report API returned ${res.status}: ${errText}`, url }, null, 2) }],
+            content: [{ type: 'text' as const, text: JSON.stringify({ success: false, error: sanitizeErrorText(`Report API returned ${res.status}: ${errText}`), url }, null, 2) }],
             isError: true,
           };
         }
@@ -1136,9 +809,10 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
         // the interactive dashboard in a browser. Apps-aware hosts ignore
         // this — they render the ui:// resource inline.
         const payload = { ...data, appUrl: `${BASE_URL}/api/report/app?url=${encodeURIComponent(url)}` };
-        return {
-          content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }],
-        };
+        // detail "summary" (app/lib/mcp-trim.ts): the full report measured about
+        // 75 to 100 KB across ten sites, and a client that caps tool output cut
+        // designesy.org's 100 KB off.
+        return jsonContent(detail === 'summary' ? reportSummary(payload) : payload);
       },
     );
 

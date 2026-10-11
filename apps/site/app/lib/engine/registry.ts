@@ -260,7 +260,7 @@ const REPORT = build(
   ],
 );
 
-// ── Score: the 42-check contract, by category ──────────────────────────────
+// ── Score: the contract checks, by category ─────────────────────────────────
 function scoreRegistry(): EngineRegistry {
   const order: string[] = [];
   for (const c of CHECKS) if (!order.includes(c.category)) order.push(c.category);

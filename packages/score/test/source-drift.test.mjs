@@ -1,5 +1,5 @@
 /**
- * Source drift — the two 42-check engines must not diverge silently.
+ * Source drift — the two 44-check engines must not diverge silently.
  *
  * route.ts (the site and the MCP endpoint) and engine.ts (the npm CLI) are two
  * hand-maintained copies of one engine. This suite fails when a change lands in
@@ -126,6 +126,42 @@ describe('source drift — route.ts vs engine.ts', () => {
     assert.deepEqual(f, [], `\n  ${f.join('\n  ')}\n`);
   });
 
+  it('compares the score arithmetic and the call to it in both orchestrators', () => {
+    const { route, engine } = loadUnits();
+    for (const k of ['fn:scoreArithmetic', 'call:scoreArithmetic']) {
+      assert.ok(route.has(k), `route.ts: ${k} not found`);
+      assert.ok(engine.has(k), `engine.ts: ${k} not found`);
+      assert.equal(route.get(k), engine.get(k), `${k} differs between the engines`);
+    }
+  });
+
+  it('fails when one engine reverts to its own accessibility floor (mutation on the real source)', () => {
+    // The divergence this guard was added for: until engine 1.2.0 the npm
+    // engine capped at 70 on ANY accessibility FAIL while the site capped only
+    // under 60%. Re-introduce it in engine.ts, in two ways, and require a finding.
+    const baseline = loadBaseline();
+    const routeUnits = unitsOf(readFileSync(ROUTE, 'utf8'), 'route.ts');
+    const src = readFileSync(ENGINE, 'utf8');
+
+    const threshold = src.replace('a11yScored > 0 && a11yPct < 60', 'a11yScored > 0 && a11yPct < 100');
+    assert.notEqual(threshold, src, 'the floor condition was not found in engine.ts; update this mutation');
+    const f1 = findings({ route: routeUnits, engine: unitsOf(threshold, 'engine.ts') }, baseline);
+    assert.ok(f1.some((l) => l.startsWith('fn:scoreArithmetic differs')), `a changed floor in engine.ts was not reported:\n  ${f1.join('\n  ')}`);
+
+    // An engine that stops calling the shared step and floors inline instead.
+    const bypass = src.replace(
+      /scoreArithmetic\(checks, slopTotal, originalityPoints\);/,
+      "scoreArithmetic(checks.filter((c) => c.category !== 'accessibility'), slopTotal, originalityPoints);",
+    );
+    assert.notEqual(bypass, src, 'the call to scoreArithmetic was not found in engine.ts; update this mutation');
+    const f2 = findings({ route: routeUnits, engine: unitsOf(bypass, 'engine.ts') }, baseline);
+    assert.ok(f2.some((l) => l.startsWith('call:scoreArithmetic differs')), `a changed call in engine.ts was not reported:\n  ${f2.join('\n  ')}`);
+
+    const removed = src.replace(/= scoreArithmetic\(/, '= scoreArithmeticLocal(');
+    const f3 = findings({ route: routeUnits, engine: unitsOf(removed, 'engine.ts') }, baseline);
+    assert.ok(f3.some((l) => l.startsWith('call:scoreArithmetic exists only in route.ts')), `a missing call in engine.ts was not reported:\n  ${f3.join('\n  ')}`);
+  });
+
   it('detects a one-sided edit (mutation check on the live sources)', () => {
     // Guard the guard: take the real units, change ONE side of one matching unit
     // and of one baselined unit, and require findings for both.
@@ -185,7 +221,8 @@ describe('source drift — the package public API surface', () => {
         'isValidUrl', 'normalizeInputUrl', 'scoreFromParts', 'scoreUrl', 'statusToSeverity',
       ],
       const: ['CONTRACT_VERSION'],
-      type: ['CheckResult', 'PageOutcome', 'ScorePartsInput', 'ScoreResult', 'ScoreScope'],
+      // CheckEvidence: engine 1.2.0, the evidence v44 and v45 attach to their results.
+      type: ['CheckEvidence', 'CheckResult', 'PageOutcome', 'ScorePartsInput', 'ScoreResult', 'ScoreScope'],
     };
     const actual = surface();
     const added = {};

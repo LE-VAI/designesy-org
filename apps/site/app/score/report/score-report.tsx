@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ShareButton } from '../../lib/share-button';
 import { ReviewPrompt } from '../../lib/review-prompt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { isEmptyRun, emptyRunReason, resultAnnouncement, categoryLabel } from '../verdict';
+import { ScoreEmptyRun } from '../score-empty-run';
 type CheckResult = {
   id: string;
   item: string;
@@ -43,8 +45,11 @@ type SlopResult = {
 
 type ScoreResponse = {
   ok: boolean;
-  score?: number;
-  grade?: string;
+  /** null when the target could not be read: there is no score to report. */
+  score?: number | null;
+  grade?: string | null;
+  unreachable?: boolean;
+  unreachableDetail?: string;
   pass?: number;
   fail?: number;
   warn?: number;
@@ -109,6 +114,12 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  // Bumped by "Try again" on the failure and empty-run states, to run again.
+  const [attempt, setAttempt] = useState(0);
+  // What the polite region says. It starts empty and is written after the
+  // page has painted (below), so the loading line arrives as a change.
+  const [liveText, setLiveText] = useState('');
+  const retry = () => setAttempt((a) => a + 1);
 
   useEffect(() => {
     if (!initialUrl) {
@@ -149,7 +160,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     }
 
     runScore();
-  }, [initialUrl]);
+  }, [initialUrl, attempt]);
 
   // Group checks by category
   const checksByCategory = useMemo(() => {
@@ -184,19 +195,66 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       .sort((a, b) => b.weight - a.weight);
   }, [result?.checks, result?.categoryScores]);
 
-  // Not-measured categories (Adobe Stardust pattern: show as null, not averaged)
+  // Not-measured categories (Adobe Stardust pattern: show as null, not
+  // averaged), by cause: a check that needs a live browser (the audit runs
+  // it), or one that does not apply to this site. One sentence said "require
+  // a live browser" for both, so categories that did not apply read as
+  // waiting on a browser.
   const notMeasured = useMemo(() => {
-    if (!result?.categoryScores) return [];
-    return CATEGORIES.filter((c) => {
-      const cs = result.categoryScores?.[c.key];
-      return cs && cs.score === null && (cs.skip > 0 || (cs.manual ?? 0) > 0);
-    }).map((c) => c.label);
+    const out = { browser: [] as string[], notApplicable: [] as string[] };
+    if (!result?.categoryScores) return out;
+    for (const [key, cs] of Object.entries(result.categoryScores)) {
+      if (!cs || cs.score !== null) continue;
+      if ((cs.manual ?? 0) > 0) out.browser.push(categoryLabel(key));
+      else if (cs.skip > 0) out.notApplicable.push(categoryLabel(key));
+    }
+    return out;
   }, [result?.categoryScores]);
+
+  // One polite region carries the run from first paint to its end: the
+  // loading line, then the failure. The loading region used to unmount with
+  // the run, and a region mounted with its text already in it is not reliably
+  // read, so the failure was never announced (WCAG 4.1.3). The run starts on
+  // page load, not on a press, so it waits its turn rather than cutting into
+  // the page being read. Its key keeps the one node across the two branches
+  // below; the visible error block stays out of it, so the failure is read
+  // once and without the block's link.
+  // A run that read nothing is not a score: the same empty-run card the score
+  // form shows, never a grade. The report used to default a missing score to 0
+  // and a missing grade to F, so a site that refused the fetch read "F 0.0%".
+  const emptyRun = status === 'ok' && !!result && (isEmptyRun(result) || result.score == null || !result.grade);
+  // A screen reader announces a change to a live region, never the text it
+  // was mounted with: the page starts loading, so the loading line was in the
+  // region from the server render and was never read, and on success the
+  // region unmounted, so a finished report was silent while focus stayed on
+  // the page body. The region now renders empty, every message is written
+  // into it once the page has painted, and it stays mounted on success too,
+  // where it reads the result (focus is left alone, so nothing is said twice).
+  const message =
+    status === 'loading'
+      ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
+      : status === 'error'
+        ? `Score failed. ${error ?? ''}`
+        : emptyRun && result
+          ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
+          : result
+            ? resultAnnouncement(result)
+            : '';
+  useEffect(() => {
+    const id = window.setTimeout(() => setLiveText(message), 150);
+    return () => window.clearTimeout(id);
+  }, [message]);
+  const live = (
+    <p key="live" className="sr-only" role="status" aria-live="polite">
+      {liveText}
+    </p>
+  );
 
   if (status === 'loading') {
     return (
-      <div className="report-loading" role="status" aria-live="polite">
-        <span className="sr-only">Evaluating {ENGINE_SCORED_CHECK_COUNT} contract checks against {initialUrl}…</span>
+      <>
+      {live}
+      <div key="loading" className="report-loading">
         {/* Hero skeleton: grade circle + score number + meta lines */}
         <div className="report-skel-hero">
           <div className="report-skel-circle" aria-hidden="true" />
@@ -229,25 +287,45 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           <div className="report-skel-row" />
         </div>
       </div>
+      </>
     );
   }
 
   if (status === 'error') {
     return (
-      <div className="report-error">
+      <>
+      {live}
+      <div key="error" className="report-error">
         <h2>Score failed</h2>
         <p>{error}</p>
-        <Link href="/score" className="score-action-btn">
-          Score a site →
-        </Link>
+        <div className="report-error-actions">
+          <button type="button" className="score-action-btn" onClick={retry} data-cuelume-press="tick">
+            Try again
+          </button>
+          <Link href="/score" className="score-action-btn">
+            Score a site →
+          </Link>
+        </div>
       </div>
+      </>
     );
   }
 
   if (!result) return null;
 
-  const score = result.score ?? 0;
-  const grade = result.grade ?? 'F';
+  if (emptyRun || result.score == null || !result.grade) {
+    return (
+      <>
+      {live}
+      <div key="empty" className="report-empty">
+        <ScoreEmptyRun url={scoredUrl} reason={emptyRunReason(result, scoredUrl)} onRetry={retry} />
+      </div>
+      </>
+    );
+  }
+
+  const score = result.score;
+  const grade = result.grade;
   const pass = result.pass ?? 0;
   const fail = result.fail ?? 0;
   const warn = result.warn ?? 0;
@@ -257,7 +335,9 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const scored = pass + warn + fail;
 
   return (
-    <div className="report">
+    <>
+    {live}
+    <div key="report" className="report">
       {/* ── HERO (Adobe Stardust: overall integer + letter + version label) ── */}
       <div className="report-hero">
         <div className="report-hero-score">
@@ -335,12 +415,24 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       )}
 
       {/* ── NOT MEASURED ── */}
-      {notMeasured.length > 0 && (
+      {(notMeasured.browser.length > 0 || notMeasured.notApplicable.length > 0) && (
         <div className="report-not-measured">
           <p>
-            <strong>Not measured (–):</strong> {notMeasured.join(', ')}. These
-            categories require a live browser and were excluded from scoring.
-            A missing dimension stays visible instead of being silently averaged.
+            <strong>Not measured (–):</strong>{' '}
+            {notMeasured.browser.length > 0 && (
+              <>
+                {notMeasured.browser.join(', ')} {notMeasured.browser.length === 1 ? 'needs' : 'need'} a live
+                browser (the browser audit runs {notMeasured.browser.length === 1 ? 'it' : 'them'}).{' '}
+              </>
+            )}
+            {notMeasured.notApplicable.length > 0 && (
+              <>
+                {notMeasured.notApplicable.join(', ')} {notMeasured.notApplicable.length === 1 ? 'does' : 'do'} not
+                apply to this site.{' '}
+              </>
+            )}
+            Both are left out of the score; a missing dimension stays visible
+            instead of being silently averaged.
           </p>
         </div>
       )}
@@ -533,8 +625,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
           </Link>
         </div>
         <p className="report-version">
-          Report generated against design system contract {CONTRACT_VERSION} · {ENGINE_CHECK_COUNT} checks ·{' '}
-          {total} checks evaluated
+          Report generated against design system contract {CONTRACT_VERSION} · {scored} of {total} checks scored
         </p>
         <p className="report-caveat" style={{ fontSize: '0.78rem', color: 'var(--muted-dim)', lineHeight: 1.5, marginTop: '0.5rem', maxWidth: '64ch' }}>
           A high score means the site ships the contract primitives the engine
@@ -552,5 +643,6 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
         <ReviewPrompt />
       </div>
     </div>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "@designesy/score",
-  "version": "0.6.0",
-  "description": "Standalone 42-check design-contract scoring engine: fetches a URL, extracts CSS + tokens, and runs all checks locally. Zero dependencies.",
+  "version": "0.7.1",
+  "description": "Standalone 44-check design-contract scoring engine: fetches a URL, extracts CSS + tokens, and runs all checks locally. No required dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
   "homepage": "https://www.designesy.org/score",
@@ -42,6 +42,9 @@
   ],
   "engines": {
     "node": ">=18.0.0"
+  },
+  "optionalDependencies": {
+    "@google/design.md": "0.4.0"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

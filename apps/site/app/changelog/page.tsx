@@ -346,6 +346,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'A rendered sweep of every public page found 230 text elements under WCAG AA in the light theme and 11 in the dark. Nearly all were one mistake repeated: a colour chosen to mark a state (3 to 1 is enough for an icon) used to write the word for it (text needs 4.5 to 1). A text token per hue makes the right choice the default, and the site build now fails on a bare hue used as text.',
     source: 'WCAG 2.2 SC 1.4.3 and 1.4.11, rendered contrast sweep of designesy.org (2026-10-08), CSS Color 5 color-mix()',
   },
+
+  // ── v0.4.3 (engine 1.2.0): two checks found on this site ──
+  {
+    version: 'v0.4.3 · engine 1.2.0',
+    date: '2026-10-09',
+    dimension: 'verification',
+    change: 'added',
+    title: 'Engine 1.2.0: status text contrast and paused entrances',
+    description:
+      'v44 measures every status color a stylesheet uses as text, in every theme it declares, and fails a status-named color with a hue that reads under 4.5 to 1 (3 to 1 for large text, an icon or a bar) on a surface the stylesheet attests; where it cannot attest the surface, or the text is white or grey, it warns. v45 fails an entrance that starts at opacity 0 and stays held invisible when a visitor pauses motion. Every score gains both, so the engine runs 44 checks. The S2 and S8 anti-slop rules stop deducting for components and prose, and the npm engine caps scores by the same accessibility floor as the site.',
+    checks: ['v44', 'v45'],
+    rationale:
+      'Both defects shipped on this site and passed every check the engine had: the CSS was valid and the default view looked right. The light warning color wrote status words at 3.51 to 1, and the pause control emptied whole pages for the visitors who had asked for less motion. A check that catches its own author is the one worth publishing.',
+    source: 'WCAG 2.2 SC 1.4.3 and 2.2.2, CSS Animations Level 1 (animation-play-state), engine 1.2.0 entry in CHANGELOG.md',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -374,6 +389,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
   { version: 'v0.4.3', date: '2026-10-09', checks: 42, title: 'Text-contrast pass', summary: 'Every status, grade and activation colour gains a text token that reads at 4.5 to 1 or better in both themes; light --muted-dim darkens. No check or verdict changed.' },
   { version: 'v0.4.2 · engine 1.1.0', date: '2026-10-08', checks: 42, title: 'Engine baseline fixes', summary: 'v05 accepts opt-in motion, v27 skips pages with no field, v14 and v18 become optional for external sites, and the token validator uses the 13 DTCG types. The contract is unchanged.' },
+  { version: 'v0.4.3 · engine 1.2.0', date: '2026-10-09', checks: 44, title: 'Status text and paused entrances', summary: 'v44 status colors used as text meet contrast in every theme; v45 pausing motion keeps content visible. S2 and S8 stop firing on components and prose. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

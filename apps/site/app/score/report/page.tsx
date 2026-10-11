@@ -29,8 +29,9 @@ export async function generateMetadata({
   });
 
   if (scoredUrl) {
-    const ogImageUrl = `${SITE_BASE}/score/report/opengraph-image?url=${encodeURIComponent(scoredUrl)}`;
-    const twImageUrl = `${SITE_BASE}/score/report/twitter-image?url=${encodeURIComponent(scoredUrl)}`;
+    // /score/report/og reads ?url= (a metadata image route cannot; app/score/report/og/route.ts).
+    const ogImageUrl = `${SITE_BASE}/score/report/og?url=${encodeURIComponent(scoredUrl)}`;
+    const twImageUrl = ogImageUrl;
     return {
       ...base,
       openGraph: {

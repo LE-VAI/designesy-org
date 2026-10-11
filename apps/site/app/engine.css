@@ -48,7 +48,12 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-12);
-  margin: 0 0 var(--space-20);
+  /* Room for the focus ring. A scroller clips its padding box on both axes,
+     and the line is one 17px row, so the link's ring (2px, 3px out) lost its
+     top and bottom. The line pads 6px above and below and gives it back as
+     margin: the same layout, and the whole ring inside the clip. */
+  padding-block: var(--space-6);
+  margin: calc(-1 * var(--space-6)) 0 calc(var(--space-20) - var(--space-6));
   overflow-x: auto;
   scrollbar-width: none;
   font: 500 0.74rem/1.4 var(--mono);
@@ -2137,36 +2142,34 @@
   color: var(--muted-dim);
 }
 
-/* One register lattice for the four engines. 42 is 3 x 14 and 7 x 6, so on
-   fourteen tracks the contract score closes as three full rows ending on the
-   face's edge (the auto-fill lattice ended 75px short at 1440 and left
-   10/10/10/10/2 at 390). A narrow face takes six tracks, the one count that
-   closes three of the four registers: contract 42 as 7 x 6, drift 12 as
-   2 x 6, guardrails 6 as one row (seven left drift at 7 + 5 and guardrails
-   one cell short of the edge). Readiness's ten close as two rows of five on
-   the same six-track cell width, so every cell still stands under a column
-   of the contract score and both rows are whole. Six across a phone face
-   keeps each target wider than the 24px floor; fourteen would not. The gap
-   is a property so the five-track column measure can read it (touch sets
-   4px, below). */
+/* One register lattice for the four engines, derived from the check counts
+   (lib/engine/lattice.ts), not written for one count. Each cell list carries
+   its lattice as custom properties: the tracks (a divisor of the contract
+   score's count, nearest fourteen on a wide face and six on a narrow one, so
+   the contract closes as whole rows ending on the face's edge) and its own
+   columns (all of its cells on one row when they fit, else the largest
+   column count that divides it). Every register keeps the lattice's cell
+   width, so each cell stands under a column of the contract score. At 44
+   checks that is 4 x 11 wide and 11 x 4 narrow; at 42 it was 3 x 14 and
+   7 x 6. The narrow lattice keeps each target wider than the 24px floor at
+   390. The fallbacks are the old 42-check values. The gap is a property so
+   the column measure can read it (touch sets 4px, below). */
 .eg-minicells {
   --mc-gap: 0px;
+  --mc-tracks: var(--mc-tracks-narrow, 6);
+  --mc-cols: var(--mc-cols-narrow, 6);
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--mc-cols), calc((100% - (var(--mc-tracks) - 1) * var(--mc-gap)) / var(--mc-tracks)));
   gap: var(--mc-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.eg-minicells:has(> li:nth-child(10):last-child) {
-  grid-template-columns: repeat(5, calc((100% - 5 * var(--mc-gap)) / 6));
-}
-
 @container face (width >= 34rem) {
-  .eg-minicells,
-  .eg-minicells:has(> li:nth-child(10):last-child) {
-    grid-template-columns: repeat(14, minmax(0, 1fr));
+  .eg-minicells {
+    --mc-tracks: var(--mc-tracks-wide, 14);
+    --mc-cols: var(--mc-cols-wide, 14);
   }
 }
 
@@ -3511,13 +3514,14 @@ html[data-motion="paused"] .eg .eg-rule {
   }
   /* The path line's links ("the methodology") were 16px tall. The line is a
      scroller, which clips vertically too, so it takes the padding the links
-     need and gives it back as margin: 44px targets, the same layout. The
-     link's rule is its text underline (above), so the padding moves the hit
-     area and never the rule: it stays 3px under the glyphs. */
+     need, and the 6px their focus ring needs beyond that (above), and gives
+     it back as margin: 44px targets, the same layout. The link's rule is its
+     text underline (above), so the padding moves the hit area and never the
+     rule: it stays 3px under the glyphs. */
   .eg-path {
-    padding-block: var(--space-14);
-    margin-top: calc(-1 * var(--space-14));
-    margin-bottom: calc(var(--space-20) - var(--space-14));
+    padding-block: calc(var(--space-14) + var(--space-6));
+    margin-top: calc(-1 * (var(--space-14) + var(--space-6)));
+    margin-bottom: calc(var(--space-20) - var(--space-14) - var(--space-6));
   }
   .eg-path a {
     display: inline-block;

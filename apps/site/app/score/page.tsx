@@ -81,8 +81,9 @@ export async function generateMetadata({
   // When a URL is being scored, explicitly point social images to the dynamic
   // OG route with the url param so the grade card renders in link previews.
   if (scoredUrl) {
-    const ogImageUrl = `${SITE_BASE}/score/opengraph-image?url=${encodeURIComponent(scoredUrl)}`;
-    const twImageUrl = `${SITE_BASE}/score/twitter-image?url=${encodeURIComponent(scoredUrl)}`;
+    // /score/og reads ?url= (a metadata image route cannot; app/score/og/route.ts).
+    const ogImageUrl = `${SITE_BASE}/score/og?url=${encodeURIComponent(scoredUrl)}`;
+    const twImageUrl = ogImageUrl;
     return {
       ...base,
       openGraph: {

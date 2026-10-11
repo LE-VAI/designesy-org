@@ -5,7 +5,7 @@ import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
-import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT, ENGINE_MANUAL_CHECK_COUNT, ENGINE_VERSION } from '../../lib/check-definitions';
 import { openIndex } from '../../lib/open-index';
 import '../docs.css';
 
@@ -33,42 +33,42 @@ const TOOLS = [
   {
     name: 'designesy_contract',
     kind: 'Read-only',
-    desc: 'The design-system contract ' + CONTRACT_VERSION + ': tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions. Optional section filter.',
-    args: 'section?: string',
+    desc: 'The design-system contract ' + CONTRACT_VERSION + ': tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions. The full contract is the largest of the published documents the server returns; pass sections, a list of top-level keys, to get only those parts. An unknown key returns the list of valid keys.',
+    args: 'sections?: string[], section?: string (older single-key form)',
     source: '/contracts/design-system.json',
   },
   {
     name: 'designesy_design_review',
     kind: 'Read-only',
-    desc: 'The Design Review kit: 8 dimensions, agent prompt, output format, verification checklist. Optionally pre-fills the prompt with artifact, purpose, context, rules.',
+    desc: 'The Design Review rubric as reference data: 8 dimensions, output format, verification checklist, anti-patterns. Pass artifact, purpose, context or rules to have them recorded beside the rubric. The copy-ready prompt from the kit stays on the kit page, and the result links to it.',
     args: 'artifact?, purpose?, context?, rules?',
     source: '/kits/design-review.json',
   },
   {
     name: 'designesy_skill_md',
     kind: 'Read-only',
-    desc: 'The SKILL.md agent-skill export of the contract: behavioral rules, tokens, anti-patterns, and verification in paste-ready markdown.',
+    desc: 'The SKILL.md agent-skill export of the contract (behavioral rules, tokens, anti-patterns, verification) as reference data, with the markdown in content, ready to save into .agents/skills/.',
     args: 'none',
     source: '/contracts/skill',
   },
   {
     name: 'designesy_agent_json',
     kind: 'Read-only',
-    desc: 'The /.well-known/agent.json discovery document: identity, authority, ingest protocol, packages, machine exports, permission policy, cite templates.',
+    desc: 'The /.well-known/agent.json discovery document as reference data: identity, authority, discovery endpoints, packages, machine exports, permission policy, cite templates. The ingest steps written for agents are left out and named; the published file keeps them.',
     args: 'none',
     source: '/.well-known/agent.json',
   },
   {
     name: 'designesy_llms_txt',
     kind: 'Read-only',
-    desc: 'The short agent-facing brief: canonical reference, topics, ingest steps, package list, contact. Returns text/plain.',
+    desc: 'The short brief as reference data: canonical links, topics, package list, machine exports, standing rules, contact. The ingest steps written for agents are left out and named; the published file keeps them.',
     args: 'none',
     source: '/llms.txt',
   },
   {
     name: 'designesy_llms_full_txt',
     kind: 'Read-only',
-    desc: 'The full agent-facing brief: ingest protocol, discovery endpoints, all packages, standing rules, anti-patterns, and the complete paste-ready agent prompt. Returns text/plain.',
+    desc: 'The full brief as reference data: authority, discovery endpoints, all packages, standing rules, anti-patterns. The ingest protocol and the paste-ready agent prompt are left out and named; both stay in the published file.',
     args: 'none',
     source: '/llms-full.txt',
   },
@@ -82,7 +82,7 @@ const TOOLS = [
   {
     name: 'designesy_tokens_score',
     kind: 'Executable',
-    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown.',
+    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown. A check that cannot apply returns SKIP and is left out of the score.',
     args: 'url?: string, dtcg_file?: string',
     source: '/contracts/tokens.json',
   },
@@ -96,14 +96,14 @@ const TOOLS = [
   {
     name: 'designesy_motion_score',
     kind: 'Executable',
-    desc: 'Validate a Lottie animation file against Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards. Fetches from a URL or accepts raw JSON. Runs 10 checks (m01-m10): required fields, version, frame rate, dimensions, layers, in/out points, markers for reduced-motion, deprecated layers, section 16 standards, JSON Schema conformance.',
+    desc: 'Validate a Lottie animation file against the motion contract: its ten checks (m01-m10), drawn from Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards, each under its own name. Fetches from a URL or accepts raw JSON. The checks: the schema\'s top-level animation object, required fields, no deprecated 4.x version, a markers array, a meta object, a reduced-motion path, keyframe easing, duration within 300 ms, and two that concern the embedding page (layout-property animation, keyboard-initiated motion), which return SKIP for a file.',
     args: 'url?: string, lottie_file?: string',
     source: '/contracts/motion.json',
   },
   {
     name: 'designesy_drift_score',
     kind: 'Executable',
-    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() to undeclared custom properties), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, dangling alias chains). Fetches the URL, extracts all CSS, parses :root tokens and var() references.',
+    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/drift',
   },
@@ -117,8 +117,8 @@ const TOOLS = [
   {
     name: 'designesy_guardrails',
     kind: 'Executable',
-    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness.',
-    args: 'url?: string (defaults to designesy.org)',
+    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness. The full bundle grows with the site\'s token count, from about 7 KB to about 530 KB of JSON; pass parts to get only the files you need.',
+    args: 'url?: string (defaults to designesy.org), parts?: string[] (tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd)',
     source: '/api/guardrails',
   },
   {
@@ -138,8 +138,8 @@ const TOOLS = [
   {
     name: 'designesy_report',
     kind: 'Executable · MCP App',
-    desc: 'Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (42-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard.',
-    args: 'url: string',
+    desc: `Generate a unified design-intelligence report for a single URL, the synthesis capstone. Fires /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), and /readiness (10-check AI readiness) in parallel, then computes a weighted composite: score × 0.5 + drift × 0.3 + readiness × 0.2. One input, one output, one composite grade. Use this when you need a single holistic assessment instead of three separate scans, or when sharing a design-intelligence verdict. MCP App: hosts that support io.modelcontextprotocol/ui (Claude Desktop, Cursor v2.6+, VS Code, Goose) render an interactive dashboard inline: composite dial, sub-engine cards, tabbed check breakdown. Legacy clients get the JSON payload plus an appUrl link to the standalone dashboard. The full payload runs to about 75 to 100 KB of JSON; detail "summary" keeps the composite, each engine\'s score and grade, the totals and only the checks that did not PASS.`,
+    args: 'url: string, detail?: "summary" | "full" (default "full")',
     source: '/api/report + /api/report/app',
   },
 ];
@@ -355,6 +355,11 @@ export default function McpDocsPage() {
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 Contract score
               </p>
+              {/* designesy.org scored by engine 1.2.0 on 2026-10-09: every
+                  scored check passes, the browser-only checks read MANUAL, no
+                  slop is deducted, and the originality lift is clamped at 100.
+                  The counts are read from the registry so they always sum to
+                  the engine's total. */}
               <p
                 style={{
                   fontSize: '1.5rem',
@@ -363,10 +368,10 @@ export default function McpDocsPage() {
                   color: 'var(--ink)',
                 }}
               >
-                93% A
+                100% A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                {ENGINE_CHECK_COUNT}-check engine · 38 PASS / 0 FAIL / 0 WARN / 1 SKIP / 3 MANUAL
+                {ENGINE_CHECK_COUNT}-check engine {ENGINE_VERSION} · {ENGINE_SCORED_CHECK_COUNT} PASS / 0 FAIL / 0 WARN / 0 SKIP / {ENGINE_MANUAL_CHECK_COUNT} MANUAL
               </p>
             </div>
           </div>

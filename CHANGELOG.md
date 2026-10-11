@@ -6,6 +6,480 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.7] — 2026-10-10
+
+**designesy-mcp 1.13.7** (PyPI, MCP registry, hosted `/api/mcp`): six tools now return what their descriptions promise, and two tools no longer disagree about one page. Found by a tool-by-tool re-test of 1.13.6.
+
+### Fixed
+
+- **`designesy_a11y_score` checks carry their names.** The description
+  promises `checks[{id, name, status}]`; the hosted tool returned
+  `{id, status}`, because it read `name` from contract rows that keep the
+  name under `item`. Each check is now `{id, name, status}` with the a11y
+  contract's own name for its id. The hosted tool reads the contract module
+  this deployment serves, typed, so a field the rows lack no longer compiles.
+  The PyPI server already returned the names.
+- **`designesy_guardrails` and `designesy_drift_score` use one definition of
+  a fabricated token.** On www.designesy.org guardrails documented 158
+  fabricated tokens while drift's d02 found none. Guardrails counted every
+  `var()` name missing from a `:root` block, so references with a fallback,
+  properties declared on a component and properties set in `style`
+  attributes all counted. Both tools now call one function in the drift
+  module: a property is fabricated when it is referenced with no fallback and
+  declared nowhere. On www.designesy.org guardrails now documents 0, and its
+  g05 total falls from 557 to 399.
+- **`designesy_tokens_score` leaves SKIP out of the score.** A clean file
+  whose t07 had no custom types to check scored 90, because the score was
+  PASS / all ten checks x 100. It is now PASS / scored checks x 100 (WARN and
+  FAIL still count 0), the result adds `skip_count` and a `scoring`
+  statement, and the description states the rule, as `designesy_motion_score`
+  does. The site's own `/export/dtcg` scores 100 (it scored 90). The tokens
+  contract (0.1.1) states the new rule. The ten checks moved into
+  `apps/site/app/lib/tokens-score.ts` with a line-for-line port in the PyPI
+  server, and both produce one golden: the PyPI server now names each check
+  with the contract's name (it used short names of its own) and writes the
+  hosted server's detail text.
+- **`designesy_guardrails` emits a valid DTCG 2025.10 token file in the
+  site export's form.** It carried a `$schema` the export does not use,
+  aliases written as CSS variables (`{--muted-dim}`), bare hex colors, the
+  non-DTCG types `spacing` and `string`, and a `$meta` root key, and it
+  dropped a property whenever another one needed its name as a group. It now
+  uses the export's `$schema`, `{colorSpace, components, alpha}` colors,
+  `{group.token}` aliases that resolve, `$root` for a property that is also a
+  group, and DTCG types only; values the format cannot type are kept verbatim
+  in `$extensions.designesy.css`. On www.designesy.org: bare hex 27 to 0,
+  CSS-variable aliases 26 to 0, non-DTCG types 112 to 0, dropped properties
+  24 to 0, and the server's own tokens validator 60 with a t05 FAIL to 78
+  with no FAIL (t08 and t10 WARN on one dimension alias, `{space.16}`, which
+  the validator reads as a value with no unit). On the 22 reachable leaderboard sites that declare `:root`
+  tokens, the emitted file failed that validator on 19 and now fails it on
+  none. Structured values make the result larger (designesy.org 89,963 to
+  108,942 characters; 26 sites measured, about 7 KB to about 530 KB), and
+  the descriptions state the new sizes. The export and guardrails share the
+  schema URL and the color parser (`apps/site/app/lib/dtcg.ts`); the export's
+  output is unchanged.
+- **`designesy_monitor_score` m09 reports the design contract version.** It
+  read the scanned site's `agent.json` version, which on www.designesy.org is
+  the catalog's (0.1.7), while `designesy_score` reported v0.4.3. m09 now
+  reports the version `/api/score` reads from the contract module. The
+  monitor contract (0.1.1) describes m09 that way.
+- **`designesy_compare` rounds its score delta.** It printed
+  `15.400000000000006` for scores of 100 and 84.6. The delta and both scores
+  are rounded to two decimals, as the tool's contrast figures already were.
+- **The acoustic-tokens version reads from its module.** The catalog's
+  machine-export line and the export's download name said v0.1.1 while
+  `acoustic-tokens.ts` and `/acoustic-tokens.json` serve 0.2.0 (its version
+  history ends at 0.2.0, the extended cues). Both now read the module's
+  version, as do the catalog lines for the tokens, a11y, motion and
+  components contracts.
+
+### Added
+
+- **`scripts/check-mcp-accuracy.js`** (build and CI): runs the real route
+  modules offline on a made-up site and holds the six tools above to their
+  descriptions and to each other. `--measure <url>` prints what guardrails
+  and drift report about one live page. Its loader,
+  `scripts/lib/route-harness.js`, transpiles the site's TypeScript and stubs
+  only the network, so the same check can run against another checkout.
+- **`check-catalog-version-binding.js` reads the machine-export lines.** A
+  line that states a version must state the one its export serves.
+
+## [1.13.6] — 2026-10-10
+
+**designesy-mcp 1.13.6** (PyPI, MCP registry, hosted `/api/mcp`): `designesy_motion_score` reports each verdict under its own check, `designesy_report` and `designesy_guardrails` take an option that returns less, and the drift engine stops counting fallbacks and style-attribute declarations as fabricated tokens (Anthropic Software Directory Policy 2B, 5B).
+
+### Fixed
+
+- **`designesy_motion_score` verdicts sit under the right check (policy 2B).**
+  The tool computed ten checks of its own (required fields, version, frame
+  rate, dimensions, layers, in/out points, markers, deprecated layers, a §16
+  placeholder, schema) and named them with the motion contract's m01-m10 by
+  array position. The contract's checks are different, so every verdict sat
+  under another check's name: on a file with zero layers, no markers and no
+  meta, "meta object present" FAILed with "layers: 0", "markers array present"
+  PASSed with "w: 100, h: 100", and m09 listed the ten standards as ", , , ,"
+  because it read fields the contract does not have. Both servers now run the
+  contract's ten checks, each under its own id and the contract's name for it:
+  m01 the schema's top-level animation object, m02 the required fields, m03 no
+  4.x Bodymovin version, m04 a markers array, m05 a meta object, m06 a
+  reduced-motion path (a marker or slot named for it, or a meta note of an
+  external wrapper), m07 keyframe easing (linear, ease and ease-in fail), m08
+  duration within 300 ms, and m09 and m10, which concern the page that embeds
+  the file. A check a file cannot settle returns SKIP with the reason, never a
+  PASS: m01 does not validate layer contents, so a clean file is SKIP, and m09
+  and m10 cite their standard by number and rule from the contract. The score
+  now follows the contract (WARN counts 0.5, SKIP is not scored), the result
+  adds `skip_count` and `scoring`, and `validator_note` points at the schema
+  URL that exists (the old one was a 404). The hosted tool reads the contract
+  this deployment serves instead of fetching it from production.
+- **The drift engine's d02 and d12 stop failing on properties nobody
+  fabricated.** On www.designesy.org d02 (No fabricated tokens) and d12 (Token
+  alias chains resolve) FAILed on 13 properties. Of the 29 undeclared names on
+  the home page, 24 are always referenced with a fallback, `var(--x, 4px)`,
+  and 5 are declared in `style` attributes by React style objects; none is
+  referenced bare and declared nowhere. d02 now counts a property as
+  fabricated only when it is referenced with no fallback and declared nowhere:
+  not in a stylesheet, a `<style>` block or a `style` attribute. d12 reads
+  each chain whole, so one that ends in a fallback (`var(--x, var(--y, 4px))`)
+  resolves and one that ends in an undeclared property still dangles; it also
+  no longer reads a reference inside another `var()`'s fallback as a chain of
+  its own. d11 counts a property set in a `style` attribute as declared. A
+  property referenced bare and declared nowhere still FAILs. `/api/drift` and
+  `/api/monitor` read the attributes through one shared function and pass them
+  to `runDriftChecks`, so the two engines agree. On the leaderboard cohort
+  (27 of 30 sites reachable), drift and monitor scores move on 5 sites and no
+  others: www.designesy.org 83 to 100, atlassian.design 67 to 88,
+  designesy.ai.studio 75 to 83, stitch.withgoogle.com 63 to 67, linear.app 42
+  to 46. The leaderboard ranks by `/api/score` alone and does not move; the
+  report composite moves by 0.3 of the drift change.
+
+### Added
+
+- **`designesy_report` takes `detail` (policy 5B).** The full result is about
+  75 to 100 KB of JSON on the ten sites measured (designesy.org 100,166
+  characters), because it carries each engine's whole result beside the merged
+  check list. `detail: "summary"` returns the same keys with fewer rows: the
+  composite, the totals, each engine's score, grade and counts, and only the
+  checks and synthesis entries that did not PASS, plus `omitted` counting what
+  was left out (designesy.org 3,773 characters; 4 to 31 KB across the ten
+  sites). `"full"`, the default, returns what the tool always returned.
+- **`designesy_guardrails` takes `parts` (policy 5B).** The full bundle grows
+  with a site's token count: about 10 KB to about 500 KB on the ten sites
+  measured (designesy.org 89,963 characters). `parts`, a list of bundle file
+  names (`tokens`, `lintConfig`, `agentRules`, `componentContract`,
+  `antiPatterns`, `designMd`), returns only those files and keeps the score,
+  grade, counts and checks. An unknown name, an empty list or a value that is
+  not a list of strings returns an error (`isError: true`) listing the valid
+  parts, before the engine runs, as `designesy_contract`'s `sections` does.
+- **The two servers' motion checks and trimming are gated.** The PyPI suite
+  (`test_motion_score.py`, `test_trim.py`) and `check-mcp-tool-parity.js` run
+  their own implementation on the same Lottie fixtures and captured results
+  and compare with one golden file each; the gate also checks that the
+  fixtures' contract is the one the site serves.
+- **d02 and d12 are checked on fixture pages.** `check-d02-coverage.js` runs
+  ten pages through the shared drift checks, assembled the way `/api/drift`
+  assembles them, including true positives that must still FAIL.
+
+## [1.13.5] — 2026-10-10
+
+**designesy-mcp 1.13.5** (PyPI, MCP registry): no result or error the PyPI server returns carries a local file path.
+
+### Fixed
+
+- **The PyPI server scrubs local paths from what it returns.** A caught
+  error's text could carry the file system of the machine running the server:
+  the browser-probe errors (v02, v21), a failed `/api/score` call and the
+  JSON-RPC error messages quoted the exception as raised, path included.
+  `_scrub_local_paths` replaces absolute paths (a drive letter, a UNC share, a
+  POSIX home, temp or system root), `file://` URLs and npm cache segments with
+  "a local path", "a local file" or "the npm cache", keeps the clause that
+  says what failed, and runs on every offline check detail too. It mirrors
+  `sanitizeErrorText` in the TypeScript engines, and
+  `test/test_error_text.py` shares their cases.
+
+### Also merged since 1.13.4
+
+**@designesy/score 0.7.1** (npm), released on its own (`score-v0.7.1`).
+Engine 1.2.0, unchanged: no check, verdict or weight changes. Under `npx`, v37
+now runs the way it already runs on designesy.org, and no result carries a
+local file path.
+
+- **v37 runs under `npx @designesy/score`.** The engine lints a site's
+  `/DESIGN.md` with Google's `@google/design.md` linter, but 0.7.0 did not
+  declare the package, so under `npx` the import failed and v37 reported
+  MANUAL for every site that serves a DESIGN.md. 0.7.1 declares
+  `@google/design.md` 0.4.0 (Apache-2.0), the version the hosted engine runs,
+  as an optional dependency, which npm installs by default. For designesy.org
+  the CLI now returns what the site returns: 41 PASS and 3 MANUAL (v02, v04 and
+  v21, which need a browser), where 0.7.0 returned 40 PASS and 4 MANUAL. An
+  install that omits optional dependencies keeps the 0.7.0 behaviour for v37
+  (MANUAL, weight 0). The package's README and description no longer say
+  "zero dependencies": the engine needs none, and this one is optional.
+- **No result carries a local file path.** 0.7.0's v37 detail quoted Node's
+  error verbatim, including the absolute path of the npm cache it ran from,
+  and with it the name of the account that ran the CLI. Both engine copies now
+  pass every check detail, and the site's 502 error text, through one shared
+  `sanitizeErrorText`: absolute paths (a drive letter, a UNC share, a POSIX
+  home, temp or system root), `file://` URLs and npm cache segments become "a
+  local path", "a local file" or "the npm cache", and the clause that says
+  what failed stays ("Cannot find package '@google/design.md' imported from a
+  local path"). The source-drift gate compares the function and the
+  orchestrators' call to it. `test/error-text.test.mjs` pins the cases, each
+  failing with the sanitiser removed.
+
+## [1.13.4] — 2026-10-10
+
+**designesy-mcp 1.13.4** (PyPI, MCP registry, hosted `/api/mcp`): tool output reads as reference data, `designesy_contract` returns only the sections you ask for, and every description matches what its tool returns (Anthropic Software Directory Policy 2B, 2F, 5B).
+
+### Changed
+
+- **The document tools return labeled reference data, never an agent prompt
+  (policy 2F).** `designesy_llms_txt`, `designesy_llms_full_txt`,
+  `designesy_agent_json` and `designesy_skill_md` now return JSON:
+  `{ kind: "published_document", source_url, media_type, note, ... }`, with
+  the published text in `content` (or the published object in `document`).
+  Any part written as steps or a prompt for an AI agent is left out and named:
+  a markdown section keeps its heading and its body becomes a one-line marker
+  (listed in `omitted_sections`), and a JSON field is removed (listed in
+  `omitted_fields`). Today that is the ingest steps of `/llms.txt`, the ingest
+  protocol, the "Agents:" usage line and the paste-ready agent prompt of
+  `/llms-full.txt`, and `ingest.steps` of `/.well-known/agent.json`. The
+  published files are unchanged; only what the tools return changed. Until
+  now a tool result could carry "You are working with Designesy..." and "If
+  machine_url is present, fetch it for structured rules", which, inside a
+  conversation, read as instructions to the assistant.
+- **`designesy_design_review` returns the rubric without the kit's agent
+  prompt.** The result is `{ kind: "review_rubric", source_url, note, kit,
+  when_to_use, required_inputs, dimensions[8], output_format,
+  verification_checklist, anti_patterns, rationalizations, kit_prompt_url,
+  kit_prompt_note, omitted_fields }`, plus `inputs` when artifact, purpose,
+  context or rules are passed. The prompt told its reader to fetch the machine
+  kit and contract "for structured rules"; everything a review needs from it
+  is already a field here, and a person can still copy it from
+  `kit_prompt_url`. This also fixes the hosted tool's filled form, which mapped
+  each dimension to fields the kit does not have (`name`, `question`,
+  `weight`) and returned eight empty objects, and the PyPI tool's, which
+  replaced placeholders the prompt does not contain and defaulted `rules` to
+  contract v0.3.0.
+
+### Added
+
+- **`designesy_contract` takes `sections` (policy 5B).** The full contract is
+  about 100 KB of JSON (roughly 25k tokens) and the only way to trim it was one
+  named section. `sections`, a list of top-level keys, returns `id`, `version`
+  and only those keys. The default is still the full contract, and `section`
+  still returns `{ section, data }`. An unknown name, an empty list, or a value
+  that is not a list of strings returns an error (`isError: true`) naming the
+  unknown keys and listing every valid one; the PyPI server's unknown-section
+  reply used to be a success.
+- **The two servers' reference-data output is gated.** The PyPI suite
+  (`test_reference_data.py`) and `check-mcp-tool-parity.js` run their own
+  implementation on the same published-document fixtures and compare with one
+  golden file, and both check that the two directive patterns are the same.
+
+### Fixed
+
+- **Descriptions match what the tools return (policy 2B).** `designesy_llms_txt`
+  said "~500 tokens" for a brief of about 6,900 characters (about 1,700
+  tokens), and `designesy_llms_full_txt` "~3000" for about 16,000 characters.
+  Both now state ranges that hold ("a few thousand characters", "over ten
+  thousand"). `designesy_contract` said "cached ~24h server-side" while the
+  servers cache it for 5 minutes; the hosted description now derives the
+  contract's size and key list from the contract it serves.
+  `designesy_agent_json` named keys the document does not have
+  (`ingest_protocol`, `package_index`, `permission_policy`,
+  `citation_templates`). `designesy_tokens_score` and `designesy_motion_score`
+  promised a `valid` field neither returns and left SKIP out of the statuses.
+- The docs page (`/docs/mcp`) and both READMEs describe the new output.
+
+## [1.13.3] — 2026-10-09
+
+Released together: **engine 1.2.0** (designesy.org, `/api/score`, the MCP
+endpoint), **@designesy/score 0.7.0** (npm), and **designesy-mcp 1.13.3** (PyPI,
+MCP registry). Headlines: two checks found on this site, v44 and v45, join every score; the S2 and S8 anti-slop rules stop
+firing on components and prose; the npm engine's accessibility floor matches
+the site's. Contract mode moves to engine 1.3.0.
+
+### Added
+
+- **Engine 1.2.0: v44 and v45, two defects this site shipped and fixed.**
+  `ENGINE_VERSION` is now `1.2.0`. Both engine copies carry the identical change
+  and the source-drift gate reports them in agreement.
+
+  - **v44 (accessibility): status colors used as text meet contrast in every
+    declared theme.** A color picked to mark a state (a dot or a bar, where 3:1
+    is enough) gets reused to write the word for that state, which needs 4.5:1.
+    On designesy.org the light `--warn` #b07d04 painted status words at 3.51:1
+    on #fbfbfc; mixed toward the ink, `color-mix(in oklab, var(--warn) 70%,
+    var(--ink))`, it paints #7f5e21 at 5.76:1. The check measures every
+    `color` that reads a status color (directly, through one alias, or at
+    reduced alpha) in every theme the stylesheet declares (`:root`,
+    `[data-theme]` and `.dark`/`.light` blocks, including attribute
+    combinations, and `prefers-color-scheme` blocks). A theme named by part of
+    a compound theme selector also reads that compound's tokens before the
+    root's: primer.style declares its dark `--fgColor-danger` only under
+    `[data-color-mode=dark][data-dark-theme=dark]`. It resolves `var()`
+    chains, `color-mix()` in srgb, oklab and oklch (rounded to the 8-bit color
+    a browser paints), `light-dark()` and relative color syntax.
+    It measures on a surface the stylesheet attests: the rule's own background,
+    another rule's for the same element, or the nearest ancestor compound's in
+    the same selector (a `:hover` ancestor's own fill, else its fill without the
+    state), with translucent fills composited over the next surface out, else
+    the theme's page background. When an ancestor in an interactive state
+    (hover, active, focus, checked, expanded, selected, open) paints no fill
+    the stylesheet declares, the surface is unresolved and the finding WARNs at
+    most: v44 never FAILs a pairing it cannot attest. Text needs 4.5:1, large
+    text (24px, or 18.66px bold) 3:1. A non-text use is a graphic under WCAG
+    1.4.11 and needs 3:1: an svg subject, a class whose role word is icon,
+    octicon, glyph, spinner or indicator (or an `icon-`/`octicon-` prefix), a
+    progress or meter bar, a color named for an icon (`--button-danger-iconColor`),
+    or an element that paints its own background with `currentColor`. Only a
+    color named as a status (ok, success, warn, warning, error, danger, fail,
+    destructive, info, grade-a to grade-f) can FAIL, and only where it
+    resolves to a hue (Oklch chroma 0.06 or more). White, grey or near-grey
+    text under a status name (a counter or a keyboard hint on a danger button)
+    WARNs at most, with its ratio kept: it is a general text-contrast miss, not
+    a status color. A hue that counts only
+    because the stylesheet also paints it as a fill or border WARNs at most,
+    because its real surface is often a fill on an ancestor that a static
+    reading cannot see. Disabled states are exempt, as WCAG 1.4.3 exempts
+    inactive controls. SKIP when no status color is used as text. Results carry
+    `evidence`: up to 20 measured uses (selector, token, theme, color,
+    background, ratio, threshold) and a count of the rest. A ratio that misses
+    its threshold by less than a rounding step is shown rounded down (4.49, not
+    4.50, against 4.5).
+  - **v45 (motion): pausing motion keeps content visible.** A site-level pause
+    (`animation-play-state: paused` on every element, under an attribute or
+    class on the document or inside `prefers-reduced-motion: reduce`) holds
+    each animation on its current frame. An entrance whose first keyframe is
+    opacity 0 is then held invisible; on designesy.org a paused visitor got
+    empty pages. Each one-shot entrance that the pause holds must end or be
+    removed under it: `animation: none`, `animation-play-state: running`, or a
+    negative `animation-delay` at least as long as the animation (the site uses
+    -3600s). FAIL without one, WARN when the override's selector or scope does
+    not clearly match, SKIP when no rule pauses every element.
+
+  **Owner decision D10: legacy scores gain both checks.** A request without a
+  contract returns what engine 1.1.0 returned except for v44 and v45. The
+  registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
+  Category weights are unchanged (accessibility 15, motion 10, of 117), so each
+  accessibility check now carries 15/7 = 2.14 points where it carried 2.5, and
+  each motion check 2.0 where it carried 2.5. A SKIP leaves a score where it
+  was.
+
+### Fixed
+
+- **S2 and S8 stopped deducting for components and prose.** designesy.org lost
+  10 points to them, every one a false positive.
+  - **S2, "Full-page gradient background"**, counted `inset: 0` as full-bleed,
+    but `inset: 0` fills the nearest positioned ancestor. All three hits on
+    designesy.org were components: a 1px window sheen, a cell fill and a heatmap
+    bar. A gradient now needs viewport evidence: it is painted on `html`, `body`
+    or `:root`, or the rule is `position: fixed` and pinned to all four edges,
+    or it is sized in viewport units. `border-radius: inherit` marks a
+    component, and a gradient sized to 1px by `background-size` is a hairline.
+  - **S8, "AI-pill badge text"**, matched the whole HTML with no word boundary,
+    so "Generate" matched "generates" and "AI-generated", and it read the
+    framework's `<script>` payload, counting each sentence twice. It now strips
+    `<script>`, `<style>`, `<template>` and comments, matches whole words, and
+    counts only the text of a pill: an element whose class or role names a
+    badge, pill, chip, tag or CTA, a button, or a link, holding 40 characters
+    or fewer. A real "AI-powered" badge still counts.
+- **The npm engine's accessibility floor matches the site's.** The site caps a
+  score at 70 when the accessibility category is under 60% (WARN counts half),
+  as /methodology documents. `@designesy/score` capped at 70 on any
+  accessibility FAIL, so the CLI scored some pages lower than the site (with
+  v44, primer.style 70 in the CLI against 89.8 on the site). The score
+  arithmetic is now one function, `scoreArithmetic`, in both copies, and the
+  source-drift gate compares it and each orchestrator's call to it; a test
+  re-introduces the old floor in one copy and requires a finding.
+- **Scores carry one decimal, without float noise.** The shared score
+  arithmetic subtracted a fractional slop total and added the originality lift
+  without rounding, so a page weighted 72.6 with 20 points of slop and a +4
+  lift scored 56.599999999999994 in both engines. It now rounds to one
+  decimal, the precision scores are shown at, after both steps. No cohort
+  score moves by more than that noise.
+- **`@designesy/score` reports the current contract.** `CONTRACT_VERSION` read
+  `v0.4.1` in 0.6.0 while the site served v0.4.3. It reads `v0.4.3`, and a
+  test now compares it with the site's contract source.
+
+### Changed
+
+- **`@designesy/score` 0.7.0 (npm)** ships engine 1.2.0. The package exports
+  one new type, `CheckEvidence`, and `CheckResult` gains an optional `evidence`
+  field (additive). The v24 hard-fail ceiling
+  reason now matches the site's wording.
+- **`designesy-score` (npm) stays retired.** It is not republished; its
+  deprecation notice now points to `@designesy/score` with 44 checks and
+  contract v0.4.3.
+- **designesy-mcp 1.13.3 (PyPI).** The offline fallback mirrors engine 1.2.0
+  and contract v0.4.3. v44 and v45 are listed in `engine.not_run` with a reason,
+  so 27 of the 44 checks run offline. The tool descriptions state 44 checks,
+  and the remote-score note reads the check count from the engine's reply. The
+  offline engine's golden covers 118 cases and 229 runs.
+- **The four engines' check grid on /score follows the check count.** Its
+  lattice was written into the stylesheet for 42 cells (3 x 14 wide, 7 x 6
+  narrow) and left a last row of two at 44. It is derived from the contract
+  score's count: 4 x 11 wide and 11 x 4 narrow at 44.
+- **Calibration corpus 1.3.0**: seven fixtures for v44 and v45 (32 in all).
+  `test/engine-1-2-0.test.mjs` pins each rule's edges and both slop fixes.
+
+**Leaderboard impact, measured.** The HTML and CSS of the 30 seed sites were
+fetched once on 2026-10-09 with GET requests, one site at a time, and scored
+by engine 1.1.0 and engine 1.2.0 on the same bytes. The scores below use the
+site's arithmetic. The DESIGN.md probe (v37) was off in both runs, so a site
+that serves a DESIGN.md can differ from its live score by that check. 26 of 30
+sites were reachable; nytimes.com and cssdesignawards.com returned 403,
+getdesy.com refused the connection and awwwards.com timed out. v44: 1 FAIL,
+9 WARN, 4 PASS, 12 SKIP. v45: 1 PASS (designesy.org), 25 SKIP. The new checks
+alone move 8 sites by -1.8 to +1.2 (mean -0.02); the slop fixes alone move 11
+by 0 to +13 (mean +2.49); together 14 sites move, by 0 to +12.3 (mean +2.2),
+and six change grade. The live leaderboard keeps its current scores until the
+re-score that runs on release.
+
+  | Site | v44 | v45 | S2, S8 findings | Score: 1.1.0 → 1.2.0 | v44/v45 | S2/S8 | Delta | Grade |
+  |---|---|---|---|---|---|---|---|---|
+  | linear.app | WARN | SKIP | S2 21 → 0; S8 9 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | vercel.com | SKIP | SKIP | S2 1 → 0 | 81.0 → 86.0 | 0 | +5 | +5 | B |
+  | stripe.com | WARN | SKIP | S2 1 → 0; S8 12 → 0 | 66.9 → 67.9 | 0 | +1 | +1 | D |
+  | apple.com | SKIP | SKIP | no change | 83.1 → 83.1 | 0 | 0 | 0 | B |
+  | nytimes.com | not reached | | | | | | | |
+  | mozaika.design | SKIP | SKIP | no change | 65.1 → 65.1 | 0 | 0 | 0 | D |
+  | www.designesy.org | PASS | PASS | S2 3 → 0; S8 6 → 0 | 98.0 → 100.0 | 0 | +2 | +2 | A |
+  | designesy.ai.studio | PASS | SKIP | no change | 77.7 → 78.5 | +0.8 | 0 | +0.8 | C |
+  | getdesy.com | not reached | | | | | | | |
+  | stitch.withgoogle.com | SKIP | SKIP | S8 4 → 0 | 64.4 → 69.4 | 0 | +5 | +5 | D |
+  | zeroheight.com | WARN | SKIP | S8 3 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | roastbyai.com | SKIP | SKIP | S8 4 → 0 | 74.7 → 82.7 | 0 | +8 | +8 | C → B |
+  | atlassian.design | PASS | SKIP | no change | 91.9 → 93.1 | +1.2 | 0 | +1.2 | A |
+  | primer.style | WARN | SKIP | S2 2 → 0; S8 1 → 0 | 85.4 → 91.6 | -1.8 | +8 | +6.2 | B → A |
+  | carbondesignsystem.com | WARN | SKIP | S2 3 → 0; S8 2 → 0 | 69.3 → 81.6 | -0.7 | +13 | +12.3 | D → B |
+  | spectrum.adobe.com | SKIP | SKIP | no change | 69.1 → 69.1 | 0 | 0 | 0 | D |
+  | m3.material.io | WARN | SKIP | no change | 66.4 → 66.4 | 0 | 0 | 0 | D |
+  | radix-ui.com | WARN | SKIP | S2 2 → 0 | 65.2 → 70.0 | +0.4 | +4.8 | +4.8 | D → C |
+  | geist.dev | SKIP | SKIP | no change | 64.4 → 64.4 | 0 | 0 | 0 | D |
+  | plex.ibm.com | SKIP | SKIP | no change | 57.1 → 57.1 | 0 | 0 | 0 | F |
+  | awwwards.com | not reached | | | | | | | |
+  | fwa.org | WARN | SKIP | S8 1 → 0 | 47.9 → 51.5 | +0.6 | +3 | +3.6 | F |
+  | cssdesignawards.com | not reached | | | | | | | |
+  | pentagram.com | SKIP | SKIP | S8 4 → 0 | 56.6 → 56.6 | 0 | 0 | 0 | F |
+  | vam.ac.uk | SKIP | SKIP | S2 7 → 0 | 70.0 → 70.0 | 0 | 0 | 0 | C |
+  | github.com | FAIL | SKIP | S2 5 → 0; S8 6 → 0 | 68.5 → 70.0 | -1.8 | +10 | +1.5 | D → C |
+  | notion.so | WARN | SKIP | S2 2 → 1 | 65.5 → 65.5 | 0 | 0 | 0 | D |
+  | figma.com | SKIP | SKIP | S8 250 → 0 | 79.4 → 84.4 | 0 | +5 | +5 | C → B |
+  | x.com | SKIP | SKIP | no change | 90.2 → 90.2 | 0 | 0 | 0 | A |
+  | wikipedia.org | PASS | SKIP | no change | 83.0 → 83.8 | +0.8 | 0 | +0.8 | B |
+
+  A WARN carries half credit, so whether it raises or lowers a score depends on
+  where the accessibility category already stands; on this cohort the v44 WARNs
+  move scores by -1.8 to +0.6. A score that holds at 70 (linear.app,
+  zeroheight.com, vam.ac.uk) is held by the accessibility floor. pentagram.com
+  stays at 56.6 because its slop deduction is still at the 20-point cap without
+  S8.
+
+  **The one v44 FAIL, read by hand**, each finding against the stylesheet it
+  came from. carbondesignsystem.com WARNs: its progress bar and status icon
+  (`--cds-support-success`, 3.05:1) are graphics and clear 3:1, and a
+  ghost-button color it also paints as a mark stays a WARN. primer.style WARNs:
+  its two misses are neutral text under a danger name, the danger button's
+  counter on hover (white on 20% white over #cf222e, #d94e58, 4.05:1) and its
+  keyboard hint in the dark theme (#9198a1 on #2a313c, 4.497:1). github.com
+  FAILs on 83 hues, in five groups. 43 are in the Dark Dimmed theme, with both
+  values from its `dark_dimmed` theme file: `--fgColor-danger` #e5534b on
+  #212830 (4.02:1) 33 times, and 10 danger labels and buttons on that theme's
+  surfaces (3.30 to 4.36:1). 4 are Primer Brand's dark red #fa383d on the Dark
+  Dimmed canvas (4.04:1). 27 are Primer Brand colors when the appearance
+  follows the system and a dark theme fills the day slot
+  (`[data-color-mode=auto][data-light-theme=dark]` and its dimmed and
+  high-contrast variants): the brand declares only `[data-color-mode=light]`
+  and `[data-color-mode=dark]`, so it keeps its light palette on the dark
+  canvas (2.78 to 4.41:1). The cascade produces that as written; only a
+  signed-in visitor with those settings reaches it. 8 are
+  `--brand-color-success-emphasis` as text, 2.46:1 on white and 2.13 to
+  2.94:1 in the dark themes, under 3:1 even as a graphic. 1 is an alert
+  counter in the light colorblind theme, #bc4c00 on #f0f1f2 (4.45:1). Its 12
+  neutral counters and keyboard hints WARN.
+
 ## [1.13.2] — 2026-10-09
 
 **designesy-mcp 1.13.2** (PyPI, MCP registry): every tool declares a title and the four MCP annotation hints.

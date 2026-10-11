@@ -191,6 +191,7 @@ import {
   extractRootTokens,
   extractVarRefs,
   extractVarChains,
+  extractStyleAttributeCss,
   extractValuesByProperty,
   uniqueValues,
   cleanCssForValueCounting,
@@ -259,14 +260,20 @@ async function scoreDriftUncached(targetUrl: string, scope?: DriftScope) {
   // (--ease, --ink, --line, --muted, --muted-dim, --ok, --radius-md, --surface)
   // are all declared today, so this changes no current verdict — it closes the
   // door rather than reporting an existing breach.
-  const attrCss = (html.match(/\sstyle="([^"]*)"/gi) || []).join(';');
+  //
+  // The same attributes also DECLARE custom properties: a React style object
+  // such as { '--ds-seg': 7 } renders as style="--ds-seg:7", and the CSS reads it
+  // with var(--ds-seg). attrCss is therefore passed to runDriftChecks too, so
+  // d02, d11 and d12 count those properties as declared. They did not, and
+  // designesy.org failed d02 and d12 on five properties set exactly this way.
+  const attrCss = extractStyleAttributeCss(html);
   const varRefs = [...extractVarRefs(allCss), ...extractVarRefs(attrCss)];
 
   // varRefs is passed explicitly so the attribute coverage above is preserved.
   // The shared module derives it from css by default, but this route legitimately
   // sees more than css — and after the --surface-1 defect, scanning style
   // attributes is a fix that must not be quietly dropped by the extraction.
-  let checks: CheckResult[] = runDriftChecks(allCss, tokens, varRefs);
+  let checks: CheckResult[] = runDriftChecks(allCss, tokens, varRefs, attrCss);
 
   // Apply scope filter AFTER checks run but BEFORE scoring math.
   // Converts absence-only results to SKIP in universal scope.

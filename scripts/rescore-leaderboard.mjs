@@ -33,10 +33,19 @@ const BATCH_PATH = join(ROOT, 'apps/site/app/leaderboard/batch-data.ts');
 const SCORE_API = process.env.SCORE_API || 'https://www.designesy.org/api/score';
 const CATEGORIES_ONLY = process.argv.includes('--categories-only');
 
+// Optional guard for the re-score dispatched right after an engine release.
+// Set (EXPECT_ENGINE_VERSION=1.2.0, or the workflow's expect_engine_version
+// input), the run stops at the first scored site, before writing anything,
+// unless the engine's receipt names that version. Without it, a dispatch that
+// beats the deploy would re-score the cohort with the previous engine; the seed
+// would say so (it records the receipt's engine_version), but the run would be
+// wasted. Empty for the weekly schedule.
+const EXPECT_ENGINE_VERSION = (process.env.EXPECT_ENGINE_VERSION || '').trim();
+
 // Last-resort check count, used only if the engine reply omits `total`. The
 // engine's own number is preferred so the seed header cannot drift from the
 // engine it describes; this value is a fallback, not the source of truth.
-const ENGINE_CHECK_COUNT_FALLBACK = 42;
+const ENGINE_CHECK_COUNT_FALLBACK = 44;
 
 // ── The per-category batch (batch-data.ts) ──────────────────────────────────
 //
@@ -407,6 +416,8 @@ async function main() {
   let runContractVersion = null;
   let runTotalChecks = null;
   let runEngineVersion = null;
+  // Set when the engine is not the one EXPECT_ENGINE_VERSION names.
+  let engineMismatch = null;
 
   for (let i = 0; i < entries.length; i++) {
     const entry = entries[i];
@@ -456,6 +467,10 @@ async function main() {
       if (runEngineVersion === null && result.engineVersion) {
         runEngineVersion = result.engineVersion;
       }
+      if (EXPECT_ENGINE_VERSION && result.engineVersion !== EXPECT_ENGINE_VERSION) {
+        engineMismatch = result.engineVersion ?? 'unknown';
+        break;
+      }
       if (runTotalChecks === null && result.totalChecks) {
         runTotalChecks = result.totalChecks;
       }
@@ -473,6 +488,17 @@ async function main() {
     // Be polite to the API (the 24h cache means most hits are instant,
     // but cold scores take 3-8s — this delay prevents burst rate-limiting)
     await new Promise((r) => setTimeout(r, 500));
+  }
+
+  if (engineMismatch !== null) {
+    // An exit code rather than process.exit(): exiting while fetch handles
+    // close aborts Node on Windows instead of failing cleanly.
+    console.error(
+      `\nThe engine at ${SCORE_API} reports engine ${engineMismatch}, not ${EXPECT_ENGINE_VERSION}. ` +
+      'The release has not reached it yet, so nothing was written. Run again once the deploy is live.',
+    );
+    process.exitCode = 1;
+    return;
   }
 
   console.log(`\nRe-score complete: ${success} scored, ${errors} errors.`);

@@ -611,6 +611,117 @@ code, pre { font-family: var(--mono); }`,
     ],
   },
 
+  // ── Engine 1.2.0: v44 and v45, the two defects found on designesy.org ─────
+  //
+  // Both are the site's own history. On 2026-10-08 light --warn #b07d04
+  // painted status words at 3.51:1 on #fbfbfc, and a site-wide pause held the
+  // .fade-up entrance on its opacity-0 first frame, so paused visitors got
+  // empty pages. Each pair pins the defect and its fix.
+
+  {
+    name: 'broken-status-hue-as-text',
+    referent:
+      'A status hue picked for marks (a dot at 3:1) reused to paint the status word: designesy.org light --warn #b07d04 on --paper #fbfbfc, 2026-10-08.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --paper: #fbfbfc; --ink: #1a1a1e; --warn: #b07d04; }
+body { background: var(--paper); color: var(--ink); }
+.status-dot { background: var(--warn); }
+.status-word { color: var(--warn); }`,
+    expect: [
+      { id: 'v44', status: 'FAIL', why: '#b07d04 as text on #fbfbfc measures 3.51:1, under the 4.5:1 body text needs. This is the measured value from the site.' },
+      { id: 'v45', status: 'SKIP', why: 'No rule pauses every element, so there is no pause that could hold an entrance.' },
+    ],
+  },
+
+  {
+    name: 'good-status-ink-mix',
+    referent:
+      'The fix designesy.org shipped: a text token per hue, mixed toward the ink in oklab, painted as #7f5e21.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --paper: #fbfbfc; --ink: #1a1a1e; --warn: #b07d04; --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)); }
+body { background: var(--paper); color: var(--ink); }
+.status-dot { background: var(--warn); }
+.status-word { color: var(--warn-ink); }`,
+    expect: [
+      { id: 'v44', status: 'PASS', why: 'color-mix(in oklab, #b07d04 70%, #1a1a1e) rounds to #7f5e21, which measures 5.76:1 on #fbfbfc; the hue stays on the dot.' },
+    ],
+  },
+
+  {
+    name: 'broken-status-hue-dark-scheme',
+    referent:
+      'A dark scheme declared with prefers-color-scheme whose error red, fine on the light page, falls under contrast on the dark one.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --paper: #ffffff; --ink: #111111; --error: #b91c1c; }
+@media (prefers-color-scheme: dark) { :root { --paper: #0b0b0c; --ink: #f2f2f2; --error: #991b1b; } }
+body { background: var(--paper); color: var(--ink); }
+.field-error { color: var(--error); }`,
+    expect: [
+      { id: 'v44', status: 'FAIL', why: 'Light: #b91c1c on #ffffff measures 6.47:1. Dark: #991b1b on #0b0b0c measures 2.37:1. Every declared theme is measured, and one failing theme fails the check.' },
+    ],
+  },
+
+  {
+    name: 'good-status-hue-large-text',
+    referent:
+      'A status hue used only for large text (a 2rem verdict heading), where WCAG asks 3:1 instead of 4.5:1.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --paper: #fbfbfc; --ink: #1a1a1e; --warn: #b07d04; }
+body { background: var(--paper); color: var(--ink); }
+.verdict-warn { font-size: 2rem; color: var(--warn); }`,
+    expect: [
+      { id: 'v44', status: 'PASS', why: '3.51:1 is under 4.5:1 but over the 3:1 that 32px text needs, so the same hue that fails as body text passes as a heading.' },
+    ],
+  },
+
+  {
+    name: 'broken-paused-entrance',
+    referent:
+      'designesy.org until 2026-10-08: a site-wide pause holds every animation, and the .fade-up entrance starts at opacity 0, so paused visitors see empty pages.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp 600ms ease-out backwards; }
+[data-motion=paused] *, [data-motion=paused] *::before, [data-motion=paused] *::after { animation-play-state: paused !important; }`,
+    expect: [
+      { id: 'v45', status: 'FAIL', why: 'The pause reaches every element, fadeUp starts at opacity 0, it runs once, and no rule under the pause ends or removes it.' },
+      { id: 'v44', status: 'SKIP', why: 'No status color is used as text on this page.' },
+    ],
+  },
+
+  {
+    name: 'good-paused-entrance-ended',
+    referent:
+      'The fix designesy.org shipped: under the pause, each entrance gets a negative delay longer than itself, so it holds on its last frame.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp 600ms ease-out backwards; }
+[data-motion=paused] *, [data-motion=paused] *::before, [data-motion=paused] *::after { animation-play-state: paused !important; }
+[data-motion=paused] .fade-up { animation-delay: -3600s !important; }`,
+    expect: [
+      { id: 'v45', status: 'PASS', why: '-3600s is longer than the 600ms entrance, so under the pause it sits on its last frame, at opacity 1.' },
+    ],
+  },
+
+  {
+    name: 'edge-no-pause-scope',
+    referent:
+      'The common case: an entrance from opacity 0 and a reduced-motion block that shortens animations, with no rule that pauses them.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `@keyframes fadeUp { from { opacity: 0; } to { opacity: 1; } }
+.fade-up { animation: fadeUp 600ms ease-out backwards; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }`,
+    expect: [
+      { id: 'v45', status: 'SKIP', why: 'Nothing sets animation-play-state: paused, so no entrance can be held; shortening an animation runs it to its end.' },
+    ],
+  },
+
   // ── Unreachable-target fixtures (added 2026-09-18) ────────────────────────
   //
   // These do NOT use scoreFromParts — they exercise scoreUrl's fetch path, so

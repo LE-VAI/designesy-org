@@ -14,6 +14,7 @@ import { DigitStrip } from '../digit-strip';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
+import { registerStyle } from './lattice';
 
 export type Face = 'tiles' | 'paths' | 'files' | 'engines' | 'diff';
 
@@ -36,6 +37,10 @@ type Props = {
   outcomes?: Outcomes;
   verdict?: VerdictData | null;
   error?: ReactNode;
+  /** Why the run stopped, in words. The live line reads it after "stopped
+      without a result", so the reason is announced with the stop; the error
+      slot above is drawn, not announced. */
+  errorText?: string;
   /** One line under the legend: how a result is scored. */
   scoring: string;
   /** Side column copy before any run. */
@@ -294,6 +299,10 @@ export function Instrument(props: Props) {
       </div>
     );
   } else if (face === 'engines') {
+    // The lattice follows the contract score's check count (the score
+    // register is ENGINE_CHECK_COUNT cells), so its rows close at any count.
+    const blocks = props.engines ?? [];
+    const contractCount = blocks.find((e) => e.key === 'score')?.count ?? Math.max(1, ...blocks.map((e) => e.count));
     faceNode = (
       <div className="eg-group" style={{ '--n': 12 } as CSSProperties}>
         <div className="eg-group-head">
@@ -307,7 +316,11 @@ export function Instrument(props: Props) {
                 {e.name}
                 <small>{e.count} checks</small>
               </span>
-              <ul className="eg-minicells" aria-label={`${e.name}, ${e.count} checks`}>
+              <ul
+                className="eg-minicells"
+                aria-label={`${e.name}, ${e.count} checks`}
+                style={registerStyle(e.count, contractCount) as CSSProperties}
+              >
                 {e.ids.map((id) => {
                   const o = outcomes[id];
                   const c = byId.get(id);
@@ -519,7 +532,7 @@ export function Instrument(props: Props) {
     phase === 'done' && verdict
       ? `${name}: grade ${verdict.grade}, ${verdict.score} out of 100. ${verdict.pass} pass, ${verdict.warn} warn, ${verdict.fail} fail.`
       : phase === 'error'
-        ? `${name} stopped without a result.`
+        ? `${name} stopped without a result.${props.errorText ? ` ${props.errorText}` : ''}`
         : '';
 
   return (

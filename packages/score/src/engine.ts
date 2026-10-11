@@ -1,13 +1,14 @@
 /**
- * @designesy/score — 42-check design-contract scoring engine.
+ * @designesy/score — 44-check design-contract scoring engine.
  *
  * Scores a URL against the Designesy design-system contract: fetches the page,
- * extracts CSS + :root tokens, runs 40 deterministic checks, computes a weighted
- * score (0-100), assigns a letter grade (A-F), and applies anti-slop deductions
- * + originality lifts.
+ * extracts CSS + :root tokens, runs 44 checks (41 scored, 3 that need a
+ * browser), computes a weighted score (0-100), assigns a letter grade (A-F),
+ * and applies anti-slop deductions + originality lifts.
  *
- * Zero dependencies. Uses node:https (not fetch/undici) to avoid the Windows
- * libuv crash during process exit.
+ * No required dependencies. Uses node:https (not fetch/undici) to avoid the
+ * Windows libuv crash during process exit. One optional dependency,
+ * @google/design.md, lints /DESIGN.md for v37; without it v37 is MANUAL.
  *
  * Extracted from apps/site/app/api/score/route.ts — same engine, same checks,
  * same scoring math. The API route wraps this module; the CLI calls it directly.
@@ -34,7 +35,12 @@ export type CheckResult = {
   detail: string;
   weight?: number;
   remediation?: string;
+  /** Structured findings (v44, v45), capped at 20 with the rest counted in `truncated`. */
+  evidence?: CheckEvidence;
 };
+
+/** Structured findings a check attaches (v44, v45), capped at 20 with the rest counted. */
+export type CheckEvidence = { findings: Array<Record<string, string | number | null>>; truncated: number };
 
 export type ScoreResult = {
   /**
@@ -514,10 +520,12 @@ const REMEDIATION: Record<string, string> = {
   v29: 'Structure design tokens in layers: primitive (raw values like --color-blue-500: #3b82f6), semantic (aliases like --color-accent: var(--color-blue-500)), and component (references like --button-bg: var(--color-accent)). At minimum, alias some tokens via var() so a color change propagates through the system. Full 3-tier architecture is DSAF A1.1 maturity level.',
   v42: 'Name your color tokens by ROLE, not by hue. The contract names colors by what they mean: --ink (text), --paper (background), --surface (panels), --muted (secondary text), --signal (brand accent), --ok/--warn/--error (status). Hue names like --blue-500 or --slate-900 describe wavelength, not usage: when the brand palette shifts or dark mode lands, every hue-named reference must be hunted down and rewritten. Keep hue primitives in a separate tier and alias them to role tokens via var().',
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
+  v44: 'Give each status hue a text token for words and keep the hue itself for marks. A color that marks a state (a dot, a bar, a tint) needs 3:1, while the word for that state needs 4.5:1 (3:1 at 24px, or 18.66px bold) in every theme the site declares. Mix the hue toward your ink for text, for example --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)), measure it on the page and on each surface it sits on in every theme, and paint status words with it.',
+  v45: 'Let every entrance that starts invisible run to its end when motion is paused. Under the pause rule, give one-shot entrances whose first keyframe is opacity 0 a negative delay longer than the animation, for example html[data-motion="paused"] :is(.fade-up, .reveal) { animation-delay: -3600s !important; }, or remove them with animation: none. Loops can stay held. Test by pausing motion and reloading: every page should still show its content.',
   v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 42-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 44-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
   v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
@@ -1321,6 +1329,1475 @@ function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
     return { id: 'v43', item, category: 'semantic', status: 'PASS', detail: `${found.length}/4 status families present (${found.join(', ')}): states expressed as semantic roles` };
   }
   return { id: 'v43', item, category: 'semantic', status: 'WARN', detail: `${found.length}/4 status families present${found.length ? ` (${found.join(', ')})` : ''}; missing: ${missing.join(', ')}` };
+}
+
+// ── v44, v45: a CSS rule model, theme-aware colour resolution ───────────────
+// Both checks need more structure than one regex over the whole sheet can give:
+// which rule a declaration sits in, which at-rules wrap it, and what each
+// custom property resolves to in each theme. parseCssRules walks the sheet once
+// with a character loop (no regex over the whole sheet, so no backtracking on
+// long brace-free runs) and returns every style rule with its declarations,
+// the at-rule preludes around it and its source order, plus every @keyframes
+// block. Native nesting resolves `&` to `:is(parent)`.
+
+type CssRuleBlock = { selector: string; decls: string; at: string[]; order: number };
+type CssKeyframesBlock = { name: string; frames: Array<{ selector: string; decls: string }> };
+type CssDecl = { prop: string; value: string; important: boolean };
+type Rgba = [number, number, number, number];
+
+function stripCssComments(css: string): string {
+  const out: string[] = [];
+  const n = css.length;
+  let last = 0;
+  let i = 0;
+  while (i < n) {
+    const c = css.charCodeAt(i);
+    if (c === 47 && css.charCodeAt(i + 1) === 42) {
+      out.push(css.slice(last, i), ' ');
+      const end = css.indexOf('*/', i + 2);
+      i = end < 0 ? n : end + 2;
+      last = i;
+      continue;
+    }
+    if (c === 34 || c === 39) {
+      i++;
+      while (i < n) {
+        const d = css.charCodeAt(i);
+        if (d === 92) { i += 2; continue; }
+        i++;
+        if (d === c || d === 10) break;
+      }
+      continue;
+    }
+    i++;
+  }
+  out.push(css.slice(last));
+  return out.join('');
+}
+
+/** Split at top-level separators, outside parentheses, brackets and quotes. */
+function splitCssTopLevel(s: string, sep: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let from = 0;
+  const push = (to: number) => {
+    const piece = s.slice(from, to).trim();
+    if (piece) out.push(piece);
+  };
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (quote) {
+      if (ch === '\\') i++;
+      else if (ch === quote) quote = '';
+      continue;
+    }
+    if (ch === '"' || ch === "'") { quote = ch; continue; }
+    if (ch === '(' || ch === '[') depth++;
+    else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+    else if (depth === 0 && (sep === ' ' ? ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\f' : ch === sep)) {
+      push(i);
+      from = i + 1;
+    }
+  }
+  push(s.length);
+  return out;
+}
+
+/** A selector on one line, cut to 120 characters, for a finding. */
+function shortSelector(selector: string): string {
+  const one = selector.replace(/\s+/g, ' ').trim();
+  return one.length > 120 ? `${one.slice(0, 117)}...` : one;
+}
+
+// v44 and v45 read the same sheet; the second parse of the same string is
+// served from here.
+let lastCssParse: { css: string; result: { rules: CssRuleBlock[]; keyframes: CssKeyframesBlock[] } } | null = null;
+
+function parseCssRules(css: string): { rules: CssRuleBlock[]; keyframes: CssKeyframesBlock[] } {
+  if (lastCssParse && lastCssParse.css === css) return lastCssParse.result;
+  const result = parseCssRulesUncached(css);
+  lastCssParse = { css, result };
+  return result;
+}
+
+function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes: CssKeyframesBlock[] } {
+  const src = stripCssComments(css);
+  const n = src.length;
+  const rules: CssRuleBlock[] = [];
+  const keyframes: CssKeyframesBlock[] = [];
+  type Frame = {
+    kind: 'rule' | 'group' | 'keyframes' | 'frame' | 'other';
+    prelude: string;
+    selector: string;
+    at: string[];
+    parts: string[];
+    segStart: number;
+    kf: CssKeyframesBlock | null;
+  };
+  const stack: Frame[] = [];
+  let order = 0;
+  let start = 0;
+  let paren = 0;
+  const close = (f: Frame, end: number) => {
+    f.parts.push(src.slice(f.segStart, end));
+    const decls = f.parts.join(' ').trim();
+    if (f.kind === 'frame' && f.kf) f.kf.frames.push({ selector: f.prelude.toLowerCase(), decls });
+    else if ((f.kind === 'rule' || (f.kind === 'group' && f.selector)) && decls) {
+      rules.push({ selector: f.selector, decls, at: f.at, order: order++ });
+    }
+  };
+  let i = 0;
+  while (i < n) {
+    const c = src.charCodeAt(i);
+    if (c === 34 || c === 39) {
+      i++;
+      while (i < n) {
+        const d = src.charCodeAt(i);
+        if (d === 92) { i += 2; continue; }
+        i++;
+        if (d === c || d === 10) break;
+      }
+      continue;
+    }
+    // An unquoted url(...) may hold braces and semicolons: skip it whole. A
+    // quoted one is read as a string, because its text can hold `)`
+    // (`url("data:...filter='url(%23n)'...")`).
+    if ((c === 117 || c === 85) && src.slice(i, i + 4).toLowerCase() === 'url(') {
+      let j = i + 4;
+      while (j < n && (src[j] === ' ' || src[j] === '\t' || src[j] === '\n' || src[j] === '\r')) j++;
+      if (src[j] !== '"' && src[j] !== "'") {
+        const end = src.indexOf(')', j);
+        i = end < 0 ? n : end + 1;
+        continue;
+      }
+    }
+    if (c === 40) { paren++; i++; continue; }
+    if (c === 41) { if (paren > 0) paren--; i++; continue; }
+    if (c === 59) { if (paren === 0) start = i + 1; i++; continue; }
+    if (c === 123) {
+      paren = 0;
+      const prelude = src.slice(start, i).trim();
+      const parent = stack.length ? stack[stack.length - 1] : null;
+      if (parent) parent.parts.push(src.slice(parent.segStart, start));
+      const at = parent ? parent.at : [];
+      const ctx = parent && (parent.kind === 'rule' || parent.kind === 'group') ? parent.selector : '';
+      let f: Frame;
+      if (prelude.startsWith('@')) {
+        const name = (/^@([\w-]+)/.exec(prelude)?.[1] ?? '').toLowerCase();
+        if (/keyframes$/.test(name)) {
+          const kf: CssKeyframesBlock = { name: prelude.slice(name.length + 1).trim().replace(/^["']|["']$/g, ''), frames: [] };
+          keyframes.push(kf);
+          f = { kind: 'keyframes', prelude, selector: '', at, parts: [], segStart: i + 1, kf };
+        } else if (/^(media|supports|layer|container|document|-moz-document|scope|starting-style)$/.test(name)) {
+          f = { kind: 'group', prelude, selector: ctx, at: [...at, prelude.toLowerCase()], parts: [], segStart: i + 1, kf: null };
+        } else {
+          f = { kind: 'other', prelude, selector: '', at, parts: [], segStart: i + 1, kf: null };
+        }
+      } else if (parent && parent.kind === 'keyframes') {
+        f = { kind: 'frame', prelude, selector: '', at, parts: [], segStart: i + 1, kf: parent.kf };
+      } else if (parent && (parent.kind === 'other' || parent.kind === 'frame')) {
+        f = { kind: 'other', prelude, selector: '', at, parts: [], segStart: i + 1, kf: null };
+      } else {
+        const selector = ctx
+          ? splitCssTopLevel(prelude, ',').map((p) => (p.includes('&') ? p.replace(/&/g, `:is(${ctx})`) : `:is(${ctx}) ${p}`)).join(', ')
+          : prelude;
+        f = { kind: 'rule', prelude, selector, at, parts: [], segStart: i + 1, kf: null };
+      }
+      stack.push(f);
+      start = i + 1;
+      i++;
+      continue;
+    }
+    if (c === 125) {
+      paren = 0;
+      const f = stack.pop();
+      if (f) {
+        close(f, i);
+        const parent = stack.length ? stack[stack.length - 1] : null;
+        if (parent) parent.segStart = i + 1;
+      }
+      start = i + 1;
+      i++;
+      continue;
+    }
+    i++;
+  }
+  while (stack.length) {
+    const f = stack.pop();
+    if (f) close(f, n);
+  }
+  return { rules, keyframes };
+}
+
+function parseCssDecls(decls: string): CssDecl[] {
+  const out: CssDecl[] = [];
+  for (const raw of splitCssTopLevel(decls, ';')) {
+    const colon = raw.indexOf(':');
+    if (colon <= 0) continue;
+    const name = raw.slice(0, colon).trim();
+    if (!/^-{0,2}[a-zA-Z_][\w-]*$/.test(name)) continue;
+    let value = raw.slice(colon + 1).trim();
+    const important = /!\s*important\s*$/i.test(value);
+    if (important) value = value.replace(/\s*!\s*important\s*$/i, '').trim();
+    out.push({ prop: name.startsWith('--') ? name : name.toLowerCase(), value, important });
+  }
+  return out;
+}
+
+/** Each var(--x[, fallback]) replaced by its value in the first scope that declares it. */
+function substituteCssVars(value: string, scope: Array<Record<string, string>>, depth = 0): string | null {
+  if (depth > 16) return null;
+  let out = '';
+  let i = 0;
+  for (;;) {
+    const k = value.indexOf('var(', i);
+    if (k < 0) return out + value.slice(i);
+    out += value.slice(i, k);
+    let d = 0;
+    let j = k + 3;
+    for (; j < value.length; j++) {
+      if (value[j] === '(') d++;
+      else if (value[j] === ')' && --d === 0) break;
+    }
+    if (j >= value.length) return null;
+    const inner = value.slice(k + 4, j);
+    const parts = splitCssTopLevel(inner, ',');
+    const name = (parts[0] ?? '').trim();
+    const comma = inner.indexOf(',');
+    const fallback = comma < 0 ? null : inner.slice(comma + 1).trim();
+    let rep: string | null = null;
+    for (const s of scope) {
+      if (Object.prototype.hasOwnProperty.call(s, name)) { rep = s[name]; break; }
+    }
+    if (rep === null) rep = fallback;
+    if (rep === null) return null;
+    const sub = substituteCssVars(rep, scope, depth + 1);
+    if (sub === null) return null;
+    out += sub;
+    i = j + 1;
+  }
+}
+
+const CSS_NAMED_COLORS: Record<string, Rgba> = {
+  transparent: [0, 0, 0, 0], white: [255, 255, 255, 1], black: [0, 0, 0, 1],
+  red: [255, 0, 0, 1], green: [0, 128, 0, 1], blue: [0, 0, 255, 1], yellow: [255, 255, 0, 1],
+  orange: [255, 165, 0, 1], gray: [128, 128, 128, 1], grey: [128, 128, 128, 1],
+  silver: [192, 192, 192, 1], maroon: [128, 0, 0, 1], purple: [128, 0, 128, 1],
+  navy: [0, 0, 128, 1], teal: [0, 128, 128, 1], olive: [128, 128, 0, 1], lime: [0, 255, 0, 1],
+};
+
+function srgbToOklab(rgb: [number, number, number]): [number, number, number] {
+  const lin = rgb.map((c) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  const l = Math.cbrt(0.4122214708 * lin[0] + 0.5363325363 * lin[1] + 0.0514459929 * lin[2]);
+  const m = Math.cbrt(0.2119034982 * lin[0] + 0.6806995451 * lin[1] + 0.1073969566 * lin[2]);
+  const s = Math.cbrt(0.0883024619 * lin[0] + 0.2817188376 * lin[1] + 0.6299787005 * lin[2]);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+/** Oklab to 0-255 sRGB, clipped per channel to the sRGB gamut. */
+function oklabToSrgb(lab: [number, number, number]): [number, number, number] {
+  const [L, a, b] = lab;
+  const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
+  const m = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
+  const s = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
+  const lin = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  return lin.map((c) => {
+    const x = Math.min(1, Math.max(0, c));
+    const g = x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055;
+    return Math.min(1, Math.max(0, g)) * 255;
+  }) as [number, number, number];
+}
+
+function cssNumber(token: string, percentScale: number): number | null {
+  const t = token.trim().toLowerCase();
+  if (t === 'none') return 0;
+  const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$/.exec(t);
+  if (!m) return null;
+  const x = parseFloat(m[1]);
+  if (m[2] === '%') return (x / 100) * percentScale;
+  if (m[2] === 'turn') return x * 360;
+  if (m[2] === 'rad') return (x * 180) / Math.PI;
+  if (m[2] === 'grad') return x * 0.9;
+  return x;
+}
+
+function cssAlpha(token: string | undefined): number | null {
+  if (token === undefined) return 1;
+  const a = cssNumber(token, 1);
+  return a === null ? null : Math.min(1, Math.max(0, a));
+}
+
+/** Function arguments as [c1, c2, c3, alpha?], comma or space syntax. */
+function cssColorArgs(args: string): string[] | null {
+  const slash = splitCssTopLevel(args, '/');
+  const head = slash[0] ?? '';
+  const channels = head.includes(',') ? splitCssTopLevel(head, ',') : splitCssTopLevel(head, ' ');
+  if (slash.length === 2) channels.push(slash[1]);
+  if (slash.length > 2 || channels.length < 3 || channels.length > 4) return null;
+  return channels;
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  const hh = (((h % 360) + 360) % 360) / 360;
+  const f = (n: number) => {
+    const k = (n + hh * 12) % 12;
+    return l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+  };
+  return [f(0) * 255, f(8) * 255, f(4) * 255];
+}
+
+/**
+ * A CSS colour value, vars already substituted, to [r, g, b, alpha] in 0-255
+ * sRGB. Hex, the common named colours, rgb(), hsl(), oklch(), oklab(),
+ * color(srgb), light-dark(), color-mix() in srgb, oklab or oklch (premultiplied,
+ * rounded to 8 bits as a browser paints it), and the identity form of relative
+ * colour syntax (`rgb(from X r g b / a)`). Anything else returns null: an
+ * unmeasurable colour is left out, never guessed.
+ */
+function parseCssColor(input: string, dark: boolean, depth = 0): Rgba | null {
+  if (depth > 8) return null;
+  const v = input.trim().toLowerCase();
+  if (!v) return null;
+  if (v[0] === '#') {
+    const hex = v.slice(1);
+    if (!/^[0-9a-f]+$/.test(hex) || ![3, 4, 6, 8].includes(hex.length)) return null;
+    const full = hex.length <= 4 ? hex.split('').map((c) => c + c).join('') : hex;
+    const ch = [0, 2, 4, 6].map((k) => (k < full.length ? parseInt(full.slice(k, k + 2), 16) : 255));
+    return [ch[0], ch[1], ch[2], ch[3] / 255];
+  }
+  if (CSS_NAMED_COLORS[v]) return [...CSS_NAMED_COLORS[v]] as Rgba;
+  const fn = /^([a-z-]+)\(([\s\S]*)\)$/.exec(v);
+  if (!fn) return null;
+  const name = fn[1];
+  const args = fn[2].trim();
+  if (name === 'light-dark') {
+    const pair = splitCssTopLevel(args, ',');
+    return pair.length === 2 ? parseCssColor(pair[dark ? 1 : 0], dark, depth + 1) : null;
+  }
+  if (name === 'color-mix') {
+    const parts = splitCssTopLevel(args, ',');
+    if (parts.length !== 3) return null;
+    const space = /^in\s+([a-z-]+)/.exec(parts[0])?.[1] ?? '';
+    if (!['srgb', 'oklab', 'oklch'].includes(space)) return null;
+    const side = (p: string) => {
+      const after = /^([\s\S]*?)\s+(\d*\.?\d+)%$/.exec(p);
+      const before = /^(\d*\.?\d+)%\s+([\s\S]*)$/.exec(p);
+      if (after) return { color: after[1], pct: parseFloat(after[2]) / 100 };
+      if (before) return { color: before[2], pct: parseFloat(before[1]) / 100 };
+      return { color: p, pct: null as number | null };
+    };
+    const a = side(parts[1]);
+    const b = side(parts[2]);
+    const ca = parseCssColor(a.color, dark, depth + 1);
+    const cb = parseCssColor(b.color, dark, depth + 1);
+    if (!ca || !cb) return null;
+    let p1 = a.pct;
+    let p2 = b.pct;
+    if (p1 === null && p2 === null) { p1 = 0.5; p2 = 0.5; }
+    else if (p1 === null) p1 = 1 - (p2 as number);
+    else if (p2 === null) p2 = 1 - p1;
+    const sum = (p1 as number) + (p2 as number);
+    if (sum <= 0) return null;
+    const w1 = (p1 as number) / sum;
+    const w2 = (p2 as number) / sum;
+    const alpha = ca[3] * w1 + cb[3] * w2;
+    if (alpha <= 0) return [0, 0, 0, 0];
+    let rgb: [number, number, number];
+    if (space === 'srgb') {
+      rgb = [0, 1, 2].map((k) => (ca[k] * ca[3] * w1 + cb[k] * cb[3] * w2) / alpha) as [number, number, number];
+    } else {
+      const la = srgbToOklab([ca[0], ca[1], ca[2]]);
+      const lb = srgbToOklab([cb[0], cb[1], cb[2]]);
+      let lab: [number, number, number];
+      if (space === 'oklab') {
+        lab = [0, 1, 2].map((k) => (la[k] * ca[3] * w1 + lb[k] * cb[3] * w2) / alpha) as [number, number, number];
+      } else {
+        const lch = (x: [number, number, number]) => [x[0], Math.hypot(x[1], x[2]), (Math.atan2(x[2], x[1]) * 180) / Math.PI];
+        const A = lch(la);
+        const B = lch(lb);
+        let h1 = A[2];
+        let h2 = B[2];
+        if (A[1] < 1e-4) h1 = h2;
+        if (B[1] < 1e-4) h2 = h1;
+        if (h2 - h1 > 180) h1 += 360;
+        else if (h1 - h2 > 180) h2 += 360;
+        const L = (A[0] * ca[3] * w1 + B[0] * cb[3] * w2) / alpha;
+        const C = (A[1] * ca[3] * w1 + B[1] * cb[3] * w2) / alpha;
+        const H = ((h1 * w1 + h2 * w2) * Math.PI) / 180;
+        lab = [L, C * Math.cos(H), C * Math.sin(H)];
+      }
+      rgb = oklabToSrgb(lab);
+    }
+    const mult = Math.min(1, sum);
+    return [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2]), Math.round(alpha * mult * 255) / 255];
+  }
+  const rel = /^from\s+([\s\S]+?)\s+(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$/.exec(args);
+  if (rel) {
+    const base = parseCssColor(rel[1], dark, depth + 1);
+    if (!base) return null;
+    const a = rel[3] === undefined ? base[3] : cssAlpha(rel[3]);
+    return a === null ? null : [base[0], base[1], base[2], a];
+  }
+  if (name === 'color') {
+    const m = /^srgb\s+([\s\S]+)$/.exec(args);
+    const ch = m ? cssColorArgs(m[1]) : null;
+    if (!ch) return null;
+    const c = ch.slice(0, 3).map((t) => cssNumber(t, 1));
+    const a = cssAlpha(ch[3]);
+    if (c.some((x) => x === null) || a === null) return null;
+    return [(c[0] as number) * 255, (c[1] as number) * 255, (c[2] as number) * 255, a];
+  }
+  const ch = cssColorArgs(args);
+  if (!ch) return null;
+  const alpha = cssAlpha(ch[3]);
+  if (alpha === null) return null;
+  if (name === 'rgb' || name === 'rgba') {
+    const c = ch.slice(0, 3).map((t) => cssNumber(t, 255));
+    if (c.some((x) => x === null)) return null;
+    return [...(c as number[]).map((x) => Math.min(255, Math.max(0, x))), alpha] as Rgba;
+  }
+  if (name === 'hsl' || name === 'hsla') {
+    const h = cssNumber(ch[0], 1);
+    const s = cssNumber(ch[1].endsWith('%') ? ch[1] : `${ch[1]}%`, 1);
+    const l = cssNumber(ch[2].endsWith('%') ? ch[2] : `${ch[2]}%`, 1);
+    if (h === null || s === null || l === null) return null;
+    return [...hslToRgb(h, Math.min(1, Math.max(0, s)), Math.min(1, Math.max(0, l))), alpha] as Rgba;
+  }
+  if (name === 'oklch' || name === 'oklab') {
+    const L = cssNumber(ch[0], 1);
+    const x = cssNumber(ch[1], 0.4);
+    const y = cssNumber(ch[2], name === 'oklch' ? 1 : 0.4);
+    if (L === null || x === null || y === null) return null;
+    const lab: [number, number, number] = name === 'oklch'
+      ? [L, x * Math.cos((y * Math.PI) / 180), x * Math.sin((y * Math.PI) / 180)]
+      : [L, x, y];
+    return [...oklabToSrgb(lab), alpha] as Rgba;
+  }
+  return null;
+}
+
+/** A token value resolved to a colour in a theme scope; bare HSL channels read as hsl(). */
+function resolveThemeColor(value: string, scope: Array<Record<string, string>>, dark: boolean): Rgba | null {
+  const sub = substituteCssVars(value, scope);
+  if (sub === null) return null;
+  const direct = parseCssColor(sub, dark);
+  if (direct) return direct;
+  if (/^\s*-?[\d.]+(?:deg)?\s+[\d.]+%\s+[\d.]+%\s*$/.test(sub)) return parseCssColor(`hsl(${sub})`, dark);
+  return null;
+}
+
+function toHexColor(rgb: Rgba | [number, number, number]): string {
+  return `#${[0, 1, 2].map((k) => Math.round(rgb[k]).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** Name segments of a custom property: camelCase and separators split, lowercased. */
+function tokenNameSegments(name: string): string[] {
+  return name.replace(/^--/, '').replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase().split(/[-_]+/).filter(Boolean);
+}
+
+// ── v44 Status colors used as text meet contrast in every declared theme ────
+// A colour picked to mark a state (a dot, a bar, a tint: 3:1 is enough for a
+// mark) gets reused to write the word for that state, and text needs 4.5:1.
+// Found on designesy.org itself: light --warn #b07d04 as text measured 3.51:1
+// on #fbfbfc; mixed toward the ink, color-mix(in oklab, var(--warn) 70%,
+// var(--ink)) paints #7f5e21 and measures 5.76:1.
+//
+// A status hue is a custom property named in the status vocabulary (v43's
+// families plus grade-a to grade-f), or one the stylesheet also paints as a
+// non-text mark (background, border, outline, fill, stroke) whose value has a
+// hue (Oklch chroma 0.06 or more, so white, black and greys are not hues). An
+// on-fill colour (--danger-foreground, --on-error, --x-contrast, --x-inverse)
+// is not a status hue: it is text for a filled surface the stylesheet does not
+// pair with it, and measuring it on the page would be wrong in both directions.
+// A text use is color or -webkit-text-fill-color reading a status hue
+// directly, through one alias, or at reduced alpha.
+//
+// Only a status-named colour can FAIL, and only where it resolves to a hue
+// (Oklch chroma 0.06 or more). A neutral value under a status name (white or
+// grey text for a counter or a hint on a danger button) WARNs at most: it is a
+// general text-contrast miss, not a status colour. A hue that qualifies only
+// because the sheet also paints it as a mark WARNs at most: across the
+// leaderboard cohort those were palette colours (utility classes,
+// illustrations, links) whose real surface is often an ancestor's fill the
+// static model cannot see. Disabled and
+// inactive states (:disabled, [disabled], [aria-disabled=true], .disabled) are
+// exempt, as WCAG 1.4.3 exempts inactive user interface components.
+//
+// Each text use is measured in every theme it applies to: the :root block and
+// every [data-theme]/.dark/.light block and prefers-color-scheme block, each
+// over the root. A theme named by fewer keys than a compound theme that
+// contains it ([data-color-mode=dark] inside [data-color-mode=dark]
+// [data-dark-theme=dark]) also reads that compound's tokens before the root's.
+//
+// The surface is attested, never assumed. Walking the selector from its
+// subject outward, the first rule that paints a background for that element
+// is its surface: the rule itself, another rule for the same selector, then
+// each ancestor compound (its full prefix, the prefix without its interactive
+// state, the compound alone, the compound without its state). A translucent
+// fill composites over the next surface out. With no fill in the selector, the
+// surface is the theme's page background (html/body, else
+// --paper/--bg/--background/--surface, else white or black by scheme), unless
+// an ancestor compound carries an interactive state (:hover, :active, :focus,
+// :checked, [aria-expanded], [aria-selected], [aria-pressed], [aria-current],
+// [open]): such a state usually changes a fill this reading cannot find, so
+// the pairing is unattested and WARNs at most. v44 never FAILs a pairing it
+// cannot attest.
+//
+// Text needs 4.5:1, large text (24px, or 18.66px at weight 700) 3:1. A
+// non-text use is a graphical object under WCAG 1.4.11 and needs 3:1: its
+// subject is an svg element, or a class whose role word (the last word, or a
+// leading icon- or octicon- prefix) is icon, octicon, glyph, spinner or
+// indicator, or a progress or meter bar; or the colour it reads is named for
+// one of those (--button-danger-iconColor); or the element paints its own
+// background with currentColor, so the colour is a fill measured against the
+// surface behind it.
+
+// Oklch chroma at or above which a colour has a hue; below it, white, black,
+// greys and near-greys are neutral.
+const V44_HUE_CHROMA = 0.06;
+const V44_STATUS_WORDS = ['ok', 'success', 'pass', 'positive', 'warn', 'warning', 'caution', 'error', 'danger', 'fail', 'negative', 'destructive', 'info'];
+const V44_ON_FILL_WORDS = ['on', 'foreground', 'contrast', 'inverse', 'inverted'];
+const V44_THEME_CLASS = /\.((?:theme-)?(?:dark|light)(?:-theme|-mode)?)(?![\w-])/gi;
+
+/** Theme keys a selector names: [data-theme=dark], [data-color-mode=light], .dark, .light. */
+function themeSelectorKeys(selector: string): string[] {
+  const keys: string[] = [];
+  for (const m of selector.matchAll(/\[\s*([\w-]+)\s*=\s*["']?([\w-]+)["']?\s*\]/g)) {
+    if (/(?:^|-)(?:theme|color-scheme|color-mode|mode|scheme|appearance)$/i.test(m[1])) keys.push(`[${m[1].toLowerCase()}=${m[2].toLowerCase()}]`);
+  }
+  for (const m of selector.matchAll(V44_THEME_CLASS)) keys.push(`.${m[1].toLowerCase()}`);
+  return keys;
+}
+
+/** A selector part with its theme attributes and classes removed. */
+function withoutThemeKeys(part: string): string {
+  return part
+    .replace(/\[[^\]]*\]/g, (a) => (themeSelectorKeys(a).length ? '' : a))
+    .replace(V44_THEME_CLASS, '')
+    .trim();
+}
+
+/**
+ * The token block a selector part declares: 'root' for :root, html, :host or
+ * body; for one of those (or a bare theme selector) carrying theme attributes
+ * or classes, the theme they name together, sorted
+ * (`[data-color-mode=dark][data-dark-theme=dark]`); null for anything else.
+ */
+function tokenBlockTheme(part: string): string | null {
+  const bare = part.replace(/:not\([^()]*\)/gi, '');
+  const keys = [...new Set(themeSelectorKeys(bare))].sort();
+  const rest = withoutThemeKeys(bare).replace(/\s+/g, '');
+  if (!/^(?::root|html|:host|body)?$/i.test(rest)) return null;
+  if (keys.length === 0) return rest ? 'root' : null;
+  return keys.join('');
+}
+
+/** A selector with its theme keys removed (and the html/:root/body that carried them), for matching a rule to its themed override. */
+function keylessSelector(selector: string): string {
+  return splitCssTopLevel(selector, ',')
+    .map((p) => {
+      const rest = withoutThemeKeys(p);
+      return (themeSelectorKeys(p).length ? rest.replace(/^(?:html|:root|body)(?=\s|$)/i, '') : rest).replace(/\s+/g, ' ').trim();
+    })
+    .join(',');
+}
+
+function v44Scheme(at: string[]): { media: boolean; scheme: string | undefined } {
+  const media = at.filter((a) => a.startsWith('@media'));
+  return { media: media.length > 0, scheme: media.map((a) => /prefers-color-scheme\s*:\s*(dark|light)/.exec(a)?.[1]).find(Boolean) };
+}
+
+function v44Composite(fg: Rgba, bg: Rgba): Rgba {
+  const a = Math.round(fg[3] * 255) / 255;
+  return [Math.round(fg[0] * a + bg[0] * (1 - a)), Math.round(fg[1] * a + bg[1] * (1 - a)), Math.round(fg[2] * a + bg[2] * (1 - a)), 1];
+}
+
+/** The colour a background value paints: 'none' when it paints nothing, null when it cannot be read. */
+function v44BackgroundColor(value: string, scope: Array<Record<string, string>>, dark: boolean): Rgba | 'none' | null {
+  if (/^(?:none|transparent|initial|inherit|unset|revert|revert-layer)$/i.test(value.trim())) return 'none';
+  const layers = splitCssTopLevel(value, ',');
+  for (const tok of splitCssTopLevel(layers[layers.length - 1] ?? '', ' ')) {
+    if (/^(?:url|[a-z-]*gradient|image|image-set|element)\(/i.test(tok)) continue;
+    const c = resolveThemeColor(tok, scope, dark);
+    if (c) return c[3] === 0 ? 'none' : c;
+  }
+  return null;
+}
+
+// Interactive states that usually change a fill.
+const V44_STATE = /^(?::(?:hover|active|focus|focus-visible|focus-within|checked|target)|\[(?:aria-(?:expanded|selected|pressed|current|checked)|open)(?:[~|^$*]?=[^\]]*)?\])$/i;
+const V44_NON_TEXT_TYPES = /^(?:svg|path|circle|rect|ellipse|line|polyline|polygon|use|g)$/i;
+const V44_NON_TEXT_WORDS = ['icon', 'octicon', 'glyph', 'spinner', 'indicator'];
+
+/** A selector part with its theme keys removed, and the html/:root/body that carried them. */
+function keylessPart(part: string): string {
+  const rest = withoutThemeKeys(part);
+  return (themeSelectorKeys(part).length ? rest.replace(/^(?:html|:root|body)(?=\s|$)/i, '') : rest).trim();
+}
+
+/** A lookup key for a run of compounds: simple selectors, combinators kept. */
+function compoundsKey(comps: Array<{ comb: string; compound: string }>, stateless: boolean): string {
+  return comps
+    .map((c, i) => `${i === 0 ? '' : c.comb === ' ' ? ' ' : c.comb}${simpleSelectors(c.compound).filter((x) => !stateless || !V44_STATE.test(x)).join('')}`)
+    .join('');
+}
+
+/**
+ * Whether a selector's subject is a graphical object rather than text: every
+ * alternative's subject is an svg element, or has a class whose role word (the
+ * last word, after any CSS-module hash) is icon, octicon, glyph, spinner or
+ * indicator, or that names an icon by prefix (icon-check, octicon-x), or is a
+ * bar of a progress or meter component.
+ */
+function nonTextSubject(part: string): boolean {
+  return expandIsWhere(part).every((alt) => {
+    const comps = selectorCompounds(alt);
+    const subject = simpleSelectors(comps[comps.length - 1]?.compound ?? '');
+    if (subject.some((x) => V44_NON_TEXT_TYPES.test(x))) return true;
+    return subject.some((x) => {
+      if (!x.startsWith('.')) return false;
+      const segs = x.slice(1).split(/[-_]+/).filter(Boolean);
+      while (segs.length > 1 && /\d/.test(segs[segs.length - 1])) segs.pop();
+      const words = segs.flatMap((w) => w.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().split(' '));
+      const last = words[words.length - 1] ?? '';
+      return V44_NON_TEXT_WORDS.includes(last) || ((words[0] === 'icon' || words[0] === 'octicon') && words.length > 1)
+        || (last === 'bar' && words.some((w) => w === 'progress' || w === 'meter'));
+    });
+  });
+}
+
+function checkStatusTextContrast(css: string): CheckResult {
+  const ID = 'v44';
+  const ITEM = 'Status colors used as text meet contrast in every declared theme';
+  const CATEGORY = 'accessibility';
+  const parsed = parseCssRules(css).rules.map((rule) => ({
+    rule,
+    decls: parseCssDecls(rule.decls),
+    tokenBlock: splitCssTopLevel(rule.selector, ',').map(tokenBlockTheme),
+  }));
+
+  // 1. Themes: the root block, and every theme block over it. Media blocks
+  //    other than prefers-color-scheme are overrides (contrast, print,
+  //    width), not themes, and are left out.
+  // A theme is the root, a prefers-color-scheme block (media), or a set of
+  // theme attributes and classes (keys); a rule reaches it by the same.
+  type Theme = { label: string; dark: boolean; tokens: Record<string, string>; keys: string[]; media: string | null };
+  type Where = { keys: string[][]; media: string | null };
+  const themes = new Map<string, Theme>();
+  const ensure = (key: string, keys: string[], media: string | null): Theme => {
+    let t = themes.get(key);
+    if (!t) {
+      const name = key === 'root' ? '' : key;
+      // Dark by name: a *-theme attribute's value decides ([data-light-theme=dark]
+      // puts the dark theme in the light slot); else any key that says dark
+      // and none that says light. A color-scheme declaration overrides both.
+      const themeValues = keys.map((k) => /^\[[\w-]*theme=([\w-]+)\]$/.exec(k)?.[1]).filter((v): v is string => Boolean(v));
+      const said = themeValues.length ? themeValues.join(' ') : name;
+      t = { label: key === 'root' ? ':root' : key, dark: /dark/.test(said) && !/light/.test(said), tokens: {}, keys, media };
+      themes.set(key, t);
+    }
+    return t;
+  };
+  const root = ensure('root', [], null);
+  const whereOf = (rule: CssRuleBlock): Where => {
+    const { scheme } = v44Scheme(rule.at);
+    return { keys: splitCssTopLevel(rule.selector, ',').map((p) => themeSelectorKeys(p)), media: scheme ? `@media (prefers-color-scheme: ${scheme})` : null };
+  };
+  const reaches = (t: Theme, w: Where) => (w.media ? t.media === w.media : t.media === null || w.keys.some((k) => k.length === 0))
+    && w.keys.some((k) => k.length === 0 || (t.keys.length > 0 && k.every((x) => t.keys.includes(x))));
+  const themed = (w: Where) => w.media !== null || w.keys.every((k) => k.length > 0);
+  for (const { rule, decls, tokenBlock } of parsed) {
+    const { media, scheme } = v44Scheme(rule.at);
+    if (media && !scheme) continue;
+    for (const t of tokenBlock) {
+      if (!t) continue;
+      const mediaKey = `@media (prefers-color-scheme: ${scheme})`;
+      const theme = t === 'root'
+        ? (scheme ? ensure(mediaKey, [], mediaKey) : root)
+        : ensure(t, t.match(/\[[^\]]*\]|\.[\w-]+/g) ?? [], null);
+      if (t === 'root' && scheme) theme.dark = scheme === 'dark';
+      for (const d of decls) {
+        if (d.prop.startsWith('--')) theme.tokens[d.prop] = d.value;
+        else if (d.prop === 'color-scheme') {
+          const v = d.value.trim().toLowerCase();
+          if (/^(?:only\s+)?dark$/.test(v)) theme.dark = true;
+          else if (/^(?:only\s+)?light$/.test(v)) theme.dark = false;
+        }
+      }
+    }
+  }
+  // A theme's tokens; then those of every compound theme that contains it,
+  // because a page that matches [data-color-mode=dark] also carries the theme
+  // attribute those compounds add (primer.style declares --fgColor-danger only
+  // under [data-color-mode=dark][data-dark-theme=dark]): nearest first, and
+  // among those the one whose added keys repeat the theme's own value
+  // ([data-dark-theme=dark] for [data-color-mode=dark]), then source order;
+  // then those of every theme it includes (a [data-color-mode=dark] block
+  // also applies under [data-color-mode=dark][data-dark-theme=dark_dimmed]),
+  // most specific first; then the root's.
+  const scopeCache = new Map<string, Array<Record<string, string>>>();
+  const scopeOf = (key: string): Array<Record<string, string>> => {
+    const hit = scopeCache.get(key);
+    if (hit) return hit;
+    const t = themes.get(key) as Theme;
+    const others = key === 'root' || t.media ? [] : [...themes.entries()].filter(([k, o]) => k !== key && k !== 'root' && !o.media);
+    const valueOf = (k: string) => /=([\w-]+)\]$/.exec(k)?.[1] ?? k.replace(/^\./, '');
+    const own = new Set(t.keys.map(valueOf));
+    const repeats = (o: Theme) => o.keys.filter((x) => !t.keys.includes(x)).every((x) => own.has(valueOf(x)));
+    const narrower = others
+      .filter(([, o]) => o.keys.length > t.keys.length && t.keys.every((x) => o.keys.includes(x)))
+      .sort((a, b) => a[1].keys.length - b[1].keys.length || Number(repeats(b[1])) - Number(repeats(a[1])))
+      .map(([, o]) => o.tokens);
+    const wider = others
+      .filter(([, o]) => o.keys.length < t.keys.length && o.keys.every((x) => t.keys.includes(x)))
+      .sort((a, b) => b[1].keys.length - a[1].keys.length)
+      .map(([, o]) => o.tokens);
+    const scope = key === 'root' ? [root.tokens] : [t.tokens, ...narrower, ...wider, root.tokens];
+    scopeCache.set(key, scope);
+    return scope;
+  };
+
+  // 2. Status hues, and the aliases that read one.
+  const paintRefs = new Set<string>();
+  for (const { decls } of parsed) {
+    for (const d of decls) {
+      if (/^(?:background(?:-color)?|border(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-color)?|outline(?:-color)?|fill|stroke)$/.test(d.prop)) {
+        for (const m of d.value.matchAll(/var\(\s*(--[\w-]+)/g)) paintRefs.add(m[1]);
+      }
+    }
+  }
+  // 'name': a status colour by its name. 'paint': a hue the sheet also paints
+  // as a mark. null: not a status hue.
+  const hueCache = new Map<string, 'name' | 'paint' | null>();
+  const hueKind = (name: string): 'name' | 'paint' | null => {
+    const hit = hueCache.get(name);
+    if (hit !== undefined) return hit;
+    const segs = tokenNameSegments(name);
+    let kind: 'name' | 'paint' | null = null;
+    if (!segs.some((s) => V44_ON_FILL_WORDS.includes(s))) {
+      if (segs.some((s) => V44_STATUS_WORDS.includes(s)) || /(?:^|-)grade-[a-f](?:-|$)/.test(segs.join('-'))) kind = 'name';
+      else if (paintRefs.has(name)) {
+        for (const [key, t] of themes) {
+          const c = resolveThemeColor(`var(${name})`, scopeOf(key), t.dark);
+          if (!c || c[3] <= 0) continue;
+          const lab = srgbToOklab([c[0], c[1], c[2]]);
+          if (Math.hypot(lab[1], lab[2]) >= V44_HUE_CHROMA) kind = 'paint';
+          break;
+        }
+      }
+    }
+    hueCache.set(name, kind);
+    return kind;
+  };
+  const isHue = (name: string): boolean => hueKind(name) !== null;
+  const huesIn = (value: string) => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]).filter(isHue);
+  const aliasOf = new Map<string, string>();
+  type AliasDecl = { value: string; keyless: string; where: Where; subjects: string[][] };
+  const componentAlias = new Map<string, AliasDecl[]>();
+  // Selectors whose text color a themed rule replaces: keyless selector -> where.
+  const themedColor = new Map<string, Where[]>();
+  for (const { rule, decls, tokenBlock } of parsed) {
+    const where = whereOf(rule);
+    if (themed(where) && decls.some((d) => d.prop === 'color' || d.prop === '-webkit-text-fill-color')) {
+      const k = keylessSelector(rule.selector);
+      themedColor.set(k, [...(themedColor.get(k) ?? []), where]);
+    }
+    for (const d of decls) {
+      if (!d.prop.startsWith('--') || isHue(d.prop)) continue;
+      const hues = huesIn(d.value);
+      if (hues.length && !aliasOf.has(d.prop)) aliasOf.set(d.prop, hues[0]);
+      // A component-scoped alias keeps every value it takes, hue or not, so a
+      // themed rule that re-points it (to an ink mix, say) is measured too.
+      if (!tokenBlock.some(Boolean) && /var\(\s*--/.test(d.value)) {
+        const keyless = keylessSelector(rule.selector);
+        const subjects = splitCssTopLevel(keyless, ',').map((p) => {
+          const comps = selectorCompounds(p);
+          return simpleSelectors(comps[comps.length - 1]?.compound ?? '');
+        }).filter((x) => x.length > 0);
+        componentAlias.set(d.prop, [...(componentAlias.get(d.prop) ?? []), { value: d.value, keyless, where, subjects }]);
+      }
+    }
+  }
+
+  // 3. The page background of each theme: body, then html, then :root, from
+  //    the theme's own rules first and the root's rules after; then the
+  //    surface tokens; then white, or black for a dark scheme. A theme other
+  //    than the root whose background is only that assumption is not
+  //    measured: nothing in it says what surface its text sits on.
+  const pageBg = new Map<string, Rgba>();
+  const assumedBg = new Set<string>();
+  const bgRules: Array<{ parts: Array<{ keys: string[]; subject: string }>; media: string | null; bg: CssDecl }> = [];
+  for (let r = parsed.length - 1; r >= 0; r--) {
+    const { rule, decls } = parsed[r];
+    if (!/(?:^|[\s,>(])(?:html|body|:root)\b|\[|\.(?:theme-)?(?:dark|light)/i.test(rule.selector)) continue;
+    const bg = [...decls].reverse().find((d) => d.prop === 'background-color' || d.prop === 'background');
+    if (!bg) continue;
+    const { media, scheme } = v44Scheme(rule.at);
+    if (media && !scheme) continue;
+    const parts = splitCssTopLevel(rule.selector, ',').map((p) => {
+      const keys = themeSelectorKeys(p);
+      const comps = withoutThemeKeys(p).split(/\s+/).filter(Boolean);
+      return { keys, subject: (comps[comps.length - 1] ?? (keys.length ? 'html' : '')).toLowerCase() };
+    }).filter((p) => p.subject === 'body' || p.subject === 'html' || p.subject === ':root');
+    if (parts.length) bgRules.push({ parts, media: scheme ? `@media (prefers-color-scheme: ${scheme})` : null, bg });
+  }
+  for (const [key, t] of themes) {
+    const scope = scopeOf(key);
+    const plain: Rgba = t.dark ? [0, 0, 0, 1] : [255, 255, 255, 1];
+    let found: Rgba | null = null;
+    for (const pass of key === 'root' ? ['root'] : ['own', 'root']) {
+      for (const subject of ['body', 'html', ':root']) {
+        for (const cand of bgRules) {
+          if (found) break;
+          const hit = cand.parts.some((p) => p.subject === subject && (pass === 'own'
+            ? (t.media ? cand.media === t.media && p.keys.length === 0 : cand.media === null && p.keys.length > 0 && p.keys.every((x) => t.keys.includes(x)))
+            : cand.media === null && p.keys.length === 0));
+          if (!hit) continue;
+          const c = v44BackgroundColor(cand.bg.value, scope, t.dark);
+          if (c && c !== 'none') found = c[3] >= 1 ? c : v44Composite(c, plain);
+        }
+        if (found) break;
+      }
+      if (found) break;
+    }
+    if (!found) {
+      for (const name of ['--paper', '--bg', '--background', '--surface']) {
+        if (!scope.some((x) => Object.prototype.hasOwnProperty.call(x, name))) continue;
+        const c = resolveThemeColor(`var(${name})`, scope, t.dark);
+        if (c && c[3] > 0) { found = c[3] >= 1 ? c : v44Composite(c, plain); break; }
+      }
+    }
+    // A theme whose scheme differs from the root's but whose page background
+    // is the root's did not theme its surface: measuring its text there would
+    // pair a dark palette with a light page, or the reverse.
+    const rootBg = pageBg.get('root');
+    if (key !== 'root' && (!found || (t.dark !== root.dark && rootBg && toHexColor(found) === toHexColor(rootBg)))) assumedBg.add(key);
+    pageBg.set(key, found ?? plain);
+  }
+
+  // Every background a rule paints, by selector (theme keys removed), for
+  // attesting a text use's surface. Latest rule first.
+  const bgIndex = new Map<string, Array<{ where: Where; value: string }>>();
+  for (let r = parsed.length - 1; r >= 0; r--) {
+    const { rule, decls } = parsed[r];
+    const bg = [...decls].reverse().find((d) => d.prop === 'background-color' || d.prop === 'background');
+    if (!bg) continue;
+    if (rule.at.some((a) => /^@media\b.*\b(?:print|forced-colors)\b/.test(a))) continue;
+    const where = whereOf(rule);
+    for (const part of splitCssTopLevel(rule.selector, ',')) {
+      // Indexed as written: a :hover rule's fill is the hovered element's,
+      // never the resting one's. The lookup side drops a state, not this side.
+      const k = compoundsKey(selectorCompounds(keylessPart(part)), false);
+      const list = bgIndex.get(k) ?? [];
+      list.push({ where, value: bg.value });
+      bgIndex.set(k, list);
+    }
+  }
+
+  // 4. Every text use, in every theme it applies to.
+  type Finding = { selector: string; token: string; theme: string; value: string; background: string; ratio: number | null; need: number; status: 'PASS' | 'WARN' | 'FAIL'; note: string };
+  const findings: Finding[] = [];
+  const seen = new Set<string>();
+  let uses = 0;
+  let unresolved = 0;
+  for (const { rule, decls } of parsed) {
+    const texts = decls.filter((d) => d.prop === 'color' || d.prop === '-webkit-text-fill-color');
+    if (!texts.length) continue;
+    if (rule.at.some((a) => /^@media\b.*\b(?:print|forced-colors)\b/.test(a))) continue;
+    const text = texts[texts.length - 1];
+    const refs = [...text.value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
+    const direct = refs.find(isHue);
+    const alias = refs.find((r) => aliasOf.has(r));
+    if (!direct && !alias) continue;
+    // Inactive controls carry no contrast requirement (WCAG 1.4.3). A rule is
+    // exempt when every selector in it names a disabled state; :not(:disabled)
+    // names the opposite and does not count.
+    const disabled = splitCssTopLevel(rule.selector, ',').every((p) =>
+      /:disabled\b|\[disabled\]|\[aria-disabled(?:=["']?true["']?)?\]|\.disabled(?![\w-])/i.test(p.replace(/:not\((?:[^()]|\([^()]*\))*\)/gi, '')));
+    if (disabled) continue;
+    uses++;
+    const token = direct ?? `${alias} -> ${aliasOf.get(alias as string)}`;
+    const byName = hueKind(direct ?? (aliasOf.get(alias as string) as string)) === 'name';
+    const where = whereOf(rule);
+    const replacedBy = themed(where) ? [] : themedColor.get(keylessSelector(rule.selector)) ?? [];
+    const applies = [...themes.keys()].filter((k) => {
+      const t = themes.get(k) as Theme;
+      return !assumedBg.has(k) && reaches(t, where) && !replacedBy.some((w) => reaches(t, w));
+    });
+    // Large text: the rule's own font-size (a clamp() reads its minimum) or
+    // the size in a font shorthand, with its weight.
+    let px: number | null = null;
+    let weight = 400;
+    for (const d of decls) {
+      if (d.prop === 'font-size' || d.prop === 'font') {
+        const v = d.value.toLowerCase();
+        const kw = /(?:^|\s)(xxx-large|xx-large|x-large)(?:\s|$)/.exec(v);
+        const m = /^clamp\(\s*([\d.]+)(px|rem|em)/.exec(v)
+          ?? (d.prop === 'font-size' ? /^([\d.]+)(px|rem|em)$/.exec(v) : /(?:^|\s)([\d.]+)(px|rem|em)(?:\s*\/|\s|$)/.exec(v));
+        if (kw) px = kw[1] === 'xxx-large' ? 48 : kw[1] === 'xx-large' ? 32 : 24;
+        else if (m) px = parseFloat(m[1]) * (m[2] === 'px' ? 1 : 16);
+        const w = d.prop === 'font' ? /(?:^|\s)(bold|bolder|[1-9]00)(?:\s|$)/.exec(v) : null;
+        if (w) weight = /bold/.test(w[1]) ? 700 : parseInt(w[1], 10);
+      }
+      if (d.prop === 'font-weight') {
+        const w = d.value.trim().toLowerCase();
+        if (/^bold(?:er)?$/.test(w)) weight = 700;
+        else if (/^\d+$/.test(w)) weight = parseInt(w, 10);
+      }
+    }
+    // A colour named for a graphic (an icon colour) is not text.
+    const graphicToken = [direct, alias, alias ? aliasOf.get(alias) : undefined].some((nm) => nm && tokenNameSegments(nm).some((w) => V44_NON_TEXT_WORDS.includes(w)));
+    const need = graphicToken || (px !== null && (px >= 24 || (px >= 18.66 && weight >= 700))) ? 3 : 4.5;
+    const ownBg = [...decls].reverse().find((d) => d.prop === 'background-color' || d.prop === 'background');
+    const ownTokens: Record<string, string> = {};
+    for (const d of decls) if (d.prop.startsWith('--')) ownTokens[d.prop] = d.value;
+    // An alias set on a component reaches only text inside that component, so
+    // a value is a variant here only when this rule's selector names the
+    // component (`.card .label` for an alias set on `.card`). A themed rule
+    // for the same component replaces the unthemed one.
+    const compounds = splitCssTopLevel(rule.selector, ',').flatMap((p) => selectorCompounds(p).map((c) => simpleSelectors(c.compound)));
+    const variantsIn = (key: string): Array<Record<string, string>> => {
+      if (direct || !alias || Object.prototype.hasOwnProperty.call(ownTokens, alias)) return [{}];
+      const t = themes.get(key) as Theme;
+      const decl = (componentAlias.get(alias) ?? []).filter((a) => reaches(t, a.where)
+        && a.subjects.some((subject) => compounds.some((c) => compoundCovers(subject, c))));
+      const forTheme = new Set(decl.filter((a) => themed(a.where)).map((a) => a.keyless));
+      const values = decl.filter((a) => themed(a.where) || !forTheme.has(a.keyless)).map((a) => a.value);
+      return [{}, ...[...new Set(values)].map((value) => ({ [alias]: value }))];
+    };
+    const sel = shortSelector(rule.selector);
+    const parts = splitCssTopLevel(rule.selector, ',');
+    for (const key of applies) {
+      const t = themes.get(key) as Theme;
+      for (const variant of variantsIn(key)) {
+        const scope = [ownTokens, variant, ...scopeOf(key)];
+        const fg = resolveThemeColor(text.value, scope, t.dark);
+        if (!fg) { unresolved++; continue; }
+        if (fg[3] <= 0) continue;
+        // One fill: its color in this theme; 'stale' when, in a theme whose
+        // scheme differs from the root's, it resolves exactly as in the root
+        // (the surface did not follow the theme, so it is not measured).
+        const fill = (value: string): Rgba | 'none' | 'unreadable' | 'stale' => {
+          const c = v44BackgroundColor(value, scope, t.dark);
+          if (c === null) return 'unreadable';
+          if (c !== 'none' && key !== 'root' && t.dark !== root.dark) {
+            const inRoot = v44BackgroundColor(value, [ownTokens, variant, root.tokens], root.dark);
+            if (inRoot && inRoot !== 'none' && toHexColor(inRoot) === toHexColor(c) && inRoot[3] === c[3]) return 'stale';
+          }
+          return c;
+        };
+        const indexed = (k: string): string | null => {
+          for (const e of bgIndex.get(k) ?? []) if (reaches(t, e.where)) return e.value;
+          return null;
+        };
+        type Surface = { bg: Rgba | null; attested: boolean; stale: boolean; need: number };
+        const surfaces: Surface[] = parts.map((part) => {
+          const comps = selectorCompounds(keylessPart(part));
+          const n = comps.length - 1;
+          let partNeed = nonTextSubject(keylessPart(part)) ? 3 : need;
+          const layers: Rgba[] = [];
+          for (let k = n; k >= 0; k--) {
+            let value: string | null = null;
+            if (k === n && ownBg) value = ownBg.value;
+            const prefix = comps.slice(0, k + 1);
+            const lone = [{ comb: '', compound: comps[k].compound }];
+            for (const cand of [compoundsKey(prefix, false), compoundsKey(prefix, true), compoundsKey(lone, false), compoundsKey(lone, true)]) {
+              if (value !== null) break;
+              value = indexed(cand);
+            }
+            if (value === null) continue;
+            // An element that paints its own background with currentColor
+            // (a progress bar, a dot) uses the colour as a fill: a graphic,
+            // measured against the surface behind it.
+            if (k === n && /^\s*currentcolor\s*$/i.test(value)) { partNeed = 3; continue; }
+            const c = fill(value);
+            if (c === 'stale') return { bg: null, attested: false, stale: true, need: partNeed };
+            if (c === 'unreadable') return { bg: null, attested: true, stale: false, need: partNeed };
+            if (c === 'none') continue;
+            layers.push(c);
+            if (c[3] >= 1) break;
+          }
+          const opaque = layers.length > 0 && layers[layers.length - 1][3] >= 1;
+          const stateAbove = comps.slice(0, n).some((c) => simpleSelectors(c.compound).some((x) => V44_STATE.test(x)));
+          let base: Rgba = opaque ? (layers.pop() as Rgba) : (pageBg.get(key) as Rgba);
+          for (let i = layers.length - 1; i >= 0; i--) base = v44Composite(layers[i], base);
+          return { bg: base, attested: opaque || !stateAbove, stale: false, need: partNeed };
+        });
+        const solid: Rgba = [Math.round(fg[0]), Math.round(fg[1]), Math.round(fg[2]), 1];
+        const fgLab = srgbToOklab([solid[0], solid[1], solid[2]]);
+        const neutral = Math.hypot(fgLab[1], fgLab[2]) < V44_HUE_CHROMA;
+        const value = toHexColor(solid) + (fg[3] < 1 ? ` at ${Math.round(fg[3] * 100)}%` : '');
+        type Measured = { background: string; ratio: number | null; need: number; status: Finding['status']; note: string };
+        const measured: Measured[] = [];
+        for (const sf of surfaces) {
+          if (sf.stale) continue;
+          if (!sf.bg) {
+            measured.push({ background: 'unresolved', ratio: null, need: sf.need, status: 'WARN', note: 'its background cannot be resolved' });
+            continue;
+          }
+          const bg = sf.bg;
+          const full = contrastRatio([solid[0], solid[1], solid[2]], [bg[0], bg[1], bg[2]]);
+          const shown = fg[3] < 1 ? v44Composite(fg, bg) : solid;
+          const painted = contrastRatio([shown[0], shown[1], shown[2]], [bg[0], bg[1], bg[2]]);
+          let status: Finding['status'] = full < sf.need ? 'FAIL' : painted < sf.need ? 'WARN' : 'PASS';
+          let note = status === 'WARN' ? `clears ${sf.need}:1 only at full alpha (${full.toFixed(2)}:1)` : '';
+          if (status === 'FAIL' && !sf.attested) {
+            status = 'WARN';
+            note = 'is only a warning: the surface is unresolved, because an ancestor in an interactive state (hover, active, focus, expanded, open) usually changes a fill this check cannot find';
+          } else if (status === 'FAIL' && !byName) {
+            status = 'WARN';
+            note = 'is only a warning: the color is not named as a status, it counts because the stylesheet also paints it as a mark, and its real surface may be a fill this check cannot see';
+          } else if (status === 'FAIL' && neutral) {
+            status = 'WARN';
+            note = 'neutral text on a status fill: a general text-contrast miss, not a status color';
+          }
+          // Shown to two places; a miss that would round up to the bar is
+          // rounded down instead, so 4.497 reads 4.49, never 4.50 against 4.5.
+          const rounded = Math.round(painted * 100) / 100;
+          const shownRatio = painted < sf.need && rounded >= sf.need ? Math.floor(painted * 100) / 100 : rounded;
+          measured.push({ background: toHexColor(bg), ratio: shownRatio, need: sf.need, status, note });
+        }
+        if (!measured.length) { unresolved++; continue; }
+        const order = { FAIL: 0, WARN: 1, PASS: 2 };
+        measured.sort((a, b) => order[a.status] - order[b.status] || (a.ratio === null ? 0 : a.ratio / a.need) - (b.ratio === null ? 0 : b.ratio / b.need));
+        const worst = measured[0];
+        const dedupe = `${sel}|${token}|${value}|${worst.background}|${worst.need}|${worst.status}`;
+        if (seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        findings.push({ selector: sel, token, theme: t.label, value, ...worst });
+      }
+    }
+  }
+
+  if (findings.length === 0) {
+    return {
+      id: ID, item: ITEM, category: CATEGORY, status: 'SKIP',
+      detail: uses === 0
+        ? 'not applicable: no status color is used as text'
+        : `not applicable: ${uses} status-color text use(s), none resolvable to a measurable color`,
+    };
+  }
+  const rank = { FAIL: 0, WARN: 1, PASS: 2 };
+  const margin = (f: Finding) => (f.ratio === null ? 0 : f.ratio / f.need);
+  findings.sort((a, b) => rank[a.status] - rank[b.status] || margin(a) - margin(b));
+  const fails = findings.filter((f) => f.status === 'FAIL');
+  const warns = findings.filter((f) => f.status === 'WARN');
+  const status = fails.length ? 'FAIL' : warns.length ? 'WARN' : 'PASS';
+  const say = (f: Finding) => (f.ratio === null
+    ? `${f.selector} uses ${f.token} ${f.value} in ${f.theme}, and ${f.note}`
+    : `${f.selector} uses ${f.token} ${f.value} on ${f.background} in ${f.theme} at ${f.ratio.toFixed(2)}:1 (needs ${f.need}:1)${f.note ? `; ${/^(?:is|clears) /.test(f.note) ? 'this ' : ''}${f.note}` : ''}`);
+  const lead = status === 'FAIL' ? fails : warns;
+  const detail = status === 'PASS'
+    ? `${findings.length} status-color text use(s) clear contrast in ${themes.size} theme(s); the closest: ${say(findings[0])}`
+    : `${lead.length} status-color text use(s) ${status === 'FAIL' ? 'under contrast' : 'to review'}: ${lead.slice(0, 2).map(say).join(' | ')}${lead.length > 2 ? ` | ${lead.length - 2} more` : ''}`;
+  return {
+    id: ID, item: ITEM, category: CATEGORY, status, detail,
+    evidence: {
+      findings: findings.slice(0, 20).map((f) => ({ selector: f.selector, token: f.token, theme: f.theme, value: f.value, background: f.background, ratio: f.ratio, need: f.need, status: f.status, note: f.note || null })),
+      truncated: Math.max(0, findings.length - 20),
+    },
+  };
+}
+
+// ── v45 Pausing motion keeps content visible ────────────────────────────────
+// A site-level pause (animation-play-state: paused on every element, under an
+// attribute or class on the document, or inside prefers-reduced-motion:
+// reduce) holds each animation on its current frame. An entrance whose first
+// keyframe is opacity 0 is then held invisible, and when the pause is restored
+// before first paint, whole pages render empty for exactly the visitors who
+// asked for less motion. Found on designesy.org itself: under
+// html[data-motion="paused"] * { animation-play-state: paused !important } the
+// .fade-up entrance (@keyframes fadeUp, from opacity 0) froze invisible; the
+// fix gives each entrance animation-delay: -3600s under the pause, so it holds
+// on its last frame.
+//
+// An entrance is a one-shot use (no `infinite`) of keyframes whose from/0%
+// frame sets opacity 0 or visibility hidden, held at that frame (no positive
+// delay with a fill that leaves the frame unapplied), that the pause reaches
+// (it is !important, outranks the rule, or the rule leaves the play state
+// alone). Its override is a rule under the same pause, for the same selector
+// or a compound it contains, that wins the cascade and sets animation: none,
+// animation-name: none, animation-play-state: running, or a negative
+// animation-delay at least as long as the animation. Static: pauses applied
+// from JavaScript (WAAPI pause(), classes added at runtime) are not modelled.
+
+type V45Scope = { prefix: string; media: boolean; selector: string; important: boolean; spec: number[]; order: number; decls: CssDecl[] };
+
+/** The compounds of one complex selector and the combinator before each. */
+function selectorCompounds(part: string): Array<{ comb: string; compound: string }> {
+  const out: Array<{ comb: string; compound: string }> = [];
+  let depth = 0;
+  let cur = '';
+  let comb = '';
+  for (let i = 0; i < part.length; i++) {
+    const ch = part[i];
+    if (ch === '(' || ch === '[') depth++;
+    else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+    if (depth === 0 && (ch === ' ' || ch === '\n' || ch === '\t' || ch === '>' || ch === '+' || ch === '~')) {
+      if (cur) { out.push({ comb, compound: cur }); cur = ''; comb = ' '; }
+      if (ch !== ' ' && ch !== '\n' && ch !== '\t') comb = ch;
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur) out.push({ comb, compound: cur });
+  return out;
+}
+
+/** The simple selectors of one compound, attribute quotes and spacing normalised. */
+function simpleSelectors(compound: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = '';
+  for (let i = 0; i < compound.length; i++) {
+    const ch = compound[i];
+    if (depth === 0 && (ch === '.' || ch === '#' || ch === '[' || (ch === ':' && compound[i - 1] !== ':')) && cur) {
+      out.push(cur);
+      cur = '';
+    }
+    if (ch === '(' || ch === '[') depth++;
+    else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+    cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out.map((s) => (s.startsWith('[') ? s.replace(/["'\s]/g, '').toLowerCase() : s)).filter((s) => s !== '*');
+}
+
+/** Specificity [ids, classes, types] of one complex selector. */
+function selectorSpecificity(part: string): number[] {
+  const spec = [0, 0, 0];
+  for (const { compound } of selectorCompounds(part)) {
+    for (const s of simpleSelectors(compound)) {
+      const fn = /^:(is|not|has|matches|where|nth-child|nth-last-child)\(([\s\S]*)\)$/i.exec(s);
+      if (fn) {
+        const name = fn[1].toLowerCase();
+        if (name === 'where') continue;
+        if (name.startsWith('nth')) { spec[1]++; continue; }
+        let best = [0, 0, 0];
+        for (const arg of splitCssTopLevel(fn[2], ',')) {
+          const sp = selectorSpecificity(arg);
+          if (sp[0] > best[0] || (sp[0] === best[0] && (sp[1] > best[1] || (sp[1] === best[1] && sp[2] > best[2])))) best = sp;
+        }
+        for (let k = 0; k < 3; k++) spec[k] += best[k];
+        continue;
+      }
+      if (s.startsWith('#')) spec[0]++;
+      else if (s.startsWith('::') || /^:(?:before|after|first-line|first-letter)$/i.test(s)) spec[2]++;
+      else if (s.startsWith('.') || s.startsWith('[') || s.startsWith(':')) spec[1]++;
+      else spec[2]++;
+    }
+  }
+  return spec;
+}
+
+function compareSpecificity(a: number[], b: number[]): number {
+  for (let k = 0; k < 3; k++) if (a[k] !== b[k]) return a[k] - b[k];
+  return 0;
+}
+
+/** One time value in ms, null when it is not a literal time. */
+function cssTimeMs(token: string): number | null {
+  const m = /^(-?(?:\d+\.?\d*|\.\d+))(ms|s)$/i.exec(token.trim());
+  return m ? parseFloat(m[1]) * (m[2].toLowerCase() === 's' ? 1000 : 1) : null;
+}
+
+/** :is() and :where() in a selector, expanded into their alternatives (bounded). */
+function expandIsWhere(part: string, budget = 64): string[] {
+  const m = /:(?:is|where|matches|-webkit-any)\(/i.exec(part);
+  if (!m) return [part];
+  const open = m.index + m[0].length - 1;
+  let depth = 0;
+  let close = -1;
+  for (let i = open; i < part.length; i++) {
+    if (part[i] === '(') depth++;
+    else if (part[i] === ')' && --depth === 0) { close = i; break; }
+  }
+  if (close < 0) return [part];
+  const out: string[] = [];
+  for (const alt of splitCssTopLevel(part.slice(open + 1, close), ',')) {
+    for (const x of expandIsWhere(part.slice(0, m.index) + alt + part.slice(close + 1), budget)) {
+      if (out.length >= budget) return out;
+      out.push(x);
+    }
+  }
+  return out;
+}
+
+/** Whether every simple selector of `inner` holds for an element matching `outer` ([x] holds wherever [x=...] does). */
+function compoundCovers(inner: string[], outer: string[]): boolean {
+  return inner.every((s) => outer.includes(s)
+    || (/^\[[\w-]+\]$/.test(s) && outer.some((o) => o.startsWith(`${s.slice(0, -1)}=`) || o.startsWith(`${s.slice(0, -1)}~=`) || o.startsWith(`${s.slice(0, -1)}|=`))));
+}
+
+/**
+ * Whether selector `r` matches every element selector `e` matches: r's
+ * compounds, read from the subject outward, each hold for e's compound at the
+ * same position, joined by the same combinator (a descendant combinator in r
+ * also holds where e has a child combinator).
+ */
+function selectorCovers(r: string, e: string): boolean {
+  const rc = selectorCompounds(r);
+  const ec = selectorCompounds(e);
+  if (!rc.length || rc.length > ec.length) return false;
+  for (let k = 1; k <= rc.length; k++) {
+    const a = rc[rc.length - k];
+    const b = ec[ec.length - k];
+    if (!compoundCovers(simpleSelectors(a.compound), simpleSelectors(b.compound))) return false;
+    if (k < rc.length && a.comb !== b.comb && !(a.comb === ' ' && b.comb === '>')) return false;
+  }
+  return true;
+}
+
+const V45_USER_ACTION = /^:(?:hover|focus|focus-within|focus-visible|active|target|checked)$/i;
+// A document-level motion toggle: an attribute that names motion or animation
+// ([data-motion=paused], [data-reduced-motion]), or a class that is one
+// (.reduce-motion, .no-motion, .motion-paused, .animations-off). Component
+// classes that only end in "paused" (a marquee's .logobar--paused) are not.
+const V45_TOGGLE_ATTR = /^\[[\w-]*(?:motion|anim)[\w-]*(?:[~|^$*]?=[^\]]*)?\]$/i;
+const V45_TOGGLE_CLASS = /^\.(?:is-|has-|prefers-)?(?:reduced?-motion|no-motion|motion-(?:off|paused|reduced?|none)|paused-motion|(?:no-)?animations?(?:-(?:off|paused|disabled|none))?|(?:pause|stop)-animations?|still)$/i;
+
+/**
+ * Whether a compound before `*` reaches the whole document: html, :root or
+ * body with any qualifier, or a bare motion toggle (an attribute that names
+ * motion or animation, or a class that is a motion toggle), never a
+ * user-action state.
+ */
+function isDocumentScope(compound: string): boolean {
+  const simple = simpleSelectors(compound);
+  if (!simple.length) return false;
+  if (simple.some((s) => V45_USER_ACTION.test(s))) return false;
+  const type = simple.find((s) => /^[a-z]/i.test(s) || /^:root$/i.test(s));
+  if (type) return /^(?:html|body|:root)$/i.test(type);
+  return simple.every((s) => s.startsWith('.') || s.startsWith('['))
+    && simple.some((s) => V45_TOGGLE_ATTR.test(s) || V45_TOGGLE_CLASS.test(s));
+}
+
+function checkPausedEntrances(css: string): CheckResult {
+  const ID = 'v45';
+  const ITEM = 'Pausing motion keeps content visible';
+  const CATEGORY = 'motion';
+  const { rules, keyframes } = parseCssRules(css);
+  const parsed = rules.map((rule) => ({ rule, decls: parseCssDecls(rule.decls) }));
+  const isReduce = (at: string[]) => at.some((a) => a.startsWith('@media') && /prefers-reduced-motion(?!\s*:\s*no-preference)/.test(a));
+  const isNoPreference = (at: string[]) => at.some((a) => a.startsWith('@media') && /prefers-reduced-motion\s*:\s*no-preference/.test(a));
+  const rootTokens: Record<string, string> = {};
+  for (const { rule, decls } of parsed) {
+    if (rule.at.some((a) => a.startsWith('@media'))) continue;
+    if (!splitCssTopLevel(rule.selector, ',').some((p) => /^\s*(?::root|html)\s*$/i.test(p))) continue;
+    for (const d of decls) if (d.prop.startsWith('--')) rootTokens[d.prop] = d.value;
+  }
+
+  // 1. Pause scopes.
+  const scopes: V45Scope[] = [];
+  for (const { rule, decls } of parsed) {
+    const pause = [...decls].reverse().find((d) => d.prop === 'animation-play-state');
+    if (!pause || !/^paused(?:\s*,\s*paused)*$/i.test(pause.value)) continue;
+    const media = isReduce(rule.at);
+    for (const part of splitCssTopLevel(rule.selector, ',')) {
+      const comps = selectorCompounds(part);
+      const subject = comps[comps.length - 1];
+      if (!subject || !/^\*(?:::?(?:before|after))?$/i.test(subject.compound)) continue;
+      let prefix = '';
+      if (comps.length === 2 && comps[1].comb === ' ' && isDocumentScope(comps[0].compound)) prefix = simpleSelectors(comps[0].compound).join('');
+      else if (comps.length !== 1) continue;
+      if (scopes.some((s) => s.prefix === prefix && s.media === media)) continue;
+      scopes.push({ prefix, media, selector: part, important: pause.important, spec: selectorSpecificity(part), order: rule.order, decls });
+    }
+  }
+  if (!scopes.length) {
+    return { id: ID, item: ITEM, category: CATEGORY, status: 'SKIP', detail: 'not applicable: no rule pauses every element (animation-play-state: paused on *)' };
+  }
+
+  // 2. Keyframes that start invisible (the last block of a name wins).
+  const hiddenNames = new Set<string>();
+  const byName = new Map<string, CssKeyframesBlock>();
+  for (const k of keyframes) byName.set(k.name, k);
+  for (const [name, k] of byName) {
+    // The first frame, and the last: an animation that also ends invisible
+    // (a flash or a glow that fades out) hides nothing a pause would reveal.
+    const frameHides = (edge: RegExp) => {
+      let opacity: string | null = null;
+      let visibility: string | null = null;
+      for (const f of k.frames) {
+        if (!f.selector.split(',').some((x) => edge.test(x.trim()))) continue;
+        for (const d of parseCssDecls(f.decls)) {
+          if (d.prop === 'opacity') opacity = d.value.trim();
+          if (d.prop === 'visibility') visibility = d.value.trim().toLowerCase();
+        }
+      }
+      return (opacity !== null && /\d/.test(opacity) && /^(?:0*\.?0*|0*(?:\.0+)?%)$/.test(opacity)) || visibility === 'hidden';
+    };
+    if (frameHides(/^(?:from|0*(?:\.0+)?%)$/) && !frameHides(/^(?:to|100(?:\.0+)?%)$/)) hiddenNames.add(name);
+  }
+
+  // 3. One-shot entrances using them, held on their first frame.
+  type Entrance = { name: string; part: string; spec: number[]; order: number; important: boolean; shorthand: boolean; durationMs: number | null; gated: boolean };
+  const entrances: Entrance[] = [];
+  if (hiddenNames.size) {
+    for (const { rule, decls } of parsed) {
+      if (isReduce(rule.at)) continue;
+      const anim = [...decls].reverse().find((d) => d.prop === 'animation' || d.prop === 'animation-name');
+      if (!anim) continue;
+      const list = (prop: string) => {
+        const d = [...decls].reverse().find((x) => x.prop === prop);
+        return d ? splitCssTopLevel(substituteCssVars(d.value, [rootTokens]) ?? d.value, ',') : null;
+      };
+      const segments = splitCssTopLevel(anim.value, ',');
+      segments.forEach((segment, idx) => {
+        const resolved = substituteCssVars(segment, [rootTokens]) ?? segment;
+        const tokens = splitCssTopLevel(resolved, ' ');
+        const name = anim.prop === 'animation-name' ? segment.trim() : splitCssTopLevel(segment, ' ').find((t) => hiddenNames.has(t));
+        if (!name || !hiddenNames.has(name)) return;
+        let infinite = anim.prop === 'animation' && tokens.some((t) => t.toLowerCase() === 'infinite');
+        const times = anim.prop === 'animation' ? tokens.map(cssTimeMs).filter((x): x is number => x !== null) : [];
+        const unknownTime = anim.prop === 'animation' && tokens.some((t) => /^var\(/i.test(t));
+        let durationMs: number | null = anim.prop === 'animation' ? (times.length ? times[0] : unknownTime ? null : 0) : null;
+        let delayMs: number | null = anim.prop === 'animation' ? (times.length > 1 ? times[1] : unknownTime ? null : 0) : 0;
+        let fill = anim.prop === 'animation' ? (tokens.find((t) => /^(?:none|forwards|backwards|both)$/i.test(t)) ?? 'none').toLowerCase() : 'none';
+        const pick = (l: string[] | null) => (l && l.length ? l[idx % l.length] : null);
+        const count = pick(list('animation-iteration-count'));
+        if (count !== null) infinite = /infinite/i.test(count);
+        const dur = pick(list('animation-duration'));
+        if (dur !== null) durationMs = cssTimeMs(dur);
+        const del = pick(list('animation-delay'));
+        if (del !== null) delayMs = cssTimeMs(del);
+        const fm = pick(list('animation-fill-mode'));
+        if (fm !== null) fill = fm.toLowerCase();
+        if (infinite || durationMs === 0) return;
+        if (delayMs !== null && delayMs > 0 && (fill === 'none' || fill === 'forwards')) return;
+        for (const part of splitCssTopLevel(rule.selector, ',')) {
+          entrances.push({ name, part, spec: selectorSpecificity(part), order: rule.order, important: anim.important, shorthand: anim.prop === 'animation', durationMs, gated: isNoPreference(rule.at) });
+        }
+      });
+    }
+  }
+
+  // 4. Overrides: rules that end or remove an animation, with what they reach.
+  const neutralises = (decls: CssDecl[], durationMs: number | null): 'yes' | 'maybe' | 'no' => {
+    let best: 'yes' | 'maybe' | 'no' = 'no';
+    for (const d of decls) {
+      const v = d.value.trim().toLowerCase();
+      if ((d.prop === 'animation' || d.prop === 'animation-name') && /^none(?:\s*,\s*none)*$/.test(v)) return 'yes';
+      if (d.prop === 'animation-play-state' && /^running(?:\s*,\s*running)*$/.test(v)) return 'yes';
+      if (d.prop === 'animation-delay') {
+        const ms = splitCssTopLevel(substituteCssVars(v, [rootTokens]) ?? v, ',').map(cssTimeMs);
+        if (ms.length && ms.every((x) => x !== null && x < 0)) {
+          const shortest = Math.min(...ms.map((x) => -(x as number)));
+          if (durationMs !== null ? shortest >= durationMs : shortest >= 60000) return 'yes';
+          if (durationMs === null) best = 'maybe';
+        }
+      }
+    }
+    return best;
+  };
+  const overrides = parsed
+    .map(({ rule, decls }) => ({ rule, decls }))
+    .filter(({ decls }) => decls.some((d) => /^animation(?:-name|-play-state|-delay)?$/.test(d.prop)));
+
+  type Verdict = { entrance: Entrance; scope: V45Scope; status: 'PASS' | 'WARN' | 'FAIL'; override: string | null };
+  const verdicts: Verdict[] = [];
+  const seen = new Set<string>();
+  for (const scope of scopes) {
+    for (const e of entrances) {
+      if (scope.media && e.gated) continue;
+      const reaches = scope.important || !e.shorthand || compareSpecificity(scope.spec, e.spec) > 0
+        || (compareSpecificity(scope.spec, e.spec) === 0 && scope.order > e.order);
+      if (!reaches) continue;
+      const key = `${scope.prefix}|${scope.media}|${e.name}|${e.part}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const eComps = selectorCompounds(e.part);
+      const eSubject = simpleSelectors(eComps[eComps.length - 1]?.compound ?? '');
+      let status: Verdict['status'] = 'FAIL';
+      let override: string | null = null;
+      const own = neutralises(scope.decls, e.durationMs);
+      if (own === 'yes') { status = 'PASS'; override = scope.selector; }
+      for (const o of overrides) {
+        if (status === 'PASS') break;
+        for (const oPart of splitCssTopLevel(o.rule.selector, ',')) {
+          if (status === 'PASS') break;
+          const oComps = selectorCompounds(oPart);
+          let rel: string | null = null;
+          let otherScope = false;
+          if (scope.media) {
+            if (isReduce(o.rule.at)) rel = oPart;
+            else if (oComps.length > 1 && isDocumentScope(oComps[0].compound)) otherScope = true;
+          } else if (scope.prefix) {
+            const first = simpleSelectors(oComps[0]?.compound ?? '').join('');
+            if (oComps.length > 1 && oComps[1].comb === ' ' && first === scope.prefix && !isReduce(o.rule.at)) {
+              rel = oPart.slice(oPart.indexOf(oComps[0].compound) + oComps[0].compound.length).trim();
+            } else if (isReduce(o.rule.at) || (oComps.length > 1 && isDocumentScope(oComps[0].compound))) otherScope = true;
+          } else {
+            rel = oPart;
+          }
+          if (rel === null && !otherScope) continue;
+          const effect = neutralises(o.decls, e.durationMs);
+          if (effect === 'no') continue;
+          // Under another scope: the selector after its document prefix, or
+          // all of it inside a reduced-motion block.
+          const target = rel ?? (isReduce(o.rule.at) && !(oComps.length > 1 && isDocumentScope(oComps[0].compound))
+            ? oPart
+            : oPart.slice(oPart.indexOf(oComps[0].compound) + oComps[0].compound.length).trim());
+          let match: 'exact' | 'partial' | null = null;
+          for (const alt of expandIsWhere(target)) {
+            const aComps = selectorCompounds(alt);
+            const aSubject = simpleSelectors(aComps[aComps.length - 1]?.compound ?? '');
+            if (selectorCovers(alt, e.part)) { match = 'exact'; break; }
+            const named = (x: string) => x.startsWith('.') || x.startsWith('#') || x.startsWith('[');
+            if (aSubject.some((x) => named(x) && compoundCovers([x], eSubject))) match = 'partial';
+          }
+          if (!match) continue;
+          const oSpec = selectorSpecificity(oPart);
+          const wins = o.decls.some((d) => d.important && /^animation(?:-name|-play-state|-delay)?$/.test(d.prop)) || (!e.important && (compareSpecificity(oSpec, e.spec) > 0
+            || (compareSpecificity(oSpec, e.spec) === 0 && o.rule.order > e.order)));
+          if (match === 'exact' && effect === 'yes' && wins && rel !== null) { status = 'PASS'; override = oPart; }
+          else if (status === 'FAIL') { status = 'WARN'; override = oPart; }
+        }
+      }
+      verdicts.push({ entrance: e, scope, status, override });
+    }
+  }
+
+  const scopeNames = scopes.map((s) => (s.media ? `@media (prefers-reduced-motion: reduce) ${shortSelector(s.selector)}` : shortSelector(s.selector)));
+  if (!verdicts.length) {
+    return {
+      id: ID, item: ITEM, category: CATEGORY, status: 'PASS',
+      detail: `pause scope ${scopeNames.join(', ')}: no one-shot entrance it holds starts at opacity 0`,
+      evidence: { findings: [], truncated: 0 },
+    };
+  }
+  const rank = { FAIL: 0, WARN: 1, PASS: 2 };
+  verdicts.sort((a, b) => rank[a.status] - rank[b.status]);
+  const fails = verdicts.filter((v) => v.status === 'FAIL');
+  const warns = verdicts.filter((v) => v.status === 'WARN');
+  const status = fails.length ? 'FAIL' : warns.length ? 'WARN' : 'PASS';
+  const pauseRule = (v: Verdict) => (v.scope.media ? `@media (prefers-reduced-motion: reduce) ${shortSelector(v.scope.selector)}` : shortSelector(v.scope.selector));
+  const say = (v: Verdict) => `@keyframes ${v.entrance.name} on ${shortSelector(v.entrance.part)} under ${pauseRule(v)}${v.override ? ` (override: ${shortSelector(v.override)})` : ''}`;
+  const lead = status === 'FAIL' ? fails : warns;
+  const detail = status === 'PASS'
+    ? `${verdicts.length} entrance(s) that start at opacity 0 end or are removed under the pause (${scopeNames.join(', ')})`
+    : status === 'FAIL'
+      ? `${fails.length} entrance(s) start at opacity 0 and stay held invisible under the pause: ${fails.slice(0, 2).map(say).join(' | ')}${fails.length > 2 ? ` | ${fails.length - 2} more` : ''}`
+      : `${warns.length} entrance(s) with an override whose selector or scope does not clearly match: ${lead.slice(0, 2).map(say).join(' | ')}${warns.length > 2 ? ` | ${warns.length - 2} more` : ''}`;
+  return {
+    id: ID, item: ITEM, category: CATEGORY, status, detail,
+    evidence: {
+      findings: verdicts.slice(0, 20).map((v) => ({ keyframes: v.entrance.name, selector: shortSelector(v.entrance.part), pauseRule: pauseRule(v), override: v.override === null ? null : shortSelector(v.override), status: v.status })),
+      truncated: Math.max(0, verdicts.length - 20),
+    },
+  };
 }
 
 // v34 — AI-Disclosure Readiness (EU AI Act Article 50, effective 2026-08-02).
@@ -2132,7 +3609,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     // package missing from THIS runtime, so the same page scored lower from the
     // npm CLI than from the API. Unverified-here is what MANUAL means (v02,
     // v04, v21): weight 0, resolved by a run that has the linter.
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return { id: 'v37', item: ITEM, category: CATEGORY, status: 'MANUAL', detail: `/DESIGN.md fetched but linter unavailable: ${msg}. The @google/design.md package may not be installed in this runtime; run the full audit to resolve.` };
   }
   try {
@@ -2147,9 +3624,210 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     // Distinct from the branch above: the linter LOADED and then threw, so the
     // file's format is unsupported rather than the runtime being incomplete.
     // Both WARN, but the messages point at different fixes.
-    const msg = e instanceof Error ? e.message : 'unknown error';
+    const msg = sanitizeErrorText(e instanceof Error ? e.message : 'unknown error');
     return { id: 'v37', item: ITEM, category: CATEGORY, status: 'WARN', detail: `/DESIGN.md fetched but lint failed: ${msg}. The file may use a format version the linter doesn't support yet.` };
   }
+}
+
+// ── Error text in a result, shared by both engine copies ───────────────────
+// A caught error's message carries the file system of the machine that ran
+// the engine: Node's "Cannot find package '@google/design.md' imported from
+// <path>" gives the full path of the npm cache the CLI ran from, under the
+// Users folder of the account that ran it, and a result is read by people
+// other than that account. Every check detail passes through
+// sanitizeErrorText before it is returned. It replaces absolute paths (a
+// drive letter, a UNC share, a POSIX home, temp or system root), file:// URLs
+// and npm cache segments, and keeps the clause that says what failed
+// ("Cannot find package '@google/design.md'"). A path segment may hold spaces
+// (an account name often does); the last one may not, so the sentence after
+// a path survives, and trailing punctuation is kept.
+function sanitizeErrorText(text: string): string {
+  const keep = (label: string) => (m: string): string => `${label}${/[.,;:!?)]+$/.exec(m)?.[0] ?? ''}`;
+  return text
+    .replace(/\bfile:\/\/[^\s'"<>`|]*/gi, keep('a local file'))
+    .replace(/\\\\[^\\\s'"<>`|]+\\(?:[^\\\r\n'"<>`|*?]+\\)*[^\\\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(/(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'"<>`|*?]+\1)*[^\\/\s'"<>`|*?]*/g, keep('a local path'))
+    .replace(
+      /(^|[\s'"`(=,:[])\/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel|workspace|workspaces|github|runner|nix|snap)(?:\/[^/\r\n'"<>`|]+(?=\/))*\/[^/\s'"<>`|]+/g,
+      (m: string, lead: string) => `${lead}${keep('a local path')(m.slice(lead.length))}`,
+    )
+    .replace(/[^\s'"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'"<>`|]*/gi, keep('the npm cache'));
+}
+
+/** The checks with every detail passed through sanitizeErrorText. */
+function sanitizeCheckDetails(checks: CheckResult[]): CheckResult[] {
+  return checks.map((c) => (typeof c.detail === 'string' ? { ...c, detail: sanitizeErrorText(c.detail) } : c));
+}
+
+// ── Score arithmetic, shared by both engine copies ─────────────────────────
+// Everything between the check verdicts and the grade: category weights, the
+// weighted score, the slop deduction, the originality lift, the per-category
+// sub-scores, the accessibility floor and the hard-fail ceilings. It is one
+// function so the source-drift gate compares it as one unit. Until engine
+// 1.2.0 the arithmetic sat inline in each orchestrator, outside the gate, and
+// the copies disagreed on the floor: the site capped at 70 when the
+// accessibility category was under 60%, the npm engine on any accessibility
+// FAIL. The site's rule is the one documented on /methodology.
+function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPoints: number): {
+  score: number;
+  categoryWeights: Record<string, number>;
+  categoryCounts: Record<string, number>;
+  categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }>;
+  a11yFloorApplied: boolean;
+  hardFailCeilingApplied: boolean;
+  hardFailCeilingReason: string | null;
+} {
+  // ── Tier 2: per-category weighted scoring ──────────────────────────────────
+  // Weights follow the contract's section emphasis (the contract IS the scoring
+  // basis), with an accessibility floor so contract sections covering real-user
+  // harm cannot be drowned out by cadence's 8 checks. SKIPs fall out of BOTH
+  // numerator and denominator (Lighthouse precedent: manual/N/A audits excluded).
+  //
+  // Weight table (relative weights, sums to 117 — the scoring formula
+  // normalizes via Σ(points)/Σ(total). Derived from AnySearch research against
+  // Lighthouse axe user-impact, design-auditor category %, and DSAF 50/50):
+  //   cadence 18, accessibility 15, semantic 12, motion 10, tokens 9,
+  //   takt 8, poise 7, identity 6, interaction 6, performance 6, responsive 3
+  // v0.4.0 additions: copywriting 8, security 5, spec 4
+  const CATEGORY_WEIGHTS: Record<string, number> = {
+    cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9,
+    takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3,
+    security: 5, spec: 4, copywriting: 8,
+  };
+
+  // Per-check weight = category weight / number of checks in that category
+  // (so each category contributes its full weight, split evenly among its checks).
+  const categoryCounts: Record<string, number> = {};
+  for (const c of checks) {
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
+    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
+  }
+
+  let weightedPoints = 0;
+  let weightedTotal = 0;
+  for (const c of checks) {
+    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
+    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
+    const checkWeight = catWeight / (categoryCounts[c.category] || 1);
+    weightedTotal += checkWeight;
+    if (c.status === 'PASS') weightedPoints += checkWeight;
+    else if (c.status === 'WARN') weightedPoints += checkWeight * 0.5;
+    // FAIL = 0 points
+  }
+
+  let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
+
+  // ── Anti-slop deduction ─────────────────────────────────────────────────────
+  // Apply detected slop patterns as a direct subtraction from the weighted score.
+  // The deduction is flat (not percentage-scaled) so it cannot be gamed by making
+  // the site more minimal. Capped at 20 total.
+  if (slopTotal > 0) {
+    score = Math.max(0, score - slopTotal);
+  }
+
+  // ── Originality lift ─────────────────────────────────────────────────────────
+  // Reward positive craft signals. Applied after the slop deduction so a generic
+  // site with no distinctive signals stays at its (already-slop-deducted) score,
+  // while a distinctive site is lifted above the compliant-but-generic baseline.
+  // Capped at +8. Score clamped to ≤100 since this is a bonus on a 100-scale base.
+  if (originalityPoints > 0) {
+    score = Math.min(100, score + originalityPoints);
+  }
+
+  // One decimal, the precision scores are shown at: subtracting a fractional
+  // slop total leaves float noise (72.6 - 20 + 4 is 56.599999999999994).
+  score = Math.round(score * 10) / 10;
+
+  // ── Per-category sub-scores (the constellation) ─────────────────────────
+  // Each category gets its own 0-100 score using the same weighting rule as
+  // the composite (PASS 1.0 / WARN 0.5 / FAIL 0, SKIP excluded). Categories
+  // with zero scored checks report null so the client can render them as
+  // "unscored" rather than fabricating a 0 or 100. This is the same math the
+  // composite uses — one source of truth, no client-side re-derivation.
+  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
+  for (const c of checks) {
+    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
+    if (c.status === 'SKIP') { agg.skip += 1; continue; }
+    if (c.status === 'MANUAL') { agg.manual += 1; continue; }
+    const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
+    agg.wt += checkWeight;
+    if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
+    else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
+    else agg.fail += 1; // FAIL
+  }
+  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
+  for (const [cat, agg] of Object.entries(catAgg)) {
+    categoryScores[cat] = {
+      score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
+      weight: CATEGORY_WEIGHTS[cat] || 5,
+      pass: agg.pass,
+      fail: agg.fail,
+      warn: agg.warn,
+      skip: agg.skip,
+      manual: agg.manual,
+    };
+  }
+
+  // ── Tier 2: accessibility floor (DSAF enterprise-grade precedent) ──────────
+  // DSAF enforces A8 Accessibility ≥75% — a system can score 90% combined and
+  // still fail enterprise-grade if a11y is 73%. We apply a softer version: if
+  // the accessibility category scores below 60%, cap the overall grade at C.
+  // This prevents "perfect tokens, zero a11y = A" dishonesty.
+  const a11yChecks = checks.filter((c) => c.category === 'accessibility' && c.status !== 'SKIP' && c.status !== 'MANUAL');
+  const a11yPass = a11yChecks.filter((c) => c.status === 'PASS').length;
+  const a11yWarn = a11yChecks.filter((c) => c.status === 'WARN').length;
+  const a11yScored = a11yChecks.length;
+  const a11yPct = a11yScored === 0 ? 100 : ((a11yPass + a11yWarn * 0.5) / a11yScored) * 100;
+  let a11yFloorApplied = false;
+  if (a11yScored > 0 && a11yPct < 60) {
+    // Cap at C (70). If the weighted score is already below 70, leave it.
+    if (score > 70) {
+      score = 70;
+      a11yFloorApplied = true;
+    }
+  }
+
+  // ── Hard-fail ceilings (PixelJury precedent) ────────────────────────────────
+  // Certain check FAILures are so severe they cap the score regardless of other
+  // strengths. These are design-integrity failures — a site that FAILs on
+  // contrast or horizontal overflow cannot be A-grade no matter how good its
+  // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
+  const hardFailChecks = checks.filter((c) => c.status === 'FAIL');
+  let hardFailCeilingApplied = false;
+  let hardFailCeilingReason: string | null = null;
+  for (const c of hardFailChecks) {
+    let cap: number | null = null;
+    let reason: string | null = null;
+
+    // v06 Contrast readable — fundamental legibility failure
+    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+    // v22 Contrast signal — CTA text unreadable on brand color
+    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
+    // v02 Horizontal overflow — broken layout on mobile
+    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
+    // v24 Touch targets — interactive elements too small to use
+    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target (WCAG 2.5.5 Enhanced): inaccessible on touch devices.'; }
+    // v25 Heading hierarchy — broken document outline
+    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: document outline is broken.'; }
+    // v16 Rem scale — root font-size under 16px (iOS zoom break)
+    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom, breaks mobile UX.'; }
+
+    if (cap !== null && score > cap) {
+      score = cap;
+      hardFailCeilingApplied = true;
+      hardFailCeilingReason = reason;
+    }
+  }
+
+  return {
+    score,
+    categoryWeights: CATEGORY_WEIGHTS,
+    categoryCounts,
+    categoryScores,
+    a11yFloorApplied,
+    hardFailCeilingApplied,
+    hardFailCeilingReason,
+  };
 }
 
 function computeGrade(score: number): string {
@@ -2301,6 +3979,8 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     checkNoTrailingPeriod(html),
     checkLinkTextDescriptive(html),
     checkNoAllCaps(html),
+    checkStatusTextContrast(css),
+    checkPausedEntrances(css),
   ];
 
   // v37 is async — added after the synchronous checks array
@@ -2322,7 +4002,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
       : await checkDesignMdSpec(targetUrl),
   );
 
-  checks = applyScopeFilter(checks, effectiveScope);
+  checks = sanitizeCheckDetails(applyScopeFilter(checks, effectiveScope));
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
   const fail = checks.filter((c) => c.status === 'FAIL').length;
@@ -2368,38 +4048,88 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     if (usedFonts.size > 0) slopFindings.push({ id: 'S1', label: 'Overused font family', severity: 5, instances: usedFonts.size, evidence: [...usedFonts] });
   }
 
-  // S2. Full-page gradient background
+  // S2. Full-page gradient background: a multi-stop linear gradient that
+  // covers the viewport. Not: a gradient on a component (the glass score hero,
+  // a window sheen, a cell fill), a hairline, or a grid.
+  //
+  // Viewport evidence is required: the gradient is painted on html, body or
+  // :root, the rule is position: fixed and pinned to all four edges (or sized
+  // to the viewport), or it is sized in viewport units.
+  // Until engine 1.2.0 `inset: 0` counted as full-bleed, but inset: 0 fills
+  // the nearest positioned ancestor, which is a component; designesy.org lost
+  // 5 points to a 1px window sheen, a cell fill and a heatmap bar that all
+  // matched on it. A viewport-sized rule with border-radius: inherit is still
+  // a component. A gradient sized to 1px (height, width, border width, or a
+  // background-size with a 1px dimension, as in `top / 100% 1px`) is a hairline.
   {
     // A repeating hairline pattern is a GRID, not a decorative gradient wash.
     //
-    // The previous pattern required the colour to precede the stop —
-    // `(transparent|rgba(...))\s+1px` — which only matches
-    // `linear-gradient(transparent 1px, ...)`. The form actually used on
-    // designesy.org is the reverse: `linear-gradient(color-mix(...) 1px,
-    // transparent 1px)`, so the filter never fired and a graph-paper grid
-    // overlay was reported as "Full-page gradient background" at severity 5 —
-    // the maximum — deducting the full 20-point slop budget on a page whose
-    // background is a 1px grid on near-black.
-    //
-    // Match a 1px stop in EITHER order, which is what "hairline" means
-    // regardless of how the colour and the stop are written.
+    // An earlier pattern required the colour to precede the stop, which only
+    // matches `linear-gradient(transparent 1px, ...)`; designesy.org writes the
+    // reverse, `linear-gradient(color-mix(...) 1px, transparent 1px)`, and its
+    // graph-paper grid was reported at the maximum severity. Match a 1px stop
+    // in EITHER order, which is what "hairline" means however it is written.
     const isGridPattern = (text: string) =>
       /(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8})\s+1px(?:\s*,)/.test(text)
       || /\s+1px\s*,\s*(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\))/.test(text);
-    const bodyGrad = css.match(/(?:^|})\s*(?:body|html)(?!::)[^{]*\{[^}]*background(?:-image)?\s*:[^;{}]*linear-gradient\s*\([^)]*,\s*[^)]*\)/gi) || [];
-    const overlayGrad: string[] = [];
-    const gradBlockRe = /\{[^{}]{0,500}?linear-gradient\s*\(\s*[^)]*,\s*[^)]{4,}\)[^{}]{0,500}?\}/gi;
-    let block: RegExpExecArray | null;
-    while ((block = gradBlockRe.exec(css)) !== null) {
-      const decl = block[0];
-      const fullBleed = /position\s*:\s*fixed/i.test(decl) || /inset\s*:\s*0\b/i.test(decl) || /width\s*:\s*100vw/i.test(decl) || /height\s*:\s*100vh/i.test(decl);
-      const hairline = /(?:height|width)\s*:\s*1px\b/.test(decl) || /border(?:-top|-bottom)?-width\s*:\s*1px\b/.test(decl);
-      if (fullBleed && !hairline) overlayGrad.push(decl.slice(0, 160));
+    // Two or more colour stops in some linear-gradient() of the value.
+    const multiStop = (value: string): boolean => {
+      let from = 0;
+      for (;;) {
+        const at = value.toLowerCase().indexOf('linear-gradient(', from);
+        if (at < 0) return false;
+        let depth = 0;
+        let end = -1;
+        for (let i = at + 15; i < value.length; i++) {
+          if (value[i] === '(') depth++;
+          else if (value[i] === ')' && --depth === 0) { end = i; break; }
+        }
+        if (end < 0) return false;
+        const args = splitCssTopLevel(value.slice(at + 16, end), ',');
+        const stops = /^(?:to\s|[-+]?[\d.]+(?:deg|turn|rad|grad)\b)/i.test(args[0] ?? '') ? args.slice(1) : args;
+        if (stops.length >= 2) return true;
+        from = end;
+      }
+    };
+    const pageGrad: string[] = [];
+    for (const rule of parseCssRules(css).rules) {
+      if (!/linear-gradient\s*\(/i.test(rule.decls)) continue;
+      const decls = parseCssDecls(rule.decls);
+      if (!decls.some((d) => (d.prop === 'background' || d.prop === 'background-image') && multiStop(d.value))) continue;
+      const text = `${rule.selector}{${rule.decls}}`;
+      if (isGridPattern(text)) continue;
+      const last = (prop: string) => [...decls].reverse().find((d) => d.prop === prop)?.value.trim().toLowerCase() ?? '';
+      const pageSelector = splitCssTopLevel(rule.selector, ',').some((p) => {
+        const comps = selectorCompounds(p);
+        const subject = comps[comps.length - 1]?.compound ?? '';
+        return /^(?:html|body|:root)(?![\w-])/i.test(subject) && !/::?(?:before|after|marker|backdrop)/i.test(subject);
+      });
+      // A fixed element covers the viewport only when it is pinned to all four
+      // edges or sized to it; a fixed drawer or toast is not a page background.
+      const zero = (v: string) => /^0(?:px|rem|em|%)?$/.test(v);
+      const inset = last('inset');
+      const pinned = (inset !== '' && inset.split(/\s+/).every(zero))
+        || ['top', 'right', 'bottom', 'left'].every((side) => zero(last(side)));
+      const viewportSized = decls.some((d) => /^(?:width|height|min-width|min-height|inline-size|block-size|min-inline-size|min-block-size)$/.test(d.prop)
+        && /(?:^|[\s(,])100(?:d|s|l)?v(?:w|h|i|b)\b/i.test(d.value));
+      const component = last('border-radius') === 'inherit';
+      const hairline = decls.some((d) => (/^(?:height|width|block-size|inline-size)$/.test(d.prop) && d.value.trim() === '1px')
+        || (/^border(?:-top|-bottom)?-width$/.test(d.prop) && d.value.trim() === '1px')
+        || (d.prop === 'background-size' && /(?:^|[\s,])1px(?:$|[\s,])/.test(d.value))
+        || (d.prop === 'background' && /\/\s*[^,/]*(?:^|\s)1px(?:$|[\s,])/.test(d.value)));
+      const fixedCover = last('position') === 'fixed' && (pinned || viewportSized);
+      if ((pageSelector || fixedCover || (viewportSized && !component)) && !hairline) pageGrad.push(text.replace(/\s+/g, ' ').slice(0, 160));
     }
-    const bodyGradFiltered = bodyGrad.filter(m => !isGridPattern(m));
-    const overlayGradFiltered = overlayGrad.filter(m => !isGridPattern(m));
-    const instances = bodyGradFiltered.length + overlayGradFiltered.length;
-    if (instances > 0) slopFindings.push({ id: 'S2', label: 'Full-page gradient background', severity: 5, instances, evidence: [...bodyGradFiltered, ...overlayGradFiltered].slice(0, 3) });
+    const instances = pageGrad.length;
+    if (instances > 0) {
+      slopFindings.push({
+        id: 'S2',
+        label: 'Full-page gradient background',
+        severity: 5,
+        instances,
+        evidence: pageGrad.slice(0, 3),
+      });
+    }
   }
 
   // S3. Purple/violet gradient
@@ -2492,11 +4222,62 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     if (emojiInButtons && emojiInButtons.length >= 2) slopFindings.push({ id: 'S7', label: 'Emoji as UI icons', severity: 4, instances: emojiInButtons.length, evidence: [`${emojiInButtons.length} emoji in button/CTA elements`] });
   }
 
-  // S8. AI-pill badges
+  // S8. AI-pill badges: "AI-powered", "Generate", "Chat with AI" and the like
+  // as the short text of a pill, badge, chip, tag or call to action.
+  //
+  // Until engine 1.2.0 this matched the whole HTML with no word boundary and
+  // no element scope, so it read prose and the framework's <script> payload:
+  // on designesy.org it counted three sentences arguing against AI sameness,
+  // twice each, because "Generate" matched "generates" and "AI-generated".
+  // Now <script>, <style>, <template> and comments are stripped, the phrases
+  // match whole words only, and only a pill counts: an element whose class or
+  // role names a badge, pill, chip, tag or CTA, a button, a link, or a span
+  // with a border-radius of its own, holding 40 characters of text or fewer.
+  // Skipped on a page that documents the rules (see isDocumentingSlopRules):
+  // the anti-slop rule table on /methodology lists these phrases.
   {
-    const pillPattern = /(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)/gi;
-    const matches = html.match(pillPattern) || [];
-    if (matches.length > 0 && !isDocumentingSlopRules) slopFindings.push({ id: 'S8', label: 'AI-pill badge text', severity: 3, instances: matches.length, evidence: [...new Set(matches.map(m => m.trim()))].slice(0, 3) });
+    const visible = html
+      .replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style\s*>/gi, ' ')
+      .replace(/<template\b[\s\S]*?<\/template\s*>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ');
+    const pillPhrase = /\b(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)\b/i;
+    const openRe = /<(span|a|button|div|small|strong|b|em|mark|label|p|li)\b([^<>]*)>/gi;
+    const tagRe: Record<string, RegExp> = {};
+    const pills: string[] = [];
+    let open: RegExpExecArray | null;
+    while ((open = openRe.exec(visible)) !== null) {
+      const tag = open[1].toLowerCase();
+      const attrs = open[2];
+      const named = [...attrs.matchAll(/\b(?:class|role)\s*=\s*["']([^"']*)["']/gi)].map((a) => a[1]).join(' ');
+      const pillish = /(?:^|[\s_-])(?:badge|pill|chip|tag|cta)(?:$|[\s_-])/i.test(named);
+      const rounded = tag === 'span' && /\bstyle\s*=\s*["'][^"']*border-radius\s*:/i.test(attrs);
+      if (!pillish && !rounded && tag !== 'button' && tag !== 'a') continue;
+      // The element's content, to its matching close tag, within 2,000 characters.
+      const start = open.index + open[0].length;
+      const windowText = visible.slice(start, start + 2000);
+      const re = tagRe[tag] ?? (tagRe[tag] = new RegExp(`<(/?)${tag}\\b[^<>]*>`, 'gi'));
+      re.lastIndex = 0;
+      let depth = 1;
+      let end = -1;
+      let t: RegExpExecArray | null;
+      while ((t = re.exec(windowText)) !== null) {
+        depth += t[1] ? -1 : 1;
+        if (depth === 0) { end = t.index; break; }
+      }
+      if (end < 0) continue;
+      const text = windowText.slice(0, end).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (text && text.length <= 40 && pillPhrase.test(text)) pills.push(text);
+    }
+    if (pills.length > 0 && !isDocumentingSlopRules) {
+      slopFindings.push({
+        id: 'S8',
+        label: 'AI-pill badge text',
+        severity: 3,
+        instances: pills.length,
+        evidence: [...new Set(pills)].slice(0, 3),
+      });
+    }
   }
 
   // S9. Lorem ipsum
@@ -2634,78 +4415,16 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     ? `${originalitySignals.length} craft signal${originalitySignals.length !== 1 ? 's' : ''} (+${originalityPoints}pts${rawOriginality > ORIGINALITY_CAP ? `, capped from +${rawOriginality}` : ''}${slopGateApplied ? ', slop-gated ×0.5' : ''})`
     : null;
 
-  // ── Weighted scoring ─────────────────────────────────────────────────────
-  const CATEGORY_WEIGHTS: Record<string, number> = {
-    cadence: 18, accessibility: 15, semantic: 12, motion: 10, tokens: 9, takt: 8, poise: 7, identity: 6, interaction: 6, performance: 6, responsive: 3, security: 5, spec: 4, copywriting: 8,
-  };
-
-  const categoryCounts: Record<string, number> = {};
-  for (const c of checks) {
-    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
-    categoryCounts[c.category] = (categoryCounts[c.category] || 0) + 1;
-  }
-
-  let weightedPoints = 0;
-  let weightedTotal = 0;
-  for (const c of checks) {
-    if (c.status === 'SKIP' || c.status === 'MANUAL') continue;
-    const catWeight = CATEGORY_WEIGHTS[c.category] || 5;
-    const checkWeight = catWeight / (categoryCounts[c.category] || 1);
-    weightedTotal += checkWeight;
-    if (c.status === 'PASS') weightedPoints += checkWeight;
-    else if (c.status === 'WARN') weightedPoints += checkWeight * 0.5;
-  }
-
-  let score = weightedTotal === 0 ? 0 : Math.round((weightedPoints / weightedTotal) * 1000) / 10;
-
-  if (slopTotal > 0) score = Math.max(0, score - slopTotal);
-  if (originalityPoints > 0) score = Math.min(100, score + originalityPoints);
-
-  // Per-category sub-scores
-  const catAgg: Record<string, { wp: number; wt: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
-  for (const c of checks) {
-    const agg = catAgg[c.category] || (catAgg[c.category] = { wp: 0, wt: 0, pass: 0, fail: 0, warn: 0, skip: 0, manual: 0 });
-    if (c.status === 'SKIP') { agg.skip += 1; continue; }
-    if (c.status === 'MANUAL') { agg.manual += 1; continue; }
-    const checkWeight = (CATEGORY_WEIGHTS[c.category] || 5) / (categoryCounts[c.category] || 1);
-    agg.wt += checkWeight;
-    if (c.status === 'PASS') { agg.wp += checkWeight; agg.pass += 1; }
-    else if (c.status === 'WARN') { agg.wp += checkWeight * 0.5; agg.warn += 1; }
-    else agg.fail += 1;
-  }
-  const categoryScores: Record<string, { score: number | null; weight: number; pass: number; fail: number; warn: number; skip: number; manual: number }> = {};
-  for (const [cat, agg] of Object.entries(catAgg)) {
-    categoryScores[cat] = {
-      score: agg.wt === 0 ? null : Math.round((agg.wp / agg.wt) * 1000) / 10,
-      weight: CATEGORY_WEIGHTS[cat] || 5,
-      pass: agg.pass, fail: agg.fail, warn: agg.warn, skip: agg.skip, manual: agg.manual,
-    };
-  }
-
-  // A11y floor: cap score at C (70) when any accessibility FAIL exists
-  let a11yFloorApplied = false;
-  for (const c of checks) {
-    if (c.category === 'accessibility' && c.status === 'FAIL') {
-      if (score > 70) { score = 70; a11yFloorApplied = true; }
-      break;
-    }
-  }
-
-  // Hard-fail ceilings for critical issues
-  let hardFailCeilingApplied = false;
-  let hardFailCeilingReason: string | null = null;
-  for (const c of checks) {
-    if (c.status !== 'FAIL') continue;
-    let cap: number | null = null;
-    let reason = '';
-    if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
-    if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
-    if (c.id === 'v02') { cap = 70; reason = 'Horizontal overflow detected: content is cut off or scrolls sideways on smaller viewports.'; }
-    if (c.id === 'v24') { cap = 75; reason = 'Interactive elements below the 44px minimum touch target: inaccessible on touch devices.'; }
-    if (c.id === 'v25') { cap = 75; reason = 'Multiple h1 elements or skipped heading levels: document outline is broken.'; }
-    if (c.id === 'v16') { cap = 70; reason = 'Root font-size below 16px: triggers iOS Safari auto-zoom, breaks mobile UX.'; }
-    if (cap !== null && score > cap) { score = cap; hardFailCeilingApplied = true; hardFailCeilingReason = reason; }
-  }
+  // The arithmetic is shared with the other engine copy; see scoreArithmetic.
+  const {
+    score,
+    categoryWeights: CATEGORY_WEIGHTS,
+    categoryCounts,
+    categoryScores,
+    a11yFloorApplied,
+    hardFailCeilingApplied,
+    hardFailCeilingReason,
+  } = scoreArithmetic(checks, slopTotal, originalityPoints);
 
   const grade = computeGrade(score);
 
@@ -2730,9 +4449,11 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
 /**
  * The contract revision these checks implement, reported by every emission.
  * The site derives its copy from the contract source; this standalone engine
- * pins it here, once, and each release moves it.
+ * pins it here, once, and each release moves it. 0.6.0 shipped v0.4.1 while
+ * the site served v0.4.3; test/engine-1-2-0.test.mjs now reads the site's
+ * contract source and fails when the two differ.
  */
-export const CONTRACT_VERSION = 'v0.4.1';
+export const CONTRACT_VERSION = 'v0.4.3';
 
 /**
  * The one verdict rule, shared by every emission format.

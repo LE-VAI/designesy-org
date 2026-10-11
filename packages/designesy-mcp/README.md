@@ -83,31 +83,31 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Read-only discovery
 | Tool | What it does |
 |---|---|
-| `designesy_catalog` | Get the 23-package catalog (versions, URLs, statuses) from `/open.json` |
-| `designesy_contract` | Get the full design-system contract (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions) — or a filtered section. The version travels in the response, so none is pinned here |
-| `designesy_design_review` | Get the Design Review kit (8 dimensions, agent prompt, output format, verification checklist) |
-| `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns |
-| `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) — identity, authority, ingest protocol |
-| `designesy_llms_txt` | Get the short agent brief (`/llms.txt`) |
-| `designesy_llms_full_txt` | Get the full agent brief (`/llms-full.txt`) with ingest protocol, all packages, paste-ready prompt |
+| `designesy_catalog` | Get the package catalog (versions, URLs, statuses) from `/open.json` |
+| `designesy_contract` | Get the full design-system contract (tokens, motion, acoustic, takt, cadence, typography, components, verification, open tensions), or pass `sections` (a list of top-level keys) to get only those parts plus `id` and `version`. The full contract is on the order of 100 KB. An unknown key returns the list of valid keys. The version travels in the response, so none is pinned here |
+| `designesy_design_review` | Get the Design Review rubric (8 dimensions, output format, verification checklist) as reference data. The kit's copy-ready prompt stays on the kit page, linked from the result |
+| `designesy_skill_md` | Get the agent-skill-format export (SKILL.md) with behavioral rules, tokens, anti-patterns, as reference data with the markdown in `content` |
+| `designesy_agent_json` | Get the agent discovery document (`.well-known/agent.json`) as reference data: identity, authority, discovery endpoints, packages. Its ingest steps stay in the published file |
+| `designesy_llms_txt` | Get the short brief (`/llms.txt`) as reference data. Its ingest steps stay in the published file |
+| `designesy_llms_full_txt` | Get the full brief (`/llms-full.txt`) as reference data: authority, all packages, standing rules. Its ingest protocol and paste-ready agent prompt stay in the published file |
 
 ### Executable verification
 | Tool | What it does |
 |---|---|
-| `designesy_score` | Run the 42-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 42 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
+| `designesy_score` | Run the 44-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 44 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
-| `designesy_motion_score` | Validate a Lottie animation file against Lottie spec v1.0.1 + the Designesy 10 Non-Negotiable Motion Standards. 10 checks (m01–m10). |
+| `designesy_motion_score` | Validate a Lottie animation file against the motion contract's 10 checks (m01–m10), drawn from Lottie spec v1.0.1 and the Designesy 10 Non-Negotiable Motion Standards, each verdict under its own check's name. Checks a file cannot settle (full schema validation, layout-property and keyboard-initiated motion) return SKIP with the reason. |
 
 ### Executable engines (new in v1.10.0)
 | Tool | What it does |
 |---|---|
 | `designesy_drift_score` | 12-check AI-drift radar — detects token fabrication, within-session drift, between-session amnesia, and silent breaking changes. |
 | `designesy_readiness_score` | 10-check AI readiness probe — tests for DTCG tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots, OG meta. |
-| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. |
+| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. The full bundle runs from about 7 KB to about 530 KB of JSON; `parts` (for example `["designMd"]`) returns only the files named. |
 | `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas, trend slope, and email alerts via Resend. |
 | `designesy_compare` | Diff two design systems from live URLs — 8-dimension structured diff (added, removed, renamed, value-changed, scale, contrast, structure, score). |
-| `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. |
+| `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. The full result runs to about 75 to 100 KB of JSON; `detail: "summary"` keeps the composite, each engine's score and grade, the totals and only the checks that did not PASS. |
 
 ## Resources (7)
 
@@ -123,16 +123,16 @@ The server also exposes 7 MCP resources (read-only URIs):
 | `designesy://llms` | Short agent brief (text) |
 | `designesy://llms-full` | Full agent brief (text) |
 
-## The 42-check verification engine
+## The 44-check verification engine
 
-`designesy_score` runs 42 deterministic checks across 14 weighted categories:
+`designesy_score` runs 44 deterministic checks across 14 weighted categories:
 
 | Category | Weight | What it measures |
 |---|---|---|
 | cadence | 18 | Typography rhythm — line-height, font-synthesis, text-underline-position, skip-ink |
-| accessibility | 15 | WCAG 2.2 primitives — reduced-motion, forced-colors, AI disclosure, focus-visible |
+| accessibility | 15 | WCAG 2.2 primitives — reduced-motion, forced-colors, AI disclosure, focus-visible, status colors used as text in every theme |
 | semantic | 12 | Token architecture — `:root` custom properties, no raw hex, semantic naming |
-| motion | 10 | Motion hygiene — duration tokens, easing tokens, reduced-motion blocks |
+| motion | 10 | Motion hygiene — duration tokens, easing tokens, reduced-motion blocks, content that stays visible when motion is paused |
 | tokens | 9 | DTCG 2025.10 conformance — `$type`, `$value`, `$description`, colorSpace |
 | takt | 8 | Timing discipline — transition bands, animation hierarchy |
 | copywriting | 8 | UX copy — button verb phrases, no trailing periods, descriptive link text, no ALL CAPS |
@@ -162,7 +162,7 @@ The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — the
 
 ### Contract vs. opinion
 
-No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 42-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
+No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 44-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
 
 ## Caching
 

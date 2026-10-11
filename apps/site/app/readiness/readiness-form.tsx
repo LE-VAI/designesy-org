@@ -72,6 +72,7 @@ export function ReadinessForm({ initialUrl, registry }: { initialUrl: string; re
             <p>{error}</p>
           </>
         }
+        errorText={error}
         scoring="found 1 · partial 0.5 · missing 0 · over 10 checks"
         restNote="Probe a URL and each location lights as found, partial or missing. Point at a row to read what it checks."
         restCard={

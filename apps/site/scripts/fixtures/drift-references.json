@@ -1,0 +1,122 @@
+{
+  "about": "Pages for check-d02-coverage.js. Each case is a linked stylesheet (css) and the served HTML (html), assembled the way /api/drift assembles them, with the verdicts d02 (No fabricated tokens), d11 (Undeclared custom property ratio) and d12 (Token alias chains resolve) must return. ROOT stands for a :root block declaring --a to --e.",
+  "cases": [
+    {
+      "name": "every undeclared property carries a fallback",
+      "css": "ROOT .x{margin:var(--a);padding:var(--hook-one, 4px);gap:var(--hook-two,2px);top:var(--hook-three, var(--a));left:var(--hook-four, var(--hook-five, 0))}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "PASS",
+        "d12": "PASS"
+      },
+      "detail": {
+        "d02": "5 undeclared with a fallback at every use"
+      }
+    },
+    {
+      "name": "properties declared in style attributes",
+      "css": "ROOT .bar{width:calc(var(--seg) * 1%);order:var(--n);z-index:var(--k)}",
+      "html": "<div class=\"bar\" style=\"--seg:3;--n:1\"></div><div class=\"bar\" style=\"--k:2\"></div>",
+      "expect": {
+        "d02": "PASS",
+        "d12": "PASS"
+      },
+      "detail": {
+        "d02": "3 declared in style attributes"
+      }
+    },
+    {
+      "name": "a property declared in a <style> block",
+      "css": "ROOT .x{gap:var(--local-gap)}",
+      "html": "<style>.wrap{--local-gap:4px}</style><div class=\"wrap\"><div class=\"x\"></div></div>",
+      "expect": {
+        "d02": "PASS",
+        "d12": "PASS"
+      }
+    },
+    {
+      "name": "true positive: undeclared, no fallback, not set anywhere",
+      "css": "ROOT .x{color:var(--brand-primary);margin:var(--space-9);padding:var(--gutter-x)}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "FAIL",
+        "d12": "FAIL"
+      },
+      "detail": {
+        "d02": "3 undeclared custom properties referenced with no fallback: --brand-primary, --space-9, --gutter-x",
+        "d12": "3 alias chains"
+      }
+    },
+    {
+      "name": "an alias chain that ends in a fallback",
+      "css": "ROOT .x{margin:var(--hook-a, var(--hook-b, 8px))}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "PASS",
+        "d12": "PASS"
+      }
+    },
+    {
+      "name": "alias chains that end in an undeclared property",
+      "css": "ROOT .x{margin:var(--gone-a, var(--gone-z))}.y{padding:var(--gone-b, var(--gone-z))}.z{gap:var(--gone-c, var(--gone-z))}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "WARN",
+        "d12": "FAIL"
+      },
+      "detail": {
+        "d02": "--gone-z"
+      }
+    },
+    {
+      "name": "a property with a fallback in one place and none in another",
+      "css": "ROOT .x{margin:var(--half, 4px)}.y{padding:var(--half)}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "WARN",
+        "d12": "WARN"
+      },
+      "detail": {
+        "d02": "--half"
+      }
+    },
+    {
+      "name": "an undeclared property referenced from a style attribute",
+      "css": "ROOT",
+      "html": "<p style=\"color:var(--attr-ghost)\">x</p>",
+      "expect": {
+        "d02": "WARN",
+        "d12": "PASS"
+      },
+      "detail": {
+        "d02": "--attr-ghost"
+      }
+    },
+    {
+      "name": "a fallback that holds an undeclared reference",
+      "css": "ROOT .x{margin:var(--hook, calc(var(--a) * 2))}.y{margin:var(--hook-2, calc(var(--nope) * 2))}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "WARN",
+        "d12": "WARN"
+      },
+      "detail": {
+        "d02": "--nope",
+        "d12": "1 dangling"
+      }
+    },
+    {
+      "name": "an unclosed var( ends at its declaration",
+      "css": "ROOT .x{margin:var(--broken, 4px;}.y{color:var(--ghost-1)}.z{color:var(--ghost-2)}.w{color:var(--ghost-3)}",
+      "html": "<div class=\"x\"></div>",
+      "expect": {
+        "d02": "FAIL",
+        "d12": "FAIL"
+      },
+      "detail": {
+        "d02": "--ghost-1, --ghost-2, --ghost-3",
+        "d12": "3 alias chains"
+      }
+    }
+  ]
+}

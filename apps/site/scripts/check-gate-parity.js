@@ -79,7 +79,7 @@ function main() {
   // second list to compare against. Excluded explicitly rather than silently.
   //
   // The runtime gates need a LIVE server and a browser, so they run in the
-  // separate `visual-gates` job after `build-site` serves the build — they can
+  // "Visual gates" parts, which serve the build `build-site` made — they can
   // never chain into `npm run build`, which runs before anything is served.
   // touched-routes.js is the sweep's route mapper, invoked by the CI step, not
   // a gate of its own.
@@ -91,9 +91,14 @@ function main() {
     'check-gate-parity.js',
     'edge-contract.js',
     'check-glass-blur.js',
+    'check-focus-visibility.js',
     'check-motion-pause.js',
+    'check-lcp-entrance.js',
     'qa-keyboard.js',
+    'check-status-messages.js',
+    'check-a11y-modes.js',
     'a11y-sweep.js',
+    'check-dock-clearance.js',
     'touched-routes.js',
     'check-readme-facts.js',
   ]);
@@ -114,6 +119,19 @@ function main() {
       id: 'gate-missing-from-build',
       why: `These gates are invoked by CI but NOT chained by \`npm run build\`, so green CI overstates what the deploy actually verifies: ${onlyInCi.join(', ')}`,
       fix: 'Either add the gate to the build script in apps/site/package.json, or remove the CI step if it is deliberately CI-only — and if so, add it to CI_ONLY in this script with the reason.',
+    });
+  }
+
+  // A CI-only gate is exempt from the comparison above, so nothing there
+  // notices when CI stops invoking one. Splitting the visual gates into
+  // parallel jobs (2026-10-10) moved every runtime gate; a step lost in such
+  // a move would leave that gate run by nothing, CI or Vercel.
+  const ciOnlyNotInCi = [...CI_ONLY].filter((g) => !inCi.includes(g)).sort();
+  if (ciOnlyNotInCi.length) {
+    findings.push({
+      id: 'ci-only-gate-not-in-ci',
+      why: `These gates are listed as CI-only, so only CI runs them, but the CI workflow no longer invokes them, so nothing does: ${ciOnlyNotInCi.join(', ')}`,
+      fix: 'Restore the step in .github/workflows/ci.yml (the runtime gates live in the "Visual gates" parts). If a gate was retired on purpose, remove it from CI_ONLY in this script in the same commit.',
     });
   }
 

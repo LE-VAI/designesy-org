@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * @designesy/score CLI — Score a URL against the 42-check Designesy engine.
+ * @designesy/score CLI — Score a URL against the 44-check Designesy engine.
  *
- * Runs the full 42-check scoring engine locally — no server required.
+ * Runs the full 44-check scoring engine locally — no server required.
  * Fetches the target URL, extracts CSS + :root tokens, runs all checks,
  * and prints a formatted report. Exits with code 1 when the score drops
  * below --min-score or the grade drops below --min-grade.
@@ -101,10 +101,10 @@ function formatReport(result: Awaited<ReturnType<typeof scoreUrl>>, url: string)
 
 function printUsage(): void {
   console.log(`
-designesy-score: Score a URL against the 42-check Designesy engine.
+designesy-score: Score a URL against the 44-check Designesy engine.
 
 Runs locally: no server required. Fetches the URL, extracts CSS + tokens,
-and runs all 42 checks in one process.
+and runs all 44 checks in one process.
 
 Usage:
   designesy-score <url> [options]
@@ -187,7 +187,7 @@ async function main(): Promise<void> {
   // Progress and the gate verdict go to stderr: stdout carries only the
   // result, so --json and the JSON formats pipe straight into a parser.
   if (!args.quiet) {
-    console.error(`${DIM}Scoring ${url} locally (42-check engine, scope=${scope || 'auto'})…${RESET}`);
+    console.error(`${DIM}Scoring ${url} locally (44-check engine, scope=${scope || 'auto'})…${RESET}`);
   }
 
   let result;

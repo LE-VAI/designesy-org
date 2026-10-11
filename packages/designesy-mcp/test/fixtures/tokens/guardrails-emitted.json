@@ -1,0 +1,252 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "Design tokens extracted from https://fixture.test/ by Designesy Guardrails v0.1.0: W3C DTCG 2025.10 format. Values the format cannot type are kept verbatim in $extensions.designesy.css.",
+  "ink": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [
+        0.9607843137254902,
+        0.9607843137254902,
+        0.9686274509803922
+      ],
+      "alpha": 1
+    }
+  },
+  "muted": {
+    "$root": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.9607843137254902,
+          0.9607843137254902,
+          0.9686274509803922
+        ],
+        "alpha": 0.62
+      }
+    },
+    "dim": {
+      "$type": "color",
+      "$value": "{muted.$root}"
+    }
+  },
+  "surface": {
+    "$root": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.043137254901960784,
+          0.043137254901960784,
+          0.058823529411764705
+        ],
+        "alpha": 1
+      }
+    },
+    "raised": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.08627450980392157,
+          0.08627450980392157,
+          0.10980392156862745
+        ],
+        "alpha": 1
+      }
+    }
+  },
+  "signal": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [
+        0.1450980392156863,
+        0.38823529411764707,
+        0.9215686274509803
+      ],
+      "alpha": 1
+    }
+  },
+  "line": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [
+        1,
+        1,
+        1
+      ],
+      "alpha": 0.12156862745098039
+    }
+  },
+  "paper": {
+    "$type": "color",
+    "$value": {
+      "colorSpace": "srgb",
+      "components": [
+        1,
+        1,
+        1
+      ],
+      "alpha": 1
+    }
+  },
+  "space": {
+    "1": {
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "2": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "3": {
+      "$type": "dimension",
+      "$value": "1rem"
+    }
+  },
+  "radius": {
+    "$root": {
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "pill": {
+      "$type": "dimension",
+      "$value": "999px"
+    }
+  },
+  "duration": {
+    "$root": {
+      "$type": "duration",
+      "$value": {
+        "value": 0.6,
+        "unit": "s"
+      }
+    },
+    "fast": {
+      "$type": "duration",
+      "$value": {
+        "value": 150,
+        "unit": "ms"
+      }
+    }
+  },
+  "ease": {
+    "$root": {
+      "$type": "cubicBezier",
+      "$value": [
+        0.22,
+        0.61,
+        0.36,
+        1
+      ]
+    },
+    "linear": {
+      "$type": "cubicBezier",
+      "$value": [
+        0,
+        0,
+        1,
+        1
+      ]
+    }
+  },
+  "sans": {
+    "$type": "fontFamily",
+    "$value": [
+      "Inter",
+      "system-ui",
+      "sans-serif"
+    ]
+  },
+  "font": {
+    "weight": {
+      "bold": {
+        "$type": "fontWeight",
+        "$value": 600
+      }
+    }
+  },
+  "z": {
+    "modal": {
+      "$type": "number",
+      "$value": 100
+    }
+  },
+  "shadow": {
+    "1": {
+      "$type": "shadow",
+      "$value": {
+        "color": {
+          "colorSpace": "srgb",
+          "components": [
+            0,
+            0,
+            0
+          ],
+          "alpha": 0.4
+        },
+        "offsetX": "0px",
+        "offsetY": "1px",
+        "blur": "3px",
+        "spread": "0px"
+      }
+    }
+  },
+  "elev": {
+    "1": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 0.3
+          },
+          "offsetX": "0px",
+          "offsetY": "1px",
+          "blur": "1px",
+          "spread": "0px"
+        },
+        {
+          "color": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0,
+              0
+            ],
+            "alpha": 0.22
+          },
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "8px",
+          "spread": "-2px"
+        }
+      ]
+    }
+  },
+  "border": {
+    "accent": {
+      "$type": "color",
+      "$value": "{signal}"
+    }
+  },
+  "$extensions": {
+    "designesy": {
+      "source": "https://fixture.test/",
+      "extracted": "2026-10-10T00:00:00.000Z",
+      "generator": "Designesy Guardrails v0.1.0",
+      "css": {
+        "--gutter": "clamp(16px, 4vw, 48px)",
+        "--glow": "color-mix(in srgb, var(--signal) 40%, transparent)"
+      }
+    }
+  }
+}

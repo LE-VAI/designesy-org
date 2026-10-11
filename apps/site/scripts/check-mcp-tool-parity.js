@@ -40,6 +40,68 @@
  * in a Vercel build (VERCEL=1), which may upload only apps/site; there the
  * agreement check prints NOT EVALUATED instead of passing silently.
  *
+ * REFERENCE-DATA OUTPUT (added for designesy-mcp 1.13.4)
+ * The document tools wrap what they return as labeled reference data and leave
+ * out any part written as steps or a prompt for an AI agent (Anthropic
+ * Software Directory Policy 2F). The hosted endpoint does it in
+ * app/lib/mcp-reference.ts, the PyPI server in its own Python. So this gate
+ * also:
+ *   - asserts both declare the same AGENT_DIRECTIVE_PATTERN_SOURCES;
+ *   - runs mcp-reference.ts (loaded with Node's type stripping) on the
+ *     published-document fixtures in packages/designesy-mcp/test/fixtures/
+ *     published-docs/ and compares its output with expected.json there, the
+ *     golden the Python suite checks its own output against. Same input, same
+ *     golden, two implementations: they agree or one of the two jobs fails.
+ * Outside a Vercel build the fixtures must be present.
+ *
+ * ERROR TEXT
+ * A caught error's message names paths on the machine that ran the code, and
+ * the hosted tools returned theirs raw (the tokens and motion tools passed a
+ * failed fetch's message straight into the result). Every error the route
+ * returns now passes through sanitizeErrorText from app/lib/error-text.ts, the
+ * engines' function. So this gate also asserts:
+ *   - every `error` property in the route is a sanitizeErrorText(...) call,
+ *     read from the TypeScript AST, and the route imports it from the module;
+ *   - the module's function is the score route's copy, word for word (source-
+ *     drift holds that copy to packages/score's), so the three cannot drift;
+ *   - run on ERROR_TEXT_FIXTURES (a Windows path, a POSIX home path and a
+ *     file:// URL, all made up, plus a site URL that must stay), it returns
+ *     exactly the clean text each fixture names.
+ *
+ * MOTION SCORE OUTPUT (added for designesy-mcp 1.13.6)
+ * designesy_motion_score labelled its own ten checks with the motion
+ * contract's names by array position, so every verdict sat under another
+ * check's name. Both servers now run the contract's m01-m10, each under its
+ * own id: app/lib/motion-score.ts here, _motion_score in the PyPI server. This
+ * gate runs motion-score.ts on the Lottie fixtures in
+ * packages/designesy-mcp/test/fixtures/motion/ and compares the whole result
+ * with expected.json there, the golden test/test_motion_score.py checks the
+ * Python port against, and checks that contract.json there is the contract
+ * app/lib/motion-contract.ts serves.
+ *
+ * TRIMMED OUTPUT (added for designesy-mcp 1.13.6)
+ * designesy_report takes detail "summary" and designesy_guardrails takes
+ * parts, so a caller can ask for less than the 75 to 100 KB (report) or up to
+ * 500 KB (guardrails) a full result runs to. The hosted endpoint trims in
+ * app/lib/mcp-trim.ts, the PyPI server in its own Python. This gate runs
+ * mcp-trim.ts on the captured results in
+ * packages/designesy-mcp/test/fixtures/trim/ and compares with expected.json
+ * there (the golden test/test_trim.py checks), including the error text for
+ * unknown part names, and asserts both declare the same part names.
+ *
+ * TOKENS SCORE OUTPUT (added for designesy-mcp 1.13.7)
+ * designesy_tokens_score scored a SKIP as a zero, and the two servers wrote
+ * different check names and detail text. Both now run the tokens contract's
+ * t01-t10 from one definition: app/lib/tokens-score.ts here, _tokens_score in
+ * the PyPI server. This gate runs tokens-score.ts on the token files in
+ * packages/designesy-mcp/test/fixtures/tokens/ and compares each whole result
+ * with expected.json there (the golden test/test_tokens_score.py checks), and
+ * checks that the generated fixtures are current: contract.json is the
+ * contract /contracts/tokens.json serves and guardrails-emitted.json is the
+ * token file designesy_guardrails emits for scripts/fixtures/mcp-accuracy.json
+ * (scripts/lib/tokens-fixtures.js builds both; site-export.json is a sample of
+ * /export/dtcg captured the same way, kept as it was).
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -51,6 +113,44 @@ const APP = path.join(__dirname, '..');
 const ROUTE = path.join(APP, 'app', 'api', 'mcp', 'route.ts');
 const REGISTRY = path.join(APP, 'app', 'lib', 'mcp-tool-registry.ts');
 const PYPI = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'designesy_mcp_server.py');
+const REFERENCE_LIB = path.join(APP, 'app', 'lib', 'mcp-reference.ts');
+const DOC_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'published-docs');
+const MOTION_LIB = path.join(APP, 'app', 'lib', 'motion-score.ts');
+const MOTION_CONTRACT_LIB = path.join(APP, 'app', 'lib', 'motion-contract.ts');
+const MOTION_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'motion');
+const TRIM_LIB = path.join(APP, 'app', 'lib', 'mcp-trim.ts');
+const TRIM_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'trim');
+const TOKENS_LIB = path.join(APP, 'app', 'lib', 'tokens-score.ts');
+const TOKENS_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'tokens');
+// The origin both servers fetch from; part of the hashed design_review output.
+const BASE_URL = 'https://www.designesy.org';
+const ERROR_TEXT_LIB = path.join(APP, 'app', 'lib', 'error-text.ts');
+const SCORE_ROUTE = path.join(APP, 'app', 'api', 'score', 'route.ts');
+
+// Errors in the shapes the MCP tools return them, with made-up paths, and the
+// text each must come out as.
+const ERROR_TEXT_FIXTURES = [
+  {
+    what: 'a Windows path in a caught fetch error (tokens tool)',
+    raw: String.raw`ENOENT: no such file or directory, open 'C:\Users\Jane Doe\AppData\Local\Temp\tokens.json'`,
+    clean: "ENOENT: no such file or directory, open 'a local path'",
+  },
+  {
+    what: 'a POSIX home path in a failed engine response (score tool)',
+    raw: `Score API returned 500: {"ok":false,"error":"Cannot find module '/home/jane/.cache/designesy/engine.js'"}`,
+    clean: `Score API returned 500: {"ok":false,"error":"Cannot find module 'a local path'"}`,
+  },
+  {
+    what: 'a file:// URL in a caught fetch error (motion tool)',
+    raw: 'Cannot read file:///C:/Users/Jane%20Doe/motion/hero.json: permission denied',
+    clean: 'Cannot read a local file: permission denied',
+  },
+  {
+    what: 'a site URL, which stays as it is',
+    raw: 'Fetch failed: 404 Not Found for https://example.com/Users/jane/tokens.json',
+    clean: 'Fetch failed: 404 Not Found for https://example.com/Users/jane/tokens.json',
+  },
+];
 
 const HINTS = ['readOnlyHint', 'destructiveHint', 'idempotentHint', 'openWorldHint'];
 const TITLE_MAX_WORDS = 5;
@@ -485,7 +585,457 @@ function pypiFindings(remote, pypi) {
   return { findings, agreedTitles, agreedHints };
 }
 
-function main() {
+/** The r"..." sources in the PyPI AGENT_DIRECTIVE_PATTERN_SOURCES tuple, or null. */
+function pypiDirectiveSources(src) {
+  const m = src.match(/^AGENT_DIRECTIVE_PATTERN_SOURCES\s*=\s*\(\r?\n([\s\S]*?)^\)/m);
+  if (!m) return null;
+  return [...m[1].matchAll(/^\s*r"((?:[^"\\]|\\.)*)",?\s*$/gm)].map((x) => x[1]);
+}
+
+/** JSON with keys sorted and no spaces, as Python's json.dumps(sort_keys=True, separators=(",", ":")). */
+function canonical(v) {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
+  if (v !== null && typeof v === 'object') {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonical(v[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
+function sha256(v) {
+  return require('node:crypto').createHash('sha256').update(typeof v === 'string' ? v : canonical(v), 'utf8').digest('hex');
+}
+
+/**
+ * Run the hosted endpoint's reference-data rules on the shared fixtures and
+ * compare with the golden. Returns { findings, evaluated, reason, compared }.
+ */
+async function referenceFindings(pypiSrc) {
+  const findings = [];
+  if (!fs.existsSync(DOC_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, DOC_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'reference-fixtures-missing',
+      why: `${DOC_FIXTURES} is missing, so the two servers' reference-data output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(REFERENCE_LIB).href);
+  } catch (e) {
+    // A deploy is not the place to fail on the build image's Node version;
+    // CI runs this gate on a Node that strips types and fails there.
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load mcp-reference.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'reference-lib-unloadable',
+      why: `Could not load app/lib/mcp-reference.ts with Node's type stripping (${e.code || e.message}), so the hosted endpoint's reference-data rules cannot be checked.`,
+      fix: 'Run on Node 22.18 or later, and keep mcp-reference.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  const pySources = pypiSrc === null ? null : pypiDirectiveSources(pypiSrc);
+  if (pySources === null) {
+    findings.push({
+      id: 'reference-patterns-unreadable',
+      why: 'Could not read AGENT_DIRECTIVE_PATTERN_SOURCES from the PyPI server, so the two servers\' directive patterns cannot be compared.',
+      fix: 'Keep the tuple at the top level of designesy_mcp_server.py, one r"..." source per line.',
+    });
+  } else if (JSON.stringify(pySources) !== JSON.stringify([...lib.AGENT_DIRECTIVE_PATTERN_SOURCES])) {
+    findings.push({
+      id: 'reference-patterns-disagree',
+      why: `The directive patterns differ. Hosted: ${JSON.stringify(lib.AGENT_DIRECTIVE_PATTERN_SOURCES)}. PyPI: ${JSON.stringify(pySources)}.`,
+      fix: 'Use the same pattern sources in app/lib/mcp-reference.ts and designesy_mcp_server.py.',
+    });
+  }
+
+  const golden = JSON.parse(fs.readFileSync(path.join(DOC_FIXTURES, 'expected.json'), 'utf8'));
+  const readText = (n) => fs.readFileSync(path.join(DOC_FIXTURES, n), 'utf8');
+  const readJson = (n) => JSON.parse(readText(n));
+  const disagree = (what, expected, actual) => findings.push({
+    id: `reference-golden:${what}`,
+    why: `The hosted endpoint's ${what} differs from the golden the PyPI suite checks (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}).`,
+    fix: 'Change both servers together, then regenerate the golden: python test/test_reference_data.py --write-golden.',
+  });
+  let compared = 0;
+  for (const [name, want] of Object.entries(golden.text)) {
+    const out = lib.publishedText(`${BASE_URL}/${name}`, 'text/plain', readText(name));
+    if (JSON.stringify(out.omitted_sections) !== JSON.stringify(want.omitted_sections)) disagree(`${name} omitted_sections`, want.omitted_sections, out.omitted_sections);
+    if (sha256(out) !== want.output_sha256) disagree(`${name} output`, want.output_sha256, sha256(out));
+    compared++;
+  }
+  const agent = lib.publishedJson(`${BASE_URL}/.well-known/agent.json`, readJson('agent.json'));
+  if (JSON.stringify(agent.omitted_fields) !== JSON.stringify(golden.agent_json.omitted_fields)) disagree('agent.json omitted_fields', golden.agent_json.omitted_fields, agent.omitted_fields);
+  if (sha256(agent) !== golden.agent_json.output_sha256) disagree('agent.json output', golden.agent_json.output_sha256, sha256(agent));
+  compared++;
+  for (const c of golden.design_review) {
+    const out = lib.designReviewRubric(readJson('design-review.json'), `${BASE_URL}/kits/design-review.json`, c.inputs, golden.fixture_rules);
+    if (sha256(out) !== c.output_sha256) disagree(`design_review ${JSON.stringify(c.inputs)} output`, c.output_sha256, sha256(out));
+    compared++;
+  }
+  return { findings, evaluated: true, compared };
+}
+
+/**
+ * Every error the route returns passes through sanitizeErrorText, and the
+ * function is the engines'. Returns { findings, evaluated, reason, wrapped, fixtures }.
+ */
+async function errorTextFindings(routeSrc) {
+  const findings = [];
+  let ts;
+  try {
+    ts = require('typescript');
+  } catch (e) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `typescript is not installed in this Vercel build (${e.code || e.message})` };
+    findings.push({
+      id: 'error-text-typescript-missing',
+      why: 'typescript could not be loaded, so the route\'s error properties cannot be read.',
+      fix: 'Install apps/site\'s dev dependencies (npm ci).',
+    });
+    return { findings, evaluated: false, reason: 'typescript missing' };
+  }
+
+  // The route: every `error` property is a sanitizeErrorText(...) call.
+  const sf = ts.createSourceFile('route.ts', routeSrc, ts.ScriptTarget.Latest, true);
+  const nameOf = (n) => (ts.isIdentifier(n) || ts.isStringLiteral(n) ? n.text : null);
+  let imported = false;
+  let wrapped = 0;
+  let seen = 0;
+  const visit = (n) => {
+    if (ts.isImportDeclaration(n) && ts.isStringLiteral(n.moduleSpecifier) && n.moduleSpecifier.text === '../../lib/error-text') {
+      const b = n.importClause?.namedBindings;
+      if (b && ts.isNamedImports(b) && b.elements.some((e) => e.name.text === 'sanitizeErrorText' && !e.propertyName)) imported = true;
+    }
+    if ((ts.isPropertyAssignment(n) || ts.isShorthandPropertyAssignment(n)) && nameOf(n.name) === 'error') {
+      seen++;
+      const v = ts.isPropertyAssignment(n) ? n.initializer : null;
+      if (v && ts.isCallExpression(v) && ts.isIdentifier(v.expression) && v.expression.text === 'sanitizeErrorText') {
+        wrapped++;
+      } else {
+        const line = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+        findings.push({
+          id: `error-text-raw:route.ts:${line}`,
+          why: `app/api/mcp/route.ts line ${line} returns an error that does not pass through sanitizeErrorText: ${n.getText(sf).slice(0, 120)}. A caught error's message can carry a path on the machine that ran it.`,
+          fix: 'Write it as error: sanitizeErrorText(...).',
+        });
+      }
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  if (!imported) {
+    findings.push({
+      id: 'error-text-not-imported',
+      why: 'app/api/mcp/route.ts does not import sanitizeErrorText from ../../lib/error-text, so its errors are not cleaned by the engines\' function.',
+      fix: "Add import { sanitizeErrorText } from '../../lib/error-text'; to the route.",
+    });
+  }
+  if (seen === 0) {
+    findings.push({
+      id: 'error-text-none-found',
+      why: 'No `error` property was found in the MCP route, so this check read nothing; it fails rather than pass on an empty sample.',
+      fix: 'Check that the tools still return { success: false, error: ... } and update this gate if the shape changed.',
+    });
+  }
+
+  // The module: the engines' function, word for word.
+  const fnText = (src) => {
+    const file = ts.createSourceFile('x.ts', src.replace(/\r\n/g, '\n'), ts.ScriptTarget.Latest, true);
+    const fn = file.statements.find((s) => ts.isFunctionDeclaration(s) && s.name?.text === 'sanitizeErrorText');
+    return fn ? fn.getText(file).replace(/^export\s+/, '') : null;
+  };
+  const libText = fs.existsSync(ERROR_TEXT_LIB) ? fnText(fs.readFileSync(ERROR_TEXT_LIB, 'utf8')) : null;
+  const scoreText = fnText(fs.readFileSync(SCORE_ROUTE, 'utf8'));
+  if (libText === null || scoreText === null) {
+    findings.push({
+      id: 'error-text-function-missing',
+      why: `sanitizeErrorText was not found in ${libText === null ? 'app/lib/error-text.ts' : 'app/api/score/route.ts'}.`,
+      fix: 'Keep the function at the top level of both files.',
+    });
+  } else if (libText !== scoreText) {
+    findings.push({
+      id: 'error-text-copies-disagree',
+      why: 'sanitizeErrorText in app/lib/error-text.ts differs from the copy in app/api/score/route.ts, so the MCP tools clean errors differently from the engines.',
+      fix: 'Change the copies together: app/lib/error-text.ts, app/api/score/route.ts and packages/score/src/engine.ts.',
+    });
+  }
+
+  // The fixtures, through the module as the route loads it.
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(ERROR_TEXT_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `this Node cannot load error-text.ts (${e.code || e.message})` };
+    findings.push({
+      id: 'error-text-lib-unloadable',
+      why: `Could not load app/lib/error-text.ts with Node's type stripping (${e.code || e.message}), so the fixtures cannot run.`,
+      fix: 'Run on Node 22.18 or later, and keep error-text.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+  for (const f of ERROR_TEXT_FIXTURES) {
+    const got = lib.sanitizeErrorText(f.raw);
+    if (got !== f.clean) {
+      findings.push({
+        id: `error-text-fixture:${f.what}`,
+        why: `sanitizeErrorText on ${f.what} returned ${JSON.stringify(got)}, expected ${JSON.stringify(f.clean)}.`,
+        fix: 'Fix the function in all three copies, or the fixture if the expected text is wrong.',
+      });
+    }
+  }
+  return { findings, evaluated: true, wrapped, fixtures: ERROR_TEXT_FIXTURES.length };
+}
+
+/**
+ * Run the hosted motion scorer on the shared Lottie fixtures and compare each
+ * whole result with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function motionFindings() {
+  const findings = [];
+  if (!fs.existsSync(MOTION_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, MOTION_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'motion-fixtures-missing',
+      why: `${MOTION_FIXTURES} is missing, so the two servers' designesy_motion_score output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  let contractLib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(MOTION_LIB).href);
+    contractLib = await import(require('node:url').pathToFileURL(MOTION_CONTRACT_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load motion-score.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'motion-lib-unloadable',
+      why: `Could not load app/lib/motion-score.ts or motion-contract.ts with Node's type stripping (${e.code || e.message}), so the hosted motion checks cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep both files free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  const read = (n) => fs.readFileSync(path.join(MOTION_FIXTURES, n), 'utf8');
+  const contract = JSON.parse(read('contract.json'));
+  if (canonical(contract) !== canonical(contractLib.motionContract)) {
+    findings.push({
+      id: 'motion-contract-fixture-stale',
+      why: 'packages/designesy-mcp/test/fixtures/motion/contract.json is not the contract app/lib/motion-contract.ts serves, so the golden scores a contract the site no longer publishes.',
+      fix: 'Write the module\'s motionContract to contract.json (JSON, two-space indent), then regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  const golden = JSON.parse(read('expected.json'));
+  const lotties = fs.readdirSync(MOTION_FIXTURES)
+    .filter((n) => n.endsWith('.json') && n !== 'contract.json' && n !== 'expected.json')
+    .sort();
+  if (JSON.stringify(lotties) !== JSON.stringify(Object.keys(golden).sort())) {
+    findings.push({
+      id: 'motion-golden-coverage',
+      why: `The motion golden covers ${JSON.stringify(Object.keys(golden).sort())} but the fixtures are ${JSON.stringify(lotties)}.`,
+      fix: 'Regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  let compared = 0;
+  for (const name of lotties) {
+    if (!golden[name]) continue;
+    const out = lib.scoreLottie(JSON.parse(read(name)), contract, '(inline lottie_file)');
+    compared++;
+    if (canonical(out) === canonical(golden[name])) continue;
+    const ids = (golden[name].checks || []).map((c) => c.id);
+    const differs = ids.filter((id, i) => canonical(out.checks[i]) !== canonical(golden[name].checks[i]));
+    findings.push({
+      id: `motion-golden:${name}`,
+      why: `The hosted designesy_motion_score result for ${name} differs from the golden the PyPI suite checks${differs.length ? ` (checks ${differs.join(', ')})` : ' (outside the checks)'}.`,
+      fix: 'Change app/lib/motion-score.ts and _motion_score in the PyPI server together, then regenerate the golden: python test/test_motion_score.py --write-golden.',
+    });
+  }
+  return { findings, evaluated: true, compared };
+}
+
+/** The quoted strings of a top-level Python tuple constant, or null. */
+function pypiTuple(src, name) {
+  const m = src.match(new RegExp(`^${name}\\s*=\\s*\\(([^)]*)\\)`, 'm'));
+  return m ? [...m[1].matchAll(/"([^"]*)"/g)].map((x) => x[1]) : null;
+}
+
+/**
+ * Run the hosted trimming on the captured report and guardrails results and
+ * compare with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function trimFindings(pypiSrc) {
+  const findings = [];
+  if (!fs.existsSync(TRIM_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, TRIM_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'trim-fixtures-missing',
+      why: `${TRIM_FIXTURES} is missing, so the two servers' trimmed report and guardrails output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(TRIM_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load mcp-trim.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'trim-lib-unloadable',
+      why: `Could not load app/lib/mcp-trim.ts with Node's type stripping (${e.code || e.message}), so the hosted trimming cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep mcp-trim.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  if (pypiSrc !== null) {
+    for (const name of ['GUARDRAILS_PARTS', 'REPORT_DETAILS', 'REPORT_ENGINES']) {
+      const py = pypiTuple(pypiSrc, name);
+      if (JSON.stringify(py) !== JSON.stringify([...lib[name]])) {
+        findings.push({
+          id: `trim-constant-disagrees:${name}`,
+          why: `${name} differs. Hosted: ${JSON.stringify(lib[name])}. PyPI: ${JSON.stringify(py)}.`,
+          fix: `Use the same ${name} in app/lib/mcp-trim.ts and designesy_mcp_server.py.`,
+        });
+      }
+    }
+  }
+
+  const read = (n) => JSON.parse(fs.readFileSync(path.join(TRIM_FIXTURES, n), 'utf8'));
+  const golden = read('expected.json');
+  const disagree = (what, expected, actual) => findings.push({
+    id: `trim-golden:${what}`,
+    why: `The hosted ${what} differs from the golden the PyPI suite checks (expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}).`,
+    fix: 'Change app/lib/mcp-trim.ts and the PyPI server together, then regenerate the golden: python test/test_trim.py --write-golden.',
+  });
+  let compared = 0;
+  for (const [name, want] of Object.entries(golden.report_summary)) {
+    const out = lib.reportSummary(read(name));
+    if (canonical(out) !== canonical(want)) disagree(`report summary of ${name}`, sha256(want), sha256(out));
+    compared++;
+  }
+  for (const [name, cases] of Object.entries(golden.guardrails_parts)) {
+    const full = read(name);
+    for (const c of cases) {
+      const picked = lib.guardrailsPartNames(c.parts);
+      if (!picked.names || JSON.stringify(picked.names) !== JSON.stringify(c.names)) {
+        disagree(`guardrails part names for ${JSON.stringify(c.parts)}`, c.names, picked);
+        continue;
+      }
+      const out = lib.guardrailsParts(full, picked.names);
+      if (sha256(out) !== c.output_sha256) disagree(`guardrails ${JSON.stringify(c.parts)} output of ${name}`, c.output_sha256, sha256(out));
+      if (JSON.stringify(out, null, 2).length !== c.chars) disagree(`guardrails ${JSON.stringify(c.parts)} size of ${name}`, c.chars, JSON.stringify(out, null, 2).length);
+      compared++;
+    }
+  }
+  for (const c of golden.guardrails_part_errors) {
+    const picked = lib.guardrailsPartNames(c.parts);
+    if (picked.error !== c.error || JSON.stringify(picked.unknown) !== JSON.stringify(c.unknown)) {
+      disagree(`guardrails error for ${JSON.stringify(c.parts)}`, { error: c.error, unknown: c.unknown }, picked);
+    }
+    compared++;
+  }
+  return { findings, evaluated: true, compared };
+}
+
+/**
+ * Run the hosted tokens scorer on the shared token files and compare each whole
+ * result with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function tokensFindings() {
+  const findings = [];
+  if (!fs.existsSync(TOKENS_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, TOKENS_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'tokens-fixtures-missing',
+      why: `${TOKENS_FIXTURES} is missing, so the two servers' designesy_tokens_score output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(TOKENS_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load tokens-score.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'tokens-lib-unloadable',
+      why: `Could not load app/lib/tokens-score.ts with Node's type stripping (${e.code || e.message}), so the hosted token checks cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep tokens-score.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  // The generated fixtures must be what the code serves and emits today.
+  try {
+    const { generatedTokenFixtures } = require('./lib/tokens-fixtures');
+    const generated = await generatedTokenFixtures();
+    for (const name of ['contract.json', 'guardrails-emitted.json']) {
+      const committed = fs.readFileSync(path.join(TOKENS_FIXTURES, name), 'utf8').replace(/\r\n/g, '\n');
+      if (committed !== generated[name]) {
+        findings.push({
+          id: `tokens-fixture-stale:${name}`,
+          why: `packages/designesy-mcp/test/fixtures/tokens/${name} is not what the site ${name === 'contract.json' ? 'serves at /contracts/tokens.json' : 'emits through designesy_guardrails'} today, so the golden scores something the site no longer produces.`,
+          fix: 'Run node scripts/lib/tokens-fixtures.js --write, then python test/test_tokens_score.py --write-golden in packages/designesy-mcp.',
+        });
+      }
+    }
+  } catch (e) {
+    if (process.env.VERCEL === '1' && e && e.code === 'MODULE_NOT_FOUND') {
+      return { findings, evaluated: false, reason: `typescript is not installed in this Vercel build (${e.message})` };
+    }
+    throw e;
+  }
+
+  const read = (n) => fs.readFileSync(path.join(TOKENS_FIXTURES, n), 'utf8');
+  const contract = JSON.parse(read('contract.json'));
+  const golden = JSON.parse(read('expected.json'));
+  const files = fs.readdirSync(TOKENS_FIXTURES)
+    .filter((n) => n.endsWith('.json') && n !== 'contract.json' && n !== 'expected.json')
+    .sort();
+  if (JSON.stringify(files) !== JSON.stringify(Object.keys(golden).sort())) {
+    findings.push({
+      id: 'tokens-golden-coverage',
+      why: `The tokens golden covers ${JSON.stringify(Object.keys(golden).sort())} but the fixtures are ${JSON.stringify(files)}.`,
+      fix: 'Regenerate the golden: python test/test_tokens_score.py --write-golden.',
+    });
+  }
+  let compared = 0;
+  for (const name of files) {
+    if (!golden[name]) continue;
+    const out = lib.scoreTokens(JSON.parse(read(name)), contract, '(inline dtcg_file)');
+    compared++;
+    if (canonical(out) === canonical(golden[name])) continue;
+    const differs = (golden[name].checks || []).map((c) => c.id).filter((id, i) => canonical(out.checks[i]) !== canonical(golden[name].checks[i]));
+    findings.push({
+      id: `tokens-golden:${name}`,
+      why: `The hosted designesy_tokens_score result for ${name} differs from the golden the PyPI suite checks${differs.length ? ` (checks ${differs.join(', ')})` : ' (outside the checks)'}.`,
+      fix: 'Change app/lib/tokens-score.ts and _tokens_score in the PyPI server together, then regenerate the golden: python test/test_tokens_score.py --write-golden.',
+    });
+  }
+  return { findings, evaluated: true, compared };
+}
+
+async function main() {
   const asJson = process.argv.includes('--json');
 
   for (const f of [ROUTE, REGISTRY]) {
@@ -546,12 +1096,13 @@ function main() {
     : 0;
 
   // Agreement with the PyPI stdio server.
+  const pypiSrc = fs.existsSync(PYPI) ? fs.readFileSync(PYPI, 'utf8') : null;
   let pypi;
   if (fs.existsSync(PYPI)) {
     if (remoteAnn === null) {
       pypi = { evaluated: false, reason: 'the hosted registry table is unreadable (reported above)' };
     } else {
-      const res = pypiFindings(remoteAnn, pypiAnnotations(fs.readFileSync(PYPI, 'utf8')));
+      const res = pypiFindings(remoteAnn, pypiAnnotations(pypiSrc));
       findings.push(...res.findings);
       pypi = { evaluated: true, agreedTitles: res.agreedTitles, agreedHints: res.agreedHints };
     }
@@ -566,6 +1117,25 @@ function main() {
     pypi = { evaluated: false, reason: 'file missing' };
   }
 
+  // Reference-data output: same rules, same fixtures, same golden.
+  const reference = await referenceFindings(pypiSrc);
+  findings.push(...reference.findings);
+
+  // Error text: no tool result carries a path on the machine that ran it.
+  const errorText = await errorTextFindings(routeSrc);
+  findings.push(...errorText.findings);
+  // Motion score output: same checks, same fixtures, same golden.
+  const motion = await motionFindings();
+  findings.push(...motion.findings);
+
+  // Trimmed report and guardrails output: same rules, same captures, same golden.
+  const trim = await trimFindings(pypiSrc);
+  findings.push(...trim.findings);
+
+  // Tokens score output: same checks, same token files, same golden.
+  const tokens = await tokensFindings();
+  findings.push(...tokens.findings);
+
   if (asJson) {
     console.log(
       JSON.stringify(
@@ -575,6 +1145,11 @@ function main() {
           declared: declared ? declared.size : null,
           annotated,
           pypi,
+          reference: { evaluated: reference.evaluated, compared: reference.compared ?? 0, reason: reference.reason },
+          errorText: { evaluated: errorText.evaluated, wrapped: errorText.wrapped ?? 0, fixtures: errorText.fixtures ?? 0, reason: errorText.reason },
+          motion: { evaluated: motion.evaluated, compared: motion.compared ?? 0, reason: motion.reason },
+          trim: { evaluated: trim.evaluated, compared: trim.compared ?? 0, reason: trim.reason },
+          tokens: { evaluated: tokens.evaluated, compared: tokens.compared ?? 0, reason: tokens.reason },
           findings,
         },
         null,
@@ -589,6 +1164,31 @@ function main() {
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] PyPI agreement: ${pypi.reason}`);
     }
+    if (reference.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted reference-data rules match the shared golden on ${reference.compared} output(s), with the PyPI server's directive patterns`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] reference-data agreement: ${reference.reason}`);
+    }
+    if (errorText.evaluated) {
+      console.log(`mcp-tool-parity: OK — all ${errorText.wrapped} error(s) the route returns pass through sanitizeErrorText, the engines' function, which cleans ${errorText.fixtures} fixture error(s) as expected`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] error text: ${errorText.reason}`);
+    }
+    if (motion.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted motion checks match the shared golden on ${motion.compared} Lottie fixture(s), against the contract the site serves`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] motion-score agreement: ${motion.reason}`);
+    }
+    if (trim.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted report summary and guardrails parts match the shared golden on ${trim.compared} case(s), with the PyPI server's part names`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] trimmed-output agreement: ${trim.reason}`);
+    }
+    if (tokens.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted token checks match the shared golden on ${tokens.compared} token file(s), and the generated fixtures are current`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] tokens-score agreement: ${tokens.reason}`);
+    }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);
     for (const f of findings) {
@@ -601,4 +1201,7 @@ function main() {
   process.exit(findings.length === 0 ? 0 : 1);
 }
 
-main();
+main().catch((e) => {
+  console.error(`mcp-tool-parity: ${e && e.stack ? e.stack : e}`);
+  process.exit(1);
+});

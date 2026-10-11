@@ -1,0 +1,207 @@
+{
+  "report_summary": {
+    "report-designesy-org.json": {
+      "detail": "summary",
+      "ok": true,
+      "url": "https://www.designesy.org/",
+      "compositeScore": 95,
+      "compositeGrade": "A",
+      "score": {
+        "ok": true,
+        "contractVersion": "v0.4.3",
+        "score": 100,
+        "grade": "A",
+        "pass": 41,
+        "fail": 0,
+        "warn": 0,
+        "skip": 0,
+        "manual": 3,
+        "total": 44,
+        "scored": 41,
+        "scope": "contract",
+        "a11yFloorApplied": false,
+        "hardFailCeilingApplied": false,
+        "hardFailCeilingReason": null,
+        "tokensExtracted": 216
+      },
+      "drift": {
+        "ok": true,
+        "url": "https://www.designesy.org/",
+        "scope": "contract",
+        "score": 83,
+        "grade": "B",
+        "pass": 10,
+        "warn": 0,
+        "fail": 2,
+        "skip": 0,
+        "total": 12,
+        "tokensExtracted": 348
+      },
+      "readiness": {
+        "ok": true,
+        "url": "https://www.designesy.org/",
+        "score": 100,
+        "grade": "A",
+        "pass": 10,
+        "warn": 0,
+        "fail": 0,
+        "total": 10
+      },
+      "totalChecks": 66,
+      "totalPass": 61,
+      "totalWarn": 0,
+      "totalFail": 2,
+      "totalSkip": 0,
+      "totalManual": 3,
+      "checks": [
+        {
+          "id": "v02",
+          "item": "Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+",
+          "category": "responsive",
+          "status": "MANUAL",
+          "detail": "requires browser viewport trace: run the full audit to resolve",
+          "weight": 0,
+          "remediation": "Test at 375px, 720px, 860px, and 1080px+ viewports. Common causes: fixed-width containers, negative margins, or images without max-width: 100%. Add overflow-x: hidden only as a last resort; find the overflowing element instead.",
+          "engine": "score"
+        },
+        {
+          "id": "v04",
+          "item": "Sound toggle flips aria-pressed and applies the audio preference",
+          "category": "poise",
+          "status": "MANUAL",
+          "detail": "requires live DOM interaction: run the full audit to resolve",
+          "weight": 0,
+          "remediation": "Sound toggle should flip aria-pressed=\"true\"/\"false\" on click and apply a [data-audio] attribute on <html> or <body> that the audio layer reads. Wire the state both ways: visual + accessibility tree.",
+          "engine": "score"
+        },
+        {
+          "id": "v21",
+          "item": "Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1",
+          "category": "performance",
+          "status": "MANUAL",
+          "detail": "requires CDP trace: run the full audit to resolve",
+          "weight": 0,
+          "remediation": "Audit Core Web Vitals with Lighthouse or PageSpeed Insights. LCP < 2.5s (optimize hero image + fonts), INP < 200ms (defer non-critical JS, use CSS for entrance animations), CLS < 0.1 (reserve space for images/ads, avoid late layout shifts).",
+          "engine": "score"
+        },
+        {
+          "id": "d02",
+          "item": "No fabricated tokens",
+          "category": "tokens",
+          "status": "FAIL",
+          "detail": "13 var() references to undeclared custom properties: --topbar-h, --cmdk-vvh, --hang, --ix-fit, --n...; token fabrication detected (16 runtime tokens excluded)",
+          "engine": "drift"
+        },
+        {
+          "id": "d12",
+          "item": "Token alias chains resolve",
+          "category": "tokens",
+          "status": "FAIL",
+          "detail": "13 alias chains reference undeclared tokens: dangling references",
+          "engine": "drift"
+        }
+      ],
+      "synthesis": [
+        {
+          "id": "rp02",
+          "item": "Score engine completed: 44-check audit ran",
+          "status": "WARN",
+          "detail": "Score engine returned A/100 (41 pass, 0 warn, 0 fail, 3 manual)"
+        }
+      ],
+      "appUrl": "https://www.designesy.org/api/report/app?url=https%3A%2F%2Fwww.designesy.org%2F",
+      "omitted": {
+        "pass_checks": 61,
+        "pass_synthesis": 7,
+        "note": "Left out: the checks that PASS, and from each engine its check list, category scores and receipt. Call again with detail \"full\" for everything."
+      }
+    }
+  },
+  "guardrails_parts": {
+    "guardrails-designesy-org.json": [
+      {
+        "parts": [
+          "designMd"
+        ],
+        "names": [
+          "designMd"
+        ],
+        "output_sha256": "c46e5dd02db0fe14aa98620d8e5e0b473cc282fce39fadbabd01d775c55ee8d9",
+        "chars": 16995
+      },
+      {
+        "parts": [
+          "tokens",
+          "lintConfig"
+        ],
+        "names": [
+          "tokens",
+          "lintConfig"
+        ],
+        "output_sha256": "c95ea9cf1bf12f175372dbbc94927432bd340a0d75841463c5cb69aad43c0f7b",
+        "chars": 55821
+      },
+      {
+        "parts": [
+          "agentRules",
+          "tokens",
+          "agentRules"
+        ],
+        "names": [
+          "agentRules",
+          "tokens"
+        ],
+        "output_sha256": "6d07253f338986788f28f83ae238dbd207d70f8194410966fd343de564564e0e",
+        "chars": 47217
+      },
+      {
+        "parts": [
+          "tokens",
+          "lintConfig",
+          "agentRules",
+          "componentContract",
+          "antiPatterns",
+          "designMd"
+        ],
+        "names": [
+          "tokens",
+          "lintConfig",
+          "agentRules",
+          "componentContract",
+          "antiPatterns",
+          "designMd"
+        ],
+        "output_sha256": "28151b524bbcb27d8d40908246debf3eb760af721100fded72e99128ccc62690",
+        "chars": 109070
+      }
+    ]
+  },
+  "guardrails_part_errors": [
+    {
+      "parts": [],
+      "error": "parts is empty; name at least one part, or omit it for the whole bundle.",
+      "unknown": []
+    },
+    {
+      "parts": [
+        "designmd"
+      ],
+      "error": "Unknown guardrails part(s): designmd.",
+      "unknown": [
+        "designmd"
+      ]
+    },
+    {
+      "parts": [
+        "tokens",
+        "nope",
+        "DESIGN.md"
+      ],
+      "error": "Unknown guardrails part(s): nope, DESIGN.md.",
+      "unknown": [
+        "nope",
+        "DESIGN.md"
+      ]
+    }
+  ]
+}

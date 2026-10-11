@@ -74,15 +74,61 @@ export function extractVarRefs(css: string): string[] {
   return refs;
 }
 
-// Extract all var() references with their fallback chains
+// Every var() reference, with whether it names a fallback: var(--x, 4px) and
+// var(--x, var(--y)) do, var(--x) does not. Same pattern as extractVarRefs, so
+// the two list the same references in the same order.
+export function extractVarRefFallbacks(css: string): { name: string; hasFallback: boolean }[] {
+  const refs: { name: string; hasFallback: boolean }[] = [];
+  const varRe = /var\(\s*(--[\w-]+)\s*(,)?/g;
+  let m;
+  while ((m = varRe.exec(css)) !== null) {
+    refs.push({ name: m[1], hasFallback: m[2] !== undefined });
+  }
+  return refs;
+}
+
+// Every outermost var() expression with its fallback, as written.
+//
+// `fallback` is the text after the first comma at the var()'s own depth, so it
+// keeps nested references whole: var(--x, var(--y, 4px)) gives primary --x and
+// fallback "var(--y, 4px)", and var(--x, calc(var(--y) * 2)) gives fallback
+// "calc(var(--y) * 2)". It is undefined when the reference names no fallback.
+//
+// This replaced a pattern that matched only var(--x) and var(--x, var(--y)): a
+// chain ending in a literal, var(--x, 4px) or var(--x, var(--y, 4px)), was not
+// read at all, and a reference inside another var()'s fallback, as in
+// var(--x, calc(var(--y) * 2)), was read as a chain of its own.
+//
+// A var() cannot span a declaration, so the scan also stops at ; { or }: an
+// unclosed var( in a comment or a truncated stylesheet then ends at its own
+// declaration instead of swallowing every reference after it.
 export function extractVarChains(css: string): { primary: string; fallback?: string }[] {
   const chains: { primary: string; fallback?: string }[] = [];
-  const chainRe = /var\(\s*(--[\w-]+)\s*(?:,\s*var\(\s*(--[\w-]+)\s*\))?\)/g;
+  const startRe = /var\(\s*(--[\w-]+)\s*/g;
   let m;
-  while ((m = chainRe.exec(css)) !== null) {
-    chains.push({ primary: m[1], fallback: m[2] });
+  while ((m = startRe.exec(css)) !== null) {
+    let depth = 1;
+    let comma = -1;
+    let i = startRe.lastIndex;
+    for (; i < css.length; i++) {
+      const c = css[i];
+      if (c === ';' || c === '{' || c === '}') break;
+      if (c === '(') depth++;
+      else if (c === ')' && --depth === 0) break;
+      else if (c === ',' && depth === 1 && comma < 0) comma = i;
+    }
+    chains.push(comma < 0 ? { primary: m[1] } : { primary: m[1], fallback: css.slice(comma + 1, i).trim() });
+    startRe.lastIndex = depth === 0 ? i + 1 : i;
   }
   return chains;
+}
+
+// The custom properties set in style="..." attributes of the served HTML,
+// joined into one declaration list. React's style={{ '--x': v }} renders here,
+// and so do references from a style object, so both /api/drift and
+// /api/monitor read this one surface the same way.
+export function extractStyleAttributeCss(html: string): string {
+  return (html.match(/\sstyle="([^"]*)"/gi) || []).join(';');
 }
 
 // ── Value extraction helpers ─────────────────────────────────────────────────
@@ -188,39 +234,123 @@ export function checkD01TokenRegistry(tokens: Record<string, string>): CheckResu
   return { id: 'd01', item: 'Token registry declared', category: 'tokens', status: 'FAIL', detail: `Only ${count} :root custom properties: the site has no token system` };
 }
 
-export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[]): CheckResult {
-  const declared = new Set(Object.keys(tokens));
-  const undeclared = varRefs.filter((r) => !declared.has(r));
-  // Filter known JS-injected runtime state tokens — these are real custom
-  // properties set via el.style.setProperty() in components (magnetic-cursor,
-  // grade badges, bundle-tabs indicator). They never appear in CSS source
-  // because they're per-element state, not design tokens. Listing them here
-  // keeps the check honest about what's a real fabrication vs runtime state.
-  const JS_INJECTED_TOKENS = new Set([
-    '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
-    '--bar-i',                                                          // progress bars
-    '--accent',                                                         // magnetic-cursor focus accent
-    '--indicator-w', '--indicator-x',                                   // bundle-tabs / filter segmented
-    '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
-    '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
-    '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
-    '--check-index', '--check-min', '--check-pad-x', '--check-pad-y',   // score check display (set inline)
-  ]);
-  const uniqueUndeclared = [...new Set(undeclared)].filter((t) => !JS_INJECTED_TOKENS.has(t));
-  const runtimeCount = [...new Set(undeclared)].filter((t) => JS_INJECTED_TOKENS.has(t)).length;
+/**
+ * What the CSS alone does not show about a reference: which custom properties
+ * the served HTML declares in style attributes, and which names are referenced
+ * at least once with no fallback. runDriftChecks builds it; a caller that
+ * passes none gets the old reading, where nothing is declared inline and every
+ * reference counts as unguarded.
+ */
+export type ReferenceContext = {
+  inlineDeclared: ReadonlySet<string>;
+  unguarded: ReadonlySet<string>;
+};
+
+export function referenceContext(css: string, inlineCss: string): ReferenceContext {
+  return {
+    inlineDeclared: new Set(Object.keys(extractRootTokens(inlineCss))),
+    unguarded: new Set(
+      [...extractVarRefFallbacks(css), ...extractVarRefFallbacks(inlineCss)]
+        .filter((r) => !r.hasFallback)
+        .map((r) => r.name),
+    ),
+  };
+}
+
+function declaredNames(tokens: Record<string, string>, ctx?: ReferenceContext): Set<string> {
+  return new Set([...Object.keys(tokens), ...(ctx ? ctx.inlineDeclared : [])]);
+}
+
+// Known JS-injected runtime state tokens: real custom properties set via
+// el.style.setProperty() in components (magnetic-cursor, grade badges,
+// bundle-tabs indicator). They never appear in CSS source because they're
+// per-element state, not design tokens. Listing them keeps the fabricated-token
+// count honest about what's a real fabrication vs runtime state.
+const JS_INJECTED_TOKENS: ReadonlySet<string> = new Set([
+  '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
+  '--bar-i',                                                          // progress bars
+  '--accent',                                                         // magnetic-cursor focus accent
+  '--indicator-w', '--indicator-x',                                   // bundle-tabs / filter segmented
+  '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
+  '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
+  '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
+  '--check-index', '--check-min', '--check-pad-x', '--check-pad-y',   // score check display (set inline)
+]);
+
+/** The fabricated custom properties of a page, and what was left out and why. */
+export type FabricatedTokens = {
+  /** Referenced with no fallback and declared nowhere, in first-reference order. */
+  names: string[];
+  /** Undeclared, but referenced with a fallback at every use. */
+  guarded: number;
+  /** Declared only in style attributes. */
+  inlineOnly: number;
+  /** Undeclared and unguarded, but set by script at runtime (JS_INJECTED_TOKENS). */
+  runtime: number;
+};
+
+// THE definition of a fabricated token, used by d02 and by /api/guardrails'
+// anti-pattern list (one definition, so the two tools cannot disagree about the
+// same page; on www.designesy.org guardrails documented 158 fabricated tokens
+// while d02 found none, because guardrails counted every var() name missing
+// from a :root block).
+//
+// A custom property is fabricated when it is referenced with no fallback and
+// declared nowhere: not in a stylesheet or <style> block (in any rule, not only
+// :root), and not in a style attribute. var(--x, 4px) names its own value, so
+// an undeclared --x there is a deliberate hook (set by script, or by a parent's
+// style), not an invented token; the reference still renders. Both readings
+// were false positives on designesy.org: of 29 undeclared names on the home
+// page, 24 were always referenced with a fallback and 5 were set in style
+// attributes, and none was unguarded, yet d02 reported 13 fabricated tokens.
+export function findFabricatedTokens(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): FabricatedTokens {
+  const declared = declaredNames(tokens, ctx);
+  const cssDeclared = new Set(Object.keys(tokens));
+  const names = [...new Set(varRefs)];
+  const inlineOnly = names.filter((r) => !cssDeclared.has(r) && declared.has(r)).length;
+  const undeclaredNames = names.filter((r) => !declared.has(r));
+  const guarded = ctx ? undeclaredNames.filter((r) => !ctx.unguarded.has(r)).length : 0;
+  const undeclared = ctx ? undeclaredNames.filter((r) => ctx.unguarded.has(r)) : undeclaredNames;
+  return {
+    names: undeclared.filter((t) => !JS_INJECTED_TOKENS.has(t)),
+    guarded,
+    inlineOnly,
+    runtime: undeclared.filter((t) => JS_INJECTED_TOKENS.has(t)).length,
+  };
+}
+
+/**
+ * One page's fabricated tokens, from its served HTML and its CSS (stylesheets
+ * plus <style> blocks, as the routes assemble `allCss`). The inputs are built
+ * the way /api/drift builds d02's: every custom property declared anywhere in
+ * the CSS, the style attributes as declarations and references, and var()
+ * references from both surfaces. /api/guardrails calls this.
+ */
+export function pageFabricatedTokens(allCss: string, html: string): FabricatedTokens {
+  const attrCss = extractStyleAttributeCss(html);
+  const varRefs = [...extractVarRefs(allCss), ...extractVarRefs(attrCss)];
+  return findFabricatedTokens(extractRootTokens(allCss), varRefs, referenceContext(allCss, attrCss));
+}
+
+// d02 reports findFabricatedTokens: see the definition above.
+export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): CheckResult {
+  const fabricated = findFabricatedTokens(tokens, varRefs, ctx);
+  const uniqueUndeclared = fabricated.names;
+  // What was not counted, and why, so a reader can check the exclusions.
+  const notCounted = `${fabricated.guarded} undeclared with a fallback at every use, ${fabricated.inlineOnly} declared in style attributes, ${fabricated.runtime} runtime-injected JS tokens excluded`;
   if (uniqueUndeclared.length === 0) {
     return {
       id: 'd02',
       item: 'No fabricated tokens',
       category: 'tokens',
       status: 'PASS',
-      detail: `All ${varRefs.length} var() references resolve (${runtimeCount} runtime-injected JS tokens excluded as known JS state)`,
+      detail: `All ${varRefs.length} var() references name a declared custom property or carry a fallback (${notCounted})`,
     };
   }
   if (uniqueUndeclared.length <= 2) {
-    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared references: ${uniqueUndeclared.slice(0, 3).join(', ')} (${runtimeCount} runtime tokens excluded)${uniqueUndeclared.length === 0 ? '' : '; investigate them'}` };
+    return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'WARN', detail: `${uniqueUndeclared.length} undeclared custom properties referenced with no fallback: ${uniqueUndeclared.slice(0, 3).join(', ')} (${notCounted}); investigate them` };
   }
-  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} var() references to undeclared custom properties: ${uniqueUndeclared.slice(0, 5).join(', ')}...; token fabrication detected (${runtimeCount} runtime tokens excluded)` };
+  return { id: 'd02', item: 'No fabricated tokens', category: 'tokens', status: 'FAIL', detail: `${uniqueUndeclared.length} undeclared custom properties referenced with no fallback: ${uniqueUndeclared.slice(0, 5).join(', ')}...; token fabrication detected (${notCounted})` };
 }
 
 export function checkD03InlineColors(css: string, tokens: Record<string, string>): CheckResult {
@@ -611,11 +741,14 @@ export function checkD10ZIndex(css: string): CheckResult {
   return { id: 'd10', item: 'Z-index values within a sane range', category: 'stacking', status: 'WARN', detail: `Z-index values reach ${max}, ${distinct.length} levels` };
 }
 
-export function checkD11UndeclaredRatio(tokens: Record<string, string>, varRefs: string[]): CheckResult {
+// A property set in a style attribute is declared (the same reading d02 and
+// d12 use). A reference with a fallback still counts here: d11 measures how
+// much of the CSS points at properties no stylesheet declares.
+export function checkD11UndeclaredRatio(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): CheckResult {
   if (varRefs.length === 0) {
     return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'PASS', detail: 'No var() references in CSS' };
   }
-  const declared = new Set(Object.keys(tokens));
+  const declared = declaredNames(tokens, ctx);
   const undeclared = varRefs.filter((r) => !declared.has(r));
   const ratio = (undeclared.length / varRefs.length) * 100;
   if (ratio < 5) {
@@ -627,12 +760,24 @@ export function checkD11UndeclaredRatio(tokens: Record<string, string>, varRefs:
   return { id: 'd11', item: 'Undeclared custom property ratio', category: 'tokens', status: 'WARN', detail: `${Math.round(ratio)}% undeclared: moderate fabrication` };
 }
 
-export function checkD12AliasChains(css: string, tokens: Record<string, string>): CheckResult {
+// A chain resolves when its property is declared (in CSS or a style
+// attribute), or when its fallback resolves: a fallback with no var() in it, a
+// literal such as 4px, always does, and one that holds var() references
+// resolves when each of them does. So var(--x, var(--y, 4px)) resolves even
+// with neither declared, and var(--x, var(--y)) dangles when neither is.
+function chainResolves(primary: string, fallback: string | undefined, declared: Set<string>, depth: number): boolean {
+  if (declared.has(primary)) return true;
+  if (fallback === undefined || depth > 8) return false;
+  return extractVarChains(fallback).every((c) => chainResolves(c.primary, c.fallback, declared, depth + 1));
+}
+
+export function checkD12AliasChains(css: string, tokens: Record<string, string>, ctx?: ReferenceContext): CheckResult {
   const chains = extractVarChains(css);
-  const declared = new Set(Object.keys(tokens));
-  const dangling = chains.filter((c) => !declared.has(c.primary) && (!c.fallback || !declared.has(c.fallback)));
+  const declared = declaredNames(tokens, ctx);
+  const dangling = chains.filter((c) => !chainResolves(c.primary, c.fallback, declared, 0));
   if (dangling.length === 0) {
-    return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'PASS', detail: chains.length > 0 ? `All ${chains.length} alias chains resolve to declared values` : 'No alias chains found' };
+    const viaFallback = chains.filter((c) => !declared.has(c.primary)).length;
+    return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'PASS', detail: chains.length > 0 ? `All ${chains.length} alias chains resolve to a declared value or a fallback (${viaFallback} through a fallback)` : 'No alias chains found' };
   }
   if (dangling.length <= 2) {
     return { id: 'd12', item: 'Token alias chains resolve', category: 'tokens', status: 'WARN', detail: `${dangling.length} dangling alias chains` };
@@ -663,15 +808,22 @@ export function checkD12AliasChains(css: string, tokens: Record<string, string>)
  * A caller that does not scan attributes passes extractVarRefs(css) directly.
  * The DEFAULT derives from css so a new caller cannot forget; drift passes its
  * union explicitly to keep the attribute coverage.
+ *
+ * `inlineCss` is the page's style attributes (extractStyleAttributeCss). d02,
+ * d11 and d12 read the custom properties it declares as declared, and d02 reads
+ * whether each name is ever referenced with no fallback, there or in css. Both
+ * routes pass it, so a property set in a style attribute is declared in both.
  */
 export function runDriftChecks(
   css: string,
   tokens: Record<string, string>,
   varRefs: string[] = extractVarRefs(css),
+  inlineCss: string = '',
 ): CheckResult[] {
+  const ctx = referenceContext(css, inlineCss);
   return [
     checkD01TokenRegistry(tokens),
-    checkD02FabricatedTokens(tokens, varRefs),
+    checkD02FabricatedTokens(tokens, varRefs, ctx),
     checkD03InlineColors(css, tokens),
     checkD04SpacingVariance(css, tokens),
     checkD05ColorVariance(css, tokens),
@@ -680,7 +832,7 @@ export function runDriftChecks(
     checkD08ShadowVariance(css),
     checkD09TransitionVariance(css),
     checkD10ZIndex(css),
-    checkD11UndeclaredRatio(tokens, varRefs),
-    checkD12AliasChains(css, tokens),
+    checkD11UndeclaredRatio(tokens, varRefs, ctx),
+    checkD12AliasChains(css, tokens, ctx),
   ];
 }

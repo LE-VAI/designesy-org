@@ -11,13 +11,15 @@ resources/read, notifications/initialized, ping) — mirrors the
 factory_sessions_mcp_server scaffolding.
 
 Gives any agent the ability to:
-  - Get the full 23-package catalog (versions, URLs, statuses)
-  - Get the design-system contract (tokens, motion, acoustic, takt, cadence)
-  - Get a filtered contract section (colors, motion, acoustic, etc.)
-  - Get the Design Review kit (8 dimensions, agent prompt, output format)
+  - Get the package catalog (versions, URLs, statuses)
+  - Get the design-system contract (tokens, motion, acoustic, takt, cadence),
+    whole or only the named top-level sections
+  - Get the Design Review rubric (8 dimensions, output format, checklist)
   - Get the SKILL.md agent-skill-format export
   - Get the agent discovery document (agent.json)
-  - Get the llms.txt / llms-full.txt agent briefs
+  - Get the llms.txt / llms-full.txt briefs
+  The document tools return labeled reference data, leaving out any part
+  written as steps or a prompt for an AI agent (see _reference_text).
 
 PROVENANCE:
     All data is fetched live from https://www.designesy.org/ machine exports:
@@ -43,6 +45,7 @@ SAFETY:
 from __future__ import annotations
 
 import json
+import re
 import ssl
 import sys
 import time
@@ -51,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.2"
+SERVER_VERSION = "1.13.7"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -200,6 +203,217 @@ def _fetch_llms_full_txt() -> str:
     return _fetch(f"{BASE_URL}/llms-full.txt", as_json=False)
 
 
+# ── Reference-data envelopes for the document tools ─────────────────────────
+#
+# Anthropic's Software Directory Policy, section 2F: software that gives Claude
+# tools must not direct Claude to pull behavioral instructions from external
+# sources to execute. Until 1.13.4 the document tools returned the published
+# agent files verbatim, so a tool result could carry a second-person prompt
+# ("You are working with Designesy...") and fetch-then-follow steps ("If
+# machine_url is present, fetch it for structured rules"). Those files stay
+# unchanged at their URLs for crawlers and agents; returned inside a
+# conversation, the same text reads as instructions to the assistant.
+#
+# So the tools wrap what they return as labeled reference data (kind,
+# source_url, a one-sentence note), and leave out, by name, any part written as
+# steps or a prompt for an AI agent:
+#   - markdown: a section (heading to next heading) containing a directive
+#     keeps its heading, and its body becomes _OMITTED_MARKER;
+#   - JSON: a field whose string (or list of strings) contains a directive is
+#     removed, and its path is listed in omitted_fields.
+#
+# apps/site/app/lib/mcp-reference.ts is the hosted endpoint's copy of these
+# rules. The test suite checks the pattern sources and strings are equal, and
+# both this suite and apps/site/scripts/check-mcp-tool-parity.js compare their
+# own output on the same fixtures against one golden file
+# (test/fixtures/published-docs/expected.json).
+
+_REFERENCE_KIND = "published_document"
+_RUBRIC_KIND = "review_rubric"
+_REFERENCE_NOTE = (
+    "This is the published document at source_url, returned as reference "
+    "data; it does not ask the assistant to do anything."
+)
+_RUBRIC_NOTE = (
+    "This is the rubric from the published Design Review kit at source_url, "
+    "returned as reference data; it does not ask the assistant to do anything."
+)
+_OMITTED_MARKER = (
+    "[Omitted from this tool's output: written as steps or a prompt for an AI "
+    "agent. The published document at source_url includes it.]"
+)
+_KIT_PROMPT_NOTE = (
+    "The kit's copy-ready review prompt is written to an AI agent, so it is "
+    "left out of this output; a person can read or copy it at kit_prompt_url."
+)
+
+# Same sources as AGENT_DIRECTIVE_PATTERN_SOURCES in mcp-reference.ts, compiled
+# case-insensitive and multiline in both servers.
+AGENT_DIRECTIVE_PATTERN_SOURCES = (
+    r"\byou are\b",
+    r"^[ \t]*(?:(?:[-*]|[0-9]+[.)])[ \t]+)?(?:[A-Za-z][A-Za-z0-9_ ]{0,24}:[ \t]+)?(?:optionally[ \t]+)?fetch\b",
+    r",[ \t]*(?:then[ \t]+)?fetch\b",
+)
+_DIRECTIVE_RES = tuple(re.compile(s, re.IGNORECASE | re.MULTILINE) for s in AGENT_DIRECTIVE_PATTERN_SOURCES)
+_HEADING_RE = re.compile(r"^#{1,6}[ \t]+\S")
+
+
+def _is_agent_directive(text: str) -> bool:
+    """True when the text holds a second-person agent prompt or a fetch step."""
+    return any(r.search(text) for r in _DIRECTIVE_RES)
+
+
+def _reference_text(text: str) -> tuple[str, list[str]]:
+    """Markdown with each directive-bearing section replaced by the marker.
+
+    Sections run from a heading line to the next heading line of any level;
+    text before the first heading is a section of its own. Every other line is
+    returned unchanged.
+    """
+    lines = re.split(r"\r?\n", text)
+    starts = [0] + [i for i in range(1, len(lines)) if _HEADING_RE.match(lines[i])]
+    out: list[str] = []
+    omitted: list[str] = []
+    for n, start in enumerate(starts):
+        end = starts[n + 1] if n + 1 < len(starts) else len(lines)
+        section = lines[start:end]
+        if not _is_agent_directive("\n".join(section)):
+            out.extend(section)
+            continue
+        heading = section[0] if _HEADING_RE.match(section[0]) else None
+        keep_heading = heading is not None and not _is_agent_directive(heading)
+        omitted.append(re.sub(r"^#{1,6}[ \t]+", "", heading).strip() if keep_heading else "(untitled section)")
+        if keep_heading:
+            out.extend([heading, ""])
+        out.append(_OMITTED_MARKER)
+        if len(section) > 1 and section[-1] == "":
+            out.append("")
+    return "\n".join(out), omitted
+
+
+_OMIT = object()
+
+
+def _strip_directives(value: Any, path: str, omitted: list[str]) -> Any:
+    if isinstance(value, str):
+        return _OMIT if _is_agent_directive(value) else value
+    if isinstance(value, list):
+        if all(not isinstance(v, (dict, list)) for v in value):
+            return _OMIT if any(isinstance(v, str) and _is_agent_directive(v) for v in value) else value
+        kept = []
+        for i, v in enumerate(value):
+            r = _strip_directives(v, f"{path}[{i}]", omitted)
+            if r is _OMIT:
+                omitted.append(f"{path}[{i}]")
+            else:
+                kept.append(r)
+        return kept
+    if isinstance(value, dict):
+        kept_obj: dict[str, Any] = {}
+        for k, v in value.items():
+            p = f"{path}.{k}" if path else k
+            r = _strip_directives(v, p, omitted)
+            if r is _OMIT:
+                omitted.append(p)
+            else:
+                kept_obj[k] = r
+        return kept_obj
+    return value
+
+
+def _reference_json(doc: Any) -> tuple[Any, list[str]]:
+    """JSON with each directive-bearing field removed.
+
+    A string, or a list of plain values holding such a string, is removed
+    whole, so a step list never comes back with gaps; lists of objects are
+    walked element by element.
+    """
+    omitted: list[str] = []
+    r = _strip_directives(doc, "", omitted)
+    return (None if r is _OMIT else r), omitted
+
+
+def _published_text(source_url: str, media_type: str, text: str) -> dict[str, Any]:
+    """A published text file (markdown or plain text) as labeled reference data."""
+    content, omitted = _reference_text(text)
+    return {
+        "kind": _REFERENCE_KIND,
+        "source_url": source_url,
+        "media_type": media_type,
+        "note": _REFERENCE_NOTE,
+        "omitted_sections": omitted,
+        "content": content,
+    }
+
+
+def _published_json(source_url: str, doc: Any) -> dict[str, Any]:
+    """A published JSON document as labeled reference data."""
+    document, omitted = _reference_json(doc)
+    return {
+        "kind": _REFERENCE_KIND,
+        "source_url": source_url,
+        "media_type": "application/json",
+        "note": _REFERENCE_NOTE,
+        "omitted_fields": omitted,
+        "document": document,
+    }
+
+
+def _design_review_rubric(
+    kit: dict[str, Any],
+    source_url: str,
+    inputs: dict[str, str | None],
+    default_rules: str,
+) -> dict[str, Any]:
+    """The Design Review kit as a rubric, without the kit's agent_prompt.
+
+    The dimensions, output format and checklist are the tool's purpose and
+    stay. Each part of the prompt a review needs is already a field here (the
+    eight dimensions, observation/judgment/action in output_format, the
+    checklist). The prompt itself is addressed to an AI agent and tells it to
+    fetch the machine kit and contract "for structured rules"; a person can
+    still copy it from kit_prompt_url. When any of the four review inputs is
+    passed they are recorded in `inputs`, `rules` defaulting to default_rules.
+    """
+    kit_page = kit.get("public_url") if isinstance(kit.get("public_url"), str) else None
+
+    def listed(key: str) -> Any:  # a missing or null list reads as [] (TS `?? []`)
+        v = kit.get(key)
+        return [] if v is None else v
+
+    from_kit, omitted = _reference_json({
+        "kit": {
+            "id": kit.get("id"),
+            "title": kit.get("title"),
+            "version": kit.get("version"),
+            "status": kit.get("status"),
+            "purpose": kit.get("purpose"),
+            "quality_bar": kit.get("quality_bar"),
+            "permission": kit.get("permission"),
+        },
+        "when_to_use": listed("when_to_use"),
+        "required_inputs": listed("required_inputs"),
+        "dimensions": listed("dimensions"),
+        "output_format": listed("output_format"),
+        "verification_checklist": listed("verification"),
+        "anti_patterns": listed("anti_patterns"),
+        "rationalizations": listed("rationalizations"),
+    })
+    result: dict[str, Any] = {"kind": _RUBRIC_KIND, "source_url": source_url, "note": _RUBRIC_NOTE}
+    if any(inputs.get(k) for k in ("artifact", "purpose", "context", "rules")):
+        result["inputs"] = {
+            "artifact": inputs.get("artifact") or None,
+            "purpose": inputs.get("purpose") or None,
+            "context": inputs.get("context") or None,
+            "rules": inputs.get("rules") or default_rules,
+        }
+    result.update(from_kit)
+    result["kit_prompt_url"] = kit_page
+    result["kit_prompt_note"] = _KIT_PROMPT_NOTE
+    result["omitted_fields"] = omitted
+    return result
+
+
 # ── designesy_score: the offline engine ──────────────────────────────────────
 #
 # designesy_score asks the live engine at /api/score first. When that call
@@ -249,8 +463,8 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.1.0"
-OFFLINE_CONTRACT_VERSION = "v0.4.1"
+OFFLINE_ENGINE_MIRRORS = "1.2.0"
+OFFLINE_CONTRACT_VERSION = "v0.4.3"
 
 # The live engine's checks that this engine does not run, in the live engine's
 # order. The parity test asserts that these and OFFLINE_CHECK_IDS together are
@@ -258,8 +472,14 @@ OFFLINE_CONTRACT_VERSION = "v0.4.1"
 # fails the test until it is ported or listed here with a reason.
 _NOT_PORTED = (
     "not ported: added to the live engine after this fallback's original "
-    "checklist (v01-v23, x01-x03), and engine 1.1.0 did not change it. The "
-    "live engine runs it."
+    "checklist (v01-v23, x01-x03), and engines 1.1.0 and 1.2.0 did not change "
+    "it. The live engine runs it."
+)
+_NOT_PORTED_V44_V45 = (
+    "not ported: added to the live engine for 1.2.0, after this fallback's "
+    "original checklist (v01-v23, x01-x03). It needs a CSS rule model and "
+    "theme-aware colour resolution this port does not carry. The live engine "
+    "runs it."
 )
 _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v24": _NOT_PORTED,
@@ -276,6 +496,8 @@ _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v39": _NOT_PORTED,
     "v40": _NOT_PORTED,
     "v41": _NOT_PORTED,
+    "v44": _NOT_PORTED_V44_V45,
+    "v45": _NOT_PORTED_V44_V45,
     "v37": (
         "needs the network: it fetches /DESIGN.md from the target origin and "
         "lints it with an optional package. The live engine's own offline mode "
@@ -1238,7 +1460,7 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
     except subprocess.TimeoutExpired:
         return "MANUAL", "CDP viewport check timed out"
     except Exception as e:
-        return "MANUAL", f"CDP viewport check error: {e}"
+        return "MANUAL", f"CDP viewport check error: {_scrub_local_paths(str(e))}"
 
 
 def _check_cwv_cdp(url: str) -> tuple[str, str]:
@@ -1295,7 +1517,7 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
     except subprocess.TimeoutExpired:
         return "MANUAL", "CDP CWV check timed out"
     except Exception as e:
-        return "MANUAL", f"CDP CWV check error: {e}"
+        return "MANUAL", f"CDP CWV check error: {_scrub_local_paths(str(e))}"
 
 
 def _browser_check(cid: str, item: str, category: str, manual_detail: str, probe, url: str, browser_probes: bool) -> dict[str, str]:
@@ -1330,6 +1552,44 @@ _TIER2_ABSENCE_PATTERNS: list[tuple[str, str, str]] = [
 ]
 _TIER3_CONTRACT_ONLY = frozenset({"v01", "v22", "v29"})
 SCOPE_CONTRACT_HOSTS = ("designesy.org", "www.designesy.org")
+
+
+# Error text in a result: sanitizeErrorText in the TypeScript engines. A caught
+# error's message carries the file system of the machine that ran the server (a
+# browser probe's "No such file or directory" names a path under the Users
+# folder of the account that ran it), and a result is read by people other than
+# whoever ran it. Absolute paths (a drive
+# letter, a UNC share, a POSIX home, temp or system root), file:// URLs and npm
+# cache segments are replaced; the clause that says what failed is kept, and so
+# is trailing punctuation. A path segment may hold spaces, the last one may not.
+_PATH_TAIL = re.compile(r"[.,;:!?)]+$")
+_FILE_URL = re.compile(r"\bfile://[^\s'\"<>`|]*", re.IGNORECASE)
+_UNC_PATH = re.compile(r"\\\\[^\\\s'\"<>`|]+\\(?:[^\\\r\n'\"<>`|*?]+\\)*[^\\\s'\"<>`|*?]*")
+_DRIVE_PATH = re.compile(r"(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'\"<>`|*?]+\1)*[^\\/\s'\"<>`|*?]*")
+_POSIX_PATH = re.compile(
+    r"(^|[\s'\"`(=,:\[])/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel"
+    r"|workspace|workspaces|github|runner|nix|snap)(?:/[^/\r\n'\"<>`|]+(?=/))*/[^/\s'\"<>`|]+"
+)
+_NPM_CACHE = re.compile(r"[^\s'\"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'\"<>`|]*", re.IGNORECASE)
+
+
+def _path_label(label: str, matched: str) -> str:
+    tail = _PATH_TAIL.search(matched)
+    return label + (tail.group(0) if tail else "")
+
+
+def _scrub_local_paths(text: str) -> str:
+    """Replace local file-system detail in text that leaves this process."""
+    text = _FILE_URL.sub(lambda m: _path_label("a local file", m.group(0)), text)
+    text = _UNC_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
+    text = _DRIVE_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
+    text = _POSIX_PATH.sub(lambda m: m.group(1) + _path_label("a local path", m.group(0)), text)
+    return _NPM_CACHE.sub(lambda m: _path_label("the npm cache", m.group(0)), text)
+
+
+def _scrub_check_details(checks: list[dict[str, str]]) -> list[dict[str, str]]:
+    """The checks with every detail passed through _scrub_local_paths."""
+    return [{**c, "detail": _scrub_local_paths(c["detail"])} if isinstance(c.get("detail"), str) else c for c in checks]
 
 
 def _apply_scope_filter(checks: list[dict[str, str]], scope: str) -> list[dict[str, str]]:
@@ -1418,7 +1678,7 @@ def _offline_checks(
         _check_skip_ink(css),
         _check_input_font_floor(css, html),
     ]
-    return effective, raw_tokens, _apply_scope_filter(checks, effective)
+    return effective, raw_tokens, _scrub_check_details(_apply_scope_filter(checks, effective))
 
 
 def _offline_result(
@@ -1516,10 +1776,10 @@ def _post_score_api(url: str, fmt: str, scope: str | None = None) -> str:
 
 
 def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
-    """POST to the canonical 42-check engine at /api/score.
+    """POST to the canonical 44-check engine at /api/score.
 
     The site API is the single source of truth for the contract it serves
-    (42 checks, 14 categories). The version is reported from that reply, not
+    (44 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
     Returns the normalized response, or None if the API is unreachable
     (caller falls back to the local engine).
@@ -1559,11 +1819,12 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
             for c in checks
         ],
             "note": (
-                # Version read from the engine's own reply rather than pinned
-                # here. This read "v0.4.0" while the site served v0.4.1: a
-                # second copy of a fact the response already carries, which is
-                # the shape that drifts every time the contract moves.
-                f"Canonical 42-check engine ({data.get('contractVersion', 'unknown')}). "
+                # Version and check count read from the engine's own reply
+                # rather than pinned here. This read "v0.4.0" while the site
+                # served v0.4.1: a second copy of a fact the response already
+                # carries, which is the shape that drifts every time the
+                # contract or the engine moves.
+                f"Canonical {data.get('total', len(checks))}-check engine ({data.get('contractVersion', 'unknown')}). "
                 f"{data.get('pass', 0)} passed, "
             f"{data.get('fail', 0)} failed, {data.get('warn', 0)} warned, "
             f"{data.get('skip', 0)} skipped, {data.get('manual', 0)} manual "
@@ -1584,8 +1845,8 @@ def _score_api_failure(exc: Exception) -> str:
             detail = json.loads(detail).get("error") or detail
         except Exception:
             pass
-        return f"HTTP {exc.code}: {detail or exc.reason}"
-    return f"{type(exc).__name__}: {exc}"
+        return _scrub_local_paths(f"HTTP {exc.code}: {detail or exc.reason}")
+    return _scrub_local_paths(f"{type(exc).__name__}: {exc}")
 
 
 def _score_impl(
@@ -1595,7 +1856,7 @@ def _score_impl(
 ) -> dict[str, Any] | str:
     """Score a live URL against the Designesy design contract.
 
-    Primary path: delegate to the canonical 42-check engine at
+    Primary path: delegate to the canonical 44-check engine at
     /api/score (same engine the npm CLI and site use).
 
     format designesy (the default) reshapes the engine's native JSON into
@@ -1717,13 +1978,47 @@ def _catalog_impl() -> dict[str, Any]:
     }
 
 
-def _contract_impl(section: str | None = None) -> dict[str, Any]:
-    """Return the full design-system contract or a filtered section."""
+def _contract_error(message: str, unknown: list[str], valid: list[str]) -> dict[str, Any]:
+    return {
+        "success": False,
+        "error": f"{message} Valid sections: {', '.join(valid)}.",
+        "unknown_sections": unknown,
+        "valid_sections": valid,
+    }
+
+
+def _contract_impl(section: str | None = None, sections: Any = None) -> dict[str, Any]:
+    """Return the full design-system contract, or only the requested parts.
+
+    sections (a list of top-level keys) returns {id, version} plus exactly
+    those keys, in the order asked. section (one name) is the older form: it
+    returns {section, data} and accepts a few aliases (color, tensions,
+    poise). Unknown names return an error listing every valid key.
+    """
     data = _fetch_contract()
+    valid = list(data.keys())
+
+    if sections is not None:
+        if not isinstance(sections, list) or not all(isinstance(s, str) for s in sections):
+            return _contract_error("sections must be a list of strings.", [], valid)
+        names: list[str] = []
+        for name in ([section] if section else []) + sections:
+            if name not in names:
+                names.append(name)
+        if not names:
+            return _contract_error("sections is empty; name at least one section, or omit it for the full contract.", [], valid)
+        unknown = [n for n in names if n not in data]
+        if unknown:
+            return _contract_error(f"Unknown contract section(s): {', '.join(unknown)}.", unknown, valid)
+        result: dict[str, Any] = {"id": data.get("id"), "version": data.get("version")}
+        for n in names:
+            result[n] = data[n]
+        return result
+
     if not section:
         return data
 
-    # Map section names to contract keys
+    # Older single-section form, kept as it was, aliases included.
     section_map = {
         "colors": "colors",
         "color": "colors",
@@ -1742,11 +2037,7 @@ def _contract_impl(section: str | None = None) -> dict[str, Any]:
     key = section_map.get(section.lower(), section.lower())
     if key in data:
         return {"section": key, "data": data[key]}
-    else:
-        return {
-            "section": section,
-            "error": f"Section '{section}' not found in contract. Available: {list(data.keys())}",
-        }
+    return _contract_error(f"Unknown contract section: {section}.", [section], valid)
 
 
 def _design_review_impl(
@@ -1755,78 +2046,45 @@ def _design_review_impl(
     context: str | None = None,
     rules: str | None = None,
 ) -> dict[str, Any]:
-    """Return the Design Review kit — 8 dimensions, agent prompt, output format.
+    """Return the Design Review kit's rubric as reference data.
 
-    This is read-only: it returns the kit framework for the calling agent to
-    execute. It does not run a live review. The agent uses the returned
-    dimensions, prompt, and output format to conduct the review itself.
+    Read-only: it returns the eight dimensions, output format and checklist
+    and does not run a review. The kit's agent_prompt is left out (see
+    _design_review_rubric); kit_prompt_url points a person at it.
     """
-    data = _fetch_kit()
-    dimensions = data.get("dimensions", [])
-    agent_prompt = data.get("agent_prompt", "")
-    output_format = data.get("output_format", [])
-    verification = data.get("verification", [])
-
-    # If the caller provided inputs, fill in the agent prompt placeholders
-    filled_prompt = agent_prompt
-    if artifact or purpose or context or rules:
-        replacements = {
-            "{{ARTIFACT}}": artifact or "(not provided)",
-            "{{PURPOSE}}": purpose or "(not provided)",
-            "{{CONTEXT}}": context or "(not provided)",
-            "{{RULES}}": rules or "Designesy design system contract v0.3.0",
-        }
-        for placeholder, value in replacements.items():
-            filled_prompt = filled_prompt.replace(placeholder, value)
-
-    return {
-        "kit_id": data.get("id"),
-        "kit_version": data.get("version"),
-        "quality_bar": data.get("quality_bar"),
-        "permission": data.get("permission"),
-        "dimensions": dimensions,
-        "agent_prompt": filled_prompt if (artifact or purpose or context or rules) else agent_prompt,
-        "output_format": output_format,
-        "verification": verification,
-        "anti_patterns": data.get("anti_patterns", []),
-        "rationalizations": data.get("rationalizations", []),
-        "note": "Read-only: this returns the review framework. The calling agent executes the review using these dimensions, prompt, and output format.",
-    }
+    kit = _fetch_kit()
+    default_rules = "designesy design system (latest published contract)"
+    if not rules and (artifact or purpose or context):
+        try:
+            default_rules = f"designesy design system v{_fetch_contract().get('version')}"
+        except Exception:  # the rubric does not depend on the contract
+            pass
+    return _design_review_rubric(
+        kit,
+        f"{BASE_URL}/kits/design-review.json",
+        {"artifact": artifact, "purpose": purpose, "context": context, "rules": rules},
+        default_rules,
+    )
 
 
 def _skill_md_impl() -> dict[str, Any]:
-    """Return the SKILL.md agent-skill-format export."""
-    content = _fetch_skill_md()
-    return {
-        "content_type": "text/markdown",
-        "source": f"{BASE_URL}/contracts/skill",
-        "content": content,
-    }
+    """Return the SKILL.md export as reference data."""
+    return _published_text(f"{BASE_URL}/contracts/skill", "text/markdown", _fetch_skill_md())
 
 
 def _agent_json_impl() -> dict[str, Any]:
-    """Return the agent discovery document (agent.json)."""
-    return _fetch_agent_json()
+    """Return the agent discovery document (agent.json) as reference data."""
+    return _published_json(f"{BASE_URL}/.well-known/agent.json", _fetch_agent_json())
 
 
 def _llms_txt_impl() -> dict[str, Any]:
-    """Return the short llms.txt agent brief."""
-    content = _fetch_llms_txt()
-    return {
-        "content_type": "text/plain",
-        "source": f"{BASE_URL}/llms.txt",
-        "content": content,
-    }
+    """Return the short llms.txt brief as reference data."""
+    return _published_text(f"{BASE_URL}/llms.txt", "text/plain", _fetch_llms_txt())
 
 
 def _llms_full_txt_impl() -> dict[str, Any]:
-    """Return the full llms-full.txt agent brief."""
-    content = _fetch_llms_full_txt()
-    return {
-        "content_type": "text/plain",
-        "source": f"{BASE_URL}/llms-full.txt",
-        "content": content,
-    }
+    """Return the full llms-full.txt brief as reference data."""
+    return _published_text(f"{BASE_URL}/llms-full.txt", "text/plain", _fetch_llms_full_txt())
 
 
 # ── Tool definitions ────────────────────────────────────────────────────────
@@ -1856,26 +2114,45 @@ TOOLS = [
     {
         "name": "designesy_contract",
         "description": (
-            "Get the Designesy design-system contract — the canonical "
+            "Get the Designesy design-system contract: the canonical "
             "tokens, motion, acoustic, takt, cadence, typography, "
             "components, and verification rules that define what the "
             "Designesy org considers legitimate design. Use this when you "
-            "need the actual contract values (token names and values, motion "
-            "timings, accessibility rules) to author, check, or bind a "
-            "design. When NOT to use: for a pass/fail score of a live site, "
-            "use designesy_score; for an agent-skill-format export, use "
-            "designesy_skill_md. Read-only — cached ~24h server-side. "
-            "Returns the full contract JSON, or a single section when "
-            "'section' is provided. Pass section to get one slice (e.g. "
-            "'motion' for just the motion tokens) instead of the full "
-            "contract — saves tokens when you only need one dimension."
+            "need the actual contract values (token names and values, "
+            "motion timings, accessibility rules) to author, check, or bind "
+            "a design. When NOT to use: for a pass/fail score of a live "
+            "site, use designesy_score; for an agent-skill-format export, "
+            "use designesy_skill_md. Read-only; this server caches the "
+            "fetched contract for 5 minutes. With no arguments it returns "
+            "the full contract JSON, which is large (on the order of 100 "
+            "KB, tens of thousands of tokens). To return less, pass "
+            "sections, a list of top-level keys such as [\"motion\", "
+            "\"colors\"]: the result holds id, version, and only those keys. "
+            "section (one name) is the older form and returns { section, "
+            "data }. An unknown name returns an error that lists every "
+            "valid key."
         ),
         "inputSchema": {
             "type": "object",
             "properties": {
+                "sections": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Optional: top-level contract keys to return, for example "
+                        "[\"motion\", \"colors\", \"verification_checks\"]. The result "
+                        "holds id, version, and only these keys. Omit for the full "
+                        "contract. An unknown key returns an error that lists every "
+                        "valid key."
+                    ),
+                },
                 "section": {
                     "type": "string",
-                    "description": "Optional: filter to a specific contract section (colors, motion, acoustic, typography, takt, cadence, verification, open_tensions, components, interaction).",
+                    "description": (
+                        "Optional, older form: one section name; returns { section, "
+                        "data }. Accepts the aliases color, tensions and poise. "
+                        "Prefer sections."
+                    ),
                 },
             },
         },
@@ -1883,21 +2160,27 @@ TOOLS = [
     {
         "name": "designesy_design_review",
         "description": (
-            "Get the Designesy Design Review framework — an 8-dimension "
-            "rubric (Purpose, Clarity, Context, Inclusion, System "
-            "coherence, Durability, Delight, Responsibility) plus the "
-            "agent prompt, output format, and verification checklist for a "
-            "qualitative design critique. Use this when you want a "
-            "structured rubric to critique a design holistically, rather "
-            "than a numeric compliance score. When NOT to use: for a "
-            "deterministic numeric score, use designesy_score; this tool "
-            "gives you a rubric, not a number. Read-only — returns the "
-            "rubric + prompt. The calling agent performs the actual "
-            "critique (this tool does not evaluate the design for you). "
-            "Returns JSON: { rubric, dimensions[8], agent_prompt, "
-            "output_format, verification_checklist }. Pass "
-            "artifact/purpose/context/rules to get a pre-filled critique "
-            "prompt; omit all four to get the blank framework."
+            "Get the Designesy Design Review rubric for a qualitative "
+            "design critique: eight dimensions (Purpose, Clarity, Context, "
+            "Inclusion, System coherence, Durability, Delight, "
+            "Responsibility), the output format, and the verification "
+            "checklist, from the published Design Review kit. Use this when "
+            "you want a structured rubric to critique a design "
+            "holistically, rather than a numeric compliance score. When NOT "
+            "to use: for a deterministic numeric score, use "
+            "designesy_score; this tool gives you a rubric, not a number. "
+            "Read-only: it returns reference data and does not evaluate the "
+            "design. Returns JSON: { kind: \"review_rubric\", source_url, "
+            "note, inputs (only when passed), kit { id, title, version, "
+            "status, purpose, quality_bar, permission }, when_to_use[], "
+            "required_inputs[], dimensions[8] { num, title, desc }, "
+            "output_format[], verification_checklist[], anti_patterns[], "
+            "rationalizations[], kit_prompt_url, kit_prompt_note, "
+            "omitted_fields[] }. The kit's copy-ready agent prompt is not "
+            "included; kit_prompt_url is the page where a person can read "
+            "it. Pass artifact, purpose, context, or rules to have them "
+            "recorded in inputs (rules defaults to the current contract "
+            "version)."
         ),
         "inputSchema": {
             "type": "object",
@@ -1905,23 +2188,26 @@ TOOLS = [
                 "artifact": {"type": "string", "description": "URL or description of the artifact to review."},
                 "purpose": {"type": "string", "description": "What the design is trying to make possible."},
                 "context": {"type": "string", "description": "Audience, device, environment, and constraints."},
-                "rules": {"type": "string", "description": "Governing rules or contract version (default: designesy design system v0.3.0)."},
+                "rules": {"type": "string", "description": "Governing rules or contract version (default: the current designesy design system contract version)."},
             },
         },
     },
     {
         "name": "designesy_skill_md",
         "description": (
-            "Get the Designesy SKILL.md — the agent-skill-format export of "
-            "the design-system contract, written as behavioral rules an AI "
-            "coding agent can drop into .agents/skills/ or a system prompt. "
-            "Use this when you want the contract in a form that steers how "
-            "an agent *builds* UI (tokens, anti-patterns, behavioral rules, "
-            "verification). When NOT to use: for the raw contract JSON, use "
-            "designesy_contract; for scoring, use designesy_score. "
-            "Read-only — no side effects. Returns markdown text (SKILL.md "
-            "format) — drop into .agents/skills/ or paste into a system "
-            "prompt. No parameters."
+            "Get the Designesy SKILL.md: the agent-skill-format export of "
+            "the design-system contract, for a user to save into "
+            ".agents/skills/ or a system prompt so a coding agent builds UI "
+            "to the contract (tokens, anti-patterns, rules, verification). "
+            "Use this when the user wants the contract in that form. When "
+            "NOT to use: for the raw contract JSON, use designesy_contract; "
+            "for scoring, use designesy_score. Read-only: no side effects. "
+            "Returns JSON: { kind: \"published_document\", source_url, "
+            "media_type: \"text/markdown\", note, omitted_sections[], content "
+            "}, where content is the SKILL.md markdown (tens of thousands "
+            "of characters) with any section written as steps or a prompt "
+            "for an AI agent replaced by a one-line marker and named in "
+            "omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
@@ -1929,46 +2215,62 @@ TOOLS = [
         "name": "designesy_agent_json",
         "description": (
             "Get the Designesy agent discovery document "
-            "(/.well-known/agent.json) — the org identity, authority, "
-            "ingest protocol, package index, machine-export list, "
-            "permission policy, and citation templates. Use this when you "
-            "are integrating with or enumerating Designesy as a machine "
-            "agent and need the canonical discovery/manifest endpoint "
-            "rather than one specific contract. When NOT to use: for the "
-            "package list, use designesy_catalog (lighter); for the "
-            "contract, use designesy_contract. Read-only — no side "
-            "effects. Returns the /.well-known/agent.json object: "
-            "{ identity, authority, ingest_protocol, package_index, "
-            "permission_policy, citation_templates }. No parameters."
+            "(/.well-known/agent.json) as reference data: the org identity, "
+            "authority, discovery endpoints, package index, machine "
+            "exports, permission policy, contact, and citation templates. "
+            "Use this when integrating with or enumerating Designesy and "
+            "need the canonical discovery manifest rather than one specific "
+            "contract. When NOT to use: for the package list, use "
+            "designesy_catalog (lighter); for the contract, use "
+            "designesy_contract. Read-only: no side effects. Returns JSON: "
+            "{ kind: \"published_document\", source_url, media_type: "
+            "\"application/json\", note, omitted_fields[], document }, where "
+            "document is the published object (schema, name, identity, "
+            "authority, topics, discovery, ingest, packages, "
+            "machine_exports, contact, permission, cite, and the rest) with "
+            "any field written as steps for an AI agent (such as "
+            "ingest.steps) removed and its path listed in omitted_fields. "
+            "No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "designesy_llms_txt",
         "description": (
-            "Get the Designesy /llms.txt — a short agent-facing brief with "
-            "the canonical reference, topic index, ingest steps, package "
-            "list, and contact. Use this first when you don't know what "
-            "Designesy is — it's the cheapest orientation path before "
-            "pulling heavier artifacts. When NOT to use: for the full "
-            "expanded brief, use designesy_llms_full_txt; for the contract "
-            "itself, use designesy_contract. Read-only — no side effects. "
-            "Returns text/plain (~500 tokens). No parameters."
+            "Get the Designesy /llms.txt brief as reference data: what "
+            "Designesy is, canonical links, topics, the published package "
+            "list, machine exports, standing rules, and contact. Use this "
+            "first when you don't know what Designesy is; at a few thousand "
+            "characters it is the cheapest orientation path before pulling "
+            "heavier artifacts. When NOT to use: for the longer brief, use "
+            "designesy_llms_full_txt; for the contract itself, use "
+            "designesy_contract. Read-only: no side effects. Returns JSON: "
+            "{ kind: \"published_document\", source_url, media_type: "
+            "\"text/plain\", note, omitted_sections[], content }, where "
+            "content is the published text with any section written as "
+            "steps for an AI agent (such as the ingest steps) replaced by a "
+            "one-line marker and named in omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "designesy_llms_full_txt",
         "description": (
-            "Get the Designesy /llms-full.txt — the complete agent-facing "
-            "brief: ingest protocol, discovery endpoints, every package, "
-            "standing rules, anti-patterns, and a paste-ready agent "
-            "prompt. Use this for comprehensive onboarding to the "
-            "Designesy ecosystem when the short /llms.txt is not enough. "
-            "When NOT to use: for a quick orientation, use "
-            "designesy_llms_txt first (~500 tokens vs ~3000). Read-only — "
-            "no side effects. Returns text/plain (~3000 tokens, includes "
-            "a paste-ready agent prompt). No parameters."
+            "Get the Designesy /llms-full.txt brief as reference data: "
+            "authority, discovery endpoints, topics, every published "
+            "package with its links, standing rules, and anti-patterns. Use "
+            "this for a fuller picture of the Designesy ecosystem when the "
+            "short brief from designesy_llms_txt is not enough. When NOT to "
+            "use: for a quick orientation, use designesy_llms_txt (a few "
+            "thousand characters; this one runs over ten thousand); for the "
+            "contract itself, use designesy_contract. Read-only: no side "
+            "effects. Returns JSON: { kind: \"published_document\", "
+            "source_url, media_type: \"text/plain\", note, "
+            "omitted_sections[], content }, where content is the published "
+            "text with any section written as steps or a prompt for an AI "
+            "agent (such as the ingest protocol and the paste-ready agent "
+            "prompt) replaced by a one-line marker and named in "
+            "omitted_sections. No parameters."
         ),
         "inputSchema": {"type": "object", "properties": {}},
     },
@@ -1976,7 +2278,7 @@ TOOLS = [
         "name": "designesy_score",
         "description": (
             "Score a live URL against the Designesy design contract with "
-            "the deterministic 42-check verification engine at "
+            "the deterministic 44-check verification engine at "
             "https://www.designesy.org/api/score. Returns a numeric score, "
             "a letter grade (A-F), and the check results. "
             "Use this to audit whether a website or AI-generated UI "
@@ -1986,7 +2288,7 @@ TOOLS = [
             "designesy_tokens_score; for a Lottie file, use "
             "designesy_motion_score; for a qualitative critique, use "
             "designesy_design_review. The engine fetches the URL "
-            "server-side, extracts its CSS, and runs 42 checks. Results "
+            "server-side, extracts its CSS, and runs 44 checks. Results "
             "are cached ~24h server-side per URL and scope. Checks that "
             "need a live browser (Core Web Vitals, sound toggle, overflow) "
             "return MANUAL; the full audit (/api/score/audit) resolves "
@@ -2006,7 +2308,7 @@ TOOLS = [
             "and the engine auto-detects: contract for designesy.org, "
             "universal for every other site. If the engine is "
             "unreachable, format designesy falls back to the offline "
-            "engine: 27 of the 42 checks run locally, each mirroring the "
+            "engine: 27 of the 44 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
             "checks it did not run) and scope, and its note says so. The "
@@ -2051,21 +2353,26 @@ TOOLS = [
         "description": (
             "Validate a design token file against the W3C Design Tokens "
             "Community Group (DTCG) 2025.10 Final Community Group Report "
-            "(the spec's first stable version, published Oct 28 2025 — "
-            "Candidate Recommendation, considered stable). Returns 10 "
-            "conformance checks (t01-t10) with PASS/FAIL/WARN. Use this "
+            "(the spec's first stable version, published Oct 28 2025 as a "
+            "Candidate Recommendation and considered stable). Returns 10 "
+            "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct — $type/$value/$description present, "
+            "structurally correct: $type/$value/$description present, "
             "structured colors (colorSpace + components rather than bare "
             "hex), a valid $schema pointer to designtokens.org, and "
             "correct dimension units. With 84% of teams now using design "
             "tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, "
             "every adopting team needs a validator. When NOT to use: for "
             "scoring a whole live site (not just its token file), use "
-            "designesy_score. Executable — fetches the URL or parses the "
+            "designesy_score. Executable: fetches the URL or parses the "
             "raw JSON you provide, runs 10 checks server-side. No "
-            "browser needed. Returns JSON: { checks[{id (t01–t10), name, "
-            "status (PASS/FAIL/WARN), detail}], valid, score }. Pass url "
+            "browser needed. Score: PASS=1, WARN=0, FAIL=0, SKIP is not "
+            "scored; points / scored checks x 100. Returns JSON: { "
+            "contract_id, contract_version, contract_status, url, "
+            "total_tokens, score (0-100), grade (A-F), pass_count, "
+            "fail_count, warn_count, skip_count, scoring, checks[{id "
+            "(t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], "
+            "provenance, validator_note }. Pass url "
             "to fetch a remote token file, or dtcg_file to validate an "
             "inline JSON string. Provide exactly one."
         ),
@@ -2092,15 +2399,15 @@ TOOLS = [
             "targeting your URL. Use this to audit a site for "
             "accessibility violations. When NOT to use: for a full "
             "design-contract score (not just a11y), use designesy_score. "
-            "Does NOT run the scan — axe-core needs a real browser DOM. "
+            "Does NOT run the scan: axe-core needs a real browser DOM. "
             "Returns the 11 checks + a Playwright script you execute "
             "locally (npm i -D @axe-core/playwright). The score comes "
             "from your local run, not from this tool. Returns JSON: { "
-            "checks[{id (a01–a11), name, status: 'PENDING_EXECUTION'}], "
+            'checks[{id (a01-a11), name, status: "PENDING_EXECUTION"}], '
             "playwright_script, install_command, run_command }. Pass "
-            "config (JSON string) to customize axe.configure() — e.g. "
-            "branding overrides, rule disables. Omit for standard WCAG "
-            "2.2 AA."
+            "config (JSON string) to customize axe.configure(), for "
+            "example with branding overrides or rule disables. Omit for "
+            "standard WCAG 2.2 AA."
         ),
         "inputSchema": {
             "type": "object",
@@ -2124,25 +2431,33 @@ TOOLS = [
     {
         "name": "designesy_motion_score",
         "description": (
-            "Validate a Lottie animation file against the Lottie spec "
-            "v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion "
-            "Standards, returning 10 checks (m01-m10) with "
-            "PASS/FAIL/WARN. The DTCG 2025.10 spec leaves motion tokens "
-            "as a second-class citizen — there is no standard for motion "
-            "token structure, reduced-motion markers, or animation "
-            "accessibility. Designesy's motion validator fills this gap: "
-            "it checks required fields (v, fr, ip, op, w, h, layers), "
-            "$version, a markers array for reduced-motion compliance, and "
-            "no deprecated version. Use this to verify a motion/animation "
-            "asset is well-formed AND accessible — the only validator "
-            "that checks both. When NOT to use: for full-site motion "
-            "scoring (not a single Lottie file), use designesy_score. "
-            "Executable — fetches the URL or parses the raw Lottie JSON, "
-            "runs 10 checks server-side. No browser needed. Returns "
-            "JSON: { checks[{id (m01–m10), name, status (PASS/FAIL/WARN), "
-            "detail}], valid, score }. Pass url to fetch a remote Lottie "
-            "file, or lottie_file to validate an inline JSON string. "
-            "Provide exactly one."
+            "Validate one Lottie animation file against the Designesy motion "
+            "contract: its ten checks (m01-m10), drawn from the Lottie spec "
+            "v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards. "
+            "Each check returns PASS, FAIL, WARN or SKIP under the contract's "
+            "own name for its id: m01 the schema's top-level animation object "
+            "(layer contents are not validated, so a clean file returns SKIP, "
+            "not PASS), m02 the required fields (v, fr, ip, op, w, h, layers), "
+            "m03 no deprecated 4.x Bodymovin version, m04 a markers array, m05 "
+            "a meta object, m06 a reduced-motion path (a marker or slot named "
+            "for it, or a meta note of an external prefers-reduced-motion "
+            "wrapper), m07 keyframe easing (linear, ease and ease-in curves "
+            "fail), m08 duration within 300 ms (longer returns WARN, since a "
+            "justification cannot be read from a file), m09 layout-property "
+            "animation and m10 keyboard-initiated motion (both SKIP: they "
+            "concern the page that embeds the file). Use this to check that a "
+            "motion asset is well formed and carries reduced-motion support. "
+            "When NOT to use: for the motion CSS of a whole site, use "
+            "designesy_score. Executable: fetches the URL or parses the inline "
+            "JSON; no browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is "
+            "not scored; points / scored checks x 100. Returns JSON: { "
+            "contract_id, contract_version, contract_status, url, "
+            "lottie_version, layer_count, score (0-100), grade (A-F), "
+            "pass_count, fail_count, warn_count, skip_count, scoring, "
+            "checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), "
+            "detail}], ten_non_negotiable, provenance, validator_note }. Pass "
+            "url to fetch a remote Lottie file, or lottie_file to validate an "
+            "inline JSON string. Provide exactly one."
         ),
         "inputSchema": {
             "type": "object",
@@ -2161,24 +2476,25 @@ TOOLS = [
     {
         "name": "designesy_drift_score",
         "description": (
-            "Score a live URL for AI-generated UI drift — 12 checks "
-            "detect the four documented 2026 drift failure modes: token "
-            "fabrication (var() to undeclared custom properties), "
-            "within-session drift (spacing/color/radius value variance), "
-            "between-session amnesia (inconsistent font stacks, shadows, "
-            "transitions), and silent breaking changes (z-index chaos, "
-            "dangling alias chains). Use this when you need to verify "
-            "whether a site (especially an AI-generated one) is drifting "
-            "off its own declared token system. When NOT to use: for a "
-            "full 42-check design-contract score, use designesy_score; "
-            "for token-file format validation, use "
-            "designesy_tokens_score. Executable — fetches the URL "
-            "server-side, extracts all CSS (inline + linked stylesheets), "
-            "parses :root custom properties and var() references, runs "
-            "12 drift checks. No browser needed. Returns JSON: { ok, "
-            "url, score (0-100), grade (A-F), pass, warn, fail, total, "
-            "tokensExtracted, checks[{id, item, category, status, "
-            "detail}] }. Results cached ~24h server-side per URL."
+            "Score a live URL for AI-generated UI drift. Its 12 checks detect "
+            "the four documented 2026 drift failure modes: token fabrication "
+            "(var() references with no fallback to custom properties declared "
+            "nowhere: not in a stylesheet, a <style> block or a style "
+            "attribute), within-session drift (spacing/color/radius value "
+            "variance), between-session amnesia (inconsistent font stacks, "
+            "shadows, transitions), and silent breaking changes (z-index chaos, "
+            "alias chains that end in an undeclared property). Use this when "
+            "you need to verify whether a site (especially an AI-generated one) "
+            "is drifting off its own declared token system. When NOT to use: "
+            "for a full 44-check design-contract score, use designesy_score; "
+            "for token-file format validation, use designesy_tokens_score. "
+            "Executable: fetches the URL server-side, extracts all CSS (inline "
+            "+ linked stylesheets), parses custom property declarations "
+            "(stylesheets, <style> blocks and style attributes) and var() "
+            "references, runs 12 drift checks. No browser needed. Returns JSON: "
+            "{ ok, url, scope, score (0-100), grade (A-F), pass, warn, fail, "
+            "skip, total, tokensExtracted, checks[{id, item, category, status, "
+            "detail}] }. Results cached ~24h per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2223,28 +2539,36 @@ TOOLS = [
     {
         "name": "designesy_guardrails",
         "description": (
-            "Generate a frozen build-contract bundle for AI coding "
-            "agents from any design system URL — the product layer. "
-            "Ingests a site, extracts its :root tokens, and emits 6 "
-            "outputs: (1) DTCG-format token file, (2) Stylelint config "
-            "generated from token values, (3) AGENTS.md-format rules "
-            "with token allowlist, (4) component contract with allowed "
-            "prop patterns, (5) anti-pattern documentation, (6) DESIGN.md "
-            "file (Google open spec, google-labs-code/design.md) — YAML "
-            "front matter + markdown body, the de-facto AI-readable "
-            "design-context standard. Use this when you need to turn a "
-            "design system into the file AI agents read and the lint "
-            "that enforces it. When NOT to use: for design-contract "
-            "scoring, use designesy_score; for token-file validation, "
-            "use designesy_tokens_score; for drift detection, use "
-            "designesy_drift_score. Executable — fetches the URL, "
-            "extracts CSS + :root custom properties, generates the "
-            "bundle. No browser needed. Returns JSON: { ok, url, score "
-            "(0-100, emission completeness), grade, pass, warn, fail, "
-            "total, tokensExtracted, bundle: { tokens, lintConfig, "
-            "agentRules, componentContract, antiPatterns, designMd }, "
-            "checks[{id, item, category, status, detail}] }. Results "
-            "cached ~24h server-side per URL."
+            "Generate a frozen build-contract bundle for AI coding agents from "
+            "any design system URL (the product layer). Ingests a site, "
+            "extracts its :root tokens, and emits 6 outputs: (1) DTCG-format "
+            "token file, (2) Stylelint config generated from token values, (3) "
+            "AGENTS.md-format rules with token allowlist, (4) component "
+            "contract with allowed prop patterns, (5) anti-pattern "
+            "documentation, (6) DESIGN.md file (Google open spec, "
+            "google-labs-code/design.md), the de-facto AI-readable "
+            "design-context standard: YAML front matter plus a markdown body. "
+            "Use this when you need to turn a design system into the file AI "
+            "agents read and the lint that enforces it. When NOT to use: for "
+            "design-contract scoring, use designesy_score; for token-file "
+            "validation, use designesy_tokens_score; for drift detection, use "
+            "designesy_drift_score. Executable: fetches the URL, extracts CSS + "
+            ":root custom properties, generates the bundle. No browser needed. "
+            "The full bundle grows with the number of tokens a site declares: "
+            "about 7 KB to about 530 KB of JSON on the 26 sites measured "
+            "(about 110 KB for designesy.org). To trim it, pass parts, a list of "
+            "bundle file names such as [\"designMd\"] or [\"tokens\", "
+            "\"lintConfig\"]: the result keeps score, grade, counts and checks, "
+            "and its bundle holds only those files, in the order asked. Valid "
+            "parts: tokens, lintConfig, agentRules, componentContract, "
+            "antiPatterns, designMd. A single part can still be large on a site "
+            "with many tokens. An unknown name returns an error that lists the "
+            "valid parts. Returns JSON: { ok, url, score (0-100, emission "
+            "completeness), grade, pass, warn, fail, total, tokensExtracted, "
+            "bundle: { tokens, lintConfig, agentRules, componentContract, "
+            "antiPatterns, designMd }, checks[{id, item, category, status, "
+            "detail}] }; with parts it adds parts, and bundle holds only the "
+            "named files. Results cached ~24h per URL."
         ),
         "inputSchema": {
             "type": "object",
@@ -2252,6 +2576,11 @@ TOOLS = [
                 "url": {
                     "type": "string",
                     "description": "URL to generate guardrails for. Defaults to https://www.designesy.org/ if not provided.",
+                },
+                "parts": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Optional: the bundle files to return, by name. Omit for the whole bundle. Valid parts: tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd.",
                 },
             },
         },
@@ -2367,28 +2696,36 @@ TOOLS = [
     {
         "name": "designesy_report",
         "description": (
-            "Generate a unified design-intelligence report for a single "
-            "URL — the synthesis capstone of the Designesy dynasty. "
-            "Fires /score (42-check audit), /drift (12-check drift "
-            "radar), and /readiness (10-check AI readiness) in "
-            "parallel, then computes a weighted composite: score × 0.5 "
-            "+ drift × 0.3 + readiness × 0.2. One input, one output, "
-            "one composite grade. Use this when you need a single "
-            "holistic assessment instead of three separate scans, or "
-            "when sharing a design-intelligence verdict (the report is "
-            "the most shareable surface). When NOT to use: for just "
-            "the audit score, use designesy_score; for just drift, use "
-            "designesy_drift_score; for just AI readiness, use "
-            "designesy_readiness_score. Executable — fires 3 internal "
-            "APIs in parallel, each fetches the target URL. No browser "
-            "needed. Returns JSON: { ok, url, compositeScore (0-100), "
-            "compositeGrade (A-F), score { sub-result }, drift { "
-            "sub-result }, readiness { sub-result }, totalChecks, "
-            "totalPass, totalWarn, totalFail, totalSkip, checks[] (all "
-            "checks across all engines, tagged with engine), "
-            "synthesis[] (8 synthesis checks verifying the report ran "
-            "correctly), appUrl (standalone interactive dashboard URL) "
-            "}. Results cached ~24h server-side per URL."
+            "Generate a unified design-intelligence report for a single URL, "
+            "the synthesis capstone. Fires /score (44-check audit), /drift "
+            "(12-check drift radar), and /readiness (10-check AI readiness) in "
+            "parallel, then computes a weighted composite: score × 0.5 + drift "
+            "× 0.3 + readiness × 0.2. One input, one output, one composite "
+            "grade. Use this when you need a single holistic assessment instead "
+            "of three separate scans, or when sharing a design-intelligence "
+            "verdict (the report is the most shareable surface). When NOT to "
+            "use: for just the audit score, use designesy_score; for just "
+            "drift, use designesy_drift_score; for just AI readiness, use "
+            "designesy_readiness_score. Executable: fires 3 internal APIs in "
+            "parallel, each fetches the target URL. No browser needed. The full "
+            "result is large: about 75 to 100 KB of JSON on the ten sites "
+            "measured, on the order of 20,000 tokens or more, because it "
+            "carries each engine's whole result beside the merged check list. "
+            "To trim it, pass detail \"summary\": the same keys with fewer rows, "
+            "about 4 to 31 KB on the same sites. It keeps the composite, the "
+            "totals, each engine's score, grade and counts, and only the checks "
+            "and synthesis entries that did not PASS; omitted counts what was "
+            "left out. detail \"full\" (the default) returns everything. Returns "
+            "JSON: { ok, url, compositeScore (0-100), compositeGrade (A-F), "
+            "score { sub-result }, drift { sub-result }, readiness { sub-result "
+            "}, totalChecks, totalPass, totalWarn, totalFail, totalSkip, "
+            "totalManual, checks[] (all checks across all engines, tagged with "
+            "engine), synthesis[] (8 synthesis checks verifying the report ran "
+            "correctly), appUrl (standalone interactive dashboard URL) }; with "
+            "detail \"summary\" it adds detail and omitted. Results cached ~24h "
+            "per URL. MCP Apps: hosts that support io.modelcontextprotocol/ui "
+            "render an interactive dashboard inline; others get the JSON plus "
+            "an appUrl link."
         ),
         "inputSchema": {
             "type": "object",
@@ -2396,6 +2733,11 @@ TOOLS = [
                 "url": {
                     "type": "string",
                     "description": "Public URL to generate a design-intelligence report for.",
+                },
+                "detail": {
+                    "type": "string",
+                    "enum": ["summary", "full"],
+                    "description": "Optional: \"full\" (the default) returns everything; \"summary\" returns the composite, the totals, each engine's score, grade and counts, and only the checks that did not PASS.",
                 },
             },
             "required": ["url"],
@@ -2483,7 +2825,7 @@ TOOL_MAP = {t["name"]: t for t in TOOLS}
 # ── Resource definitions ────────────────────────────────────────────────────
 
 RESOURCES = [
-    {"uri": "designesy://open", "name": "Package catalog", "description": "23-package catalog from /open.json", "mimeType": "application/json"},
+    {"uri": "designesy://open", "name": "Package catalog", "description": "Package catalog from /open.json", "mimeType": "application/json"},
     {"uri": "designesy://contract", "name": "Design system contract", "description": "Full contract from /contracts/design-system.json", "mimeType": "application/json"},
     {"uri": "designesy://kit/design-review", "name": "Design Review kit", "description": "Review kit from /kits/design-review.json", "mimeType": "application/json"},
     {"uri": "designesy://skill", "name": "SKILL.md", "description": "Agent-skill-format export from /contracts/skill", "mimeType": "text/markdown"},
@@ -2514,7 +2856,7 @@ _RESOURCE_FETCHERS = {
 # this list lacked cubicBezier and carried seven names the format does not
 # define (string, boolean, link, borderStyle, borderWeight, radius, spacing),
 # so t06 WARNed on a conformant easing token and passed those names as
-# standard. apps/site/app/api/mcp/route.ts carries the same list; the test
+# standard. apps/site/app/lib/tokens-score.ts carries the same list; the test
 # suite asserts the two stay equal.
 DTCG_STANDARD_TYPES = frozenset({
     "color", "dimension", "fontFamily", "fontWeight", "duration",
@@ -2524,13 +2866,13 @@ DTCG_STANDARD_TYPES = frozenset({
 
 
 def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> dict[str, Any]:
-    """Validate a design token file against W3C DTCG 2025.10 format."""
+    """Run the tokens contract's ten checks on one DTCG token file (see _tokens_score)."""
     contract = _fetch("https://www.designesy.org/contracts/tokens.json", as_json=True)
 
     token_data: Any = None
     if dtcg_file:
         try:
-            token_data = json.loads(dtcg_file)
+            token_data = json.loads(dtcg_file, parse_constant=_reject_json_constant)
         except json.JSONDecodeError:
             return {"success": False, "error": "Invalid JSON in dtcg_file parameter"}
     elif url:
@@ -2545,217 +2887,239 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 
     if not isinstance(token_data, dict):
         return {"success": False, "error": "Token file is not a JSON object"}
+    return _tokens_score(token_data, contract, url or "(inline dtcg_file)")
 
-    tokens = token_data
-    token_groups = tokens.get("$tokens", tokens.get("tokens", tokens))
 
+# ── designesy_tokens_score: the tokens contract's ten checks ─────────────────
+#
+# A line-for-line port of apps/site/app/lib/tokens-score.ts. The score used to
+# be PASS / all ten checks x 100, so a check that could not apply counted as a
+# zero (a clean file whose t07 had no custom types scored 90, not 100). It is
+# now PASS / scored checks x 100: SKIP is not scored, WARN and FAIL earn
+# nothing. Check names are the contract's own, looked up by id. Both
+# implementations run on test/fixtures/tokens/ and must produce expected.json
+# there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
+#
+# Object keys are walked in JavaScript's order (_js_keys), truthiness follows
+# JavaScript (_js_truthy), numbers print as JavaScript prints them (_js_num)
+# and rounding follows Math.round (_js_round), so the two servers write the
+# same result for the same file.
+
+TOKENS_CHECK_NAMES = {
+    "t01": "$schema declaration",
+    "t02": "Token groups present",
+    "t03": "$type on all tokens",
+    "t04": "$value on all tokens",
+    "t05": "Structured color format",
+    "t06": "Standard type names",
+    "t07": "Custom type extension",
+    "t08": "Dimension units",
+    "t09": "Token naming hierarchy",
+    "t10": "No deprecated patterns",
+}
+
+TOKENS_SCORING = (
+    "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. "
+    "A>=90, B>=80, C>=70, D>=60, F<60."
+)
+
+_DIMENSION_UNITS = sorted(
+    ["px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
+     "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
+     "cm", "mm", "in", "pt", "pc", "fr"],
+    key=len, reverse=True,
+)
+
+
+def _js_truthy(x: Any) -> bool:
+    """JavaScript truthiness for a JSON value: objects and arrays are truthy."""
+    if isinstance(x, (dict, list)):
+        return True
+    return bool(x)
+
+
+def _js_keys(d: dict[str, Any]) -> list[str]:
+    """Object.keys order: array-index keys ascending, then the rest as inserted."""
+    def is_index(k: str) -> bool:
+        return k.isascii() and k.isdigit() and (k == "0" or not k.startswith("0")) and int(k) < 4294967295
+    index = sorted((k for k in d if is_index(k)), key=int)
+    return index + [k for k in d if not is_index(k)]
+
+
+def _dimension_unit(v: str) -> str:
+    for unit in _DIMENSION_UNITS:
+        if v.endswith(unit):
+            return unit
+    return ""
+
+
+def _tokens_check_names(contract: dict[str, Any]) -> dict[str, str]:
+    names = dict(TOKENS_CHECK_NAMES)
+    verification = contract.get("verification") if isinstance(contract, dict) else None
+    rows = verification.get("checks") if isinstance(verification, dict) else None
+    for row in rows if isinstance(rows, list) else []:
+        if isinstance(row, dict) and isinstance(row.get("id"), str) and isinstance(row.get("item"), str) and row["id"] in names:
+            names[row["id"]] = row["item"]
+    return names
+
+
+def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) -> dict[str, Any]:
+    """Run t01-t10 on one parsed token file (a JSON object)."""
+    names = _tokens_check_names(contract)
     results: list[dict[str, Any]] = []
 
+    def add(cid: str, status: str, detail: str) -> None:
+        results.append({"id": cid, "name": names[cid], "status": status, "detail": detail})
+
+    # tokens.$tokens || tokens.tokens || tokens
+    picked: Any = tokens
+    for key in ("$tokens", "tokens"):
+        if _js_truthy(tokens.get(key)):
+            picked = tokens[key]
+            break
+    token_groups: dict[str, Any] = picked if isinstance(picked, dict) else {}
+
     # t01: $schema present and points to designtokens.org
-    has_schema = "$schema" in tokens and isinstance(tokens["$schema"], str)
-    schema_valid = has_schema and "designtokens.org" in tokens["$schema"]
-    results.append({
-        "id": "t01",
-        "name": "$schema declaration",
-        "status": "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
-        "detail": (
-            f"Schema: {tokens.get('$schema')}"
-            if has_schema
-            else "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json"
-        ),
-    })
+    schema = tokens.get("$schema")
+    has_schema = isinstance(schema, str) and schema != ""
+    schema_valid = has_schema and "designtokens.org" in schema
+    add("t01", "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
+        f"Schema: {schema}" if has_schema else
+        "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json")
 
     # t02: token groups exist
-    group_keys = [k for k in token_groups if not k.startswith("$")] if isinstance(token_groups, dict) else []
-    results.append({
-        "id": "t02",
-        "name": "Token groups present",
-        "status": "PASS" if len(group_keys) > 0 else "FAIL",
-        "detail": f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}",
-    })
+    group_keys = [k for k in _js_keys(token_groups) if not k.startswith("$")]
+    add("t02", "PASS" if group_keys else "FAIL",
+        f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
 
-    # Walk tokens for t03-t10
-    type_pass_count = 0
-    value_pass_count = 0
-    color_structured_count = 0
-    color_bare_hex_count = 0
-    total_tokens = 0
-    all_types: set[str] = set()
-    dimension_values: list[tuple[str, str]] = []  # (token_path, $value)
-    deprecated_patterns: list[str] = []
+    # t03-t10: one walk over the tokens
+    counts = {"type": 0, "value": 0, "structured": 0, "bare_hex": 0, "total": 0}
+    all_types: list[str] = []  # insertion-ordered, as a JS Set
+    dimension_values: list[tuple[str, str]] = []
+    deprecated: list[str] = []
 
-    VALID_DIMENSION_UNITS = {
-        "px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
-        "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
-        "cm", "mm", "in", "pt", "pc", "fr",
-    }
-
-    def _extract_unit(v: str) -> str:
-        """Extract the unit suffix from a dimension value string."""
-        for unit in sorted(VALID_DIMENSION_UNITS, key=len, reverse=True):
-            if v.endswith(unit):
-                return unit
-        return ""
-
-    def _walk(obj: dict[str, Any], path: str = "") -> None:
-        nonlocal type_pass_count, value_pass_count, color_structured_count, color_bare_hex_count, total_tokens
-        for key, val in obj.items():
+    def walk(obj: dict[str, Any], path: str) -> None:
+        for key in _js_keys(obj):
             if key.startswith("$"):
                 continue
-            if isinstance(val, dict):
-                if "$value" in val:
-                    total_tokens += 1
-                    token_path = f"{path}.{key}" if path else key
-                    t = val.get("$type")
-                    v = val.get("$value")
+            val = obj[key]
+            current = f"{path}.{key}" if path else key
+            if not isinstance(val, dict):
+                continue
+            if "$value" not in val:
+                walk(val, current)
+                continue
+            counts["total"] += 1
+            t = val.get("$type")
+            v = val["$value"]
+            if _js_truthy(t):
+                counts["type"] += 1
+                if isinstance(t, str) and t not in all_types:
+                    all_types.append(t)
+            counts["value"] += 1
+            if t == "color":
+                if isinstance(v, dict) and "colorSpace" in v:
+                    counts["structured"] += 1
+                elif isinstance(v, str) and v.startswith("#"):
+                    counts["bare_hex"] += 1
+                    deprecated.append(f"Color token '{current}' uses bare hex (pre-2025.10 pattern)")
+            if t == "dimension":
+                if isinstance(v, str):
+                    dimension_values.append((current, v))
+                    if not _dimension_unit(v):
+                        deprecated.append(f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
+                elif isinstance(v, (int, float)) and not isinstance(v, bool):
+                    dimension_values.append((current, _js_num(v)))
+                    deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+            if "$ref" in val:
+                deprecated.append(f"Token '{current}' uses deprecated $ref syntax (use {{path}} in $value)")
 
-                    if "$type" in val:
-                        type_pass_count += 1
-                        if isinstance(t, str):
-                            all_types.add(t)
-                    value_pass_count += 1
-
-                    if t == "color":
-                        if isinstance(v, dict) and "colorSpace" in v:
-                            color_structured_count += 1
-                        elif isinstance(v, str) and v.startswith("#"):
-                            color_bare_hex_count += 1
-                            deprecated_patterns.append(f"Color token '{token_path}' uses bare hex (pre-2025.10 pattern)")
-
-                    if t == "dimension":
-                        if isinstance(v, str):
-                            dimension_values.append((token_path, v))
-                            if not _extract_unit(v):
-                                deprecated_patterns.append(f"Dimension token '{token_path}' has unrecognized or missing unit: '{v}'")
-                        elif isinstance(v, (int, float)):
-                            dimension_values.append((token_path, str(v)))
-                            deprecated_patterns.append(f"Dimension token '{token_path}' uses bare number (should include unit string)")
-
-                    # Check for deprecated $ref syntax (DTCG 2025.10 uses {path} references)
-                    if "$ref" in val:
-                        deprecated_patterns.append(f"Token '{token_path}' uses deprecated $ref syntax (use {{path}} in $value)")
-                else:
-                    _walk(val, f"{path}.{key}" if path else key)
-
-    if isinstance(token_groups, dict):
-        _walk(token_groups)
+    walk(token_groups, "")
+    total, typed = counts["total"], counts["type"]
 
     # t03: $type on all tokens
-    results.append({
-        "id": "t03",
-        "name": "$type on all tokens",
-        "status": "PASS" if total_tokens > 0 and type_pass_count == total_tokens else ("WARN" if type_pass_count > 0 else "FAIL"),
-        "detail": f"{type_pass_count}/{total_tokens} tokens have $type",
-    })
+    add("t03", "PASS" if total > 0 and typed == total else ("WARN" if typed > 0 else "FAIL"),
+        f"{typed}/{total} tokens have $type")
 
     # t04: $value on all tokens
-    results.append({
-        "id": "t04",
-        "name": "$value on all tokens",
-        "status": "PASS" if total_tokens > 0 and value_pass_count == total_tokens else "FAIL",
-        "detail": f"{value_pass_count}/{total_tokens} tokens have $value",
-    })
+    add("t04", "PASS" if total > 0 and counts["value"] == total else "FAIL",
+        f"{counts['value']}/{total} tokens have $value")
 
-    # t05: structured color format
-    if color_structured_count + color_bare_hex_count > 0:
-        results.append({
-            "id": "t05",
-            "name": "Structured color format",
-            "status": "PASS" if color_bare_hex_count == 0 else ("WARN" if color_structured_count > 0 else "FAIL"),
-            "detail": f"{color_structured_count} structured, {color_bare_hex_count} bare hex. DTCG 2025.10 prefers colorSpace + components over bare hex.",
-        })
+    # t05: structured color format (colorSpace + components)
+    structured, bare_hex = counts["structured"], counts["bare_hex"]
+    if structured + bare_hex > 0:
+        add("t05", "PASS" if bare_hex == 0 else ("WARN" if structured > 0 else "FAIL"),
+            f"{structured} structured, {bare_hex} bare hex. DTCG 2025.10 prefers {{colorSpace, components}} over bare hex strings.")
     else:
-        results.append({"id": "t05", "name": "Structured color format", "status": "SKIP", "detail": "No color tokens found"})
+        add("t05", "SKIP", "No color tokens found")
 
-    # t06: Standard type names — verify all $type values are in the DTCG 2025.10 set
-    non_standard_types = all_types - DTCG_STANDARD_TYPES
-    if total_tokens == 0:
-        t06_status = "SKIP"
-        t06_detail = "No tokens found"
-    elif type_pass_count == 0:
-        t06_status = "FAIL"
-        t06_detail = "No tokens have $type — cannot verify standard type names"
-    elif not non_standard_types:
-        t06_status = "PASS"
-        t06_detail = f"All {len(all_types)} unique type(s) are DTCG 2025.10 standard: {', '.join(sorted(all_types))}"
+    # t06: standard type names
+    non_standard = sorted(t for t in all_types if t not in DTCG_STANDARD_TYPES)
+    if total == 0:
+        add("t06", "SKIP", "No tokens found")
+    elif typed == 0:
+        add("t06", "FAIL", "No tokens have $type: cannot verify standard type names")
+    elif not non_standard:
+        add("t06", "PASS", f"All {len(all_types)} unique type(s) are DTCG 2025.10 standard: {', '.join(sorted(all_types))}")
     else:
-        t06_status = "WARN"
-        t06_detail = f"Non-standard type(s) found: {', '.join(sorted(non_standard_types))}. These may be valid custom types (see t07)."
-    results.append({"id": "t06", "name": "Standard type names", "status": t06_status, "detail": t06_detail})
+        add("t06", "WARN", f"Non-standard type(s) found: {', '.join(non_standard)}. These may be valid custom types (see t07).")
 
-    # t07: Custom type extension — non-standard types should follow namespacing convention
-    custom_types = [t for t in all_types if t not in DTCG_STANDARD_TYPES]
-    if not custom_types:
-        t07_status = "SKIP"
-        t07_detail = "No custom types found"
+    # t07: custom types follow the dot-namespacing convention
+    custom = sorted(t for t in all_types if t not in DTCG_STANDARD_TYPES)
+    if not custom:
+        add("t07", "SKIP", "No custom types found")
     else:
-        bare_customs = [t for t in custom_types if "." not in t]
+        bare_customs = [t for t in custom if "." not in t]
         if not bare_customs:
-            t07_status = "PASS"
-            t07_detail = f"All {len(custom_types)} custom type(s) use dot-namespacing: {', '.join(sorted(custom_types))}"
+            add("t07", "PASS", f"All {len(custom)} custom type(s) use dot-namespacing: {', '.join(custom)}")
         else:
-            t07_status = "WARN"
-            t07_detail = f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(sorted(bare_customs))}"
-    results.append({"id": "t07", "name": "Custom type extension", "status": t07_status, "detail": t07_detail})
+            add("t07", "WARN", f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(bare_customs)}")
 
-    # t08: Dimension units — verify dimension tokens have valid CSS length units
+    # t08: dimension tokens have valid CSS length units
     if not dimension_values:
-        t08_status = "SKIP"
-        t08_detail = "No dimension tokens found"
+        add("t08", "SKIP", "No dimension tokens found")
     else:
-        bad_units: list[str] = []
-        for token_path, v in dimension_values:
-            unit = _extract_unit(v)
-            if not unit:
-                bad_units.append(f"{token_path}='{v}'")
+        bad_units = [f"{p}='{v}'" for p, v in dimension_values if not _dimension_unit(v)]
         if not bad_units:
-            t08_status = "PASS"
-            t08_detail = f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)"
+            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)")
         else:
-            t08_status = "WARN" if len(bad_units) < len(dimension_values) else "FAIL"
-            t08_detail = f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}"
-    results.append({"id": "t08", "name": "Dimension units", "status": t08_status, "detail": t08_detail})
+            add("t08", "WARN" if len(bad_units) < len(dimension_values) else "FAIL",
+                f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}")
 
-    # t09: Token naming hierarchy — groups should exist (dot-notation is implicit in nesting)
-    if total_tokens == 0:
-        t09_status = "FAIL"
-        t09_detail = "No tokens found — cannot assess naming hierarchy"
-    elif len(group_keys) > 0:
-        t09_status = "PASS"
-        t09_detail = f"{len(group_keys)} token group(s) with nested hierarchy: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}"
+    # t09: tokens are organised into groups (nesting is the dot hierarchy)
+    if total == 0:
+        add("t09", "FAIL", "No tokens found: cannot assess naming hierarchy")
+    elif group_keys:
+        add("t09", "PASS", f"{len(group_keys)} token group(s) with nested hierarchy: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
     else:
-        t09_status = "WARN"
-        t09_detail = "No token groups found — tokens should be organized into groups (e.g., color, spacing, typography)"
-    results.append({"id": "t09", "name": "Token naming hierarchy", "status": t09_status, "detail": t09_detail})
+        add("t09", "WARN", "No token groups found: tokens should be organized into groups (e.g., color, spacing, typography)")
 
-    # t10: No deprecated patterns — check for pre-2025.10 patterns
-    if not deprecated_patterns:
-        t10_status = "PASS"
-        t10_detail = "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+    # t10: no pre-2025.10 patterns
+    if not deprecated:
+        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)")
     else:
-        t10_status = "WARN"
-        t10_detail = f"{len(deprecated_patterns)} deprecated pattern(s) found: {'; '.join(deprecated_patterns[:3])}{'...' if len(deprecated_patterns) > 3 else ''}"
-    results.append({"id": "t10", "name": "No deprecated patterns", "status": t10_status, "detail": t10_detail})
+        add("t10", "WARN", f"{len(deprecated)} deprecated pattern(s) found: {'; '.join(deprecated[:3])}{'...' if len(deprecated) > 3 else ''}")
 
-    pass_count = sum(1 for r in results if r["status"] == "PASS")
-    fail_count = sum(1 for r in results if r["status"] == "FAIL")
-    warn_count = sum(1 for r in results if r["status"] == "WARN")
-    score = round((pass_count / len(results)) * 100) if results else 0
+    tally = {s: sum(1 for r in results if r["status"] == s) for s in ("PASS", "WARN", "FAIL", "SKIP")}
+    scored = tally["PASS"] + tally["WARN"] + tally["FAIL"]
+    score = _js_round(tally["PASS"] / scored * 100) if scored > 0 else 0
     grade = "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else ("D" if score >= 60 else "F")))
 
     return {
         "contract_id": contract.get("id"),
         "contract_version": contract.get("version"),
         "contract_status": contract.get("status"),
-        "url": url or "(inline dtcg_file)",
-        "total_tokens": total_tokens,
+        "url": url,
+        "total_tokens": total,
         "score": score,
         "grade": grade,
-        "pass_count": pass_count,
-        "fail_count": fail_count,
-        "warn_count": warn_count,
+        "pass_count": tally["PASS"],
+        "fail_count": tally["FAIL"],
+        "warn_count": tally["WARN"],
+        "skip_count": tally["SKIP"],
+        "scoring": TOKENS_SCORING,
         "checks": results,
-        "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.3.0 section 8",
+        "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
         "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)",
     }
 
@@ -2813,14 +3177,19 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
     }
 
 
+def _reject_json_constant(name: str) -> Any:
+    """NaN and Infinity are not JSON; JSON.parse rejects them, so this does too."""
+    raise json.JSONDecodeError(f"{name} is not valid JSON", name, 0)
+
+
 def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -> dict[str, Any]:
-    """Validate a Lottie file against spec v1.0.1 and section 16 standards."""
+    """Run the motion contract's ten checks on one Lottie file (see _motion_score)."""
     contract = _fetch("https://www.designesy.org/contracts/motion.json", as_json=True)
 
     lottie_data: Any = None
     if lottie_file:
         try:
-            lottie_data = json.loads(lottie_file)
+            lottie_data = json.loads(lottie_file, parse_constant=_reject_json_constant)
         except json.JSONDecodeError:
             return {"success": False, "error": "Invalid JSON in lottie_file parameter"}
     elif url:
@@ -2835,129 +3204,358 @@ def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -
 
     if not isinstance(lottie_data, dict):
         return {"success": False, "error": "Lottie file is not a JSON object"}
+    return _motion_score(lottie_data, contract, url or "(inline lottie_file)")
 
-    lottie = lottie_data
-    results: list[dict[str, Any]] = []
 
-    # m01: required fields
-    required = ["v", "fr", "ip", "op", "w", "h", "layers"]
-    missing = [f for f in required if f not in lottie]
-    results.append({
-        "id": "m01",
-        "name": "Required fields present",
-        "status": "PASS" if not missing else "FAIL",
-        "detail": f"All required fields present: {', '.join(required)}" if not missing else f"Missing: {', '.join(missing)}",
-    })
+# ── designesy_motion_score: the motion contract's ten checks ─────────────────
+#
+# A line-for-line port of apps/site/app/lib/motion-score.ts. The tool used to
+# compute its own ten checks and label them with the contract's names by array
+# position, so every verdict sat under another check's name ("meta object
+# present" FAILed because a file had zero layers). Each check now computes its
+# own verdict under its own id and the contract's name for that id. Both
+# implementations run on test/fixtures/motion/ and must produce expected.json
+# there (test/test_motion_score.py here, check-mcp-tool-parity.js there).
+#
+# Numbers in details print as JavaScript prints them (_js_num), and rounding
+# follows Math.round (_js_round), so the two servers write the same text.
 
-    # m02: version
-    version = str(lottie.get("v", ""))
-    version_num = int(version) if version.isdigit() else 0
-    results.append({
-        "id": "m02",
-        "name": "Lottie version",
-        "status": "PASS" if version_num >= 10001 else ("WARN" if version_num > 0 else "FAIL"),
-        "detail": f"Version: {version or 'missing'}. Spec v1.0.1 uses $version: 10001.",
-    })
+LOTTIE_SCHEMA_URL = "https://lottie.github.io/lottie-spec/1.0.1/lottie.schema.json"
 
-    # m03: frame rate
-    fr = lottie.get("fr")
-    results.append({
-        "id": "m03",
-        "name": "Frame rate",
-        "status": "PASS" if isinstance(fr, (int, float)) and fr > 0 else "FAIL",
-        "detail": f"fr: {fr}. Must be a positive number.",
-    })
+MOTION_CHECK_NAMES = {
+    "m01": "Lottie file validates against LAC v1.0.1 JSON Schema",
+    "m02": "Required fields present (v, fr, ip, op, w, h, layers)",
+    "m03": 'No deprecated Bodymovin version (v: "4.x")',
+    "m04": "markers array present (reduced-motion support)",
+    "m05": "meta object present (attribution, author, description)",
+    "m06": "prefers-reduced-motion path documented (§3.4)",
+    "m07": "Easing uses deliberate curves (§16.1, §16.10)",
+    "m08": "Duration ≤ 300ms for UI motion (§16.7)",
+    "m09": "No layout-property animation (§16.5)",
+    "m10": "No motion on keyboard-initiated actions (§16.4)",
+}
 
-    # m04: dimensions
-    w = lottie.get("w")
-    h = lottie.get("h")
-    results.append({
-        "id": "m04",
-        "name": "Composition dimensions",
-        "status": "PASS" if isinstance(w, (int, float)) and w > 0 and isinstance(h, (int, float)) and h > 0 else "FAIL",
-        "detail": f"w: {w}, h: {h}. Both must be positive numbers.",
-    })
+_MOTION_REQUIRED = ["v", "fr", "ip", "op", "w", "h", "layers"]
+# re.ASCII keeps IGNORECASE to ASCII letters, as a JavaScript /i pattern does.
+_REDUCED_NAME = re.compile(r"reduc|calm|static|still|no[-_ ]?motion", re.IGNORECASE | re.ASCII)
+_EXTERNAL_NOTE = re.compile(r"prefers-reduced-motion|reduced[- ]motion", re.IGNORECASE | re.ASCII)
+_EASE_EPS = 0.001
+_UI_BOUND_MS = 300
 
-    # m05: layers
-    layers = lottie.get("layers")
-    results.append({
-        "id": "m05",
-        "name": "Layers present",
-        "status": "PASS" if isinstance(layers, list) and len(layers) > 0 else "FAIL",
-        "detail": f"layers: {len(layers) if isinstance(layers, list) else 'not an array'}. At least one layer required.",
-    })
 
-    # m06: in/out points
-    ip = lottie.get("ip")
-    op = lottie.get("op")
-    results.append({
-        "id": "m06",
-        "name": "In/out points",
-        "status": "PASS" if isinstance(ip, (int, float)) and isinstance(op, (int, float)) and op > ip else "WARN",
-        "detail": f"ip: {ip}, op: {op}. op must be greater than ip.",
-    })
+def _is_num(x: Any) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
 
-    # m07: markers for reduced-motion
-    markers = lottie.get("markers")
-    results.append({
-        "id": "m07",
-        "name": "Markers for reduced-motion",
-        "status": "PASS" if isinstance(markers, list) and len(markers) > 0 else "WARN",
-        "detail": f"{len(markers) if isinstance(markers, list) else 'No'} markers. Section 16 recommends named segments for accessibility.",
-    })
 
-    # m08: deprecated layer types
-    deprecated_count = 0
-    if isinstance(layers, list):
-        for layer in layers:
-            if isinstance(layer, dict) and layer.get("ty") in (12, 13):
-                deprecated_count += 1
-    results.append({
-        "id": "m08",
-        "name": "No deprecated layers",
-        "status": "PASS" if deprecated_count == 0 else "WARN",
-        "detail": f"{deprecated_count} deprecated layer types. Types 12, 13 are deprecated in v1.0.1.",
-    })
+def _is_int(x: Any) -> bool:
+    return _is_num(x) and float(x).is_integer()
 
-    # m09: section 16 standards
-    ten_standards = contract.get("conformance", {}).get("ten_non_negotiable", [])
-    results.append({
-        "id": "m09",
-        "name": "Section 16 Ten Non-Negotiable Standards",
-        "status": "PASS",
-        "detail": f"Ten standards from contract: {', '.join(s.get('id', s.get('name', s.get('item', ''))) for s in ten_standards)}. Full verification requires runtime preview.",
-    })
 
-    # m10: JSON Schema conformance
-    results.append({
-        "id": "m10",
-        "name": "JSON Schema conformance",
-        "status": "PASS" if not missing else "FAIL",
-        "detail": "Validate with ajv 8.20.0 + ajv-formats 3.0.1 against lottie.github.io/lottie-spec/1.0.1/specs/schema/lottie.schema.json",
-    })
+def _js_round(x: float) -> int:
+    """Math.round: the nearest integer, halves toward +infinity."""
+    r = math.floor(x)
+    return int(r + 1) if x - r >= 0.5 else int(r)
 
-    pass_count = sum(1 for r in results if r["status"] == "PASS")
-    fail_count = sum(1 for r in results if r["status"] == "FAIL")
-    warn_count = sum(1 for r in results if r["status"] == "WARN")
-    score = round((pass_count / len(results)) * 100) if results else 0
-    grade = "A" if score >= 90 else ("B" if score >= 80 else ("C" if score >= 70 else ("D" if score >= 60 else "F")))
+
+def _js_json(s: str) -> str:
+    return json.dumps(s, ensure_ascii=False)
+
+
+def _show(o: dict[str, Any], k: str) -> str:
+    """A value for a sentence: numbers as JS prints them, anything else by kind."""
+    if k not in o:
+        return "missing"
+    x = o[k]
+    if _is_num(x):
+        return _js_num(x)
+    if x is None:
+        return "null"
+    if isinstance(x, list):
+        return "an array"
+    if isinstance(x, str):
+        return "a string"
+    if isinstance(x, bool):
+        return "a boolean"
+    if isinstance(x, dict):
+        return "an object"
+    return "not a number"
+
+
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def _clip(s: str) -> str:
+    return s[:40] + "..." if len(s) > 40 else s
+
+
+def _standard(contract: dict[str, Any], num: int) -> str:
+    """'§16.5 (Layout is not animated)', read from the contract's ten_non_negotiable."""
+    conf = contract.get("conformance")
+    items = conf.get("ten_non_negotiable") if isinstance(conf, dict) else None
+    for s in items if isinstance(items, list) else []:
+        if isinstance(s, dict) and _is_num(s.get("num")) and s.get("num") == num and isinstance(s.get("rule"), str):
+            return f"§16.{num} ({s['rule']})"
+    return f"§16.{num}"
+
+
+def _motion_check_names(contract: dict[str, Any]) -> dict[str, str]:
+    names = dict(MOTION_CHECK_NAMES)
+    ver = contract.get("verification")
+    items = ver.get("checks") if isinstance(ver, dict) else None
+    for c in items if isinstance(items, list) else []:
+        if isinstance(c, dict) and isinstance(c.get("id"), str) and isinstance(c.get("item"), str) and c["id"] in names:
+            names[c["id"]] = c["item"]
+    return names
+
+
+def _m01_schema(l: dict[str, Any]) -> tuple[str, str]:
+    v: list[str] = []
+    for f in ("w", "h", "fr", "op", "ip", "layers"):
+        if f not in l:
+            v.append(f"{f} is missing")
+    for f in ("w", "h"):
+        if f in l and not (_is_int(l[f]) and l[f] >= 0):
+            v.append(f"{f} must be an integer of at least 0")
+    if "fr" in l and not (_is_num(l["fr"]) and l["fr"] > 0):
+        v.append("fr must be a number above 0")
+    for f in ("ip", "op"):
+        if f in l and not _is_num(l[f]):
+            v.append(f"{f} must be a number")
+    if "layers" in l:
+        if not isinstance(l["layers"], list):
+            v.append("layers must be an array")
+        else:
+            bad = sum(1 for x in l["layers"] if not isinstance(x, dict))
+            if bad > 0:
+                v.append("1 layer is not an object" if bad == 1 else f"{bad} layers are not objects")
+    if "ver" in l and not (_is_int(l["ver"]) and l["ver"] >= 10000):
+        v.append("ver must be an integer of at least 10000")
+    if "nm" in l and not isinstance(l["nm"], str):
+        v.append("nm must be a string")
+    if "markers" in l:
+        if not isinstance(l["markers"], list):
+            v.append("markers must be an array")
+        elif any(not isinstance(m, dict) for m in l["markers"]):
+            v.append("every marker must be an object")
+    if "slots" in l and not isinstance(l["slots"], dict):
+        v.append("slots must be an object")
+    if "assets" in l and not isinstance(l["assets"], list):
+        v.append("assets must be an array")
+    if v:
+        return "FAIL", f"Schema violations in the top-level animation object: {'; '.join(v)}. Schema: {LOTTIE_SCHEMA_URL}."
+    return "SKIP", (
+        "Schema: the top-level animation object has no violation (w, h, fr, ip, op and layers are present and "
+        "typed as the schema requires). Layer contents are not validated here, so this is not a full schema "
+        f"pass: validate the file with ajv 8 (ajv/dist/2020) and ajv-formats against {LOTTIE_SCHEMA_URL}."
+    )
+
+
+def _near(a: float, b: float) -> bool:
+    return abs(a - b) <= _EASE_EPS
+
+
+def _classify_curve(x1: float, y1: float, x2: float, y2: float) -> str:
+    """cubic-bezier(x1, y1, x2, y2) from a keyframe's out (o) and in (i) handles."""
+    if _near(x1, y1) and _near(x2, y2):
+        return "linear"
+    if _near(x1, 0.25) and _near(y1, 0.1) and _near(x2, 0.25) and _near(y2, 1):
+        return "ease"
+    # Second handle on the diagonal (no deceleration into the next keyframe) and
+    # first handle below it (acceleration away from this one): an ease-in.
+    if _near(x2, y2) and y1 < x1 - _EASE_EPS:
+        return "ease-in"
+    return "custom"
+
+
+def _comps(x: Any) -> list[Any]:
+    return x if isinstance(x, list) else [x]
+
+
+def _keyframe_curve(kf: dict[str, Any]) -> str | None:
+    """The curve of one keyframe: its first rejected dimension, else custom. None when it has none."""
+    h = kf.get("h")
+    if (_is_num(h) and h == 1) or not isinstance(kf.get("o"), dict) or not isinstance(kf.get("i"), dict):
+        return None
+    ox, oy = _comps(kf["o"].get("x")), _comps(kf["o"].get("y"))
+    ix, iy = _comps(kf["i"].get("x")), _comps(kf["i"].get("y"))
+    dims = max(len(ox), len(oy), len(ix), len(iy))
+    seen = False
+    for d in range(dims):
+        p = [a[min(d, len(a) - 1)] if a else None for a in (ox, oy, ix, iy)]
+        if not all(_is_num(x) for x in p):
+            continue
+        seen = True
+        c = _classify_curve(p[0], p[1], p[2], p[3])
+        if c != "custom":
+            return c
+    return "custom" if seen else None
+
+
+def _m07_easing(l: dict[str, Any], contract: dict[str, Any], layer_count: int) -> tuple[str, str]:
+    counts = {"linear": 0, "ease": 0, "ease-in": 0, "custom": 0}
+    stack: list[Any] = [l]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, list):
+            stack.extend(node)
+        elif isinstance(node, dict):
+            a = node.get("a")
+            if _is_num(a) and a == 1 and isinstance(node.get("k"), list):
+                for kf in node["k"]:
+                    if isinstance(kf, dict):
+                        c = _keyframe_curve(kf)
+                        if c:
+                            counts[c] += 1
+            stack.extend(node.values())
+    total = sum(counts.values())
+    stds = f"{_standard(contract, 1)} and {_standard(contract, 10)}"
+    if total == 0:
+        return "SKIP", (
+            f"Easing: no eased keyframes to check ({_plural(layer_count, 'layer')}, no animated property with "
+            f"bezier handles), so {stds} have nothing to test."
+        )
+    rejected = counts["linear"] + counts["ease"] + counts["ease-in"]
+    if rejected == 0:
+        every = "the one eased keyframe uses a custom curve" if total == 1 else f"all {total} eased keyframes use custom curves"
+        return "PASS", f"Easing: {every}, as {stds} require."
+    parts = [f"{counts[k]} {k}" for k in ("linear", "ease", "ease-in") if counts[k] > 0]
+    return "FAIL", (
+        f"Easing: {rejected} of {_plural(total, 'eased keyframe')} {'uses' if rejected == 1 else 'use'} a curve {stds} reject ({', '.join(parts)}). "
+        "Use a custom curve that decelerates, such as the contract's cubicBezier tokens."
+    )
+
+
+def _motion_score(lottie: dict[str, Any], contract: dict[str, Any], url: str) -> dict[str, Any]:
+    """Score one parsed Lottie file (a JSON object) against the motion contract."""
+    l = lottie
+    if not isinstance(contract, dict):
+        contract = {}
+    names = _motion_check_names(contract)
+    layers = l.get("layers") if isinstance(l.get("layers"), list) else None
+    layer_count = len(layers) if layers is not None else 0
+    out: list[dict[str, str]] = []
+
+    def add(cid: str, verdict: tuple[str, str]) -> None:
+        out.append({"id": cid, "name": names[cid], "status": verdict[0], "detail": verdict[1]})
+
+    add("m01", _m01_schema(l))
+
+    missing = [f for f in _MOTION_REQUIRED if f not in l]
+    required = ", ".join(_MOTION_REQUIRED)
+    if missing:
+        add("m02", ("FAIL", f"Required fields missing: {', '.join(missing)}. The contract requires {required}."))
+    elif layers is not None and len(layers) == 0:
+        add("m02", ("WARN", f"Required fields present ({required}), but layers is empty, so the animation draws nothing."))
+    else:
+        add("m02", ("PASS", f"Required fields present: {required}."))
+
+    if "v" not in l:
+        add("m03", ("SKIP", "Bodymovin version: the file has no v field, so its exporter version cannot be checked (m02 reports the missing field)."))
+    else:
+        v = l["v"] if isinstance(l["v"], str) else None
+        major = re.match(r"[0-9]+", v) if v is not None else None
+        if v is None or major is None:
+            shown = _show(l, "v") if v is None else _js_json(_clip(v))
+            add("m03", ("WARN", f'Bodymovin version: v is {shown}, not a version string such as "5.12.0", so deprecation cannot be checked.'))
+        elif int(major.group(0)) < 5:
+            add("m03", ("FAIL", f"Bodymovin version: v is {_js_json(_clip(v))}, a {major.group(0)}.x export, which is deprecated: re-export with an exporter that follows the Lottie spec."))
+        else:
+            add("m03", ("PASS", f"Bodymovin version: v is {_js_json(_clip(v))}, 5.x or later, so not deprecated."))
+
+    markers = l.get("markers") if isinstance(l.get("markers"), list) else None
+    if markers:
+        named = [m["cm"] for m in markers if isinstance(m, dict) and isinstance(m.get("cm"), str)]
+        listed = f": {', '.join(_clip(n) for n in named[:5])}{', ...' if len(named) > 5 else ''}" if named else ""
+        add("m04", ("PASS", f"markers array present with {_plural(len(markers), 'marker')}{listed}."))
+    elif markers is not None:
+        add("m04", ("FAIL", "markers array is empty, so a player has no named segment to choose for reduced motion."))
+    else:
+        add("m04", ("FAIL", "No markers array, so a player has no named segment to choose for reduced motion."))
+
+    meta = l.get("meta") if isinstance(l.get("meta"), dict) else None
+    if meta is not None:
+        fields = [n for k, n in (("a", "author"), ("d", "description"), ("k", "keywords"), ("g", "generator"), ("tc", "theme color")) if k in meta]
+        add("m05", ("PASS", f"meta object present with {', '.join(fields)}." if fields else "meta object present, with none of author, description or keywords filled in."))
+    else:
+        add("m05", ("WARN", "No meta object, so the file carries no attribution, author or description (an attribution gap)."))
+
+    reduced_marker = next(
+        (m["cm"] for m in (markers or []) if isinstance(m, dict) and isinstance(m.get("cm"), str) and _REDUCED_NAME.search(m["cm"])),
+        None,
+    )
+    slots = l.get("slots")
+    reduced_slot = next((k for k in slots if _REDUCED_NAME.search(k)), None) if isinstance(slots, dict) else None
+    meta_text: list[str] = []
+    if meta is not None:
+        k = meta.get("k")
+        meta_text = [t for t in [meta.get("d"), *(k if isinstance(k, list) else [k])] if isinstance(t, str)]
+    if reduced_marker is not None:
+        add("m06", ("PASS", f"Reduced-motion path documented in the file: marker {_js_json(_clip(reduced_marker))}."))
+    elif reduced_slot is not None:
+        add("m06", ("PASS", f"Reduced-motion path documented in the file: slot {_js_json(_clip(reduced_slot))}."))
+    elif any(_EXTERNAL_NOTE.search(t) for t in meta_text):
+        add("m06", ("WARN", "Reduced motion is handled outside the file: meta notes an external prefers-reduced-motion wrapper, which this tool cannot see."))
+    else:
+        add("m06", ("FAIL", "No reduced-motion path documented: no marker or slot is named for reduced motion (reduced, calm, static, still, no-motion), and meta does not note an external prefers-reduced-motion wrapper."))
+
+    add("m07", _m07_easing(l, contract, layer_count))
+
+    fr, ip, op = l.get("fr"), l.get("ip"), l.get("op")
+    if _is_num(fr) and fr > 0 and _is_num(ip) and _is_num(op) and op > ip:
+        ms = _js_round(((op - ip) / fr) * 1000)
+        span = f"{ms} ms ({_js_num(op - ip)} frames at {_js_num(fr)} fps)"
+        if ms <= _UI_BOUND_MS:
+            add("m08", ("PASS", f"Duration {span} is within the {_UI_BOUND_MS} ms bound for UI motion, {_standard(contract, 7)}."))
+        else:
+            add("m08", ("WARN", (
+                f"Duration {span} exceeds the {_UI_BOUND_MS} ms bound for UI motion, {_standard(contract, 7)}. "
+                "Longer motion needs a stated justification, which this tool cannot read from a file: shorten it if it is UI motion."
+            )))
+    else:
+        add("m08", ("SKIP", f"Duration cannot be computed: it needs fr above 0 and op greater than ip (fr {_show(l, 'fr')}, ip {_show(l, 'ip')}, op {_show(l, 'op')})."))
+
+    add("m09", ("SKIP", (
+        f"Not applicable to a Lottie file: {_standard(contract, 5)} concerns CSS layout properties (width, height, "
+        "margin, padding, top, left), and a Lottie file has none; it animates transforms, opacity and vector shapes "
+        "inside its own canvas. Check the page that embeds it with designesy_score."
+    )))
+    add("m10", ("SKIP", (
+        f"Not applicable to a Lottie file: {_standard(contract, 4)} concerns what starts playback, and whether a "
+        "keyboard action starts it is decided by the page that embeds the file. Check that page with designesy_score."
+    )))
+
+    def count(s: str) -> int:
+        return sum(1 for c in out if c["status"] == s)
+
+    passed, warned, failed, skipped = count("PASS"), count("WARN"), count("FAIL"), count("SKIP")
+    scored = passed + warned + failed
+    score = _js_round(((passed + warned * 0.5) / scored) * 100) if scored > 0 else 0
+    grade = "A" if score >= 90 else "B" if score >= 80 else "C" if score >= 70 else "D" if score >= 60 else "F"
+    conf = contract.get("conformance")
+    ten = conf.get("ten_non_negotiable") if isinstance(conf, dict) else None
 
     return {
         "contract_id": contract.get("id"),
         "contract_version": contract.get("version"),
         "contract_status": contract.get("status"),
-        "url": url or "(inline lottie_file)",
-        "lottie_version": version,
-        "layer_count": len(layers) if isinstance(layers, list) else 0,
+        "url": url,
+        "lottie_version": l["v"] if isinstance(l.get("v"), str) else None,
+        "layer_count": layer_count,
         "score": score,
         "grade": grade,
-        "pass_count": pass_count,
-        "fail_count": fail_count,
-        "warn_count": warn_count,
-        "checks": results,
-        "ten_non_negotiable": ten_standards,
-        "provenance": "Lottie spec v1.0.1 + JSON Schema Draft 2020-12 + designesy-core.v0.3.0 sections 7, 16",
-        "validator_note": "Canonical validator: ajv 8.20.0 (import Ajv from 'ajv/dist/2020') + ajv-formats 3.0.1",
+        "pass_count": passed,
+        "fail_count": failed,
+        "warn_count": warned,
+        "skip_count": skipped,
+        "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+        "checks": out,
+        "ten_non_negotiable": ten if isinstance(ten, list) else [],
+        "provenance": "Lottie Animation Community spec v1.0.1 and Designesy core §7 (Motion Stance) and §16 (Ten Non-Negotiable Motion Standards)",
+        "validator_note": (
+            'm01 checks the top-level animation object only. For full schema validation use ajv 8 (import Ajv from "ajv/dist/2020") '
+            f"with ajv-formats 3 against {LOTTIE_SCHEMA_URL}."
+        ),
     }
 
 
@@ -3008,10 +3606,23 @@ def _readiness_score_impl(url: str | None = None) -> dict[str, Any]:
     return _post_api("readiness", {"url": target})
 
 
-def _guardrails_impl(url: str | None = None) -> dict[str, Any]:
-    """Proxy to /api/guardrails — generate build-contract bundle."""
+def _guardrails_impl(url: str | None = None, parts: Any = None) -> dict[str, Any]:
+    """Proxy to /api/guardrails: generate the build-contract bundle.
+
+    parts (a list of bundle file names) returns only those files; see
+    _guardrails_parts. Bad names are refused before the API is called.
+    """
+    names: list[str] | None = None
+    if parts is not None:
+        if not isinstance(parts, list) or not all(isinstance(p, str) for p in parts):
+            return _parts_error("parts must be a list of strings.", [])
+        picked = _guardrails_part_names(parts)
+        if isinstance(picked, tuple):
+            return _parts_error(*picked)
+        names = picked
     target = url or f"{BASE_URL}/"
-    return _post_api("guardrails", {"url": target})
+    data = _post_api("guardrails", {"url": target})
+    return _guardrails_parts(data, names) if names is not None else data
 
 
 def _monitor_score_impl(
@@ -3032,12 +3643,116 @@ def _compare_impl(url_a: str, url_b: str) -> dict[str, Any]:
     return _post_api("compare", {"urlA": url_a, "urlB": url_b})
 
 
-def _report_impl(url: str) -> dict[str, Any]:
-    """Proxy to /api/report — composite score+drift+readiness synthesis."""
+def _report_impl(url: str, detail: Any = None) -> dict[str, Any]:
+    """Proxy to /api/report: composite score+drift+readiness synthesis.
+
+    detail "summary" returns _report_summary of the result; "full" (the
+    default) returns all of it.
+    """
+    if detail is not None and detail not in REPORT_DETAILS:
+        return {"success": False, "error": 'detail must be "summary" or "full".'}
     data = _post_api("report", {"url": url})
     # Attach the standalone app URL (same as the TS endpoint does)
     data["appUrl"] = f"{BASE_URL}/api/report/app?url={urllib.parse.quote(url, safe='')}"
-    return data
+    return _report_summary(data) if detail == "summary" else data
+
+
+# ── Narrower results for report and guardrails ──────────────────────────────
+#
+# A line-for-line port of apps/site/app/lib/mcp-trim.ts. On www.designesy.org
+# designesy_report returned about 100,000 characters and designesy_guardrails
+# about 90,000, and a client that caps tool output cut both off (Anthropic
+# Software Directory Policy 5B: be frugal with tokens, and give users a way to
+# trim). The parameters are optional; without them the tools return what they
+# always did. Both implementations run on test/fixtures/trim/ and must produce
+# expected.json there (test/test_trim.py here, check-mcp-tool-parity.js there).
+
+REPORT_DETAILS = ("summary", "full")
+REPORT_ENGINES = ("score", "drift", "readiness")
+GUARDRAILS_PARTS = ("tokens", "lintConfig", "agentRules", "componentContract", "antiPatterns", "designMd")
+
+
+def _is_scalar(x: Any) -> bool:
+    return x is None or not isinstance(x, (dict, list))
+
+
+def _not_pass(items: Any) -> list[Any]:
+    if not isinstance(items, list):
+        return []
+    return [c for c in items if not (isinstance(c, dict) and c.get("status") == "PASS")]
+
+
+def _report_summary(report: Any) -> Any:
+    """designesy_report with detail "summary": the same keys as the full report,
+    fewer rows. The composite and the totals stay; each engine keeps only its
+    single values (score, grade, counts), without its check list, category
+    scores or receipt; checks and synthesis keep the entries that did not PASS.
+    A result without a check list (an error) is returned unchanged.
+    """
+    if not isinstance(report, dict) or not isinstance(report.get("checks"), list):
+        return report
+    out: dict[str, Any] = {"detail": "summary"}
+    for k, v in report.items():
+        if _is_scalar(v):
+            out[k] = v
+        elif k in REPORT_ENGINES and isinstance(v, dict):
+            out[k] = {ek: ev for ek, ev in v.items() if _is_scalar(ev)}
+        elif k in ("checks", "synthesis"):
+            out[k] = _not_pass(v)
+
+    def kept(k: str) -> int:
+        return len(out[k]) if isinstance(out.get(k), list) else 0
+
+    def given(k: str) -> int:
+        return len(report[k]) if isinstance(report.get(k), list) else 0
+
+    out["omitted"] = {
+        "pass_checks": given("checks") - kept("checks"),
+        "pass_synthesis": given("synthesis") - kept("synthesis"),
+        "note": (
+            "Left out: the checks that PASS, and from each engine its check list, category scores "
+            'and receipt. Call again with detail "full" for everything.'
+        ),
+    }
+    return out
+
+
+def _guardrails_part_names(parts: list[str]) -> list[str] | tuple[str, list[str]]:
+    """The names asked for, duplicates dropped, or (error, unknown names)."""
+    names = list(dict.fromkeys(parts))
+    if not names:
+        return ("parts is empty; name at least one part, or omit it for the whole bundle.", [])
+    unknown = [n for n in names if n not in GUARDRAILS_PARTS]
+    if unknown:
+        return (f"Unknown guardrails part(s): {', '.join(unknown)}.", unknown)
+    return names
+
+
+def _parts_error(message: str, unknown: list[str]) -> dict[str, Any]:
+    return {
+        "success": False,
+        "error": f"{message} Valid parts: {', '.join(GUARDRAILS_PARTS)}.",
+        "unknown_parts": unknown,
+        "valid_parts": list(GUARDRAILS_PARTS),
+    }
+
+
+def _guardrails_parts(result: Any, names: list[str]) -> Any:
+    """designesy_guardrails with parts: only the named bundle files, in the order
+    asked, and a parts list naming them. Everything outside the bundle (score,
+    grade, counts, checks) is kept. A result without a bundle is unchanged.
+    """
+    if not isinstance(result, dict) or not isinstance(result.get("bundle"), dict):
+        return result
+    bundle = result["bundle"]
+    out: dict[str, Any] = {}
+    for k, v in result.items():
+        if k != "bundle":
+            out[k] = v
+            continue
+        out["parts"] = list(names)
+        out["bundle"] = {n: bundle.get(n) for n in names}
+    return out
 
 
 # ── Tool dispatch ───────────────────────────────────────────────────────────
@@ -3047,7 +3762,7 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     if name == "designesy_catalog":
         return _catalog_impl()
     elif name == "designesy_contract":
-        return _contract_impl(section=args.get("section"))
+        return _contract_impl(section=args.get("section"), sections=args.get("sections"))
     elif name == "designesy_design_review":
         return _design_review_impl(
             artifact=args.get("artifact"),
@@ -3084,7 +3799,7 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     elif name == "designesy_readiness_score":
         return _readiness_score_impl(url=args.get("url"))
     elif name == "designesy_guardrails":
-        return _guardrails_impl(url=args.get("url"))
+        return _guardrails_impl(url=args.get("url"), parts=args.get("parts"))
     elif name == "designesy_monitor_score":
         return _monitor_score_impl(
             url=args.get("url"),
@@ -3097,7 +3812,7 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
             url_b=args.get("urlB", ""),
         )
     elif name == "designesy_report":
-        return _report_impl(url=args.get("url", ""))
+        return _report_impl(url=args.get("url", ""), detail=args.get("detail"))
     else:
         return {"success": False, "error": f"Unknown tool: {name}"}
 
@@ -3142,9 +3857,9 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         try:
             res = _dispatch(name, args)
         except urllib.error.URLError as e:
-            return _error(req_id, -32000, f"Failed to fetch URL: {e}")
+            return _error(req_id, -32000, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
         except Exception as e:
-            return _error(req_id, -32000, f"Tool execution failed: {e}")
+            return _error(req_id, -32000, f"Tool execution failed: {_scrub_local_paths(str(e))}")
         # A str result (designesy_score format=review) is already the text
         # the tool returns, so it is sent as written; JSON-encoding it would
         # wrap the markdown in quotes and escape every newline.
@@ -3162,7 +3877,7 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         try:
             content = _RESOURCE_FETCHERS[uri]()
         except Exception as e:
-            return _error(req_id, -32000, f"Failed to read resource: {e}")
+            return _error(req_id, -32000, f"Failed to read resource: {_scrub_local_paths(str(e))}")
         if isinstance(content, str):
             text = content
         else:
