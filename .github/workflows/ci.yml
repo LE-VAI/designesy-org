@@ -933,3 +933,12 @@ jobs:
           done
           echo "::error::Dock clearance timed out on both attempts"
           exit 1
+
+      # Every space the search index adds between two elements' text
+      # (scripts/lib/word-boundaries.js) must sit where the page already shows
+      # two words. Each one is marked in the served HTML and measured at 1440
+      # and 390 with JavaScript off; one that renders touching would split a
+      # word in the index (<em>un</em>believable), and fails here.
+      - name: Word boundaries render
+        if: always()
+        run: node scripts/check-word-boundaries-render.js --base http://127.0.0.1:3422 --channel chrome

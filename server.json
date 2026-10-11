@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.LE-VAI/designesy-org",
   "title": "Designesy",
-  "description": "Score any URL against a real design contract — 44 checks, A-F grade, token + motion validation.",
+  "description": "Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade.",
   "repository": {
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
@@ -10,6 +10,22 @@
   "version": "1.13.8",
   "license": "MIT",
   "websiteUrl": "https://www.designesy.org",
+  "icons": [
+    {
+      "src": "https://www.designesy.org/brand/designesy-icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ]
+    },
+    {
+      "src": "https://www.designesy.org/brand/designesy-icon-512.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ]
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",
@@ -51,7 +67,7 @@
         "designesy_compare",
         "designesy_report"
       ],
-      "transport_note": "Two paths: (1) PyPI package — pip install designesy-mcp, run as stdio MCP server locally. (2) Remote HTTP — https://www.designesy.org/api/mcp native TypeScript MCP server on Vercel Node.js runtime (mcp-handler adapter, stateless Streamable HTTP, 2026-07-28 spec aligned). Sister listing org.designesy.www/designesy (DNS-authenticated) is the branded namespace; this io.github listing auto-republishes on every release tag via GitHub OIDC.",
+      "transport_note": "Two paths: (1) PyPI package — pip install designesy-mcp (or uvx designesy-mcp), run as a stdio MCP server locally. (2) Remote — https://www.designesy.org/api/mcp, stateless Streamable HTTP, no auth. Server Card: https://www.designesy.org/api/mcp/server-card. This io.github name is the one canonical listing; it republishes on every release tag via GitHub OIDC.",
       "auth": "github-oidc"
     }
   }
