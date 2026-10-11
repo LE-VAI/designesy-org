@@ -264,12 +264,12 @@ class TestHostedAgreement:
 
     def test_same_parameters(self, route):
         assert "detail: z.enum(REPORT_DETAILS).optional()" in route
-        assert "parts: z.array(z.string()).optional()" in route
+        assert "parts: z.array(z.enum(GUARDRAILS_PARTS)).optional()" in route
         report = next(t for t in mcp.TOOLS if t["name"] == "designesy_report")["inputSchema"]
         guard = next(t for t in mcp.TOOLS if t["name"] == "designesy_guardrails")["inputSchema"]
         assert report["properties"]["detail"]["enum"] == list(mcp.REPORT_DETAILS)
         assert report["required"] == ["url"]
-        assert guard["properties"]["parts"] == {**guard["properties"]["parts"], "type": "array", "items": {"type": "string"}}
+        assert guard["properties"]["parts"] == {**guard["properties"]["parts"], "type": "array", "items": {"type": "string", "enum": list(mcp.GUARDRAILS_PARTS)}}
         assert "required" not in guard
 
     @pytest.mark.parametrize("tool", ["designesy_report", "designesy_guardrails", "designesy_motion_score", "designesy_drift_score"])

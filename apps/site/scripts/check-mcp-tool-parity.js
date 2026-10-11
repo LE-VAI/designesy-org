@@ -102,6 +102,26 @@
  * (scripts/lib/tokens-fixtures.js builds both; site-export.json is a sample of
  * /export/dtcg captured the same way, kept as it was).
  *
+ * TOOL DEFINITIONS (added for designesy-mcp 1.13.9)
+ * The ten scoring tools declare an outputSchema, and both servers return
+ * structuredContent that must conform to it: on the hosted endpoint the SDK
+ * refuses a success that does not, so a schema stricter than the engines'
+ * real output would turn working calls into errors. The schemas, the server
+ * instructions and the no-parameter input schema live in
+ * app/lib/mcp-tool-definitions.ts here and in the PyPI server's own Python,
+ * and both are compared with one golden,
+ * packages/designesy-mcp/test/fixtures/tool-definitions.json. This gate:
+ *   - compares the module (loaded with Node's type stripping) with the golden;
+ *   - checks that the route gives each scoring tool its own outputSchema, no
+ *     other tool one, and passes the instructions to the handler;
+ *   - validates the captured real results the other goldens hold (the motion
+ *     and tokens outputs, the report and guardrails captures, trimmed and
+ *     whole, and the score, drift and readiness results a report carries)
+ *     against the schemas with the SDK's own validator, plus one result that
+ *     must fail, so a validator that passes everything is caught.
+ * scripts/check-mcp-accuracy.js checks the rendered descriptions, input
+ * schemas and live results; the PyPI suite checks the Python copy.
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -124,6 +144,8 @@ const TOKENS_LIB = path.join(APP, 'app', 'lib', 'tokens-score.ts');
 const TOKENS_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'tokens');
 // The origin both servers fetch from; part of the hashed design_review output.
 const BASE_URL = 'https://www.designesy.org';
+const DEFINITIONS_LIB = path.join(APP, 'app', 'lib', 'mcp-tool-definitions.ts');
+const DEFINITIONS_GOLDEN = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'tool-definitions.json');
 const ERROR_TEXT_LIB = path.join(APP, 'app', 'lib', 'error-text.ts');
 const SCORE_ROUTE = path.join(APP, 'app', 'api', 'score', 'route.ts');
 
@@ -1035,6 +1057,110 @@ async function tokensFindings() {
   return { findings, evaluated: true, compared };
 }
 
+/**
+ * The scoring tools' output schemas, the instructions and the no-parameter
+ * input schema: the module equals the golden, the route wires each schema to
+ * its own tool, and real captured results pass the schemas. Returns
+ * { findings, evaluated, reason, validated }.
+ */
+async function definitionsFindings(routeSrc) {
+  const findings = [];
+  const add = (id, why, fix) => findings.push({ id: `definitions:${id}`, why, fix });
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(DEFINITIONS_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `this Node cannot load mcp-tool-definitions.ts (${e.code || e.message})` };
+    add('lib-unloadable', `Could not load app/lib/mcp-tool-definitions.ts with Node's type stripping (${e.code || e.message}).`, 'Run on Node 22.18 or later, and keep the file free of imports.');
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  // The route: each scoring tool declares outputSchema('<its own name>'); no other tool has one.
+  const scoring = Object.keys(lib.MCP_OUTPUT_SCHEMAS);
+  const code = stripComments(routeSrc);
+  const starts = [...code.matchAll(/registerTool\(\s*'([a-z0-9_]+)'\s*,/g)].map((m) => ({ name: m[1], at: m.index }));
+  if (starts.length === 0) add('route-unreadable', 'No registerTool() call was found in the route, so no outputSchema could be checked.', 'Keep the server.registerTool(\'name\', ...) form, or update this gate.');
+  starts.forEach((st, i) => {
+    const segment = code.slice(st.at, i + 1 < starts.length ? starts[i + 1].at : code.length);
+    const config = segment.slice(0, Math.max(0, segment.search(/\basync\s*\(/)));
+    const named = [...config.matchAll(/outputSchema:\s*outputSchema\('([a-z0-9_]+)'\)/g)].map((m) => m[1]);
+    const any = /\boutputSchema\s*:/.test(config);
+    if (scoring.includes(st.name)) {
+      if (named.length !== 1 || named[0] !== st.name) {
+        add(`route-output-schema:${st.name}`, `registerTool('${st.name}', ...) does not declare outputSchema: outputSchema('${st.name}').`, `Add outputSchema: outputSchema('${st.name}') to its config in app/api/mcp/route.ts.`);
+      }
+    } else if (any) {
+      add(`route-output-schema-extra:${st.name}`, `registerTool('${st.name}', ...) declares an outputSchema, but ${st.name} has no schema in MCP_OUTPUT_SCHEMAS.`, 'Add its schema to mcp-tool-definitions.ts and the golden, or remove the outputSchema.');
+    }
+  });
+  if (!/instructions:\s*MCP_SERVER_INSTRUCTIONS/.test(code)) {
+    add('route-instructions', 'The route does not pass MCP_SERVER_INSTRUCTIONS to createMcpHandler.', 'Pass instructions: MCP_SERVER_INSTRUCTIONS in the handler options.');
+  }
+
+  if (!fs.existsSync(DEFINITIONS_GOLDEN)) {
+    if (process.env.VERCEL === '1') return { findings, evaluated: false, reason: `${path.relative(APP, DEFINITIONS_GOLDEN)} is not in this Vercel build` };
+    add('golden-missing', `${DEFINITIONS_GOLDEN} is missing.`, 'Run node scripts/check-mcp-accuracy.js --write-definitions from a full checkout.');
+    return { findings, evaluated: false, reason: 'golden missing' };
+  }
+  const golden = JSON.parse(fs.readFileSync(DEFINITIONS_GOLDEN, 'utf8'));
+  const pairs = [
+    ['output_schemas', lib.MCP_OUTPUT_SCHEMAS],
+    ['instructions', lib.MCP_SERVER_INSTRUCTIONS],
+    ['no_parameter_input_schema', lib.NO_PARAMETER_INPUT_SCHEMA],
+  ];
+  for (const [key, value] of pairs) {
+    if (canonical(golden[key]) !== canonical(value)) {
+      add(`golden:${key}`, `mcp-tool-definitions.ts ${key} differs from tool-definitions.json, the golden the PyPI server is held to.`, 'Change both servers together, then run node scripts/check-mcp-accuracy.js --write-definitions.');
+    }
+  }
+
+  // Real results against the schemas, with the validator the SDK uses.
+  let fromJsonSchema;
+  try {
+    ({ fromJsonSchema } = require('@modelcontextprotocol/server'));
+  } catch (e) {
+    if (process.env.VERCEL === '1' && e && e.code === 'MODULE_NOT_FOUND') return { findings, evaluated: false, reason: `@modelcontextprotocol/server is not installed (${e.message})` };
+    throw e;
+  }
+  const validators = Object.fromEntries(scoring.map((n) => [n, fromJsonSchema(lib.MCP_OUTPUT_SCHEMAS[n])]));
+  let validated = 0;
+  const check = async (tool, data, what, mustPass = true) => {
+    const r = await validators[tool]['~standard'].validate(data);
+    const passed = !r.issues;
+    if (passed !== mustPass) {
+      add(
+        `validates:${tool}:${what}`,
+        mustPass
+          ? `The captured ${what} does not match ${tool}'s outputSchema: ${r.issues.map((x) => x.message).join('; ').slice(0, 300)}. The hosted SDK would refuse that result.`
+          : `${tool}'s outputSchema accepts ${what}, which it must refuse, so the validation proves nothing.`,
+        mustPass ? 'Loosen the schema to what the engine returns, and change the golden and the PyPI copy with it.' : 'Check that the schema declares types.',
+      );
+    }
+    validated++;
+  };
+  const readJson = (dir, n) => JSON.parse(fs.readFileSync(path.join(dir, n), 'utf8'));
+  if (fs.existsSync(MOTION_FIXTURES)) {
+    for (const [n, out] of Object.entries(readJson(MOTION_FIXTURES, 'expected.json'))) await check('designesy_motion_score', out, `motion result for ${n}`);
+  }
+  if (fs.existsSync(TOKENS_FIXTURES)) {
+    for (const [n, out] of Object.entries(readJson(TOKENS_FIXTURES, 'expected.json'))) await check('designesy_tokens_score', out, `tokens result for ${n}`);
+  }
+  if (fs.existsSync(TRIM_FIXTURES)) {
+    const trim = await import(require('node:url').pathToFileURL(TRIM_LIB).href);
+    const report = readJson(TRIM_FIXTURES, 'report-designesy-org.json');
+    const guardrails = readJson(TRIM_FIXTURES, 'guardrails-designesy-org.json');
+    await check('designesy_report', report, 'designesy.org report');
+    await check('designesy_report', trim.reportSummary(report), 'designesy.org report summary');
+    await check('designesy_score', report.score, 'designesy.org score result (from the report)');
+    await check('designesy_drift_score', report.drift, 'designesy.org drift result (from the report)');
+    await check('designesy_readiness_score', report.readiness, 'designesy.org readiness result (from the report)');
+    await check('designesy_guardrails', guardrails, 'designesy.org guardrails bundle');
+    await check('designesy_guardrails', trim.guardrailsParts(guardrails, ['designMd', 'tokens']), 'designesy.org guardrails parts');
+    await check('designesy_drift_score', { ...report.drift, score: 'high' }, 'a drift result whose score is a string', false);
+  }
+  return { findings, evaluated: true, validated };
+}
+
 // ── Server card (SEP-2127) ────────────────────────────────────────────────────
 //
 // The card at /api/mcp/server-card, its legacy copy at
@@ -1251,6 +1377,10 @@ async function main() {
   const tokens = await tokensFindings();
   findings.push(...tokens.findings);
 
+  // Tool definitions: one golden, wired in the route, true of real results.
+  const definitions = await definitionsFindings(routeSrc);
+  findings.push(...definitions.findings);
+
   // Server card and AI Catalog: one builder, agreeing with server.json.
   const serverCard = await serverCardFindings(registered);
   findings.push(...serverCard.findings);
@@ -1269,6 +1399,7 @@ async function main() {
           motion: { evaluated: motion.evaluated, compared: motion.compared ?? 0, reason: motion.reason },
           trim: { evaluated: trim.evaluated, compared: trim.compared ?? 0, reason: trim.reason },
           tokens: { evaluated: tokens.evaluated, compared: tokens.compared ?? 0, reason: tokens.reason },
+          definitions: { evaluated: definitions.evaluated, validated: definitions.validated ?? 0, reason: definitions.reason },
           serverCard: { evaluated: serverCard.evaluated, serverJson: serverCard.serverJson ?? false, reason: serverCard.reason },
           findings,
         },
@@ -1308,6 +1439,11 @@ async function main() {
       console.log(`mcp-tool-parity: OK — the hosted token checks match the shared golden on ${tokens.compared} token file(s), and the generated fixtures are current`);
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] tokens-score agreement: ${tokens.reason}`);
+    }
+    if (definitions.evaluated) {
+      console.log(`mcp-tool-parity: OK — the output schemas, instructions and no-parameter schema match the shared golden, each scoring tool carries its own schema, and ${definitions.validated} captured result(s) validate as expected`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] tool definitions: ${definitions.reason}`);
     }
     if (!serverCard.evaluated) {
       console.log(`mcp-tool-parity: [NOT EVALUATED] server card: ${serverCard.reason}`);
