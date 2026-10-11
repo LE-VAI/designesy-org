@@ -27,6 +27,17 @@
  *   3. Source: the methodology check list separates its label and its
  *      description with a space, so Pagefind indexes "here") Parses", not
  *      "here")Parses".
+ *   4. Index: no word glued to a word. Pagefind read the text of two
+ *      elements as one run wherever React wrote no space between them, so
+ *      the index held "againVisit", "designDesign Systemsscored", "08Scroll"
+ *      and 5,610 in all on 93 pages. separateWords (scripts/lib/word-boundaries.js)
+ *      adds the space in the copy Pagefind indexes. Asserted on markup, on
+ *      the wiring, and on the built index: wherever a served page has a
+ *      letter or digit meeting a letter or digit across element tags, the
+ *      index holds the two words apart. That covers a lowercase letter
+ *      before a capital or a digit ("againVisit", "Tokens90") and the run-ons
+ *      that rule alone misses ("Systemsscored", "08Scroll"). JOINED_NAMES
+ *      lists the names kept whole, each with its reason.
  *
  * Usage:  node scripts/check-palette-excerpts.js
  * Exits 1 on any failure. Needs Node 22.18+ (type stripping for excerpt.ts).
@@ -36,6 +47,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const zlib = require('node:zlib');
+const { separateWords, gluedBoundaries, JOINED_NAMES } = require('./lib/word-boundaries');
 
 const APP = path.join(__dirname, '..');
 
@@ -251,6 +264,105 @@ async function main() {
       /<span className="dx-check-item">\{unbroken\(itemOf\(c\.id\)\)\}<\/span>\s*<\/span>\{' '\}\s*<span className="dx-check-how">/,
       'Pagefind joins the two spans without a space: "here")Parses"'
     );
+  });
+
+  // ── 4. Index: words glued across element boundaries ────────────────────
+  const sep = (html) => separateWords(html).html;
+
+  check('separateWords: the four run-ons the index held are two words each', () => {
+    // The markup each came from, as the build serves it.
+    assert.equal(
+      sep('<p class="eg-path"><span>designesy.org<b>/frameworks/mozaika-design</b></span><span>mozaika.design</span><span>Design Systems</span><span>scored 2026-10-10</span></p>'),
+      '<p class="eg-path"><span>designesy.org<b>/frameworks/mozaika-design</b></span><span> mozaika.design</span><span> Design Systems</span><span> scored 2026-10-10</span></p>'
+    );
+    assert.equal(
+      sep('<a class="button primary" href="/score?url=mozaika.design">Score it again</a><a class="button ghost" href="https://mozaika.design">Visit mozaika.design</a>'),
+      '<a class="button primary" href="/score?url=mozaika.design">Score it again</a><a class="button ghost" href="https://mozaika.design"> Visit mozaika.design</a>'
+    );
+    assert.equal(
+      sep('<span class="check-cell-index" aria-hidden="true">08</span><span class="check-cell-body"><span class="check-cell-title">Scroll <code>padding-top</code> 4.5rem</span></span>'),
+      '<span class="check-cell-index" aria-hidden="true">08</span><span class="check-cell-body"><span class="check-cell-title"> Scroll <code>padding-top</code> 4.5rem</span></span>'
+    );
+    assert.equal(
+      sep('<span class="check-cell-title">Wordmark breath</span><span class="check-cell-meta">Collapses under <code>prefers-reduced-motion</code></span>'),
+      '<span class="check-cell-title">Wordmark breath</span><span class="check-cell-meta"> Collapses under <code>prefers-reduced-motion</code></span>'
+    );
+  });
+
+  check('separateWords: table cells and dt/dd are words apart', () => {
+    assert.equal(sep('<tr><th>Check</th><th>What</th></tr>'), '<tr><th>Check</th><th> What</th></tr>');
+    assert.equal(sep('<dl><dt>Standard</dt><dd>W3C DTCG</dd></dl>'), '<dl><dt>Standard</dt><dd> W3C DTCG</dd></dl>');
+  });
+
+  check('separateWords: leaves punctuation joins, <wbr>, <pre>, React text joins and named words alone', () => {
+    const same = [
+      '<code>--ink</code>, <code>--paper</code>', // punctuation after an element
+      '<span>/labs/</span><span>poise.json</span>', // a path in segments
+      'design<wbr>verification', // a break opportunity inside a word
+      '<pre><span class="k">const</span><span>x</span></pre>', // highlighted code
+      'v<!-- -->0.4.4', // React's comment between two text runs
+      'Java<b>Script</b> and Type<i>Script</i>', // JOINED_NAMES
+      '<p>One</p> <p>Two</p>', // whitespace already there
+    ];
+    for (const html of same) assert.equal(sep(html), html, html);
+    assert.deepEqual(JOINED_NAMES.map((n) => n.name), ['JavaScript', 'TypeScript']);
+    for (const n of JOINED_NAMES) assert.ok(n.reason && n.reason.length > 20, `${n.name} has no reason`);
+  });
+
+  check('separateWords: entities count as the characters they stand for', () => {
+    assert.equal(sep('<b>R&amp;D</b><span>Team</span>'), '<b>R&amp;D</b><span> Team</span>');
+    assert.equal(sep('<b>Q&amp;</b><span>A</span>'), '<b>Q&amp;</b><span>A</span>');
+  });
+
+  check('wiring: postbuild-pagefind stages every page through separateWords', () => {
+    const src = fs.readFileSync(path.join(__dirname, 'postbuild-pagefind.js'), 'utf8');
+    assert.ok(/require\('\.\/lib\/word-boundaries'\)/.test(src), 'postbuild-pagefind.js does not load word-boundaries');
+    assert.ok(/separateWords\(fs\.readFileSync\(path\.join\(srcDir, rel\), 'utf8'\)\)/.test(src), 'staged pages are not passed through separateWords');
+    assert.ok(!/fs\.copyFileSync\(path\.join\(srcDir, rel\), dest\)/.test(src), 'staged pages are still copied verbatim');
+  });
+
+  // The built index. This gate runs after `next build` and postbuild-pagefind
+  // (its place in the build script and in CI); without a build there is no
+  // index to read, and that is a failure, not a pass.
+  const NEXT = path.join(APP, '.next');
+  const FRAG = path.join(NEXT, 'static', 'chunks', 'app', 'pagefind', 'fragment');
+  const SERVED = path.join(NEXT, 'server', 'app');
+  check('index: every word meeting a word across element tags is held apart', () => {
+    assert.ok(fs.existsSync(FRAG), `no Pagefind index at ${path.relative(APP, FRAG)}: run after next build and postbuild-pagefind`);
+    const content = new Map();
+    for (const f of fs.readdirSync(FRAG)) {
+      const buf = zlib.gunzipSync(fs.readFileSync(path.join(FRAG, f)));
+      const j = JSON.parse(buf.subarray('pagefind_dcd'.length).toString('utf8'));
+      const rel = j.url.replace(/^\/_next\/static\/chunks\/app\//, '').replace(/^\//, '');
+      content.set(rel, ` ${j.content.replace(/\s+/g, ' ')} `);
+    }
+    let pages = 0;
+    let boundaries = 0;
+    const glued = [];
+    for (const [rel, text] of content) {
+      const served = [path.join(SERVED, rel || 'index.html'), path.join(SERVED, rel.replace(/\.html$/, ''), 'index.html')].find((p) => fs.existsSync(p) && fs.statSync(p).isFile());
+      if (!served) continue; // a JSON endpoint wrapper: no element boundaries in its text
+      pages += 1;
+      for (const { tail, head, tags } of gluedBoundaries(fs.readFileSync(served, 'utf8'))) {
+        const run = tail + head;
+        // Apart: a space, or the full stop Pagefind adds where a block ends.
+        const apart = text.includes(`${tail} ${head}`) || text.includes(`${tail}. ${head}`);
+        if (!apart && !text.includes(run)) continue; // outside the indexed body
+        boundaries += 1;
+        if (!apart) glued.push({ page: `/${rel.replace(/\.html$/, '')}`, run, tags });
+      }
+    }
+    assert.ok(pages > 50, `only ${pages} indexed page(s) matched a served page`);
+    const lowerThenCapitalOrDigit = glued.filter((g) => /\p{Ll}[\p{Lu}\p{N}]/u.test(g.run)).length;
+    const lines = glued.slice(0, 25).map((g) => `${g.page}: "${g.run}" at ${g.tags.slice(0, 60)}`);
+    assert.equal(
+      glued.length,
+      0,
+      `${glued.length} of ${boundaries} word boundaries are glued in the index across ${new Set(glued.map((g) => g.page)).size} page(s); ` +
+        `${lowerThenCapitalOrDigit} of them a lowercase letter before a capital or a digit:\n  ${lines.join('\n  ')}` +
+        (glued.length > lines.length ? `\n  ... ${glued.length - lines.length} more` : '')
+    );
+    console.log(`        ${boundaries} word boundaries on ${pages} indexed pages, every one held apart`);
   });
 
   if (failures.length) {
