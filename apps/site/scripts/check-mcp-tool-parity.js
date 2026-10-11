@@ -1035,6 +1035,121 @@ async function tokensFindings() {
   return { findings, evaluated: true, compared };
 }
 
+// ── Server card (SEP-2127) ────────────────────────────────────────────────────
+//
+// The card at /api/mcp/server-card, its legacy copy at
+// /.well-known/mcp/server-card.json and the entry in /.well-known/ai-catalog.json
+// are built by app/lib/mcp-server-card.ts. The legacy route was a hand-kept
+// list of 17 tool names, a description the registry no longer used, a prompts
+// capability the server does not have, and a date frozen at 2026-08-02. So
+// this clause asserts:
+//   - the built card meets the v1 schema's required fields and limits;
+//   - its name, title, description, website and remote equal server.json's,
+//     the file the official registry publishes, and server.json's icons are
+//     the card's;
+//   - the card lists no tools, resources or prompts (the Final spec leaves
+//     them to the live server, where they cannot drift);
+//   - each route builds its body with the shared builder and names no tool;
+//   - the catalog entry points at the card's own URL with the card media type.
+const SERVER_CARD_LIB = path.join(APP, 'app', 'lib', 'mcp-server-card.ts');
+const SERVER_JSON = path.join(APP, '..', '..', 'server.json');
+const SERVER_CARD_ROUTES = [
+  { file: path.join(APP, 'app', 'api', 'mcp', 'server-card', 'route.ts'), builder: 'buildServerCard' },
+  { file: path.join(APP, 'app', '.well-known', 'mcp', 'server-card.json', 'route.ts'), builder: 'buildServerCard' },
+  { file: path.join(APP, 'app', '.well-known', 'ai-catalog.json', 'route.ts'), builder: 'buildAiCatalog' },
+];
+const CARD_NAME_RE = /^[a-zA-Z0-9.-]+\/[a-zA-Z0-9._-]+$/;
+
+async function serverCardFindings(registered) {
+  const findings = [];
+  const add = (id, why, fix) => findings.push({ id: `server-card:${id}`, why, fix });
+
+  for (const r of SERVER_CARD_ROUTES) {
+    const rel = path.relative(APP, r.file);
+    if (!fs.existsSync(r.file)) {
+      add(`route-missing:${rel}`, `${rel} is missing, so the discovery document it serves is gone.`, `Restore ${rel}; it returns ${r.builder}() from app/lib/mcp-server-card.ts.`);
+      continue;
+    }
+    const code = stripComments(fs.readFileSync(r.file, 'utf8'));
+    if (!new RegExp(`\\b${r.builder}\\(`).test(code)) {
+      add(`route-not-derived:${rel}`, `${rel} does not call ${r.builder}(), so its body can drift from the card the other routes serve.`, `Build the response with ${r.builder}() from app/lib/mcp-server-card.ts.`);
+    }
+    const named = [...registered].filter((n) => code.includes(`'${n}'`) || code.includes(`"${n}"`));
+    if (named.length) {
+      add(`route-names-tools:${rel}`, `${rel} names ${named.length} tool(s) (${named.join(', ')}). A card lists no tools; a hand-kept list goes stale when a tool is added.`, 'Remove the list; clients read tools from tools/list.');
+    }
+  }
+
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(SERVER_CARD_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load mcp-server-card.ts (${e.code || e.message})` };
+    }
+    add('lib-unloadable', `Could not load app/lib/mcp-server-card.ts with Node's type stripping (${e.code || e.message}).`, 'Run on Node 22.18 or later, and keep the file free of imports.');
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  const card = lib.buildServerCard('0.0.0-gate');
+  if (card.$schema !== 'https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json') {
+    add('schema-url', `$schema is ${JSON.stringify(card.$schema)}; the v1 schema requires its own URL exactly.`, 'Use the v1 server-card schema URL.');
+  }
+  if (card.version !== '0.0.0-gate') {
+    add('version-not-passed', 'buildServerCard() does not report the version it is given, so the card would not follow MCP_SERVER_VERSION.', 'Return the version argument.');
+  }
+  if (typeof card.name !== 'string' || card.name.length < 3 || card.name.length > 200 || !CARD_NAME_RE.test(card.name)) {
+    add('name', `name ${JSON.stringify(card.name)} breaks the schema (3 to 200 characters, one slash, reverse-DNS).`, 'Use the registry name.');
+  }
+  for (const k of ['description', 'title']) {
+    const v = card[k];
+    if (typeof v !== 'string' || v.length < 1 || v.length > 100) {
+      add(`${k}-length`, `${k} is ${typeof v === 'string' ? v.length : 'not a string'} characters; the schema allows 1 to 100.`, `Shorten ${k}.`);
+    }
+  }
+  for (const k of ['tools', 'resources', 'prompts', 'capabilities']) {
+    if (k in card) add(`lists-${k}`, `The card carries "${k}". The Final spec leaves primitives to the live server.`, `Remove "${k}" from buildServerCard().`);
+  }
+  for (const icon of card.icons || []) {
+    if (!/^https:\/\//.test(icon.src) || icon.src.length > 255) {
+      add('icon-src', `Icon ${icon.src} is not an HTTPS URL of at most 255 characters, which the registry requires.`, 'Serve the icon over HTTPS at a short path.');
+    }
+  }
+
+  const catalog = lib.buildAiCatalog();
+  const entry = (catalog.entries || [])[0];
+  if (catalog.specVersion !== '1.0' || !catalog.host || !catalog.host.displayName) {
+    add('catalog-shape', 'The AI Catalog needs specVersion "1.0" and a host with a displayName.', 'Fix buildAiCatalog().');
+  }
+  if (!entry || entry.type !== 'application/mcp-server-card+json' || entry.url !== `${card.remotes[0].url}/server-card`) {
+    add('catalog-entry', `The catalog entry must point at ${card.remotes[0].url}/server-card with type application/mcp-server-card+json; it has ${JSON.stringify(entry)}.`, 'Fix buildAiCatalog().');
+  }
+
+  if (!fs.existsSync(SERVER_JSON)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: true, serverJson: false };
+    }
+    add('server-json-missing', `${SERVER_JSON} is missing, so the card cannot be compared with the registry listing.`, 'Run this gate from a full checkout.');
+    return { findings, evaluated: true, serverJson: false };
+  }
+  const sj = JSON.parse(fs.readFileSync(SERVER_JSON, 'utf8'));
+  const pairs = [
+    ['name', sj.name, card.name],
+    ['title', sj.title, card.title],
+    ['description', sj.description, card.description],
+    ['websiteUrl', sj.websiteUrl, card.websiteUrl],
+    ['remote url', (sj.remotes || [])[0] && sj.remotes[0].url, card.remotes[0].url],
+    ['remote type', (sj.remotes || [])[0] && sj.remotes[0].type, card.remotes[0].type],
+    ['icons', JSON.stringify(sj.icons || null), JSON.stringify(card.icons)],
+  ];
+  for (const [what, a, b] of pairs) {
+    if (a !== b) {
+      add(`disagrees:${what}`, `server.json ${what} is ${JSON.stringify(a)}; the card's is ${JSON.stringify(b)}. Registries copy server.json, clients read the card.`, `Make them equal; the text lives in app/lib/mcp-server-card.ts.`);
+    }
+  }
+  return { findings, evaluated: true, serverJson: true };
+}
+
 async function main() {
   const asJson = process.argv.includes('--json');
 
@@ -1136,6 +1251,10 @@ async function main() {
   const tokens = await tokensFindings();
   findings.push(...tokens.findings);
 
+  // Server card and AI Catalog: one builder, agreeing with server.json.
+  const serverCard = await serverCardFindings(registered);
+  findings.push(...serverCard.findings);
+
   if (asJson) {
     console.log(
       JSON.stringify(
@@ -1150,6 +1269,7 @@ async function main() {
           motion: { evaluated: motion.evaluated, compared: motion.compared ?? 0, reason: motion.reason },
           trim: { evaluated: trim.evaluated, compared: trim.compared ?? 0, reason: trim.reason },
           tokens: { evaluated: tokens.evaluated, compared: tokens.compared ?? 0, reason: tokens.reason },
+          serverCard: { evaluated: serverCard.evaluated, serverJson: serverCard.serverJson ?? false, reason: serverCard.reason },
           findings,
         },
         null,
@@ -1188,6 +1308,13 @@ async function main() {
       console.log(`mcp-tool-parity: OK — the hosted token checks match the shared golden on ${tokens.compared} token file(s), and the generated fixtures are current`);
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] tokens-score agreement: ${tokens.reason}`);
+    }
+    if (!serverCard.evaluated) {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] server card: ${serverCard.reason}`);
+    } else if (serverCard.serverJson) {
+      console.log('mcp-tool-parity: OK — the server card, its legacy copy and the AI Catalog come from one builder, meet the v1 schema, and agree with server.json');
+    } else {
+      console.log('mcp-tool-parity: OK — the server card meets the v1 schema; [NOT EVALUATED] server.json agreement: not in this Vercel build');
     }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);

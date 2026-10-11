@@ -439,6 +439,7 @@ class TestPublishedSurfacesMatchPyproject:
     @pytest.mark.parametrize("rel", [
         "apps/site/app/api/mcp/route.ts",
         "apps/site/app/.well-known/mcp/server-card.json/route.ts",
+        "apps/site/app/api/mcp/server-card/route.ts",
     ])
     def test_site_routes_read_the_constant(self, rel):
         # A literal here is how the drift started, so none may come back: the
