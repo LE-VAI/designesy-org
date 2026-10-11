@@ -86,9 +86,12 @@ const CATEGORIES: { key: string; label: string }[] = [
 
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
+// The grade letter is text, so a grade token here is the grade's -ink text
+// token. B read --signal-light, a brand blue (2.50:1 on the light paper); a
+// grade never takes a brand colour (D5).
 const GRADE_COLOR: Record<string, string> = {
   A: 'var(--ok-ink)',
-  B: 'var(--signal-light)',
+  B: 'var(--grade-b-ink)',
   C: 'var(--warn-ink)',
   D: 'var(--grade-d-ink)',
   F: 'var(--error-ink)',
