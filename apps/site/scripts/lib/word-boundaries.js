@@ -28,13 +28,21 @@
  * "poise.json"), the same measurement found both, so those boundaries are
  * left as they are.
  *
- * Not separated: a boundary inside <pre> (highlighted code), one made only of
- * <wbr> (a break opportunity inside a word), and a name in JOINED_NAMES.
+ * Not separated: a boundary whose tags are all inline formatting (FORMATTING:
+ * <em>un</em>believable, x<sup>2</sup>, de<mark>sign</mark>, a lone <wbr>),
+ * text inside <sup>, <sub> or <abbr>, two CJK characters (those scripts put
+ * no space between words), anything inside <pre>, and a name in
+ * JOINED_NAMES. Every space that is added must render apart in the served
+ * page: scripts/check-word-boundaries-render.js measures each one in CI and
+ * fails the build on one that renders touching.
  */
 
 'use strict';
 
 const WORD = /[\p{L}\p{N}]/u;
+
+/** Scripts written without spaces between words: a space between two of their characters is wrong. */
+const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]/u;
 
 /**
  * Names that stay one word even if markup ever splits them. Each entry says
@@ -44,6 +52,21 @@ const JOINED_NAMES = [
   { name: 'JavaScript', reason: 'a product name written as one word; a boundary inside it would be styling, never two words' },
   { name: 'TypeScript', reason: 'a product name written as one word; a boundary inside it would be styling, never two words' },
 ];
+
+/**
+ * Inline formatting: these mark part of a run of text (a stressed syllable,
+ * an exponent, a highlighted fragment), so text on either side of their tags
+ * can be one word: <em>un</em>believable, x<sup>2</sup>, de<mark>sign</mark>.
+ * A boundary whose tags are all of these is never separated. span, a, small,
+ * code and time are not on the list: on this site they carry separate items
+ * (a card's title and its note, two buttons, a label and its suffix), and the
+ * render gate (check-word-boundaries-render.js) fails the build if a space
+ * lands where the two sides render touching.
+ */
+const FORMATTING = new Set(['b', 'strong', 'i', 'em', 'u', 's', 'mark', 'sup', 'sub', 'abbr', 'cite', 'dfn', 'q', 'ins', 'del', 'var', 'kbd', 'wbr']);
+
+/** Text inside these is never split, whatever the tags around it. */
+const NEVER_INSIDE = new Set(['sup', 'sub', 'abbr']);
 
 const SKIP = new Set(['script', 'style', 'template', 'textarea', 'pre', 'noscript', 'head']);
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
@@ -68,16 +91,20 @@ function joinedName(tail, head) {
 /**
  * Walk an HTML document and call visit(boundary) at every place where two
  * text runs meet across element tags with no whitespace between them.
- * boundary = { at, tail, head, tags } where `at` is the index in html where
- * the second run starts, tail/head are the words on either side (decoded),
- * and tags is the markup between them.
+ * boundary = { at, tail, head, tags, names, inside } where `at` is the index
+ * in html where the second run starts, tail/head are the words on either
+ * side (decoded), tags is the markup between them, names the element names
+ * in that markup, and inside the elements open around either run.
  */
 function walkBoundaries(html, visit) {
   const re = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>|([^<]+)|</g;
   let m;
   const skip = []; // names of open skipped elements
+  const open = []; // names of open elements, outermost first
   let prev = null; // decoded text of the previous run
+  let prevOpen = []; // open elements around it
   let tags = ''; // markup since the previous run
+  let names = [];
   while ((m = re.exec(html))) {
     if (m[0].startsWith('<!--')) continue; // React's <!-- --> joins one text run
     if (m[2]) {
@@ -90,11 +117,19 @@ function walkBoundaries(html, visit) {
         } else skip.push(name);
         prev = null;
         tags = '';
+        names = [];
         continue;
       }
       if (skip.length) continue;
+      if (!selfClose) {
+        if (closing) {
+          const k = open.lastIndexOf(name);
+          if (k >= 0) open.length = k;
+        } else open.push(name);
+      }
       if (name === 'br') prev = null;
       tags += m[0];
+      names.push(name);
       continue;
     }
     if (skip.length) continue;
@@ -102,36 +137,60 @@ function walkBoundaries(html, visit) {
     if (!text.trim()) {
       prev = null; // whitespace between the runs: already two words
       tags = '';
+      names = [];
       continue;
     }
-    if (prev !== null && tags && !/^(?:<wbr\s*\/?>)+$/i.test(tags)) {
+    if (prev !== null && tags) {
       const tail = (prev.match(/(\S{1,40})$/) || ['', ''])[1];
       const head = (text.match(/^(\S{1,40})/) || ['', ''])[1];
-      if (tail && head) visit({ at: m.index, tail, head, tags });
+      if (tail && head) visit({ at: m.index, tail, head, tags, names, inside: [...new Set([...prevOpen, ...open])] });
     }
     prev = text;
+    prevOpen = open.slice();
     tags = '';
+    names = [];
   }
 }
 
-/** True when the boundary joins a word to a word and no name keeps them one. */
-function glues({ tail, head }) {
-  return WORD.test(tail.slice(-1)) && WORD.test(head[0]) && !joinedName(tail, head);
+/**
+ * True when a space belongs at the boundary: a word meets a word, the tags
+ * between are not all inline formatting, neither run sits in sup, sub or
+ * abbr, the two characters are not both CJK, and no name keeps them one.
+ */
+function glues({ tail, head, names = [], inside = [] }) {
+  const a = tail.slice(-1);
+  const b = head[0];
+  if (!WORD.test(a) || !WORD.test(b)) return false;
+  if (CJK.test(a) && CJK.test(b)) return false;
+  if (names.length && names.every((n) => FORMATTING.has(n))) return false;
+  if (inside.some((n) => NEVER_INSIDE.has(n))) return false;
+  return !joinedName(tail, head);
 }
 
-/** The document with one space added at every boundary that glues two words. */
-function separateWords(html) {
+/** Where separateWords puts a space: indexes into html, ascending. */
+function separationPoints(html) {
   const at = [];
   walkBoundaries(html, (b) => {
     if (glues(b)) at.push(b.at);
   });
+  return at;
+}
+
+/** html with `insert` placed at each of the ascending indexes `at`. */
+function insertAt(html, at, insert) {
   let out = '';
   let last = 0;
   for (const i of at) {
-    out += html.slice(last, i) + ' ';
+    out += html.slice(last, i) + insert;
     last = i;
   }
-  return { html: out + html.slice(last), inserted: at.length };
+  return out + html.slice(last);
+}
+
+/** The document with one space added at every boundary that glues two words. */
+function separateWords(html) {
+  const at = separationPoints(html);
+  return { html: insertAt(html, at, ' '), inserted: at.length };
 }
 
 /** Every boundary in a document that glues two words: [{ tail, head, tags }]. */
@@ -143,4 +202,4 @@ function gluedBoundaries(html) {
   return out;
 }
 
-module.exports = { WORD, JOINED_NAMES, separateWords, gluedBoundaries, walkBoundaries };
+module.exports = { WORD, CJK, JOINED_NAMES, FORMATTING, NEVER_INSIDE, separateWords, separationPoints, insertAt, gluedBoundaries, walkBoundaries };

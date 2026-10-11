@@ -36,8 +36,13 @@
  *      letter or digit meeting a letter or digit across element tags, the
  *      index holds the two words apart. That covers a lowercase letter
  *      before a capital or a digit ("againVisit", "Tokens90") and the run-ons
- *      that rule alone misses ("Systemsscored", "08Scroll"). JOINED_NAMES
- *      lists the names kept whole, each with its reason.
+ *      that rule alone misses ("Systemsscored", "08Scroll"). Unit cases pin
+ *      what is left whole: words split by inline formatting
+ *      (<em>un</em>believable, x<sup>2</sup>, de<mark>sign</mark>), text in
+ *      sup, sub and abbr, two CJK characters, punctuation boundaries, React's
+ *      text-join comments, and JOINED_NAMES (JavaScript, TypeScript), each
+ *      with its reason. That every added space renders apart is measured in
+ *      a browser by check-word-boundaries-render.js (CI, Visual gates part 3).
  *
  * Usage:  node scripts/check-palette-excerpts.js
  * Exits 1 on any failure. Needs Node 22.18+ (type stripping for excerpt.ts).
@@ -294,19 +299,75 @@ async function main() {
     assert.equal(sep('<dl><dt>Standard</dt><dd>W3C DTCG</dd></dl>'), '<dl><dt>Standard</dt><dd> W3C DTCG</dd></dl>');
   });
 
-  check('separateWords: leaves punctuation joins, <wbr>, <pre>, React text joins and named words alone', () => {
-    const same = [
-      '<code>--ink</code>, <code>--paper</code>', // punctuation after an element
-      '<span>/labs/</span><span>poise.json</span>', // a path in segments
-      'design<wbr>verification', // a break opportunity inside a word
-      '<pre><span class="k">const</span><span>x</span></pre>', // highlighted code
-      'v<!-- -->0.4.4', // React's comment between two text runs
-      'Java<b>Script</b> and Type<i>Script</i>', // JOINED_NAMES
-      '<p>One</p> <p>Two</p>', // whitespace already there
-    ];
-    for (const html of same) assert.equal(sep(html), html, html);
+  check('separateWords: URL-like text on either side of a boundary gets one space, not a split URL', () => {
+    assert.equal(sep('<span>mozaika-design</span><span>mozaika.design</span>'), '<span>mozaika-design</span><span> mozaika.design</span>');
+    assert.equal(sep('<span>designesy.org<b>/frameworks/mozaika-design</b></span>'), '<span>designesy.org<b>/frameworks/mozaika-design</b></span>');
+  });
+
+  check('separateWords: punctuation boundaries are left alone', () => {
+    for (const html of [
+      '<code>--ink</code>, <code>--paper</code>',
+      '<code>--ink</code><span>,</span>',
+      '<span>/labs/</span><span>poise.json</span>',
+      '<span>roles</span><span>→</span>',
+      '<span>(</span><span>v01</span><span>)</span>',
+    ]) {
+      assert.equal(sep(html), html, html);
+    }
+  });
+
+  check('separateWords: React text-join comments are one run, not a boundary', () => {
+    for (const html of ['v<!-- -->0.4.4', 'pt<!-- -->s', '<span>42<!-- -->-check engine</span>']) assert.equal(sep(html), html, html);
+  });
+
+  check('separateWords: JOINED_NAMES (JavaScript, TypeScript) stay whole, each with a reason', () => {
+    // span tags are not inline formatting, so only the allowlist keeps these whole.
+    assert.equal(sep('<span>Java</span><span>Script</span>'), '<span>Java</span><span>Script</span>');
+    assert.equal(sep('<span>Type</span><span class="x">Script</span> files'), '<span>Type</span><span class="x">Script</span> files');
+    assert.equal(sep('<span>Java</span><span>Ruby</span>'), '<span>Java</span><span> Ruby</span>');
     assert.deepEqual(JOINED_NAMES.map((n) => n.name), ['JavaScript', 'TypeScript']);
     for (const n of JOINED_NAMES) assert.ok(n.reason && n.reason.length > 20, `${n.name} has no reason`);
+  });
+
+  check('separateWords: words split by inline formatting stay whole (em, sup, sub, mark, abbr, wbr)', () => {
+    for (const html of [
+      '<em>un</em>believable',
+      'un<em>believ</em>able',
+      'x<sup>2</sup>',
+      'H<sub>2</sub>O',
+      'de<mark>sign</mark>',
+      '<mark>de</mark><mark>sign</mark>',
+      '<b>bold</b><i>italic</i>',
+      '<abbr title="Web Content Accessibility Guidelines">WCAG</abbr>2',
+      'design<wbr>verification',
+      '<pre><span class="k">const</span><span>x</span></pre>',
+    ]) {
+      assert.equal(sep(html), html, html);
+    }
+  });
+
+  check('separateWords: never inside <sup>, <sub> or <abbr>, whatever the tags within', () => {
+    for (const html of [
+      'x<sup><span>1</span><span>2</span></sup>',
+      'CO<sub><span>2</span><span>e</span></sub>',
+      '<abbr><span>W</span><span>CAG</span></abbr>',
+      '<abbr>WCAG</abbr><span>AA</span>',
+    ]) {
+      assert.equal(sep(html), html, html);
+    }
+  });
+
+  check('separateWords: no space between two CJK characters (fixture)', () => {
+    for (const html of [
+      '<span>设计</span><span>系统</span>',
+      '<tr><td>设计</td><td>系统</td></tr>',
+      '<span>デザイン</span><span>システム</span>',
+      '<span>디자인</span><span>시스템</span>',
+    ]) {
+      assert.equal(sep(html), html, html);
+    }
+    // A CJK word next to a Latin one is two words.
+    assert.equal(sep('<span>设计</span><span>System</span>'), '<span>设计</span><span> System</span>');
   });
 
   check('separateWords: entities count as the characters they stand for', () => {
