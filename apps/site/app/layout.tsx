@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Schibsted_Grotesk, Geist_Mono } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
+import { SiteAnalytics } from './lib/site-analytics';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
 import { DirectorDock } from './lib/director-dock';
@@ -240,8 +239,10 @@ export default function RootLayout({
             pills come last, where a floating control belongs. */}
         <BackButton />
         <DirectorDock />
-        <Analytics />
-        <SpeedInsights />
+        {/* Analytics and Speed Insights never receive a query string or
+            fragment: /score?url=… would otherwise send the address a visitor
+            scored (lib/analytics-url.ts). */}
+        <SiteAnalytics />
       </body>
     </html>
   );
