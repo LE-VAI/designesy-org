@@ -3985,15 +3985,18 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-title {
-  font-size: clamp(2.4rem, 2.4rem + 1.4vw, 3.5rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
+  /* One page-title style (brand ledger D58): Fraunces 700, the published
+     contract's heading weight, at the instrument title's size, leading,
+     tracking and optical size (.eg-title, engine.css), so a document page and
+     an engine page open on the same title. It was 400 at up to 56px, a second
+     H1 system on 55 routes. */
+  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
   margin-bottom: var(--space-16);
   text-wrap: balance;
-  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
-     dark-mode contrast. */
-  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
 }
 
 .surface-lede {
