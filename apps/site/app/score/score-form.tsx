@@ -21,6 +21,7 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { CATEGORIES, categoryChips, categoryOrder, topCategories, verdictLine, isEmptyRun, emptyRunReason, readEvidence } from './verdict';
 import { ScoreEmptyRun } from './score-empty-run';
 import { ReviewPrompt } from '../lib/review-prompt';
+import { BrandIcon } from '../lib/brand-icons';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -1278,10 +1279,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
             <div className="score-search-wrapper">
               <span className="score-search-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <BrandIcon name="search" size={16} />
               </span>
               <input
                 type="search"

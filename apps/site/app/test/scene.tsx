@@ -5,7 +5,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 /**
  * Pure-canvas firework sparkle — no three.js dependency.
  * Click anywhere → burst of signal-blue particles + shockwave ring.
- * Uses contract tokens: --signal (#0133cb), --signal-light (#3358e8).
+ * Uses contract tokens: --signal (#0A94FF), --signal-light (#36A7FF).
  */
 
 type Particle = {
@@ -133,7 +133,7 @@ export default function Scene() {
         life: 0,
         maxLife: 50 + Math.random() * 30,
         size: 2 + Math.random() * 3,
-        color: i % 3 === 0 ? '#3358e8' : '#0133cb',
+        color: i % 3 === 0 ? '#36A7FF' : '#0A94FF',
       });
     }
 

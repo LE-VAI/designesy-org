@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { initScrollPause } from './scroll-pause';
+import { Wordmark } from './brand-logotype';
 
 const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
@@ -105,10 +106,10 @@ export function Footer() {
       <div className="site-shell footer-inner">
         <div className="footer-meta">
           <span className="wordmark" data-cuelume-hover="sparkle">
-            {/* The wrapper keeps the dot on the word: .wordmark is a flex row
-                with a gap sized for the topbar's mark, and a bare text node
-                plus .dot became two flex items with that gap between them. */}
-            <span className="wordmark-type">designesy<span className="dot">.</span></span>
+            {/* The outlined wordmark (identity v1); the hidden text is its
+                name, so the footer still reads "designesy". */}
+            <Wordmark className="wordmark-word" />
+            <span className="sr-only">designesy</span>
           </span>
           <span>
             <strong>Designesy LLC</strong> · Design intelligence infrastructure

@@ -114,7 +114,7 @@
      4.01:1). The fail flag keeps white on the deepened red (5.5:1). */
   --ix-warn-bg: rgb(214 165 40);
   --ix-fail-bg: color-mix(in srgb, var(--ix-fail) 92%, var(--ix-shade));
-  --ix-fail-ink: var(--paper-on-signal);
+  --ix-fail-ink: var(--paper-white);
   --ix-flag-shadow: 0 6px 18px -8px rgba(20, 32, 90, 0.35);
   --ix-foot-fill: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent);
   --ix-foot-o: 0.55;
@@ -1087,7 +1087,7 @@
 .ix-pin.is-fail { box-shadow: 0 0 0 1.5px var(--ix-fail), var(--ix-flag-shadow); }
 
 .ix-flag {
-  color: var(--paper-on-signal);
+  color: var(--paper-white);
   box-shadow: var(--ix-flag-shadow);
   transform: translateX(-8px);
 }

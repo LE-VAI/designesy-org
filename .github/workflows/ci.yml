@@ -251,6 +251,15 @@ jobs:
         if: always()
         run: node scripts/check-paused-entrances.js
 
+      # No retired brand colour ships (identity v1): the old signal blue in
+      # hex and rgb form, the old yellows, the indigo pass and head hues and
+      # the old grade D orange, in app/, public/ (with the generated markdown
+      # above) and the root config. An explicit allowlist, each entry with its
+      # reason, covers the contract's own history.
+      - name: Retired literals
+        if: always()
+        run: node scripts/check-retired-literals.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js

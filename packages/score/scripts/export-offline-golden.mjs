@@ -145,6 +145,13 @@ const EDGE = [
   ['tokens-durations-three-via-alias', HTML_WITH_FIELD, ':root { --duration: 200ms; --duration-fast: 180ms; --motion-slow: 420ms; }'],
   ['tokens-negative-hex-channels', HTML_WITH_FIELD, ':root { --paper: #-f-f-f; --ink: #000; --signal: #fff; }'],
 
+  // v22 (identity v1): a declared --action / --on-action pair is the pair measured.
+  ['v22-action-pair-pass', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: var(--signal); --on-action: #010102; }'],
+  ['v22-action-pair-hides-nothing', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: #0A94FF; --on-action: #ffffff; }'],
+  ['v22-action-pair-fail', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: #0A94FF; --on-action: #36A7FF; }'],
+  ['v22-action-pair-unresolvable', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: var(--missing); --on-action: #010102; }'],
+  ['v22-action-without-label', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: #0A94FF; }'],
+
   // will-change, press scale, line-height, selection, x01-x03.
   ['will-change-minified-pair', HTML_WITH_FIELD, '.a{will-change:transform,opacity}'],
   ['will-change-uppercase', HTML_WITH_FIELD, '.a { will-change: Transform; }'],

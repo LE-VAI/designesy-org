@@ -24,6 +24,17 @@
  *   6. designesy_compare printed a score delta of 15.400000000000006.
  * Each was visible only in a live call, so nothing before a deploy could see it.
  *
+ * 1.13.8 added three more, re-derived on 2026-10-10:
+ *   7. designesy_tokens_score counted a WARN as 0 where designesy_motion_score,
+ *      the score engine and the npm validator count it 0.5 (owner decision
+ *      2026-10-10: warnings count half everywhere).
+ *   8. The tokens validator read a DTCG alias such as {space.16} as a literal
+ *      with no unit (a WARN in t08 and t10), skipped $root tokens, and did not
+ *      read the 2025.10 dimension form { value, unit }.
+ *   9. The site's own /export/dtcg held CSS, not DTCG: 7 $values were var()
+ *      (interaction.focus_ring = var(--signal-light), the four font stacks),
+ *      and the 5 radii were "6px" strings, not { value, unit } objects.
+ *
  * WHAT IT DOES
  * scripts/lib/route-harness.js loads the real route modules under Node with the
  * network stubbed, and this gate drives them with the made-up site in
@@ -37,6 +48,17 @@
  *                        {group.token} aliases that resolve, structured colors,
  *                        only DTCG types, loses no declaration, and passes the
  *                        server's own tokens validator with zero FAIL
+ *   tokens-warn-half     a WARN counts half, and the result, the tool
+ *                        description and the contract all state it, as the
+ *                        motion tool does
+ *   tokens-alias         a dimension alias is checked by the value it resolves
+ *                        to, an alias may name a $root token, $root tokens are
+ *                        counted, and { value, unit } dimensions are read
+ *   export-dtcg          every $value /export/dtcg serves is a DTCG value (no
+ *                        var(), dimensions and shadow lengths as { value, unit },
+ *                        font stacks as family names, aliases that resolve to a
+ *                        token of their type), and the server's own tokens
+ *                        validator gives it 0 WARN and 0 FAIL
  *   monitor-m09          m09 reports the contract version designesy_score reads
  *   compare-rounding     every number in a compare result has at most two decimals
  *
@@ -213,6 +235,100 @@ async function tokensSkip() {
   return { findings, measured: `score ${payload.score} (${statuses}); /export/dtcg ${ex.score}` };
 }
 
+async function tokensWarnHalf() {
+  const findings = [];
+  const h = siteHarness();
+  const fx = FIXTURES.tokensWarnHalf;
+  const { payload, config } = await h.callTool('designesy_tokens_score', { dtcg_file: JSON.stringify(fx.file) });
+  const statuses = (payload.checks || []).map((c) => `${c.id}:${c.status}`).join(' ');
+  if (payload.warn_count !== 1 || payload.score !== fx.expectScore) {
+    findings.push({ id: 'tokens-warn-half:score', why: `${payload.pass_count} PASS, ${payload.warn_count} WARN and ${payload.skip_count} SKIP scored ${payload.score} (${statuses}); a WARN counts half, so the score is ${fx.expectScore}.` });
+  }
+  const RULE = 'PASS=1, WARN=0.5, FAIL=0';
+  if (typeof payload.scoring !== 'string' || !payload.scoring.startsWith(`${RULE}; SKIP is not scored.`)) {
+    findings.push({ id: 'tokens-warn-half:scoring', why: `The result states ${JSON.stringify(payload.scoring)}; the rule is ${RULE}, SKIP not scored.` });
+  }
+  if (!config.description.includes(`Score: ${RULE}, SKIP is not scored`)) {
+    findings.push({ id: 'tokens-warn-half:description', why: 'The tool description does not state PASS=1, WARN=0.5, FAIL=0, SKIP is not scored.' });
+  }
+  const motion = h.tools.get('designesy_motion_score');
+  if (!motion || !motion.config.description.includes(RULE)) {
+    findings.push({ id: 'tokens-warn-half:motion', why: `designesy_motion_score no longer states ${RULE}, so the two tools' rules cannot be compared.` });
+  }
+  const contract = h.load('app/lib/tokens-contract.ts').tokensContract;
+  if (!contract.verification.scoring.includes(`${RULE};`)) {
+    findings.push({ id: 'tokens-warn-half:contract', why: `The tokens contract (v${contract.version}) states: ${contract.verification.scoring}` });
+  }
+  return { findings, measured: `score ${payload.score} (${statuses})` };
+}
+
+async function tokensAlias() {
+  const findings = [];
+  const h = siteHarness();
+  const fx = FIXTURES.tokensAlias;
+  const { payload } = await h.callTool('designesy_tokens_score', { dtcg_file: JSON.stringify(fx.file) });
+  const check = (id) => (payload.checks || []).find((c) => c.id === id) || { status: 'missing', detail: '' };
+  for (const id of ['t08', 't10']) {
+    if (check(id).status !== 'PASS') {
+      findings.push({ id: `tokens-alias:${id}`, why: `${id} is ${check(id).status} on a file whose every dimension alias resolves to a valid dimension: ${check(id).detail}` });
+    }
+  }
+  if (payload.total_tokens !== fx.expectTotalTokens) {
+    findings.push({ id: 'tokens-alias:root', why: `The validator counts ${payload.total_tokens} token(s); the file has ${fx.expectTotalTokens}, two of them $root tokens.` });
+  }
+  if (!check('t08').detail.startsWith(`All ${fx.expectDimensions} dimension token(s)`)) {
+    findings.push({ id: 'tokens-alias:dimensions', why: `t08 reads ${JSON.stringify(check('t08').detail)}; the file has ${fx.expectDimensions} dimension tokens ({ value, unit } and $root included).` });
+  }
+  if (payload.warn_count !== 0 || payload.fail_count !== 0) {
+    findings.push({ id: 'tokens-alias:verdict', why: `${payload.warn_count} WARN and ${payload.fail_count} FAIL on a conformant file.` });
+  }
+  return { findings, measured: `${payload.total_tokens} tokens, t08 ${check('t08').status}, t10 ${check('t10').status}` };
+}
+
+async function exportDtcg() {
+  const findings = [];
+  const h = siteHarness();
+  const doc = await (await h.load('app/export/dtcg/route.ts').GET()).json();
+  const push = (id, why) => findings.push({ id: `export-dtcg:${id}`, why });
+  const tokens = dtcgTokens(doc);
+  const byPath = new Map(tokens.map((t) => [t.path, t.token]));
+  const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
+  const isDimension = (v) => !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).sort().join(',') === 'unit,value'
+    && typeof v.value === 'number' && (v.unit === 'px' || v.unit === 'rem');
+  const isColor = (v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
+
+  const withVar = tokens.filter((t) => JSON.stringify(t.token.$value).includes('var('));
+  if (withVar.length) push('var', `${withVar.length} $value(s) hold a CSS var(), e.g. ${withVar.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
+  const dims = tokens.filter((t) => t.token.$type === 'dimension');
+  const badDims = dims.filter((t) => !isDimension(t.token.$value));
+  if (badDims.length) push('dimension', `${badDims.length}/${dims.length} dimension token(s) are not { value, unit: px | rem }, e.g. ${badDims.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
+  for (const t of tokens.filter((x) => x.token.$type === 'shadow')) {
+    for (const layer of [].concat(t.token.$value)) {
+      const bad = ['offsetX', 'offsetY', 'blur', 'spread'].filter((f) => !isDimension(layer && layer[f]));
+      if (bad.length) push(`shadow-length:${t.path}`, `${t.path} has ${bad.map((f) => `${f}=${JSON.stringify(layer && layer[f])}`).join(', ')}, not { value, unit }.`);
+      if (!isColor(layer && layer.color)) push(`shadow-color:${t.path}`, `${t.path} has color ${JSON.stringify(layer && layer.color)}, not a structured color.`);
+    }
+  }
+  for (const t of tokens.filter((x) => x.token.$type === 'fontFamily')) {
+    const v = t.token.$value;
+    const names = (typeof v === 'string' && !isAlias(v)) || (Array.isArray(v) && v.length > 0 && v.every((n) => typeof n === 'string' && !/[(),]/.test(n)));
+    if (!names && !isAlias(v)) push(`font-family:${t.path}`, `${t.path} is ${JSON.stringify(v)}, not a family name, an array of them, or an alias.`);
+  }
+  for (const t of tokens.filter((x) => x.token.$type === 'color' && !isAlias(x.token.$value))) {
+    if (!isColor(t.token.$value)) push(`color:${t.path}`, `${t.path} is ${JSON.stringify(t.token.$value)}, not a structured color.`);
+  }
+  for (const t of tokens.filter((x) => isAlias(x.token.$value))) {
+    const target = byPath.get(t.token.$value.slice(1, -1));
+    if (!target) push(`alias-dangles:${t.path}`, `${t.path} aliases ${t.token.$value}, which is not a token in the file.`);
+    else if (target.$type !== t.token.$type) push(`alias-type:${t.path}`, `${t.path} is typed ${t.token.$type} but aliases ${t.token.$value}, typed ${target.$type}.`);
+  }
+  const v = (await h.callTool('designesy_tokens_score', { dtcg_file: JSON.stringify(doc) })).payload;
+  const flagged = (v.checks || []).filter((c) => c.status === 'WARN' || c.status === 'FAIL');
+  if (flagged.length) push('validator', `The server's own tokens validator flags the export: ${flagged.map((c) => `${c.id} ${c.status} (${c.detail})`).join('; ')}.`);
+  const aliases = tokens.filter((t) => isAlias(t.token.$value)).length;
+  return { findings, measured: `${tokens.length} tokens, ${withVar.length} var(), ${badDims.length} non-object dimension(s), ${aliases} alias(es), validator ${v.score} (${v.warn_count} WARN, ${v.fail_count} FAIL)` };
+}
+
 async function guardrailsDtcg() {
   const findings = [];
   const h = siteHarness();
@@ -342,6 +458,9 @@ const CHECKS = [
   ['a11y-names', a11yNames],
   ['fabricated-agreement', fabricatedAgreement],
   ['tokens-skip', tokensSkip],
+  ['tokens-warn-half', tokensWarnHalf],
+  ['tokens-alias', tokensAlias],
+  ['export-dtcg', exportDtcg],
   ['guardrails-dtcg', guardrailsDtcg],
   ['monitor-m09', monitorM09],
   ['compare-rounding', compareRounding],

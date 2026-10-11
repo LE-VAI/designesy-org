@@ -54,11 +54,14 @@
  *               inset ring drawn inside on purpose reaches the same depth
  *               all round and passes.
  *     colour    the computed outline colour is >= 3:1 on the page's paper,
- *               and on the dark theme is never rgb(1, 51, 203): --signal is a
- *               fill (2.32:1 on the dark page), and an outside site review
- *               found it drawn as the ring on 30 stops of /docs, /pricing
- *               and /review. A transparent outline paints nothing (the
- *               forced-colours fallback under a focus fill) and is skipped.
+ *               in each theme. (It once also refused rgb(1, 51, 203) on the
+ *               dark theme: the old --signal fill, 2.32:1 there, which an
+ *               outside site review found drawn as the ring on 30 stops of
+ *               /docs, /pricing and /review. That colour is retired from the
+ *               palette, so the literal could match nothing and was removed;
+ *               the 3:1 clause is what fails a faint ring.) A transparent
+ *               outline paints nothing (the forced-colours fallback under a
+ *               focus fill) and is skipped.
  *     words     an inline control's painted ring stays out of the box of
  *               any glyph beside it on its line (more than 0.5px in fails).
  *               Read from layout, not pixels: a ring 5px out around a link
@@ -142,8 +145,6 @@ const NAMED = [
   { route: '/labs/poise/orb', selector: '.orb-button-ghost', label: 'the orb ghost button' },
   { route: '/labs/poise/orb', selector: '.orb-attr-link', label: 'the orb attribution link' },
 ];
-// Never a ring colour on the dark theme: the brand fill, 2.32:1 on the page.
-const FORBIDDEN_DARK_RING = { 'rgb(1, 51, 203)': '--signal (#0133cb), a fill colour' };
 const PAD = 6; // the crop: the box plus this much on every side
 const IN = 6; // how far inside the edge a sample line starts
 const TH = 24; // a channel delta of this much (of 255) is a changed pixel
@@ -460,9 +461,9 @@ function contrast(p, q) {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
-// The computed ring colour, read from style rather than pixels: never the
-// --signal fill on the dark theme, and at least 3:1 on the page's paper (a
-// ring that fails on the paper fails on every surface lighter than it).
+// The computed ring colour, read from style rather than pixels: at least 3:1
+// on the page's paper (a ring that fails on the paper fails on every surface
+// lighter than it).
 function colourReasons(info) {
   const out = [];
   const paper = parseColour(info.paper);
@@ -478,7 +479,6 @@ function colourReasons(info) {
   }
   for (const o of info.outlines || []) {
     if (o.style === 'none' || !(parseFloat(o.width) > 0)) continue;
-    if (info.theme === 'dark' && FORBIDDEN_DARK_RING[o.color]) out.push(`${o.who} outline is ${o.color}, ${FORBIDDEN_DARK_RING[o.color]}, on the dark theme`);
     const c = parseColour(o.color);
     // A transparent outline paints nothing: it is the forced-colours fallback
     // under an indicator drawn another way (a link's focus fill), which the

@@ -129,8 +129,8 @@ export default function VaiCard() {
         </span>
       </button>
 
-      {/* The panel — VAI's surface. Yellow accent inside, per the rule:
-          "VAI #FFC400 inside panel; Designesy #FECC34 suppressed on unified surfaces." */}
+      {/* The panel — VAI's surface. Yellow accent inside: VAI #FFC400 is
+          VAI's colour, and Designesy uses no yellow (identity v1, D6). */}
       {open && (
         <div
           id="vai-panel"
