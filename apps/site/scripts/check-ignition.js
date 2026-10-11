@@ -398,15 +398,18 @@ async function run(browser, surfaceName, theme, mode, land) {
         { t, sel: LAMP },
       );
     await seekAnims(0);
-    // A run the visitor started brings the result into view (smooth scroll,
-    // real time); let it settle so every crop frames the same spot.
-    let lastY = -1;
-    for (let i = 0; i < 30; i++) {
-      const y = await page.evaluate(() => window.scrollY);
-      if (y === lastY) break;
-      lastY = y;
-      await page.waitForTimeout(150);
-    }
+    // A run the visitor started brings the run line into view: a smooth
+    // scroll on the real clock, started from an animation frame on the fake
+    // one. Each read waits for it to settle, so every crop frames the same spot.
+    const settleScroll = async () => {
+      let lastY = -1;
+      for (let i = 0; i < 30; i++) {
+        const y = await page.evaluate(() => window.scrollY);
+        if (y === lastY) return;
+        lastY = y;
+        await page.waitForTimeout(150);
+      }
+    };
 
     const calm = mode !== 'motion';
     let t = 0;
@@ -414,6 +417,7 @@ async function run(browser, surfaceName, theme, mode, land) {
       if (ms > t) await page.clock.runFor(ms - t);
       t = ms;
       await seekAnims(ms);
+      await settleScroll();
       return read();
     };
 
