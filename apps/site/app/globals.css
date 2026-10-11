@@ -9038,6 +9038,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   transform: translateY(0);
   outline: 2px solid var(--signal-access);
   outline-offset: 2px;
+  /* The link appears over the topbar's logotype, so its ring could sit
+     beside white letters (Azure on near-white is under 3:1). A mat of its
+     own surface, 3px past the ring, keeps the ring's surroundings fixed. */
+  box-shadow: 0 0 0 7px var(--surface-raised);
 }
 
 /* ------------------------------------------------------------------
