@@ -811,6 +811,15 @@
   box-shadow: inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
 }
 
+/* Light theme: the Azure gradient's top stop is 2.5:1 on the paper, under the
+   3:1 a status mark needs, so the lamp takes a 1px --signal-access rim, drawn
+   as a ring outside it (a box-shadow, so the layout box does not move). Dark
+   keeps the bare gradient (D49). */
+[data-theme="light"] [data-status="PASS"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="PASS"] {
+  box-shadow: 0 0 0 1px var(--signal-access), inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
+}
+
 [data-status="WARN"] > .eg-cell-top .eg-lamp,
 .eg-lamp[data-status="WARN"] {
   background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b));

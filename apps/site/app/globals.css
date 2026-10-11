@@ -10173,7 +10173,11 @@ a.lab-card:focus-visible .lab-card-arrow {
   flex-direction: column;
   gap: var(--space-20);
   position: relative;
-  overflow: hidden;
+  /* clip, not hidden: it clips the same paint (the rounded corners) without
+     making the card a scroll container, so the result's sticky readout
+     column holds against the viewport. With hidden it stuck 96px down inside
+     the card, under nothing, at rest (D48). */
+  overflow: clip;
 }
 
 /* The rim: a 1px top-lit edge on a masked layer (the console's
@@ -13777,6 +13781,9 @@ select {
   flex-wrap: wrap;
   gap: var(--space-6) var(--space-8);
   font-size: 0.75rem;
+  /* A set line, so the two-column layout can drop the readout to the first
+     row exactly (below). */
+  line-height: 1rem;
   color: var(--muted);
 }
 .rs-legend i {
@@ -13895,9 +13902,12 @@ button.rs-row:focus-visible {
       align-items: start;
       gap: var(--space-32);
     }
+    /* The readout's top meets the first list row's (D48): the list opens
+       with its one-line legend (1rem) and the list's gap. */
     .rs-side {
       position: sticky;
       top: var(--space-96);
+      margin-top: calc(1rem + var(--space-12));
     }
   }
 }
