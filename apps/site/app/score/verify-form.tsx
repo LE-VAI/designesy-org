@@ -741,6 +741,7 @@ export function VerifyForm({
         registry={view}
         face="engines"
         engines={liveBlocks}
+        ignite
         phase={phase}
         target={(status === 'loading' ? normalizeInput(url) : scoredUrl).replace(/^https?:\/\//i, '').replace(/\/$/, '')}
         outcomes={outcomes}

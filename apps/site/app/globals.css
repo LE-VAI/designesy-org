@@ -14035,6 +14035,122 @@ button.rs-row:focus-visible {
   color: var(--ink);
 }
 
+/* The loading ignition (brand D51, rulings D54; lib/engine/ignition.ts). One
+   Azure dot (--signal) per score loader: the lone dot on the score form's
+   run line, or the dot in the four-engine instrument's mark. Its container
+   carries data-ignite and the run's data-phase. While a run is out the dot
+   breathes; when a result lands it sweeps to the flame (--activation), rings
+   once, holds, and swaps back. These are status and instrument dots only:
+   the mark in the logo and lockup artwork (header, footer, OG) never carries
+   data-ignite, so nothing here reaches it.
+
+   The fill is the dot's ::before, so a fade touches the fill alone. On light
+   the dot itself draws a 1px rim of the fill's deep counterpart:
+   --signal-access on Azure (D49), --activation-ink on the flame (D35), swept
+   between the two with the fill. The rim never fades, and its width is
+   divided by the breath's scale, so it is 1px in every frame. The ring sits
+   under the dot, so at scale 1 it is hidden and only its growth shows. */
+@property --ig-s {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --ig-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+[data-ignite] > .ig-dot,
+[data-ignite] > .ig-halo {
+  grid-area: 1 / 1;
+  border-radius: 50%;
+}
+
+[data-ignite] > .ig-dot {
+  --ig-fill: var(--signal);
+  position: relative;
+  background: none;
+  transform: scale(var(--ig-s));
+}
+
+[data-ignite] > .ig-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ig-fill);
+  opacity: var(--ig-a);
+}
+
+[data-ignite] > .ig-dot[data-lamp="lit"] {
+  --ig-fill: var(--activation);
+}
+
+[data-ignite] > .ig-halo {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--activation);
+  opacity: 0;
+}
+
+[data-theme="light"] [data-ignite] > .ig-dot {
+  --ig-rim: var(--signal-access);
+  box-shadow: 0 0 0 calc(1px / var(--ig-s)) var(--ig-rim);
+}
+
+[data-theme="light"] [data-ignite] > .ig-dot[data-lamp="lit"] {
+  --ig-rim: var(--activation-ink);
+}
+
+/* The breath: scale and the fill's opacity, never the dot's own opacity, so
+   the rim holds. Only with motion allowed and not paused, so reduced motion
+   and the site's "Pause motion" stop it live, mid-run, without a reload. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="paused"]) [data-ignite][data-phase="running"] > .ig-dot {
+    animation: ig-breathe 1600ms ease-in-out infinite;
+  }
+}
+
+@keyframes ig-breathe {
+  0%,
+  100% { --ig-s: 1; --ig-a: 1; }
+  50% { --ig-s: 0.86; --ig-a: 0.72; }
+}
+
+/* The score form's run line: the lone dot and what is being scored. It
+   stands over the loader while the run is out and over the result once it
+   lands, so the dot that breathed is the dot that lights. The loading card
+   below keeps the same words for screen readers; this line is drawn only. */
+.score-run-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-28) 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.score-lamp {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 8px;
+  height: 8px;
+}
+
+.score-lamp > i {
+  width: 8px;
+  height: 8px;
+}
+
+.score-run-line + .score-verify-log,
+.score-run-line + .score-results {
+  margin-top: var(--space-12);
+}
+
 .score-verify-log-list {
   list-style: none;
   margin: 0;

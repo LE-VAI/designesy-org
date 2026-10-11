@@ -16,6 +16,7 @@ import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData 
 import { bandOf, display } from './types';
 import { registerStyle } from './lattice';
 import { fmtScore, statusCountWords } from '../../score/verdict';
+import { useIgnition } from './ignition';
 
 export type Face = 'tiles' | 'paths' | 'files' | 'engines' | 'diff';
 
@@ -85,6 +86,9 @@ type Props = {
   restGrade?: boolean;
   /** Replaces the whole resting side (the converter's output frame). */
   restSide?: ReactNode;
+  /** The loading ignition (lib/engine/ignition.ts): the mark's dot breathes
+      while a run is out and lights when a verdict lands. The score only. */
+  ignite?: boolean;
 };
 
 // The status words every result surface uses (score/verdict.ts STATUS_LABEL),
@@ -162,6 +166,9 @@ export function Instrument(props: Props) {
   const leave = useRef<number | null>(null);
   const uid = useId();
   const { live: elapsed, took } = useElapsed(phase);
+  const lampDot = useRef<HTMLElement | null>(null);
+  const lampHalo = useRef<HTMLElement | null>(null);
+  useIgnition(lampDot, lampHalo, phase, !!verdict, !!props.ignite);
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
@@ -558,7 +565,14 @@ export function Instrument(props: Props) {
       <i className="eg-inst-verdict" aria-hidden="true" data-band={lightBand} />
       <div className="eg-inst-bar">
         <span className="eg-inst-app">
-          <i className="eg-mark" aria-hidden="true"><i /></i>
+          {props.ignite ? (
+            <i className="eg-mark" aria-hidden="true" data-ignite="" data-phase={phase}>
+              <i className="ig-halo" ref={lampHalo} />
+              <i className="ig-dot" ref={lampDot} />
+            </i>
+          ) : (
+            <i className="eg-mark" aria-hidden="true"><i /></i>
+          )}
           {name}
         </span>
         <span className="eg-inst-target">

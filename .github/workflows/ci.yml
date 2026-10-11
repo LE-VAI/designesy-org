@@ -591,7 +591,8 @@ jobs:
   # status and LCP gates arrived; on a pull request it hit its 25-minute limit
   # inside Dock clearance. The parts run side by side, balanced by the step
   # times of a green run on main (38086271824):
-  #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17
+  #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17,
+  #           ignition (added later, about 30 locally)
   #   part 2  focus visibility 187, a11y sweep 101 (the full set), and
   #           a11y modes 59 (added later; its first run, 38099424155)
   #   part 3  dock clearance 443 (304-443 across that day's green runs)
@@ -724,6 +725,14 @@ jobs:
       # in one live region that was there before it (or an alert).
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
+
+      # The score's loading ignition (brand D51, rulings D54) runs on a fake
+      # clock and every frame is read: the OKLCH sweep, the ring, the hold, the
+      # swap back, the light rim at full strength through the breath, the calm
+      # path's instant swaps (no intermediate colour) under reduced motion and
+      # under "Pause motion", and exactly one ignition per landing.
+      - name: Loading ignition
+        run: node scripts/check-ignition.js --base http://127.0.0.1:3422 --channel chrome
 
       - name: Summarize
         if: always()
