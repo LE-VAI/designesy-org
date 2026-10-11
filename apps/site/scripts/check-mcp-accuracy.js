@@ -63,6 +63,8 @@
  *                        font stacks as family names, aliases that resolve to a
  *                        token of their type), and the server's own tokens
  *                        validator gives it 0 WARN and 0 FAIL
+ *   monitor-m01          m01 SKIPs a first run (no history: nothing is scheduled or
+ *                        stored server-side) and is then not scored; PASSes with history
  *   monitor-m09          m09 reports the contract version designesy_score reads
  *   compare-rounding     every number in a compare result has at most two decimals
  *
@@ -388,6 +390,31 @@ async function monitorM09() {
   return { findings, measured: m09.detail };
 }
 
+async function monitorM01() {
+  // m01 PASSed on every call ("Monitor run executed: the URL is being
+  // watched") though the route schedules and stores nothing: the caller sends
+  // the earlier runs. It must PASS only with history, and SKIP a first run,
+  // which then is not scored.
+  const findings = [];
+  const h = siteHarness();
+  const first = await h.post('app/api/monitor/route.ts', { url: FIXTURES.site.url });
+  const m01First = (first.body.monitorChecks || []).find((c) => c.id === 'm01');
+  if (!m01First || m01First.status !== 'SKIP') {
+    findings.push({ id: 'monitor-m01:first-run', why: `With no history m01 is ${m01First ? `${m01First.status} ("${m01First.detail}")` : 'missing'}; nothing was supplied to compare against, so it must SKIP.` });
+  }
+  const scored = (first.body.monitorChecks || []).filter((c) => c.status !== 'SKIP');
+  const points = scored.reduce((s, c) => s + (c.status === 'PASS' ? 1 : c.status === 'WARN' ? 0.5 : 0), 0);
+  if (scored.length && first.body.score !== Math.round((points / scored.length) * 100)) {
+    findings.push({ id: 'monitor-m01:skip-scored', why: `The first-run score ${first.body.score} counts the SKIP; over the ${scored.length} scored checks it is ${Math.round((points / scored.length) * 100)}.` });
+  }
+  const second = await h.post('app/api/monitor/route.ts', { url: FIXTURES.site.url, history: [first.body.currentSnapshot] });
+  const m01Second = (second.body.monitorChecks || []).find((c) => c.id === 'm01');
+  if (!m01Second || m01Second.status !== 'PASS') {
+    findings.push({ id: 'monitor-m01:with-history', why: `With one earlier run m01 is ${m01Second ? m01Second.status : 'missing'}; it must PASS.` });
+  }
+  return { findings, measured: `first run m01 ${m01First && m01First.status} score ${first.body.score}; with history m01 ${m01Second && m01Second.status} score ${second.body.score}` };
+}
+
 async function compareRounding() {
   const findings = [];
   const h = siteHarness();
@@ -533,6 +560,7 @@ const CHECKS = [
   ['tokens-alias', tokensAlias],
   ['export-dtcg', exportDtcg],
   ['guardrails-dtcg', guardrailsDtcg],
+  ['monitor-m01', monitorM01],
   ['monitor-m09', monitorM09],
   ['compare-rounding', compareRounding],
 ];
