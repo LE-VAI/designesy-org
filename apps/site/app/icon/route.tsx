@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { IMAGE_CACHE_HEADERS } from '../lib/image-cache';
 
 // A plain route, not the app/icon.tsx metadata convention (brand D55). As a
 // metadata icon it put <link rel="icon" href="/icon" sizes="32x32"> in every
@@ -40,6 +41,6 @@ export function GET() {
         </svg>
       </div>
     ),
-    size
+    { ...size, headers: IMAGE_CACHE_HEADERS }
   );
 }
