@@ -9,7 +9,7 @@ export type VerdictInput = {
   /** Set by /api/score when the target could not be fetched at all. */
   unreachable?: boolean;
   unreachableDetail?: string;
-  categoryScores?: Record<string, { score: number | null }>;
+  categoryScores?: Record<string, { score: number | null; fail?: number; weight?: number }>;
 };
 
 export const CATEGORIES: { key: string; label: string }[] = [
@@ -46,15 +46,32 @@ export function categoryChips(checks: { category: string }[]): { key: string; la
   return [...known, ...extra].map((key) => ({ key, label: categoryLabel(key), count: counts.get(key) || 0 }));
 }
 
-// Strongest / weakest scored categories for the hero meta line.
+// Strongest / weakest scored categories for the hero meta line. Every
+// category tied at the top (or bottom) is named: picking the first after a
+// sort named 1 of 5 tied at 100 ("Strongest: Tokens 100%") and 1 of 2 tied
+// at 50, by the API's insertion order. Three or more read as a count.
 export function topCategories(r: VerdictInput, mode: 'best' | 'worst'): { label: string; score: number | null } {
   const entries = Object.entries(r.categoryScores || {}).filter(([, v]) => v.score !== null);
   if (entries.length === 0) return { label: '', score: null };
-  const sorted = entries.sort((a, b) => (mode === 'best' ? (b[1].score! - a[1].score!) : (a[1].score! - b[1].score!)));
-  const [key, val] = sorted[0];
-  const label = CATEGORIES.find((c) => c.key === key)?.label
-    || key.charAt(0).toUpperCase() + key.slice(1);
-  return { label, score: val.score };
+  const scores = entries.map(([, v]) => v.score as number);
+  const score = mode === 'best' ? Math.max(...scores) : Math.min(...scores);
+  const tied = entries.filter(([, v]) => v.score === score).map(([key]) => categoryLabel(key));
+  const label = tied.length === 1 ? tied[0] : tied.length === 2 ? `${tied[0]} and ${tied[1]}` : `${tied.length} categories`;
+  return { label, score };
+}
+
+// Every category the engine scored, heaviest weight first (ties keep the
+// contract's order). The bars, the rubric and the receipt list them all: a
+// fixed list of 11 left out copywriting, security and DESIGN.md, so 6 of 44
+// checks had no category view and the rubric's weights summed to 100 while
+// the engine's sum to 117.
+export function categoryOrder(scores: Record<string, { weight?: number }> | undefined): string[] {
+  const keys = Object.keys(scores || {});
+  const rank = (k: string) => {
+    const i = CATEGORIES.findIndex((c) => c.key === k);
+    return i < 0 ? CATEGORIES.length : i;
+  };
+  return keys.sort((a, b) => (scores![b].weight ?? 0) - (scores![a].weight ?? 0) || rank(a) - rank(b));
 }
 
 // A run that read nothing is not a score. The API answers ok with total 0
@@ -87,9 +104,29 @@ export function verdictLine(r: VerdictInput): string {
   }
   if (fails > 0) {
     const worst = topCategories(r, 'worst');
-    return `${fails} contract ${fails === 1 ? 'violation' : 'violations'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
+    return `${fails} failed ${fails === 1 ? 'check' : 'checks'}${worst.label ? `, weakest in ${worst.label}` : ''}.`;
   }
   return 'Partial conformance: passes the floor, but the contract sees warnings the eye forgives.';
+}
+
+// The sentence the report's live region reads when a run lands, in the
+// approved words: "Contract score D, 67.9 out of 100. 1 failed check, in
+// Accessibility." The categories named are those with a failed check, most
+// failures first (then the heavier weight).
+export function resultAnnouncement(r: VerdictInput & { grade?: string | null; score?: number | null }): string {
+  const value = (Math.round((r.score ?? 0) * 10) / 10).toFixed(1);
+  const head = `Contract score ${r.grade ?? 'F'}, ${value} out of 100.`;
+  const fails = r.fail ?? 0;
+  if (fails === 0) return `${head} No failed checks.`;
+  const where = Object.entries(r.categoryScores ?? {})
+    .filter(([, c]) => (c.fail ?? 0) > 0)
+    .sort(([, a], [, b]) => (b.fail ?? 0) - (a.fail ?? 0) || (b.weight ?? 0) - (a.weight ?? 0))
+    .map(([key]) => categoryLabel(key));
+  const count = `${fails} failed ${fails === 1 ? 'check' : 'checks'}`;
+  if (where.length === 0) return `${head} ${count}.`;
+  if (where.length === 1) return `${head} ${count}, in ${where[0]}.`;
+  if (where.length === 2) return `${head} ${count}, in ${where[0]} and ${where[1]}.`;
+  return `${head} ${count} across ${where.length} categories, most in ${where[0]}.`;
 }
 
 // ── Evidence ──────────────────────────────────────────────────────────────

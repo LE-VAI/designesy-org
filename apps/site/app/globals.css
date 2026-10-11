@@ -9996,6 +9996,27 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
 }
 
+/* Buttons on the result surfaces take the page's faces. A <button> does not
+   inherit font-family by default, and none of the result's button classes set
+   one, so the category list, filter tabs, chips, actions and the report's
+   category chips drew in the browser's control font (Arial on Windows, the
+   system face on a phone): a fourth face against the contract's three.
+   :where() keeps this at zero class weight, so a button class that sets its
+   own face (mono, say) still wins. */
+:where(.score-form, .report, .report-error, .report-empty) button {
+  font-family: inherit;
+}
+
+/* The notice's text and its one way on. The alert region (role="alert") is
+   the text alone, so it is announced without the button's name in it. */
+.score-error-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
 /* ── Score Welcome / Idle State ─────────────────────────────────────────── */
 
 .score-welcome-card {
@@ -10637,8 +10658,10 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--muted);
 }
 
+/* Result text holds 12px (0.75rem): the tile's check count, the report's
+   check statuses and the run time were set at 10.4 and 10.9px. */
 .score-engine-tile-count {
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -10657,10 +10680,22 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--error-ink);
 }
 
+/* Proportional figures: the score is a standalone decimal (see .num-punct). */
 .score-engine-tile-score {
   font-size: 0.85rem;
   font-weight: 600;
   opacity: 0.7;
+  font-variant-numeric: proportional-nums;
+}
+
+/* Standalone decimal figures take proportional digits. Schibsted Grotesk's
+   tabular figures give the period and the percent sign a digit's full advance
+   (10px against 4px for the period at 14px), so 67.9% read "67 . 9%".
+   Tabular figures stay where numbers line up in a column. The ring's figure
+   counts up, so its digits stay tabular (no wobble) and only its punctuation,
+   wrapped in .num-punct, is proportional. */
+.num-punct {
+  font-variant-numeric: proportional-nums;
 }
 
 .score-engine-tile-pwf {
@@ -11660,11 +11695,26 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   background: var(--surface-raised);
 }
 
-/* Focus sits inside the row, so the ring is not cut by the rows around it. */
-.score-card-item:focus-visible {
+/* Focus sits inside the row, so the ring is not cut by the rows around it.
+   The focusable element is the title's button (.score-card-toggle); where :has
+   is supported the row draws the ring for it, otherwise the button draws its
+   own around the title. */
+.score-card-toggle:focus-visible {
   outline: 2px solid var(--signal-access);
-  outline-offset: -2px;
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
   box-shadow: none;
+}
+@supports selector(:has(*)) {
+  .score-card-item:has(> .score-card-main .score-card-toggle:focus-visible) {
+    outline: 2px solid var(--signal-access);
+    outline-offset: -2px;
+    box-shadow: none;
+  }
+  .score-card-toggle:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
 }
 
 /* Press: a row darkens instead of scaling, since a scaled row would pull its
@@ -11739,6 +11789,44 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
      on every card's right. */
   max-inline-size: 100%;
   text-wrap: pretty;
+}
+
+/* The row's disclosure button: the title itself, reset to read as the title.
+   Its ::after covers the row (the card is position: relative), so a press
+   anywhere on the row opens it, as the whole row did when it was a div with
+   role="button". The drawer sits above that layer, so its text can be
+   selected without closing it, and the chevron lets presses through. */
+.score-card-toggle {
+  appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-wrap: inherit;
+  cursor: pointer;
+}
+.score-card-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+.score-card-right {
+  pointer-events: none;
+}
+.score-card-drawer {
+  position: relative;
+  z-index: 1;
+  cursor: auto;
+}
+/* The drawer stays in the DOM, so aria-controls always names an element;
+   closed, it is hidden (its display: flex would otherwise outrank [hidden]). */
+.score-card-drawer[hidden] {
+  display: none;
 }
 
 .score-card-right {
@@ -12382,7 +12470,7 @@ html[data-motion="paused"] .pricing-card::after {
 .score-history-meta {
   font-size: 0.75rem;
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
 }
 
 .score-history-rerun {
@@ -12609,6 +12697,20 @@ html[data-motion="paused"] .pricing-card::after {
   margin-bottom: var(--space-24);
 }
 
+/* The failure's two ways on: run it again, or score another site. */
+.report-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-12);
+}
+
+/* A run that read nothing: the score form's empty-run card, in the report's
+   column. */
+.report-empty {
+  padding: var(--space-32) 0;
+}
+
 /* --- Report hero --- */
 
 .report-hero {
@@ -12645,7 +12747,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-size: clamp(2rem, 2rem + 0.9vw, 2.75rem);
   font-weight: 700;
   letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
 }
 
 .report-hero-pct {
@@ -12760,7 +12862,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-cat-score {
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
 }
 
 .report-cat-score--null {
@@ -12818,7 +12920,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-size: 0.9rem;
   color: var(--muted);
   font-weight: 400;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: proportional-nums;
 }
 
 .report-section-meta {
@@ -12865,7 +12967,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-status {
   flex-shrink: 0;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
@@ -13600,7 +13702,7 @@ select {
   margin-left: var(--space-8);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   color: var(--muted-dim);
   font-family: var(--mono);
   white-space: nowrap;

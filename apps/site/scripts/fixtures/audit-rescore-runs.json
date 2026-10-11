@@ -1,0 +1,1155 @@
+{
+ "$comment": "Engine runs from the site's own /api/score (scope auto), 2026-10-10, trimmed to what the arithmetic reads: check id, category and status, and the slop and originality totals. scripts/check-audit-rescore.mjs scores them with the shipped scoreArithmetic. To refresh after a deliberate arithmetic change, re-capture from a local next start and keep the same trimming.",
+ "runs": [
+  {
+   "site": "stripe.com",
+   "scope": "universal",
+   "score": 67.9,
+   "grade": "D",
+   "slopTotal": 19,
+   "originalityPoints": 8,
+   "checks": [
+    {
+     "id": "v01",
+     "category": "tokens",
+     "status": "SKIP"
+    },
+    {
+     "id": "v02",
+     "category": "responsive",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v03",
+     "category": "interaction",
+     "status": "PASS"
+    },
+    {
+     "id": "v04",
+     "category": "poise",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v05",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v06",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v07",
+     "category": "identity",
+     "status": "WARN"
+    },
+    {
+     "id": "v08",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v09",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v10",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v11",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v12",
+     "category": "motion",
+     "status": "WARN"
+    },
+    {
+     "id": "v13",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v14",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v15",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v16",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v17",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v18",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v19",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v20",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v21",
+     "category": "performance",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v22",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v23",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "x01",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x02",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x03",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v24",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v25",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v26",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v27",
+     "category": "accessibility",
+     "status": "FAIL"
+    },
+    {
+     "id": "v28",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v29",
+     "category": "tokens",
+     "status": "PASS"
+    },
+    {
+     "id": "v42",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v43",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v34",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v35",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v36",
+     "category": "security",
+     "status": "PASS"
+    },
+    {
+     "id": "v38",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v39",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v40",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v41",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v44",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v45",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "v37",
+     "category": "spec",
+     "status": "SKIP"
+    }
+   ]
+  },
+  {
+   "site": "pentagram.com",
+   "scope": "universal",
+   "score": 56.6,
+   "grade": "F",
+   "slopTotal": 20,
+   "originalityPoints": 4,
+   "checks": [
+    {
+     "id": "v01",
+     "category": "tokens",
+     "status": "SKIP"
+    },
+    {
+     "id": "v02",
+     "category": "responsive",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v03",
+     "category": "interaction",
+     "status": "PASS"
+    },
+    {
+     "id": "v04",
+     "category": "poise",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v05",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v06",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v07",
+     "category": "identity",
+     "status": "WARN"
+    },
+    {
+     "id": "v08",
+     "category": "poise",
+     "status": "SKIP"
+    },
+    {
+     "id": "v09",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v10",
+     "category": "takt",
+     "status": "SKIP"
+    },
+    {
+     "id": "v11",
+     "category": "motion",
+     "status": "FAIL"
+    },
+    {
+     "id": "v12",
+     "category": "motion",
+     "status": "WARN"
+    },
+    {
+     "id": "v13",
+     "category": "takt",
+     "status": "SKIP"
+    },
+    {
+     "id": "v14",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v15",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v16",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v17",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v18",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v19",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v20",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v21",
+     "category": "performance",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v22",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v23",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "x01",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x02",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x03",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v24",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v25",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v26",
+     "category": "cadence",
+     "status": "FAIL"
+    },
+    {
+     "id": "v27",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v28",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v29",
+     "category": "tokens",
+     "status": "PASS"
+    },
+    {
+     "id": "v42",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v43",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v34",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v35",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v36",
+     "category": "security",
+     "status": "PASS"
+    },
+    {
+     "id": "v38",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v39",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v40",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v41",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v44",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v45",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "v37",
+     "category": "spec",
+     "status": "SKIP"
+    }
+   ]
+  },
+  {
+   "site": "bolt.new",
+   "scope": "universal",
+   "score": 73.1,
+   "grade": "C",
+   "slopTotal": 20,
+   "originalityPoints": 8,
+   "checks": [
+    {
+     "id": "v01",
+     "category": "tokens",
+     "status": "SKIP"
+    },
+    {
+     "id": "v02",
+     "category": "responsive",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v03",
+     "category": "interaction",
+     "status": "PASS"
+    },
+    {
+     "id": "v04",
+     "category": "poise",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v05",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v06",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v07",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v08",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v09",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v10",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v11",
+     "category": "motion",
+     "status": "FAIL"
+    },
+    {
+     "id": "v12",
+     "category": "motion",
+     "status": "WARN"
+    },
+    {
+     "id": "v13",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v14",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v15",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v16",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v17",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v18",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v19",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v20",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v21",
+     "category": "performance",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v22",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v23",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "x01",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x02",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x03",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v24",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v25",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v26",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v27",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v28",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v29",
+     "category": "tokens",
+     "status": "PASS"
+    },
+    {
+     "id": "v42",
+     "category": "semantic",
+     "status": "PASS"
+    },
+    {
+     "id": "v43",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v34",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v35",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v36",
+     "category": "security",
+     "status": "PASS"
+    },
+    {
+     "id": "v38",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v39",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v40",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v41",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v44",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v45",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "v37",
+     "category": "spec",
+     "status": "WARN"
+    }
+   ]
+  },
+  {
+   "site": "v0.dev",
+   "scope": "universal",
+   "score": 65.5,
+   "grade": "D",
+   "slopTotal": 15,
+   "originalityPoints": 7,
+   "checks": [
+    {
+     "id": "v01",
+     "category": "tokens",
+     "status": "SKIP"
+    },
+    {
+     "id": "v02",
+     "category": "responsive",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v03",
+     "category": "interaction",
+     "status": "PASS"
+    },
+    {
+     "id": "v04",
+     "category": "poise",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v05",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v06",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v07",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v08",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v09",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v10",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v11",
+     "category": "motion",
+     "status": "FAIL"
+    },
+    {
+     "id": "v12",
+     "category": "motion",
+     "status": "WARN"
+    },
+    {
+     "id": "v13",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v14",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v15",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v16",
+     "category": "cadence",
+     "status": "WARN"
+    },
+    {
+     "id": "v17",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v18",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v19",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v20",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v21",
+     "category": "performance",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v22",
+     "category": "accessibility",
+     "status": "SKIP"
+    },
+    {
+     "id": "v23",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "x01",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "x02",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "x03",
+     "category": "cadence",
+     "status": "SKIP"
+    },
+    {
+     "id": "v24",
+     "category": "accessibility",
+     "status": "WARN"
+    },
+    {
+     "id": "v25",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v26",
+     "category": "cadence",
+     "status": "FAIL"
+    },
+    {
+     "id": "v27",
+     "category": "accessibility",
+     "status": "FAIL"
+    },
+    {
+     "id": "v28",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v29",
+     "category": "tokens",
+     "status": "SKIP"
+    },
+    {
+     "id": "v42",
+     "category": "semantic",
+     "status": "SKIP"
+    },
+    {
+     "id": "v43",
+     "category": "semantic",
+     "status": "WARN"
+    },
+    {
+     "id": "v34",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v35",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v36",
+     "category": "security",
+     "status": "PASS"
+    },
+    {
+     "id": "v38",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v39",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v40",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v41",
+     "category": "copywriting",
+     "status": "WARN"
+    },
+    {
+     "id": "v44",
+     "category": "accessibility",
+     "status": "FAIL"
+    },
+    {
+     "id": "v45",
+     "category": "motion",
+     "status": "SKIP"
+    },
+    {
+     "id": "v37",
+     "category": "spec",
+     "status": "WARN"
+    }
+   ]
+  },
+  {
+   "site": "www.designesy.org",
+   "scope": "contract",
+   "score": 100,
+   "grade": "A",
+   "slopTotal": 0,
+   "originalityPoints": 8,
+   "checks": [
+    {
+     "id": "v01",
+     "category": "tokens",
+     "status": "PASS"
+    },
+    {
+     "id": "v02",
+     "category": "responsive",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v03",
+     "category": "interaction",
+     "status": "PASS"
+    },
+    {
+     "id": "v04",
+     "category": "poise",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v05",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v06",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v07",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v08",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v09",
+     "category": "poise",
+     "status": "PASS"
+    },
+    {
+     "id": "v10",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v11",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v12",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v13",
+     "category": "takt",
+     "status": "PASS"
+    },
+    {
+     "id": "v14",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v15",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v16",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v17",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v18",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v19",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v20",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v21",
+     "category": "performance",
+     "status": "MANUAL"
+    },
+    {
+     "id": "v22",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v23",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "x01",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "x02",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "x03",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v24",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v25",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v26",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v27",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v28",
+     "category": "cadence",
+     "status": "PASS"
+    },
+    {
+     "id": "v29",
+     "category": "tokens",
+     "status": "PASS"
+    },
+    {
+     "id": "v42",
+     "category": "semantic",
+     "status": "PASS"
+    },
+    {
+     "id": "v43",
+     "category": "semantic",
+     "status": "PASS"
+    },
+    {
+     "id": "v34",
+     "category": "identity",
+     "status": "PASS"
+    },
+    {
+     "id": "v35",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v36",
+     "category": "security",
+     "status": "PASS"
+    },
+    {
+     "id": "v38",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v39",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v40",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v41",
+     "category": "copywriting",
+     "status": "PASS"
+    },
+    {
+     "id": "v44",
+     "category": "accessibility",
+     "status": "PASS"
+    },
+    {
+     "id": "v45",
+     "category": "motion",
+     "status": "PASS"
+    },
+    {
+     "id": "v37",
+     "category": "spec",
+     "status": "PASS"
+    }
+   ]
+  }
+ ]
+}

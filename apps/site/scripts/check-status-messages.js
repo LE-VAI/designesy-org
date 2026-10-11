@@ -42,14 +42,30 @@
  *      and its dot draws at all: a line shorter than its stroke is only a dot
  *      with round caps, and with butt caps it drew nothing.
  *
+ * A finished run is announced too. On the report page, with /api/score held
+ * and then answered with a result, and on the home form run by an
+ * assistive-technology press:
+ *   E. the report's loading line arrives as a change to a region that was
+ *      mounted empty (a region's initial text is not announced, and the page
+ *      starts loading, so its loading line was never read);
+ *   F. when the result lands, that same region, still mounted, reads it in
+ *      the approved words ("Contract score D, 67.9 out of 100. ..."), and no
+ *      other live region repeats it (it used to unmount on success, leaving a
+ *      finished report silent with focus on the page body);
+ *   G. a run started by a screen reader's press (a trusted click with no key
+ *      or pointer event before it, as NVDA's Enter in browse mode sends) moves
+ *      focus to the verdict line, as a keyboard or pointer run does.
+ *
  * PROVING IT CAN FAIL
- * Against a build without the fix, A fails on every surface. --break injects
- * three later regressions into a fixed build, and the gate must exit 1:
+ * Against a build without the fix, A fails on every surface, and E, F and G
+ * fail on main. --break injects four later regressions into a fixed build,
+ * and the gate must exit 1:
  *   - the score form's alert becomes a freshly mounted status region (B),
  *   - the four-engine form's visible card becomes a second alert next to the
- *     instrument's polite line (C), and
+ *     instrument's polite line (C),
  *   - on every instrument surface, the side column's drawn reason becomes an
- *     alert next to the polite line (C, and the instrument form of B).
+ *     alert next to the polite line (C, and the instrument form of B), and
+ *   - the report's region is emptied once the result is drawn (F).
  *
  * Usage:
  *   node scripts/check-status-messages.js --base http://127.0.0.1:3422
@@ -211,7 +227,8 @@ const SURFACES = [
 const BREAK_SCRIPT = () => {
   const swap = () => {
     // Score form: its alert becomes a status region mounted with its text in it.
-    for (const el of document.querySelectorAll('.score-form:not(.eg-bench) .score-error-card[role="alert"]')) {
+    // The alert is the notice inside the card (the card also holds "Try again").
+    for (const el of document.querySelectorAll('.score-form:not(.eg-bench) .score-error-card [role="alert"]')) {
       el.setAttribute('role', 'status');
     }
     // Four-engine form: the visible card becomes a second announcer.
@@ -223,8 +240,12 @@ const BREAK_SCRIPT = () => {
     for (const el of document.querySelectorAll('.eg-inst .eg-error:not([role])')) {
       el.setAttribute('role', 'alert');
     }
+    // Report: the result is drawn but its region says nothing.
+    if (document.querySelector('.report')) {
+      for (const el of document.querySelectorAll('p.sr-only[role="status"]')) if (el.textContent) el.textContent = '';
+    }
   };
-  new MutationObserver(swap).observe(document, { childList: true, subtree: true });
+  new MutationObserver(swap).observe(document, { childList: true, subtree: true, characterData: true });
 };
 
 function deferred() {
@@ -415,6 +436,144 @@ async function probe(browser, surface) {
   return out;
 }
 
+// ── E, F, G: a finished run is announced ────────────────────────────────
+// Every live region's text from the moment it enters the document: its text
+// on arrival, then each change. Installed before the page parses, so a region
+// in the server's HTML is caught with what it arrived holding.
+const LIVE_LOG = () => {
+  window.__live = [];
+  const seen = new Map();
+  const sel = '[aria-live], [role="status"], [role="alert"], [role="log"]';
+  const scan = () => {
+    for (const el of document.querySelectorAll(sel)) {
+      const text = el.textContent.replace(/\s+/g, ' ').trim();
+      let rec = seen.get(el);
+      if (!rec) {
+        rec = { id: window.__live.length, first: text, texts: [text], el };
+        seen.set(el, rec);
+        window.__live.push(rec);
+      } else if (rec.texts[rec.texts.length - 1] !== text) {
+        rec.texts.push(text);
+      }
+    }
+  };
+  new MutationObserver(scan).observe(document, { childList: true, subtree: true, characterData: true });
+};
+
+// A screen reader's press: the page sees a trusted click and no key or
+// pointer event before it. Installed first, so it runs before the page's own
+// listeners and keeps every keydown from them; Enter still presses the button.
+const AT_PRESS = () => {
+  window.addEventListener('keydown', (e) => e.stopImmediatePropagation(), { capture: true });
+  window.addEventListener('pointerdown', (e) => e.stopImmediatePropagation(), { capture: true });
+};
+
+const ANNOUNCED = /^Contract score [A-F], \d{1,3}\.\d out of 100\./;
+
+async function probeReportRun(browser) {
+  const out = { surface: 'report page: loading, then a result', failures: [] };
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await ctx.addInitScript(LIVE_LOG);
+  if (BREAK) await ctx.addInitScript(BREAK_SCRIPT);
+  const gate = deferred();
+  const arrived = deferred();
+  await ctx.route('**/api/score', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    arrived.release();
+    await gate.promise;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SCORED.body) });
+  });
+  const page = await ctx.newPage();
+  try {
+    await page.goto(BASE + '/score/report?url=example.com', { waitUntil: 'load', timeout: 60000 });
+    await Promise.race([
+      arrived.promise,
+      page.waitForTimeout(30000).then(() => {
+        throw new Error('the /api/score request never arrived');
+      }),
+    ]);
+    await page.waitForTimeout(800);
+    gate.release();
+    await page.locator('.report').first().waitFor({ timeout: 20000 });
+    await page.waitForTimeout(1200);
+    const log = await page.evaluate(() =>
+      window.__live.map((r) => ({
+        first: r.first,
+        texts: r.texts,
+        connected: r.el.isConnected,
+        now: r.el.textContent.replace(/\s+/g, ' ').trim(),
+      })),
+    );
+    out.live = log;
+    const loading = log.find((r) => r.texts.some((t) => /^Evaluating .*contract checks/.test(t)));
+    if (!loading) {
+      out.failures.push('E: no live region ever carried the loading line');
+    } else if (/^Evaluating/.test(loading.first)) {
+      out.failures.push(`E: the loading line was in its region when the region arrived ("${loading.first}"), so it is never announced`);
+    }
+    const carrying = log.filter((r) => r.connected && ANNOUNCED.test(r.now));
+    if (carrying.length === 0) {
+      const where = loading && !loading.connected ? 'its region unmounted when the result was drawn' : 'no live region reads it';
+      out.failures.push(`F: the finished result is not announced: ${where}`);
+    } else {
+      if (carrying.length > 1) out.failures.push(`F: ${carrying.length} live regions read the result, so it is announced ${carrying.length} times`);
+      if (loading && !carrying.some((r) => r.texts.some((t) => /^Evaluating/.test(t)))) {
+        out.failures.push('F: the result is read by a region mounted with it, not by the region that carried the run');
+      }
+      out.announced = carrying[0].now;
+    }
+  } catch (e) {
+    out.failures.push(`could not measure: ${e.message.split('\n')[0]}`);
+    out.fatal = true;
+  } finally {
+    gate.release();
+    await ctx.close();
+  }
+  return out;
+}
+
+async function probeAtPress(browser) {
+  const out = { surface: 'score form: a run a screen reader starts', failures: [] };
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await ctx.addInitScript(AT_PRESS);
+  await ctx.route('**/api/score', (route) =>
+    route.request().method() === 'POST'
+      ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SCORED.body) })
+      : route.continue(),
+  );
+  const page = await ctx.newPage();
+  try {
+    await page.goto(BASE + '/', { waitUntil: 'load', timeout: 60000 });
+    await page.waitForFunction(
+      () => {
+        const f = document.querySelector('form.eg-bar');
+        return !!f && Object.keys(f).some((k) => k.startsWith('__react'));
+      },
+      null,
+      { timeout: 30000 },
+    );
+    await page.getByRole('textbox', { name: 'Site URL to score' }).fill('example.com');
+    await page.locator('form.eg-bar button[type="submit"]').first().focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.score-verdict-line').first().waitFor({ timeout: 20000 });
+    await page.waitForTimeout(1200);
+    const focus = await page.evaluate(() => {
+      const a = document.activeElement;
+      return a ? `${a.tagName.toLowerCase()}${a.className ? '.' + String(a.className).split(' ').join('.') : ''}` : 'none';
+    });
+    out.focus = focus;
+    if (!/score-verdict-line/.test(focus)) {
+      out.failures.push(`G: after a run started by an assistive-technology press, focus stayed on ${focus}, not the verdict line`);
+    }
+  } catch (e) {
+    out.failures.push(`could not measure: ${e.message.split('\n')[0]}`);
+    out.fatal = true;
+  } finally {
+    await ctx.close();
+  }
+  return out;
+}
+
 (async () => {
   let browser;
   try {
@@ -425,6 +584,8 @@ async function probe(browser, surface) {
   }
   const results = [];
   for (const surface of SURFACES) results.push(await probe(browser, surface));
+  results.push(await probeReportRun(browser));
+  results.push(await probeAtPress(browser));
   await browser.close();
 
   const failed = results.filter((r) => r.failures.length);
@@ -433,7 +594,8 @@ async function probe(browser, surface) {
   } else {
     for (const r of results) {
       const where = (r.hits || []).map((h) => (h.root === null ? 'not live' : `${h.rootRole}`)).join(', ');
-      console.log(`  ${r.failures.length ? 'FAIL' : 'ok  '} ${r.surface}${where ? `: message in ${where}` : ''}`);
+      const said = r.announced ? `: reads "${r.announced}"` : r.focus ? `: focus on ${r.focus}` : '';
+      console.log(`  ${r.failures.length ? 'FAIL' : 'ok  '} ${r.surface}${where ? `: message in ${where}` : ''}${said}`);
       if (r.line !== undefined) console.log(`         live line: ${JSON.stringify(r.line)}`);
       for (const f of r.failures) console.log(`         ${f}`);
     }
@@ -444,6 +606,8 @@ async function probe(browser, surface) {
     process.exit(1);
   }
   if (!AS_JSON) {
-    console.log(`Status messages gate passed: a failed run is announced once on ${results.length} surfaces.`);
+    console.log(
+      `Status messages gate passed: a failed run is announced once on ${results.length - 2} surfaces, the report announces its loading line and its result, and a run a screen reader starts lands on the verdict.`,
+    );
   }
 })();
