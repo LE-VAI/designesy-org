@@ -12,7 +12,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
-import { bandOf, display } from './types';
+import { display } from './types';
 import { registerStyle } from './lattice';
 import { fmtScore, statusCountWords } from '../../score/verdict';
 import { useIgnition } from './ignition';
@@ -121,7 +121,7 @@ export function GradeScale({ score, grade }: { score?: number; grade?: string })
           <span
             key={z.grade}
             className={`eg-scale-zone${here === z ? ' is-here' : ''}`}
-            data-band={grade ? bandOf(grade) : undefined}
+            data-grade={grade ? grade.toLowerCase() : undefined}
             style={{ '--w': z.w } as CSSProperties}
           />
         ))}
@@ -417,9 +417,11 @@ export function Instrument(props: Props) {
   const stateLabel =
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
-  // The verdict light's hue: the grade's band once a verdict lands, the fail
-  // hue when the run stops without one. No band, no light.
-  const lightBand = phase === 'done' && verdict ? bandOf(verdict.grade) : phase === 'error' ? 'fail' : undefined;
+  // The verdict light's hue: the verdict's grade once it lands, in the grade
+  // palette (brand ledger D56); the fail hue when the run stops without one.
+  // No verdict and no stop, no light.
+  const lightGrade = phase === 'done' && verdict ? verdict.grade.toLowerCase() : undefined;
+  const lightBand = phase === 'error' ? 'fail' : undefined;
 
   // The probe (a check under the pointer or keyboard focus) is drawn OVER the
   // resting side, not instead of it; see the eg-side render below.
@@ -558,7 +560,7 @@ export function Instrument(props: Props) {
           moves (engine.css). Signal while a run is out; the verdict's hue
           once, when the answer lands. */}
       <i className="eg-inst-glow" aria-hidden="true" />
-      <i className="eg-inst-verdict" aria-hidden="true" data-band={lightBand} />
+      <i className="eg-inst-verdict" aria-hidden="true" data-grade={lightGrade} data-band={lightBand} />
       <div className="eg-inst-bar">
         <span className="eg-inst-app">
           {props.ignite ? (

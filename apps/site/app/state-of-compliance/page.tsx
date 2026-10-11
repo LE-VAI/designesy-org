@@ -36,7 +36,6 @@ import {
   byUrl,
   fmt,
   round1,
-  toneOf,
   scoreTone,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
@@ -196,7 +195,7 @@ export default function StateOfCompliancePage() {
                 meta: BAND_TEXT[g],
                 value: GRADE_COUNTS[g],
                 display: String(GRADE_COUNTS[g]),
-                tone: toneOf(g),
+                grade: g,
               }))}
             />
           </DataFigure>
@@ -351,7 +350,7 @@ export default function StateOfCompliancePage() {
                   {s.name}
                   {s.self ? ' (self-scored)' : ''}
                 </Link>,
-                <span key="g" className="dx-grade" data-tone={toneOf(s.grade)}>
+                <span key="g" className="dx-grade" data-grade={s.grade.toLowerCase()}>
                   {s.grade}
                 </span>,
                 fmt(s.score),

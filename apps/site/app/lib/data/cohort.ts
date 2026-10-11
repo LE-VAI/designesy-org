@@ -144,8 +144,10 @@ export const GRADE_BANDS: { grade: Grade; min: number; max: number }[] = [
   { grade: 'A', min: 90, max: 100 },
 ];
 
-/** A and B pass, C and D warn, F fails: the band a grade is drawn in, shared
-    with the engine instruments (lib/engine/types bandOf). */
+/** A and B pass, C and D warn, F fails: the three-tier band of a grade, for
+    category bars on the grade thresholds (D48). A grade itself is never drawn
+    in a band: chips, dots, zones and grade bars take data-grade and the grade
+    palette (brand ledger D56). */
 export function toneOf(grade: string): 'pass' | 'warn' | 'fail' {
   return grade === 'A' || grade === 'B' ? 'pass' : grade === 'C' || grade === 'D' ? 'warn' : 'fail';
 }

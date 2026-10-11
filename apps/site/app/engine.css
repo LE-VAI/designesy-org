@@ -304,11 +304,17 @@
   box-shadow: var(--glow-verdict);
 }
 
-.eg-inst-verdict[data-band="warn"] { --vc-hue: var(--lv-warn-a); }
 .eg-inst-verdict[data-band="fail"] { --vc-hue: var(--lv-fail-a); }
 
+/* A verdict lights in its grade's colour (brand ledger D56), never a band's. */
+.eg-inst-verdict[data-grade="a"] { --vc-hue: var(--grade-a); }
+.eg-inst-verdict[data-grade="b"] { --vc-hue: var(--grade-b); }
+.eg-inst-verdict[data-grade="c"] { --vc-hue: var(--grade-c); }
+.eg-inst-verdict[data-grade="d"] { --vc-hue: var(--grade-d); }
+.eg-inst-verdict[data-grade="f"] { --vc-hue: var(--grade-f); }
+
 /* 1950ms = 150 in + 1200 hold + 600 decay. */
-.eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
+.eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
   animation: eg-verdict-glow 1950ms var(--ease-out) both;
 }
 
@@ -1017,9 +1023,13 @@
   box-shadow: none;
 }
 
-.eg-scale-zone.is-here[data-band="pass"] { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); }
-.eg-scale-zone.is-here[data-band="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
-.eg-scale-zone.is-here[data-band="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+/* The zone the score lands in takes its grade's colour (brand ledger D56): a
+   B is lime, not the brand's Azure, and a D is rose, not C's amber. */
+.eg-scale-zone.is-here[data-grade="a"] { background: var(--grade-a); }
+.eg-scale-zone.is-here[data-grade="b"] { background: var(--grade-b); }
+.eg-scale-zone.is-here[data-grade="c"] { background: var(--grade-c); }
+.eg-scale-zone.is-here[data-grade="d"] { background: var(--grade-d); }
+.eg-scale-zone.is-here[data-grade="f"] { background: var(--grade-f); }
 
 .eg-scale-marker {
   --at: 0;
@@ -3346,7 +3356,7 @@ button.mt-row {
    State swaps keep their 150ms fade. */
 @media (prefers-reduced-motion: reduce) {
   .eg-inst[data-phase="running"] .eg-dot,
-  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
+  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
     animation: none;
   }
   .eg-inst-target > [data-host] {
@@ -3358,7 +3368,7 @@ button.mt-row {
 }
 
 html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-dot,
-html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
+html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
   animation: none;
 }
 

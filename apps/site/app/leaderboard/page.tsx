@@ -23,7 +23,6 @@ import {
   SCORES_ENGINE_VERSION,
   CATEGORY_LABELS,
   fmt,
-  toneOf,
   type CohortSite,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
@@ -98,7 +97,7 @@ function Row({ s }: { s: CohortSite }) {
       </th>
       <td data-num className="dx-rank-score">
         <span className="dx-rank-sg">
-          <span className="dx-grade" data-tone={toneOf(s.grade)}>
+          <span className="dx-grade" data-grade={s.grade.toLowerCase()}>
             {s.grade}
           </span>
           <span className="dx-rank-v">{fmt(s.score)}</span>

@@ -17,7 +17,7 @@ import { AgentActions } from '../lib/agent-actions';
 import { CATEGORY_WEIGHTS, CHECKS as REGISTRY, ENGINE_MANUAL_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import { display } from '../lib/engine/types';
-import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt, toneOf } from '../lib/data/cohort';
+import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt } from '../lib/data/cohort';
 import { DataTable } from '../lib/data/figure';
 import { unbroken } from '../lib/data/unbroken';
 
@@ -253,7 +253,7 @@ export default function BenchmarksPage() {
                   'designesy',
                   SELF ? (
                     <span key="s" className="dx-rank-sg">
-                      <span className="dx-grade" data-tone={toneOf(SELF.grade)}>
+                      <span className="dx-grade" data-grade={SELF.grade.toLowerCase()}>
                         {SELF.grade}
                       </span>
                       <span className="dx-num">{fmt(SELF.score)}</span>

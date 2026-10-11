@@ -12132,13 +12132,15 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line);
 }
 
-/* Grade tints reuse the existing is-a/is-b/is-c/is-d/is-f grade palette
-   defined for score-hero-card. Same tokens, no new colors. */
-.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal-text)); border-color: var(--grade-a-line, var(--line-strong)); }
-.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal-text)); border-color: var(--grade-b-line, var(--line)); }
-.score-history-emblem.is-c { color: var(--grade-c-text, var(--muted)); border-color: var(--grade-c-line, var(--line)); }
-.score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
-.score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
+/* A past score's grade in the grade palette (brand ledger D56): the letter in
+   --grade-*-ink, the rim in --grade-*. The old fallbacks drew A and B in the
+   brand's Azure and C, D and F in grey, since nothing set the --grade-*-text
+   properties they read first. */
+.score-history-emblem.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
+.score-history-emblem.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 45%, transparent); }
+.score-history-emblem.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 45%, transparent); }
+.score-history-emblem.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 45%, transparent); }
+.score-history-emblem.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 45%, transparent); }
 
 .score-history-body {
   flex: 1;

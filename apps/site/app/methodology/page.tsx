@@ -751,7 +751,7 @@ export default function MethodologyPage() {
                   {[...GRADES].map((g) => (
                     <div key={g}>
                       <dt>
-                        <span className="dx-grade" data-tone={g === 'A' || g === 'B' ? 'pass' : g === 'F' ? 'fail' : 'warn'}>
+                        <span className="dx-grade" data-grade={g.toLowerCase()}>
                           {g}
                         </span>
                         <span className="dx-band-range">{BAND_RANGE[g]}</span>

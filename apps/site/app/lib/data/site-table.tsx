@@ -5,7 +5,7 @@
 // score and profile columns sit at one x down a page of tables.
 
 import Link from 'next/link';
-import { BATCH_CATEGORIES, fmt, toneOf, type CohortSite } from './cohort';
+import { BATCH_CATEGORIES, fmt, type CohortSite } from './cohort';
 import { CategoryProfile, HeldTag } from './cells';
 
 export function SiteTable({
@@ -83,7 +83,7 @@ export function SiteTable({
               )}
               <td data-num className="dx-rank-score">
                 <span className="dx-rank-sg">
-                  <span className="dx-grade" data-tone={toneOf(s.grade)}>
+                  <span className="dx-grade" data-grade={s.grade.toLowerCase()}>
                     {s.grade}
                   </span>
                   <span className="dx-rank-v">{fmt(s.score)}</span>
