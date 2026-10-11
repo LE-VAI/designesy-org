@@ -37,7 +37,7 @@ function fixtureResponse(body, status = 200) {
  * @param {object} opts
  * @param {string} opts.app      apps/site directory whose code is loaded
  * @param {Record<string, unknown>} [opts.pages]  url -> body served by safeFetch and fetch
- * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not (return undefined for 404)
+ * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not: a body (undefined for 404), a Response, or a throw
  */
 function createHarness({ app, pages = {}, api = () => undefined }) {
   // Packages resolve from the loaded app first, then from this checkout, so a
@@ -57,13 +57,17 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
   const cache = new Map();
   const tools = new Map();
   const calls = [];
+  // The options the route passes to createMcpHandler (serverInfo, instructions).
+  const serverOptions = { value: null };
 
   const serve = async (input, init) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     calls.push({ url, method: (init && init.method) || 'GET' });
     if (Object.prototype.hasOwnProperty.call(pages, url)) return fixtureResponse(pages[url]);
+    // api may answer with a Response (any status and headers) or throw, as a
+    // failing network does; anything else is a 200 body (undefined is a 404).
     const answer = await api(url, init);
-    return fixtureResponse(answer);
+    return answer instanceof Response ? answer : fixtureResponse(answer);
   };
 
   // Bare-specifier stubs: the transport around the measurement.
@@ -74,7 +78,8 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
     },
     'next/cache': { unstable_cache: (fn) => fn },
     'mcp-handler': {
-      createMcpHandler: (register) => {
+      createMcpHandler: (register, options) => {
+        serverOptions.value = options || {};
         register({
           registerTool: (name, config, handler) => tools.set(name, { config, handler }),
           registerResource: () => {},
@@ -175,7 +180,13 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
     });
   }
 
-  return { load, post, callTool, calls, tools };
+  /** The options app/api/mcp/route.ts passes to createMcpHandler. */
+  function mcpOptions() {
+    load('app/api/mcp/route.ts');
+    return serverOptions.value;
+  }
+
+  return { load, post, callTool, calls, tools, mcpOptions };
 }
 
 module.exports = { createHarness };

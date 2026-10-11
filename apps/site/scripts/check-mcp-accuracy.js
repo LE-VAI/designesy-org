@@ -61,13 +61,43 @@
  *                        validator gives it 0 WARN and 0 FAIL
  *   monitor-m09          m09 reports the contract version designesy_score reads
  *   compare-rounding     every number in a compare result has at most two decimals
+ *   tool-definitions     every description and the server instructions fit in
+ *                        2,048 characters (Claude Code truncates there), open
+ *                        with what the tool does then "Use this when", name a
+ *                        sibling to use instead, hold no agent directive, and
+ *                        state the engine rate limits the routes enforce and
+ *                        the document sizes the site renders; every parameter
+ *                        carries an example and a tool without parameters takes
+ *                        {"type":"object","additionalProperties":false}; the
+ *                        ten scoring tools, and only they, declare an
+ *                        outputSchema; and descriptions, input and output
+ *                        schemas, instructions and the contract keys equal the
+ *                        golden the PyPI server is held to
+ *                        (packages/designesy-mcp/test/fixtures/tool-definitions.json)
+ *   structured-output    each scoring tool, driven through the real engine
+ *                        routes on the fixture site, returns structuredContent
+ *                        that equals its text block and passes its outputSchema
+ *                        (with the SDK's own validator), and each failure kind
+ *                        (HTTP 400, 429, 502, 504, a network error, a refused
+ *                        address, a 403, a 404, a reply that is not JSON)
+ *                        returns isError, no structuredContent, and the right
+ *                        retryable answer in both the field and the text
  *
+ * TOOL DEFINITIONS (added for designesy-mcp 1.13.9)
+ * The 2026-10-11 quality pass re-read every description against its handler.
+ * Three said what the code does not do: designesy_tokens_score named a
+ * $description check that none of t01-t10 runs, designesy_monitor_score listed
+ * "schedule registered" although nothing is scheduled (m01 passes on every
+ * call and the caller keeps the history), and the tokens and motion tools said
+ * "provide exactly one" of url and the inline file while the code quietly
+ * prefers the inline file. tool-definitions holds each fact to the code that
+ * decides it; --write-definitions regenerates the golden from this checkout.
  * --app <dir> runs the same checks against another checkout's apps/site, which
  * is how the failing verdicts on main were recorded. --measure <url> fetches a
  * live page once and prints what guardrails and drift report about it (the
  * before/after numbers for designesy.org); it is a measurement, not a gate.
  *
- * Usage:  node scripts/check-mcp-accuracy.js [--json] [--app <dir>] [--measure <url>]
+ * Usage:  node scripts/check-mcp-accuracy.js [--json] [--app <dir>] [--measure <url>] [--write-definitions]
  * Exits 1 on any finding, so it can gate CI.
  */
 
@@ -84,6 +114,30 @@ const arg = (name) => {
 };
 const APP = path.resolve(arg('--app') || path.join(__dirname, '..'));
 const FIXTURES = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'mcp-accuracy.json'), 'utf8'));
+
+// The golden both MCP servers' tool definitions are held to. It sits with the
+// PyPI package's fixtures, outside apps/site, so a Vercel build that uploads
+// only apps/site reports the comparison NOT EVALUATED instead of failing.
+const PYPI_FIXTURES = path.join(__dirname, '..', '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures');
+const DEFINITIONS = path.join(PYPI_FIXTURES, 'tool-definitions.json');
+// Claude Code truncates each tool description and each server's instructions
+// at 2,048 characters (https://code.claude.com/docs/en/mcp).
+const DESCRIPTION_LIMIT = 2048;
+const SCORING_TOOLS = [
+  'designesy_score', 'designesy_tokens_score', 'designesy_a11y_score', 'designesy_motion_score',
+  'designesy_drift_score', 'designesy_readiness_score', 'designesy_guardrails',
+  'designesy_monitor_score', 'designesy_compare', 'designesy_report',
+];
+// The engine route each page tool calls, for the stated rate limits.
+const ENGINE_ROUTES = {
+  designesy_score: 'app/api/score/route.ts',
+  designesy_drift_score: 'app/api/drift/route.ts',
+  designesy_readiness_score: 'app/api/readiness/route.ts',
+  designesy_guardrails: 'app/api/guardrails/route.ts',
+  designesy_monitor_score: 'app/api/monitor/route.ts',
+  designesy_compare: 'app/api/compare/route.ts',
+  designesy_report: 'app/api/report/route.ts',
+};
 
 // The 13 types DTCG 2025.10 defines (Format Module §8 and §9).
 const DTCG_TYPES = new Set([
@@ -403,6 +457,312 @@ async function compareRounding() {
   return { findings, measured: `delta ${delta}` };
 }
 
+// ── Tool definitions ──────────────────────────────────────────────────────────
+
+/** JSON with keys sorted, so two objects compare by content, not key order. */
+function canonicalJson(v) {
+  if (Array.isArray(v)) return `[${v.map(canonicalJson).join(',')}]`;
+  if (v !== null && typeof v === 'object') {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson(v[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
+/**
+ * The JSON Schema the SDK advertises for a registered schema: it reads the
+ * schema's StandardJSONSchemaV1 export with the draft-2020-12 target, and for
+ * an input schema adds type "object" when the root has none. $schema is left
+ * out of the comparison (zod writes it, a hand-written schema does not).
+ */
+function advertised(schema, io) {
+  const json = schema['~standard'].jsonSchema[io]({ target: 'draft-2020-12' });
+  const { $schema: _dialect, ...rest } = json;
+  return io === 'input' && rest.type === undefined ? { type: 'object', ...rest } : rest;
+}
+
+/** Everything a client reads about the tools, as this checkout's route registers it. */
+function renderedDefinitions(h) {
+  const options = h.mcpOptions();
+  const defs = h.load('app/lib/mcp-tool-definitions.ts');
+  const out = {
+    about: 'Tool-definition facts both MCP servers state alike. Generated from apps/site by node scripts/check-mcp-accuracy.js --write-definitions; checked there, by scripts/check-mcp-tool-parity.js, and by the PyPI suite (test/test_tool_definitions.py).',
+    instructions: options.instructions,
+    no_parameter_input_schema: defs.NO_PARAMETER_INPUT_SCHEMA,
+    contract_keys: Object.keys(h.load('app/lib/design-system-contract.ts').designSystemContract),
+    descriptions: {},
+    input_schemas: {},
+    output_schemas: {},
+  };
+  for (const [name, { config }] of h.tools) {
+    out.descriptions[name] = config.description;
+    out.input_schemas[name] = config.inputSchema ? advertised(config.inputSchema, 'input') : null;
+    if (config.outputSchema) out.output_schemas[name] = advertised(config.outputSchema, 'output');
+  }
+  return out;
+}
+
+/** The size, in characters, of what each document tool returns, rendered from this checkout. */
+async function documentSizes(h) {
+  const ref = h.load('app/lib/mcp-reference.ts');
+  const text = async (file) => (await h.load(file).GET()).text();
+  const size = (v) => JSON.stringify(v, null, 2).length;
+  const base = 'https://www.designesy.org';
+  return {
+    designesy_llms_txt: size(ref.publishedText(`${base}/llms.txt`, 'text/plain', await text('app/llms.txt/route.ts'))),
+    designesy_llms_full_txt: size(ref.publishedText(`${base}/llms-full.txt`, 'text/plain', await text('app/llms-full.txt/route.ts'))),
+    designesy_skill_md: size(ref.publishedText(`${base}/contracts/skill`, 'text/markdown', await text('app/contracts/skill/route.ts'))),
+    designesy_agent_json: size(ref.publishedJson(`${base}/.well-known/agent.json`, JSON.parse(await text('app/.well-known/agent.json/route.ts')))),
+  };
+}
+
+const commaNumber = (s) => Number(s.replace(/,/g, ''));
+
+async function toolDefinitions() {
+  const findings = [];
+  const push = (id, why) => findings.push({ id: `tool-definitions:${id}`, why });
+  const h = siteHarness();
+  const r = renderedDefinitions(h);
+  const { isAgentDirective } = h.load('app/lib/mcp-reference.ts');
+  const names = Object.keys(r.descriptions);
+
+  // Length: Claude Code shows 2,048 characters of each.
+  if (typeof r.instructions !== 'string' || r.instructions.length === 0) push('instructions-missing', 'The route passes no instructions to createMcpHandler.');
+  else if (r.instructions.length > DESCRIPTION_LIMIT) push('instructions-length', `The server instructions run to ${r.instructions.length} characters; Claude Code truncates at ${DESCRIPTION_LIMIT}.`);
+  const lengths = [];
+  for (const name of names) {
+    const d = r.descriptions[name];
+    lengths.push(d.length);
+    if (d.length > DESCRIPTION_LIMIT) push(`length:${name}`, `${name}'s description runs to ${d.length} characters; Claude Code truncates at ${DESCRIPTION_LIMIT}.`);
+    // Structure: what it does, then "Use this when", then a sibling to use instead.
+    const firstStop = d.indexOf('. ');
+    if (firstStop < 0 || !d.startsWith('Use this when ', firstStop + 2)) push(`structure:${name}`, `${name}'s second sentence does not start "Use this when".`);
+    if (!/When not to use: [^.]*designesy_\w+/.test(d)) push(`siblings:${name}`, `${name}'s description names no sibling tool under "When not to use".`);
+    // Neutral reference text (Software Directory Policy 2F).
+    if (isAgentDirective(d)) push(`directive:${name}`, `${name}'s description matches AGENT_DIRECTIVE_PATTERN_SOURCES.`);
+    if (/\byou must\b|\balways call\b|\bignore\b/i.test(d)) push(`imperative:${name}`, `${name}'s description addresses the assistant with an order.`);
+    if (/RESEND_API_KEY/.test(d)) push(`env-name:${name}`, `${name}'s description names an environment variable; say "a configured Resend key".`);
+  }
+  if (isAgentDirective(r.instructions || '')) push('directive:instructions', 'The server instructions match AGENT_DIRECTIVE_PATTERN_SOURCES.');
+
+  // Parameters: an example on each; the recommended schema for none.
+  for (const name of names) {
+    const schema = r.input_schemas[name];
+    const props = (schema && schema.properties) || {};
+    if (Object.keys(props).length === 0) {
+      if (canonicalJson(schema) !== canonicalJson({ type: 'object', additionalProperties: false })) {
+        push(`no-parameters:${name}`, `${name} takes no parameters but advertises ${JSON.stringify(schema)}, not {"type":"object","additionalProperties":false}.`);
+      }
+      continue;
+    }
+    for (const [p, ps] of Object.entries(props)) {
+      if (typeof ps.description !== 'string' || !/for example/.test(ps.description)) push(`parameter-example:${name}.${p}`, `${name}.${p} has no description with "for example".`);
+    }
+  }
+  const contract = r.input_schemas.designesy_contract.properties;
+  if (canonicalJson(contract.sections.items.enum) !== canonicalJson(r.contract_keys) || canonicalJson(contract.section.enum) !== canonicalJson(r.contract_keys)) {
+    push('contract-enum', 'designesy_contract\'s section and sections enums are not the contract\'s top-level keys.');
+  }
+
+  // Output schemas: the ten scoring tools, and only they.
+  const withOutput = Object.keys(r.output_schemas).sort();
+  if (canonicalJson(withOutput) !== canonicalJson([...SCORING_TOOLS].sort())) push('output-schema-set', `These tools declare an outputSchema: ${withOutput.join(', ')}; expected ${SCORING_TOOLS.join(', ')}.`);
+  for (const name of withOutput) {
+    const o = r.output_schemas[name];
+    if (o.type !== 'object' || o.additionalProperties !== true) push(`output-schema-open:${name}`, `${name}'s outputSchema is not an object schema that allows additional properties.`);
+    if (!/output schema/.test(r.descriptions[name])) push(`output-schema-named:${name}`, `${name}'s description does not point at its output schema.`);
+  }
+
+  // Rate limits: the number a description states is the one its route enforces.
+  const mw = fs.readFileSync(path.join(APP, 'middleware.ts'), 'utf8');
+  for (const [name, file] of Object.entries(ENGINE_ROUTES)) {
+    const src = fs.readFileSync(path.join(APP, file), 'utf8');
+    const limit = Number((/const RATE_LIMIT = (\d+)/.exec(src) || [])[1]);
+    const stated = /engine allows (\d+) \w+ an hour per address/.exec(r.descriptions[name]);
+    if (!limit) push(`rate-limit-unread:${name}`, `${file} has no readable RATE_LIMIT.`);
+    else if (!stated || Number(stated[1]) !== limit) push(`rate-limit:${name}`, `${name}'s description states ${stated ? stated[1] : 'no'} an hour; ${file} enforces ${limit} an hour.`);
+    const edge = new RegExp(`pattern: '${path.posix.dirname(file.replace(/^app/, '')).replace(/\//g, '\\/')}', [^\\n]*fixedWindow\\((\\d+), '([^']+)'\\)`).exec(mw);
+    if (edge && edge[2] === '1 h' && Number(edge[1]) !== limit) push(`rate-limit-edge:${name}`, `middleware.ts allows ${edge[1]} an hour for ${file}; the route enforces ${limit}.`);
+  }
+
+  // Document sizes: each "about N characters" is within 20% of what the tool returns.
+  const sizes = await documentSizes(h);
+  for (const [name, measured] of Object.entries(sizes)) {
+    const own = /about ([\d,]+) characters/.exec(r.descriptions[name]);
+    if (!own) push(`size-missing:${name}`, `${name}'s description states no size.`);
+    else if (Math.abs(commaNumber(own[1]) - measured) > measured * 0.2) push(`size:${name}`, `${name} says about ${own[1]} characters; it returns ${measured}.`);
+  }
+  for (const name of names) {
+    for (const m of r.descriptions[name].matchAll(/(designesy_\w+) \(about ([\d,]+) characters\)/g)) {
+      const measured = sizes[m[1]];
+      if (measured === undefined || Math.abs(commaNumber(m[2]) - measured) > measured * 0.2) push(`size-cited:${name}`, `${name} says ${m[1]} is about ${m[2]} characters; it returns ${measured}.`);
+    }
+  }
+
+  // The golden the PyPI server is held to.
+  let golden = null;
+  if (fs.existsSync(DEFINITIONS)) golden = JSON.parse(fs.readFileSync(DEFINITIONS, 'utf8'));
+  else if (process.env.VERCEL !== '1') push('golden-missing', `${DEFINITIONS} is missing; run this gate with --write-definitions from a full checkout.`);
+  if (golden) {
+    for (const key of ['instructions', 'no_parameter_input_schema', 'contract_keys']) {
+      if (canonicalJson(golden[key]) !== canonicalJson(r[key])) push(`golden:${key}`, `${key} differs from tool-definitions.json; change both servers, then run --write-definitions.`);
+    }
+    for (const key of ['descriptions', 'input_schemas', 'output_schemas']) {
+      const want = golden[key] || {};
+      for (const name of new Set([...Object.keys(want), ...Object.keys(r[key])])) {
+        if (canonicalJson(want[name]) !== canonicalJson(r[key][name])) push(`golden:${key}:${name}`, `${name}'s ${key.replace(/s$/, '').replace('_', ' ')} differs from tool-definitions.json; change both servers, then run --write-definitions.`);
+      }
+    }
+  }
+  return {
+    findings,
+    measured: `${names.length} descriptions, longest ${Math.max(...lengths)} chars; instructions ${r.instructions ? r.instructions.length : 0} chars; ${withOutput.length} output schemas; documents ${Object.entries(sizes).map(([n, v]) => `${n.replace('designesy_', '')} ${v}`).join(', ')}${golden ? '' : '; golden NOT EVALUATED'}`,
+  };
+}
+
+// ── Structured output ─────────────────────────────────────────────────────────
+
+async function structuredOutput() {
+  const findings = [];
+  const push = (id, why) => findings.push({ id: `structured-output:${id}`, why });
+  const s = FIXTURES.site;
+  const origin = new URL(s.url).origin;
+  const conformantLottie = JSON.parse(fs.readFileSync(path.join(PYPI_FIXTURES, 'motion', 'conformant.json'), 'utf8'));
+  const files = {
+    [`${origin}/tokens.json`]: FIXTURES.tokensAlias.file,
+    [`${origin}/hero.json`]: conformantLottie,
+  };
+  const engines = {
+    '/api/score': 'app/api/score/route.ts',
+    '/api/drift': 'app/api/drift/route.ts',
+    '/api/readiness': 'app/api/readiness/route.ts',
+    '/api/guardrails': 'app/api/guardrails/route.ts',
+    '/api/monitor': 'app/api/monitor/route.ts',
+    '/api/compare': 'app/api/compare/route.ts',
+    '/api/report': 'app/api/report/route.ts',
+  };
+  let override = null;
+  const pages = {
+    [s.url]: s.html,
+    ...s.stylesheets,
+    [`${origin}/.well-known/agent.json`]: s.agentJson,
+    [FIXTURES.compare.urlB]: FIXTURES.compare.htmlB,
+    ...files,
+  };
+  // The engines are the real route modules, so a tool call runs the same code
+  // the deployment does, on the fixture site, with no network.
+  const h = createHarness({
+    app: APP,
+    pages,
+    api: async (url, init) => {
+      if (override) {
+        const answer = await override(url, init);
+        if (answer !== undefined) return answer;
+      }
+      const u = new URL(url);
+      if (u.origin === 'https://www.designesy.org' && engines[u.pathname]) {
+        return h.load(engines[u.pathname]).POST(new Request(url, { method: 'POST', headers: (init && init.headers) || {}, body: init && init.body }));
+      }
+      // The URL guard's own refusal, for an address it blocks.
+      if (u.hostname === '127.0.0.1') throw new Error(`SSRF guard: blocked URL ${url}`);
+      if (u.pathname === '/locked.json') return new Response('denied', { status: 403, statusText: 'Forbidden' });
+      return undefined;
+    },
+  });
+  Object.assign(pages, servedContracts(h));
+
+  const ok = [
+    ['designesy_score', { url: s.url }],
+    ['designesy_score', { url: s.url, scope: 'contract' }],
+    ['designesy_score', { url: s.url, format: 'canonical' }],
+    ['designesy_score', { url: s.url, format: 'google' }],
+    ['designesy_score', { url: s.url, format: 'review' }],
+    ['designesy_score', { url: 'https://missing.test/' }],
+    ['designesy_tokens_score', { dtcg_file: JSON.stringify(FIXTURES.tokensAlias.file) }],
+    ['designesy_tokens_score', { url: `${origin}/tokens.json` }],
+    ['designesy_a11y_score', { url: s.url }],
+    ['designesy_motion_score', { lottie_file: JSON.stringify(conformantLottie) }],
+    ['designesy_motion_score', { url: `${origin}/hero.json` }],
+    ['designesy_drift_score', { url: s.url }],
+    ['designesy_readiness_score', { url: s.url }],
+    ['designesy_guardrails', { url: s.url }],
+    ['designesy_guardrails', { url: s.url, parts: ['designMd', 'tokens'] }],
+    ['designesy_monitor_score', { url: s.url }],
+    ['designesy_compare', { urlA: s.url, urlB: FIXTURES.compare.urlB }],
+    ['designesy_report', { url: s.url }],
+    ['designesy_report', { url: s.url, detail: 'summary' }],
+  ];
+  let passed = 0;
+  let snapshot = null;
+  for (const [name, args] of ok) {
+    const label = `${name} ${JSON.stringify(args).slice(0, 60)}`;
+    const { result } = await h.callTool(name, args);
+    if (result.isError) {
+      push(`is-error:${label}`, `${label} returned an error: ${result.content[0].text.slice(0, 200)}`);
+      continue;
+    }
+    const sc = result.structuredContent;
+    if (!sc || typeof sc !== 'object' || Array.isArray(sc)) {
+      push(`missing:${label}`, `${label} returned no structuredContent object; the SDK refuses a success without one when the tool has an outputSchema.`);
+      continue;
+    }
+    const text = result.content[0].text;
+    if (args.format === 'review') {
+      if (sc.format !== 'review' || sc.markdown !== text) push(`review:${label}`, `${label}: structuredContent is not { format: "review", markdown } holding the text block.`);
+    } else if (canonicalJson(JSON.parse(text)) !== canonicalJson(sc)) {
+      push(`text-differs:${label}`, `${label}: the text block and structuredContent are not the same JSON.`);
+    }
+    const v = await h.tools.get(name).config.outputSchema['~standard'].validate(sc);
+    if (v.issues) push(`schema:${label}`, `${label} does not match its outputSchema: ${v.issues.map((i) => i.message).join('; ').slice(0, 300)}`);
+    else passed++;
+    if (name === 'designesy_monitor_score') snapshot = sc.currentSnapshot;
+  }
+  // A second monitor run, with the first as history.
+  if (snapshot) {
+    const { result } = await h.callTool('designesy_monitor_score', { url: s.url, history: [snapshot] });
+    const v = result.structuredContent && await h.tools.get('designesy_monitor_score').config.outputSchema['~standard'].validate(result.structuredContent);
+    if (result.isError || !v || v.issues) push('monitor-history', `designesy_monitor_score with history did not return a valid structuredContent: ${result.content[0].text.slice(0, 200)}`);
+    else passed++;
+  }
+
+  // Failures: isError, no structuredContent, and the retryable answer in the field and the text.
+  const drift = (body, status, headers = {}) => (url) => (url.endsWith('/api/drift') ? new Response(JSON.stringify(body), { status, headers }) : undefined);
+  const failures = [
+    ['engine 400 (a private address)', 'designesy_drift_score', { url: 'http://127.0.0.1/' }, null, false, /Correct the input/],
+    ['engine 502 (page could not be fetched)', 'designesy_drift_score', { url: 'https://missing.test/' }, null, true, /check the URL with the user/],
+    ['engine 429 with Retry-After', 'designesy_drift_score', { url: s.url }, drift({ ok: false, error: 'Rate limit exceeded. Maximum 50 drift scans per hour.' }, 429, { 'retry-after': '37' }), true, /Wait 37 seconds/],
+    ['engine 504', 'designesy_drift_score', { url: s.url }, drift({ error: 'FUNCTION_INVOCATION_TIMEOUT' }, 504), true, /failed or timed out/],
+    ['engine unreachable', 'designesy_drift_score', { url: s.url }, (url) => { if (url.endsWith('/api/drift')) throw new TypeError('fetch failed'); return undefined; }, true, /Could not reach the drift engine/],
+    ['score 400', 'designesy_score', { url: 'http://127.0.0.1/' }, null, false, /HTTP 400/],
+    ['report on an unreadable page', 'designesy_report', { url: 'https://missing.test/' }, null, true, /check the URL with the user/],
+    ['tokens file on a refused address', 'designesy_tokens_score', { url: 'http://127.0.0.1/tokens.json' }, null, false, /not a public http\(s\) URL/],
+    ['tokens file behind a login', 'designesy_tokens_score', { url: `${origin}/locked.json` }, null, false, /needs a login[^.]*dtcg_file/],
+    ['tokens file that is not JSON', 'designesy_tokens_score', { url: s.url }, null, false, /did not return JSON/],
+    ['motion file missing', 'designesy_motion_score', { url: `${origin}/nothing.json` }, null, false, /HTTP 404/],
+    ['a11y config that is not JSON', 'designesy_a11y_score', { url: s.url, config: '{nope' }, null, false, /Invalid JSON in config/],
+  ];
+  for (const [what, name, args, answer, retryable, says] of failures) {
+    override = answer;
+    const { result, payload } = await h.callTool(name, args);
+    override = null;
+    const problems = [];
+    if (result.isError !== true) problems.push('isError is not true');
+    if (result.structuredContent !== undefined) problems.push('it carries structuredContent');
+    if (!payload || payload.retryable !== retryable) problems.push(`retryable is ${payload && payload.retryable}, expected ${retryable}`);
+    const err = (payload && payload.error) || '';
+    if (!err.includes(`Retryable: ${retryable ? 'yes, once' : 'no'}.`)) problems.push('the text does not state the retryable answer');
+    if (!says.test(err)) problems.push(`the text does not match ${says}`);
+    if (problems.length) push(`failure:${what}`, `${what} (${name}): ${problems.join('; ')}. Text: ${err.slice(0, 200)}`);
+    else passed++;
+  }
+
+  // The classifier matches the guard's own words, so a reworded guard cannot slip past it.
+  const guard = fs.readFileSync(path.join(APP, 'app', 'lib', 'url-guard.ts'), 'utf8');
+  for (const words of ['SSRF guard: blocked URL', 'SSRF guard: blocked DNS resolution', 'has no public address', 'SSRF guard: fetch timeout']) {
+    if (!guard.includes(words)) push(`guard-words:${words}`, `app/lib/url-guard.ts no longer says "${words}", which the MCP route's fileFetchFailure classifies.`);
+  }
+  return { findings, measured: `${passed} result(s) checked: ${ok.length + 1} successes against their outputSchema, ${failures.length} failures` };
+}
+
 // ── --measure: one live page through guardrails and drift ─────────────────────
 
 async function measure(url) {
@@ -464,6 +824,8 @@ const CHECKS = [
   ['guardrails-dtcg', guardrailsDtcg],
   ['monitor-m09', monitorM09],
   ['compare-rounding', compareRounding],
+  ['tool-definitions', toolDefinitions],
+  ['structured-output', structuredOutput],
 ];
 
 async function main() {
@@ -477,6 +839,13 @@ async function main() {
     }
     console.error(`mcp-accuracy: typescript could not be loaded from ${APP}; install apps/site's dev dependencies (npm ci).`);
     process.exit(1);
+  }
+
+  if (argv.includes('--write-definitions')) {
+    fs.writeFileSync(DEFINITIONS, `${JSON.stringify(renderedDefinitions(siteHarness()), null, 2)}
+`);
+    console.log(`mcp-accuracy: wrote ${DEFINITIONS}`);
+    return;
   }
 
   const target = arg('--measure');
