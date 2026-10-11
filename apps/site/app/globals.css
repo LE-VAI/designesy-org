@@ -219,7 +219,11 @@
   --grade-f-ink: var(--grade-f);
   --grade-d-glow: #FB7185;   /* D is rose (D5): the orange is the brand's flame, not a grade */
   --signal-pos: #34d399;     /* emerald for positive signal points */
-  --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
+  /* Retiring (brand ledger D57): green borrowed grade A, and availability is
+     plain words now. Its last consumers are on the home page, which the D60
+     PR rebuilds; whichever of the two PRs lands second deletes it here, in
+     the light block below, and in the contract at its next version. */
+  --live: #22c55e;
   --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
   --amber-notice: #c9a227;   /* amber for score-drawer remediation heading */
 
@@ -607,7 +611,7 @@ read-along {
   --grade-b-light: var(--grade-b-ink);
   --grade-d-glow: #C9216C;
   --signal-pos: #059669;
-  --live: #15803d;
+  --live: #15803d; /* retiring, see the dark declaration (D57) */
   --error-text: var(--error-ink);
   --amber-notice: var(--warn-ink);
 
@@ -6159,9 +6163,11 @@ button.check-cell {
   will-change: transform, opacity;
 }
 
-/* avoid items show an X in the activation accent instead of a blue checkmark */
+/* Avoid items show an X instead of the checkmark, in the text colour: the
+   shape carries "avoid". It took the flame's ink, and the flame means
+   something happening now, nothing else (brand ledger D57). */
 .check-cell.is-avoid .check-cell-check {
-  color: var(--activation-ink);
+  color: var(--ink);
 }
 
 @keyframes check-pop {

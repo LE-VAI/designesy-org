@@ -184,7 +184,9 @@ export function SourceList({ items }: { items: Source[] }) {
    The panel
    ------------------------------------------------------------------------ */
 
-type Lamp = 'pass' | 'live' | 'warn' | 'pending';
+// 'done' is a confirmed fact (shipped, measured): the check glyph, not a lit
+// dot (brand ledger D57; the flame is only for something happening now).
+type Lamp = 'pass' | 'done' | 'warn' | 'pending';
 
 function Panel({
   label,

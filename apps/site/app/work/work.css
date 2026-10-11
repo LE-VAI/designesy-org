@@ -308,8 +308,31 @@
 }
 
 .cs-led[data-lamp="pass"] { --cs-lamp: var(--lv-pass-a); }
-.cs-led[data-lamp="live"] { --cs-lamp: var(--live); }
+
+/* Light theme: the pass lamp's Azure is 2.19 to 2.58:1 on the light surfaces,
+   under the 3:1 a status mark needs, so it takes a 1px ring of its own ink
+   (brand ledger D49, D67). The warn lamp's --warn holds 3.08:1 or more. */
+[data-theme="light"] .cs-led[data-lamp="pass"] {
+  box-shadow: 0 0 0 1px var(--signal-access), 0 0 0 3px color-mix(in srgb, var(--cs-lamp) 18%, transparent);
+}
 .cs-led[data-lamp="warn"] { --cs-lamp: var(--warn); }
+
+/* Done: a confirmed fact (a shipped site, a closed measurement) reads as the
+   site's check glyph, not a lamp (brand ledger D57). It was a green dot, and
+   green is grade A's. */
+.cs-led[data-lamp="done"] {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font: 700 0.8rem/1 var(--sans);
+  color: var(--signal-text);
+}
+
+.cs-led[data-lamp="done"]::before {
+  content: "✓";
+}
 
 /* Pending: a hollow lamp, nothing lit yet. */
 .cs-led[data-lamp="pending"] {

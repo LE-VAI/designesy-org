@@ -25,9 +25,9 @@ export const metadata: Metadata = pageMeta({
 
 /** The lamp states the status beside it: verified by the engine, live, or
     built and not yet hosted. The review verdict is the chip's to state. */
-function lampFor(cs: CaseStudy): 'pass' | 'live' | 'pending' {
+function lampFor(cs: CaseStudy): 'pass' | 'done' | 'pending' {
   if (cs.status === 'Verified · public') return 'pass';
-  if (cs.status === 'Shipped · live') return 'live';
+  if (cs.status === 'Shipped · live') return 'done';
   return 'pending';
 }
 

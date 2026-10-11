@@ -455,14 +455,16 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv-ink-accent) 20%, transparent);
 }
 
-/* The running LED: working means moving. Opacity .35 to 1 on a 1.5s breath
-   (12s / 8, a divisor of the site's master period); a run that lands stops
-   it, and resolved means still. Reduced motion and the motion switch keep
-   the colour and drop the pulse (Motion, below). */
+/* The running LED: working means moving. Its halo breathes on a 1.5s cycle
+   (12s / 8, a divisor of the site's master period); the dot itself never
+   fades (brand ledger D54, D57: a live pulse is a halo, never the dot's
+   opacity). A run that lands stops it, and resolved means still. Reduced
+   motion and the motion switch keep the colour and the resting ring and drop
+   the breath (Motion, below). */
 @keyframes eg-led {
   0%,
-  100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lv-ink-accent) 0%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--lv-ink-accent) 28%, transparent); }
 }
 
 .eg-inst[data-phase="running"] .eg-dot {
@@ -495,9 +497,20 @@
   from { opacity: 0; transform: translateY(4px); }
 }
 
+/* A finished run is a confirmed fact, so the LED becomes the check glyph the
+   site uses for one (brand ledger D57), not a coloured dot: the green it took
+   was grade A's, and orange is only for something happening now. */
 .eg-inst[data-phase="done"] .eg-dot {
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 18%, transparent);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  font: 700 0.75rem/1 var(--sans);
+  color: var(--signal-text);
+}
+
+.eg-inst[data-phase="done"] .eg-dot::before {
+  content: "✓";
 }
 
 .eg-inst[data-phase="error"] .eg-dot {
