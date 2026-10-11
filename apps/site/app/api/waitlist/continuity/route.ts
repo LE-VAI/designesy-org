@@ -169,38 +169,6 @@ async function sendResend(data: Normalized): Promise<{ ok: boolean; detail?: str
   return { ok: true };
 }
 
-async function sendFormSubmit(data: Normalized): Promise<{ ok: boolean; detail?: string }> {
-  // Zero-config fallback: first delivery may require one activation click in hello@ inbox.
-  const endpoint = `https://formsubmit.co/ajax/${encodeURIComponent(NOTIFY_TO)}`;
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      _subject: `[Continuity waitlist] ${data.email}`,
-      _template: 'table',
-      _captcha: 'false',
-      email: data.email,
-      role: data.role || '',
-      interest: data.interest || '',
-      site: data.site || '',
-      note: data.note || '',
-      source: data.source,
-      product: data.product,
-      capturedAt: data.capturedAt,
-      message: formatNotifyText(data),
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    return { ok: false, detail: `formsubmit_${res.status}:${body.slice(0, 200)}` };
-  }
-  return { ok: true };
-}
-
 async function sendWebhook(data: Normalized): Promise<{ ok: boolean; detail?: string }> {
   if (!WEBHOOK_URL) return { ok: false, detail: 'webhook_unconfigured' };
   let parsed: URL;
@@ -251,19 +219,16 @@ export async function POST(req: Request) {
   const data = normalized.data;
   const transportErrors: string[] = [];
 
-  // Prefer first-party Resend when configured; else FormSubmit; optional webhook fan-out.
+  // Resend delivers the signup; an optional webhook fans it out. There is no
+  // third fallback: a sign-up that cannot be delivered gets the 503 below, which
+  // asks the person to email us, rather than going to another processor (owner
+  // decision 2026-10-11: the FormSubmit fallback was removed).
   let delivered = false;
 
   if (RESEND_API_KEY) {
     const r = await sendResend(data);
     if (r.ok) delivered = true;
     else if (r.detail) transportErrors.push(r.detail);
-  }
-
-  if (!delivered) {
-    const f = await sendFormSubmit(data);
-    if (f.ok) delivered = true;
-    else if (f.detail) transportErrors.push(f.detail);
   }
 
   if (WEBHOOK_URL) {
