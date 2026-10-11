@@ -726,9 +726,11 @@ jobs:
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
 
-      # The score's loading ignition (brand D51) runs on a fake clock and every
-      # frame is read: the OKLCH sweep, the ring, the hold, the cool, the light
-      # rims, and the calm path under reduced motion and under "Pause motion".
+      # The score's loading ignition (brand D51, rulings D54) runs on a fake
+      # clock and every frame is read: the OKLCH sweep, the ring, the hold, the
+      # swap back, the light rim at full strength through the breath, the calm
+      # path's instant swaps (no intermediate colour) under reduced motion and
+      # under "Pause motion", and exactly one ignition per landing.
       - name: Loading ignition
         run: node scripts/check-ignition.js --base http://127.0.0.1:3422 --channel chrome
 

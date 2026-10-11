@@ -1,28 +1,34 @@
 'use client';
 
-// The loading ignition (brand D51): the instrument mark's dot while a score
-// runs, and the moment its result lands.
+// The loading ignition (brand D51, rulings D54): one Azure dot per score
+// loader, the run line's lone dot or the four-engine instrument's mark.
 //
-//   running   the dot breathes: scale 1 -> .86 -> 1, opacity 1 -> .72 -> 1,
-//             1600ms ease-in-out, looped (engine.css, eg-lamp-breathe). The
-//             loop is CSS so the site's pause and reduced motion stop it live.
+//   running   the dot breathes: scale 1 -> .86 -> 1 and the fill's opacity
+//             1 -> .72 -> 1, 1600ms ease-in-out, looped (globals.css,
+//             ig-breathe). Only the fill fades: on light the 1px rim stays at
+//             full strength and full width in every frame. The loop is CSS,
+//             so the site's pause and reduced motion stop it live.
 //   lands     the dot ignites: 320ms, hue swept in OKLCH from Azure (--signal,
 //             hue 250.8) up through violet, magenta and red to the flame
 //             (--activation, hue 46.7 + 360), lightness and chroma alongside,
 //             easeOutQuart. A straight sRGB blend between these two near
 //             inverses passes through grey, so the colour is computed per
-//             frame here. One flame ring rings out 120ms in (scale 1 -> 1.9,
-//             opacity .9 -> 0, 700ms easeOutExpo).
+//             frame here. On light the rim sweeps with it, from
+//             --signal-access to --activation-ink, so it never drops out. One
+//             flame ring rings out 120ms in (scale 1 -> 1.9, opacity .9 -> 0,
+//             700ms easeOutExpo).
 //   holds     the flame stays until 1400ms after ignition (320 + 1080), then
-//             cools straight back to Azure with a 400ms opacity .55 -> 1
-//             settle. No sweep back; breathing resumes only with a new run.
+//             swaps straight back to Azure, and the fill (never the rim)
+//             settles from .55 to 1 over 400ms. No sweep back; breathing
+//             resumes only with a new run.
 //   calm      reduced motion, or the site's "Pause motion": no breathing, no
-//             sweep, no ring. The flame arrives in one 150ms crossfade, holds,
-//             and returns to Azure.
+//             sweep, no ring, no fade. The flame arrives as an instant swap,
+//             holds, and swaps back to Azure.
 //
 // Orange only when a result lands (D16): an error, or a run with no verdict,
-// stops the breath and leaves the dot Azure. No colour is written here: both
-// ends are read from the tokens on the dot itself.
+// stops the breath and leaves the dot Azure. One ignition per landing, page
+// wide (claimLanding). No colour is written here: every end is read from the
+// tokens on the dot itself.
 
 import { useEffect, useRef, type RefObject } from 'react';
 import type { Phase } from './types';
@@ -32,7 +38,6 @@ export const HALO_DELAY_MS = 120;
 export const HALO_MS = 700;
 export const COOL_AT_MS = 1400;
 export const SETTLE_MS = 400;
-export const CALM_FADE_MS = 150;
 
 const EXPO = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const easeOutQuart = (k: number) => 1 - Math.pow(1 - k, 4);
@@ -101,10 +106,29 @@ export function isCalm(): boolean {
   );
 }
 
+let landing = false;
+
+/**
+ * One ignition per result landing, page wide. A landing is one React commit:
+ * every lamp that sees it runs its effect in the same synchronous flush,
+ * before any microtask, so the first lamp claims it and the rest stay Azure.
+ * The claim lapses at the next microtask, ready for the next landing.
+ */
+export function claimLanding(): boolean {
+  if (landing) return false;
+  landing = true;
+  queueMicrotask(() => {
+    landing = false;
+  });
+  return true;
+}
+
 /**
  * Lights the dot when a run lands with a verdict. The dot carries
- * data-lamp: absent at rest (Azure), "sweep" while the colour is written per
- * frame, "lit" while the flame holds. The halo is the flame ring behind it.
+ * data-lamp: absent at rest (Azure), "sweep" while the colours are written
+ * per frame (--ig-fill, and --ig-rim for the light rim), "lit" while the
+ * flame holds. The fill is the dot's ::before; the halo is the flame ring
+ * behind the dot.
  */
 export function useIgnition(
   dotRef: RefObject<HTMLElement | null>,
@@ -122,40 +146,49 @@ export function useIgnition(
     const halo = haloRef.current;
     if (!enabled || !dot || !halo) return;
     if (!(phase === 'done' && before === 'running' && landed)) return;
+    if (!claimLanding()) return;
 
     const css = getComputedStyle(dot);
-    const coolHex = css.getPropertyValue('--signal').trim();
-    const hotHex = css.getPropertyValue('--activation').trim();
-    const cool = hexToOklch(coolHex);
-    const hot = hexToOklch(hotHex);
+    const read = (name: string) => css.getPropertyValue(name).trim();
+    const fillHex = [read('--signal'), read('--activation')];
+    const rimHex = [read('--signal-access'), read('--activation-ink')];
+    const fill = fillHex.map(hexToOklch);
+    const rim = rimHex.map(hexToOklch);
     const timers: number[] = [];
     const anims: Animation[] = [];
     let raf = 0;
     let cancelled = false;
 
+    const write = (fillValue: string, rimValue: string) => {
+      dot.style.setProperty('--ig-fill', fillValue);
+      dot.style.setProperty('--ig-rim', rimValue);
+    };
     const rest = () => {
       dot.removeAttribute('data-lamp');
-      dot.style.removeProperty('background-color');
+      dot.style.removeProperty('--ig-fill');
+      dot.style.removeProperty('--ig-rim');
     };
 
-    if (isCalm() || !cool || !hot) {
-      // One crossfade to the flame, then back: no movement, no ring.
+    if (isCalm() || fill.includes(null) || rim.includes(null)) {
+      // An instant swap each way: no sweep, no ring, no fade.
       dot.setAttribute('data-lamp', 'lit');
-      anims.push(dot.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: CALM_FADE_MS, easing: 'ease-out' }));
       timers.push(window.setTimeout(rest, COOL_AT_MS));
     } else {
+      const [fillCool, fillHot] = fill as Oklch[];
+      const [rimCool, rimHot] = rim as Oklch[];
       const start = performance.now();
       dot.setAttribute('data-lamp', 'sweep');
-      dot.style.backgroundColor = coolHex;
+      write(fillHex[0], rimHex[0]);
       const step = () => {
         if (cancelled) return;
         const t = performance.now() - start;
         if (t >= SWEEP_MS) {
-          dot.style.removeProperty('background-color');
+          dot.style.removeProperty('--ig-fill');
+          dot.style.removeProperty('--ig-rim');
           dot.setAttribute('data-lamp', 'lit');
           return;
         }
-        dot.style.backgroundColor = sweepAt(t, cool, hot, hotHex);
+        write(sweepAt(t, fillCool, fillHot, fillHex[1]), sweepAt(t, rimCool, rimHot, rimHex[1]));
         raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
@@ -172,7 +205,14 @@ export function useIgnition(
         window.setTimeout(() => {
           cancelAnimationFrame(raf);
           rest();
-          anims.push(dot.animate([{ opacity: 0.55 }, { opacity: 1 }], { duration: SETTLE_MS, easing: 'ease-out' }));
+          // The fill settles; the rim, on light, is at full strength throughout.
+          anims.push(
+            dot.animate([{ opacity: 0.55 }, { opacity: 1 }], {
+              duration: SETTLE_MS,
+              easing: 'ease-out',
+              pseudoElement: '::before',
+            }),
+          );
         }, COOL_AT_MS),
       );
     }
