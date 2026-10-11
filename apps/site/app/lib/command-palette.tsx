@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { useTheme } from './use-theme';
 import { useMotionPreference } from './use-motion-pref';
+import { tidyExcerpt } from './excerpt';
 
 /**
  * Command palette (Cmd+K / Ctrl+K, or "/").
@@ -629,13 +630,9 @@ export function CommandPalette() {
           if (!href || seen.has(href)) continue;
           seen.add(href);
           const title = d.meta?.title?.trim() || titleFromHref(href);
-          const meta = d.excerpt
-            ? d.excerpt
-                .replace(/<(?!\/?mark>)[^>]+>/g, '')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .slice(0, 110)
-            : '';
+          // One clean line: whole words, the match early and intact, no stray
+          // quote or bracket at the cuts, an ellipsis where it is mid-sentence.
+          const meta = d.excerpt ? tidyExcerpt(d.excerpt) : '';
           rows.push({ title, href, group: groupForHref(href), keywords: '', meta });
         }
       }

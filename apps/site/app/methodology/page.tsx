@@ -1183,7 +1183,7 @@ export default function MethodologyPage() {
                                 {c.manualReason && <span className="dx-tag">manual</span>}
                                 {c.skipReason && <span className="dx-tag">conditional</span>}
                                 <span className="dx-check-item">{unbroken(itemOf(c.id))}</span>
-                              </span>
+                              </span>{' '}
                               <span className="dx-check-how">{unbroken(display(c.how))}</span>
                             </li>
                           ))}
