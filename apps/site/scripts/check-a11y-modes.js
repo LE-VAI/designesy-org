@@ -322,7 +322,7 @@ const RESULT_STATES = [
       const field = page.getByRole('textbox', { name: 'Site URL to score' });
       await field.fill('example.com');
       await field.press('Enter');
-      await page.locator('.score-cat-legend-row').first().waitFor({ timeout: 20000 });
+      await page.locator('.rs-row').first().waitFor({ timeout: 20000 });
       await page.locator('.score-check-group').first().waitFor({ timeout: 20000 });
     },
   },
@@ -330,7 +330,7 @@ const RESULT_STATES = [
     route: '/score/report?url=https%3A%2F%2Fexample.com',
     label: '/score/report [score result]',
     ready: async (page) => {
-      await page.locator('.report-hero').waitFor({ timeout: 20000 });
+      await page.locator('.report-result .rs-row').first().waitFor({ timeout: 20000 });
     },
   },
 ];
