@@ -16,6 +16,11 @@
 // On the site the colours come from tokens (.brand-icon .sig and .live in
 // globals.css). The share cards render outside the page, so they pass the
 // colours in (`sig`, `live`).
+//
+// Small sizes (D45): at 18px or smaller a `sig` or `live` dot is drawn at
+// least SMALL_DOT_R grid units in radius, about its centre, so the one
+// coloured part stays legible; `hub` dots stay exactly as drawn. The rule
+// follows the size prop, not CSS.
 
 import type { CSSProperties } from 'react';
 
@@ -45,6 +50,11 @@ type Part =
   | { el: 'rect'; paint: Paint; x: number; y: number; width: number; height: number; rx: number; opacity?: number }
   | { el: 'circle'; paint: Paint; cx: number; cy: number; r: number; opacity?: number };
 type Paint = 'stroke' | 'fill' | 'hub' | 'sig' | 'live';
+
+/** At or below this rendered size (px) the coloured dots take SMALL_DOT_R. */
+const SMALL_SIZE_PX = 18;
+/** The smallest radius, in 24-grid units, of a sig or live dot at a small size. */
+const SMALL_DOT_R = 2.4;
 
 const ICONS: Record<BrandIconName, readonly Part[]> = {
   score: [
@@ -161,6 +171,7 @@ export function BrandIcon({
   sig?: string;
   live?: string;
 }) {
+  const small = size <= SMALL_SIZE_PX;
   return (
     <svg
       className={className ? `brand-icon ${className}` : 'brand-icon'}
@@ -191,7 +202,9 @@ export function BrandIcon({
         };
         if (p.el === 'path') return <path key={i} {...paint} d={p.d} />;
         if (p.el === 'rect') return <rect key={i} {...paint} x={p.x} y={p.y} width={p.width} height={p.height} rx={p.rx} />;
-        return <circle key={i} {...paint} cx={p.cx} cy={p.cy} r={p.r} />;
+        const dot = p.paint === 'sig' || p.paint === 'live';
+        const r = small && dot ? Math.max(p.r, SMALL_DOT_R) : p.r;
+        return <circle key={i} {...paint} cx={p.cx} cy={p.cy} r={r} />;
       })}
     </svg>
   );
