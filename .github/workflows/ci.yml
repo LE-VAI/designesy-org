@@ -239,6 +239,13 @@ jobs:
         if: always()
         run: node scripts/check-jsx-glue.js
 
+      # A palette "Mentioned on" row is one clean line: whole words, the match
+      # early and intact, no orphan quote or bracket at the cuts, an ellipsis
+      # where it is mid-sentence ("here")Parses anchor el" shipped for "mo").
+      - name: Palette excerpts
+        if: always()
+        run: node scripts/check-palette-excerpts.js
+
       # Text in a status or grade hue uses its --<hue>-ink token: several bare
       # light-theme hues are under 4.5:1 for text (--warn 3.51:1, --grade-b
       # 2.99:1 on --paper). Every ink token is measured on all four surfaces.
