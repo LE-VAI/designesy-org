@@ -793,6 +793,22 @@
   box-shadow: inset 0 0 0 1px var(--lv-fail-b), inset 0 1px 0 var(--lv-shine);
 }
 
+/* Light theme: every other status lamp whose fill is under 3:1 on a light
+   surface takes a 1px ring of its own ink, as PASS does above (brand ledger
+   D67, extending D49). Measured on paper, surface, raised and lifted: the
+   WARN fill's top stop #e0a917 is 1.81 to 2.13:1, FAIL's #ef5b5b falls to
+   2.82:1 on lifted, and the SKIP/MANUAL hatch is about 1.5:1. The minicells
+   and the scale marker take no ring: each repeats a figure printed beside it. */
+[data-theme="light"] [data-status="WARN"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="WARN"] {
+  box-shadow: 0 0 0 1px var(--warn-ink), inset 0 0 0 1px var(--lv-warn-b), inset 0 1px 0 var(--lv-shine);
+}
+
+[data-theme="light"] [data-status="FAIL"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="FAIL"] {
+  box-shadow: 0 0 0 1px var(--error-ink), inset 0 0 0 1px var(--lv-fail-b), inset 0 1px 0 var(--lv-shine);
+}
+
 /* Skipped or checked by a person: hatched, the drawing convention for
    "a different material". */
 [data-status="SKIP"] > .eg-cell-top .eg-lamp,
@@ -801,6 +817,14 @@
 .eg-lamp[data-status="MANUAL"] {
   background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+/* Light: the hatch's ring is its status word's ink (--muted), D67. */
+[data-theme="light"] [data-status="SKIP"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] [data-status="MANUAL"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="SKIP"],
+[data-theme="light"] .eg-lamp[data-status="MANUAL"] {
+  box-shadow: 0 0 0 1px var(--muted);
 }
 
 .eg-cell[data-status="PASS"] { --tone: color-mix(in srgb, var(--lv-pass-a) 34%, transparent); }
@@ -2738,7 +2762,9 @@ button.mt-row {
 
 .eg-row[data-status="FAIL"] .eg-row-status { color: var(--error-ink); }
 .eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
-.eg-row[data-status="PASS"] .eg-row-status { color: var(--ok-ink); }
+/* One hue family per status (brand ledger D67): PASS reads in the Azure of its
+   lamp, not the green of a score band (80 and up, D48/D56). */
+.eg-row[data-status="PASS"] .eg-row-status { color: var(--signal-access); }
 
 .eg-chev {
   margin-top: 0.3rem;

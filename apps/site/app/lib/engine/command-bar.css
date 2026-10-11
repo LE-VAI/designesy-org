@@ -467,11 +467,40 @@
   cursor: progress;
 }
 
+/* Light theme: the spec's primary edge on light (03-SYSTEM-SPEC, Primary
+   action, "Edge on light"; brand ledger D67), so the run key stays anchored on
+   a light slab. Presence only, not a contrast boundary (it composites to
+   about 1.7:1); the ink label is what identifies the key. */
+[data-theme="light"] .eg-bar-go {
+  box-shadow:
+    inset 0 0 0 1px rgb(1 106 187 / 0.35),
+    inset 0 1px 0 color-mix(in srgb, var(--paper-white) 24%, transparent),
+    0 1px 2px color-mix(in srgb, var(--paper) 45%, transparent),
+    0 10px 24px -14px var(--signal-light);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-theme="light"] .eg-bar-go:hover:not([aria-busy="true"]) {
+    box-shadow:
+      inset 0 0 0 1px rgb(1 106 187 / 0.35),
+      inset 0 1px 0 color-mix(in srgb, var(--paper-white) 30%, transparent),
+      0 1px 2px color-mix(in srgb, var(--paper) 45%, transparent),
+      0 14px 30px -14px var(--signal-light);
+  }
+}
+
 .eg-bar-go:focus-visible {
   outline: 2px solid var(--ctl-focus, var(--signal-access));
   outline-offset: 2px;
   border-radius: var(--ctl-r-in);
   box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--paper-white) 24%, transparent),
+    0 1px 2px color-mix(in srgb, var(--paper) 45%, transparent);
+}
+
+[data-theme="light"] .eg-bar-go:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px rgb(1 106 187 / 0.35),
     inset 0 1px 0 color-mix(in srgb, var(--paper-white) 24%, transparent),
     0 1px 2px color-mix(in srgb, var(--paper) 45%, transparent);
 }
