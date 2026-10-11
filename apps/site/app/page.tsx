@@ -240,37 +240,16 @@ const FIELD = [
   },
 ];
 
-/** One line icon per "put the contract to work" card: what the thing is,
- *  drawn in the same 1.5px stroke as the search palette's row icons. */
+/** One icon per "put the contract to work" card: what the thing is, from the
+ *  icon family (v2 and v2.1), as in the search palette's rows. */
 function FieldIcon({ name }: { name: 'contract' | 'review' | 'studio' | 'continuity' }) {
-  const props = {
-    width: 18,
-    height: 18,
-    viewBox: '0 0 18 18',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.5,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  };
-  // Icon family v2 where the meaning matches: the contract (its dot the
-  // signature) and the Design Review kit (its dot the head).
+  // The contract (its dot the signature), the Design Review kit (its dot the
+  // head), the Studio bubble (its dot the reply), and Continuity's history
+  // clock (a neutral hub dot at its centre).
   if (name === 'contract') return <BrandIcon name="contract" size={18} />;
   if (name === 'review') return <BrandIcon name="kit" size={18} />;
-  if (name === 'studio') {
-    return (
-      <svg {...props}>
-        <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h9A1.5 1.5 0 0 1 15 4.5v6A1.5 1.5 0 0 1 13.5 12H8l-3.5 3v-3h0A1.5 1.5 0 0 1 3 10.5z" />
-        <path d="M6 6.8h6M6 9.2h3.6" />
-      </svg>
-    );
-  }
-  return (
-    <svg {...props}>
-      <path d="M2.8 9a6.2 6.2 0 1 0 1.9-4.5" />
-      <path d="M2.6 2.8v2.6h2.6M9 5.6V9l2.4 1.6" />
-    </svg>
-  );
+  if (name === 'studio') return <BrandIcon name="studio" size={18} />;
+  return <BrandIcon name="continuity" size={18} />;
 }
 
 // All nine operating principles (canonical titles from /docs). The homepage

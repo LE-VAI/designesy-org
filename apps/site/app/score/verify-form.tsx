@@ -23,6 +23,7 @@
 'use client';
 
 import { useState, useRef, useMemo, useEffect } from 'react';
+import { BrandIcon } from '../lib/brand-icons';
 import { CopyPrompt } from '../lib/copy-prompt';
 import { EngineBar } from '../lib/engine/command-bar';
 import { useSegmentIndicator } from '../lib/engine/use-segment-indicator';
@@ -807,19 +808,8 @@ export function VerifyForm({
       {status === 'error' && (
         <div className="score-error-card">
           <span className="score-error-icon" aria-hidden="true">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            {/* v2.1 error: its point a neutral hub dot, the colour from .score-error-icon. */}
+            <BrandIcon name="error" size={20} />
           </span>
           <div className="score-error-body">
             <div>
@@ -971,19 +961,7 @@ export function VerifyForm({
                     disabled={!shareUrl}
                     title="Copy the shareable link"
                   >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
+                    <BrandIcon name="share" size={14} />
                     {linkCopied ? 'Link copied!' : 'Copy link'}
                   </button>
                   {shareUrl && (
@@ -1375,21 +1353,16 @@ export function VerifyForm({
                       <span className="score-check-group-count">
                         {group.checks.length}
                       </span>
-                      <svg
+                      {/* v2.1 chevron (drawn pointing right): right when collapsed, down when open. */}
+                      <BrandIcon
+                        name="chevron"
+                        size={14}
                         className="score-check-group-chevron"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
                         style={{
-                          transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                          transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
                           transition: 'transform 0.2s var(--ease-out)',
                         }}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      />
                     </button>
                     {!collapsed && (
                       <div
@@ -1440,20 +1413,15 @@ export function VerifyForm({
                               </div>
 
                               <span className="score-card-right" aria-hidden="true">
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
+                                {/* v2.1 chevron (drawn pointing right): down, up when expanded. */}
+                                <BrandIcon
+                                  name="chevron"
+                                  size={14}
                                   style={{
-                                    transform: isExpanded ? 'rotate(180deg)' : 'none',
+                                    transform: isExpanded ? 'rotate(270deg)' : 'rotate(90deg)',
                                     transition: 'transform 0.2s',
                                   }}
-                                >
-                                  <polyline points="6 9 12 15 18 9" />
-                                </svg>
+                                />
                               </span>
 
                               <div className="score-card-drawer" id={`${cardId}-body`} hidden={!isExpanded}>
