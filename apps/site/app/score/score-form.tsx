@@ -655,11 +655,8 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
       {status === 'error' && result?.error && (
         <div className="score-error-card">
           <span className="score-error-icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            {/* v2.1 error: its point a neutral hub dot, the colour from .score-error-icon. */}
+            <BrandIcon name="error" size={20} />
           </span>
           <div className="score-error-body">
             <div role="alert">
@@ -793,9 +790,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 aria-controls="score-rubric-body"
                 data-cuelume-press="tick"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: rubricOpen ? 'rotate(180deg)' : 'none', transition: 'transform var(--duration-fast) var(--ease-out)' }}>
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+                {/* v2.1 chevron (drawn pointing right): down when closed, up when open. */}
+                <BrandIcon
+                  name="chevron"
+                  size={14}
+                  style={{ transform: rubricOpen ? 'rotate(270deg)' : 'rotate(90deg)', transition: 'transform var(--duration-fast) var(--ease-out)' }}
+                />
                 How this is scored
               </button>
               {rubricOpen && (
@@ -909,10 +909,7 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                 disabled={!shareUrl}
                 title="Copy the shareable link to this score result"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
+                <BrandIcon name="share" size={14} />
                 {linkCopied ? 'Link copied!' : 'Copy link'}
               </button>
 
@@ -1239,21 +1236,16 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                       <span className="score-check-group-count">
                         {group.checks.length}
                       </span>
-                      <svg
+                      {/* v2.1 chevron (drawn pointing right): right when collapsed, down when open. */}
+                      <BrandIcon
+                        name="chevron"
+                        size={14}
                         className="score-check-group-chevron"
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
                         style={{
-                          transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                          transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
                           transition: 'transform 0.2s var(--ease-out)',
                         }}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      />
                     </button>
                     {!collapsed && (
                       <div
@@ -1301,17 +1293,12 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
                               </div>
 
                               <span className="score-card-right" aria-hidden="true">
-                                <svg
-                                  width="14"
-                                  height="14"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
-                                >
-                                  <polyline points="6 9 12 15 18 9" />
-                                </svg>
+                                {/* v2.1 chevron (drawn pointing right): down, up when expanded. */}
+                                <BrandIcon
+                                  name="chevron"
+                                  size={14}
+                                  style={{ transform: isExpanded ? 'rotate(270deg)' : 'rotate(90deg)', transition: 'transform 0.2s' }}
+                                />
                               </span>
 
                               <div className="score-card-drawer" id={`${cardId}-body`} hidden={!isExpanded}>
