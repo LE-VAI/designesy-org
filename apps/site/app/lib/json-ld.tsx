@@ -24,7 +24,8 @@ export function organizationJsonLd() {
     email: 'hello@designesy.org',
     description:
       'Design intelligence infrastructure for a humane creative civilization.',
-    logo: 'https://www.designesy.org/icon',
+    // At least 112x112 for search engines' logo use; /icon is 32x32.
+    logo: 'https://www.designesy.org/brand/designesy-icon-512.png',
     sameAs: [
       'https://x.com/designesy',
       'https://github.com/designesy',
