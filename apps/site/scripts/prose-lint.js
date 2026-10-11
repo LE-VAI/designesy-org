@@ -135,6 +135,14 @@ const ALLOW = [
     on: /^\$29/,
     why: 'Continuity pricing, verified real on /pricing and /continuity.',
   },
+  // Real currency: the Designesy Review is $899 one-time (offer approved
+  // 2026-10-09). It renders on /pricing, /pricing/review and in the prompt
+  // under a score result, all from REVIEW_PRICE in app/lib/review-offer.ts.
+  {
+    rule: 'stray-dollar-before-number',
+    on: /^\$899\b/,
+    why: 'Designesy Review price, one-time, from lib/review-offer.ts.',
+  },
   // "undefined" used as an English word, not as a leaked value. Verified on
   // /contracts/readiness: "FAIL: No /robots.txt - crawling rules undefined".
   // The word is the sentence's meaning; a numeric guard would not catch it and

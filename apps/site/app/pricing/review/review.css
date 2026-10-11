@@ -1,0 +1,101 @@
+/* /pricing/review route-only styles. The page is built from the site's own
+   parts (surface header, principle list, the /pricing Review card from
+   pricing.css, .button); this sheet only seats them. Plain .css imported in
+   pricing/review/page.tsx, so Next code-splits it to this route. */
+
+/* The call to action under the header note and under the closing note: the
+   header's 28px step (the lab meta row's) and the section's 24px step. */
+.surface-header .review-offer-actions {
+  margin-top: var(--space-28);
+}
+
+.doctrine-section .review-offer-actions {
+  margin-top: var(--space-24);
+}
+
+/* The sample link, once a sample Review is published, one row gap under the
+   deliverables. */
+.review-offer-sample {
+  margin-top: var(--space-24);
+}
+
+/* The note under the disclosure card, on the prose measure. */
+.review-offer-note {
+  max-width: 66ch;
+  margin-top: var(--space-16);
+}
+
+/* How a Review runs: four numbered steps in the terms card's face. The
+   number is the principle card's (mono-weight caps tracking in
+   --signal-text), hung in its own column so every step's text starts on one
+   line. Each step's text is one <span>, so the item holds exactly two grid
+   cells (the number and the text). The list keeps its semantics through
+   role="list" in the markup, which Safari drops when list-style is none. */
+.review-steps {
+  display: grid;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: review-step;
+}
+
+.review-steps li {
+  display: grid;
+  grid-template-columns: var(--space-32) minmax(0, 1fr);
+  align-items: baseline;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+  counter-increment: review-step;
+}
+
+.review-steps li::before {
+  content: counter(review-step, decimal-leading-zero);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--signal-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.review-steps strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The disclosure reads at the face's paragraph size, in ink: it is the
+   statement this card exists to make. */
+.review-disclosure {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* The contact address in a key row: the row's mono, underlined as a link
+   (the status note's idiom), the underline taking the brand on hover. */
+.review-offer-mail {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.15em;
+  overflow-wrap: anywhere;
+  transition: text-decoration-color var(--duration-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .review-offer-mail:hover {
+    text-decoration-color: var(--signal-light);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-offer-mail {
+    transition: none;
+  }
+}
+
+html[data-motion="paused"] .review-offer-mail {
+  transition: none;
+}

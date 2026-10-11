@@ -1,0 +1,23 @@
+/* The Review prompt under a score result (lib/review-prompt.tsx). It sits in
+   the result's footnote register: the score note's size, in --muted (the
+   12px-and-up text ink that holds 4.5:1 in both themes; --muted-dim does not
+   at this size), on the prose measure. The link is the site's .text-link at
+   the line's own size, so it reads as part of the sentence, not as a button. */
+.review-prompt {
+  margin: var(--space-16) 0 0;
+  max-width: 66ch;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.review-prompt .text-link {
+  font-size: inherit;
+}
+
+/* In the result column (.score-results, a flex column) the column's own gap
+   is the step above the line, so the margin would double it. */
+.score-results > .review-prompt {
+  margin-top: 0;
+}

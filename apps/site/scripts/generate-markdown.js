@@ -104,6 +104,7 @@ const ROUTES = [
   'learn/the-pause-button-that-emptied-our-pages',
   'review',
   'pricing',
+  'pricing/review',
   'graph',
   'labs',
   'maturity',
