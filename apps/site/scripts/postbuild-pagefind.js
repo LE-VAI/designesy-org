@@ -45,6 +45,7 @@ const STAGE_DIR = path.join(ROOT, '.next', 'search-stage');
 const INTERNAL_PATTERNS = [
   /^_not-found\.html$/i,
   /^_error\.html$/i,
+  /^_global-error\.html$/i,
   /^(404|500)\.html$/i,
   // Metadata-route handlers (only relevant if glob is widened beyond *.html)
   /^(icon|apple-icon|favicon|opengraph-image|twitter-image|sitemap|robots|manifest)\./i,

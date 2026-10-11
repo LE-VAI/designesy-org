@@ -86,7 +86,9 @@ const FIND_EXEMPT = {
 };
 
 const TRACE = /\.nft(?:\.json)?(?:\.html)?$/i;
-const INTERNAL_ROUTE = /^\/(?:_not-found|_error|404|500)$/;
+// _global-error is Next 16's prerendered fallback for the global error boundary;
+// it is an internal page (a direct request answers 500), never a public route.
+const INTERNAL_ROUTE = /^\/(?:_not-found|_error|_global-error|404|500)$/;
 
 function walkFiles(dir) {
   const out = [];
