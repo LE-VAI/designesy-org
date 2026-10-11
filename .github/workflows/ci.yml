@@ -546,8 +546,12 @@ jobs:
   # 302 and measures a login page. Testing the build this run produced is also
   # the stronger assertion — it gates the commit, not a deployment of it.
   #
-  # @sparticuz/chromium is already a dependency, so no browser install step is
-  # needed on Linux; each script launches it itself.
+  # No part installs a browser. Edge contract, glass blur, motion pause, LCP
+  # entrance, status messages, focus visibility and dock clearance pass
+  # `--channel chrome` and launch the Chrome that GitHub's ubuntu runners ship.
+  # Keyboard QA and the a11y sweep launch @sparticuz/chromium, a Linux Chromium
+  # binary that is already a dependency; each of those two scripts finds it
+  # itself.
   visual-gates-1:
     name: 'Visual gates (part 1: edges, glass, motion, LCP, keyboard, status)'
     runs-on: ubuntu-latest
@@ -603,13 +607,19 @@ jobs:
       # timeout gets one retry; a real failure is never retried, and a hang
       # that repeats still fails. The step shell runs `bash -e`, so the exit
       # code is captured with `|| rc=$?` rather than read after the pipeline.
+      #
+      # Every recorded hang (2026-10-08 to 2026-10-10) ran on @sparticuz/chromium;
+      # the gate now launches Chrome with `--channel chrome`, like the gates
+      # after it. It also writes a timestamped stderr line before and after
+      # each browser operation, so the last line of a killed attempt names the
+      # route, width and step it hung on. Only the JSON goes to stdout and tee.
       - name: Edge contract
         shell: bash
         run: |
           set -o pipefail
           for attempt in 1 2; do
             rc=0
-            timeout --kill-after=10s 240s node scripts/edge-contract.js --base http://127.0.0.1:3422 --json | tee /tmp/edge.json || rc=$?
+            timeout --kill-after=10s 240s node scripts/edge-contract.js --base http://127.0.0.1:3422 --channel chrome --json | tee /tmp/edge.json || rc=$?
             if [ "$rc" -ne 124 ] && [ "$rc" -ne 137 ]; then exit "$rc"; fi
             echo "::warning::Edge contract attempt $attempt timed out after 240 s"
           done

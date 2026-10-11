@@ -472,6 +472,33 @@ function assess(route, width, d) {
   return v;
 }
 
+// --- stall trace ----------------------------------------------------------------
+
+// One stderr line before and after every browser operation that can hang, so
+// when CI's 240 s bound kills an attempt, the last line names the route, width
+// and step it was waiting on. Every recorded stall died inside newPage or
+// context.close with no output at all. stderr only: stdout carries the --json
+// report that CI tees into /tmp/edge.json, and it must stay valid JSON.
+//   [edge] +12345ms /drift 390 newPage start
+// "-" stands for no route (a context-level step) or no width (the browser).
+function trace(route, width, op, phase) {
+  process.stderr.write(`[edge] +${Math.round(performance.now())}ms ${route} ${width} ${op} ${phase}\n`);
+}
+
+/** Runs one browser operation between a start and an end line. A throw is
+ *  traced as "fail" and rethrown untouched, so callers behave as before. */
+async function step(route, width, op, fn) {
+  trace(route, width, op, 'start');
+  try {
+    const value = await fn();
+    trace(route, width, op, 'end');
+    return value;
+  } catch (e) {
+    trace(route, width, op, 'fail');
+    throw e;
+  }
+}
+
 // --- browser ------------------------------------------------------------------
 
 async function openBrowser(chromium, { cdp, channel }) {
@@ -549,7 +576,7 @@ async function main() {
     process.exit(2);
   }
 
-  const { browser, mode } = await openBrowser(chromium, { cdp: CDP, channel: CHANNEL });
+  const { browser, mode } = await step('-', '-', 'launch', () => openBrowser(chromium, { cdp: CDP, channel: CHANNEL }));
   const cfg = { surfaces: SURFACES, dividers: DIVIDERS, capAllow: CAP_ALLOW, cutAllow: CUT_ALLOW, tol: TOL };
   const violations = [];
   const pages = [];
@@ -561,42 +588,49 @@ async function main() {
       if (CDP) {
         ctx = browser.contexts()[0];
       } else {
-        ctx = await browser.newContext({
-          viewport: { width, height: HEIGHT },
-          deviceScaleFactor: 1,
-          isMobile: mobile,
-          hasTouch: mobile,
-          reducedMotion: 'reduce',
-        });
-        await ctx.addInitScript((seed) => {
-          try {
-            if (!localStorage.getItem(seed.key)) {
-              localStorage.setItem(seed.key, JSON.stringify([{ ...seed.entry, scoredAt: new Date().toISOString() }]));
-            }
-          } catch (e) { /* storage blocked: the panel simply stays absent */ }
-        }, HISTORY_SEED);
+        ctx = await step('-', width, 'newContext', () =>
+          browser.newContext({
+            viewport: { width, height: HEIGHT },
+            deviceScaleFactor: 1,
+            isMobile: mobile,
+            hasTouch: mobile,
+            reducedMotion: 'reduce',
+          }),
+        );
+        await step('-', width, 'addInitScript', () =>
+          ctx.addInitScript((seed) => {
+            try {
+              if (!localStorage.getItem(seed.key)) {
+                localStorage.setItem(seed.key, JSON.stringify([{ ...seed.entry, scoredAt: new Date().toISOString() }]));
+              }
+            } catch (e) { /* storage blocked: the panel simply stays absent */ }
+          }, HISTORY_SEED),
+        );
       }
 
       for (const route of routes) {
-        const page = await ctx.newPage();
+        const page = await step(route, width, 'newPage', () => ctx.newPage());
         let session = null;
         try {
           if (CDP) {
             // setViewportSize is ignored over CDP (a real OS window); the
             // tab-scoped Emulation override is not, and is cleared below.
-            session = await ctx.newCDPSession(page);
-            await session.send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile });
-            await page.emulateMedia({ reducedMotion: 'reduce' });
+            session = await step(route, width, 'newCDPSession', () => ctx.newCDPSession(page));
+            await step(route, width, 'setDeviceMetricsOverride', () =>
+              session.send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile }),
+            );
+            await step(route, width, 'emulateMedia', () => page.emulateMedia({ reducedMotion: 'reduce' }));
           }
-          await page.goto(BASE + route, { waitUntil: 'load', timeout: 60000 });
-          const actual = await page.evaluate(() => innerWidth);
+          await step(route, width, 'goto', () => page.goto(BASE + route, { waitUntil: 'load', timeout: 60000 }));
+          const actual = await step(route, width, 'innerWidth', () => page.evaluate(() => innerWidth));
           if (Math.abs(actual - width) > 8) {
             violations.push({ route, width, id: 'VIEWPORT', selectors: [], measured: { wanted: width, actual } });
             pages.push({ route, width, ok: false });
             continue;
           }
-          await settle(page);
-          const data = await page.evaluate(probe, cfg);
+          // settle: fonts.ready, one scroll pass, then a 400 ms wait.
+          await step(route, width, 'settle', () => settle(page));
+          const data = await step(route, width, 'probe', () => page.evaluate(probe, cfg));
           const found = assess(route, width, data);
           violations.push(...found);
           pages.push({
@@ -613,15 +647,19 @@ async function main() {
           violations.push({ route, width, id: 'LOAD', selectors: [], measured: { error: String(e).slice(0, 200) } });
           pages.push({ route, width, ok: false });
         } finally {
-          if (session) await session.send('Emulation.clearDeviceMetricsOverride').catch(() => {});
-          await page.close().catch(() => {});
+          if (session) {
+            await step(route, width, 'clearDeviceMetricsOverride', () =>
+              session.send('Emulation.clearDeviceMetricsOverride'),
+            ).catch(() => {});
+          }
+          await step(route, width, 'page.close', () => page.close()).catch(() => {});
         }
       }
-      if (!CDP) await ctx.close();
+      if (!CDP) await step('-', width, 'context.close', () => ctx.close());
     }
   } finally {
     // Only close what we launched; a CDP browser is the operator's.
-    if (!CDP) await browser.close();
+    if (!CDP) await step('-', '-', 'browser.close', () => browser.close());
   }
 
   const summary = {};
