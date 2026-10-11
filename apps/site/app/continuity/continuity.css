@@ -57,7 +57,7 @@
 
 .continuity-card-tag {
   font-family: var(--mono);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--signal-text);
@@ -180,7 +180,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
 
 .continuity-ladder-name {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--signal-text);
@@ -290,7 +290,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
 
 .continuity-panel-side-title {
   margin: 0 0 var(--space-16);
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -320,7 +320,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
   position: absolute;
   inset-inline-start: 0;
   top: 0.1rem;
-  font: 600 0.72rem/1.4 var(--mono);
+  font: 600 0.8rem/1.4 var(--mono);
   color: var(--signal-text);
   font-variant-numeric: tabular-nums;
 }
@@ -366,7 +366,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
   align-items: baseline;
   gap: var(--space-8);
   margin-bottom: var(--space-8);
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);

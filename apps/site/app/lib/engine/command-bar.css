@@ -291,7 +291,7 @@
 
 .eg-bar-tag {
   flex: 0 0 auto;
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -328,7 +328,7 @@
 }
 
 .eg-more > summary small {
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -367,7 +367,7 @@
   height: var(--space-22);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px currentColor;
-  font: 600 0.72rem/1 var(--mono);
+  font: 600 0.8rem/1 var(--mono);
 }
 
 .eg-bar-input {
@@ -572,7 +572,7 @@
 }
 
 .eg-bar-status b {
-  font: 500 0.78rem/1.25rem var(--mono);
+  font: 500 0.8rem/1.25rem var(--mono);
   color: var(--ink);
 }
 
@@ -613,7 +613,7 @@
 
 .eg-seg-label {
   grid-area: label;
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -794,7 +794,7 @@
 }
 
 .eg-seg-hint code {
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--ink);
 }
 

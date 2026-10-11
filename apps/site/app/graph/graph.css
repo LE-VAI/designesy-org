@@ -253,7 +253,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 /* The stage number is an index, as on every row list: quiet at rest, the
    signal text only on contact. */
 .chain-cell-num {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--muted-dim);
   letter-spacing: 0.05em;
@@ -321,7 +321,7 @@ html[data-motion="paused"] .chain-cell-main::after {
    beside or under it. */
 .chain-cell-fact dt {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -349,7 +349,7 @@ html[data-motion="paused"] .chain-cell-main::after {
   justify-content: space-between;
   gap: var(--space-12);
   min-height: 1.5rem;
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 0.8rem/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   text-decoration: none;
@@ -408,7 +408,7 @@ html[data-motion="paused"] .chain-cell-route:hover .chain-cell-route-arrow {
 }
 
 .chain-cell-next-num {
-  font: 500 0.75rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }

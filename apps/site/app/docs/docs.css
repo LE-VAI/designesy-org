@@ -231,7 +231,7 @@
    executable tools asked for an undefined --accent and rendered in ink). */
 .mcp-kind {
   margin-inline-start: var(--space-8);
-  font: 600 0.7rem/1 var(--sans);
+  font: 600 0.8rem/1 var(--sans);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);

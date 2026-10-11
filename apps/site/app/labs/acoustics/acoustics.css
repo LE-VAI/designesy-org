@@ -87,7 +87,7 @@
 }
 
 .cue-rack-title {
-  font: 600 0.78rem/1 var(--sans);
+  font: 600 0.8rem/1 var(--sans);
   color: var(--ink);
 }
 
@@ -101,7 +101,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -208,7 +208,7 @@ html[data-audio="on"] .cue-rack-off {
 }
 
 .cue-cell-num {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -229,7 +229,7 @@ html[data-audio="on"] .cue-rack-off {
 }
 
 .cue-cell-role {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--muted);
 }

@@ -30,7 +30,7 @@
     content: attr(data-label);
     display: block;
     margin-bottom: var(--space-2);
-    font: 600 0.6875rem/1.35 var(--sans);
+    font: 600 0.8rem/1.35 var(--sans);
     font-variant-numeric: normal;
     letter-spacing: 0.12em;
     text-transform: uppercase;

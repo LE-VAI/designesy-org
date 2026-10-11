@@ -133,14 +133,14 @@
 
 .orb-param-value {
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
 
 .orb-param-hint {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.45;
 }
@@ -319,7 +319,7 @@
 }
 
 .orb-attr p {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.5;
   margin: 0;

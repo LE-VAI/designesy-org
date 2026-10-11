@@ -46,7 +46,7 @@
 
 .pricing-card-name {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--signal-text);
@@ -473,7 +473,7 @@ html[data-motion="paused"] .pricing-faq-q::after {
 
 @media (max-width: 480px) {
   .pricing-compare {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
   .pricing-compare th,
   .pricing-compare td {
@@ -538,7 +538,7 @@ html[data-motion="paused"] .pricing-faq-q::after {
 
 .pricing-firewall-label {
   margin: 0 0 var(--space-12);
-  font: 700 0.7rem/1rem var(--mono);
+  font: 700 0.8rem/1rem var(--mono);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--signal-text);

@@ -324,6 +324,14 @@ jobs:
         if: always()
         run: node scripts/check-badge-miss-limit.js
 
+      # Text sizes stay on the brand's type scale in the sheets moved onto it
+      # (brand ledger D59, D68): nothing under the 0.8rem floor, and with the
+      # ladder on, only the six steps (or a clamp, var or inherit). Display
+      # numerals and the home page's rules are exempt, each with its reason.
+      - name: Type scale
+        if: always()
+        run: node scripts/check-type-scale.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js

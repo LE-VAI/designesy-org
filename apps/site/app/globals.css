@@ -1474,7 +1474,7 @@ html[data-motion="paused"] :is(
   align-items: center;
   gap: 1px;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -1484,7 +1484,7 @@ html[data-motion="paused"] :is(
 }
 
 .cmdk-kbd-mod {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 /* Icon-only search below 1024px. It was icon-only only below 720, so between
@@ -1674,7 +1674,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-esc {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1722,7 +1722,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-group-label {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1781,7 +1781,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-item-meta {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.3;
   overflow: hidden;
@@ -1840,7 +1840,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-item-enter {
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1930,14 +1930,14 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-35);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1;
 }
 
 .cmdk-footer-hint kbd {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-5);
@@ -3501,7 +3501,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .status-badge {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3629,7 +3629,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .footer-dock-label {
   display: block;
   padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3714,7 +3714,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   gap: var(--space-fine-35);
   flex-shrink: 0;
   padding: var(--space-fine-30) var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--muted);
   background: var(--surface-raised);
@@ -3760,7 +3760,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
 }
 
 /* Neutral dot accent before each machine pill: --muted at .7 holds 4:1 on
@@ -3931,7 +3931,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -4027,7 +4027,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .principle-num {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--signal-text);
   letter-spacing: 0.08em;
@@ -4192,7 +4192,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
    at this size) put the 20px heading at 1.67x the label. */
 .definition-label,
 .definition .definition-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4310,7 +4310,7 @@ dl.definition-side {
 }
 
 .definition-side dt {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4349,7 +4349,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 0.8rem/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -4766,7 +4766,7 @@ dl.definition-side {
   row-gap: var(--space-4);
   min-width: 0;
   margin-top: var(--space-4);
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 0.8rem/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -4801,7 +4801,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 0.8rem/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -5051,7 +5051,7 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 
 .docs-card-grid .row-index {
   font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   padding-top: 0.15em;
@@ -5179,7 +5179,7 @@ button.row:active {
 
 .row-index,
 .layer-num {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   /* --signal (var(--signal)) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
      --signal-light (var(--signal-light)) is 3.68:1 — passes AA-large (3:1) for the
@@ -5441,7 +5441,7 @@ html[data-motion="paused"] .row-check::before {
    at the row's end; centred in a 224-301px share row it floated 115px below
    its title. */
 .row-copy-badge {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.04em;
@@ -5628,7 +5628,7 @@ button.row {
   top: var(--space-20);
   right: var(--space-24);
   z-index: 1;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 650;
   line-height: 1rem;
   letter-spacing: 0.06em;
@@ -6194,7 +6194,7 @@ button.check-cell {
 }
 
 .check-cell-index {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
@@ -6230,7 +6230,7 @@ button.check-cell {
 }
 
 .check-cell-meta {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.42;
   text-wrap: pretty;
@@ -6246,7 +6246,7 @@ button.check-cell {
    shorter than its cell never needs the break. */
 :is(.check-cell-title, .check-cell-meta) code {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: max(0.8rem, 0.92em);
   font-weight: 500;
   letter-spacing: 0;
   white-space: nowrap;
@@ -6280,7 +6280,7 @@ button.check-cell {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6758,7 +6758,7 @@ button.check-cell {
   .nav-drawer-group-label {
     margin: 0 0 var(--space-4);
     padding: 0 var(--space-12);
-    font: 500 0.6875rem/1rem var(--mono);
+    font: 500 0.8rem/1rem var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-dim);
@@ -7013,7 +7013,7 @@ button.check-cell {
    step, so a re-run step reads as words and an address. */
 .row-url {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: max(0.8rem, 0.92em);
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -7083,7 +7083,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-status {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7200,7 +7200,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-side dt {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7406,7 +7406,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.12em;
@@ -7427,7 +7427,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-note {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.5;
   border-top: 1px solid var(--line-faint);
@@ -7436,7 +7436,7 @@ html[data-motion="paused"] .lab-card:active {
 
 .demo-cell-note code {
   color: var(--signal-text);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
 }
 
 /* ==========================================================================
@@ -7641,7 +7641,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-head {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7908,11 +7908,11 @@ html:not(.js-ready) .demo-stagger-bar {
 
   /* Keep horizontal rail; densify type before stacking */
   .pipeline-label {
-    font-size: 0.76rem;
+    font-size: 0.8rem;
   }
 
   .pipeline-note {
-    font-size: 0.66rem;
+    font-size: 0.8rem;
     max-width: 6.5rem;
   }
 }
@@ -7965,7 +7965,7 @@ html:not(.js-ready) .demo-stagger-bar {
     max-width: none;
     margin-inline-start: auto;
     text-align: right;
-    font-size: 0.72rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -8311,7 +8311,7 @@ a.field-card:active {
   min-width: 0;
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0.08em;
@@ -8330,7 +8330,7 @@ a.field-card:active {
   padding: calc(var(--space-16) - 0.275em) var(--space-fine-135) var(--space-20);
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -8405,7 +8405,7 @@ a.field-card:active {
   background: var(--surface-raised);
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.03em;
@@ -8961,7 +8961,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .effect-desc {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.4;
   z-index: 2;
@@ -9549,7 +9549,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-output-side dt {
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9591,7 +9591,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-empty-run-eyebrow {
   margin: 0;
-  font: 600 0.6875rem/1rem var(--mono);
+  font: 600 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9990,7 +9990,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-lbl {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -10101,7 +10101,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-audit-error {
   margin: var(--space-8) 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--warn-ink);
   font-weight: 500;
 }
@@ -10154,7 +10154,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 .audit-progress-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -10235,7 +10235,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-tokens-badge {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-weight: 500;
 }
@@ -10305,7 +10305,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
 .score-engine-tile-score small {
   margin-left: var(--space-2);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -10317,7 +10317,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -10327,7 +10327,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Result text holds 12px (0.75rem): the tile's check count, the report's
    check statuses and the run time were set at 10.4 and 10.9px. */
 .score-engine-tile-count {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -10369,7 +10369,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-pwf {
   /* What needs attention, in the category lines' words; 12px, the results
      floor (it was 11.2px). */
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -10528,7 +10528,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-check-group-count {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -10682,7 +10682,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signals-eyebrow {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -10744,7 +10744,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 /* The count chip: the check group count's tinted pill, with no border. */
 .score-signals-group-chip {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -10838,7 +10838,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signal-evidence {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.4;
   word-break: break-word;
@@ -10857,7 +10857,7 @@ html[data-motion="paused"] .score-check-group::after {
   align-items: center;
   gap: var(--space-6);
   min-height: 1.5rem;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -10901,7 +10901,7 @@ html[data-motion="paused"] .score-check-group::after {
   line-clamp: 2;
   overflow: hidden;
   margin-top: var(--space-4);
-  font: 400 0.6875rem/1.45 var(--mono);
+  font: 400 0.8rem/1.45 var(--mono);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -11134,7 +11134,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Copy button — pushed to the right, styled as an outlined button */
 
 .score-tab-count {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   padding: var(--space-1) var(--space-5);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 10%, transparent);
@@ -11253,7 +11253,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   background: var(--surface-soft);
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -11280,7 +11280,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Full --muted, no opacity: at .7 the count measured 3.97:1 on the chip, and
    it was only ever off screen in the old sideways strip. */
 .score-chip-num {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -11422,7 +11422,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-card-status-pill {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: var(--space-2) var(--space-6);
@@ -11437,14 +11437,14 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
 .score-card-id {
-  font-size: 0.725rem;
+  font-size: 0.8rem;
   font-family: var(--mono);
   color: var(--muted);
   font-weight: 600;
 }
 
 .score-card-cat {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* muted-dim (var(--muted-dim)) on the card surface (~#19191d) is 4.25:1 — below
@@ -11513,7 +11513,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   /* Same card-surface AA repair as .score-card-cat: muted-dim is 4.25:1
      at 11.2px on ~#19191d; --muted clears 4.5:1 comfortably. */
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .score-card-drawer {
@@ -11537,7 +11537,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-drawer-heading {
-  font-size: 0.675rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* --signal inside the drawer fails AA at 10.8px; --signal-access is the
@@ -11618,7 +11618,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
      the indicator moves on both axes. */
   .score-filter-tab {
     padding: 0 var(--space-fine-60);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     white-space: nowrap;
   }
 
@@ -11638,7 +11638,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
   .score-contract-note {
     margin-top: var(--space-16);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     line-height: 1.5;
   }
 }
@@ -11655,7 +11655,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-hint {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     margin-top: var(--space-12);
   }
 
@@ -11744,7 +11744,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-metric-lbl {
-    font-size: 0.6875rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -12029,7 +12029,7 @@ html[data-motion="paused"] .pricing-card::after {
 .score-history-clear {
   background: none;
   border: none;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   cursor: pointer;
   padding: var(--space-8) var(--space-12);
@@ -12118,7 +12118,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-meta {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: proportional-nums;
 }
@@ -12128,7 +12128,7 @@ html[data-motion="paused"] .pricing-card::after {
   background: none;
   border: 1px solid var(--line);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   padding: var(--space-8) var(--space-fine-85);
   min-height: 44px;
   border-radius: var(--radius-sm);
@@ -12144,7 +12144,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-foot {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
@@ -12535,7 +12535,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-weight {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
 }
 
@@ -12549,7 +12549,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-detail {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
 }
 
@@ -12646,7 +12646,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-status {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
@@ -12662,7 +12662,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-check-id {
   flex-shrink: 0;
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   min-width: 2rem;
 }
@@ -12772,7 +12772,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-slop-finding-id {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   flex-shrink: 0;
 }
@@ -13198,7 +13198,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-20);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   padding: var(--space-2) var(--space-7);
@@ -13233,7 +13233,7 @@ select {
   margin-left: var(--space-8);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-family: var(--mono);
   white-space: nowrap;
@@ -13248,7 +13248,7 @@ select {
   margin-left: var(--space-8);
   padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--line-strong);
@@ -13366,7 +13366,7 @@ select {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 2px;
-  font: 500 0.75rem/1.2 var(--sans);
+  font: 500 0.8rem/1.2 var(--sans);
   color: var(--muted-dim);
 }
 .rs-ticks > span {
@@ -13376,7 +13376,7 @@ select {
   text-align: left;
 }
 .rs-ticks b {
-  font: 500 0.75rem/1.2 var(--mono);
+  font: 500 0.8rem/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   margin-left: 0.3em;
   color: var(--muted-dim);
@@ -13398,7 +13398,7 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6) var(--space-8);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   /* A set line, so the two-column layout can drop the readout to the first
      row exactly (below). */
   line-height: 1rem;
@@ -13549,7 +13549,7 @@ button.rs-row:focus-visible {
   border: none;
   padding: var(--space-4) 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -13572,7 +13572,7 @@ button.rs-row:focus-visible {
 
 .score-rubric-formula {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--muted);
   font-family: var(--mono);
@@ -13583,7 +13583,7 @@ button.rs-row:focus-visible {
 }
 
 .score-rubric-formula sub {
-  font-size: 0.85em;
+  font-size: max(0.8rem, 0.85em);
 }
 
 .score-rubric-weights {
@@ -13599,7 +13599,7 @@ button.rs-row:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .score-rubric-weight-label {
@@ -14311,7 +14311,7 @@ button.rs-row:focus-visible {
 .hero-proof-recent-grade {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   width: 1.45rem;
   height: 1.45rem;
   display: inline-flex;
@@ -14590,7 +14590,7 @@ button.rs-row:focus-visible {
   background: none;
   border: none;
   color: var(--muted-dim);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -14599,7 +14599,7 @@ button.rs-row:focus-visible {
 }
 
 .lottie-tip-close-label {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
@@ -14941,7 +14941,7 @@ button.rs-row:focus-visible {
 .listen-dur {
   min-width: 1.75rem;
   text-align: end;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -15133,7 +15133,7 @@ button.rs-row:focus-visible {
 
 .docs-toc-heading {
   margin: 0 0 var(--space-12, 12px);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -15215,7 +15215,7 @@ button.rs-row:focus-visible {
     min-height: 2.75rem;
   }
   .docs-toc-summary-label {
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -15263,7 +15263,7 @@ button.rs-row:focus-visible {
   border-radius: var(--radius-sm);
   background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-family: var(--mono, ui-monospace, monospace);
   letter-spacing: 0.02em;
   text-decoration: none;
@@ -15820,7 +15820,7 @@ html[data-motion="paused"] .senses-panel {
 }
 
 .senses-row-hint {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -16125,7 +16125,7 @@ html[data-motion="paused"] .senses-panel {
     bottom: max(1rem, env(safe-area-inset-bottom));
     height: 2.75rem;
     padding: 0 var(--space-12);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
   .director-dock-label {
     display: inline;
@@ -16304,7 +16304,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
       var(--rim) border-box;
     box-shadow: var(--specular), var(--elev-2);
     color: var(--ink);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
