@@ -546,6 +546,20 @@ async function a11yScan() {
       findings.push({ id: 'a11y-scan:run:default:source', why: 'Without a config the script still replaces the axe-core source.' });
     }
   }
+  // The url argument is embedded as a string literal: a quote, a backtick and
+  // ${ in it must neither break the script nor run, and the script must
+  // navigate to exactly that URL (it was spliced between single quotes).
+  const hostile = 'https://example.com/a' + "'" + 'b' + '"' + 'c' + '`' + 'd' + '${globalThis.__a11yInjected = 1}' + "');globalThis.__a11yInjected = 2;('";
+  const { payload: hp } = await h.callTool('designesy_a11y_score', { url: hostile });
+  try {
+    const ran = await runA11yScript((hp && hp.playwright_script) || '');
+    if (ran.goto.length !== 1 || ran.goto[0] !== hostile) findings.push({ id: 'a11y-scan:url:goto', why: `With a hostile url the script navigated to ${JSON.stringify(ran.goto)}; it should navigate to exactly ${JSON.stringify(hostile)}.` });
+    if (!ran.output || ran.output.url !== hostile) findings.push({ id: 'a11y-scan:url:output', why: `With a hostile url the script printed url ${JSON.stringify(ran.output && ran.output.url)}.` });
+    if (ran.tests[0] !== `${hostile}: WCAG 2.2 AA scan`) findings.push({ id: 'a11y-scan:url:title', why: `With a hostile url the test was named ${JSON.stringify(ran.tests[0])}.` });
+  } catch (e) {
+    findings.push({ id: 'a11y-scan:url:parse', why: `With a url holding a quote, a backtick and \${, the generated script failed: ${e && e.message ? e.message : e}` });
+  }
+  if (globalThis.__a11yInjected !== undefined) findings.push({ id: 'a11y-scan:url:injected', why: 'Code inside the url argument ran when the generated script was loaded.' });
   return { findings, measured: axe ? `axe-core ${axe.version}: ${five.map((t) => `${t} ${axe.getRules([t]).length}`).join(', ')}` : 'axe-core not loaded' };
 }
 

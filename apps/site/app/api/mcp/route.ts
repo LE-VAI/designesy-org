@@ -464,6 +464,12 @@ const handler = createMcpHandler(
         // the string it is given as axeSource. So the script imports axe-core
         // and hands AxeBuilder its source with the configure() call appended.
         const configImport = brandConfig ? `\nimport axe from 'axe-core';` : '';
+        // The url argument is written into the script as a JavaScript string
+        // literal (JSON.stringify), never spliced between quotes: a quote, a
+        // backtick or ${ in it used to break out of the literal, and the
+        // calling agent runs this script.
+        const urlJs = JSON.stringify(url);
+        const titleJs = JSON.stringify(`${url}: WCAG 2.2 AA scan`);
         const configLine = brandConfig
           ? `// axe.configure() runs in the page, so it travels with the axe-core source.\n  const brandConfig = ${JSON.stringify(brandConfig, null, 2)};\n  const axeSource = axe.source + ';axe.configure(' + JSON.stringify(brandConfig) + ');';`
           : '';
@@ -473,8 +479,8 @@ const handler = createMcpHandler(
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';${configImport}
 
-test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
-  await page.goto('${url}');
+test(${titleJs}, async ({ page }) => {
+  await page.goto(${urlJs});
   ${configLine}
   const results = await new AxeBuilder({ page${brandConfig ? ', axeSource' : ''} })
     .withTags(${JSON.stringify(tags)})
@@ -491,7 +497,7 @@ test('${url}: WCAG 2.2 AA scan', async ({ page }) => {
   const grade = score === null ? null : score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
 
   console.log(JSON.stringify({
-    url: '${url}',
+    url: ${urlJs},
     ruleset: ${JSON.stringify(tag)},
     tags: ${JSON.stringify(tags)},
     score, grade,

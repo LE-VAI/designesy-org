@@ -139,3 +139,34 @@ class TestTheGeneratedScriptRuns:
         plain = _call({"url": "https://example.com/"})
         assert "import axe from" not in plain["playwright_script"]
         assert plain["install_command"] == "npm i -D @axe-core/playwright@4.13.0"
+
+
+class TestTheUrlIsAStringLiteral:
+    """The url argument was spliced between single quotes in page.goto('...'),
+    the test title and the printed result, so a quote ended the literal and the
+    rest of the url became code the caller's runner executed."""
+
+    HOSTILE = "https://example.com/a'b\"c`d${globalThis.__a11yInjected = 1}');globalThis.__a11yInjected = 2;('"
+
+    def test_the_script_parses_and_navigates_to_exactly_that_url(self):
+        import shutil
+        import subprocess
+        import tempfile
+
+        import pytest
+
+        node = shutil.which("node")
+        if not node:
+            pytest.skip("node is not installed; the generated script cannot be run")
+        script = _call({"url": self.HOSTILE})["playwright_script"]
+        assert "page.goto(" + json.dumps(self.HOSTILE, ensure_ascii=False) + ")" in script
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "a11y-scan.spec.mjs")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(script)
+            done = subprocess.run([node, TestTheGeneratedScriptRuns.RUNNER, path, "3", "1"], capture_output=True, text=True, encoding="utf-8", timeout=60)
+        assert done.returncode == 0, done.stderr
+        ran = json.loads(done.stdout)
+        assert ran["goto"] == [self.HOSTILE]
+        assert ran["output"]["url"] == self.HOSTILE
+        assert ran["tests"] == [f"{self.HOSTILE} — WCAG 2.2 AA scan"]

@@ -3617,6 +3617,12 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
     # configure(): it injects the string it is given as axeSource. So the
     # script imports axe-core and appends the configure() call to its source.
     # As the hosted route does.
+    # The url argument is written into the script as a JavaScript string
+    # literal (json.dumps), never spliced between quotes: a quote, a backtick
+    # or ${ in it used to break out of the literal, and the caller runs this
+    # script. As the hosted route does.
+    url_js = json.dumps(url, ensure_ascii=False)
+    title_js = json.dumps(f"{url} — WCAG 2.2 AA scan", ensure_ascii=False)
     config_import = ""
     config_line = ""
     builder_args = "{ page }"
@@ -3635,8 +3641,8 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
         f"import {{ test, expect }} from '@playwright/test';\n"
         f"import AxeBuilder from '@axe-core/playwright';\n"
         f"{config_import}\n"
-        f"test('{url} — WCAG 2.2 AA scan', async ({{ page }}) => {{\n"
-        f"  await page.goto('{url}');\n"
+        f"test({title_js}, async ({{ page }}) => {{\n"
+        f"  await page.goto({url_js});\n"
         f"{config_line}\n"
         f"  const results = await new AxeBuilder({builder_args})\n"
         f"    .withTags({tags_js})\n"
@@ -3650,7 +3656,7 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
         f"  const score = applicable === 0 ? null : Math.round((passCount / applicable) * 100);\n"
         f"  const grade = score === null ? null : score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';\n"
         f"  const note = score === null ? 'not scored: no axe rule in these tags applied to this page' : null;\n"
-        f"  console.log(JSON.stringify({{ url: '{url}', ruleset: {json.dumps(tag, ensure_ascii=False)}, tags: {tags_js}, score, grade, scored: score !== null, note, passCount, failCount, violations }}, null, 2));\n"
+        f"  console.log(JSON.stringify({{ url: {url_js}, ruleset: {json.dumps(tag, ensure_ascii=False)}, tags: {tags_js}, score, grade, scored: score !== null, note, passCount, failCount, violations }}, null, 2));\n"
         f"}});\n"
     )
 
