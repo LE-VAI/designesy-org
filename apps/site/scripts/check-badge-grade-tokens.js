@@ -47,7 +47,12 @@
  *   8. No grade in GRADE_COLOR reads a brand token (--signal*, --action*,
  *      --activation*), a grade that reads a --grade-* token reads its own
  *      text token (--grade-<g>-ink: the grade letter is text), and B reads
- *      --grade-b-ink.
+ *      --grade-b-ink. Since the B′ result, the report draws its grade with the
+ *      shared readout (score/result-parts.tsx), whose letter takes its colour
+ *      from the .rs-readout[data-grade] rules in app/globals.css: then each
+ *      grade's rule must set --tone-ink to its own --grade-<g>-ink (text) and
+ *      --tone to its own --grade-<g> base (the scale's marks), never a brand
+ *      token.
  *
  * Usage:  node scripts/check-badge-grade-tokens.js [--json]
  * Exits 1 on any finding.
@@ -222,7 +227,31 @@ function checkShields(src, bases, inks, neutralFill, findings) {
 }
 
 /** The report page: the grade letter is text in a grade token, never a brand colour. */
-function checkReport(src, findings) {
+function checkReadoutRules(css, findings) {
+  const rows = [];
+  for (const g of GRADES) {
+    const l = g.toLowerCase();
+    const re = new RegExp(`:is\\(\\.rs-readout, \\.rs-track > span\\)\\[data-grade="${l}"\\]\\s*\\{([^}]*)\\}`);
+    const m = css.match(re);
+    if (!m) {
+      findings.push(`report: no .rs-readout rule for grade ${g}`);
+      continue;
+    }
+    const body = m[1].replace(/\s/g, '');
+    rows.push({ grade: g, rule: body });
+    if (!body.includes(`--tone-ink:var(--grade-${l}-ink)`)) findings.push(`report: grade ${g} letter is not --grade-${l}-ink`);
+    if (!body.includes(`--tone:var(--grade-${l})`)) findings.push(`report: grade ${g} marks are not --grade-${l}`);
+    const brand = [...body.matchAll(/var\((--[\w-]+)/g)].map((x) => x[1]).filter((t) => BRAND_TOKEN.test(t));
+    if (brand.length) findings.push(`report: grade ${g} reads brand token ${brand.join(', ')} (D5)`);
+  }
+  return rows;
+}
+
+function checkReport(src, findings, css) {
+  if (!/const GRADE_COLOR/.test(src)) {
+    if (!/<ResultReadout /.test(src)) findings.push('report: neither GRADE_COLOR nor the shared readout draws the grade');
+    return checkReadoutRules(css, findings);
+  }
   const colours = stringMap(src, 'GRADE_COLOR', 'score-report.tsx');
   const rows = [];
   for (const g of GRADES) {
@@ -289,7 +318,7 @@ function main() {
   }
 
   const shields = checkShields(fs.readFileSync(SHIELDS_ROUTE, 'utf8'), tokens, inks, neutralFill.toLowerCase(), findings);
-  const report = checkReport(fs.readFileSync(REPORT, 'utf8'), findings);
+  const report = checkReport(fs.readFileSync(REPORT, 'utf8'), findings, css);
 
   const ok = findings.length === 0;
   if (asJson) {
@@ -307,7 +336,7 @@ function main() {
       console.log(`  ${r.grade}      ${String(r.colour).padEnd(12)}  ${String(r.token ?? '-').padEnd(14)}  ${String(r.text ?? '-').padEnd(7)}  ${r.textOnColour == null ? '-' : r.textOnColour.toFixed(2)}`);
     }
     console.log('  report grade letter (/score/report)');
-    for (const r of report) console.log(`  ${r.grade}      ${r.value}`);
+    for (const r of report) console.log(`  ${r.grade}      ${r.value ?? r.rule}`);
     for (const f of findings) console.log(`  FAIL ${f}`);
   }
   process.exit(ok ? 0 : 1);

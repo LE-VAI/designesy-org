@@ -15,6 +15,7 @@ import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
 import { registerStyle } from './lattice';
+import { fmtScore, statusCountWords } from '../../score/verdict';
 
 export type Face = 'tiles' | 'paths' | 'files' | 'engines' | 'diff';
 
@@ -75,6 +76,10 @@ type Props = {
   sideExtra?: ReactNode;
   /** The target pill before a run: what the engine is waiting for. */
   idleTarget?: string;
+  /** The verdict's label, where the number has a name ("Combined score" on
+      /score), and a line under it saying what it is made of. */
+  verdictLabel?: string;
+  verdictNote?: ReactNode;
   /** Draw the verdict row empty at rest, where the grade will land (default
       on). Off for an engine whose result replaces the verdict (compare). */
   restGrade?: boolean;
@@ -82,12 +87,14 @@ type Props = {
   restSide?: ReactNode;
 };
 
+// The status words every result surface uses (score/verdict.ts STATUS_LABEL),
+// lower-cased for the cells' names and the probe line.
 const STATUS_WORD: Record<Status, string> = {
   PASS: 'pass',
-  WARN: 'warn',
+  WARN: 'needs work',
   FAIL: 'fail',
-  SKIP: 'skipped',
-  MANUAL: 'by a person',
+  SKIP: 'does not apply',
+  MANUAL: 'needs a browser run',
 };
 
 const ZONES = [
@@ -340,7 +347,7 @@ export function Instrument(props: Props) {
                   );
                 })}
               </ul>
-              <span className="eg-engine-score">{phase === 'done' && typeof e.score === 'number' ? e.score : ''}</span>
+              <span className="eg-engine-score">{phase === 'done' && typeof e.score === 'number' ? fmtScore(e.score) : ''}</span>
               {e.asks && <p className="eg-engine-ask">{e.asks}</p>}
             </div>
           ))}
@@ -455,21 +462,22 @@ export function Instrument(props: Props) {
   } else if (phase === 'done' && verdict) {
     side = (
       <>
-        <span className="eg-label">Verdict</span>
-        <div className="eg-verdict-row">
+        <span className="eg-label">{props.verdictLabel || 'Verdict'}</span>
+        <div className="eg-verdict-row" data-grade={verdict.grade.toLowerCase()}>
           <span className="eg-grade">{verdict.grade}</span>
           <span className="eg-score">
-            {verdict.score}
+            {fmtScore(verdict.score)}
             <small>/100</small>
           </span>
         </div>
+        {props.verdictNote && <p className="eg-verdict-note">{props.verdictNote}</p>}
         <GradeScale score={verdict.score} grade={verdict.grade} />
         <ul className="eg-tally">
-          <li><Lamp status="PASS" /><b>{verdict.pass}</b> pass</li>
-          <li><Lamp status="WARN" /><b>{verdict.warn}</b> warn</li>
-          <li><Lamp status="FAIL" /><b>{verdict.fail}</b> fail</li>
-          {!!verdict.skip && <li><Lamp status="SKIP" /><b>{verdict.skip}</b> skipped</li>}
-          {!!verdict.manual && <li><Lamp status="MANUAL" /><b>{verdict.manual}</b> by a person</li>}
+          <li><Lamp status="PASS" /><b>{verdict.pass}</b> {statusCountWords('PASS', verdict.pass)}</li>
+          <li><Lamp status="WARN" /><b>{verdict.warn}</b> {statusCountWords('WARN', verdict.warn)}</li>
+          <li><Lamp status="FAIL" /><b>{verdict.fail}</b> {statusCountWords('FAIL', verdict.fail)}</li>
+          {!!verdict.skip && <li><Lamp status="SKIP" /><b>{verdict.skip}</b> {statusCountWords('SKIP', verdict.skip)}</li>}
+          {!!verdict.manual && <li><Lamp status="MANUAL" /><b>{verdict.manual}</b> {statusCountWords('MANUAL', verdict.manual)}</li>}
         </ul>
         {props.startNode ? (
           props.startNode
@@ -530,7 +538,7 @@ export function Instrument(props: Props) {
 
   const announce =
     phase === 'done' && verdict
-      ? `${name}: grade ${verdict.grade}, ${verdict.score} out of 100. ${verdict.pass} pass, ${verdict.warn} warn, ${verdict.fail} fail.`
+      ? `${name}: ${props.verdictLabel ? `${props.verdictLabel.toLowerCase()} ` : ''}grade ${verdict.grade}, ${fmtScore(verdict.score)} out of 100. ${verdict.pass} ${statusCountWords('PASS', verdict.pass)}, ${verdict.warn} ${statusCountWords('WARN', verdict.warn)}, ${verdict.fail} ${statusCountWords('FAIL', verdict.fail)}.`
       : phase === 'error'
         ? `${name} stopped without a result.${props.errorText ? ` ${props.errorText}` : ''}`
         : '';
@@ -604,9 +612,9 @@ export function Instrument(props: Props) {
       <div className="eg-legend">
         <ul aria-label="Legend">
           <li><Lamp status="PASS" />pass</li>
-          <li><Lamp status="WARN" />warn</li>
+          <li><Lamp status="WARN" />needs work</li>
           <li><Lamp status="FAIL" />fail</li>
-          <li><Lamp status="SKIP" />skipped</li>
+          <li><Lamp status="SKIP" />does not apply</li>
         </ul>
         {/* One item per clause, so the line wraps between clauses and the
             separators are drawn by the sheet (engine.css, eg-legend-meta). */}

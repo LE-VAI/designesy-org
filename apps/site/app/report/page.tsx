@@ -26,13 +26,13 @@ export async function generateMetadata({
   const base = pageMeta({
     title: 'Design-intelligence report',
     description:
-      'Generate a unified design-intelligence report for any URL: score, drift, and readiness synthesized into one composite grade. One input, one output, one grade. The synthesis capstone.',
+      'Generate a unified design-intelligence report for any URL: score, drift, and readiness synthesized into one combined score. One input, one output, one grade. The synthesis capstone.',
     path: '/report',
 
     machineSibling: '/contracts/report.json',
     ogTitle: 'Design-intelligence report · Designesy',
     ogDescription:
-      'One URL, three engines, one composite grade. Score + drift + readiness in a single report.',
+      'One URL, three engines, one combined score. Contract score, drift and readiness in a single report.',
     twitterDescription: 'Designesy report · designesy.org/report',
   });
 
@@ -86,14 +86,14 @@ export default async function ReportPage({ searchParams }: { searchParams?: Prom
           steps={[
             { title: 'Fire three engines', text: 'The contract score, the drift radar and AI readiness, in parallel, each fetching the page itself.' },
             { title: 'Weigh them', text: 'Contract score counts 50%, drift 30%, readiness 20%. If one returns nothing, the others are re-weighted.' },
-            { title: 'Check the report', text: 'Eight synthesis checks confirm every engine ran and that no engine sits more than 30 points from the composite.' },
+            { title: 'Check the report', text: 'Eight synthesis checks confirm every engine ran and that no engine sits more than 30 points from the combined score.' },
             { title: 'Grade', text: 'The weighted sum, rounded, takes the same letter scale as every engine. A is 90 and up.' },
           ]}
           formula={
             <>
-              <span><b>composite</b> = round(score × 0.5 + drift × 0.3 + readiness × 0.2)</span>
+              <span><b>combined score</b> = round(contract score × 0.5 + drift × 0.3 + readiness × 0.2)</span>
               <GradeLine />
-              <span>The synthesis checks grade the report itself, apart from the composite.</span>
+              <span>The synthesis checks grade the report itself, apart from the combined score.</span>
             </>
           }
         />

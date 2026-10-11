@@ -138,7 +138,7 @@ export default function LeaderboardPage() {
                 The cohort
               </h2>
               <p className="eg-section-sub">
-                composite scores, weekly run of {SCORES_DATE}
+                contract scores, weekly run of {SCORES_DATE}
               </p>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function LeaderboardPage() {
             title="Every site on the grade scale"
             note={
               <>
-                Each dot is one site at its composite score, on the bands the engine grades by: F under 60, then a grade every ten
+                Each dot is one site at its contract score, on the bands the engine grades by: F under 60, then a grade every ten
                 points. Sites a point or two apart stack. The ringed dot is designesy.org, scored by its own engine; an outlined dot
                 is a score held over from an earlier run.
               </>
@@ -196,7 +196,7 @@ export default function LeaderboardPage() {
                 held: s.unreachable,
               }))}
               median={COHORT_STATS.median}
-              label={`Composite scores of ${COHORT_STATS.count} sites on a scale from 40 to 100. ${GRADE_LINE}. Median ${fmt(
+              label={`Contract scores of ${COHORT_STATS.count} sites on a scale from 40 to 100. ${GRADE_LINE}. Median ${fmt(
                 COHORT_STATS.median,
               )}. Highest ${TOP.name} at ${fmt(TOP.score)}, lowest ${LOW.name} at ${fmt(LOW.score)}.`}
               idle={
@@ -216,7 +216,7 @@ export default function LeaderboardPage() {
                 Ranking
               </h2>
               <p className="eg-section-sub">
-                by composite score · a site&apos;s name opens its evaluation
+                by contract score · a site&apos;s name opens its evaluation
               </p>
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function LeaderboardPage() {
           <div className="dx-table-box">
             <table className="dx-table dx-rank">
               <caption className="sr-only">
-                {COHORT_STATS.count} sites ranked by composite score, with grade, change since the previous weekly run, score by
+                {COHORT_STATS.count} sites ranked by contract score, with grade, change since the previous weekly run, score by
                 category, and check counts.
               </caption>
               <thead>
@@ -258,7 +258,7 @@ export default function LeaderboardPage() {
 
           <p className="dx-src">
             By category: one column per category, heaviest first ({CATEGORY_LIST}), filled to its score and tinted by grade
-            band; dashed where the engine scored nothing. Category scores come from the batch run of {BATCH_RUN_DATE}; composite
+            band; dashed where the engine scored nothing. Category scores come from the batch run of {BATCH_RUN_DATE}; contract
             scores and ranks from {SCORES_DATE}. A signed figure beside a score is its change since the previous run.
           </p>
 
@@ -300,7 +300,7 @@ export default function LeaderboardPage() {
             <div>
               <dt>The score</dt>
               <dd>
-                The composite the engine reports at <Link href="/score">/score</Link>: {ENGINE_SCORED_CHECK_COUNT} checks it can
+                The contract score the engine reports at <Link href="/score">/score</Link>: {ENGINE_SCORED_CHECK_COUNT} checks it can
                 run from the delivered page, weighted by category, less anti-slop deductions and plus originality credit. The{' '}
                 <Link href="/methodology">methodology</Link> shows every weight.
               </dd>

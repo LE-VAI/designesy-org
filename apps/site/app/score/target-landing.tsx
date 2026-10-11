@@ -16,7 +16,7 @@ const CASE_SNAPSHOTS: Record<string, { grade: string; score: string; date: strin
 
 // The copy payload of THE OUTPUT card: its sentence, without the side key.
 const OUTPUT_TEXT =
-  "A letter grade, a per-check breakdown (pass, fail, warn, skip), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. No backend. No data kept. The score is the artifact.";
+  "A letter grade, a per-check breakdown (pass, fail, needs work, does not apply), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. No backend. No data kept. The score is the artifact.";
 
 /**
  * Shared shell for target-specific score landing pages
@@ -147,7 +147,7 @@ export function TargetLanding({
             <div className="score-output-face">
               <p className="definition-label">The output</p>
               <p>
-                A letter grade, a per-check breakdown (pass, fail, warn, skip),
+                A letter grade, a per-check breakdown (pass, fail, needs work, does not apply),
                 the tokens extracted from your site&rsquo;s <code>:root</code>,
                 and a copyable receipt citing the contract version. No login.
                 No backend. No data kept. The score is the artifact.
@@ -160,7 +160,7 @@ export function TargetLanding({
               </div>
               <div>
                 <dt>Checks</dt>
-                <dd>{ENGINE_CHECK_COUNT}, each pass, fail, warn or skip</dd>
+                <dd>{ENGINE_CHECK_COUNT}, each pass, fail, needs work or does not apply</dd>
               </div>
               <div>
                 <dt>Receipt</dt>
