@@ -38,6 +38,8 @@ import { ResultReadout, ResultScale, CategoryList } from './result-parts';
 import { ScoreEmptyRun } from './score-empty-run';
 import { ReviewPrompt } from '../lib/review-prompt';
 import { BrandIcon } from '../lib/brand-icons';
+import { useIgnition } from '../lib/engine/ignition';
+import type { Phase } from '../lib/engine/types';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -210,6 +212,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const verdictRef = useRef<HTMLParagraphElement | null>(null);
   const landRun = useRef<{ y: number } | null>(null);
+  // The loading ignition (brand D51): the run line's lone dot breathes while
+  // the run is out and lights when a scored result lands (lib/engine/ignition).
+  const lampDot = useRef<HTMLElement | null>(null);
+  const lampHalo = useRef<HTMLElement | null>(null);
+  const runLineRef = useRef<HTMLParagraphElement | null>(null);
   // The URL of the last run, for "Try again" on a failure.
   const lastTarget = useRef('');
   const [rubricOpen, setRubricOpen] = useState(false);
@@ -351,7 +358,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const active = document.activeElement;
     const stillHere = !active || active === document.body || !!active.closest('.score-form');
     requestAnimationFrame(() => {
-      bringIntoView(resultsRef.current);
+      // The run line stands over the result and carries the lit dot, so it
+      // lands in view with it (under the sticky bar, not behind it).
+      bringIntoView(runLineRef.current ?? resultsRef.current);
       if (stillHere) verdictRef.current?.focus({ preventScroll: true });
     });
   }, [status]);
@@ -627,6 +636,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     }
   }
 
+  const landed = status === 'ok' && !!result?.ok && !isEmptyRun(result);
+  const runPhase: Phase = status === 'loading' ? 'running' : status === 'ok' ? 'done' : status === 'error' ? 'error' : 'idle';
+  useIgnition(lampDot, lampHalo, runPhase, landed, true);
+  const runHost = (status === 'loading' ? normalizeInput(url) : scoredUrl).replace(/^https?:\/\//i, '').replace(/\/$/, '');
+
   return (
     <div className="score-form">
       <EngineBar
@@ -676,9 +690,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       )}
 
+      {/* One element from the run's start to its result, so the dot that
+          breathed is the dot that lights. Drawn only: the loading card keeps
+          the same words for screen readers, and the result is announced by
+          focus on the verdict line. A failed or empty run drops it with the
+          loader, as before. */}
+      {(status === 'loading' || landed) && (
+        <p className="score-run-line" aria-hidden="true" ref={runLineRef}>
+          <span className="score-lamp" data-ignite="" data-phase={runPhase}>
+            <i className="ig-halo" ref={lampHalo} />
+            <i className="ig-dot" ref={lampDot} />
+          </span>
+          {status === 'loading' ? 'Scoring' : 'Scored'} {runHost}
+        </p>
+      )}
+
       {status === 'loading' && (
         <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
-          <p className="score-verify-log-title">Scoring {normalizeInput(url).replace(/^https?:\/\//i, '').replace(/\/$/, '')}</p>
+          <p className="score-verify-log-title sr-only">Scoring {normalizeInput(url).replace(/^https?:\/\//i, '').replace(/\/$/, '')}</p>
           <ol className="score-verify-log-list">
             {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 14 categories', 'Composing verdict'].map((step, i) => (
               <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
