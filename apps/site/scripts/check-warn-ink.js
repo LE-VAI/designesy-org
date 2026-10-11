@@ -7,13 +7,15 @@
  * The status hues (--ok, --warn, --error), the grade hues (--grade-a ... -f)
  * and --activation are for icons, dots, bars, arcs and tints. In the light
  * theme several of them are under the 4.5:1 that text needs: --warn #b07d04
- * is 3.51:1 on --paper, --grade-b #65a30d 2.99:1, --grade-d #ea580c 3.44:1,
- * --activation #d4a017 2.30:1, and --ok and --error fall to 4.26:1 and 4.10:1
- * on --surface-lifted. Until 2026-10-08 the warn hue painted the WARN status
+ * is 3.51:1 on --paper, --grade-b #5D960C 3.48:1, --activation #F56B00
+ * 2.91:1, and --ok and --error fall to 4.26:1 and 4.10:1 on
+ * --surface-lifted. (Before identity v1: --grade-b #65a30d 2.99:1, --grade-d
+ * #ea580c 3.44:1, --activation #d4a017 2.30:1.) Until 2026-10-08 the warn hue painted the WARN status
  * words; a contrast sweep of the live site then found the grade-B letter on
  * the home page at 3.09:1 and the badge table's B at 2.93:1, among others.
  * The fix is one text token per hue, --<hue>-ink, equal to the hue in the
- * dark theme and mixed toward --ink in the light theme.
+ * dark theme and mixed toward --ink (or, for the grades and --activation
+ * since identity v1, set to a measured value) in the light theme.
  *
  * WHAT IT ASSERTS
  *   1. No stylesheet under app/ paints text (`color:` or
@@ -33,6 +35,11 @@
  *   5. Every inline text mix of a hue toward --ink found in a stylesheet
  *      (`color: color-mix(in srgb, var(--warn) 70%, var(--ink))`) is measured
  *      the same way.
+ *   4b. The four-surface standard of identity v1 (brand ledger D17 to D19):
+ *      --signal-access, the text, link and focus colour, is at least 4.5:1 on
+ *      all four surfaces in both themes, like an ink token; and the grade
+ *      bases, which paint arcs, fills and emblems, are at least 3:1 on all
+ *      four (WCAG 1.4.11).
  *   6. --muted-dim, the dim text tier, is at least 4.5:1 on all four light
  *      surfaces, and on --paper, --surface and --surface-raised in dark. Dark
  *      --surface-lifted is excluded on purpose: dark scopes on that plane
@@ -76,6 +83,11 @@ const HUES = ['ok', 'warn', 'error', 'grade-a', 'grade-b', 'grade-c', 'grade-d',
 // roles whose light values point at an ink token.
 const INK = ['warn-ink', 'ok-ink', 'error-ink', 'grade-a-ink', 'grade-b-ink', 'grade-c-ink', 'grade-d-ink', 'grade-f-ink', 'activation-ink'];
 const TEXT_ROLES = ['grade-b-light', 'error-text', 'amber-notice'];
+// The signal used as text, links and focus in both themes (identity v1, D19).
+const LINK = ['signal-access'];
+// Mark colours: arcs, fills and emblems, held to 3:1 (WCAG 1.4.11, D18).
+const MARKS = ['grade-a', 'grade-b', 'grade-c', 'grade-d', 'grade-f'];
+const MARK_MIN = 3;
 const SURFACES = ['paper', 'surface', 'surface-raised', 'surface-lifted'];
 
 const rel = (p) => path.relative(SITE, p).split(path.sep).join('/');
@@ -344,28 +356,28 @@ const resolve = (theme, value) => resolveIn(SITE_SCOPE[theme](), value);
 
 const lines = [];
 // backgrounds: [{ name, rgb }]; text must hold 4.5:1 on every one.
-function measureOn(label, theme, color, backgrounds) {
+function measureOn(label, theme, color, backgrounds, min = MIN) {
   for (const { name, rgb } of backgrounds) {
     if (!rgb) {
       failures.push(`cannot read ${theme} ${name} (for ${label})`);
       continue;
     }
     const ratio = contrast(color, rgb);
-    lines.push({ label, theme, surface: name, color: toHex(color), ratio });
-    if (ratio < MIN) failures.push(`${theme} ${label} ${toHex(color)} is ${ratio.toFixed(3)}:1 on ${name}, under ${MIN}:1`);
+    lines.push({ label, theme, surface: name, color: toHex(color), ratio, min });
+    if (ratio < min) failures.push(`${theme} ${label} ${toHex(color)} is ${ratio.toFixed(3)}:1 on ${name}, under ${min}:1`);
   }
 }
 const siteSurfaces = (theme, names) => names.map((n) => ({ name: `--${n}`, rgb: resolve(theme, `var(--${n})`) }));
-const measure = (label, theme, color, names) => measureOn(label, theme, color, siteSurfaces(theme, names));
+const measure = (label, theme, color, names, min = MIN) => measureOn(label, theme, color, siteSurfaces(theme, names), min);
 
 for (const theme of ['dark', 'light']) {
   if (!themes[theme]) {
     failures.push(`globals.css: no ${theme} token block found`);
     continue;
   }
-  for (const name of [...INK, ...TEXT_ROLES, 'muted-dim']) {
+  for (const name of [...INK, ...TEXT_ROLES, ...LINK, 'muted-dim']) {
     const own = decl(themes[theme], name);
-    if (!own && INK.includes(name)) {
+    if (!own && (INK.includes(name) || LINK.includes(name))) {
       failures.push(`globals.css: --${name} is not declared in the ${theme} block`);
       continue;
     }
@@ -377,6 +389,15 @@ for (const theme of ['dark', 'light']) {
     }
     const surfaces = name === 'muted-dim' && theme === 'dark' ? SURFACES.slice(0, 3) : SURFACES;
     measure(`--${name}`, theme, color, surfaces);
+  }
+  for (const name of MARKS) {
+    const value = decl(themes[theme], name) || decl(themes.dark, name);
+    const color = resolve(theme, value);
+    if (!color) {
+      failures.push(`globals.css: cannot measure ${theme} --${name} "${value}"`);
+      continue;
+    }
+    measure(`--${name} (mark)`, theme, color, SURFACES, MARK_MIN);
   }
   for (const { where, value } of inlineMixes) {
     const color = resolve(theme, value);
@@ -477,7 +498,7 @@ for (const l of lines) {
   const key = `${l.theme} ${l.label}`;
   if (!rows.has(key)) rows.set(key, `${l.theme.padEnd(5)} ${l.label} ${l.color}:`);
   // Three decimals near the floor, where two would print a failing 4.498 as 4.50.
-  const shown = Math.abs(l.ratio - MIN) < 0.01 ? l.ratio.toFixed(3) : l.ratio.toFixed(2);
+  const shown = Math.abs(l.ratio - l.min) < 0.01 ? l.ratio.toFixed(3) : l.ratio.toFixed(2);
   rows.set(key, `${rows.get(key)} ${l.surface} ${shown}`);
 }
 for (const row of rows.values()) console.log(`  ${row}`);
@@ -486,4 +507,4 @@ if (failures.length) {
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, --muted-dim, ${inlineMixes.length} inline ink mixes, ${aliasTextValues.length} followed alias values (${FOLLOW.map((n) => `--${n}`).join(', ')}) and ${appReadings} report-app tokens are at least ${MIN}:1 on every surface in both themes.`);
+console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, --signal-access, --muted-dim, ${MARKS.length} grade marks at ${MARK_MIN}:1, ${inlineMixes.length} inline ink mixes, ${aliasTextValues.length} followed alias values (${FOLLOW.map((n) => `--${n}`).join(', ')}) and ${appReadings} report-app tokens are at least ${MIN}:1 on every surface in both themes.`);

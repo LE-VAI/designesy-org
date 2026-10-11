@@ -217,11 +217,11 @@ const PRIMITIVE_COLORS = [
   { token: '--surface', value: '#0a0a0c', role: 'Card / panel base' },
   { token: '--surface-raised', value: '#121216', role: 'Elevated surface' },
   { token: '--surface-lifted', value: '#16161b', role: 'Lifted / hover panel' },
-  { token: '--signal', value: '#0133cb', role: 'Brand signal accent' },
-  { token: '--signal-light', value: '#3358e8', role: 'Signal hover / focus lift' },
-  { token: '--signal-access', value: '#5d7bff', role: 'Accessible signal (AA on dark)' },
-  { token: '--paper-on-signal', value: '#ffffff', role: 'Text on signal fill' },
-  { token: '--activation', value: '#fecc34', role: 'Activation highlight (reserved)' },
+  { token: '--signal', value: '#0A94FF', role: 'Brand signal accent' },
+  { token: '--signal-light', value: '#36A7FF', role: 'Signal hover / focus lift' },
+  { token: '--signal-access', value: '#0A94FF · light: #016ABB', role: 'Accessible signal (AA on dark)' },
+  { token: '--paper-on-signal', value: '#010102', role: 'Text on signal fill' },
+  { token: '--activation', value: '#F56B00', role: 'Activation highlight (reserved)' },
 ];
 
 const PRIMITIVE_SURFACES = [
@@ -230,7 +230,7 @@ const PRIMITIVE_SURFACES = [
   { token: '--line', value: 'rgba(255, 255, 255, 0.12)', role: 'Default border' },
   { token: '--line-strong', value: 'rgba(255, 255, 255, 0.22)', role: 'Emphasized border' },
   { token: '--line-faint', value: 'rgba(255, 255, 255, 0.06)', role: 'Subtle divider' },
-  { token: '--signal-dim', value: 'rgba(1, 51, 203, 0.14)', role: 'Signal wash / badge fill' },
+  { token: '--signal-dim', value: 'rgba(10, 148, 255, 0.14)', role: 'Signal wash / badge fill' },
 ];
 
 // The radius rows are the contract module's: the four published steps and the

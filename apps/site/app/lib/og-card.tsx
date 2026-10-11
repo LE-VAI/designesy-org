@@ -37,7 +37,9 @@ function ogFonts() {
 }
 
 /** VAI house mark (the LE-VAI asterisk), drawn on the card's black paper. */
-const VAI_YELLOW = '#FECC35';
+// VAI's own token (identity v1, D6). Temporary: the MIGRATE packet retires
+// this asterisk and leaves the text-only "A VAI project" link (D24).
+const VAI_YELLOW = '#FFC400';
 function VaiMark({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
