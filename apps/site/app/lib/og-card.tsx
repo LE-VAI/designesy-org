@@ -2,14 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
 import { ImageResponse } from 'next/og';
-import {
-  LOCKUP_MARK_TRANSFORM,
-  LOCKUP_VIEWBOX,
-  LOCKUP_WORD_TRANSFORM,
-  LOGO_AZURE,
-  markChildren,
-  wordChildren,
-} from './brand-logotype';
+import { LOGO_AZURE, lockupGeometry, markChildren, wordChildren } from './brand-logotype';
 import { BrandIcon, type BrandIconName } from './brand-icons';
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -62,12 +55,17 @@ export function ogFonts(): OgFont[] {
  * master's padding, so the dot (x 366) is never cropped.
  */
 export function OgLockup({ height }: { height: number }) {
-  const [, , vbW, vbH] = LOCKUP_VIEWBOX.split(' ').map(Number);
+  // The mark is 74% of the lockup's height, so a lockup up to 65px tall has a
+  // mark of 48px or less and takes the small master (D66), as the header does.
+  // Every card draws it 46px tall.
+  const small = height <= 65;
+  const g = lockupGeometry(small);
+  const [, , vbW, vbH] = g.viewBox.split(' ').map(Number);
   return (
-    <svg width={Math.round((height * vbW) / vbH)} height={height} viewBox={LOCKUP_VIEWBOX}>
+    <svg width={Math.round((height * vbW) / vbH)} height={height} viewBox={g.viewBox}>
       <g transform="scale(1,-1)">
-        <g transform={LOCKUP_MARK_TRANSFORM}>{markChildren(T.logo)}</g>
-        <g transform={LOCKUP_WORD_TRANSFORM}>{wordChildren(T.logo)}</g>
+        <g transform={g.mark}>{markChildren(T.logo, small)}</g>
+        <g transform={g.word}>{wordChildren(T.logo)}</g>
       </g>
     </svg>
   );
