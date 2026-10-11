@@ -47,6 +47,7 @@
     "build:score": "cd packages/score && npx tsc -p tsconfig.json",
     "lint": "cd apps/site && npm run lint",
     "score": "node cli/designesy-score.mjs",
-    "deploy:prod": "node scripts/deploy-prod.mjs"
+    "deploy:prod": "node scripts/deploy-prod.mjs",
+    "check-retired-literals": "node apps/site/scripts/check-retired-literals.js && node scripts/check-retired-literals-packages.js"
   }
 }
