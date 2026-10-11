@@ -176,7 +176,13 @@ function isPrivateIPv4(host: string): boolean {
 const DNS_CACHE_TTL = 60_000; // 60 seconds
 const dnsCache = new Map<string, { addresses: string[]; expiresAt: number }>();
 
-async function resolveAndValidateHost(hostname: string): Promise<boolean> {
+/**
+ * True when every address `hostname` resolves to is public. A lookup failure
+ * counts as not public (it cannot be shown to be safe). Exported for callers
+ * that hand a URL to something other than safeFetch: a third-party API, or a
+ * browser (app/lib/browser-guard.ts).
+ */
+export async function resolveAndValidateHost(hostname: string): Promise<boolean> {
   // Check DNS cache first (cache the resolution, not the decision — re-validate
   // cached IPs against the blocklist on every call).
   const now = Date.now();
@@ -215,6 +221,18 @@ async function resolveAndValidateHost(hostname: string): Promise<boolean> {
   }
 
   return true;
+}
+
+/**
+ * The full check for a URL that will be fetched outside safeFetch: the string
+ * checks of isValidUrl, then a DNS lookup of the host with every resolved
+ * address validated. Run it before the URL leaves this process. It is a
+ * check at one moment, not a pin: whoever fetches the URL later resolves the
+ * name again (see the DNS-rebinding note at the top of this file).
+ */
+export async function isPublicUrl(url: string): Promise<boolean> {
+  if (!isValidUrl(url)) return false;
+  return resolveAndValidateHost(new URL(url).hostname);
 }
 
 /**
