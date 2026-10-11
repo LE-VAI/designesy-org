@@ -22,6 +22,7 @@ const SURFACE_LINKS = [
   { href: '/continuity', label: 'Continuity' },
   { href: '/contracts', label: 'Contracts' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/brand', label: 'Brand' },
   { href: '/privacy', label: 'Privacy' },
 ];
 

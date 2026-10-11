@@ -92,6 +92,11 @@ export type OgCardProps = {
   badge?: string;
   /** The icon in the card's tile; null for none. Defaults by kind and path. */
   icon?: BrandIconName | null;
+  /**
+   * The quiet endorsement line (D24). On by default; false for a page whose
+   * own copy leaves it off, so its card matches it (/brand, D71).
+   */
+  endorsement?: boolean;
 };
 
 /**
@@ -128,6 +133,7 @@ export function renderOgCard({
   kind = 'default',
   badge,
   icon,
+  endorsement = true,
 }: OgCardProps) {
   const tileIcon = icon === undefined ? defaultIcon(kind, path) : icon;
   const textWidth = tileIcon ? 720 : 960;
@@ -238,7 +244,9 @@ export function renderOgCard({
           }}
         >
           <div style={{ display: 'flex', fontFamily: '"Geist Mono"', fontSize: 22, color: T.muted }}>{path}</div>
-          <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
+          {endorsement ? (
+            <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
+          ) : null}
         </div>
 
         {tileIcon ? (

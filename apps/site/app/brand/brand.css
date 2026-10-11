@@ -1,0 +1,416 @@
+/* /brand route-only styles (brand ledger D71). Imported by brand/page.tsx, so
+   Next code-splits it to this route.
+
+   Sizes are the D68 type scale, a Major Third on a 16px root: 0.8rem labels
+   (the floor), 1rem body, 1.25rem lead and card titles, 1.563rem, 1.953rem
+   section titles; the page title keeps the site's display clamp (.surface-title)
+   at Fraunces 700 (D58). Colours are the site's tokens; the two specimen
+   grounds, ink and white, are set on the page from the contract's values
+   (--brand-ink, --brand-white in page.tsx) because they must not follow the
+   theme: a lockup "on ink" is on ink in both themes. Cards keep a neutral
+   hairline and no coloured edge (D62); orange appears only where the page
+   shows the flame. Nothing on the page moves. */
+
+/* --- Hero --- */
+
+.brand-kicker {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: var(--space-12);
+}
+
+/* D58: one page-title style, Fraunces 700. */
+.brand-page .brand-title {
+  font-weight: 700;
+}
+
+.brand-lede {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+/* The two keys of Ctrl+I, drawn as keycaps inside the sentence. */
+.brand-lede kbd {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-8);
+  margin-inline: var(--space-fine-15);
+  vertical-align: 0.12em;
+}
+
+/* The inversion, side by side at every width: the adjacency is the story. */
+.brand-flip {
+  margin: 0 0 var(--space-56);
+  display: grid;
+  gap: var(--space-16);
+}
+
+.brand-flip-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.brand-flip-pair > .brand-stage {
+  border-radius: 0;
+  min-height: clamp(12rem, 9rem + 10vw, 17.5rem);
+  box-shadow: none;
+}
+
+.brand-flip-mark {
+  height: clamp(7.5rem, 5rem + 8vw, 10rem);
+  width: auto;
+}
+
+.brand-eq {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Specimen grounds and the mark's dot --- */
+
+.brand-stage {
+  display: grid;
+  place-items: center;
+  min-height: 9.375rem;
+  padding: var(--space-20);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+  /* A specimen of colour keeps its colours in forced-colours mode. */
+  forced-color-adjust: none;
+}
+
+.brand-stage--dark {
+  background: var(--brand-ink);
+  color: var(--brand-white);
+}
+
+.brand-stage--light {
+  background: var(--brand-white);
+  color: var(--brand-ink);
+}
+
+.brand-dot--azure {
+  fill: var(--signal);
+}
+
+.brand-dot--flame {
+  fill: var(--activation);
+}
+
+/* --- Sections --- */
+
+.brand-section {
+  display: grid;
+  gap: var(--space-24);
+  padding-block: var(--space-56);
+  border-top: 1px solid var(--line);
+}
+
+.brand-section:last-child {
+  padding-bottom: var(--space-96);
+}
+
+.brand-section h2 {
+  font-family: var(--display);
+  font-size: 1.953rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.brand-section h3 {
+  font-family: var(--sans);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.brand-section p {
+  font-size: 1rem;
+  line-height: 1.65;
+  max-width: 66ch;
+}
+
+.brand-section p.brand-fine,
+.brand-fine {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.brand-section p.brand-mono,
+.brand-mono {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* A link in running text: ink and an underline at rest. Focus is the house
+   inline-link fill (globals.css), so this rule stands down while focused. */
+.brand-page p > a:not([class]):not(:focus-visible) {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color var(--duration-quick) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .brand-page p > a:not([class]):not(:focus-visible):hover {
+    text-decoration-color: var(--signal-access);
+  }
+}
+
+.brand-tiles,
+.brand-type,
+.brand-swatches,
+.brand-grades,
+.brand-icon-grid,
+.brand-donts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- The logo --- */
+
+.brand-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--grid-gutter);
+}
+
+.brand-tile {
+  display: grid;
+  align-content: start;
+  gap: var(--space-12);
+  min-width: 0;
+  padding: var(--space-20);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+.brand-tile .brand-stage {
+  margin-bottom: var(--space-4);
+}
+
+.brand-lockup {
+  width: min(100%, 18.75rem);
+  height: auto;
+}
+
+.brand-lockup-small {
+  height: 1.5rem;
+  width: auto;
+}
+
+.brand-mark {
+  height: 6rem;
+  width: auto;
+}
+
+.brand-wordmark {
+  width: min(100%, 13.75rem);
+  height: auto;
+}
+
+/* Clear space: the dashed edge sits one dot diameter (2 x r 58 = 116) from
+   the art box (396 tall), at the mark's rendered height. */
+.brand-clear {
+  --mark-h: 6rem;
+  display: inline-grid;
+  padding: calc(var(--mark-h) * 116 / 396);
+  outline: 1px dashed var(--signal-deep);
+  outline-offset: -1px;
+}
+
+.brand-clear .brand-mark {
+  height: var(--mark-h);
+}
+
+/* --- Colour --- */
+
+.brand-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--grid-gutter);
+}
+
+.brand-swatch {
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.brand-chip {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-16);
+  min-height: 7.5rem;
+  padding: var(--space-16);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--line);
+  forced-color-adjust: none;
+}
+
+.brand-chip-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.brand-chip-hex {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.brand-grades {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-8);
+  max-width: 32.5rem;
+}
+
+.brand-grade {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  font-family: var(--display);
+  font-size: 1.563rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.brand-grade-cell {
+  display: block;
+  padding-block: var(--space-8);
+  forced-color-adjust: none;
+}
+
+/* --- Type --- */
+
+.brand-type {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.brand-type-row {
+  display: grid;
+  grid-template-columns: 12.5rem minmax(0, 1fr);
+  gap: var(--space-16);
+  align-items: baseline;
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line);
+}
+
+.brand-type-row > * {
+  min-width: 0;
+}
+
+.brand-type-display {
+  font-family: var(--display);
+  font-size: 2.441rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.brand-type-text {
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+
+.brand-type-data {
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 40rem) {
+  .brand-type-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+}
+
+/* --- Icons --- */
+
+.brand-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: var(--space-12);
+}
+
+.brand-icon-tile {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--space-8) var(--space-12);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  color: var(--ink);
+}
+
+/* --- Please don't --- */
+
+.brand-donts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-24) var(--grid-gutter);
+}
+
+.brand-dont {
+  display: grid;
+  align-content: start;
+  gap: var(--space-fine-30);
+  padding-top: var(--space-12);
+  border-top: 2px solid var(--ink);
+}
+
+.brand-section .brand-dont h3 {
+  font-size: 1rem;
+}
+
+/* --- Download --- */
+
+.brand-kit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-16) var(--space-24);
+}
+
+.brand-kit-meta {
+  display: grid;
+  gap: var(--space-fine-20);
+}
