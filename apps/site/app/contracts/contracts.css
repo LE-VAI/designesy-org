@@ -222,7 +222,7 @@
   background: var(--signal);
   color: var(--paper-on-signal);
   border: 1px solid var(--signal);
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
