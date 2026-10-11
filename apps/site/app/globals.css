@@ -3112,58 +3112,14 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   }
 }
 
-/* --- Definitions: the signal accent is state, never rest. The 3px bar on
-   the left edge draws in (scaleY, transform only) while the pointer is on a
-   copyable definition, while it holds keyboard focus, and while it reads
-   Copied. At rest the card is plain reading material: the resting 3px
-   signal border was the generic callout stripe. --- */
+/* --- Definitions: plain reading material. No edge stripe in any state
+   (brand ledger D62): the 3px signal bar that drew in on hover, focus and
+   Copied was the side-stripe card pattern. Focus has its ring and Copied its
+   badge, so nothing is lost. --- */
 .definition {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-}
-.definition::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 300ms var(--ease-out);
-  z-index: 1;
-  pointer-events: none;
-}
-@media (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    transform: scaleY(1);
-  }
-}
-.definition.is-copyable:focus-visible::after,
-.definition.is-copied::after {
-  transform: scaleY(1);
-}
-/* Reduced motion, tiered: the second-pass guard hides the bar outright; for
-   its states it comes back as an opacity fade at the 150ms entry (inside the
-   200ms allowance) instead of drawing in. */
-@media (prefers-reduced-motion: reduce) {
-  .definition.is-copyable::after {
-    display: block;
-    transform: none;
-    opacity: 0;
-    transition: opacity var(--mat-t-in);
-  }
-  .definition.is-copyable:focus-visible::after,
-  .definition.is-copied::after {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    opacity: 1;
-  }
 }
 
 /* --- Buttons: signal glow ring on hover (primary) --- */
@@ -3507,7 +3463,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* --- Reduced motion: disable all second-pass effects --- */
 @media (prefers-reduced-motion: reduce) {
   .lab-card::after,
-  .definition::after,
   .button.primary::after,
   .button.ghost::after,
   button.pillar::before,
@@ -5200,10 +5155,12 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   border-top: 1px solid var(--line-faint);
 }
 
+/* Hover lifts the row's ground and firms its rule in the line colour; a
+   signal-coloured left edge is the side-stripe pattern (brand ledger D62). */
 @media (hover: hover) {
   .row:hover,
 .layer-item:hover {
-    border-left-color: var(--signal);
+    border-left-color: var(--line-strong);
     background: var(--surface-soft);
   }
 }
@@ -10335,25 +10292,16 @@ a.lab-card:focus-visible .lab-card-arrow {
   box-shadow: var(--inner-light), 0 4px 16px color-mix(in srgb, var(--signal) 15%, transparent);
 }
 
-/* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
-.score-engine-tile-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--tile-hue, var(--line));
-}
-
-/* A tile takes its grade's colour from the contract's grade tokens: the bar
-   (a mark) in --grade-*, the letter and score (text) in --grade-*-ink. It used
-   a 90/70 status rule of its own, so a D drew red and a B drew yellow. */
-.score-engine-tile[data-grade="a"] { --tile-hue: var(--grade-a); --tile-ink: var(--grade-a-ink); }
-.score-engine-tile[data-grade="b"] { --tile-hue: var(--grade-b); --tile-ink: var(--grade-b-ink); }
-.score-engine-tile[data-grade="c"] { --tile-hue: var(--grade-c); --tile-ink: var(--grade-c-ink); }
-.score-engine-tile[data-grade="d"] { --tile-hue: var(--grade-d); --tile-ink: var(--grade-d-ink); }
-.score-engine-tile[data-grade="f"] { --tile-hue: var(--grade-f); --tile-ink: var(--grade-f-ink); }
+/* A tile takes its grade's colour from the contract's grade tokens: the letter
+   and score (text) in --grade-*-ink. It used a 90/70 status rule of its own,
+   so a D drew red and a B drew yellow. The grade-coloured 2px top bar is gone
+   (brand ledger D62, no coloured edge stripes on cards): the letter carries
+   the grade, and the tile keeps its neutral line border. */
+.score-engine-tile[data-grade="a"] { --tile-ink: var(--grade-a-ink); }
+.score-engine-tile[data-grade="b"] { --tile-ink: var(--grade-b-ink); }
+.score-engine-tile[data-grade="c"] { --tile-ink: var(--grade-c-ink); }
+.score-engine-tile[data-grade="d"] { --tile-ink: var(--grade-d-ink); }
+.score-engine-tile[data-grade="f"] { --tile-ink: var(--grade-f-ink); }
 .score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
 .score-engine-tile-score small {
   margin-left: var(--space-2);
@@ -15064,8 +15012,10 @@ button.rs-row:focus-visible {
 }
 
 
+/* Playing is happening now, so the listen button takes the flame; the row
+   only lifts its ground. An orange left edge was a coloured stripe (brand
+   ledger D62). */
 .row--listen.is-playing {
-  border-left-color: var(--activation);
   background: var(--surface-soft);
 }
 
