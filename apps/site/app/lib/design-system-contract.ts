@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.3: machine + human source.
+ * Designesy design system contract v0.4.4: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -38,13 +38,13 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.3',
+  version: '0.4.4',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-10-09',
+  updated: '2026-10-11',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -244,38 +244,68 @@ export const designSystemContract = {
     },
     signal: {
       token: '--signal',
-      value: '#0133cb',
+      value: '#0A94FF',
       role: 'Brand accent (internal token name; public products avoid this vocabulary)',
     },
     signal_light: {
       token: '--signal-light',
-      value: '#3358e8',
+      value: '#36A7FF',
       role: 'Accent hover / focus lift',
     },
     activation: {
       token: '--activation',
-      value: '#fecc34',
-      role: 'Activation highlight (reserved)',
+      value: '#F56B00',
+      role: 'Activated Orange, the exact RGB inverse of --signal: live moments only (a scan running, the live monitor, the activated mark). Selection is blue',
     },
     activation_ink: {
       token: '--activation-ink',
       value: 'var(--activation)',
-      role: 'Activation used as text: --activation on dark (13.81:1 on paper); on light, --activation mixed 55% toward --ink in oklab (#79602c, 5.76:1 on paper, 5.06:1 on lifted). Light --activation itself (#d4a017, 2.30:1 on paper) is for borders and highlights',
+      role: 'Activation used as text: --activation on dark (6.94:1 on paper, 6.00:1 on lifted); on light #B04D00 (5.20:1 on paper, 4.56:1 on lifted). Light --activation itself (#F56B00, 3.01:1 on white) is for fills only',
     },
     signal_access: {
       token: '--signal-access',
-      value: '#5d7bff',
-      role: 'Accessible signal (AA contrast on dark surfaces)',
+      value: '#0A94FF · light: #016ABB',
+      role: 'Accessible signal: text, links and focus. Dark is Azure itself (5.75:1 or more on every dark surface); light is Deep Azure #016ABB (4.71 to 5.55:1 on the four light surfaces)',
     },
     signal_text: {
       token: '--signal-text',
       value: 'var(--signal-access)',
-      role: 'Signal used as text: --signal-access on dark (>= 4.93:1 on every surface), --signal on light (8.69:1 on paper). --signal itself is a fill; as dark-mode text it measured 2.0-2.3:1',
+      role: 'Signal used as text: --signal-access in both themes. --signal itself is a fill; on light it is 3.14:1 on white and never text',
     },
     paper_on_signal: {
       token: '--paper-on-signal',
-      value: '#ffffff',
-      role: 'Text on signal fill',
+      value: '#010102',
+      role: 'Text on an Azure fill, and only that: ink, 6.65:1 on Azure. White on Azure is 3.14:1 and is not used',
+    },
+    paper_white: {
+      token: '--paper-white',
+      value: '#FFFFFF',
+      role: 'The constant white, the same in both themes: the dark increase-contrast ink, text on red fills (5.56:1 on #ca2323), shimmer and shine highlights',
+    },
+    signal_deep: {
+      token: '--signal-deep',
+      value: '#016ABB',
+      role: 'Deep Azure: Azure\'s own 251° hue, darker. Links, focus and selected states on light surfaces (4.71 to 5.55:1 on all four). Never a button fill',
+    },
+    signal_teal: {
+      token: '--signal-teal',
+      value: '#2CEBCA',
+      role: 'Gradient end only (Azure to Teal, on black or white). Never a standalone colour, never behind body text, never paired with the activation colour',
+    },
+    action: {
+      token: '--action',
+      value: 'var(--signal) · light: #0A94FF',
+      role: 'Primary action fill: Azure in both themes',
+    },
+    on_action: {
+      token: '--on-action',
+      value: '#010102',
+      role: 'Primary action label: ink on --action, 6.65:1 in both themes',
+    },
+    action_pressed: {
+      token: '--action-pressed',
+      value: '#087ED9',
+      role: 'Primary action pressed fill, and the light-theme hover: --on-action on it is 4.96:1',
     },
     ok: {
       token: '--ok',
@@ -324,8 +354,8 @@ export const designSystemContract = {
     },
     grade_d: {
       token: '--grade-d',
-      value: '#fb923c',
-      role: 'Grade scale D (≥60%): orange, score emblem arc',
+      value: '#FB7185',
+      role: 'Grade scale D (≥60%): rose, score emblem arc (light #C9216C). Off orange, which is the brand\'s activation colour',
     },
     grade_f: {
       token: '--grade-f',
@@ -335,37 +365,37 @@ export const designSystemContract = {
     grade_a_ink: {
       token: '--grade-a-ink',
       value: 'var(--grade-a)',
-      role: 'Grade A used as text: --grade-a on dark (9.16:1 on paper, 7.91:1 on lifted); on light, --grade-a mixed 70% toward --ink in oklab (#215f35, 7.38:1 on paper, 6.47:1 on lifted). Light --grade-a itself (#15803d, 4.26:1 on lifted) is for arcs, borders and tints',
+      role: 'Grade A used as text: --grade-a on dark (9.16:1 on paper, 7.91:1 on lifted); light #147839 (5.38:1 on paper, 4.72:1 on lifted). Light --grade-a itself (#15803d, 4.26:1 on lifted) is for arcs, borders and tints',
     },
     grade_b_ink: {
       token: '--grade-b-ink',
       value: 'var(--grade-b)',
-      role: 'Grade B used as text: --grade-b on dark (10.56:1 on paper, 9.13:1 on lifted); on light, --grade-b mixed 65% toward --ink in oklab (#4a6f26, 5.65:1 on paper, 4.96:1 on lifted). Light --grade-b itself (#65a30d, 2.99:1 on paper) is for arcs, borders and tints',
+      role: 'Grade B used as text: --grade-b on dark (10.56:1 on paper, 9.13:1 on lifted); light #497509 (5.30:1 on paper, 4.65:1 on lifted). Light --grade-b itself (#5D960C, 3.06:1 on lifted) is for arcs, borders and tints',
     },
     grade_c_ink: {
       token: '--grade-c-ink',
       value: 'var(--grade-c)',
-      role: 'Grade C used as text: --grade-c on dark (10.88:1 on paper, 9.40:1 on lifted); on light, --grade-c mixed 70% toward --ink in oklab (#7f5e21, 5.76:1 on paper, 5.06:1 on lifted). Light --grade-c itself (#b07d04, 3.51:1 on paper) is for arcs, borders and tints',
+      role: 'Grade C used as text: --grade-c on dark (10.88:1 on paper, 9.40:1 on lifted); light #896203 (5.33:1 on paper, 4.68:1 on lifted). Light --grade-c itself (#b07d04, 3.08:1 on lifted) is for arcs, borders and tints',
     },
     grade_d_ink: {
       token: '--grade-d-ink',
       value: 'var(--grade-d)',
-      role: 'Grade D used as text: --grade-d on dark (9.22:1 on paper, 7.97:1 on lifted); on light, --grade-d mixed 70% toward --ink in oklab (#a64723, 5.73:1 on paper, 5.02:1 on lifted). Light --grade-d itself (#ea580c, 3.44:1 on paper) is for arcs, borders and tints',
+      role: 'Grade D used as text: --grade-d on dark (7.75:1 on paper, 6.70:1 on lifted); light #BE1F67 (5.67:1 on paper, 4.98:1 on lifted, 4.67:1 on its own 12% emblem tint). Light --grade-d itself (#C9216C, 4.55:1 on lifted) is for arcs, borders and tints',
     },
     grade_f_ink: {
       token: '--grade-f-ink',
       value: 'var(--grade-f)',
-      role: 'Grade F used as text: --grade-f on dark (5.54:1 on paper, 4.79:1 on lifted); on light, --grade-f mixed 70% toward --ink in oklab (#9e2c29, 7.13:1 on paper, 6.26:1 on lifted). Light --grade-f itself (#dc2626, 4.10:1 on lifted) is for arcs, borders and tints',
+      role: 'Grade F used as text: --grade-f on dark (5.54:1 on paper, 4.79:1 on lifted); light #CD2323 (5.26:1 on paper, 4.62:1 on lifted). Light --grade-f itself (#dc2626, 4.10:1 on lifted) is for arcs, borders and tints',
     },
     grade_b_light: {
       token: '--grade-b-light',
       value: '#a3e635',
-      role: 'Lighter lime for grade-B text on dark surfaces (13.84:1 on paper); light value is --grade-b-ink (#4a6f26, 5.65:1 on paper), because light lime #65a30d is 2.99:1',
+      role: 'Lighter lime for grade-B text on dark surfaces (13.84:1 on paper); light value is --grade-b-ink (#497509, 5.30:1 on paper), because light lime #5D960C is 3.48:1',
     },
     grade_d_glow: {
       token: '--grade-d-glow',
-      value: '#f97316',
-      role: 'Orange-600 glow variant for D-grade emblem and hero proof: distinct from --grade-d (#fb923c, the arc color)',
+      value: '#FB7185',
+      role: 'Glow variant for the D-grade emblem and hero proof: the same rose as --grade-d (light #C9216C)',
     },
     signal_pos: {
       token: '--signal-pos',
@@ -389,27 +419,27 @@ export const designSystemContract = {
     },
     shimmer_1: {
       token: '--shimmer-1',
-      value: '#f4f6ff',
+      value: '#f1f7ff',
       role: 'Wordmark shimmer gradient stop 1: decorative animation',
     },
     shimmer_2: {
       token: '--shimmer-2',
-      value: '#e8ecff',
+      value: '#e1effe',
       role: 'Wordmark shimmer gradient stop 2: decorative animation',
     },
     shimmer_3: {
       token: '--shimmer-3',
-      value: '#5b78f0',
+      value: '#0286e9',
       role: 'Wordmark shimmer gradient stop 3: decorative animation',
     },
     shimmer_4: {
       token: '--shimmer-4',
-      value: '#9eb0ff',
+      value: '#7cbafd',
       role: 'Wordmark shimmer gradient stop 4: decorative animation',
     },
     shimmer_5: {
       token: '--shimmer-5',
-      value: '#dce4ff',
+      value: '#d3e7fe',
       role: 'Wordmark shimmer gradient stop 5: decorative animation',
     },
   },
@@ -441,7 +471,7 @@ export const designSystemContract = {
     },
     signal_dim: {
       token: '--signal-dim',
-      value: 'rgba(1, 51, 203, 0.14)',
+      value: 'rgba(10, 148, 255, 0.14) · light: rgba(10, 148, 255, 0.08)',
       role: 'Accent wash / badge fill',
     },
     surface_gradient: {
@@ -461,13 +491,13 @@ export const designSystemContract = {
     },
     signal_glow: {
       token: '--signal-glow',
-      value: '0 0 60px rgba(51,88,232,0.18), 0 0 24px rgba(51,88,232,0.28)',
+      value: '0 0 60px rgba(54,167,255,0.18), 0 0 24px rgba(54,167,255,0.28)',
       role: 'Accent glow (border and focus only, never a button fill; v22)',
     },
     signal_gradient: {
       token: '--signal-gradient',
-      value: 'linear-gradient(135deg, var(--signal-light), #6b8aff 130%)',
-      role: 'Accent gradient (borders/focus only)',
+      value: 'linear-gradient(135deg, #0A94FF 0%, #0A94FF 35%, #2CEBCA 100%)',
+      role: 'Signature gradient, Azure to Teal, on black or white grounds only; one per view; never behind body text (borders and focus, never a button fill)',
     },
     /* Ambient-field family — deliberately separate from the signal family.
        The field paints thousands of dots across the whole viewport, so when it
@@ -480,17 +510,17 @@ export const designSystemContract = {
        is the loudest element on near-white. */
     field_dot_1: {
       token: '--field-dot-1',
-      value: '#0133cb · light: #4a6ad4',
+      value: '#0A94FF · light: #4FA9F5',
       role: 'Ambient field dot: primary hue',
     },
     field_dot_2: {
       token: '--field-dot-2',
-      value: '#3358e8 · light: #7b93e0',
+      value: '#36A7FF · light: #86C3F7',
       role: 'Ambient field dot: secondary hue',
     },
     field_dot_3: {
       token: '--field-dot-3',
-      value: '#5d7bff · light: #a3b4ea',
+      value: '#7CC4FF · light: #B5DAFA',
       role: 'Ambient field dot: tertiary hue (bright variant derived from it)',
     },
     field_alpha: {
@@ -564,12 +594,12 @@ export const designSystemContract = {
     },
     rim: {
       token: '--rim',
-      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05) 38%, rgb(255 255 255 / 0.03)) · light: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(10 20 60 / 0.08) 40%, rgb(10 20 60 / 0.11))',
+      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.05) 38%, rgb(255 255 255 / 0.03)) · light: linear-gradient(180deg, rgb(255 255 255 / 0.95), rgb(0 25 51 / 0.08) 40%, rgb(0 25 51 / 0.11))',
       role: 'The 1px top-lit edge on every tier-1+ surface, painted on a masked ::before',
     },
     rim_hot: {
       token: '--rim-hot',
-      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.08) 38%, rgb(255 255 255 / 0.05)) · light: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(10 20 60 / 0.12) 40%, rgb(10 20 60 / 0.16))',
+      value: 'linear-gradient(180deg, rgb(255 255 255 / 0.24), rgb(255 255 255 / 0.08) 38%, rgb(255 255 255 / 0.05)) · light: linear-gradient(180deg, rgb(255 255 255 / 1), rgb(0 25 51 / 0.12) 40%, rgb(0 25 51 / 0.16))',
       role: 'Rim on hover and focus-visible, on a second pre-rendered layer whose opacity crossfades',
     },
     specular: {
@@ -579,27 +609,27 @@ export const designSystemContract = {
     },
     elev_1: {
       token: '--elev-1',
-      value: '0 1px 1px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.22) · light: rgb(20 32 90) at 0.06 / 0.05',
+      value: '0 1px 1px rgb(0 0 0 / 0.3), 0 2px 4px rgb(0 0 0 / 0.22) · light: rgb(1 40 76) at 0.06 / 0.05',
       role: 'Elevation 1: reading cards. Every x offset is 0 (one light, straight down)',
     },
     elev_2: {
       token: '--elev-2',
-      value: '0 1px 1px rgb(0 0 0 / 0.28), 0 4px 8px -2px rgb(0 0 0 / 0.3), 0 12px 24px -8px rgb(0 0 0 / 0.36) · light: rgb(20 32 90) at 0.06 / 0.07 / 0.09',
+      value: '0 1px 1px rgb(0 0 0 / 0.28), 0 4px 8px -2px rgb(0 0 0 / 0.3), 0 12px 24px -8px rgb(0 0 0 / 0.36) · light: rgb(1 40 76) at 0.06 / 0.07 / 0.09',
       role: 'Elevation 2: instruments and paired panels',
     },
     elev_3: {
       token: '--elev-3',
-      value: '0 2px 2px rgb(0 0 0 / 0.26), 0 8px 16px -4px rgb(0 0 0 / 0.32), 0 24px 48px -12px rgb(0 0 0 / 0.42), 0 48px 96px -32px rgb(0 0 0 / 0.55) · light: rgb(20 32 90) at 0.05 / 0.07 / 0.1 / 0.14',
+      value: '0 2px 2px rgb(0 0 0 / 0.26), 0 8px 16px -4px rgb(0 0 0 / 0.32), 0 24px 48px -12px rgb(0 0 0 / 0.42), 0 48px 96px -32px rgb(0 0 0 / 0.55) · light: rgb(1 40 76) at 0.05 / 0.07 / 0.1 / 0.14',
       role: 'Elevation 3: floating controls and objects (command slab, popovers, verdict HUD)',
     },
     elev_4: {
       token: '--elev-4',
-      value: '0 2px 4px rgb(0 0 0 / 0.3), 0 16px 32px -8px rgb(0 0 0 / 0.4), 0 40px 80px -16px rgb(0 0 0 / 0.5), 0 80px 140px -40px rgb(0 0 0 / 0.6) · light: rgb(20 32 90) at 0.06 / 0.1 / 0.14 / 0.18',
+      value: '0 2px 4px rgb(0 0 0 / 0.3), 0 16px 32px -8px rgb(0 0 0 / 0.4), 0 40px 80px -16px rgb(0 0 0 / 0.5), 0 80px 140px -40px rgb(0 0 0 / 0.6) · light: rgb(1 40 76) at 0.06 / 0.1 / 0.14 / 0.18',
       role: 'Elevation 4: transient overlays only (find palette, mobile drawer)',
     },
     floor_pool: {
       token: '--floor-pool',
-      value: 'radial-gradient(closest-side, oklch(0.55 0.2 265 / 0.16), transparent) · light: radial-gradient(closest-side, rgb(20 32 90 / 0.2), transparent)',
+      value: 'radial-gradient(closest-side, oklch(0.55 0.2 251 / 0.16), transparent) · light: radial-gradient(closest-side, rgb(1 40 76 / 0.2), transparent)',
       role: 'Floor under a standing object, one per viewport. Luminous in dark mode, where a dark pool cannot be seen; a navy shadow in light mode',
     },
     glow_signal: {
@@ -633,39 +663,39 @@ export const designSystemContract = {
         value: 'var(--mat-instrument)',
         role: 'Deprecated alias of --mat-instrument (no rule paints with it); kept so older references resolve to the opaque instrument body, not the old translucent fill',
       },
-      lv_glass_ring: { token: '--lv-glass-ring', value: 'rgba(255, 255, 255, 0.09) · light: rgba(10, 20, 60, 0.09)', role: 'Instrument outer ring' },
+      lv_glass_ring: { token: '--lv-glass-ring', value: 'rgba(255, 255, 255, 0.09) · light: rgba(0, 25, 51, 0.09)', role: 'Instrument outer ring' },
       lv_glass_edge: { token: '--lv-glass-edge', value: 'rgba(255, 255, 255, 0.07) · light: rgba(255, 255, 255, 0.9)', role: 'Instrument inner top edge' },
       lv_glass_shadow: {
         token: '--lv-glass-shadow',
-        value: '0 44px 110px -44px rgba(0, 0, 0, 0.85), 0 14px 36px -16px rgba(0, 0, 0, 0.55) · light: 0 36px 80px -36px rgba(20, 32, 90, 0.28), 0 10px 26px -14px rgba(20, 32, 90, 0.16)',
+        value: '0 44px 110px -44px rgba(0, 0, 0, 0.85), 0 14px 36px -16px rgba(0, 0, 0, 0.55) · light: 0 36px 80px -36px rgba(1, 40, 76, 0.28), 0 10px 26px -14px rgba(1, 40, 76, 0.16)',
         role: 'Instrument drop shadow',
       },
       lv_sheen: { token: '--lv-sheen', value: 'rgba(255, 255, 255, 0.3) · light: rgba(255, 255, 255, 0.95)', role: 'The single specular sheen line on an instrument' },
-      lv_well: { token: '--lv-well', value: 'rgba(255, 255, 255, 0.035) · light: rgba(10, 20, 60, 0.035)', role: 'Recessed well fill (inputs, tracks)' },
-      lv_well_line: { token: '--lv-well-line', value: 'rgba(255, 255, 255, 0.1) · light: rgba(10, 20, 60, 0.1)', role: 'Recessed well outline' },
-      lv_pass_a: { token: '--lv-pass-a', value: '#5b7cff · light: #3a63f5', role: 'Pass fill, light stop' },
-      lv_pass_b: { token: '--lv-pass-b', value: '#2c50ec · light: #0133cb', role: 'Pass fill, deep stop' },
-      lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(70, 105, 255, 0.55) · light: rgba(1, 51, 203, 0.22)', role: 'Pass glow' },
+      lv_well: { token: '--lv-well', value: 'rgba(255, 255, 255, 0.035) · light: rgba(0, 25, 51, 0.035)', role: 'Recessed well fill (inputs, tracks)' },
+      lv_well_line: { token: '--lv-well-line', value: 'rgba(255, 255, 255, 0.1) · light: rgba(0, 25, 51, 0.1)', role: 'Recessed well outline' },
+      lv_pass_a: { token: '--lv-pass-a', value: '#36A7FF', role: 'Pass fill, light stop (both themes)' },
+      lv_pass_b: { token: '--lv-pass-b', value: '#0A94FF', role: 'Pass fill, deep stop (both themes); ink on the gradient 6.65 to 8.08:1' },
+      lv_pass_glow: { token: '--lv-pass-glow', value: 'rgba(54, 167, 255, 0.55) · light: rgba(1, 106, 187, 0.22)', role: 'Pass glow' },
       lv_warn_a: { token: '--lv-warn-a', value: '#f7c948 · light: #e0a917', role: 'Warn fill, light stop' },
       lv_warn_b: { token: '--lv-warn-b', value: '#d79a06 · light: #b07d04', role: 'Warn fill, deep stop' },
       lv_fail_a: { token: '--lv-fail-a', value: '#ff7f7f · light: #ef5b5b', role: 'Fail fill, light stop' },
       lv_fail_b: { token: '--lv-fail-b', value: '#e0454a · light: #c62828', role: 'Fail fill, deep stop' },
-      lv_hatch: { token: '--lv-hatch', value: 'rgba(255, 255, 255, 0.2) · light: rgba(10, 20, 60, 0.22)', role: 'Hatching for skipped or person-checked cells: the drawing convention for a different material' },
-      lv_head: { token: '--lv-head', value: '#8aa0ff · light: #0133cb', role: 'Inspection highlight: the element outline and tag fill in the inspection demo' },
+      lv_hatch: { token: '--lv-hatch', value: 'rgba(255, 255, 255, 0.2) · light: rgba(0, 25, 51, 0.22)', role: 'Hatching for skipped or person-checked cells: the drawing convention for a different material' },
+      lv_head: { token: '--lv-head', value: '#36A7FF · light: #0A94FF', role: 'Inspection highlight: the element outline and tag fill in the inspection demo' },
       lv_head_ink: {
         token: '--lv-head-ink',
-        value: '#010102 · light: var(--paper-on-signal)',
-        role: 'Text on a --lv-head fill (8.5:1 dark; white on #0133cb is 8.99:1 light)',
+        value: '#010102',
+        role: 'Text on a --lv-head fill: 8.08:1 on the dark head, 6.65:1 on the light head',
       },
       lv_ink_accent: { token: '--lv-ink-accent', value: 'var(--signal-access)', role: 'Accent text on an instrument' },
       lv_shine: {
         token: '--lv-shine',
-        value: 'color-mix(in srgb, var(--paper-on-signal) 34%, transparent)',
+        value: 'color-mix(in srgb, var(--paper-white) 34%, transparent)',
         role: 'The one specular highlight on lit cells',
       },
       lv_shine_soft: {
         token: '--lv-shine-soft',
-        value: 'color-mix(in srgb, var(--paper-on-signal) 26%, transparent)',
+        value: 'color-mix(in srgb, var(--paper-white) 26%, transparent)',
         role: 'Softer specular highlight on lit cells',
       },
     },
@@ -932,7 +962,7 @@ export const designSystemContract = {
       },
       focus_ring: {
         token: '--focus-ring',
-        value: 'var(--signal-light)',
+        value: 'var(--signal-access)',
         role: 'Keyboard focus indicator color',
       },
     },
@@ -1396,6 +1426,15 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/changelog',
+      ],
+    },
+    {
+      version: '0.4.4',
+      date: '2026-10-11',
+      summary:
+        'Identity v1 colour system. Azure #0A94FF replaces #0133cb as --signal; light text, links, focus and selected states take Deep Azure #016ABB (--signal-access, --signal-deep); text on an Azure fill is ink #010102 (--paper-on-signal, 6.65:1); --paper-white #FFFFFF is the constant white for the increase-contrast ink, text on red fills and highlights. Activated Orange #F56B00 replaces #fecc34 (light text #B04D00). New tokens: --signal-deep, --signal-teal, --action, --on-action, --action-pressed, --paper-white. Grade D moves to rose (#FB7185 dark, #C9216C light; light text #BE1F67); the light grade text tokens are measured values, each at least 4.6:1 on paper, surface, raised and lifted. The instrument pass gradient and inspection head move to the Azure family. Shimmer stops, glows and light navy shadows move to Azure\'s 251 degree hue. No check, weight or verdict changed.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
       ],
     },
   ],

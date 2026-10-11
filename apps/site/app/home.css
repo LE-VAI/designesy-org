@@ -768,14 +768,14 @@ button.pillar {
      band at 47–53%. With background-size 250% the band lives at container
      coords 117.5–132.5% — fully off the right edge of the word at rest, so
      the resting face reads as flat typography, not a gradient. The band is
-     tighter (6% of image) and brighter (pure var(--paper-on-signal)) than the old 12% mix. */
+     tighter (6% of image) and brighter (pure var(--paper-white)) than the old 12% mix. */
   background-image: linear-gradient(
     104deg,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%),
-    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%) 47%,
-    var(--paper-on-signal) 50%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%) 53%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-on-signal) 30%)
+    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%),
+    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 47%,
+    var(--paper-white) 50%,
+    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 53%,
+    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%)
   );
   background-size: 250% 100%;
   background-position: 0% 0; /* band parked fully off the right edge */
@@ -1249,10 +1249,10 @@ button.pillar {
   background: color-mix(in srgb, var(--signal) 8%, var(--surface));
 }
 
-/* On the light theme's signal tint (#ebeffb) --muted-dim measures 4.26:1, so
-   the featured card's status line and arrow take --muted (6.6:1). Dark is
-   untouched: --muted-dim already clears 4.5 on its tint. */
-[data-theme="light"] .home .field-card.is-featured {
+/* Secondary text on a signal tint reaches 4.6:1 (D33): the featured card's
+   status line and arrow take --muted in both themes. --muted-dim measured
+   4.48:1 on the dark Azure tint (#0a151f) and 4.26:1 on the old light one. */
+.home .field-card.is-featured {
   --muted-dim: var(--muted);
 }
 

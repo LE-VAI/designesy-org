@@ -4,11 +4,13 @@ export const size = { width: 32, height: 32 };
 export const contentType = 'image/png';
 
 /**
- * Tab mark — signal "gate" mark.
- * One lit cell of the contract verification grid: a signal dot inside a
- * thin square ring. Echoes the Score Gate hero and the OG card markRing.
- * No monogram, no letter logo. Matches wordmark period language.
- * Contract tokens: --paper #010102, --signal #0133cb, --signal-dim rgba(1,51,203,0.14).
+ * Tab mark: the Designesy mark, favicon variant (identity v1, D3 and D23).
+ * Four body shapes in white and the Azure dot, on --paper #010102. The favicon
+ * variant widens the gutters to m/3 and enlarges the body so the figure holds
+ * at 16 to 48px; its corners are rounded at r 7.5. The dot is flat Azure at
+ * this size (the teal hint starts at 96px).
+ * Paths are the master designesy-mark.v1.favicon.on-dark.svg, unchanged; its
+ * 512 box already contains the dot (x 276 to 396), so nothing is cropped.
  */
 export default function Icon() {
   return new ImageResponse(
@@ -18,32 +20,16 @@ export default function Icon() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           background: '#010102',
         }}
       >
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1.5px solid rgba(1, 51, 203, 0.14)',
-            borderRadius: 5,
-            background: '#0a0a0c',
-          }}
-        >
-          <div
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 5,
-              background: '#0133cb',
-            }}
-          />
-        </div>
+        <svg width="32" height="32" viewBox="0 0 512 512">
+          <path fill="#FFFFFF" d="M116.27 308.00A120.00 120.00 0 0 1 228.00 196.27A7.50 7.50 0 0 1 236.00 203.75L236.00 308.50A7.50 7.50 0 0 1 228.50 316.00L123.75 316.00A7.50 7.50 0 0 1 116.27 308.00Z" />
+          <path fill="#FFFFFF" d="M283.50 196.00L388.50 196.00A7.50 7.50 0 0 1 396.00 203.50L396.00 308.50A7.50 7.50 0 0 1 388.50 316.00L283.50 316.00A7.50 7.50 0 0 1 276.00 308.50L276.00 203.50A7.50 7.50 0 0 1 283.50 196.00Z" />
+          <path fill="#FFFFFF" d="M128.80 463.20L223.20 368.80A7.50 7.50 0 0 1 236.00 374.11L236.00 468.50A7.50 7.50 0 0 1 228.50 476.00L134.11 476.00A7.50 7.50 0 0 1 128.80 463.20Z" />
+          <path fill="#FFFFFF" d="M283.50 356.00L388.25 356.00A7.50 7.50 0 0 1 395.73 364.00A120.00 120.00 0 0 1 284.00 475.73A7.50 7.50 0 0 1 276.00 468.25L276.00 363.50A7.50 7.50 0 0 1 283.50 356.00Z" />
+          <circle fill="#0A94FF" cx="336" cy="96" r="60" />
+        </svg>
       </div>
     ),
     size

@@ -187,7 +187,7 @@
 }
 
 .badge-snippet-copy:focus-visible {
-  outline: 2px solid var(--signal-light);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 

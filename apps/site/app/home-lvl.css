@@ -1266,6 +1266,18 @@ html[data-motion="paused"] .vc-glow {
   }
 }
 
+/* On the Azure tile the icon's signal dot would vanish into its own colour,
+   so there it takes the ink of the rest of the icon. */
+.field-card.is-featured .field-card-icon .sig,
+.field-card:focus-visible .field-card-icon .sig {
+  fill: currentColor;
+}
+@media (hover: hover) {
+  .field-card:hover .field-card-icon .sig {
+    fill: currentColor;
+  }
+}
+
 /* --- The static headline wraps like text ---------------------------------
    The nowrap and clip-bleed on .hero-display-line existed to hold a
    scrambling, rotating word on one line. The headline no longer moves, so on

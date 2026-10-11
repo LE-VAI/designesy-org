@@ -60,7 +60,7 @@ const DIMENSIONS = [
     num: '05',
     title: 'System coherence',
     observation:
-      'VAI yellow #FFC400 as the field, black rounded cards, VAI wordmark only. Designesy activation yellow #FECC34 is deliberately suppressed. Deployment pattern matches Tile.',
+      'VAI yellow #FFC400 as the field, black rounded cards, VAI wordmark only. The Designesy colours are deliberately kept out. Deployment pattern matches Tile.',
     judgment: 'Coherent within the VAI surface. The yellow-field mode is a distinct address within the doctrine.',
     action: 'Retain as a VAI-specific surface option. Do not import into Designesy.',
   },
