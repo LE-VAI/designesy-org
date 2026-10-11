@@ -1,16 +1,28 @@
-// The Designesy icon family v2 (identity v1, D15 and D22), from the brand
-// masters designesy-icon-*.v2.svg, unchanged.
+// The Designesy icon family v2 (identity v1, D15 and D22) and its v2.1
+// additions (D41: theme, motion, mention, machine, studio, continuity, error,
+// share, chevron), from the brand masters designesy-icon-*.v2.svg, unchanged.
 //
 // Grammar: a 24-unit grid, a 2px stroke with round caps and joins, rounded
 // modules. The round dot is the only filled part and the only part that may
 // take colour, and it always marks one meaning: the active grade (score), the
 // winner (leaderboard), the latest reading (monitor), the signature
-// (contract), the 'on' switch (settings), the head (kit). `sig` dots take
-// Azure; the `live` dot takes the flame, and only for a live moment.
+// (contract), the 'on' switch (settings), the head (kit), the active choice
+// (theme), the landing (motion), the match (mention), the machine reading
+// (machine), the reply (studio). `sig` dots take Azure; the `live` dot takes
+// the flame, and only for a live moment. A `hub` dot is a neutral point (the
+// gauge's pivot, the clock's centre, the error's point) and keeps the body
+// colour. The chevron points right; callers rotate it for down, left and up.
 //
 // On the site the colours come from tokens (.brand-icon .sig and .live in
 // globals.css). The share cards render outside the page, so they pass the
 // colours in (`sig`, `live`).
+//
+// Small sizes (D45): at 18px or smaller a `sig` or `live` dot is drawn at
+// least SMALL_DOT_R grid units in radius, about its centre, so the one
+// coloured part stays legible; `hub` dots stay exactly as drawn. The rule
+// follows the size prop, not CSS.
+
+import type { CSSProperties } from 'react';
 
 export type BrandIconName =
   | 'score'
@@ -22,13 +34,27 @@ export type BrandIconName =
   | 'docs'
   | 'search'
   | 'settings'
-  | 'live';
+  | 'live'
+  | 'theme'
+  | 'motion'
+  | 'mention'
+  | 'machine'
+  | 'studio'
+  | 'continuity'
+  | 'error'
+  | 'share'
+  | 'chevron';
 
 type Part =
   | { el: 'path'; paint: Paint; d: string; opacity?: number }
   | { el: 'rect'; paint: Paint; x: number; y: number; width: number; height: number; rx: number; opacity?: number }
   | { el: 'circle'; paint: Paint; cx: number; cy: number; r: number; opacity?: number };
 type Paint = 'stroke' | 'fill' | 'hub' | 'sig' | 'live';
+
+/** At or below this rendered size (px) the coloured dots take SMALL_DOT_R. */
+const SMALL_SIZE_PX = 18;
+/** The smallest radius, in 24-grid units, of a sig or live dot at a small size. */
+const SMALL_DOT_R = 2.4;
 
 const ICONS: Record<BrandIconName, readonly Part[]> = {
   score: [
@@ -82,12 +108,54 @@ const ICONS: Record<BrandIconName, readonly Part[]> = {
     { el: 'circle', paint: 'stroke', cx: 12, cy: 12, r: 8.5 },
     { el: 'circle', paint: 'live', cx: 12, cy: 12, r: 3.6 },
   ],
+  theme: [
+    { el: 'path', paint: 'stroke', d: 'M19.5 14.2A8 8 0 1 1 9.8 4.5A6.2 6.2 0 0 0 19.5 14.2Z' },
+    { el: 'circle', paint: 'sig', cx: 18.2, cy: 5.6, r: 1.9 },
+  ],
+  motion: [
+    { el: 'path', paint: 'stroke', d: 'M3.5 19.5C11 19.5 12 6 18 6' },
+    { el: 'circle', paint: 'sig', cx: 18.6, cy: 6, r: 2.2 },
+  ],
+  mention: [
+    { el: 'path', paint: 'stroke', d: 'M4 6.5H20M4 12H10.5M4 17.5H15' },
+    { el: 'circle', paint: 'sig', cx: 15.5, cy: 12, r: 2.2 },
+  ],
+  machine: [
+    {
+      el: 'path',
+      paint: 'stroke',
+      d: 'M8 4C5.5 4 5.5 6.5 5.5 8.5S4.5 12 3.5 12C4.5 12 5.5 13.5 5.5 15.5S5.5 20 8 20M16 4C18.5 4 18.5 6.5 18.5 8.5S19.5 12 20.5 12C19.5 12 18.5 13.5 18.5 15.5S18.5 20 16 20',
+    },
+    { el: 'circle', paint: 'sig', cx: 12, cy: 12, r: 2.2 },
+  ],
+  studio: [
+    { el: 'path', paint: 'stroke', d: 'M7.5 3.5H16.5A4 4 0 0 1 20.5 7.5V13A4 4 0 0 1 16.5 17H11L6.5 20.5V17A3 3 0 0 1 3.5 14V7.5A4 4 0 0 1 7.5 3.5Z' },
+    { el: 'path', paint: 'stroke', d: 'M8 8.5H13.5M8 12H11' },
+    { el: 'circle', paint: 'sig', cx: 16.2, cy: 12, r: 1.9 },
+  ],
+  continuity: [
+    { el: 'path', paint: 'stroke', d: 'M4.2 13.5A8 8 0 1 0 6.3 6.3' },
+    { el: 'path', paint: 'stroke', d: 'M3.6 3.8V7.2H7' },
+    { el: 'path', paint: 'stroke', d: 'M12 8V12L14.6 13.6' },
+    { el: 'circle', paint: 'hub', cx: 12, cy: 12, r: 1.6 },
+  ],
+  error: [
+    { el: 'circle', paint: 'stroke', cx: 12, cy: 12, r: 8.5 },
+    { el: 'path', paint: 'stroke', d: 'M12 7.5V12.5' },
+    { el: 'circle', paint: 'hub', cx: 12, cy: 16.2, r: 1.4 },
+  ],
+  share: [
+    { el: 'path', paint: 'stroke', d: 'M10.5 4.5H7.5A4 4 0 0 0 3.5 8.5V16.5A4 4 0 0 0 7.5 20.5H15.5A4 4 0 0 0 19.5 16.5V13.5' },
+    { el: 'path', paint: 'stroke', d: 'M14.5 3.5H20.5V9.5M20.5 3.5L12 12' },
+  ],
+  chevron: [{ el: 'path', paint: 'stroke', d: 'M9.5 6L15.5 12L9.5 18' }],
 };
 
 export function BrandIcon({
   name,
   size = 24,
   className,
+  style,
   color = 'currentColor',
   sig,
   live,
@@ -95,17 +163,21 @@ export function BrandIcon({
   name: BrandIconName;
   size?: number;
   className?: string;
+  /** Inline style on the svg, e.g. a chevron's rotation and its transition. */
+  style?: CSSProperties;
   /** The body colour; currentColor on the site. */
   color?: string;
   /** Explicit dot colours, for renders outside the page (share cards). */
   sig?: string;
   live?: string;
 }) {
+  const small = size <= SMALL_SIZE_PX;
   return (
     <svg
       className={className ? `brand-icon ${className}` : 'brand-icon'}
       width={size}
       height={size}
+      style={style}
       viewBox="0 0 24 24"
       aria-hidden="true"
       focusable="false"
@@ -130,7 +202,9 @@ export function BrandIcon({
         };
         if (p.el === 'path') return <path key={i} {...paint} d={p.d} />;
         if (p.el === 'rect') return <rect key={i} {...paint} x={p.x} y={p.y} width={p.width} height={p.height} rx={p.rx} />;
-        return <circle key={i} {...paint} cx={p.cx} cy={p.cy} r={p.r} />;
+        const dot = p.paint === 'sig' || p.paint === 'live';
+        const r = small && dot ? Math.max(p.r, SMALL_DOT_R) : p.r;
+        return <circle key={i} {...paint} cx={p.cx} cy={p.cy} r={r} />;
       })}
     </svg>
   );

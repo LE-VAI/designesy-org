@@ -24,6 +24,13 @@
  * and several of them quote a retired value on purpose to explain what they
  * guard against.
  *
+ * THE LIST
+ * The colours are not written here. They live in retired-literals.json next
+ * to this script, the one list every retired-literal gate reads (this one,
+ * scripts/check-retired-literals-packages.js at the repo root for every
+ * package, and designesy/score-action at a pinned commit), so the copies
+ * cannot drift. The list carries its own self-test vectors.
+ *
  * THE ALLOWLIST
  * Explicit, per file and per line, each with its reason. An entry that no
  * longer matches anything fails the gate too, so the list cannot outlive the
@@ -37,49 +44,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-/** The retired colours, with the decision that retired each. */
-const RETIRED_HEX = [
-  { hex: '0133cb', why: 'old signal blue (D19)' },
-  { hex: 'fecc34', why: 'old activation yellow (D4, retired)' },
-  { hex: 'fecc35', why: 'the share-card yellow asterisk (D24)' },
-  { hex: '2c50ec', why: 'old indigo pass hue (D33)' },
-  { hex: '5b7cff', why: 'old indigo pass hue (D33)' },
-  { hex: '3a63f5', why: 'old indigo pass hue (D33)' },
-  { hex: '8aa0ff', why: 'old indigo head hue (D33)' },
-  { hex: 'ea580c', why: 'old grade D orange, light (D5)' },
-  { hex: 'fb923c', why: 'old grade D orange, dark (D5)' },
-  { hex: 'f97316', why: 'old grade D glow (D5)' },
-  {
-    hex: '3358e8',
-    why: 'old --signal-light blue (D19, D37); the light tint is now #36A7FF, and a grade never takes a brand colour',
-  },
-];
-
-function buildPatterns() {
-  const pats = RETIRED_HEX.map(({ hex, why }) => ({
-    label: `#${hex}`,
-    why,
-    // #rrggbb or #rrggbbaa, and not the first six digits of a longer hex.
-    re: new RegExp(`#${hex}(?:[0-9a-f]{2})?(?![0-9a-f])`, 'gi'),
-  }));
-  pats.push({
-    label: 'rgb(1,51,203)',
-    why: 'old signal blue, rgb form (D19)',
-    // rgb(1,51,203) rgba(1, 51, 203, .2) rgb(1 51 203 / .4)
-    re: /rgba?\(\s*1\s*[,\s]\s*51\s*[,\s]\s*203(?![0-9])/gi,
-  });
-  pats.push({
-    label: 'rgb(51,88,232)',
-    why: 'old --signal-light blue, rgb form (D19, D37)',
-    // rgb(51,88,232) rgba(51, 88, 232, .06) rgb(51 88 232 / .4)
-    re: /rgba?\(\s*51\s*[,\s]\s*88\s*[,\s]\s*232(?![0-9])/gi,
-  });
-  for (const p of pats) {
-    // A pattern that cannot match anything is a gate that cannot fail.
-    if (!(p.re instanceof RegExp)) throw new Error(`pattern for ${p.label} did not compile`);
-  }
-  return pats;
-}
+// The retired colours, their patterns and the self-test vectors come from
+// the one canonical list (retired-literals.json, brand ledger D44), shared
+// with the packages gate and with designesy/score-action.
+const { buildPatterns, selfTest, matchLine } = require('./lib/retired-literals');
 
 /**
  * Lines allowed to carry a retired literal. `file` is relative to the site
@@ -147,12 +115,8 @@ function scan(siteRoot, patterns) {
     const rel = path.relative(siteRoot, full).split(path.sep).join('/');
     const lines = fs.readFileSync(full, 'utf8').split(/\r?\n/);
     lines.forEach((line, i) => {
-      for (const p of patterns) {
-        p.re.lastIndex = 0;
-        let m;
-        while ((m = p.re.exec(line))) {
-          findings.push({ file: rel, line: i + 1, literal: m[0], retired: p.label, why: p.why, text: line.trim().slice(0, 160) });
-        }
+      for (const m of matchLine(line, patterns)) {
+        findings.push({ file: rel, line: i + 1, literal: m.literal, retired: m.retired, why: m.why, text: line.trim().slice(0, 160) });
       }
     });
   }
@@ -173,29 +137,6 @@ function classify(findings) {
   }
   const stale = ALLOWLIST.filter((a, i) => !used.has(i) && !a.optional);
   return { blocked, allowed, stale };
-}
-
-function selfTest(patterns) {
-  // Every form the gate claims to catch, and the near misses it must not.
-  const must = [
-    '#0133CB', '#0133cb', '#0133cb24', '#FECC34', '#fecc35', '#2c50ec', '#5B7CFF', '#3a63f5',
-    '#8aa0ff', '#EA580C', '#fb923c', '#F97316', 'rgb(1,51,203)', 'rgba(1, 51, 203, 0.14)',
-    'rgb(1 51 203 / .42)', 'RGB( 1 , 51 , 203 )',
-    '#3358e8', '#3358E8', '#3358e866', 'rgb(51,88,232)', 'rgba(51, 88, 232, 0.06)', 'rgb(51 88 232 / .4)',
-    'RGBA( 51 , 88 , 232 , .5)',
-  ];
-  const mustNot = [
-    '#0133cb2', '#0133cbab12', '#0A94FF', '#FFC400', 'rgb(1,51,2030)', 'rgb(11,51,203)', '#fecc3', '#36A7FF',
-    '#3358e81', '#3358e8ab12', 'rgb(51,88,2320)', 'rgb(151,88,232)', 'rgba(54, 167, 255, 0.06)',
-  ];
-  const hit = (s) => patterns.some((p) => { p.re.lastIndex = 0; return p.re.test(s); });
-  const missed = must.filter((s) => !hit(s));
-  const falsePos = mustNot.filter((s) => hit(s));
-  const ok = missed.length === 0 && falsePos.length === 0;
-  console.log(`retired-literals self-test: ${must.length - missed.length}/${must.length} caught, ${falsePos.length} false positives`);
-  if (missed.length) console.log('  missed: ' + missed.join(', '));
-  if (falsePos.length) console.log('  false positives: ' + falsePos.join(', '));
-  return ok;
 }
 
 function main() {

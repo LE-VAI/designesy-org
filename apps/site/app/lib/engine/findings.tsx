@@ -6,6 +6,7 @@
 // criterion is published. A filter narrows to what needs work.
 
 import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
+import { BrandIcon } from '../brand-icons';
 import { Lamp } from './instrument';
 import { Segmented } from './command-bar';
 import { display, type Outcomes, type RegistryView, type Status } from './types';
@@ -125,9 +126,8 @@ export const Findings = forwardRef<FindingsHandle, {
                         {o.detail && <span className="eg-row-detail">{display(o.detail)}</span>}
                       </span>
                       <span className="eg-row-status">{WORD[o.status]}</span>
-                      <svg className="eg-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="m6 3.5 4.5 4.5L6 12.5" />
-                      </svg>
+                      {/* v2.1 chevron; .eg-chev turns it down on open. */}
+                      <BrandIcon name="chevron" size={16} className="eg-chev" />
                     </button>
                     <div className="eg-row-more" id={moreId} hidden={!isOpen}>
                       <b>Checks</b>
