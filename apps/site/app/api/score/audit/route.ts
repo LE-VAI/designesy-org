@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { normalizeInputUrl, isPublicUrl } from '../../../lib/url-guard';
+import { createUrlVerdict, guardBrowser, type GuardedBrowser, type UrlVerdict } from '../../../lib/browser-guard';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,43 +25,12 @@ function rateLimited(ip: string): boolean {
   return false;
 }
 
-// ── URL normalization (mirror of /api/score) ───────────────────────────────
-
-function normalizeInputUrl(raw: string): string {
-  let clean = raw.trim();
-  if (!clean) return '';
-  if (!/^https?:\/\//i.test(clean)) {
-    clean = `https://${clean}`;
-  }
-  try {
-    const u = new URL(clean);
-    return u.href;
-  } catch {
-    return clean;
-  }
-}
-
-function isValidUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
-    const host = u.hostname.toLowerCase();
-    if (
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host.startsWith('10.') ||
-      host.startsWith('192.168.') ||
-      host.startsWith('172.16.') ||
-      host === '0.0.0.0' ||
-      !host.includes('.')
-    ) {
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
+// ── URL guard ───────────────────────────────────────────────────────────────
+// normalizeInputUrl and isPublicUrl come from app/lib/url-guard.ts, the guard
+// the JSON engines use. This route used to carry its own string-only check,
+// which let 169.254.169.254, 172.17-31.x, 100.64/10, 127.0.0.2 and names that
+// resolve to private addresses through to PageSpeed Insights and the browser.
+// The browser itself is guarded per request in app/lib/browser-guard.ts.
 
 // ── Check result shape (mirror of /api/score) ──────────────────────────────
 
@@ -239,13 +210,13 @@ async function checkCoreWebVitals(targetUrl: string): Promise<CheckResult> {
 // INP requires real user input and isn't measurable in a headless lab run;
 // we mark INP as SKIP and score LCP + CLS only. This is the standard lab
 // limitation documented by web.dev.
-async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, shared?: import('playwright-core').Browser): Promise<CheckResult> {
+async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, shared?: GuardedBrowser): Promise<CheckResult> {
   let browser;
   let ownsBrowser = false;
   try {
     // Prefer the caller-owned browser: the route opens ONE Chromium and
     // passes it in, so neither check has to launch or close it.
-    browser = shared ?? (await launchBrowser());
+    browser = shared ?? (await openAuditBrowser());
     ownsBrowser = !shared;
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
@@ -310,7 +281,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, 
   } finally {
     // Release the SHARED browser — closing it here would kill the browser
     // out from under the sibling checks that are still running.
-    if (ownsBrowser && browser) await closeBrowserSafely(browser);
+    if (ownsBrowser && browser) await browser.close();
   }
 }
 
@@ -458,10 +429,28 @@ async function closeBrowserSafely(browser: import('playwright-core').Browser): P
   }
 }
 
+// The only way the audit obtains a browser. launchBrowser() is called nowhere
+// else (scripts/check-audit-ssrf.js asserts it), and the checks receive the
+// GuardedBrowser this returns, never the Playwright Browser, so every context a
+// check opens has every request host-checked (app/lib/browser-guard.ts). If
+// the guard cannot be installed the browser is closed and the error propagates:
+// the audit does not run an unguarded browser.
+//
+// One UrlVerdict per request: its hostname cache lives as long as the request.
+async function openAuditBrowser(isAllowed: UrlVerdict = createUrlVerdict()): Promise<GuardedBrowser> {
+  const raw = await launchBrowser();
+  try {
+    return await guardBrowser(raw, isAllowed, () => closeBrowserSafely(raw));
+  } catch (e) {
+    await closeBrowserSafely(raw);
+    throw e;
+  }
+}
+
 // v02 — responsive overflow. Launch Chromium, navigate at 4 viewports,
 // measure scrollWidth vs clientWidth at each. PASS if all 4 fit; FAIL with
 // the first overflowing viewport in the detail string.
-async function checkResponsiveOverflow(targetUrl: string, shared?: import('playwright-core').Browser): Promise<CheckResult> {
+async function checkResponsiveOverflow(targetUrl: string, shared?: GuardedBrowser): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v02',
@@ -482,7 +471,7 @@ async function checkResponsiveOverflow(targetUrl: string, shared?: import('playw
   try {
     // Prefer the caller-owned browser: the route opens ONE Chromium and
     // passes it in, so neither check has to launch or close it.
-    browser = shared ?? (await launchBrowser());
+    browser = shared ?? (await openAuditBrowser());
     ownsBrowser = !shared;
     const overflows: string[] = [];
     for (const vp of viewports) {
@@ -530,7 +519,7 @@ async function checkResponsiveOverflow(targetUrl: string, shared?: import('playw
   } finally {
     // Release the SHARED browser — closing it here would kill the browser
     // out from under the sibling checks that are still running.
-    if (ownsBrowser && browser) await closeBrowserSafely(browser);
+    if (ownsBrowser && browser) await browser.close();
   }
 }
 
@@ -540,7 +529,7 @@ async function checkResponsiveOverflow(targetUrl: string, shared?: import('playw
 // update. PASS if both state changes occur.
 // When scope=universal, absence of a sound toggle is SKIP (not WARN) — a site
 // without sound isn't broken, it just doesn't use audio.
-async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal', shared?: import('playwright-core').Browser): Promise<CheckResult> {
+async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal', shared?: GuardedBrowser): Promise<CheckResult> {
   if (!browserAuditEnabled()) {
     return {
       id: 'v04',
@@ -555,7 +544,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
   try {
     // Prefer the caller-owned browser: the route opens ONE Chromium and
     // passes it in, so neither check has to launch or close it.
-    browser = shared ?? (await launchBrowser());
+    browser = shared ?? (await openAuditBrowser());
     ownsBrowser = !shared;
     const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
@@ -636,7 +625,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
   } finally {
     // Release the SHARED browser — closing it here would kill the browser
     // out from under the sibling checks that are still running.
-    if (ownsBrowser && browser) await closeBrowserSafely(browser);
+    if (ownsBrowser && browser) await browser.close();
   }
 }
 
@@ -673,7 +662,10 @@ export async function POST(request: Request) {
       return 'universal' as const;
     })();
 
-  if (!url || !isValidUrl(url)) {
+  // The shared guard's string checks, then a DNS lookup of the host with every
+  // resolved address public. Runs before the URL reaches PageSpeed Insights or
+  // a browser. Same 400 and wording as /api/score for a refused address.
+  if (!url || !(await isPublicUrl(url))) {
     return NextResponse.json(
       { ok: false, error: 'Invalid URL. Enter a valid domain like designesy.org or nike.com.' },
       { status: 400 }
@@ -710,14 +702,14 @@ export async function POST(request: Request) {
     // The route owns the browser lifecycle so the first check to finish cannot
     // close it out from under the second.
     const v21Promise = checkCoreWebVitals(url);
-    const browser = browserAuditEnabled() ? await launchBrowser() : undefined;
+    const browser = browserAuditEnabled() ? await openAuditBrowser(createUrlVerdict()) : undefined;
     let v02: CheckResult;
     let v04: CheckResult;
     try {
       v02 = await checkResponsiveOverflow(url, browser);
       v04 = await checkSoundToggle(url, scope, browser);
     } finally {
-      if (browser) await closeBrowserSafely(browser);
+      if (browser) await browser.close();
     }
     const v21 = await v21Promise;
     const checks = [v02, v04, v21];

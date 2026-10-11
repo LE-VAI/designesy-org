@@ -134,6 +134,14 @@ jobs:
         if: always()
         run: node scripts/check-audit-rescore.mjs
 
+      # The full audit reaches public addresses only: the route refuses private,
+      # loopback, link-local, CGNAT and IPv6 hosts after a DNS lookup, and the
+      # browser it drives refuses them on every request, redirect hops included
+      # (app/lib/browser-guard.ts).
+      - name: Audit SSRF guard
+        if: always()
+        run: node scripts/check-audit-ssrf.js
+
       # One value reads one way on every result surface: the words, the score
       # format, the colour rules and the grade colours of the share card and
       # badge (app/score/verdict.ts is the one source).
