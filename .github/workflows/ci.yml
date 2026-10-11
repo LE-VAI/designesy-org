@@ -168,6 +168,15 @@ jobs:
         if: always()
         run: node scripts/check-mcp-tool-parity.js
 
+      # Each MCP tool returns what its description promises, and two tools
+      # never disagree about one page: the real route modules run offline on
+      # scripts/fixtures/mcp-accuracy.json (a11y check names, one fabricated-
+      # token definition, SKIP left out of the tokens score, a valid DTCG file
+      # from guardrails, m09's contract version, rounded compare numbers).
+      - name: MCP accuracy
+        if: always()
+        run: node scripts/check-mcp-accuracy.js
+
       - name: Count literal
         if: always()
         run: node scripts/check-count-literal.js
