@@ -61,11 +61,12 @@
  *                        validator gives it 0 WARN and 0 FAIL
  *   monitor-m09          m09 reports the contract version designesy_score reads
  *   compare-rounding     every number in a compare result has at most two decimals
- *   tool-definitions     every description and the server instructions fit in
- *                        2,048 characters (Claude Code truncates there), open
- *                        with what the tool does then "Use this when", name a
- *                        sibling to use instead, hold no agent directive, and
- *                        state the engine rate limits the routes enforce and
+ *   tool-definitions     every description fits in 2,048 characters (Claude
+ *                        Code truncates there) and the server instructions
+ *                        in 1,950, a margin for later edits; each description
+ *                        opens with what the tool does then "Use this when",
+ *                        names a sibling to use instead, holds no agent
+ *                        directive, and states the rate limits the routes enforce and
  *                        the document sizes the site renders; every parameter
  *                        carries an example and a tool without parameters takes
  *                        {"type":"object","additionalProperties":false}; the
@@ -123,6 +124,8 @@ const DEFINITIONS = path.join(PYPI_FIXTURES, 'tool-definitions.json');
 // Claude Code truncates each tool description and each server's instructions
 // at 2,048 characters (https://code.claude.com/docs/en/mcp).
 const DESCRIPTION_LIMIT = 2048;
+// The instructions keep a margin under that limit, so a later edit has room.
+const INSTRUCTIONS_BUDGET = 1950;
 const SCORING_TOOLS = [
   'designesy_score', 'designesy_tokens_score', 'designesy_a11y_score', 'designesy_motion_score',
   'designesy_drift_score', 'designesy_readiness_score', 'designesy_guardrails',
@@ -527,7 +530,7 @@ async function toolDefinitions() {
 
   // Length: Claude Code shows 2,048 characters of each.
   if (typeof r.instructions !== 'string' || r.instructions.length === 0) push('instructions-missing', 'The route passes no instructions to createMcpHandler.');
-  else if (r.instructions.length > DESCRIPTION_LIMIT) push('instructions-length', `The server instructions run to ${r.instructions.length} characters; Claude Code truncates at ${DESCRIPTION_LIMIT}.`);
+  else if (r.instructions.length > INSTRUCTIONS_BUDGET) push('instructions-length', `The server instructions run to ${r.instructions.length} characters; the budget is ${INSTRUCTIONS_BUDGET}, under the ${DESCRIPTION_LIMIT} where Claude Code truncates.`);
   const lengths = [];
   for (const name of names) {
     const d = r.descriptions[name];

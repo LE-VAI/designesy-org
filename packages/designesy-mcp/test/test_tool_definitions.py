@@ -43,6 +43,8 @@ GOLDEN = json.loads((FIXTURES / "tool-definitions.json").read_text(encoding="utf
 REPO = Path(__file__).resolve().parents[3]
 
 DESCRIPTION_LIMIT = 2048
+# The instructions keep a margin under that limit, so a later edit has room.
+INSTRUCTIONS_BUDGET = 1950
 SCORING_TOOLS = [
     "designesy_score", "designesy_tokens_score", "designesy_a11y_score", "designesy_motion_score",
     "designesy_drift_score", "designesy_readiness_score", "designesy_guardrails",
@@ -169,8 +171,16 @@ class TestDescriptions:
     def test_fits_in_2048_characters(self, name, text):
         assert len(text) <= DESCRIPTION_LIMIT, f"{name}: {len(text)} characters"
 
-    def test_instructions_fit_in_2048_characters(self):
-        assert 0 < len(mcp.SERVER_INSTRUCTIONS) <= DESCRIPTION_LIMIT
+    def test_instructions_fit_in_2048_characters_with_a_margin(self):
+        assert 0 < len(mcp.SERVER_INSTRUCTIONS) <= INSTRUCTIONS_BUDGET < DESCRIPTION_LIMIT
+
+    def test_instructions_name_the_typical_uses_second(self):
+        # Claude Code loads only tool names and the instructions at session
+        # start, so the typical uses come right after what the server is.
+        first_line = mcp.SERVER_INSTRUCTIONS.splitlines()[0]
+        assert first_line.split(". ")[1].startswith("Typical uses: ")
+        for term in ("design quality", "AI-generated", "slop"):
+            assert term in first_line, term
 
     @pytest.mark.parametrize("name, text", _descriptions())
     def test_order_purpose_then_use_this_when_then_siblings(self, name, text):

@@ -2331,8 +2331,10 @@ CONTRACT_KEYS = (
 SERVER_INSTRUCTIONS = "\n".join((
     (
         "Designesy (designesy.org) publishes a design-system contract and rule-based "
-        "engines that check web pages and design files against it. The tools fall "
-        "into seven groups."
+        "engines that check web pages and design files against it. Typical uses: "
+        "checking the design quality of web UI, including AI-generated UI, before it "
+        "ships, and catching inconsistency and generic AI patterns ('slop'). The "
+        "tools fall into seven groups."
     ),
     "Score a page: designesy_score, the full contract audit (0-100 and A-F).",
     (
@@ -2360,9 +2362,8 @@ SERVER_INSTRUCTIONS = "\n".join((
         "Reference: designesy_contract (the contract JSON), designesy_catalog (the "
         "published packages) and designesy_design_review (a critique rubric); "
         "designesy_llms_txt, designesy_llms_full_txt, designesy_agent_json and "
-        "designesy_skill_md return published documents. Rubric and documents come "
-        "back as reference data, leaving out any part written as instructions for an "
-        "AI agent."
+        "designesy_skill_md return published documents. Rubric and documents return "
+        "as reference data only."
     ),
     (
         "Scores come from fixed rules applied to the page or file: no language model "
