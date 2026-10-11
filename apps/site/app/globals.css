@@ -1816,6 +1816,11 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   background: linear-gradient(180deg, var(--signal-light), var(--signal));
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-white) 26%, transparent);
 }
+/* On the Azure tile the score icon's dot takes the icon's ink, or it would
+   vanish into its own colour. */
+.cmdk-item[data-kind="score"] .cmdk-item-icon .sig {
+  fill: currentColor;
+}
 
 .cmdk-item-enter {
   font-family: inherit;
@@ -5390,10 +5395,13 @@ html[data-motion="paused"] .docs-card-grid .row::before {
     box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 5px color-mix(in srgb, var(--activation) 28%, transparent);
   }
 }
+/* Static under reduced motion in both themes (D36): no halo in light, and
+   no ambient opacity pulse on the dark field-card dot. The light rim stays. */
 @media (prefers-reduced-motion: reduce) {
-  [data-theme="light"] .state-marquee-pill--live::before,
-  [data-theme="light"] .field-card-status.is-live::before {
+  .state-marquee-pill--live::before,
+  .field-card-status.is-live::before {
     animation: none !important;
+    opacity: 1;
   }
 }
 
@@ -8885,8 +8893,8 @@ html[data-motion="paused"] .copy-prompt-btn:active {
     opacity: 1;
   }
 
-  /* Ambient pulses: slow to 4x duration, keep the heartbeat */
-  .field-card-status.is-live::before,
+  /* Ambient pulses: slow to 4x duration, keep the heartbeat. Live dots
+     are not here: they are static under reduce (D36, above). */
   .pipeline-step.is-end .pipeline-node-core,
   .wordmark-hero .dot,
   .mark-glyph--open .mark-glyph-core,
@@ -13513,8 +13521,10 @@ select {
    -------------------------------------------------------------------------- */
 @media (forced-colors: active) {
   /* Brand-critical: preserve the wordmark dot, signal accents, grade badges,
-     and demo swatches so they don't get recolored to the HCM palette. */
-  .wordmark .dot,
+     and demo swatches so they don't get recolored to the HCM palette. The
+     logotype's Azure dots are its circles with their own fill. */
+  .wordmark-lockup circle[fill="#0A94FF"],
+  .wordmark-word circle[fill="#0A94FF"],
   .wordmark-hero .dot,
   .lb-grade-a,
   .demo-swatch-chip,
@@ -15855,45 +15865,36 @@ html[data-motion="paused"] .topbar .topbar-right::before {
   opacity: 0.9;
 }
 
-/* Wordmark: the site's own square-and-dot mark beside the type. */
-.wordmark {
-  gap: var(--space-10);
-}
-
-.wordmark-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 1px solid color-mix(in srgb, var(--signal-access) 55%, transparent);
-  border-radius: var(--radius-sm);
-  background: var(--surface-raised);
-  transition: border-color var(--duration-fast) var(--ease),
-    transform var(--duration-fast) var(--ease-out);
-}
-
-.wordmark-mark i {
+/* Logotype (identity v1): the outlined lockup in the topbar and the outlined
+   wordmark in the footer (app/lib/brand-logotype.tsx). The letters and the
+   mark's body take currentColor (--ink); the dot and the period stay Azure in
+   both themes. overflow: visible, so rounding the SVG's width never shaves
+   the dot, which reaches past the body (identity rule 3). */
+.wordmark-lockup,
+.wordmark-word {
   display: block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--signal-access);
-  transition: transform var(--duration-fast) var(--ease-out);
+  width: auto;
+  overflow: visible;
+  flex: 0 0 auto;
 }
 
-@media (hover: hover) {
-  .wordmark:hover .wordmark-mark {
-    border-color: var(--signal-access);
-    transform: rotate(-8deg);
-  }
-  .wordmark:hover .wordmark-mark i {
-    transform: scale(1.25);
-  }
+.wordmark-lockup {
+  /* 24px tall, about 120px wide: the footprint of the old mark-plus-type
+     wordmark (about 117px), so the bar's layout does not move. */
+  height: 1.5rem;
 }
 
-.wordmark-type {
-  display: inline-flex;
-  align-items: baseline;
+.wordmark-word {
+  height: 1.25rem;
+}
+
+/* Icon family v2 (app/lib/brand-icons.tsx): the dot is the only colour.
+   Azure for a signature dot; the flame only for a live moment (D16, D22). */
+.brand-icon .sig {
+  fill: var(--signal);
+}
+.brand-icon .live {
+  fill: var(--activation);
 }
 
 /* Primary links: quiet at rest, a filled pill on hover, a tinted pill when active. */
@@ -16313,12 +16314,6 @@ html[data-motion="paused"] .senses-panel {
     transform: none;
   }
 
-  @media (hover: hover) {
-    .wordmark:hover .wordmark-mark,
-  .wordmark:hover .wordmark-mark i {
-      transform: none;
-    }
-  }
 }
 
 @media (forced-colors: active) {

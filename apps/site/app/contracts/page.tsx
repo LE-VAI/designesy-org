@@ -713,19 +713,19 @@ export default function ContractsPage() {
                   <span className="demo-swatch-name">--muted-dim</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#0133cb' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#0A94FF' }} />
                   <span className="demo-swatch-name">--signal</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#3358e8' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#36A7FF' }} />
                   <span className="demo-swatch-name">--signal-light</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#5d7bff' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#0A94FF' }} />
                   <span className="demo-swatch-name">--signal-access</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: '#fecc34' }} />
+                  <div className="demo-swatch-chip" style={{ background: '#F56B00' }} />
                   <span className="demo-swatch-name">--activation</span>
                 </div>
               </div>
@@ -761,7 +761,7 @@ export default function ContractsPage() {
                   <span className="demo-swatch-name">--hover</span>
                 </div>
                 <div className="demo-swatch">
-                  <div className="demo-swatch-chip" style={{ background: 'rgba(1,51,203,0.14)' }} />
+                  <div className="demo-swatch-chip" style={{ background: 'rgba(10,148,255,0.14)' }} />
                   <span className="demo-swatch-name">--signal-dim</span>
                 </div>
               </div>

@@ -215,10 +215,10 @@ void main() {
 
 // ── Designesy-blue preset (tokens → orb state) ───────────────────────────
 //
-// Tokens mapped from design-system-contract.ts v0.4.0:
-//   --signal         #0133cb  (brand action)
-//   --signal-light   #3358e8  (hover / focus)
-//   --signal-access  #5d7bff  (accessible accent)
+// Tokens mapped from design-system-contract.ts (identity v1, dark theme):
+//   --signal         #0A94FF  (Azure, brand action)
+//   --signal-light   #36A7FF  (hover)
+//   --field-dot-3    #7CC4FF  (the lightest step of the Azure field)
 //   --ink            #f5f5f7  (primary foreground)
 //
 // 6 parameters surfaced, mapped to orb shader uniforms:
@@ -242,7 +242,7 @@ type OrbState = {
 };
 
 const DESIGNESY_PRESET: OrbState = {
-  colors: ['#0133cb', '#3358e8', '#5d7bff', '#f5f5f7'],
+  colors: ['#0A94FF', '#36A7FF', '#7CC4FF', '#f5f5f7'],
   colorShift: 0.18,
   flow: 0.55,
   turbulence: 0.35,

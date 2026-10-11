@@ -64,7 +64,7 @@ const DIMENSIONS = [
     num: '05',
     title: 'System coherence',
     observation:
-      'Visual system aligns with VAI brand: dark default, VAI yellow accent #FFC400. Designesy activation yellow #FECC34 is deliberately suppressed in the VAI surface. The tool follows the same deployment pattern as Continuity.',
+      'Visual system aligns with VAI brand: dark default, VAI yellow accent #FFC400. The Designesy colours are deliberately kept out of the VAI surface. The tool follows the same deployment pattern as Continuity.',
     judgment:
       'Coherent within the VAI surface. The Designesy graduation path is documented: Lab feel on LE-VAI, then contract, then series production for Designesy public surfaces.',
     action: 'Keep the VAI/Designesy separation explicit. When Tile graduates to Designesy /labs, switch from VAI yellow to Designesy tokens.',

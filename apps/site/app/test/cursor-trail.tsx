@@ -59,7 +59,8 @@ type Dot = {
   colorIdx: number;
 };
 
-const PALETTE = ['#0133CB', '#3358E8', '#5B78F0', '#7E9DFF'];
+// The Azure family (identity v1): --signal, --signal-light, --field-dot-3.
+const PALETTE = ['#0A94FF', '#36A7FF', '#5BB5FF', '#7CC4FF'];
 const COUNT = 220; // more dots than V1's 90, but still clean
 const FLOW_GRID = 24;
 const FLOW_FORCE = 0.035; // gentle — calm drift, not busy

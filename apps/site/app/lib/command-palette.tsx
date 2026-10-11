@@ -5,6 +5,7 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { lockScroll } from './scroll-lock';
+import { BrandIcon } from './brand-icons';
 import { pushLayer, yieldToModal } from './overlay-stack';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
@@ -501,12 +502,8 @@ function Icon({ kind }: { kind: RowIcon }) {
   };
   switch (kind) {
     case 'score':
-      return (
-        <svg {...common}>
-          <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
-          <path d="M5.2 8.2l1.9 1.9 3.8-4.2" />
-        </svg>
-      );
+      // Icon family v2: the gauge, its dot the active grade.
+      return <BrandIcon name="score" size={16} />;
     case 'theme':
       return (
         <svg {...common}>
@@ -532,12 +529,8 @@ function Icon({ kind }: { kind: RowIcon }) {
         </svg>
       );
     default:
-      return (
-        <svg {...common}>
-          <path d="M4 2.5h5.2L12 5.3v8.2H4z" />
-          <path d="M9 2.7V5.5h2.8" />
-        </svg>
-      );
+      // A page: icon family v2, docs.
+      return <BrandIcon name="docs" size={16} />;
   }
 }
 
@@ -1016,10 +1009,7 @@ export function CommandPalette() {
         data-cuelume-hover="tick"
         data-cuelume-press="tick"
       >
-        <svg className="cmdk-trigger-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.5" y2="16.5" />
-        </svg>
+        <BrandIcon name="search" size={15} className="cmdk-trigger-icon" />
         <span className="cmdk-trigger-label">Find</span>
         <kbd className="cmdk-trigger-kbd" aria-hidden="true">
           <span className="cmdk-kbd-mod">{modLabel}</span>K
@@ -1060,10 +1050,7 @@ export function CommandPalette() {
               }}
             >
               <div className="cmdk-input-row">
-                <svg className="cmdk-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" />
-                  <line x1="21" y1="21" x2="16.5" y2="16.5" />
-                </svg>
+                <BrandIcon name="search" size={16} className="cmdk-input-icon" />
                 <input
                   ref={inputRef}
                   type="text"

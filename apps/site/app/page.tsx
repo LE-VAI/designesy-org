@@ -6,6 +6,7 @@ import './home-lvl.css';
 import './home-inspect.css';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
+import { BrandIcon } from './lib/brand-icons';
 import { Toggle } from './lib/toggle';
 import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
@@ -252,22 +253,10 @@ function FieldIcon({ name }: { name: 'contract' | 'review' | 'studio' | 'continu
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
   };
-  if (name === 'contract') {
-    return (
-      <svg {...props}>
-        <path d="M4.5 2.5h6.2l2.8 2.8v10.2h-9z" />
-        <path d="M10.5 2.7v2.8h2.8M6.8 9.2l1.6 1.6 3-3.3" />
-      </svg>
-    );
-  }
-  if (name === 'review') {
-    return (
-      <svg {...props}>
-        <circle cx="8" cy="8" r="4.8" />
-        <path d="M11.6 11.6 15.5 15.5M6 8.2l1.4 1.4 2.6-2.8" />
-      </svg>
-    );
-  }
+  // Icon family v2 where the meaning matches: the contract (its dot the
+  // signature) and the Design Review kit (its dot the head).
+  if (name === 'contract') return <BrandIcon name="contract" size={18} />;
+  if (name === 'review') return <BrandIcon name="kit" size={18} />;
   if (name === 'studio') {
     return (
       <svg {...props}>

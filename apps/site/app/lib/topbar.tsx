@@ -9,6 +9,7 @@ import { SensesMenu } from './senses-menu';
 import { StudioGlyph, STUDIO_HREF, STUDIO_LABEL } from './director-dock';
 import { lockScroll, scrollLocked } from './scroll-lock';
 import { pushLayer } from './overlay-stack';
+import { Lockup } from './brand-logotype';
 
 // Primary nav — 5 items. Score + Leaderboard pair as the public verification
 // surface; Contract, Kits, Docs cover the developer/designer path.
@@ -246,11 +247,11 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             data-cuelume-press="tick"
             aria-current={pathname === '/' ? 'page' : undefined}
           >
-            {/* The site's own mark (favicon and share-card construction): a
-                contract square holding the signal dot. Decorative; the
-                wordmark text names the link. */}
-            <span className="wordmark-mark" aria-hidden="true"><i /></span>
-            <span className="wordmark-type">designesy<span className="dot">.</span></span>
+            {/* The logotype (identity v1): the mark and the word as one
+                outlined lockup. The artwork is decorative; the hidden text
+                names the link. */}
+            <Lockup className="wordmark-lockup" />
+            <span className="sr-only">designesy</span>
           </Link>
           <div className="topbar-right">
             <nav className="nav-links" aria-label="Primary">
