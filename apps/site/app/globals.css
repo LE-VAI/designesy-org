@@ -12772,6 +12772,19 @@ html[data-motion="paused"] .pricing-card::after {
   padding: var(--space-32) 0;
 }
 
+/* No address in the link (/score/report with no ?url=): the page asks for one
+   in the site's own URL bar. Nothing ran, so nothing reads as a failure. */
+.report-start {
+  display: grid;
+  gap: var(--space-16);
+  max-width: 44rem;
+  padding: var(--space-32) 0;
+}
+
+.report-start p {
+  color: var(--muted);
+}
+
 /* --- Report hero --- */
 
 .report-hero {

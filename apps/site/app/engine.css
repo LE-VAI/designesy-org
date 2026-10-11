@@ -198,6 +198,21 @@
   }
 }
 
+/* A failed run's notice stands directly under the bar (/score), on the bar's
+   own columns, so the reason sits under the URL it is about and inside the
+   first screen on a phone (it was under the instrument, 1,100px below the
+   fold at 390). The bench's row gap spaces it; the card's own top margin is
+   for the forms that stack it in flow. */
+.eg-bench > .score-error-card {
+  margin-top: 0;
+}
+
+@container bench (width >= 64rem) {
+  .eg-bench > .eg-bar:not(.is-pair):not(:has(.is-area)) + .score-error-card {
+    grid-column: full-start / split;
+  }
+}
+
 /* A pair bar's wells stand on the bench's columns too (mirror and line 11).
    That rule reads the slab's own padding, so it lives in command-bar.css,
    the sheet that declares it. */
@@ -448,9 +463,10 @@
   animation: eg-led 1.5s var(--ease-in-out) infinite;
 }
 
-/* The state reads the run: "12 checks · ready", then "reading 3/12" while the
-   cursor steps through the registry, then "done in 1.2 s". Each swap fades in
-   150ms (allowed under reduced motion); the resting first paint does not. */
+/* The state reads the run: "12 checks · ready", then "12 checks · checking ·
+   3 s", the seconds since the run began (the engines answer once, at the end,
+   so no count of checks read is shown), then "done in 1.2 s". Each swap fades
+   in 150ms (allowed under reduced motion); the resting first paint does not. */
 .eg-inst-state > span {
   white-space: nowrap;
 }
@@ -461,80 +477,6 @@
 
 @keyframes eg-state-in {
   from { opacity: 0; }
-}
-
-/* The reading counter: a digit strip (lib/digit-strip) of 1..n, one row
-   showing, stepped by the same clock as the scan cursor (n x 110ms, steps(n)),
-   so "reading 3" shows while the third lamp is lit. The strip's mechanics are
-   repeated here, scoped, because the shared rules live in home-inspect.css,
-   which an engine page does not load. Both lines share the strip's 1.25em
-   line, so the digits sit on the text's baseline. */
-.eg-state-read {
-  line-height: 1.25;
-}
-
-/* The strip writes --ds-lh and --ds-at inline (lib/digit-strip); the same
-   values are declared here so the sheet never references a property it does
-   not declare (the site's own drift checks read stylesheets, d02 and d11). */
-.eg-inst-state .digit-strip {
-  --ds-lh: 1.25em;
-  --ds-at: 0;
-  display: inline-block;
-  height: var(--ds-lh);
-  overflow: hidden;
-  line-height: var(--ds-lh);
-  font-variant-numeric: tabular-nums;
-  vertical-align: top;
-}
-
-.eg-inst-state .digit-strip-rows {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  transform: translateY(calc(var(--ds-at) * -1 * var(--ds-lh)));
-}
-
-.eg-inst-state .digit-strip-rows > span {
-  display: block;
-  height: var(--ds-lh);
-}
-
-/* A row is a whole pixel. 1.25em of the state's 0.72rem is 14.4px, so the
-   strip stepped by 14.4px and landed between device pixels: the counter's
-   digit drew 0.5px above "/12" beside it (measured on /drift at 1440, DPR
-   4). Rounded, every step is an integer translate. The line around it
-   takes the same rounded height, so the row's baseline is the text's. The
-   strip writes --ds-lh inline (lib/digit-strip), so the override needs the
-   !important; behind @supports, because a custom property that fails to
-   compute would leave the strip with no height at all. */
-@supports (width: round(1.5px, 1px)) {
-  .eg-state-read {
-    line-height: round(1.25em, 1px);
-  }
-  .eg-inst-state .digit-strip {
-    --ds-lh: round(1.25em, 1px) !important;
-  }
-}
-
-.eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
-  animation: eg-read calc(var(--n-all) * 110ms) steps(var(--n-all), jump-end) infinite;
-}
-
-@keyframes eg-read {
-  to { transform: translateY(calc(var(--n-all) * -1 * var(--ds-lh))); }
-}
-
-/* With motion off the count cannot step, so the calm line says what is
-   running instead; it is always the line a screen reader reads (the strip
-   is aria-hidden). */
-.eg-state-calm {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 /* The target pill receives the host when a run starts: it rises 4px into
@@ -3400,13 +3342,11 @@ button.mt-row {
 
 /* Tiered: movement and loops stop, the state still reads. The LED keeps its
    colour without the pulse; the verdict light (a 1.2s hold) does not land;
-   the host fades in place (150ms, inside the allowance) without rising; the
-   counter cannot step, so the calm line shows instead of the strip. State
-   swaps keep their 150ms fade. */
+   the host fades in place (150ms, inside the allowance) without rising.
+   State swaps keep their 150ms fade. */
 @media (prefers-reduced-motion: reduce) {
   .eg-inst[data-phase="running"] .eg-dot,
-  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
-  .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
     animation: none;
   }
   .eg-inst-target > [data-host] {
@@ -3415,22 +3355,10 @@ button.mt-row {
   .eg-inst-glow {
     transition: opacity var(--duration-quick) var(--ease-out);
   }
-  .eg-state-read {
-    display: none;
-  }
-  .eg-state-calm {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip-path: none;
-  }
 }
 
 html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-dot,
-html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
-html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
   animation: none;
 }
 
@@ -3440,19 +3368,6 @@ html[data-motion="paused"] .eg-inst-target > [data-host] {
 
 html[data-motion="paused"] .eg-inst-glow {
   transition: opacity var(--duration-quick) var(--ease-out);
-}
-
-html[data-motion="paused"] .eg-state-read {
-  display: none;
-}
-
-html[data-motion="paused"] .eg-state-calm {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip-path: none;
 }
 
 @keyframes eg-host-fade {
