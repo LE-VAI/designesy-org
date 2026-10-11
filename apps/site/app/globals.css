@@ -88,9 +88,12 @@
   --signal-dim: rgba(10, 148, 255, 0.14);
   /* Gradient end only, never a standalone colour (D7). */
   --signal-teal: #2CEBCA;
-  /* Text placed ON a --signal fill: ink, 6.65:1 on Azure. White on Azure is
-     3.14:1 and is not used (D9, D19). */
+  /* Text placed ON an Azure fill, and nothing else: ink, 6.65:1 on Azure.
+     White on Azure is 3.14:1 and is not used (D9, D19, D33). */
   --paper-on-signal: #010102;
+  /* The constant white, the same in both themes (D33): the dark
+     increase-contrast ink, text on red fills, shimmer and shine highlights. */
+  --paper-white: #FFFFFF;
   /* Activated Orange, the exact RGB inverse of --signal (D1). Live moments
      only (D16). 6.0 to 6.94:1 on the dark surfaces. */
   --activation: #F56B00;
@@ -537,6 +540,7 @@ read-along {
   --signal-deep: #016ABB;
   --signal-dim: rgba(10, 148, 255, 0.08);
   --paper-on-signal: #010102;
+  --paper-white: #FFFFFF;
   /* Fills only on light (3.01:1 on white). Orange text takes --activation-ink,
      4.56 to 5.37:1 on the four light surfaces. */
   --activation: #F56B00;
@@ -597,7 +601,7 @@ read-along {
   --grade-a-ink: #147839;
   --grade-b-ink: #497509;
   --grade-c-ink: #896203;
-  --grade-d-ink: #C7216B;
+  --grade-d-ink: #BE1F67;
   --grade-f-ink: #CD2323;
   /* Three tokens that are only ever text take their ink token in light. */
   --grade-b-light: var(--grade-b-ink);
@@ -896,7 +900,7 @@ p {
     var(--shimmer-3) 42%,
     var(--shimmer-4) 46.5%,
     var(--shimmer-5) 49%,
-    var(--paper-on-signal) 50.5%,
+    var(--paper-white) 50.5%,
     var(--shimmer-5) 52%,
     var(--shimmer-4) 54.5%,
     var(--shimmer-3) 58%,
@@ -1810,7 +1814,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 .cmdk-item[data-kind="score"] .cmdk-item-icon {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--signal-light), var(--signal));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paper-white) 26%, transparent);
 }
 
 .cmdk-item-enter {
@@ -2369,12 +2373,27 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   }
 }
 
-.button.primary:active,
-[data-theme="light"] .button.primary:active {
+.button.primary:active {
   background: var(--action-pressed);
   border-color: var(--action-pressed);
   transform: scale(0.97);
   box-shadow: var(--inner-light);
+}
+
+/* Light pressed is shown by depth, not colour (D33): hover is already
+   #087ED9, and the darkest Azure that keeps ink at 4.5:1 or more (#0878CE,
+   4.56) looks the same. The 1px drop goes under reduced motion; the inset
+   shadow stays. */
+[data-theme="light"] .button.primary:active {
+  background: var(--action-pressed);
+  border-color: var(--action-pressed);
+  transform: translateY(1px);
+  box-shadow: var(--inner-light), inset 0 1px 2px rgb(1 1 2 / 0.28);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="light"] .button.primary:active {
+    transform: none;
+  }
 }
 
 .button.ghost {
@@ -5303,8 +5322,8 @@ html[data-motion="paused"] .docs-card-grid .row::before {
     border-color: var(--line-strong);
   }
   .state-marquee-pill--live:hover {
-    color: var(--signal-text);
-    background: color-mix(in srgb, var(--signal) 22%, transparent);
+    color: var(--ink);
+    background: var(--surface-hover);
   }
   .state-marquee-pill--adopted:hover {
     color: var(--ink);
@@ -5317,29 +5336,29 @@ html[data-motion="paused"] .docs-card-grid .row::before {
 }
 
 /* Keyboard path: the house ring, --signal-access, as every focus rule takes
-   it (see :focus-visible). The contract's --focus-ring still resolves to
-   --signal-light, which measures under 3:1 beside the dark surfaces, so the
-   site no longer draws a ring with it until the contract moves too. Offset
-   outside the pill so the ring never clips against the marquee's mask
-   gradient. */
+   it (see :focus-visible). --focus-ring resolves to the same token in both
+   themes (#0A94FF dark, #016ABB light), so a ring drawn with either is the
+   same ring. Offset outside the pill so the ring never clips against the
+   marquee's mask gradient. */
 .state-marquee-pill:focus-visible {
   outline: 2px solid var(--signal-access);
   outline-offset: 2px;
   border-color: var(--signal-access);
 }
 
-/* Live — bold signal pills with pulse dot */
+/* Live (D31): a neutral pill in the text colour; the small pulsing dot in
+   --activation is its only orange. */
 .state-marquee-pill--live {
-  color: var(--signal-text);
-  background: var(--signal-dim);
-  border: 1px solid color-mix(in srgb, var(--signal) 18%, transparent);
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
 }
 .state-marquee-pill--live::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--signal-light);
+  background: var(--activation);
   flex-shrink: 0;
   animation: marquee-pulse 2s var(--ease-in-out) infinite;
 }
@@ -14380,7 +14399,7 @@ select {
 /* Light theme — re-lit shimmer. The dark-mode band is a WHITE flash on a
    light-gray word; on light paper (var(--paper)) that inverts the logic: a white
    band is near-invisible against near-white paper, and color-mix(var(--ink) 70%,
-   var(--paper-on-signal) 30%) renders the base face as washed light-gray instead of ink.
+   var(--paper-white) 30%) renders the base face as washed light-gray instead of ink.
    Light-mode "shine" on dark text is a CHROMATIC/dark sweep, not a white one —
    the band is a tight signal-blue flash (--signal-light) that dips below the
    baseline ink in lightness and adds chroma, exactly how Linear/Stripe read
@@ -14963,7 +14982,7 @@ select {
     /* Deepen the paper so ink sits further from the surface — the dark-side
        analogue of "increase contrast". On a dark theme "more contrast" means
        further separation, not brighter paper. */
-    --ink: var(--paper-on-signal);
+    --ink: var(--paper-white);
     --muted: #b8b8b8;
     --muted-dim: #999999;
 
@@ -15006,7 +15025,7 @@ select {
   }
 
   [data-theme="light"] {
-    --surface-soft: var(--paper-on-signal);
+    --surface-soft: var(--surface);
     /* Was var(--ink): every hover fill went near-black under the ink text it
        held (1:1). The lifted step is the opaque light hover. */
     --surface-hover: var(--surface-lifted);
@@ -15244,8 +15263,8 @@ select {
     background 0.18s var(--ease-out);
 }
 
-/* The house ring (see .state-marquee-pill:focus-visible for why not
-   --focus-ring). */
+/* The house ring, --signal-access (--focus-ring resolves to the same token;
+   see .state-marquee-pill:focus-visible). */
 .listen-btn:focus-visible {
   outline: 2px solid var(--signal-access);
   outline-offset: 2px;
@@ -16099,7 +16118,7 @@ html[data-motion="paused"] .senses-panel {
   color: var(--paper-on-signal);
   background: linear-gradient(180deg, var(--signal-light), var(--signal));
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--paper-on-signal) 26%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--paper-white) 26%, transparent),
     0 6px 16px -8px color-mix(in srgb, var(--signal-light) 80%, transparent);
 }
 

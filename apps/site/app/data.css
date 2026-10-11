@@ -34,7 +34,7 @@
 /* The light theme takes each tone's darker step: the pale warn and fail
    tones fall under 3:1 on white. */
 [data-theme="light"] .dx {
-  --dx-pass: var(--lv-pass-b);
+  --dx-pass: var(--signal-access);
   --dx-warn: var(--lv-warn-b);
   --dx-fail: var(--lv-fail-b);
   --dx-range: color-mix(in srgb, var(--ink) 58%, transparent);
