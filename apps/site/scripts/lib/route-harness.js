@@ -38,8 +38,12 @@ function fixtureResponse(body, status = 200) {
  * @param {string} opts.app      apps/site directory whose code is loaded
  * @param {Record<string, unknown>} [opts.pages]  url -> body served by safeFetch and fetch
  * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not (return undefined for 404)
+ * @param {(hostname: string, options?: object) => Promise<Array<{ address: string, family: number }>>} [opts.lookup]
+ *   answers node:dns/promises lookup() for the loaded modules (the URL guard's
+ *   DNS check), so a gate can say what a name resolves to without live DNS.
+ *   Omitted, the real resolver is used, as before.
  */
-function createHarness({ app, pages = {}, api = () => undefined }) {
+function createHarness({ app, pages = {}, api = () => undefined, lookup }) {
   // Packages resolve from the loaded app first, then from this checkout, so a
   // bare source snapshot (git archive of another commit) runs without its own
   // node_modules.
@@ -86,6 +90,7 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
     '@upstash/redis': { Redis: class {} },
     '@upstash/ratelimit': { Ratelimit: class {} },
   };
+  if (lookup) stubs['node:dns/promises'] = { ...require('node:dns/promises'), lookup };
 
   // App-relative path stubs, applied after the real module loads.
   const overrides = {
@@ -145,12 +150,12 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
   }
 
   /** POST a JSON body to a route module (path relative to the app) and parse the reply. */
-  async function post(routeFile, body) {
+  async function post(routeFile, body, headers = {}) {
     const route = load(routeFile);
     return offline(async () => {
       const res = await route.POST(new Request('https://harness.test/api', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
       }));
       return { status: res.status, body: await res.json() };
