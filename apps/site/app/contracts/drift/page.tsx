@@ -50,7 +50,7 @@ export default function DriftContractPage() {
           <h1 className="surface-title" data-scramble>Drift</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/drift.md" label="the drift contract" />
         </section>
@@ -170,16 +170,16 @@ export default function DriftContractPage() {
             <Link href="/drift" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Drift radar →
             </Link>
-            <Link href="/api/drift" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/drift" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The drift contract is the first scoring engine that detects
           AI-generated UI drift deterministically: 12 checks against compiled
-          CSS. <Link href={c.machine_url}>Machine export</Link>.
+          CSS. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

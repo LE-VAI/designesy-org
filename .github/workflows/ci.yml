@@ -246,6 +246,14 @@ jobs:
         if: always()
         run: node scripts/check-jsx-glue.js
 
+      # next/link prefetches its href as a page, so a link to an endpoint or a
+      # file sent GET ?_rsc= to it: POST-only API routes answered 405 and logged
+      # a console error on 71 of 74 routes (live audit 2026-10-11). Endpoints
+      # and files take a plain <a> (or RouteLink, app/lib/route-link.tsx).
+      - name: Link targets
+        if: always()
+        run: node scripts/check-link-targets.js
+
       # A palette "Mentioned on" row is one clean line: whole words, the match
       # early and intact, no orphan quote or bracket at the cuts, an ellipsis
       # where it is mid-sentence ("here")Parses anchor el" shipped for "mo").

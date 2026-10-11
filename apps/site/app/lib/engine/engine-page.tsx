@@ -2,7 +2,7 @@
 // the bench between them (input, instrument, findings) belongs to each
 // engine's own client form.
 
-import Link from 'next/link';
+import { RouteLink } from '../route-link';
 import type { CSSProperties, ReactNode } from 'react';
 import { EngineNextLinks, type NextItem } from './engine-next';
 
@@ -32,7 +32,7 @@ export function EngineHead({
         ))}
         {contract && (
           <span>
-            <Link href={contract.href}>{contract.label}</Link>
+            <RouteLink href={contract.href}>{contract.label}</RouteLink>
           </span>
         )}
       </p>

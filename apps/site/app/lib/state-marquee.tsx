@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Ref } from 'react';
-import Link from 'next/link';
+import { RouteLink } from './route-link';
 import { initScrollPause } from './scroll-pause';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
@@ -79,14 +79,14 @@ export function StateMarquee() {
         {[0, 1].map((copy) => (
           <div className="state-marquee-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>
             {SIGNALS.map((item) => (
-              <Link
+              <RouteLink
                 href={item.href}
                 key={item.t}
                 className={`state-marquee-pill state-marquee-pill--${item.c}`}
                 tabIndex={copy === 1 ? -1 : undefined}
               >
                 {item.t}
-              </Link>
+              </RouteLink>
             ))}
           </div>
         ))}

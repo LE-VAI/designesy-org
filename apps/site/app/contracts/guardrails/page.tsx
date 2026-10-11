@@ -62,7 +62,7 @@ export default function GuardrailsContractPage() {
           <h1 className="surface-title" data-scramble>Guardrails</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/guardrails.md" label="the guardrails contract" />
         </section>
@@ -162,16 +162,16 @@ export default function GuardrailsContractPage() {
             <Link href="/guardrails" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Generate guardrails →
             </Link>
-            <Link href="/api/guardrails" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/guardrails" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The guardrails emitter is the product layer: it turns a design
           system into the file AI agents read and the lint that enforces it.{' '}
-          <Link href={c.machine_url}>Machine export</Link>.
+          <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

@@ -43,7 +43,7 @@ export default function ReportContractPage() {
           <h1 className="surface-title" data-scramble>Report</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/report.md" label="the report contract" />
         </section>
@@ -176,16 +176,16 @@ export default function ReportContractPage() {
             <Link href="/report" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Generate a report →
             </Link>
-            <Link href="/api/report" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/report" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The report contract is the synthesis capstone: it answers &ldquo;how
           good is this design, is AI breaking it, and can agents use it&rdquo; in
-          one composite grade. <Link href={c.machine_url}>Machine export</Link>.
+          one composite grade. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

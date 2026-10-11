@@ -88,9 +88,9 @@ export default function SpecsPage() {
           contract={{ href: '/specs/review-findings.json', label: 'the JSON Schema' }}
         >
           <div className="dx-actions">
-            <Link className="button primary" href="/specs/review-findings.json" data-cuelume-press>
+            <a className="button primary" href="/specs/review-findings.json" data-cuelume-press>
               JSON Schema
-            </Link>
+            </a>
             <Link className="button ghost" href="/methodology" data-cuelume-press>
               Methodology
             </Link>

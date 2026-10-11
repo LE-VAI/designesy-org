@@ -70,7 +70,7 @@ export default function MonitorContractPage() {
           <h1 className="surface-title" data-scramble>Monitor</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/monitor.md" label="the monitor contract" />
         </section>
@@ -206,16 +206,16 @@ export default function MonitorContractPage() {
             <Link href="/monitor" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Monitor a URL →
             </Link>
-            <Link href="/api/monitor" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/monitor" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The monitor contract is the continuous-governance layer: it turns
           every prior designesy surface from a snapshot into a watched series.{' '}
-          <Link href={c.machine_url}>Machine export</Link>.
+          <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

@@ -46,7 +46,7 @@ export default function CompareContractPage() {
           <h1 className="surface-title" data-scramble>Compare</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/compare.md" label="the compare contract" />
         </section>
@@ -145,16 +145,16 @@ export default function CompareContractPage() {
             <Link href="/compare" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Compare two URLs →
             </Link>
-            <Link href="/api/compare" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/compare" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The compare contract is the diff engine: it answers &ldquo;what
           actually changed between two design systems&rdquo; deterministically from
-          live production URLs. <Link href={c.machine_url}>Machine export</Link>.
+          live production URLs. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

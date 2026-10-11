@@ -12,6 +12,7 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { useTheme } from './use-theme';
 import { useMotionPreference } from './use-motion-pref';
 import { tidyExcerpt } from './excerpt';
+import { isNonPageHref } from './route-link';
 
 /**
  * Command palette (Cmd+K / Ctrl+K, or "/").
@@ -687,7 +688,10 @@ export function CommandPalette() {
   const go = useCallback(
     (href: string) => {
       close();
-      router.push(href);
+      // An endpoint or a file (MCP server, open.json, llms.txt) is loaded as
+      // itself: the router would fetch it as a page first (a 405 on /api/mcp).
+      if (isNonPageHref(href)) window.location.assign(href);
+      else router.push(href);
     },
     [close, router]
   );
