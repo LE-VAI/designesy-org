@@ -425,7 +425,9 @@ function extractRootTokens(css: string): Record<string, string> {
   // the base tokens.  Strip @media blocks before extracting :root.
   const stripped = css.replace(/@media[^{]*\{[^@]*?\}\s*\}/gi, '');
   const tokens: Record<string, string> = {};
-  const rootRe = /:root\s*\{([^}]*)\}/g;
+  // `:root, :host { ... }` is the block Tailwind v4 writes its theme into;
+  // until engine 1.3.0 only `:root {` was read, so those tokens were missed.
+  const rootRe = /:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g;
   let m;
   while ((m = rootRe.exec(stripped)) !== null) {
     const block = m[1];
@@ -467,19 +469,6 @@ const TOKEN_ALIASES: Record<string, string[]> = {
   ],
 };
 
-function hexToRgb(color: string): [number, number, number] | null {
-  color = color.trim();
-  if (!color.startsWith('#')) return null;
-  let hex = color.slice(1);
-  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
-  if (hex.length !== 6) return null;
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
-  return [r, g, b];
-}
-
 // ── WCAG 2.1 contrast ratio ──────────────────────────────────────────────────
 // Per WCAG 2.1 §1.4.3: contrast = (L1 + 0.05) / (L2 + 0.05), where L1/L2 are
 // relative luminances of the lighter/darker colors. Relative luminance uses
@@ -503,25 +492,28 @@ function contrastRatio(a: [number, number, number], b: [number, number, number])
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-// Helper: resolve any color value (hex, var()-ref, rgb()) to an RGB triple.
-// Falls back through the token map for var() references; returns null if the
-// value can't be resolved to a concrete hex color.
-function resolveColor(value: string, tokens: Record<string, string>): [number, number, number] | null {
-  const v = value.trim();
-  if (!v) return null;
-  if (v.startsWith('#')) return hexToRgb(v);
-  const varMatch = v.match(/^var\(\s*(--[\w-]+)/);
-  if (varMatch) {
-    const ref = tokens[varMatch[1]];
-    if (ref) return resolveColor(ref, tokens);
-    return null;
-  }
-  // rgb(r, g, b) / rgba(r, g, b, a)
-  const rgbMatch = v.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (rgbMatch) {
-    return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
-  }
-  return null;
+/**
+ * A token value as the opaque sRGB colour v06 and v22 measure.
+ *
+ * Read through the CSS Color 4 parser v44 uses (resolveThemeColor): var()
+ * chains with fallbacks, hex of 3, 4, 6 or 8 digits, rgb() and hsl() in comma
+ * or space syntax, oklch(), oklab(), color(srgb), color-mix(), light-dark()
+ * (its light side: these two checks read one theme) and bare HSL channels.
+ * Until engine 1.3.0 they read only 3- and 6-digit hex and comma rgb(), with
+ * alpha ignored, so a stylesheet written in oklch() (Tailwind v4, shadcn)
+ * SKIPped both checks and a page with illegible text scored 100.
+ *
+ * A translucent colour is composited over `under` as a browser paints it;
+ * with nothing under it, it is not measured.
+ */
+function resolveTokenColor(value: string, tokens: Record<string, string>, under: [number, number, number] | null): [number, number, number] | null {
+  if (!value.trim()) return null;
+  const c = resolveThemeColor(value, [tokens], false);
+  if (!c) return null;
+  if (c[3] >= 1) return [c[0], c[1], c[2]];
+  if (!under) return null;
+  const painted = v44Composite(c, [under[0], under[1], under[2], 1]);
+  return [painted[0], painted[1], painted[2]];
 }
 
 // ── APCA-W3 0.0.98G-4g — supplementary perceptual contrast ───────────────────
@@ -683,9 +675,11 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
   // (designers choose the higher-contrast pairing).
   const actionVal = tokens['--action'];
   const onActionVal = tokens['--on-action'];
+  // The page under a translucent fill is --paper; a translucent label sits on the fill.
+  const pageRgb = resolveTokenColor(tokens['--paper'] || '', tokens, null);
   if (actionVal && onActionVal) {
-    const fillRgb = resolveColor(actionVal, tokens);
-    const labelRgb = resolveColor(onActionVal, tokens);
+    const fillRgb = resolveTokenColor(actionVal, tokens, pageRgb);
+    const labelRgb = fillRgb ? resolveTokenColor(onActionVal, tokens, fillRgb) : null;
     if (!fillRgb || !labelRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--action ${actionVal} or --on-action ${onActionVal} unresolvable to RGB` };
     const pairRatio = contrastRatio(labelRgb, fillRgb);
     const pairStr = `${pairRatio.toFixed(2)}:1`;
@@ -695,12 +689,12 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
   }
   const signalVal = tokens['--signal'];
   if (!signalVal) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: '--signal accent token not declared' };
-  const signalRgb = resolveColor(signalVal, tokens);
+  const signalRgb = resolveTokenColor(signalVal, tokens, pageRgb);
   if (!signalRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--signal value ${signalVal} unresolvable to RGB` };
 
   const candidates: Array<{ name: string; rgb: [number, number, number] | null }> = [
-    { name: '--paper', rgb: resolveColor(tokens['--paper'] || '', tokens) },
-    { name: '--ink', rgb: resolveColor(tokens['--ink'] || '', tokens) },
+    { name: '--paper', rgb: resolveTokenColor(tokens['--paper'] || '', tokens, signalRgb) },
+    { name: '--ink', rgb: resolveTokenColor(tokens['--ink'] || '', tokens, signalRgb) },
   ];
   let bestRatio = 0;
   let bestName = '';
@@ -720,19 +714,25 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
 // Computes both WCAG 2.1 ratio (the scoring standard) AND APCA Lc (the
 // WCAG 3 candidate, polarity-aware). APCA is supplementary — it does not
 // change pass/fail, but surfaces dark-mode contrast issues WCAG 2.1 misses.
+//
+// Where a stylesheet declares --muted-foreground, that is the muted text
+// measured: in the shadcn convention --muted is a surface and
+// --muted-foreground the text on it. Engine 1.3.0 reads oklch() (see
+// resolveTokenColor), so without this every default shadcn theme would
+// measure its --muted surface as text, at about 1.1:1, and FAIL.
 function checkContrastReadable(tokens: Record<string, string>): CheckResult {
   const paperVal = tokens['--paper'];
   if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared: cannot test contrast' };
-  const paperRgb = resolveColor(paperVal, tokens);
+  const paperRgb = resolveTokenColor(paperVal, tokens, null);
   if (!paperRgb) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: `--paper value ${paperVal} unresolvable to RGB` };
 
-  const textTokens = ['--ink', '--muted', '--muted-dim'];
+  const textTokens = ['--ink', tokens['--muted-foreground'] ? '--muted-foreground' : '--muted', '--muted-dim'];
   const results: string[] = [];
   let worst = { name: '', ratio: Infinity, status: 'PASS' as 'PASS' | 'WARN' | 'FAIL' };
   for (const name of textTokens) {
     const val = tokens[name];
     if (!val) { results.push(`${name}: not declared`); continue; }
-    const rgb = resolveColor(val, tokens);
+    const rgb = resolveTokenColor(val, tokens, paperRgb);
     if (!rgb) { results.push(`${name}: unresolvable`); continue; }
     const ratio = contrastRatio(rgb, paperRgb);
     const r = ratio.toFixed(2);
@@ -1809,7 +1809,9 @@ function parseCssColor(input: string, dark: boolean, depth = 0): Rgba | null {
     const ch = [0, 2, 4, 6].map((k) => (k < full.length ? parseInt(full.slice(k, k + 2), 16) : 255));
     return [ch[0], ch[1], ch[2], ch[3] / 255];
   }
-  if (CSS_NAMED_COLORS[v]) return [...CSS_NAMED_COLORS[v]] as Rgba;
+  // Own keys only: 'constructor' or 'toString' as a value read Object.prototype
+  // and threw, which failed the whole score (engine 1.3.0 reads token values here).
+  if (Object.prototype.hasOwnProperty.call(CSS_NAMED_COLORS, v)) return [...CSS_NAMED_COLORS[v]] as Rgba;
   const fn = /^([a-z-]+)\(([\s\S]*)\)$/.exec(v);
   if (!fn) return null;
   const name = fn[1];

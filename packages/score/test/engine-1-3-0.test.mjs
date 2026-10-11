@@ -268,3 +268,59 @@ describe('v34: only a positively identified AI chat surface can FAIL', () => {
     assert.equal(r.grade, 'B');
   });
 });
+
+describe('v06 and v22 read CSS Color 4, and tokens declared as :root, :host', () => {
+  const pick = (r, id) => r.checks.find((c) => c.id === id);
+
+  it('measures oklch() tokens (audit H4: SKIP and 100 / A before 1.3.0)', async () => {
+    const css = STRONG_CSS.replace('--paper:#ffffff', '--paper:oklch(1 0 0)').replace('--ink:#111111', '--ink:oklch(0.2 0 0)').replace('--muted:#595959', '--muted:oklch(0.85 0 0)');
+    const r = await run({ css });
+    const v06 = pick(r, 'v06');
+    assert.equal(v06.status, 'FAIL');
+    assert.match(v06.detail, /--muted=1\.58:1/);
+    assert.equal(pick(r, 'v22').status, 'PASS');
+    assert.equal(r.score, 65);
+    assert.equal(r.grade, 'D');
+  });
+
+  it('reads the :root, :host block Tailwind v4 emits (no tokens before 1.3.0)', async () => {
+    const r = await run({ html: HTML, css: ':root,:host{--paper:#ffffff;--ink:#111111;--muted:#d0d0d0;--signal:#0133cb}body{color:var(--ink)}' });
+    assert.equal(r.tokensExtracted, 4);
+    assert.equal(pick(r, 'v01').status, 'PASS');
+    assert.match(pick(r, 'v06').detail, /--muted=1\.54:1/);
+    const spaced = await run({ html: HTML, css: ':root, :host {\n  --paper: #fff;\n  --ink: #111;\n}' });
+    assert.equal(spaced.tokensExtracted, 2);
+  });
+
+  it('reads space-syntax rgb() and hsl(), and 8-digit hex', async () => {
+    const r = await run({ css: ':root{--paper:rgb(255 255 255);--ink:hsl(240 6% 10%);--muted:rgb(89 89 89 / 100%);--signal:hsl(225deg 99% 40%)}' });
+    assert.equal(pick(r, 'v06').status, 'PASS');
+    assert.match(pick(r, 'v06').detail, /--muted=7\.00:1/);
+    assert.equal(pick(r, 'v22').status, 'PASS');
+    const hex8 = await run({ css: ':root{--paper:#ffffffff;--ink:#111111ff}' });
+    assert.equal(pick(hex8, 'v06').status, 'PASS');
+  });
+
+  it('composites translucent text over the paper it sits on, and leaves a translucent paper unmeasured', async () => {
+    // #00000061 is black at 38%: painted on white it is #9e9e9e, 2.68:1.
+    const r = await run({ css: ':root{--paper:#fff;--ink:#000000de;--muted:#00000061}' });
+    assert.equal(pick(r, 'v06').status, 'FAIL');
+    assert.match(pick(r, 'v06').detail, /--muted=2\.68:1/);
+    const paper = await run({ css: ':root{--paper:rgb(255 255 255 / 50%);--ink:#111}' });
+    assert.equal(pick(paper, 'v06').status, 'SKIP');
+  });
+
+  it('measures --muted-foreground, not the --muted surface, where a shadcn theme declares both', async () => {
+    const shadcn = ':root{--background:oklch(1 0 0);--foreground:oklch(0.145 0 0);--muted:oklch(0.97 0 0);--muted-foreground:oklch(0.556 0 0)}';
+    const v06 = pick(await run({ css: shadcn }), 'v06');
+    assert.equal(v06.status, 'PASS');
+    assert.match(v06.detail, /--muted-foreground=4\.73:1/);
+    assert.doesNotMatch(v06.detail, /--muted=/);
+  });
+
+  it('does not throw on a value that names an Object.prototype key', async () => {
+    const r = await run({ css: ':root{--paper:constructor;--ink:#000;--signal:toString}' });
+    assert.equal(pick(r, 'v06').status, 'SKIP');
+    assert.equal(pick(r, 'v22').status, 'SKIP');
+  });
+});
