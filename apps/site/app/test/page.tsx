@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import SceneClient from './scene-client';
 import CursorTrail from './cursor-trail';
 import VaiCard from './vai-card';
@@ -8,7 +9,22 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * A scratch page for the hover, tap and cursor experiments. It stays on preview
+ * deployments and local builds, where it is useful, and is a 404 on the
+ * production deployment: it draws a typeset wordmark (brand D12: a typeset
+ * word is not the logo) and a VAI character card on a Designesy surface
+ * (CHARACTER != BRAND), and it held the only contrast failures on the site
+ * (live audit 2026-10-11, V08).
+ *
+ * Rendered per request, so the decision reads the environment of the
+ * deployment that serves the page, never only the one it was built in.
+ */
+export const dynamic = 'force-dynamic';
+
 export default function TestPage() {
+  if (process.env.VERCEL_ENV === 'production') notFound();
+
   return (
     <main
       style={{
