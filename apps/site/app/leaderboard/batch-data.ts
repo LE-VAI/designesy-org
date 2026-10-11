@@ -10,7 +10,7 @@ import type { CategoryBreakdown } from './seed';
 
 /** The day the batch below was run: the date every per-category figure on the
     data pages carries, beside the composite's weekly re-score date. */
-export const BATCH_RUN_DATE = '2026-10-10';
+export const BATCH_RUN_DATE = '2026-10-11';
 
 export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakdown>> = {
   "https://linear.app": {
@@ -92,7 +92,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://www.designesy.org": {
-    "cadence": { score: 100, weight: 18, pass: 12, fail: 0, warn: 0, skip: 0 },
+    "cadence": { score: 95.8, weight: 18, pass: 11, fail: 0, warn: 1, skip: 0 },
     "accessibility": { score: 100, weight: 15, pass: 7, fail: 0, warn: 0, skip: 0 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 5, fail: 0, warn: 0, skip: 0 },
