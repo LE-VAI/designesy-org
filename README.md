@@ -157,7 +157,7 @@ Zero dependencies — Node built-ins only. The `--api` flag or `SCORE_API` env v
 
 ## Repository
 
-This is the controlled public root for Designesy — a Next.js 15 App Router site (React 19, Turbopack, Vercel deploy).
+This is the controlled public root for Designesy — a Next.js 16 App Router site (React 19, webpack build, Vercel deploy).
 
 ```
 apps/site          Next.js application
