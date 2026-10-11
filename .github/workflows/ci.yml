@@ -915,6 +915,12 @@ jobs:
       # longest last, so the last line names the route, width, theme and step
       # that hung. The step shell runs `bash -e`, so the exit code is captured
       # with `|| rc=$?`.
+      #
+      # That trace showed every hang was one page's walk or reveal, the other
+      # pages long done, so the script now limits each page operation to 40 s
+      # and runs a stuck page once more in a fresh context; a second timeout
+      # fails the gate as TIMEOUT, naming the page and the step. The 960 s
+      # bound and its retry stay as the outer net.
       - name: Dock clearance
         shell: bash
         run: |
