@@ -492,25 +492,25 @@ export const openIndex = {
       title: 'Tokens contract',
       path: '/contracts/tokens.json',
       url: 'https://www.designesy.org/contracts/tokens.json',
-      meta: 'v0.1.0 W3C DTCG 2025.10 token-format conformance: color-space rules, custom types, 10 checks',
+      meta: 'v' + tokensContract.version + ' W3C DTCG 2025.10 token-format conformance: color-space rules, custom types, 10 checks',
     },
     {
       title: 'Accessibility contract',
       path: '/contracts/a11y.json',
       url: 'https://www.designesy.org/contracts/a11y.json',
-      meta: 'v0.1.1 axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules: brand customization, provenance chain, 11 checks',
+      meta: 'v' + a11yContract.version + ' axe-core 4.13.0 + WCAG 2.2 AA + ACT Rules: brand customization, provenance chain, 11 checks',
     },
     {
       title: 'Motion contract',
       path: '/contracts/motion.json',
       url: 'https://www.designesy.org/contracts/motion.json',
-      meta: 'v0.1.0 Lottie spec v1.0.1 JSON Schema + §16 Ten Non-Negotiable Motion Standards: reduced-motion, 10 checks',
+      meta: 'v' + motionContract.version + ' Lottie spec v1.0.1 JSON Schema + §16 Ten Non-Negotiable Motion Standards: reduced-motion, 10 checks',
     },
     {
       title: 'Components contract',
       path: '/contracts/components.json',
       url: 'https://www.designesy.org/contracts/components.json',
-      meta: 'v0.1.0 machine-readable component states + token bindings + accessibility obligations: derived from the design system contract',
+      meta: 'v' + componentsContract.version + ' machine-readable component states + token bindings + accessibility obligations: derived from the design system contract',
     },
     {
       title: 'Design Review kit',
@@ -528,7 +528,7 @@ export const openIndex = {
       title: 'Acoustic tokens',
       path: '/acoustic-tokens.json',
       url: 'https://www.designesy.org/acoustic-tokens.json',
-      meta: 'Acoustic token system v0.1.1: nineteen cues, nineteen roles, Cuelume engine, net-new vs W3C DTCG',
+      meta: 'Acoustic token system v' + acousticTokens.version + ': nineteen cues, nineteen roles, Cuelume engine, net-new vs W3C DTCG',
     },
     {
       title: 'Graph',

@@ -20,6 +20,7 @@ const steps = [
   ['next build', [nextBin, 'build']],
   ['check-contract-drift', [path.join(siteRoot, 'scripts', 'check-contract-drift.js')]],
   ['check-catalog-version-binding', [path.join(siteRoot, 'scripts', 'check-catalog-version-binding.js')]],
+  ['check-contract-lock', [path.join(siteRoot, 'scripts', 'check-contract-lock.js')]],
   ['postbuild-pagefind', [path.join(siteRoot, 'scripts', 'postbuild-pagefind.js')]],
   ['check-search-coverage', [path.join(siteRoot, 'scripts', 'check-search-coverage.js')]],
 ];

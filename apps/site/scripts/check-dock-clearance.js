@@ -491,6 +491,61 @@ function installProbe(cfg) {
   window.__dockProbe = { walk, scan: () => scan().length };
 }
 
+// --- stall trace ----------------------------------------------------------------
+
+// One stderr line before and after every browser operation that can hang, so
+// when CI's bound kills an attempt, the log names the route, width, theme and
+// step it was waiting on (part 3 has hung to its job limit with no output).
+// stderr only: stdout and the checks are unchanged.
+//   [dock] +12345ms /docs 390 dark walk start
+// "-" stands for no route, width or theme (a browser-level step). The theme is
+// the one the page is in when the step runs. A result state's label has its
+// spaces replaced by "_" so every line splits on spaces.
+//
+// Jobs run --concurrency at a time, so the last line before a kill can belong
+// to a worker that was not stuck. On SIGTERM (CI's `timeout`) the operations
+// still in flight are listed with their age, longest last, and tracing stops:
+// the last line is then the step that hung. Playwright's own SIGTERM handler
+// closes the browser without exiting, so the run then ends on its own.
+const inFlight = new Map();
+let opSeq = 0;
+let traceStopped = false;
+const ms = (t) => Math.round(t);
+
+function trace(where, op, phase) {
+  if (traceStopped) return;
+  process.stderr.write(`[dock] +${ms(performance.now())}ms ${where} ${op} ${phase}\n`);
+}
+
+/** Runs one browser operation between a start and an end line. A throw is
+ *  traced as "fail" and rethrown untouched, so callers behave as before. */
+async function step(where, op, fn) {
+  const id = ++opSeq;
+  inFlight.set(id, { where, op, t0: performance.now() });
+  trace(where, op, 'start');
+  try {
+    const value = await fn();
+    trace(where, op, 'end');
+    return value;
+  } catch (e) {
+    trace(where, op, 'fail');
+    throw e;
+  } finally {
+    inFlight.delete(id);
+  }
+}
+
+function dumpInFlight() {
+  if (traceStopped) return;
+  const now = performance.now();
+  const open = [...inFlight.values()].sort((a, b) => b.t0 - a.t0);
+  process.stderr.write(`[dock] +${ms(now)}ms SIGTERM with ${open.length} operation(s) in flight, longest last\n`);
+  for (const o of open) process.stderr.write(`[dock] +${ms(now)}ms ${o.where} ${o.op} in-flight ${ms(now - o.t0)}ms\n`);
+  traceStopped = true;
+}
+
+const place = (job, theme) => `${job.label.replace(/\s+/g, '_')} ${job.vp.w} ${theme}`;
+
 async function launch() {
   let chromium;
   try {
@@ -531,81 +586,101 @@ function assess(job, walk, row) {
 
 /** One route at one width: loaded once, walked once per theme. */
 async function runJob(browser, job, result, themes) {
-  const ctx = await browser.newContext({
-    viewport: { width: job.vp.w, height: job.vp.h },
-    deviceScaleFactor: 1,
-    isMobile: job.vp.mobile,
-    hasTouch: job.vp.mobile,
-    colorScheme: themes[0],
-  });
-  const page = await ctx.newPage();
+  const at0 = place(job, themes[0]);
+  const ctx = await step(at0, 'newContext', () =>
+    browser.newContext({
+      viewport: { width: job.vp.w, height: job.vp.h },
+      deviceScaleFactor: 1,
+      isMobile: job.vp.mobile,
+      hasTouch: job.vp.mobile,
+      colorScheme: themes[0],
+    }),
+  );
+  const page = await step(at0, 'newPage', () => ctx.newPage());
   if (SAFE_AREA && job.vp.mobile) {
-    const cdp = await ctx.newCDPSession(page);
-    await cdp.send('Emulation.setSafeAreaInsetsOverride', {
-      insets: { top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: SAFE_AREA, bottomMax: SAFE_AREA },
-    });
+    const cdp = await step(at0, 'newCDPSession', () => ctx.newCDPSession(page));
+    await step(at0, 'setSafeAreaInsetsOverride', () =>
+      cdp.send('Emulation.setSafeAreaInsetsOverride', {
+        insets: { top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: SAFE_AREA, bottomMax: SAFE_AREA },
+      }),
+    );
   }
   const rows = themes.map((theme) => ({ route: job.label, width: job.vp.w, theme, ok: false, violations: [] }));
   try {
     if (job.state) {
-      await page.route('**/api/score', (route) =>
-        route.request().method() === 'POST'
-          ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) })
-          : route.continue(),
+      await step(at0, 'route.mock', () =>
+        page.route('**/api/score', (route) =>
+          route.request().method() === 'POST'
+            ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) })
+            : route.continue(),
+        ),
       );
     }
     // Arrive from another page, so the Back pill has history to offer
     // (phones drop the Back pill, so they skip the hop).
-    if (job.vp.w > 720) await page.goto(BASE + '/robots.txt', { waitUntil: 'load', timeout: 60000 });
-    await page.goto(BASE + job.route, { waitUntil: 'load', timeout: 60000 });
-    if (job.state) await job.state.ready(page);
-    await page.evaluate(async () => {
-      try {
-        await document.fonts.ready;
-      } catch {
-        /* no FontFaceSet */
-      }
-    });
+    if (job.vp.w > 720) {
+      await step(at0, 'goto.robots', () => page.goto(BASE + '/robots.txt', { waitUntil: 'load', timeout: 60000 }));
+    }
+    await step(at0, 'goto', () => page.goto(BASE + job.route, { waitUntil: 'load', timeout: 60000 }));
+    if (job.state) await step(at0, 'results.ready', () => job.state.ready(page));
+    await step(at0, 'fonts', () =>
+      page.evaluate(async () => {
+        try {
+          await document.fonts.ready;
+        } catch {
+          /* no FontFaceSet */
+        }
+      }),
+    );
     // One pass down and back so every reveal, count-up and lazy block has
     // run, then the pills held still and, with --break, held up.
-    await page.evaluate(async () => {
-      const frame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-      const h = document.documentElement.scrollHeight;
-      for (let y = 0; y < h; y += innerHeight) {
-        scrollTo({ top: y, left: 0, behavior: 'instant' });
+    await step(at0, 'reveal', () =>
+      page.evaluate(async () => {
+        const frame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+        const h = document.documentElement.scrollHeight;
+        for (let y = 0; y < h; y += innerHeight) {
+          scrollTo({ top: y, left: 0, behavior: 'instant' });
+          await frame();
+        }
+        scrollTo({ top: 0, left: 0, behavior: 'instant' });
         await frame();
-      }
-      scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      await frame();
-    });
-    await page.waitForTimeout(job.state ? 1200 : 400);
-    await page.addStyleTag({ content: PILL_STILL + (BREAK ? PILL_FORCED : '') });
-    await page.evaluate(installProbe, {
-      pills: PILLS,
-      controls: CONTROLS,
-      values: VALUES,
-      valueClass: VALUE_CLASS.source,
-      tol: 0.5,
-      fine: 6,
-      fineSpan: 72,
-      coarse: Number(opt('--coarse', '1.8')),
-      anchors: job.state ? job.state.anchors : null,
-    });
+      }),
+    );
+    await step(at0, 'settle.wait', () => page.waitForTimeout(job.state ? 1200 : 400));
+    await step(at0, 'addStyleTag', () => page.addStyleTag({ content: PILL_STILL + (BREAK ? PILL_FORCED : '') }));
+    await step(at0, 'installProbe', () =>
+      page.evaluate(installProbe, {
+        pills: PILLS,
+        controls: CONTROLS,
+        values: VALUES,
+        valueClass: VALUE_CLASS.source,
+        tol: 0.5,
+        fine: 6,
+        fineSpan: 72,
+        coarse: Number(opt('--coarse', '1.8')),
+        anchors: job.state ? job.state.anchors : null,
+      }),
+    );
     for (let i = 0; i < themes.length; i++) {
       const row = rows[i];
+      const at = place(job, themes[i]);
       try {
         if (i > 0) {
           // The next theme as a visitor switching it gets it: the scheme and
           // the site's own data-theme, which its stylesheet keys on.
-          await page.emulateMedia({ colorScheme: themes[i] });
-          await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), themes[i]);
-          await page.waitForTimeout(150);
+          await step(at, 'emulateMedia', () => page.emulateMedia({ colorScheme: themes[i] }));
+          await step(at, 'setTheme', () =>
+            page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), themes[i]),
+          );
+          await step(at, 'theme.wait', () => page.waitForTimeout(150));
         }
-        const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+        const theme = await step(at, 'readTheme', () =>
+          page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+        );
         if (theme !== themes[i]) throw new Error(`page is in ${theme}, not ${themes[i]}`);
-        let walk = await page.evaluate(() => window.__dockProbe.walk());
+        let walk = await step(at, 'walk', () => page.evaluate(() => window.__dockProbe.walk()));
         // Late content moved the page under the walk: walk it again, once.
-        if (walk.grew) walk = await page.evaluate(() => window.__dockProbe.walk());
+        if (walk.grew) walk = await step(at, 'walk.again', () => page.evaluate(() => window.__dockProbe.walk()));
         assess(job, walk, row);
       } catch (e) {
         row.violations.push({ id: 'LOAD', why: String(e && e.message ? e.message : e).slice(0, 200) });
@@ -616,7 +691,7 @@ async function runJob(browser, job, result, themes) {
       row.violations.push({ id: 'LOAD', why: String(e && e.message ? e.message : e).slice(0, 200) });
     }
   } finally {
-    await ctx.close().catch(() => {});
+    await step(place(job, themes[themes.length - 1]), 'context.close', () => ctx.close()).catch(() => {});
   }
   return rows;
 }
@@ -642,7 +717,7 @@ async function main() {
 
   let result;
   try {
-    result = await stripeLikeResult();
+    result = await step('- - -', 'fixture', () => stripeLikeResult());
   } catch (e) {
     console.error(`[dock] cannot build the results fixture: ${e.message}`);
     process.exit(2);
@@ -655,7 +730,10 @@ async function main() {
   const jobs = [];
   for (const vp of viewports) for (const t of targets) jobs.push({ ...t, vp });
 
-  const browser = await launch();
+  const browser = await step('- - -', 'launch', () => launch());
+  // After launch, so a SIGTERM before it still ends the process as it always
+  // did; from here Playwright holds SIGTERM anyway (it closes the browser).
+  process.once('SIGTERM', dumpInFlight);
   const rows = [];
   const started = Date.now();
   try {
@@ -674,7 +752,7 @@ async function main() {
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, jobs.length) }, worker));
   } finally {
-    await browser.close();
+    await step('- - -', 'browser.close', () => browser.close());
   }
 
   const failed = rows.filter((r) => !r.ok);

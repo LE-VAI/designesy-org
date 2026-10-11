@@ -96,6 +96,7 @@ function main() {
     'check-lcp-entrance.js',
     'qa-keyboard.js',
     'check-status-messages.js',
+    'check-a11y-modes.js',
     'a11y-sweep.js',
     'check-dock-clearance.js',
     'touched-routes.js',

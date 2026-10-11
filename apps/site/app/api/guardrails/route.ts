@@ -22,6 +22,8 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { cssTokensToDtcg } from '../../lib/dtcg';
+import { pageFabricatedTokens } from '../../lib/drift-checks';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -174,88 +176,20 @@ type CheckResult = {
   detail: string;
 };
 
-// ── DTCG token transformation ─────────────────────────────────────────────────
+// ── DTCG token file ──────────────────────────────────────────────────────────
+//
+// app/lib/dtcg.ts converts the :root properties with the conventions of the
+// site's own /export/dtcg (its $schema, structured colors, {group.token}
+// aliases, $root for a property that is also a group), and keeps what DTCG
+// cannot type in $extensions.designesy.css. The emitted file used to carry a
+// $schema the export does not use, {--css-var} aliases, bare hex colors and the
+// non-DTCG types 'spacing' and 'string', and it dropped a property whenever
+// another one needed its name as a group.
 
-type DTCGToken = {
-  $type: string;
-  $value: string;
-  $description?: string;
-};
-
-type DTCGTokenGroup = {
-  [key: string]: DTCGToken | DTCGTokenGroup;
-};
-
-function inferTokenType(name: string, value: string): string {
-  const lower = name.toLowerCase();
-  if (lower.includes('color') || lower.includes('bg') || lower.includes('ink') || lower.includes('line') || lower.includes('surface') || lower.includes('muted') || lower.includes('signal') || lower.includes('activation')) {
-    return 'color';
-  }
-  if (/#[0-9a-fA-F]{3,8}|rgba?\(|hsla?\(|oklch\(/i.test(value)) {
-    return 'color';
-  }
-  if (lower.includes('font') || lower.includes('family')) {
-    return 'fontFamily';
-  }
-  if (lower.includes('size') || lower.includes('scale')) {
-    return 'dimension';
-  }
-  if (lower.includes('space') || lower.includes('gap') || lower.includes('pad') || lower.includes('margin')) {
-    return 'spacing';
-  }
-  if (lower.includes('radius')) {
-    return 'dimension';
-  }
-  if (lower.includes('duration') || lower.includes('delay')) {
-    return 'duration';
-  }
-  if (lower.includes('ease') || lower.includes('bezier') || lower.includes('transition')) {
-    return 'cubicBezier';
-  }
-  if (lower.includes('shadow')) {
-    return 'shadow';
-  }
-  if (lower.includes('z-index') || lower.includes('weight') || lower.includes('line-height') || lower.includes('letter-spacing')) {
-    return 'number';
-  }
-  return 'string';
-}
-
-function groupTokensByPrefix(tokens: Record<string, string>): DTCGTokenGroup {
-  const root: DTCGTokenGroup = {};
-  for (const [name, value] of Object.entries(tokens)) {
-    // Strip leading --
-    const clean = name.replace(/^--/, '');
-    // Split on first dash to create groups
-    const parts = clean.split('-');
-    let cursor = root;
-    for (let i = 0; i < parts.length - 1; i++) {
-      const group = parts[i];
-      if (!cursor[group] || typeof cursor[group] !== 'object' || '$type' in (cursor[group] as DTCGToken)) {
-        cursor[group] = {};
-      }
-      cursor = cursor[group] as DTCGTokenGroup;
-    }
-    const leaf = parts[parts.length - 1];
-    const type = inferTokenType(name, value);
-    cursor[leaf] = {
-      $type: type,
-      $value: value.replace(/var\(([^)]+)\)/g, '{$1}'),
-    };
-  }
-  return root;
-}
+const GENERATOR = 'Designesy Guardrails v0.1.0';
 
 function generateDTCG(tokens: Record<string, string>, origin: string): object {
-  return {
-    $schema: 'https://designtokens.org/schema',
-    $meta: {
-      source: origin,
-      extracted: new Date().toISOString(),
-      generator: 'Designesy Guardrails v0.1.0',
-    },
-    ...groupTokensByPrefix(tokens),
-  };
+  return cssTokensToDtcg(tokens, { source: origin, generator: GENERATOR, extracted: new Date().toISOString() });
 }
 
 // ── Stylelint config generation ──────────────────────────────────────────────
@@ -362,7 +296,7 @@ ${fontTokens.length > 0 ? fontTokens.map((t) => `- \`${t}\` → ${tokens[t]}`).j
 
 1. **No raw colors.** Use \`var(--<color-token>)\`. Never \`#ffffff\` or \`rgb()\` in declarations.
 2. **No magic numbers.** Spacing, radius, and duration must reference tokens.
-3. **No fabricated tokens.** Every \`var()\` must resolve to a :root declaration.
+3. **No fabricated tokens.** Every \`var()\` must name a declared custom property or carry a fallback.
 4. **No off-system fonts.** Use \`var(--<font-token>)\` for font-family.
 5. **Composition over value.** When adding a new value, add a token instead of inlining it.
 
@@ -476,7 +410,14 @@ type AntiPatterns = {
   fabricatedTokens: AntiPatternCategory;
 };
 
-function detectAntiPatterns(css: string, tokens: Record<string, string>): AntiPatterns {
+// fabricatedTokens is the drift radar's d02 definition (pageFabricatedTokens in
+// app/lib/drift-checks.ts): a custom property referenced with no fallback and
+// declared nowhere, not in any stylesheet rule and not in a style attribute.
+// It used to count every var() name missing from a :root block, so on
+// www.designesy.org this list documented 158 fabricated tokens while d02 found
+// none: fallbacks, component-scoped declarations and style-attribute
+// declarations were all counted as fabrications.
+function detectAntiPatterns(css: string, html: string, tokens: Record<string, string>): AntiPatterns {
   const tokenValues = new Set(Object.values(tokens).map((v) => v.trim().toLowerCase()));
 
   // Inline colors
@@ -494,14 +435,8 @@ function detectAntiPatterns(css: string, tokens: Record<string, string>): AntiPa
     }
   }
 
-  // Undeclared var() references
-  const declared = new Set(Object.keys(tokens));
-  const varRe = /var\(\s*(--[\w-]+)/g;
-  const undeclaredRefs: string[] = [];
-  let vm;
-  while ((vm = varRe.exec(css)) !== null) {
-    if (!declared.has(vm[1])) undeclaredRefs.push(vm[1]);
-  }
+  // Fabricated tokens: the d02 definition.
+  const fabricated = pageFabricatedTokens(css, html).names;
 
   return {
     inlineColors: {
@@ -515,9 +450,9 @@ function detectAntiPatterns(css: string, tokens: Record<string, string>): AntiPa
       rule: 'Replace raw spacing values with var(--<spacing-token>) references.',
     },
     fabricatedTokens: {
-      count: [...new Set(undeclaredRefs)].length,
-      examples: [...new Set(undeclaredRefs)].slice(0, 10),
-      rule: 'Every var() must resolve to a :root declaration. Remove or declare fabricated tokens.',
+      count: fabricated.length,
+      examples: fabricated.slice(0, 10),
+      rule: 'Every var() with no fallback must name a custom property declared on the page: in a stylesheet, a <style> block or a style attribute (the definition drift check d02 uses). Declare each listed property, or give its references a fallback.',
     },
   };
 }
@@ -762,7 +697,7 @@ function generateDesignMd(tokens: Record<string, string>, origin: string): strin
   bodyLines.push("### Don't");
   bodyLines.push('');
   bodyLines.push("- Don't use raw hex colors, magic numbers, or inline values.");
-  bodyLines.push("- Don't fabricate `var()` references that don't resolve to :root.");
+  bodyLines.push("- Don't reference a custom property that is declared nowhere without giving `var()` a fallback.");
   bodyLines.push("- Don't mix off-system fonts: use the declared font tokens.");
   bodyLines.push("- Don't scatter spacing values: use the spacing scale.");
   bodyLines.push('');
@@ -852,8 +787,7 @@ function checkG04ComponentContract(tokens: Record<string, string>): CheckResult 
   };
 }
 
-function checkG05AntiPatterns(css: string, tokens: Record<string, string>): CheckResult {
-  const anti = detectAntiPatterns(css, tokens);
+function checkG05AntiPatterns(anti: AntiPatterns): CheckResult {
   const totalIssues = anti.inlineColors.count + anti.magicNumbers.count + anti.fabricatedTokens.count;
   if (totalIssues === 0) {
     return {
@@ -922,7 +856,7 @@ async function emitGuardrailsUncached(targetUrl: string) {
   const lintConfig = generateStylelintConfig(tokens);
   const agentRules = generateAgentRules(tokens, targetUrl);
   const componentContract = generateComponentContract(tokens);
-  const antiPatterns = detectAntiPatterns(allCss, tokens);
+  const antiPatterns = detectAntiPatterns(allCss, html, tokens);
   const designMd = generateDesignMd(tokens, targetUrl);
 
   // Run the 6 emission checks
@@ -931,7 +865,7 @@ async function emitGuardrailsUncached(targetUrl: string) {
     checkG02LintConfig(tokens),
     checkG03AgentRules(tokens),
     checkG04ComponentContract(tokens),
-    checkG05AntiPatterns(allCss, tokens),
+    checkG05AntiPatterns(antiPatterns),
     checkG06DesignMd(tokens),
   ];
 

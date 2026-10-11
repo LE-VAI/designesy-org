@@ -82,7 +82,7 @@ const TOOLS = [
   {
     name: 'designesy_tokens_score',
     kind: 'Executable',
-    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown.',
+    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown. A check that cannot apply returns SKIP and is left out of the score.',
     args: 'url?: string, dtcg_file?: string',
     source: '/contracts/tokens.json',
   },
@@ -117,7 +117,7 @@ const TOOLS = [
   {
     name: 'designesy_guardrails',
     kind: 'Executable',
-    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness. The full bundle grows with the site\'s token count, from about 10 KB to about 500 KB of JSON; pass parts to get only the files you need.',
+    desc: 'Generate a frozen build-contract bundle for AI coding agents from any design system URL (the product layer). Ingests a site, extracts its :root tokens, and emits 6 outputs: DTCG-format token file, Stylelint config, AGENTS.md rules, component contract, anti-pattern documentation, and DESIGN.md (Google open spec). 6 emission checks verify bundle completeness. The full bundle grows with the site\'s token count, from about 7 KB to about 530 KB of JSON; pass parts to get only the files you need.',
     args: 'url?: string (defaults to designesy.org), parts?: string[] (tokens, lintConfig, agentRules, componentContract, antiPatterns, designMd)',
     source: '/api/guardrails',
   },

@@ -14,7 +14,8 @@
 //   m06 resolved since last run (checks that newly pass — the healing signal)
 //   m07 score degradation threshold (alert if score drops > N points)
 //   m08 token-set mutation (tokens added/removed/renamed since baseline)
-//   m09 contract version drift (agent.json version changed since last run)
+//   m09 contract version (the design contract version this run is scored
+//       against: CONTRACT_VERSION, the value /api/score reports as contractVersion)
 //   m10 alert delivered (email via Resend when alerts fire + email provided + key set;
 //        falls back to in-UI surfacing otherwise)
 //
@@ -29,6 +30,7 @@ import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { Resend } from 'resend';
+import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -382,32 +384,21 @@ function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): Mo
   return { id: 'm08', item: 'Token-set mutation', status: 'WARN', detail: `Token count changed by ${delta > 0 ? '+' : ''}${delta} (${baseline.tokensExtracted} → ${current.tokensExtracted})` };
 }
 
-async function checkM09ContractVersion(targetUrl: string, previous: Snapshot | null): Promise<MonitorCheckResult> {
-  // Probe for /.well-known/agent.json version field
-  let version: string | null = null;
-  try {
-    const parsed = new URL(targetUrl);
-    const agentUrl = `${parsed.origin}/.well-known/agent.json`;
-    const text = await fetchText(agentUrl);
-    if (text) {
-      const agent = JSON.parse(text);
-      version = agent.version || agent.identity?.version || null;
-    }
-  } catch {
-    // agent.json not available
-  }
-
-  if (!version) {
-    return { id: 'm09', item: 'Contract version drift', status: 'WARN', detail: 'Could not detect contract version: no agent.json version field found' };
-  }
-
+// m09 reports the design contract version the run is measured against, read
+// from the module /api/score reads (CONTRACT_VERSION, which designesy_score
+// returns as contractVersion), never written here as a literal.
+//
+// It used to read the scanned site's /.well-known/agent.json `version`, which
+// on www.designesy.org is the catalog's version (0.1.7), so m09 said
+// "Contract version 0.1.7" while designesy_score reported CONTRACT_VERSION for
+// the same page.
+// Snapshots do not record a contract version yet, so a run with history says
+// so instead of comparing.
+function checkM09ContractVersion(previous: Snapshot | null): MonitorCheckResult {
   if (!previous) {
-    return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} recorded as baseline` };
+    return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} recorded as baseline` };
   }
-
-  // We don't store the version in snapshots in v0.1.0, so we can't compare
-  // This check will PASS (version detected) and note the limitation
-  return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${version} detected: version history comparison requires v0.2` };
+  return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} detected: version history comparison requires v0.2` };
 }
 
 function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }): MonitorCheckResult {
@@ -592,7 +583,7 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   const m06 = checkM06Resolved(currentSnapshot, previous);
   const m07 = checkM07ScoreDegradation(currentSnapshot, previous);
   const m08 = checkM08TokenMutation(currentSnapshot, baseline);
-  const m09 = await checkM09ContractVersion(targetUrl, previous);
+  const m09 = checkM09ContractVersion(previous);
 
   // Collect alerts from FAIL conditions
   if (m03.status === 'FAIL') alerts.push(m03.detail);

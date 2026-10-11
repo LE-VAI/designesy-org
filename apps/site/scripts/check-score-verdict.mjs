@@ -21,6 +21,9 @@
  *      the reason and a real retry button, and no ring, percentage or verdict.
  *   4. Wiring: score-form.tsx renders that card for an empty run and gates the
  *      graded result (ring, counts, signals, filters, list) behind !isEmptyRun.
+ *   5. Wiring: the report (score-report.tsx) renders the same card for an
+ *      empty run and never defaults a missing score to 0 or a grade to F (it
+ *      read "F 0.0%" for lovable.dev); its failure block offers a retry.
  *
  * Usage:  node scripts/check-score-verdict.mjs
  * Exits 1 on any failure. Needs Node 22.18+ (type stripping for verdict.ts).
@@ -42,7 +45,7 @@ const emitWarning = process.emitWarning;
 process.emitWarning = (warning, ...rest) =>
   String(warning).includes('Module type of') ? undefined : emitWarning.call(process, warning, ...rest);
 
-const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss, categoryChips } = await import(
+const { verdictLine, isEmptyRun, emptyRunReason, readEvidence, describeCss, categoryChips, resultAnnouncement, topCategories, categoryOrder } = await import(
   pathToFileURL(path.join(APP, 'app', 'score', 'verdict.ts')).href
 );
 
@@ -94,14 +97,31 @@ check('the reason line is the API account when it gave one', () => {
   assert.match(fallback, /no checks ran/);
 });
 
-check('graded verdicts are unchanged', () => {
+check('graded verdicts count failed checks and name every tie', () => {
   assert.match(verdictLine({ total: 42, fail: 0, warn: 2 }), /^Strong conformance/);
   assert.match(verdictLine({ total: 42, fail: 0, warn: 12 }), /^Partial conformance/);
   assert.equal(
     verdictLine({ total: 42, fail: 3, warn: 1, categoryScores: { motion: { score: 40 }, tokens: { score: 90 } } }),
-    '3 contract violations, weakest in Motion.',
+    '3 failed checks, weakest in Motion.',
   );
-  assert.equal(verdictLine({ total: 42, fail: 1, warn: 0 }), '1 contract violation.');
+  assert.equal(verdictLine({ total: 42, fail: 1, warn: 0 }), '1 failed check.');
+  // A tie is named, not decided by the API's key order (stripe.com: two at 50).
+  assert.equal(
+    verdictLine({ total: 44, fail: 1, warn: 12, categoryScores: { accessibility: { score: 50 }, semantic: { score: 50 }, tokens: { score: 100 } } }),
+    '1 failed check, weakest in Accessibility and Semantic.',
+  );
+  const five = Object.fromEntries(['tokens', 'takt', 'poise', 'interaction', 'security'].map((k) => [k, { score: 100 }]));
+  assert.deepEqual(topCategories({ categoryScores: { ...five, motion: { score: 83 } } }, 'best'), { label: '5 categories', score: 100 });
+});
+
+check('every scored category is listed, heaviest first', () => {
+  // The 14 categories and weights of a stripe.com run (the engine's weights).
+  const weights = { tokens: 9, responsive: 3, interaction: 6, poise: 7, motion: 10, accessibility: 15, identity: 6, takt: 8, cadence: 18, performance: 6, semantic: 12, security: 5, copywriting: 8, spec: 4 };
+  const scores = Object.fromEntries(Object.entries(weights).map(([k, weight]) => [k, { score: 50, weight }]));
+  const order = categoryOrder(scores);
+  assert.equal(order.length, Object.keys(scores).length, 'a category is missing from the list');
+  for (let i = 1; i < order.length; i++) assert.ok((scores[order[i - 1]].weight ?? 0) >= (scores[order[i]].weight ?? 0), `${order[i - 1]} before ${order[i]}`);
+  for (const k of ['copywriting', 'security', 'spec']) assert.ok(order.includes(k), `${k} is left out`);
 });
 
 check('raw CSS evidence is described in words; names stay plain', () => {
@@ -167,6 +187,35 @@ check('score-form renders the empty-run card and gates the graded result', () =>
   assert.equal((form.match(/className="score-results/g) || []).length, 2);
   // No history entry for a run that read nothing.
   assert.match(form, /if \(isEmptyRun\(data\)\) \{[\s\S]{0,120}return;\s*\}[\s\S]{0,400}saveScore\(/);
+});
+
+check('the report renders the empty-run card, never a defaulted F 0.0%', () => {
+  const report = fs.readFileSync(path.join(APP, 'app', 'score', 'report', 'score-report.tsx'), 'utf8');
+  assert.match(report, /import \{ ScoreEmptyRun \} from '\.\.\/score-empty-run';/);
+  assert.match(report, /isEmptyRun\(result\)/);
+  assert.match(report, /<ScoreEmptyRun url=\{scoredUrl\} reason=\{emptyRunReason\(result, scoredUrl\)\} onRetry=\{retry\} \/>/);
+  assert.doesNotMatch(report, /result\.score \?\? 0|result\.grade \?\? 'F'/, 'the report defaults a missing score or grade again');
+  // The failure block's retry runs the score again.
+  assert.match(report, /<h2>Score failed<\/h2>[\s\S]{0,300}onClick=\{retry\}[\s\S]{0,120}Try again/);
+});
+
+check('the report announces a finished run in the approved words', () => {
+  const run = {
+    grade: 'D', score: 67.9, fail: 1, total: 44,
+    categoryScores: { accessibility: { score: 50, fail: 1, weight: 15 }, tokens: { score: 100, fail: 0, weight: 9 } },
+  };
+  assert.equal(resultAnnouncement(run), 'Contract score D, 67.9 out of 100. 1 failed check, in Accessibility.');
+  assert.equal(resultAnnouncement({ grade: 'A', score: 100, fail: 0 }), 'Contract score A, 100.0 out of 100. No failed checks.');
+  assert.equal(
+    resultAnnouncement({ grade: 'F', score: 56.6, fail: 3, categoryScores: { motion: { score: 50, fail: 1, weight: 10 }, cadence: { score: 60, fail: 2, weight: 18 } } }),
+    'Contract score F, 56.6 out of 100. 3 failed checks, in Cadence and Motion.',
+  );
+  // The live region is mounted empty and written after paint, and the success
+  // branch keeps it (it used to unmount there, so a finished report was silent).
+  const report = fs.readFileSync(path.join(APP, 'app', 'score', 'report', 'score-report.tsx'), 'utf8');
+  assert.match(report, /role="status" aria-live="polite">\s*\{liveText\}\s*<\/p>/);
+  assert.match(report, /resultAnnouncement\(result\)/);
+  assert.equal((report.match(/\{live\}/g) || []).length, 4, 'the live region is not in all four branches');
 });
 
 if (failures.length) {

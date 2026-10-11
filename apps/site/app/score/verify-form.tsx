@@ -25,10 +25,12 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { CopyPrompt } from '../lib/copy-prompt';
 import { EngineBar } from '../lib/engine/command-bar';
+import { useSegmentIndicator } from '../lib/engine/use-segment-indicator';
 import { Instrument, type EngineBlock } from '../lib/engine/instrument';
 import { toOutcomes, type Phase, type RegistryView } from '../lib/engine/types';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { readEvidence } from './verdict';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -184,7 +186,7 @@ function verdictLine(
     return 'Strong conformance. The design holds to its contract across all four engines.';
   }
   if (totalFail > 0) {
-    return `${totalFail} contract ${totalFail === 1 ? 'violation' : 'violations'} across 4 engines.`;
+    return `${totalFail} failed ${totalFail === 1 ? 'check' : 'checks'} across 4 engines.`;
   }
   return 'Partial conformance. It clears the floor, with warnings left to resolve.';
 }
@@ -379,6 +381,12 @@ export function VerifyForm({
   const [delta, setDelta] = useState<number | null>(null);
   const [activeBundleTab, setActiveBundleTab] = useState('tokens');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  // The status filter and the guardrails bundle tabs are segmented strips;
+  // the pill behind the selected one is measured as on the score form.
+  const filterSegmentedRef = useRef<HTMLDivElement>(null);
+  const bundleTabsRef = useRef<HTMLDivElement>(null);
+  // The URL of the last run, for "Try again" on a failure.
+  const lastTarget = useRef('');
 
   // Load history on mount (client-only, SSR-safe).
   useEffect(() => {
@@ -414,6 +422,7 @@ export function VerifyForm({
     if (!targetUrl) return;
 
     setStatus('loading');
+    lastTarget.current = targetUrl;
     setReportResult(null);
     setGuardrailsResult(null);
     setExpandedId(null);
@@ -510,6 +519,9 @@ export function VerifyForm({
     if (activeEngine === 'guardrails') return guardrailsResult?.checks || [];
     return [];
   }, [activeEngine, reportResult, guardrailsResult]);
+
+  useSegmentIndicator(filterSegmentedRef, filterStatus, activeChecks);
+  useSegmentIndicator(bundleTabsRef, activeBundleTab, guardrailsResult);
 
   const filteredChecks = useMemo(() => {
     return activeChecks
@@ -794,7 +806,7 @@ export function VerifyForm({
           role here would read the failure twice (WCAG 4.1.3). */}
       {status === 'error' && (
         <div className="score-error-card">
-          <span className="score-error-icon">
+          <span className="score-error-icon" aria-hidden="true">
             <svg
               width="20"
               height="20"
@@ -809,9 +821,19 @@ export function VerifyForm({
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
           </span>
-          <div>
-            <p className="score-error-title">Verification Notice</p>
-            <p className="score-error-msg">{failure}</p>
+          <div className="score-error-body">
+            <div>
+              <p className="score-error-title">Verification notice</p>
+              <p className="score-error-msg">{failure}</p>
+            </div>
+            <button
+              type="button"
+              className="score-action-btn score-error-retry"
+              onClick={() => void runVerify(lastTarget.current || normalizeInput(url))}
+              data-cuelume-press="tick"
+            >
+              Try again
+            </button>
           </div>
         </div>
       )}
@@ -931,7 +953,7 @@ export function VerifyForm({
                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                     </svg>
-                    {copied ? 'Receipt Copied!' : 'Copy Receipt'}
+                    {copied ? 'Receipt copied' : 'Copy receipt'}
                   </button>
                   <a
                     href={`/report?url=${encodeURIComponent(scoredUrl)}`}
@@ -1000,7 +1022,7 @@ export function VerifyForm({
           >
             <EngineTile
               label="Score"
-              checkCount="(40)"
+              checkCount={`(${ENGINE_CHECK_COUNT})`}
               result={reportResult?.score || null}
               active={activeEngine === 'score'}
               onClick={() => {
@@ -1118,26 +1140,34 @@ export function VerifyForm({
                       </span>
                     </p>
                     <ul className="score-signals-list">
-                      {scoreData.slop.findings.map((f) => (
-                        <li
-                          key={f.id}
-                          className="score-signal-row is-slop"
-                        >
-                          <span className="score-signal-points is-neg">
-                            −{f.deduction}
-                          </span>
-                          <span className="score-signal-body">
-                            <span className="score-signal-label">
-                              {f.label}
-                            </span>
-                            {f.evidence && f.evidence.length > 0 && (
-                              <span className="score-signal-evidence">
-                                {f.evidence.slice(0, 3).join(' · ')}
-                              </span>
-                            )}
-                          </span>
-                        </li>
-                      ))}
+                      {scoreData.slop.findings.map((f) => {
+                        // As on the score form: names and values read as they
+                        // are; a declaration block from minified CSS is said
+                        // in words, the block itself one disclosure away.
+                        const ev = readEvidence((f.evidence || []).slice(0, 3));
+                        return (
+                          <li key={f.id} className="score-signal-row is-slop">
+                            <span className="score-signal-points is-neg">−{f.deduction}</span>
+                            <div className="score-signal-body">
+                              <span className="score-signal-label">{f.label}</span>
+                              {ev.plain.length > 0 && (
+                                <span className="score-signal-evidence">{ev.plain.join(' · ')}</span>
+                              )}
+                              {ev.raw.length > 0 && (
+                                <>
+                                  <span className="score-signal-evidence">{ev.summary}</span>
+                                  <details className="score-signal-raw">
+                                    <summary>{ev.raw.length === 1 ? 'Show the CSS rule' : `Show the ${ev.raw.length} CSS rules`}</summary>
+                                    {ev.raw.map((block, i) => (
+                                      <code key={i} className="score-signal-code">{block}</code>
+                                    ))}
+                                  </details>
+                                </>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
@@ -1153,6 +1183,7 @@ export function VerifyForm({
               <div className="score-controls-card">
                 <div
                   className="score-filter-segmented"
+                  ref={bundleTabsRef}
                   role="tablist"
                   aria-label="Guardrails bundle sections"
                 >
@@ -1177,11 +1208,17 @@ export function VerifyForm({
 
           {/* Filter + search controls */}
           <div className="score-controls-card">
-            <div className="score-filter-segmented">
+            <div
+              className="score-filter-segmented"
+              ref={filterSegmentedRef}
+              role="group"
+              aria-label="Filter checks by status"
+            >
               <button
                 type="button"
                 className={`score-filter-tab ${filterStatus === 'ALL' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('ALL')}
+                aria-pressed={filterStatus === 'ALL'}
               >
                 All{' '}
                 <span className="score-tab-count">
@@ -1192,6 +1229,7 @@ export function VerifyForm({
                 type="button"
                 className={`score-filter-tab is-pass ${filterStatus === 'PASS' ? 'is-active' : ''}`}
                 onClick={() => setFilterStatus('PASS')}
+                aria-pressed={filterStatus === 'PASS'}
               >
                 Pass{' '}
                 <span className="score-tab-count">
@@ -1203,6 +1241,7 @@ export function VerifyForm({
                   type="button"
                   className={`score-filter-tab is-fail ${filterStatus === 'FAIL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('FAIL')}
+                  aria-pressed={filterStatus === 'FAIL'}
                 >
                   Fail{' '}
                   <span className="score-tab-count">
@@ -1215,6 +1254,7 @@ export function VerifyForm({
                   type="button"
                   className={`score-filter-tab is-warn ${filterStatus === 'WARN' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('WARN')}
+                  aria-pressed={filterStatus === 'WARN'}
                 >
                   Warn{' '}
                   <span className="score-tab-count">
@@ -1227,6 +1267,7 @@ export function VerifyForm({
                   type="button"
                   className={`score-filter-tab is-manual ${filterStatus === 'MANUAL' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('MANUAL')}
+                  aria-pressed={filterStatus === 'MANUAL'}
                 >
                   Manual{' '}
                   <span className="score-tab-count">
@@ -1239,6 +1280,7 @@ export function VerifyForm({
                   type="button"
                   className={`score-filter-tab is-skip ${filterStatus === 'SKIP' ? 'is-active' : ''}`}
                   onClick={() => setFilterStatus('SKIP')}
+                  aria-pressed={filterStatus === 'SKIP'}
                 >
                   N/A{' '}
                   <span className="score-tab-count">
@@ -1283,6 +1325,10 @@ export function VerifyForm({
               each group collapsible. FAIL expanded by default; PASS collapsed.
               This mirrors Lighthouse's Passed/Failed/Manual/NA bucketing. */}
           <div className="score-cards-feed">
+            {/* The list's own heading, so each card's title (an h3) sits one
+                level under it on every page that shows a result: on the
+                platform pages an auto-run put h4 titles straight under the h1. */}
+            <h2 className="sr-only">Checks</h2>
             {filteredChecks.length === 0 ? (
               <div className="score-empty-feed">
                 <p className="score-empty-title">No matching checks</p>
@@ -1352,26 +1398,19 @@ export function VerifyForm({
                       >
                         {group.checks.map((check, idx) => {
                           const isExpanded = expandedId === check.id;
+                          // A disclosure, as in score-form.tsx: the title is the
+                          // button, named by the title alone, with aria-expanded
+                          // and the drawer it controls; the whole row opens it.
+                          const cardId = `vf-${check.id}`;
                           return (
                             <div
                               key={check.id}
-                              id={`vf-${check.id}`}
+                              id={cardId}
                               className={`score-card-item ${isExpanded ? 'is-expanded' : ''}`}
-                              onClick={() =>
-                                setExpandedId(isExpanded ? null : check.id)
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  setExpandedId(isExpanded ? null : check.id);
-                                }
-                              }}
-                              role="button"
-                              tabIndex={0}
                               style={{ animationDelay: `${Math.min(idx * 40, 600)}ms` }}
                             >
                               <div className="score-card-main">
-                                <div className="score-card-badge-group">
+                                <div className="score-card-badge-group" id={`${cardId}-meta`}>
                                   <span
                                     className={`score-card-status-pill is-${check.status.toLowerCase()}`}
                                   >
@@ -1386,10 +1425,21 @@ export function VerifyForm({
                                     </span>
                                   )}
                                 </div>
-                                <h4 className="score-card-title">{check.item}</h4>
+                                <h3 className="score-card-title">
+                                  <button
+                                    type="button"
+                                    className="score-card-toggle"
+                                    aria-expanded={isExpanded}
+                                    aria-controls={`${cardId}-body`}
+                                    aria-describedby={`${cardId}-meta`}
+                                    onClick={() => setExpandedId(isExpanded ? null : check.id)}
+                                  >
+                                    {check.item}
+                                  </button>
+                                </h3>
                               </div>
 
-                              <span className="score-card-right">
+                              <span className="score-card-right" aria-hidden="true">
                                 <svg
                                   width="14"
                                   height="14"
@@ -1406,26 +1456,24 @@ export function VerifyForm({
                                 </svg>
                               </span>
 
-                              {isExpanded && (
-                                <div className="score-card-drawer">
-                                  <p className="score-drawer-heading">
-                                    Technical Finding
-                                  </p>
-                                  <p className="score-drawer-detail">{check.detail}</p>
-                                  {check.remediation &&
-                                    (check.status === 'FAIL' ||
-                                      check.status === 'WARN') && (
-                                      <>
-                                        <p className="score-drawer-heading score-drawer-remediation-heading">
-                                          How to fix this
-                                        </p>
-                                        <p className="score-drawer-detail score-drawer-remediation">
-                                          {check.remediation}
-                                        </p>
-                                      </>
-                                    )}
-                                </div>
-                              )}
+                              <div className="score-card-drawer" id={`${cardId}-body`} hidden={!isExpanded}>
+                                <p className="score-drawer-heading">
+                                  Technical finding
+                                </p>
+                                <p className="score-drawer-detail">{check.detail}</p>
+                                {check.remediation &&
+                                  (check.status === 'FAIL' ||
+                                    check.status === 'WARN') && (
+                                    <>
+                                      <p className="score-drawer-heading score-drawer-remediation-heading">
+                                        How to fix this
+                                      </p>
+                                      <p className="score-drawer-detail score-drawer-remediation">
+                                        {check.remediation}
+                                      </p>
+                                    </>
+                                  )}
+                              </div>
                             </div>
                           );
                         })}

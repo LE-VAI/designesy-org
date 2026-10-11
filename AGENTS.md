@@ -47,6 +47,21 @@ sources → principles → contracts → tools → systems → better designed w
   `scripts/check-jsx-glue.js` fails a sentence that wraps so JSX glues two
   words together (add `{' '}` at the boundary).
 
+## Contract Versions
+
+- A published contract version names one content. A change to a value, role
+  or rule in `apps/site/app/lib/design-system-contract.ts` ships with a raised
+  `version` and an `adoption_history` entry for it, in the same pull request.
+- The build holds the line: `scripts/check-contract-lock.js` hashes the
+  contract's normative content and fails when the hash moves while `version`
+  stays put. `scripts/design-system-contract.lock.json` records the pair.
+- After a bump, refresh the lock from `apps/site`:
+  `npm run update-contract-lock`. The refresh refuses to record a new hash
+  under the old version, so the fix for a failing lock is always a bump.
+- What the hash covers, and the metadata it leaves out (dates, history,
+  provenance, addresses, the engine's check registry), is listed with reasons
+  at the top of the gate.
+
 ## Workflow Expectation
 
 1. Understand the system layer (docs/designesy)

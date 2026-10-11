@@ -227,9 +227,11 @@ class TestGuardrailsParts:
     def test_description_names_the_parts_and_the_size(self):
         d = _desc("designesy_guardrails")
         assert "Valid parts: " + ", ".join(mcp.GUARDRAILS_PARTS) + "." in d
-        assert "about 10 KB to about 500 KB" in d and "about 90 KB for designesy.org" in d
+        # 1.13.7: the token file carries structured DTCG values, so the result
+        # grew (designesy.org 89,963 to 108,942 characters, the capture here).
+        assert "about 7 KB to about 530 KB" in d and "about 110 KB for designesy.org" in d
         size = len(_pretty(_fixture(GUARDRAILS)))
-        assert 80_000 <= size <= 100_000
+        assert 100_000 <= size <= 120_000
 
 
 @pytest.fixture(scope="module")

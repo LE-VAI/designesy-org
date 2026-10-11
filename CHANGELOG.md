@@ -6,6 +6,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.7] — 2026-10-10
+
+**designesy-mcp 1.13.7** (PyPI, MCP registry, hosted `/api/mcp`): six tools now return what their descriptions promise, and two tools no longer disagree about one page. Found by a tool-by-tool re-test of 1.13.6.
+
+### Fixed
+
+- **`designesy_a11y_score` checks carry their names.** The description
+  promises `checks[{id, name, status}]`; the hosted tool returned
+  `{id, status}`, because it read `name` from contract rows that keep the
+  name under `item`. Each check is now `{id, name, status}` with the a11y
+  contract's own name for its id. The hosted tool reads the contract module
+  this deployment serves, typed, so a field the rows lack no longer compiles.
+  The PyPI server already returned the names.
+- **`designesy_guardrails` and `designesy_drift_score` use one definition of
+  a fabricated token.** On www.designesy.org guardrails documented 158
+  fabricated tokens while drift's d02 found none. Guardrails counted every
+  `var()` name missing from a `:root` block, so references with a fallback,
+  properties declared on a component and properties set in `style`
+  attributes all counted. Both tools now call one function in the drift
+  module: a property is fabricated when it is referenced with no fallback and
+  declared nowhere. On www.designesy.org guardrails now documents 0, and its
+  g05 total falls from 557 to 399.
+- **`designesy_tokens_score` leaves SKIP out of the score.** A clean file
+  whose t07 had no custom types to check scored 90, because the score was
+  PASS / all ten checks x 100. It is now PASS / scored checks x 100 (WARN and
+  FAIL still count 0), the result adds `skip_count` and a `scoring`
+  statement, and the description states the rule, as `designesy_motion_score`
+  does. The site's own `/export/dtcg` scores 100 (it scored 90). The tokens
+  contract (0.1.1) states the new rule. The ten checks moved into
+  `apps/site/app/lib/tokens-score.ts` with a line-for-line port in the PyPI
+  server, and both produce one golden: the PyPI server now names each check
+  with the contract's name (it used short names of its own) and writes the
+  hosted server's detail text.
+- **`designesy_guardrails` emits a valid DTCG 2025.10 token file in the
+  site export's form.** It carried a `$schema` the export does not use,
+  aliases written as CSS variables (`{--muted-dim}`), bare hex colors, the
+  non-DTCG types `spacing` and `string`, and a `$meta` root key, and it
+  dropped a property whenever another one needed its name as a group. It now
+  uses the export's `$schema`, `{colorSpace, components, alpha}` colors,
+  `{group.token}` aliases that resolve, `$root` for a property that is also a
+  group, and DTCG types only; values the format cannot type are kept verbatim
+  in `$extensions.designesy.css`. On www.designesy.org: bare hex 27 to 0,
+  CSS-variable aliases 26 to 0, non-DTCG types 112 to 0, dropped properties
+  24 to 0, and the server's own tokens validator 60 with a t05 FAIL to 78
+  with no FAIL (t08 and t10 WARN on one dimension alias, `{space.16}`, which
+  the validator reads as a value with no unit). On the 22 reachable leaderboard sites that declare `:root`
+  tokens, the emitted file failed that validator on 19 and now fails it on
+  none. Structured values make the result larger (designesy.org 89,963 to
+  108,942 characters; 26 sites measured, about 7 KB to about 530 KB), and
+  the descriptions state the new sizes. The export and guardrails share the
+  schema URL and the color parser (`apps/site/app/lib/dtcg.ts`); the export's
+  output is unchanged.
+- **`designesy_monitor_score` m09 reports the design contract version.** It
+  read the scanned site's `agent.json` version, which on www.designesy.org is
+  the catalog's (0.1.7), while `designesy_score` reported v0.4.3. m09 now
+  reports the version `/api/score` reads from the contract module. The
+  monitor contract (0.1.1) describes m09 that way.
+- **`designesy_compare` rounds its score delta.** It printed
+  `15.400000000000006` for scores of 100 and 84.6. The delta and both scores
+  are rounded to two decimals, as the tool's contrast figures already were.
+- **The acoustic-tokens version reads from its module.** The catalog's
+  machine-export line and the export's download name said v0.1.1 while
+  `acoustic-tokens.ts` and `/acoustic-tokens.json` serve 0.2.0 (its version
+  history ends at 0.2.0, the extended cues). Both now read the module's
+  version, as do the catalog lines for the tokens, a11y, motion and
+  components contracts.
+
+### Added
+
+- **`scripts/check-mcp-accuracy.js`** (build and CI): runs the real route
+  modules offline on a made-up site and holds the six tools above to their
+  descriptions and to each other. `--measure <url>` prints what guardrails
+  and drift report about one live page. Its loader,
+  `scripts/lib/route-harness.js`, transpiles the site's TypeScript and stubs
+  only the network, so the same check can run against another checkout.
+- **`check-catalog-version-binding.js` reads the machine-export lines.** A
+  line that states a version must state the one its export serves.
+
 ## [1.13.6] — 2026-10-10
 
 **designesy-mcp 1.13.6** (PyPI, MCP registry, hosted `/api/mcp`): `designesy_motion_score` reports each verdict under its own check, `designesy_report` and `designesy_guardrails` take an option that returns less, and the drift engine stops counting fallbacks and style-attribute declarations as fabricated tokens (Anthropic Software Directory Policy 2B, 5B).

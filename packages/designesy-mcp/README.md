@@ -104,7 +104,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 |---|---|
 | `designesy_drift_score` | 12-check AI-drift radar — detects token fabrication, within-session drift, between-session amnesia, and silent breaking changes. |
 | `designesy_readiness_score` | 10-check AI readiness probe — tests for DTCG tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots, OG meta. |
-| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. The full bundle runs from about 10 KB to about 500 KB of JSON; `parts` (for example `["designMd"]`) returns only the files named. |
+| `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. The full bundle runs from about 7 KB to about 530 KB of JSON; `parts` (for example `["designMd"]`) returns only the files named. |
 | `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas, trend slope, and email alerts via Resend. |
 | `designesy_compare` | Diff two design systems from live URLs — 8-dimension structured diff (added, removed, renamed, value-changed, scale, contrast, structure, score). |
 | `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. The full result runs to about 75 to 100 KB of JSON; `detail: "summary"` keeps the composite, each engine's score and grade, the totals and only the checks that did not PASS. |

@@ -25,6 +25,17 @@ if (typeof window !== 'undefined') {
   };
   window.addEventListener('pointerdown', mark, { capture: true, passive: true });
   window.addEventListener('keydown', mark, { capture: true });
+  // A screen reader presses a button with an accessibility click: no key or
+  // pointer event reaches the page, only a trusted click whose detail is 0
+  // (NVDA's Enter in browse mode). Without this, a run its user started read
+  // as one a shared link started on load, and focus stayed put.
+  window.addEventListener(
+    'click',
+    (e) => {
+      if (e.isTrusted && e.detail === 0) mark();
+    },
+    { capture: true, passive: true },
+  );
 }
 
 export function userJustActed(withinMs = 2500): boolean {

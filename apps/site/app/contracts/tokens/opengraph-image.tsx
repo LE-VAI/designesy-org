@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { tokensContract } from '../../lib/tokens-contract';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -11,6 +12,6 @@ export default function OpenGraphImage() {
     lede: 'Token-format conformance for W3C DTCG 2025.10. OKLCH mandatory, custom types via $extension.',
     path: 'designesy.org/contracts/tokens',
     kind: 'contract',
-    badge: 'v0.1.0',
+    badge: `v${tokensContract.version}`,
   });
 }

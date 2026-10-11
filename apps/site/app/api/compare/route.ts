@@ -296,6 +296,11 @@ type CompareResponse = {
 
 // ── Diff computation ─────────────────────────────────────────────────────────
 
+/** Two decimal places: how this engine reports every number it computes. */
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 function computeGrade(score: number): string {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B';
@@ -510,9 +515,9 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
         token: entry.token,
         valueA: entry.valueA || '',
         valueB: entry.valueB || '',
-        contrastA: Math.round(cA * 100) / 100,
-        contrastB: Math.round(cB * 100) / 100,
-        drift: Math.round((cB - cA) * 100) / 100,
+        contrastA: round2(cA),
+        contrastB: round2(cB),
+        drift: round2(cB - cA),
       });
     }
   }
@@ -546,17 +551,23 @@ async function scoreCompareUncached(urlA: string, urlB: string): Promise<Compare
     const scoreA = await scoreAResp.json();
     const scoreB = await scoreBResp.json();
     if (scoreA.ok && scoreB.ok) {
+      // Rounded like every other computed number here (round2): a raw float
+      // difference printed as 15.400000000000006 for scores of 100 and 84.6.
+      const a = round2(scoreA.score);
+      const b = round2(scoreB.score);
+      const delta = round2(a - b);
       scoreDelta = {
-        scoreA: scoreA.score,
-        scoreB: scoreB.score,
-        delta: scoreA.score - scoreB.score,
+        scoreA: a,
+        scoreB: b,
+        delta,
         gradeA: scoreA.grade,
         gradeB: scoreB.grade,
       };
-      if (scoreA.score < 50 || scoreB.score < 50) {
-        checks.push({ id: 'c08', item: 'Score delta', status: 'WARN', detail: `Score delta computed (A: ${scoreA.grade}/${scoreA.score}, B: ${scoreB.grade}/${scoreB.score}, Δ${scoreA.score - scoreB.score > 0 ? '+' : ''}${scoreA.score - scoreB.score}): one or both scores are low` });
+      const summary = `A: ${scoreA.grade}/${a}, B: ${scoreB.grade}/${b}, Δ${delta > 0 ? '+' : ''}${delta}`;
+      if (a < 50 || b < 50) {
+        checks.push({ id: 'c08', item: 'Score delta', status: 'WARN', detail: `Score delta computed (${summary}): one or both scores are low` });
       } else {
-        checks.push({ id: 'c08', item: 'Score delta', status: 'PASS', detail: `Score delta computed (A: ${scoreA.grade}/${scoreA.score}, B: ${scoreB.grade}/${scoreB.score}, Δ${scoreA.score - scoreB.score > 0 ? '+' : ''}${scoreA.score - scoreB.score})` });
+        checks.push({ id: 'c08', item: 'Score delta', status: 'PASS', detail: `Score delta computed (${summary})` });
       }
     } else {
       checks.push({ id: 'c08', item: 'Score delta', status: 'FAIL', detail: 'Could not run /score on one or both URLs' });

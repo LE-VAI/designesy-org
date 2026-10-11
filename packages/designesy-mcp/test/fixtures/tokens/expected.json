@@ -1,0 +1,626 @@
+{
+  "bare-hex-ref.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 1,
+    "score": 75,
+    "grade": "C",
+    "pass_count": 6,
+    "fail_count": 1,
+    "warn_count": 1,
+    "skip_count": 2,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "1 token groups found: color"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "1/1 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "1/1 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "FAIL",
+        "detail": "0 structured, 1 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 1 unique type(s) are DTCG 2025.10 standard: color"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "SKIP",
+        "detail": "No dimension tokens found"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "1 token group(s) with nested hierarchy: color"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "WARN",
+        "detail": "2 deprecated pattern(s) found: Color token 'color.primary' uses bare hex (pre-2025.10 pattern); Token 'color.primary' uses deprecated $ref syntax (use {path} in $value)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "empty.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 0,
+    "score": 33,
+    "grade": "F",
+    "pass_count": 2,
+    "fail_count": 4,
+    "warn_count": 0,
+    "skip_count": 4,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "FAIL",
+        "detail": "0 token groups found: "
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "FAIL",
+        "detail": "0/0 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "FAIL",
+        "detail": "0/0 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "SKIP",
+        "detail": "No color tokens found"
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "SKIP",
+        "detail": "No tokens found"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "SKIP",
+        "detail": "No dimension tokens found"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "FAIL",
+        "detail": "No tokens found: cannot assess naming hierarchy"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "guardrails-emitted.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 18,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "16 token groups found: ink, muted, surface, signal, line..."
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "18/18 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "18/18 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "5 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 8 unique type(s) are DTCG 2025.10 standard: color, cubicBezier, dimension, duration, fontFamily, fontWeight, number, shadow"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "PASS",
+        "detail": "All 4 dimension token(s) use valid units (px, rem, em, %, etc.)"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "16 token group(s) with nested hierarchy: ink, muted, surface, signal, line..."
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "invalid.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 4,
+    "score": 33,
+    "grade": "F",
+    "pass_count": 3,
+    "fail_count": 1,
+    "warn_count": 5,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "WARN",
+        "detail": "Schema: https://wrong-schema.com/schema.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "2 token groups found: colors, spacing"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "WARN",
+        "detail": "3/4 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "4/4 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "SKIP",
+        "detail": "No color tokens found"
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "WARN",
+        "detail": "Non-standard type(s) found: myCustomGlow. These may be valid custom types (see t07)."
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "WARN",
+        "detail": "Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): myCustomGlow"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "FAIL",
+        "detail": "2/2 dimension token(s) have missing/unrecognized units: spacing.md='16', spacing.lg='2parsangs'"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "2 token group(s) with nested hierarchy: colors, spacing"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "WARN",
+        "detail": "2 deprecated pattern(s) found: Dimension token 'spacing.md' uses bare number (should include unit string); Dimension token 'spacing.lg' has unrecognized or missing unit: '2parsangs'"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "js-key-order.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 12,
+    "score": 30,
+    "grade": "F",
+    "pass_count": 3,
+    "fail_count": 0,
+    "warn_count": 7,
+    "skip_count": 0,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "WARN",
+        "detail": "Schema: https://example.com/not-designtokens.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "6 token groups found: 2, 10, zeta, alpha, beta..."
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "WARN",
+        "detail": "11/12 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "12/12 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "WARN",
+        "detail": "1 structured, 1 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "WARN",
+        "detail": "Non-standard type(s) found: com.example.glow, glow. These may be valid custom types (see t07)."
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "WARN",
+        "detail": "Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): glow"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "WARN",
+        "detail": "6/7 dimension token(s) have missing/unrecognized units: 2.1='1.5', 2.9='2parsec', 2.007='7q', 10.a='3', 10.b='4'"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "6 token group(s) with nested hierarchy: 2, 10, zeta, alpha, beta..."
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "WARN",
+        "detail": "8 deprecated pattern(s) found: Dimension token '2.1' has unrecognized or missing unit: '1.5'; Dimension token '2.9' has unrecognized or missing unit: '2parsec'; Dimension token '2.007' has unrecognized or missing unit: '7q'..."
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "nine-pass-one-skip.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 2,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "2 token groups found: color, space"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "2/2 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "2/2 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "1 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 2 unique type(s) are DTCG 2025.10 standard: color, dimension"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "PASS",
+        "detail": "All 1 dimension token(s) use valid units (px, rem, em, %, etc.)"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "2 token group(s) with nested hierarchy: color, space"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "site-export.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 45,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "6 token groups found: color, radius, shadow, motion, interaction..."
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "45/45 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "45/45 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "21 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 6 unique type(s) are DTCG 2025.10 standard: color, cubicBezier, dimension, duration, fontFamily, shadow"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "PASS",
+        "detail": "All 5 dimension token(s) use valid units (px, rem, em, %, etc.)"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "6 token group(s) with nested hierarchy: color, radius, shadow, motion, interaction..."
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  },
+  "valid.json": {
+    "contract_id": "designesy.tokens",
+    "contract_version": "0.1.1",
+    "contract_status": "provisional",
+    "url": "(inline dtcg_file)",
+    "total_tokens": 6,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
+    "fail_count": 0,
+    "warn_count": 0,
+    "skip_count": 1,
+    "scoring": "PASS=1, WARN=0, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
+    "checks": [
+      {
+        "id": "t01",
+        "name": "$schema declaration present and pointing at designtokens.org",
+        "status": "PASS",
+        "detail": "Schema: https://www.designtokens.org/schemas/2025.10/format.json"
+      },
+      {
+        "id": "t02",
+        "name": "Token groups present (top-level non-$ keys)",
+        "status": "PASS",
+        "detail": "3 token groups found: color, spacing, font"
+      },
+      {
+        "id": "t03",
+        "name": "Every token has $type (direct or inherited)",
+        "status": "PASS",
+        "detail": "6/6 tokens have $type"
+      },
+      {
+        "id": "t04",
+        "name": "Every token has $value",
+        "status": "PASS",
+        "detail": "6/6 tokens have $value"
+      },
+      {
+        "id": "t05",
+        "name": "Color tokens use structured {colorSpace, components} format instead of bare hex",
+        "status": "PASS",
+        "detail": "2 structured, 0 bare hex. DTCG 2025.10 prefers {colorSpace, components} over bare hex strings."
+      },
+      {
+        "id": "t06",
+        "name": "$type values are DTCG 2025.10 standard types",
+        "status": "PASS",
+        "detail": "All 4 unique type(s) are DTCG 2025.10 standard: color, dimension, fontFamily, fontWeight"
+      },
+      {
+        "id": "t07",
+        "name": "Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)",
+        "status": "SKIP",
+        "detail": "No custom types found"
+      },
+      {
+        "id": "t08",
+        "name": "Dimension units are valid CSS length units (px, rem preferred)",
+        "status": "PASS",
+        "detail": "All 2 dimension token(s) use valid units (px, rem, em, %, etc.)"
+      },
+      {
+        "id": "t09",
+        "name": "Token naming hierarchy: tokens organized into nested groups",
+        "status": "PASS",
+        "detail": "3 token group(s) with nested hierarchy: color, spacing, font"
+      },
+      {
+        "id": "t10",
+        "name": "No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)",
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)"
+      }
+    ],
+    "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
+    "validator_note": "Canonical validator: @terrazzo/parser 2.4.0 (npm i -D @terrazzo/parser, run: tz check tokens.json)"
+  }
+}

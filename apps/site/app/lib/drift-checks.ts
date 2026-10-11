@@ -261,15 +261,49 @@ function declaredNames(tokens: Record<string, string>, ctx?: ReferenceContext): 
   return new Set([...Object.keys(tokens), ...(ctx ? ctx.inlineDeclared : [])]);
 }
 
-// d02 counts a custom property as fabricated when it is referenced with no
-// fallback and declared nowhere: not in a stylesheet or <style> block, and not
-// in a style attribute. var(--x, 4px) names its own value, so an undeclared
-// --x there is a deliberate hook (set by script, or by a parent's style), not
-// an invented token; the reference still renders. Both readings were false
-// positives on designesy.org: of 29 undeclared names on the home page, 24 were
-// always referenced with a fallback and 5 were set in style attributes, and
-// none was unguarded, yet d02 reported 13 fabricated tokens.
-export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): CheckResult {
+// Known JS-injected runtime state tokens: real custom properties set via
+// el.style.setProperty() in components (magnetic-cursor, grade badges,
+// bundle-tabs indicator). They never appear in CSS source because they're
+// per-element state, not design tokens. Listing them keeps the fabricated-token
+// count honest about what's a real fabrication vs runtime state.
+const JS_INJECTED_TOKENS: ReadonlySet<string> = new Set([
+  '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
+  '--bar-i',                                                          // progress bars
+  '--accent',                                                         // magnetic-cursor focus accent
+  '--indicator-w', '--indicator-x',                                   // bundle-tabs / filter segmented
+  '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
+  '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
+  '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
+  '--check-index', '--check-min', '--check-pad-x', '--check-pad-y',   // score check display (set inline)
+]);
+
+/** The fabricated custom properties of a page, and what was left out and why. */
+export type FabricatedTokens = {
+  /** Referenced with no fallback and declared nowhere, in first-reference order. */
+  names: string[];
+  /** Undeclared, but referenced with a fallback at every use. */
+  guarded: number;
+  /** Declared only in style attributes. */
+  inlineOnly: number;
+  /** Undeclared and unguarded, but set by script at runtime (JS_INJECTED_TOKENS). */
+  runtime: number;
+};
+
+// THE definition of a fabricated token, used by d02 and by /api/guardrails'
+// anti-pattern list (one definition, so the two tools cannot disagree about the
+// same page; on www.designesy.org guardrails documented 158 fabricated tokens
+// while d02 found none, because guardrails counted every var() name missing
+// from a :root block).
+//
+// A custom property is fabricated when it is referenced with no fallback and
+// declared nowhere: not in a stylesheet or <style> block (in any rule, not only
+// :root), and not in a style attribute. var(--x, 4px) names its own value, so
+// an undeclared --x there is a deliberate hook (set by script, or by a parent's
+// style), not an invented token; the reference still renders. Both readings
+// were false positives on designesy.org: of 29 undeclared names on the home
+// page, 24 were always referenced with a fallback and 5 were set in style
+// attributes, and none was unguarded, yet d02 reported 13 fabricated tokens.
+export function findFabricatedTokens(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): FabricatedTokens {
   const declared = declaredNames(tokens, ctx);
   const cssDeclared = new Set(Object.keys(tokens));
   const names = [...new Set(varRefs)];
@@ -277,25 +311,33 @@ export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs
   const undeclaredNames = names.filter((r) => !declared.has(r));
   const guarded = ctx ? undeclaredNames.filter((r) => !ctx.unguarded.has(r)).length : 0;
   const undeclared = ctx ? undeclaredNames.filter((r) => ctx.unguarded.has(r)) : undeclaredNames;
-  // Filter known JS-injected runtime state tokens — these are real custom
-  // properties set via el.style.setProperty() in components (magnetic-cursor,
-  // grade badges, bundle-tabs indicator). They never appear in CSS source
-  // because they're per-element state, not design tokens. Listing them here
-  // keeps the check honest about what's a real fabrication vs runtime state.
-  const JS_INJECTED_TOKENS = new Set([
-    '--scroll-y', '--spot-x', '--spot-y', '--tilt-rx', '--tilt-ry', // magnetic-cursor
-    '--bar-i',                                                          // progress bars
-    '--accent',                                                         // magnetic-cursor focus accent
-    '--indicator-w', '--indicator-x',                                   // bundle-tabs / filter segmented
-    '--grade-a-line', '--grade-a-text', '--grade-b-line', '--grade-b-text',
-    '--grade-c-line', '--grade-c-text', '--grade-d-line', '--grade-d-text',
-    '--grade-f-line', '--grade-f-text',                                  // grade badges (set inline)
-    '--check-index', '--check-min', '--check-pad-x', '--check-pad-y',   // score check display (set inline)
-  ]);
-  const uniqueUndeclared = undeclared.filter((t) => !JS_INJECTED_TOKENS.has(t));
-  const runtimeCount = undeclared.filter((t) => JS_INJECTED_TOKENS.has(t)).length;
+  return {
+    names: undeclared.filter((t) => !JS_INJECTED_TOKENS.has(t)),
+    guarded,
+    inlineOnly,
+    runtime: undeclared.filter((t) => JS_INJECTED_TOKENS.has(t)).length,
+  };
+}
+
+/**
+ * One page's fabricated tokens, from its served HTML and its CSS (stylesheets
+ * plus <style> blocks, as the routes assemble `allCss`). The inputs are built
+ * the way /api/drift builds d02's: every custom property declared anywhere in
+ * the CSS, the style attributes as declarations and references, and var()
+ * references from both surfaces. /api/guardrails calls this.
+ */
+export function pageFabricatedTokens(allCss: string, html: string): FabricatedTokens {
+  const attrCss = extractStyleAttributeCss(html);
+  const varRefs = [...extractVarRefs(allCss), ...extractVarRefs(attrCss)];
+  return findFabricatedTokens(extractRootTokens(allCss), varRefs, referenceContext(allCss, attrCss));
+}
+
+// d02 reports findFabricatedTokens: see the definition above.
+export function checkD02FabricatedTokens(tokens: Record<string, string>, varRefs: string[], ctx?: ReferenceContext): CheckResult {
+  const fabricated = findFabricatedTokens(tokens, varRefs, ctx);
+  const uniqueUndeclared = fabricated.names;
   // What was not counted, and why, so a reader can check the exclusions.
-  const notCounted = `${guarded} undeclared with a fallback at every use, ${inlineOnly} declared in style attributes, ${runtimeCount} runtime-injected JS tokens excluded`;
+  const notCounted = `${fabricated.guarded} undeclared with a fallback at every use, ${fabricated.inlineOnly} declared in style attributes, ${fabricated.runtime} runtime-injected JS tokens excluded`;
   if (uniqueUndeclared.length === 0) {
     return {
       id: 'd02',

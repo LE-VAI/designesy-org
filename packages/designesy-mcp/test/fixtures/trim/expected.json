@@ -126,8 +126,8 @@
         "names": [
           "designMd"
         ],
-        "output_sha256": "30e7adb53344982e5db46d5e44cf4d2d0aaa4cc11d925b2f1bb141b11a2f1413",
-        "chars": 16967
+        "output_sha256": "c46e5dd02db0fe14aa98620d8e5e0b473cc282fce39fadbabd01d775c55ee8d9",
+        "chars": 16995
       },
       {
         "parts": [
@@ -138,8 +138,8 @@
           "tokens",
           "lintConfig"
         ],
-        "output_sha256": "9d9383457a4828bff9bd17fb093bd33dbbb23faedbfadd462f2235afd3c58458",
-        "chars": 36784
+        "output_sha256": "c95ea9cf1bf12f175372dbbc94927432bd340a0d75841463c5cb69aad43c0f7b",
+        "chars": 55821
       },
       {
         "parts": [
@@ -151,8 +151,8 @@
           "agentRules",
           "tokens"
         ],
-        "output_sha256": "e60de15e601da17a9feaaf37b1f1980857c89a0813f4e059bfc9c16e797b8b49",
-        "chars": 28159
+        "output_sha256": "6d07253f338986788f28f83ae238dbd207d70f8194410966fd343de564564e0e",
+        "chars": 47217
       },
       {
         "parts": [
@@ -171,8 +171,8 @@
           "antiPatterns",
           "designMd"
         ],
-        "output_sha256": "bed50bc6e685d286f758533d4434c777c23ecc6136d4b02dd3ee346d20748acf",
-        "chars": 90091
+        "output_sha256": "28151b524bbcb27d8d40908246debf3eb760af721100fded72e99128ccc62690",
+        "chars": 109070
       }
     ]
   },

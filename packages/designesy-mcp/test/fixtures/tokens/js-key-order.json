@@ -1,0 +1,71 @@
+{
+  "$schema": "https://example.com/not-designtokens.json",
+  "zeta": {
+    "glow": {
+      "$type": "com.example.glow",
+      "$value": "soft"
+    }
+  },
+  "10": {
+    "a": {
+      "$type": "dimension",
+      "$value": "3"
+    },
+    "b": {
+      "$type": "dimension",
+      "$value": 4.0
+    }
+  },
+  "alpha": {
+    "hex": {
+      "$type": "color",
+      "$value": "#abc"
+    },
+    "rich": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1,
+          0,
+          0
+        ]
+      }
+    }
+  },
+  "2": {
+    "9": {
+      "$type": "dimension",
+      "$value": "2parsec"
+    },
+    "1": {
+      "$type": "dimension",
+      "$value": "1.5"
+    },
+    "007": {
+      "$type": "dimension",
+      "$value": "7q"
+    }
+  },
+  "beta": {
+    "untyped": {
+      "$type": "",
+      "$value": "x"
+    },
+    "ref": {
+      "$type": "glow",
+      "$value": "y",
+      "$ref": "#/beta/untyped"
+    }
+  },
+  "gamma": {
+    "ok": {
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "neg": {
+      "$type": "dimension",
+      "$value": -2
+    }
+  }
+}

@@ -89,6 +89,19 @@
  * there (the golden test/test_trim.py checks), including the error text for
  * unknown part names, and asserts both declare the same part names.
  *
+ * TOKENS SCORE OUTPUT (added for designesy-mcp 1.13.7)
+ * designesy_tokens_score scored a SKIP as a zero, and the two servers wrote
+ * different check names and detail text. Both now run the tokens contract's
+ * t01-t10 from one definition: app/lib/tokens-score.ts here, _tokens_score in
+ * the PyPI server. This gate runs tokens-score.ts on the token files in
+ * packages/designesy-mcp/test/fixtures/tokens/ and compares each whole result
+ * with expected.json there (the golden test/test_tokens_score.py checks), and
+ * checks that the generated fixtures are current: contract.json is the
+ * contract /contracts/tokens.json serves and guardrails-emitted.json is the
+ * token file designesy_guardrails emits for scripts/fixtures/mcp-accuracy.json
+ * (scripts/lib/tokens-fixtures.js builds both; site-export.json is a sample of
+ * /export/dtcg captured the same way, kept as it was).
+ *
  * Usage:  node scripts/check-mcp-tool-parity.js [--json]
  * Exits 1 on any finding, so it can gate CI.
  */
@@ -107,6 +120,8 @@ const MOTION_CONTRACT_LIB = path.join(APP, 'app', 'lib', 'motion-contract.ts');
 const MOTION_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'motion');
 const TRIM_LIB = path.join(APP, 'app', 'lib', 'mcp-trim.ts');
 const TRIM_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'trim');
+const TOKENS_LIB = path.join(APP, 'app', 'lib', 'tokens-score.ts');
+const TOKENS_FIXTURES = path.join(APP, '..', '..', 'packages', 'designesy-mcp', 'test', 'fixtures', 'tokens');
 // The origin both servers fetch from; part of the hashed design_review output.
 const BASE_URL = 'https://www.designesy.org';
 const ERROR_TEXT_LIB = path.join(APP, 'app', 'lib', 'error-text.ts');
@@ -937,6 +952,89 @@ async function trimFindings(pypiSrc) {
   return { findings, evaluated: true, compared };
 }
 
+/**
+ * Run the hosted tokens scorer on the shared token files and compare each whole
+ * result with the golden the PyPI suite checks. Returns
+ * { findings, evaluated, reason, compared }.
+ */
+async function tokensFindings() {
+  const findings = [];
+  if (!fs.existsSync(TOKENS_FIXTURES)) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `${path.relative(APP, TOKENS_FIXTURES)} is not in this Vercel build` };
+    }
+    findings.push({
+      id: 'tokens-fixtures-missing',
+      why: `${TOKENS_FIXTURES} is missing, so the two servers' designesy_tokens_score output cannot be compared.`,
+      fix: 'Run this gate from a full checkout of the repository.',
+    });
+    return { findings, evaluated: false, reason: 'fixtures missing' };
+  }
+  let lib;
+  try {
+    lib = await import(require('node:url').pathToFileURL(TOKENS_LIB).href);
+  } catch (e) {
+    if (process.env.VERCEL === '1') {
+      return { findings, evaluated: false, reason: `this Node cannot load tokens-score.ts (${e.code || e.message})` };
+    }
+    findings.push({
+      id: 'tokens-lib-unloadable',
+      why: `Could not load app/lib/tokens-score.ts with Node's type stripping (${e.code || e.message}), so the hosted token checks cannot be compared with the golden.`,
+      fix: 'Run on Node 22.18 or later, and keep tokens-score.ts free of imports and of syntax that type stripping cannot erase.',
+    });
+    return { findings, evaluated: false, reason: 'library unloadable' };
+  }
+
+  // The generated fixtures must be what the code serves and emits today.
+  try {
+    const { generatedTokenFixtures } = require('./lib/tokens-fixtures');
+    const generated = await generatedTokenFixtures();
+    for (const name of ['contract.json', 'guardrails-emitted.json']) {
+      const committed = fs.readFileSync(path.join(TOKENS_FIXTURES, name), 'utf8').replace(/\r\n/g, '\n');
+      if (committed !== generated[name]) {
+        findings.push({
+          id: `tokens-fixture-stale:${name}`,
+          why: `packages/designesy-mcp/test/fixtures/tokens/${name} is not what the site ${name === 'contract.json' ? 'serves at /contracts/tokens.json' : 'emits through designesy_guardrails'} today, so the golden scores something the site no longer produces.`,
+          fix: 'Run node scripts/lib/tokens-fixtures.js --write, then python test/test_tokens_score.py --write-golden in packages/designesy-mcp.',
+        });
+      }
+    }
+  } catch (e) {
+    if (process.env.VERCEL === '1' && e && e.code === 'MODULE_NOT_FOUND') {
+      return { findings, evaluated: false, reason: `typescript is not installed in this Vercel build (${e.message})` };
+    }
+    throw e;
+  }
+
+  const read = (n) => fs.readFileSync(path.join(TOKENS_FIXTURES, n), 'utf8');
+  const contract = JSON.parse(read('contract.json'));
+  const golden = JSON.parse(read('expected.json'));
+  const files = fs.readdirSync(TOKENS_FIXTURES)
+    .filter((n) => n.endsWith('.json') && n !== 'contract.json' && n !== 'expected.json')
+    .sort();
+  if (JSON.stringify(files) !== JSON.stringify(Object.keys(golden).sort())) {
+    findings.push({
+      id: 'tokens-golden-coverage',
+      why: `The tokens golden covers ${JSON.stringify(Object.keys(golden).sort())} but the fixtures are ${JSON.stringify(files)}.`,
+      fix: 'Regenerate the golden: python test/test_tokens_score.py --write-golden.',
+    });
+  }
+  let compared = 0;
+  for (const name of files) {
+    if (!golden[name]) continue;
+    const out = lib.scoreTokens(JSON.parse(read(name)), contract, '(inline dtcg_file)');
+    compared++;
+    if (canonical(out) === canonical(golden[name])) continue;
+    const differs = (golden[name].checks || []).map((c) => c.id).filter((id, i) => canonical(out.checks[i]) !== canonical(golden[name].checks[i]));
+    findings.push({
+      id: `tokens-golden:${name}`,
+      why: `The hosted designesy_tokens_score result for ${name} differs from the golden the PyPI suite checks${differs.length ? ` (checks ${differs.join(', ')})` : ' (outside the checks)'}.`,
+      fix: 'Change app/lib/tokens-score.ts and _tokens_score in the PyPI server together, then regenerate the golden: python test/test_tokens_score.py --write-golden.',
+    });
+  }
+  return { findings, evaluated: true, compared };
+}
+
 async function main() {
   const asJson = process.argv.includes('--json');
 
@@ -1034,6 +1132,10 @@ async function main() {
   const trim = await trimFindings(pypiSrc);
   findings.push(...trim.findings);
 
+  // Tokens score output: same checks, same token files, same golden.
+  const tokens = await tokensFindings();
+  findings.push(...tokens.findings);
+
   if (asJson) {
     console.log(
       JSON.stringify(
@@ -1047,6 +1149,7 @@ async function main() {
           errorText: { evaluated: errorText.evaluated, wrapped: errorText.wrapped ?? 0, fixtures: errorText.fixtures ?? 0, reason: errorText.reason },
           motion: { evaluated: motion.evaluated, compared: motion.compared ?? 0, reason: motion.reason },
           trim: { evaluated: trim.evaluated, compared: trim.compared ?? 0, reason: trim.reason },
+          tokens: { evaluated: tokens.evaluated, compared: tokens.compared ?? 0, reason: tokens.reason },
           findings,
         },
         null,
@@ -1080,6 +1183,11 @@ async function main() {
       console.log(`mcp-tool-parity: OK — the hosted report summary and guardrails parts match the shared golden on ${trim.compared} case(s), with the PyPI server's part names`);
     } else {
       console.log(`mcp-tool-parity: [NOT EVALUATED] trimmed-output agreement: ${trim.reason}`);
+    }
+    if (tokens.evaluated) {
+      console.log(`mcp-tool-parity: OK — the hosted token checks match the shared golden on ${tokens.compared} token file(s), and the generated fixtures are current`);
+    } else {
+      console.log(`mcp-tool-parity: [NOT EVALUATED] tokens-score agreement: ${tokens.reason}`);
     }
   } else {
     console.error(`mcp-tool-parity: ${findings.length} finding(s)\n`);

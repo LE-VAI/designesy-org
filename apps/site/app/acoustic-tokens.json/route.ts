@@ -8,7 +8,7 @@ export function GET() {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
       'Content-Disposition':
-        'inline; filename="designesy-acoustic-tokens-v0.1.1.json"',
+        `inline; filename="designesy-acoustic-tokens-v${acousticTokens.version}.json"`,
     },
   });
 }

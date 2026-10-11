@@ -1,0 +1,23 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "color": {
+    "ink": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.96,
+          0.96,
+          0.97
+        ],
+        "alpha": 1
+      }
+    }
+  },
+  "space": {
+    "md": {
+      "$type": "dimension",
+      "$value": "16px"
+    }
+  }
+}
