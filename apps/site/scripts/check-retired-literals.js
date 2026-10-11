@@ -3,18 +3,18 @@
  * retired literals: no retired brand colour ships.
  *
  * WHY THIS EXISTS
- * Identity v1 retired the old signal blue, the old activation yellow, the
- * indigo pass and head hues and the orange grade D (brand ledger D4, D5, D19,
- * D33). The token swap moved every token, but a token swap cannot see a
- * literal: a hard-coded hex in a share card, a favicon, a badge, a demo
- * swatch or a lab preset kept painting the retired colour after the tokens
- * had moved. Before this gate the site carried the old blue 16 times in 12
+ * Identity v1 retired the old signal blue and its light tint, the old
+ * activation yellow, the indigo pass and head hues and the orange grade D
+ * (brand ledger D4, D5, D19, D33, D37). The token swap moved every token,
+ * but a token swap cannot see a literal: a hard-coded hex in a share card,
+ * a favicon, a badge, a demo swatch or a lab preset kept painting the
+ * retired colour after the tokens had moved. Before this gate the site carried the old blue 16 times in 12
  * files, its rgb() form 9 times and the old yellow 5 times. Migration exits
  * only when this reads 0 (brand verdict, ruling H).
  *
  * WHAT IT MATCHES
  * Each retired colour as a hex (#rrggbb, or #rrggbbaa with an alpha), case
- * insensitive, and the old blue's rgb()/rgba() form with commas or spaces.
+ * insensitive, and the old blues' rgb()/rgba() forms with commas or spaces.
  * A longer hex that merely starts with the same digits does not match.
  *
  * WHAT IT READS
@@ -49,6 +49,10 @@ const RETIRED_HEX = [
   { hex: 'ea580c', why: 'old grade D orange, light (D5)' },
   { hex: 'fb923c', why: 'old grade D orange, dark (D5)' },
   { hex: 'f97316', why: 'old grade D glow (D5)' },
+  {
+    hex: '3358e8',
+    why: 'old --signal-light blue (D19, D37); the light tint is now #36A7FF, and a grade never takes a brand colour',
+  },
 ];
 
 function buildPatterns() {
@@ -63,6 +67,12 @@ function buildPatterns() {
     why: 'old signal blue, rgb form (D19)',
     // rgb(1,51,203) rgba(1, 51, 203, .2) rgb(1 51 203 / .4)
     re: /rgba?\(\s*1\s*[,\s]\s*51\s*[,\s]\s*203(?![0-9])/gi,
+  });
+  pats.push({
+    label: 'rgb(51,88,232)',
+    why: 'old --signal-light blue, rgb form (D19, D37)',
+    // rgb(51,88,232) rgba(51, 88, 232, .06) rgb(51 88 232 / .4)
+    re: /rgba?\(\s*51\s*[,\s]\s*88\s*[,\s]\s*232(?![0-9])/gi,
   });
   for (const p of pats) {
     // A pattern that cannot match anything is a gate that cannot fail.
@@ -95,6 +105,12 @@ const ALLOWLIST = [
     reason:
       'The same v0.4.4 history entry, as /contracts/design-system lists the adoption history in its generated markdown. Present only after a build.',
     optional: true,
+  },
+  {
+    file: 'app/globals.css',
+    includes: 'It was --signal-light (#3358e8), which on the dark theme measured',
+    reason:
+      'A comment, not a paint: the focus-ring note records which value --signal-access replaced and the contrast it measured, so a later reader knows why the ring moved. History states what was.',
   },
 ];
 
@@ -165,8 +181,13 @@ function selfTest(patterns) {
     '#0133CB', '#0133cb', '#0133cb24', '#FECC34', '#fecc35', '#2c50ec', '#5B7CFF', '#3a63f5',
     '#8aa0ff', '#EA580C', '#fb923c', '#F97316', 'rgb(1,51,203)', 'rgba(1, 51, 203, 0.14)',
     'rgb(1 51 203 / .42)', 'RGB( 1 , 51 , 203 )',
+    '#3358e8', '#3358E8', '#3358e866', 'rgb(51,88,232)', 'rgba(51, 88, 232, 0.06)', 'rgb(51 88 232 / .4)',
+    'RGBA( 51 , 88 , 232 , .5)',
   ];
-  const mustNot = ['#0133cb2', '#0133cbab12', '#0A94FF', '#FFC400', 'rgb(1,51,2030)', 'rgb(11,51,203)', '#fecc3', '#36A7FF'];
+  const mustNot = [
+    '#0133cb2', '#0133cbab12', '#0A94FF', '#FFC400', 'rgb(1,51,2030)', 'rgb(11,51,203)', '#fecc3', '#36A7FF',
+    '#3358e81', '#3358e8ab12', 'rgb(51,88,2320)', 'rgb(151,88,232)', 'rgba(54, 167, 255, 0.06)',
+  ];
   const hit = (s) => patterns.some((p) => { p.re.lastIndex = 0; return p.re.test(s); });
   const missed = must.filter((s) => !hit(s));
   const falsePos = mustNot.filter((s) => hit(s));

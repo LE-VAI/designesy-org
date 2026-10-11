@@ -260,6 +260,14 @@ jobs:
         if: always()
         run: node scripts/check-retired-literals.js
 
+      # The score badge is an SVG string, so its grade colours are literals a
+      # token swap cannot see. Each fill must equal its light --grade-* base,
+      # the letter must hold 4.5:1 on it, and the fill 3:1 on a white and a
+      # near-black host page (brand ledger D37).
+      - name: Badge grade tokens
+        if: always()
+        run: node scripts/check-badge-grade-tokens.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js

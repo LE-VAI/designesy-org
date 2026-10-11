@@ -81,8 +81,8 @@
   background-image:
     radial-gradient(
       ellipse 60% 50% at 50% 48%,
-      rgba(51, 88, 232, 0.06) 0%,
-      rgba(51, 88, 232, 0.02) 40%,
+      rgba(54, 167, 255, 0.06) 0%,
+      rgba(54, 167, 255, 0.02) 40%,
       transparent 70%
     );
 }

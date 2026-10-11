@@ -66,7 +66,7 @@ export default function Scene() {
         const alpha = 0.15 + Math.sin(time + i) * 0.1;
         ctx.beginPath();
         ctx.arc(x, y, 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(51, 88, 232, ${Math.max(0, alpha)})`;
+        ctx.fillStyle = `rgba(54, 167, 255, ${Math.max(0, alpha)})`;
         ctx.fill();
       }
 
@@ -78,7 +78,7 @@ export default function Scene() {
         r.radius += 3;
         ctx.beginPath();
         ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(51, 88, 232, ${(1 - progress) * 0.5})`;
+        ctx.strokeStyle = `rgba(54, 167, 255, ${(1 - progress) * 0.5})`;
         ctx.lineWidth = 2 * (1 - progress);
         ctx.stroke();
         return true;
