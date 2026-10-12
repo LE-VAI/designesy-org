@@ -14,7 +14,7 @@
 }
 
 .cue-pref-note {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -87,7 +87,7 @@
 }
 
 .cue-rack-title {
-  font: 600 0.8rem/1 var(--sans);
+  font: 600 var(--text-label)/1 var(--sans);
   color: var(--ink);
 }
 
@@ -101,7 +101,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -208,7 +208,7 @@ html[data-audio="on"] .cue-rack-off {
 }
 
 .cue-cell-num {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -216,20 +216,20 @@ html[data-audio="on"] .cue-rack-off {
 }
 
 .cue-cell-token {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--signal-text);
   font-family: var(--mono);
 }
 
 .cue-cell-cue {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
 
 .cue-cell-role {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted);
 }

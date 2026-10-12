@@ -56,7 +56,7 @@
   margin: calc(-1 * var(--space-6)) 0 calc(var(--space-20) - var(--space-6));
   overflow-x: auto;
   scrollbar-width: none;
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -333,7 +333,7 @@
   min-height: 2.9rem;
   padding: 0 var(--space-16);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.8rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -373,7 +373,7 @@
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -392,7 +392,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -505,7 +505,7 @@
   height: auto;
   border-radius: 0;
   background: none;
-  font: 700 0.8rem/1 var(--sans);
+  font: 700 var(--text-label)/1 var(--sans);
   color: var(--signal-text);
 }
 
@@ -578,7 +578,7 @@
 }
 
 .eg-label {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -586,14 +586,14 @@
 
 .eg-group-hint {
   margin: 0 0 var(--space-12);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
 }
 
 .eg-count {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -603,7 +603,7 @@
    side pane used to list it apart from the row it describes. */
 .eg-group-note {
   margin: var(--space-10) 0 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -729,13 +729,13 @@
 }
 
 .eg-cell-id {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
 .eg-cell-label {
   align-self: end;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 500;
   line-height: 1.3;
   color: var(--ink);
@@ -891,7 +891,7 @@
 
 .eg-side-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -920,14 +920,14 @@
 }
 
 .eg-score {
-  font: 500 1.563rem/1 var(--mono);
+  font: 500 var(--text-h3)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 .eg-score small {
   margin-left: 2px;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -942,7 +942,7 @@
 /* What a named verdict is made of ("Contract, drift and readiness ..."). */
 .eg-verdict-note {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.4;
   color: var(--muted);
 }
@@ -989,7 +989,7 @@
 }
 
 .eg-verdict-row.is-rest .eg-grade {
-  font-size: 1.563rem;
+  font-size: var(--text-h3);
   line-height: 1;
 }
 
@@ -1021,12 +1021,12 @@
 
 .eg-running-line {
   margin: 0;
-  font: 500 1rem/1.4 var(--sans);
+  font: 500 var(--text-body)/1.4 var(--sans);
   color: var(--ink);
 }
 
 .eg-elapsed {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1084,7 +1084,7 @@
 .eg-scale-ticks {
   display: flex;
   gap: 2px;
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1102,7 +1102,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -1113,7 +1113,7 @@
 }
 
 .eg-tally b {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -1154,7 +1154,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
 }
@@ -1168,7 +1168,7 @@
      detail needs four lines in the side pane at 1440 and six at 390, and a
      three- or five-line clamp cut its last clause ("(0 runtime tokens
      excluded)"). */
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -1193,7 +1193,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
-  font: 500 1rem/1 var(--sans);
+  font: 500 var(--text-body)/1 var(--sans);
   text-decoration: none;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -1228,7 +1228,7 @@
 }
 
 .eg-figs dt {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1236,19 +1236,19 @@
 
 .eg-figs dd {
   margin: 0;
-  font: 500 1.25rem/1.1 var(--mono);
+  font: 500 var(--text-lead)/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .eg-figs dd small {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
 .eg-quiet {
   margin: 0;
-  font: 500 0.8rem/1.5 var(--mono);
+  font: 500 var(--text-label)/1.5 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1263,7 +1263,7 @@
 .eg-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1280,7 +1280,7 @@
 }
 
 .eg-table th {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1294,7 +1294,7 @@
 
 .eg-table td:first-child,
 .eg-table code {
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--ink);
 }
 
@@ -1329,7 +1329,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--ink);
 }
@@ -1375,7 +1375,7 @@
 }
 
 .eg-watch-host {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
 }
 
 /* Before a run: a reference drawn from the engine's contract. */
@@ -1403,7 +1403,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-12);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1411,13 +1411,13 @@
 
 .eg-ref dd {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
 }
 
 .eg-ref-where {
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   white-space: nowrap;
 }
@@ -1430,14 +1430,14 @@
 }
 
 .eg-ref-rows dd {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
 
 .eg-ref-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -1453,13 +1453,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
 .eg-probe-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1473,7 +1473,7 @@
 }
 
 .eg-probe dt {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1481,7 +1481,7 @@
 
 .eg-probe dd {
   margin: 0 0 var(--space-6);
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -1495,7 +1495,7 @@
   gap: var(--space-8) var(--space-16);
   padding: var(--space-12) var(--space-20);
   border-top: 1px solid var(--line-faint);
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1564,7 +1564,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font: 500 0.8rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
 }
 
 .eg-paths-origin {
@@ -1652,7 +1652,7 @@
 }
 
 .eg-path-checks {
-  font: 400 0.8rem/1.3 var(--sans);
+  font: 400 var(--text-label)/1.3 var(--sans);
   color: var(--muted-dim);
 }
 
@@ -1682,7 +1682,7 @@
 .eg-diff-head {
   padding: 0 var(--space-10) var(--space-10);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -1736,13 +1736,13 @@
 .eg-diff-a {
   justify-self: end;
   text-align: right;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
 }
 
 .eg-diff-b {
   justify-self: start;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
 }
 
@@ -1763,7 +1763,7 @@
   align-items: center;
   gap: var(--space-8);
   min-width: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .eg-diff-mid > .eg-lamp {
@@ -1775,7 +1775,7 @@
    label column. It was centred over a left-set spine and shared no edge
    with the list it heads. */
 .eg-diff-head .eg-diff-mid {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
 }
 
 .eg-diff-head .eg-diff-count {
@@ -1901,7 +1901,7 @@
 .eg-file-where {
   padding-top: var(--space-6);
   border-top: 1px solid var(--line-faint);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -1909,12 +1909,12 @@
 
 .eg-file .eg-cell-label {
   align-self: start;
-  font: 500 0.8rem/1.25 var(--mono);
+  font: 500 var(--text-label)/1.25 var(--mono);
   overflow-wrap: anywhere;
 }
 
 .eg-file-meta {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1944,12 +1944,12 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-12);
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--ink);
 }
 
 .eg-viewer-name small {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1964,7 +1964,7 @@
   margin: 0;
   padding: var(--space-16) var(--space-20);
   overflow: auto;
-  font: 400 0.8rem/1.65 var(--mono);
+  font: 400 var(--text-label)/1.65 var(--mono);
   color: var(--ink);
   tab-size: 2;
 }
@@ -2042,7 +2042,7 @@
 }
 
 .eg-weight-name {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -2052,7 +2052,7 @@
    and in the narrow segments it wraps in one face and not the other. */
 .eg-weight-meta {
   min-height: 2.7em;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -2137,7 +2137,7 @@
 .eg-engine-ask {
   grid-column: 3;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -2146,13 +2146,13 @@
 .eg-engine-name {
   display: grid;
   gap: var(--space-4);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
 }
 
 .eg-engine-name small {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2244,7 +2244,7 @@
 
 .eg-engine-score {
   justify-self: end;
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2284,7 +2284,7 @@
 .mt-grid {
   /* The question prompt's measures, shared by the prompt and the matrix
      beside it (64rem, below), so the two cannot drift apart. */
-  --mt-prompt-size: 0.98rem;
+  --mt-prompt-size: var(--text-body);
   --mt-prompt-lh: 1.4;
   --mt-prompt-gap: var(--space-12);
   display: grid;
@@ -2369,13 +2369,13 @@
 
 .mt-axis-meta {
   margin: 0 0 var(--space-12);
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
 }
 
 .mt-axis-desc {
   margin: var(--space-8) 0 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -2402,7 +2402,7 @@
   column-gap: var(--space-12);
   margin: 0 0 var(--mt-prompt-gap, var(--space-12));
   padding-inline-start: var(--space-14);
-  font-size: var(--mt-prompt-size, 1rem);
+  font-size: var(--mt-prompt-size, var(--text-body));
   font-weight: 600;
   line-height: var(--mt-prompt-lh, 1.4);
   color: var(--ink);
@@ -2412,7 +2412,7 @@
 .mt-q-num {
   justify-self: center;
   padding-top: 0.15rem;
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2434,7 +2434,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
   color: var(--ink);
-  font: 400 1rem/1.4 var(--sans);
+  font: 400 var(--text-body)/1.4 var(--sans);
   text-align: left;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -2464,7 +2464,7 @@
   height: 1.6rem;
   border-radius: var(--radius-sm);
   background: var(--lv-well-line);
-  font: 600 0.8rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -2551,13 +2551,13 @@ button.mt-row {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
 }
 
 .mt-row-name small {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2587,7 +2587,7 @@ button.mt-row {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2611,7 +2611,7 @@ button.mt-row {
 }
 
 .mt-overall-stage {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
 }
@@ -2665,7 +2665,7 @@ button.mt-row {
 
 .eg-section-sub {
   margin: var(--space-8) 0 0;
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -2730,7 +2730,7 @@ button.mt-row {
 
 .eg-row-id {
   padding-top: 0.2rem;
-  font: 500 0.8rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2741,13 +2741,13 @@ button.mt-row {
 }
 
 .eg-row-title {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.35;
 }
 
 .eg-row-detail {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -2755,7 +2755,7 @@ button.mt-row {
 
 .eg-row-status {
   padding-top: 0.2rem;
-  font: 600 0.8rem/1.2 var(--mono);
+  font: 600 var(--text-label)/1.2 var(--mono);
   letter-spacing: 0.06em;
   color: var(--muted);
 }
@@ -2782,7 +2782,7 @@ button.mt-row {
   display: grid;
   gap: var(--space-4);
   padding: 0 var(--space-16) var(--space-16) calc(var(--space-16) + 1.4rem + 3rem + 2 * var(--space-12));
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2792,7 +2792,7 @@ button.mt-row {
 }
 
 .eg-row-more b {
-  font: 500 0.8rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -2824,7 +2824,7 @@ button.mt-row {
   padding: var(--space-20);
   border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 
@@ -2835,7 +2835,7 @@ button.mt-row {
 
 .eg-error p {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2896,14 +2896,14 @@ button.mt-row {
   border-radius: var(--radius-sm);
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--line-strong);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   z-index: 1;
 }
 
 .eg-step-title {
   margin: var(--space-6) 0 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink);
@@ -2911,7 +2911,7 @@ button.mt-row {
 
 .eg-step p {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -2966,7 +2966,7 @@ button.mt-row {
   border-radius: var(--radius-lg);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  font: 500 0.8rem/1.6 var(--mono);
+  font: 500 var(--text-label)/1.6 var(--mono);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -3049,7 +3049,7 @@ button.mt-row {
 .eg-prose p {
   max-width: 65ch;
   margin: var(--space-16) 0 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.65;
   color: var(--muted);
   text-wrap: pretty;
@@ -3106,7 +3106,7 @@ button.mt-row {
 }
 
 .m3-pipe b {
-  font: 500 1.25rem/1.1 var(--mono);
+  font: 500 var(--text-lead)/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -3127,7 +3127,7 @@ button.mt-row {
 }
 
 .m3-pipe span {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -3150,14 +3150,14 @@ button.mt-row {
 }
 
 .m3-map dt {
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .m3-map dd {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -3199,7 +3199,7 @@ button.mt-row {
   border: 1px solid var(--lv-well-line);
   border-radius: var(--radius-lg);
   background: var(--lv-well);
-  font: 400 0.8rem/1.6 var(--mono);
+  font: 400 var(--text-label)/1.6 var(--mono);
   color: var(--muted);
   tab-size: 2;
   white-space: pre;
@@ -3224,7 +3224,7 @@ button.mt-row {
   place-items: center;
   min-height: 6rem;
   color: var(--muted-dim);
-  font-size: 1rem;
+  font-size: var(--text-body);
   letter-spacing: 0.1em;
 }
 
@@ -3279,18 +3279,18 @@ button.mt-row {
 }
 
 .eg-go-title {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 
 .eg-go-desc {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
 }
 
 .eg-go-route {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 

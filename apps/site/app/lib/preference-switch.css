@@ -88,7 +88,7 @@
 }
 
 .pref-switch-name {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.2;
 }
@@ -96,7 +96,7 @@
 /* Fixed width, so On and Off never shift what follows. */
 .pref-switch-state {
   min-width: 3ch;
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: start;
@@ -137,7 +137,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted);
 }

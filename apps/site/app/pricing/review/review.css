@@ -44,7 +44,7 @@
   display: grid;
   grid-template-columns: var(--space-32) minmax(0, 1fr);
   align-items: baseline;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -53,7 +53,7 @@
 
 .review-steps li::before {
   content: counter(review-step, decimal-leading-zero);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--signal-text);
@@ -68,7 +68,7 @@
 /* The disclosure reads at the face's paragraph size, in ink: it is the
    statement this card exists to make. */
 .review-disclosure {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.6;
   color: var(--ink);
 }
