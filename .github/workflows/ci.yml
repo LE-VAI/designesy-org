@@ -784,6 +784,14 @@ jobs:
       - name: Loading ignition
         run: node scripts/check-ignition.js --base http://127.0.0.1:3422 --channel chrome
 
+      # The flame flip (brand D69): nothing loads before the first trigger;
+      # the circle opens from the logo's dot, holds and closes on its timings;
+      # Azure under the layer reads the flame exactly; clicks pass through it;
+      # the calm path swaps whole; the keycaps and Ctrl+I work by keyboard and
+      # never inside a text field; nothing persists.
+      - name: Flame flip
+        run: node scripts/check-flame-flip.js --base http://127.0.0.1:3422 --channel chrome
+
       - name: Summarize
         if: always()
         run: |

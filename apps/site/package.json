@@ -20,6 +20,7 @@
     "check-focus-rings": "node scripts/check-focus-rings.js",
     "check-motion-pause": "node scripts/check-motion-pause.js",
     "check-lcp-entrance": "node scripts/check-lcp-entrance.js",
+    "check-flame-flip": "node scripts/check-flame-flip.js",
     "check-paused-entrances": "node scripts/check-paused-entrances.js",
     "check-retired-literals": "node scripts/check-retired-literals.js",
     "check-badge-grade-tokens": "node scripts/check-badge-grade-tokens.js",

@@ -3565,7 +3565,8 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 
 .footer {
   border-top: 1px solid var(--line);
-  padding: var(--space-48) 0 var(--space-40);
+  /* 48px above the content in all: 40 here and 8 inside .footer-inner. */
+  padding: var(--space-40) 0 var(--space-40);
   margin-top: var(--space-32);
 }
 
@@ -3593,6 +3594,10 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      still contain the dock. */
   min-width: 0;
   overflow: hidden;
+  /* Room inside the clip for a focus ring on the first row (the house ring
+     reaches 5px out; the flame flip's keycaps sit on that row, D69). Taken
+     from the footer's own top padding, so nothing moves. */
+  padding-top: var(--space-8);
 }
 
 .footer-meta {
@@ -3633,6 +3638,64 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
    the badge, so at rest the 0.85 dimmed the ring as well (2.76:1 measured). */
 .footer-badge:focus-visible {
   opacity: 1;
+}
+
+/* The wordmark and the flame flip's keycaps share the footer's first row. */
+.footer-mark {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* The flame flip's keycaps (brand ledger D69): "ctrl + i" in the mono face,
+   a real button (lib/flame-flip.tsx) with the house focus ring. 44px tall
+   like the wordmark beside it, so the hit area meets the target size. */
+.flip-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-fine-35);
+  min-height: 2.75rem;
+  padding: 0 var(--space-8);
+  font: 500 var(--text-label)/1 var(--mono);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.flip-keys kbd {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-fine-12) var(--space-8);
+}
+
+@media (hover: hover) {
+  .flip-keys:hover kbd {
+    border-color: var(--muted);
+  }
+}
+
+/* The flame flip's layer (lib/flame-flip-run.ts creates it on the first
+   trigger). It inverts what lies beneath it: Azure #0A94FF reads as the
+   flame #F56B00, its exact inverse. Clipped to a circle from the header
+   logo's dot, which the run animates; hidden (display: none, so no backdrop
+   pass) whenever it is not running. It never takes a pointer event. */
+.flame-flip {
+  position: fixed;
+  inset: 0;
+  /* Over the page, its chrome and popovers; under the scrim, the drawer,
+     dialogs and toasts. Derived from the stacking scale, not a new step. */
+  z-index: calc(var(--z-popover) + 20);
+  pointer-events: none;
+  -webkit-backdrop-filter: invert(1);
+  backdrop-filter: invert(1);
+  clip-path: circle(0px at 0 0);
 }
 
 /*
