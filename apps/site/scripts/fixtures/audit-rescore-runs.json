@@ -1,5 +1,5 @@
 {
- "$comment": "Engine runs from the site's own /api/score (scope auto), 2026-10-10, trimmed to what the arithmetic reads: check id, category and status, and the slop and originality totals. scripts/check-audit-rescore.mjs scores them with the shipped scoreArithmetic. To refresh after a deliberate arithmetic change, re-capture from a local next start and keep the same trimming.",
+ "$comment": "Engine runs from the site's own /api/score (scope auto), 2026-10-10, trimmed to what the arithmetic reads: check id, category and status, and the slop and originality totals. scripts/check-audit-rescore.mjs scores them with the shipped scoreArithmetic. To refresh after a deliberate arithmetic change, re-capture from a local next start and keep the same trimming. Engine 1.3.0 (any FAIL caps at 89.9, v44 at 65) changes one recorded score with the verdicts as captured: v0.dev 65.5 to 65, which its v44 FAIL now caps; the other four are unchanged.",
  "runs": [
   {
    "site": "stripe.com",
@@ -694,7 +694,7 @@
   {
    "site": "v0.dev",
    "scope": "universal",
-   "score": 65.5,
+   "score": 65,
    "grade": "D",
    "slopTotal": 15,
    "originalityPoints": 7,

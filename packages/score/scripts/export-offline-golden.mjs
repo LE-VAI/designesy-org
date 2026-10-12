@@ -145,6 +145,17 @@ const EDGE = [
   ['tokens-durations-three-via-alias', HTML_WITH_FIELD, ':root { --duration: 200ms; --duration-fast: 180ms; --motion-slow: 420ms; }'],
   ['tokens-negative-hex-channels', HTML_WITH_FIELD, ':root { --paper: #-f-f-f; --ink: #000; --signal: #fff; }'],
 
+  // v01, v06, v22 (engine 1.3.0): colour read through the CSS Color 4 parser,
+  // and the :root, :host block Tailwind v4 writes its theme into.
+  ['color4-oklch-tokens', HTML_WITH_FIELD, ':root { --paper: oklch(1 0 0); --ink: oklch(0.2 0 0); --muted: oklch(0.85 0 0); --signal: oklch(0.45 0.2 264); }'],
+  ['color4-root-host-block', HTML_WITH_FIELD, ':root, :host { --paper: #ffffff; --ink: #111111; --muted: #d0d0d0; --signal: #0133cb; }'],
+  ['color4-space-rgb-hsl', HTML_WITH_FIELD, ':root { --paper: rgb(255 255 255); --ink: hsl(240 6% 10%); --muted: rgb(89 89 89 / 100%); --signal: hsl(225deg 99% 40%); }'],
+  ['color4-eight-digit-hex-translucent-text', HTML_WITH_FIELD, ':root { --paper: #ffffffff; --ink: #000000de; --muted: #00000061; --muted-dim: #0000008a; }'],
+  ['color4-translucent-paper', HTML_WITH_FIELD, ':root { --paper: rgb(255 255 255 / 50%); --ink: #111; }'],
+  ['color4-shadcn-muted-foreground', HTML_WITH_FIELD, ':root { --background: oklch(1 0 0); --foreground: oklch(0.145 0 0); --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0); --primary: oklch(0.205 0 0); }'],
+  ['color4-color-mix-and-fallback', HTML_WITH_FIELD, ':root { --paper: #fafafa; --ink: color-mix(in oklab, #000 85%, var(--paper)); --muted: var(--missing, #767676); --signal: light-dark(#0133cb, #8fb0ff); }'],
+  ['color4-prototype-name-values', HTML_WITH_FIELD, ':root { --paper: constructor; --ink: #000; --signal: toString; }'],
+
   // v22 (identity v1): a declared --action / --on-action pair is the pair measured.
   ['v22-action-pair-pass', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: var(--signal); --on-action: #010102; }'],
   ['v22-action-pair-hides-nothing', HTML_WITH_FIELD, ':root { --paper: #010102; --ink: #f5f5f7; --signal: #0A94FF; --action: #0A94FF; --on-action: #ffffff; }'],

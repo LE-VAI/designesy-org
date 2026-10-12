@@ -40,6 +40,10 @@
  * network stubbed, and this gate drives them with the made-up site in
  * scripts/fixtures/mcp-accuracy.json:
  *   a11y-names          every check carries the a11y contract's own name for its id
+ *   a11y-scan           the WCAG 2.2 AA scan lists every tag it includes (axe-core tags
+ *                        are not cumulative: wcag22aa alone ran one rule), each tag selects
+ *                        at least one rule in the installed axe-core, and a page where no
+ *                        rule applied is not scored (0/0 printed null and graded F)
  *   fabricated-agreement guardrails and drift d02 name the same fabricated
  *                        tokens, and they are the fixture's three true positives
  *   tokens-skip          a SKIP is left out of the tokens score, and the result
@@ -59,6 +63,8 @@
  *                        font stacks as family names, aliases that resolve to a
  *                        token of their type), and the server's own tokens
  *                        validator gives it 0 WARN and 0 FAIL
+ *   monitor-m01          m01 SKIPs a first run (no history: nothing is scheduled or
+ *                        stored server-side) and is then not scored; PASSes with history
  *   monitor-m09          m09 reports the contract version designesy_score reads
  *   compare-rounding     every number in a compare result has at most two decimals
  *
@@ -384,6 +390,31 @@ async function monitorM09() {
   return { findings, measured: m09.detail };
 }
 
+async function monitorM01() {
+  // m01 PASSed on every call ("Monitor run executed: the URL is being
+  // watched") though the route schedules and stores nothing: the caller sends
+  // the earlier runs. It must PASS only with history, and SKIP a first run,
+  // which then is not scored.
+  const findings = [];
+  const h = siteHarness();
+  const first = await h.post('app/api/monitor/route.ts', { url: FIXTURES.site.url });
+  const m01First = (first.body.monitorChecks || []).find((c) => c.id === 'm01');
+  if (!m01First || m01First.status !== 'SKIP') {
+    findings.push({ id: 'monitor-m01:first-run', why: `With no history m01 is ${m01First ? `${m01First.status} ("${m01First.detail}")` : 'missing'}; nothing was supplied to compare against, so it must SKIP.` });
+  }
+  const scored = (first.body.monitorChecks || []).filter((c) => c.status !== 'SKIP');
+  const points = scored.reduce((s, c) => s + (c.status === 'PASS' ? 1 : c.status === 'WARN' ? 0.5 : 0), 0);
+  if (scored.length && first.body.score !== Math.round((points / scored.length) * 100)) {
+    findings.push({ id: 'monitor-m01:skip-scored', why: `The first-run score ${first.body.score} counts the SKIP; over the ${scored.length} scored checks it is ${Math.round((points / scored.length) * 100)}.` });
+  }
+  const second = await h.post('app/api/monitor/route.ts', { url: FIXTURES.site.url, history: [first.body.currentSnapshot] });
+  const m01Second = (second.body.monitorChecks || []).find((c) => c.id === 'm01');
+  if (!m01Second || m01Second.status !== 'PASS') {
+    findings.push({ id: 'monitor-m01:with-history', why: `With one earlier run m01 is ${m01Second ? m01Second.status : 'missing'}; it must PASS.` });
+  }
+  return { findings, measured: `first run m01 ${m01First && m01First.status} score ${first.body.score}; with history m01 ${m01Second && m01Second.status} score ${second.body.score}` };
+}
+
 async function compareRounding() {
   const findings = [];
   const h = siteHarness();
@@ -452,16 +483,98 @@ async function measure(url) {
   };
 }
 
+async function a11yScan() {
+  const findings = [];
+  const h = siteHarness();
+  const five = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+  const { payload } = await h.callTool('designesy_a11y_score', { url: FIXTURES.site.url });
+  const script = (payload && payload.playwright_script) || '';
+  if (JSON.stringify(payload && payload.tags) !== JSON.stringify(five)) {
+    findings.push({ id: 'a11y-scan:tags', why: `The default scan lists ${JSON.stringify(payload && payload.tags)}; a WCAG 2.2 AA scan needs ${JSON.stringify(five)}.` });
+  }
+  if (!script.includes(`.withTags(${JSON.stringify(five)})`)) {
+    findings.push({ id: 'a11y-scan:script', why: 'The generated script does not pass the five WCAG tags to AxeBuilder.withTags.' });
+  }
+  // Every tag must select a rule in the axe-core this site installs: a typo
+  // ('wcag2a2a') selects nothing and the scan passes vacuously.
+  let axe = null;
+  try {
+    axe = require(require.resolve('axe-core', { paths: [APP] }));
+  } catch {
+    findings.push({ id: 'a11y-scan:axe-core', why: 'axe-core is not installed in apps/site, so the tags cannot be checked against its rules.' });
+  }
+  if (axe) {
+    for (const t of five) {
+      if (axe.getRules([t]).length === 0) findings.push({ id: `a11y-scan:empty-tag:${t}`, why: `${t} selects no rule in axe-core ${axe.version}.` });
+    }
+  }
+  // Run the script's own scoring lines: 0/0 must be "not scored", never F.
+  const m = /(const applicable = [^\n]*\n[^\n]*const score = [^\n]*\n[^\n]*const grade = [^\n]*)\n/.exec(script);
+  if (!m) {
+    findings.push({ id: 'a11y-scan:guard', why: 'The generated script has no applicable === 0 guard before its score.' });
+  } else {
+    const grade = (passCount, failCount) => new Function('passCount', 'failCount', `${m[1]}\nreturn { score, grade };`)(passCount, failCount);
+    const none = grade(0, 0);
+    const some = grade(3, 1);
+    if (none.score !== null || none.grade !== null) findings.push({ id: 'a11y-scan:zero', why: `0 passes and 0 violations scored ${none.score} (${none.grade}); it must be not scored.` });
+    if (some.score !== 75 || some.grade !== 'C') findings.push({ id: 'a11y-scan:arith', why: `3 passes and 1 violation scored ${some.score} (${some.grade}); expected 75 (C).` });
+  }
+  // Run the generated script itself, with and without a config: its imports
+  // and its config path must work as written (with a config it called
+  // axe.configure() on an axe nothing defined, and threw on every run).
+  const { runA11yScript } = await import(require('node:url').pathToFileURL(path.join(__dirname, 'lib', 'run-a11y-script.mjs')).href);
+  const brand = { branding: { brand: 'designesy', application: 'designesy-a11y' }, rules: [{ id: 'region', enabled: false }] };
+  for (const [label, args] of [['default', {}], ['config', { config: JSON.stringify(brand) }]]) {
+    const { payload: p } = await h.callTool('designesy_a11y_score', { url: FIXTURES.site.url, ...args });
+    let ran = null;
+    try {
+      ran = await runA11yScript((p && p.playwright_script) || '');
+    } catch (e) {
+      findings.push({ id: `a11y-scan:run:${label}`, why: `The generated script (${label}) threw when run: ${e && e.message ? e.message : e}` });
+      continue;
+    }
+    if (ran.tests.length !== 1 || ran.goto[0] !== FIXTURES.site.url) {
+      findings.push({ id: `a11y-scan:run:${label}:test`, why: `The script (${label}) registered ${ran.tests.length} test(s) and visited ${JSON.stringify(ran.goto)}.` });
+    }
+    if (!ran.output || ran.output.score !== 75 || ran.output.grade !== 'C') {
+      findings.push({ id: `a11y-scan:run:${label}:output`, why: `The script (${label}) printed ${JSON.stringify(ran.output)}; 3 passes and 1 violation should print 75 (C).` });
+    }
+    if (label === 'config' && (!ran.axeSource || JSON.stringify(ran.configured) !== JSON.stringify(brand))) {
+      findings.push({ id: 'a11y-scan:run:config:configure', why: `With a config, axe.configure() inside the page received ${JSON.stringify(ran.configured)}; it should receive ${JSON.stringify(brand)}.` });
+    }
+    if (label === 'default' && ran.axeSource) {
+      findings.push({ id: 'a11y-scan:run:default:source', why: 'Without a config the script still replaces the axe-core source.' });
+    }
+  }
+  // The url argument is embedded as a string literal: a quote, a backtick and
+  // ${ in it must neither break the script nor run, and the script must
+  // navigate to exactly that URL (it was spliced between single quotes).
+  const hostile = 'https://example.com/a' + "'" + 'b' + '"' + 'c' + '`' + 'd' + '${globalThis.__a11yInjected = 1}' + "');globalThis.__a11yInjected = 2;('";
+  const { payload: hp } = await h.callTool('designesy_a11y_score', { url: hostile });
+  try {
+    const ran = await runA11yScript((hp && hp.playwright_script) || '');
+    if (ran.goto.length !== 1 || ran.goto[0] !== hostile) findings.push({ id: 'a11y-scan:url:goto', why: `With a hostile url the script navigated to ${JSON.stringify(ran.goto)}; it should navigate to exactly ${JSON.stringify(hostile)}.` });
+    if (!ran.output || ran.output.url !== hostile) findings.push({ id: 'a11y-scan:url:output', why: `With a hostile url the script printed url ${JSON.stringify(ran.output && ran.output.url)}.` });
+    if (ran.tests[0] !== `${hostile}: WCAG 2.2 AA scan`) findings.push({ id: 'a11y-scan:url:title', why: `With a hostile url the test was named ${JSON.stringify(ran.tests[0])}.` });
+  } catch (e) {
+    findings.push({ id: 'a11y-scan:url:parse', why: `With a url holding a quote, a backtick and \${, the generated script failed: ${e && e.message ? e.message : e}` });
+  }
+  if (globalThis.__a11yInjected !== undefined) findings.push({ id: 'a11y-scan:url:injected', why: 'Code inside the url argument ran when the generated script was loaded.' });
+  return { findings, measured: axe ? `axe-core ${axe.version}: ${five.map((t) => `${t} ${axe.getRules([t]).length}`).join(', ')}` : 'axe-core not loaded' };
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const CHECKS = [
   ['a11y-names', a11yNames],
+  ['a11y-scan', a11yScan],
   ['fabricated-agreement', fabricatedAgreement],
   ['tokens-skip', tokensSkip],
   ['tokens-warn-half', tokensWarnHalf],
   ['tokens-alias', tokensAlias],
   ['export-dtcg', exportDtcg],
   ['guardrails-dtcg', guardrailsDtcg],
+  ['monitor-m01', monitorM01],
   ['monitor-m09', monitorM09],
   ['compare-rounding', compareRounding],
 ];

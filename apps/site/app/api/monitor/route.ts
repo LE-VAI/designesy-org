@@ -6,7 +6,9 @@
 // POST body.
 //
 // Monitor checks:
-//   m01 schedule registered (always PASS — the act of calling this API registers a run)
+//   m01 history supplied (PASS when the request carries at least one earlier run,
+//       SKIP otherwise: nothing is scheduled or stored server-side, the caller
+//       supplies the history, so a first run has nothing to compare against)
 //   m02 last run fresh (always PASS — this run is happening now)
 //   m03 drift delta vs baseline (score change since first run)
 //   m04 drift trend slope (3-run trajectory: improving / flat / regressing)
@@ -198,7 +200,7 @@ type DriftCheckResult = CheckResult;
 type MonitorCheckResult = {
   id: string;
   item: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
+  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
   detail: string;
 };
 
@@ -284,8 +286,15 @@ function createSnapshot(timestamp: string, checks: DriftCheckResult[], tokensExt
 
 // ── The 10 monitor checks ────────────────────────────────────────────────────
 
-function checkM01ScheduleRegistered(): MonitorCheckResult {
-  return { id: 'm01', item: 'Schedule registered', status: 'PASS', detail: 'Monitor run executed: the URL is being watched' };
+// m01 used to PASS on every call ("Monitor run executed: the URL is being
+// watched"), but this route schedules nothing and stores nothing: the caller
+// supplies the earlier runs. It now says what the run had to compare against,
+// and a first run, with nothing to compare, is not scored.
+function checkM01HistorySupplied(history: Snapshot[]): MonitorCheckResult {
+  if (history.length === 0) {
+    return { id: 'm01', item: 'History supplied', status: 'SKIP', detail: 'No history: drift needs a previous run. This run is the baseline; pass it back as history next time.' };
+  }
+  return { id: 'm01', item: 'History supplied', status: 'PASS', detail: `${history.length} earlier run${history.length === 1 ? '' : 's'} supplied: drift is measured against ${history.length === 1 ? 'it' : 'them'}` };
 }
 
 function checkM02LastRunFresh(): MonitorCheckResult {
@@ -481,7 +490,7 @@ async function sendAlertEmail(
     </tr>
     <tr>
       <td style="padding-top:2rem;border-top:1px solid rgba(255,255,255,0.06);">
-        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because you registered ${targetUrl} for drift monitoring on designesy.org. This alert was triggered by a score degradation, new violations, or token-set mutation detected during a monitor run.</p>
+        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because a monitor run for ${targetUrl} on designesy.org was requested with this address for alerts. Nothing is scheduled: each run is one request, compared with the earlier runs sent with it. This alert was triggered by a score degradation, new violations, or token-set mutation detected during that run.</p>
       </td>
     </tr>
   </table>
@@ -575,7 +584,7 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   const alerts: string[] = [];
 
   // Run the 10 monitor checks
-  const m01 = checkM01ScheduleRegistered();
+  const m01 = checkM01HistorySupplied(history);
   const m02 = checkM02LastRunFresh();
   const m03 = checkM03DriftDelta(currentSnapshot, baseline);
   const m04 = checkM04TrendSlope([...history, currentSnapshot]);
@@ -596,12 +605,14 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
 
   const monitorChecks: MonitorCheckResult[] = [m01, m02, m03, m04, m05, m06, m07, m08, m09, m10];
 
-  // Monitor score = governance health, not design quality
+  // Monitor score = governance health, not design quality. A SKIP (m01 on a
+  // first run) is not scored, as in every other Designesy score.
   const monitorPass = monitorChecks.filter((c) => c.status === 'PASS').length;
   const monitorWarn = monitorChecks.filter((c) => c.status === 'WARN').length;
   const monitorFail = monitorChecks.filter((c) => c.status === 'FAIL').length;
+  const monitorScored = monitorPass + monitorWarn + monitorFail;
   const monitorPoints = monitorPass + monitorWarn * 0.5;
-  const monitorScore = Math.round((monitorPoints / monitorChecks.length) * 100);
+  const monitorScore = monitorScored === 0 ? 0 : Math.round((monitorPoints / monitorScored) * 100);
 
   return {
     ok: true,
