@@ -8,7 +8,7 @@ import './home-inspect.css';
 import { Topbar } from './lib/topbar';
 import { Footer } from './lib/footer';
 import { BrandIcon } from './lib/brand-icons';
-import { pageMeta } from './lib/site-meta';
+import { pageMeta, LISTING_LINE } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
 import {
   ContractHealthRack,
@@ -62,16 +62,16 @@ import {
 // this value. Lowering it re-renders the same stale number more often.
 export const revalidate = 3600;
 
+// The home page's one-liner is the confirmed listing line (owner decision,
+// 2026-10-12), used everywhere a one-liner appears and built from the engine
+// count (LISTING_LINE, lib/site-meta). The hero copy on the page is unchanged.
 export const metadata: Metadata = pageMeta({
   title: 'Designesy: design judgment, verified live',
-  description:
-    `AI makes execution free. We make execution provable. Designesy publishes design judgment as a versioned contract and verifies any live page against it: ${ENGINE_CHECK_COUNT} checks, one grade, evidence you can cite.`,
+  description: LISTING_LINE,
   path: '/',
   ogTitle: 'Designesy: design judgment, verified live',
-  ogDescription:
-    `A published design contract and a live engine that verifies any page against it. ${ENGINE_CHECK_COUNT} checks, one grade. AI makes execution free. We make execution provable.`,
-  twitterDescription:
-    `Verify any site against the Designesy design contract. ${ENGINE_CHECK_COUNT} checks. One grade. designesy.org`,
+  ogDescription: LISTING_LINE,
+  twitterDescription: LISTING_LINE,
 });
 
 // The hero headline, in the two parts the markup renders. The claim holds
