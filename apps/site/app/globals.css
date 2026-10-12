@@ -48,6 +48,34 @@
   line-gap-override: 0%;
 }
 
+/* Mono fallbacks, matched to Atkinson Hyperlegible Mono (brand ledger D65).
+   next/font has no metrics for this family, so it generates no adjusted
+   fallback, and before the web face arrives the stack would paint in the
+   platform mono: Cascadia Code on Windows 11 (0.586em a character) or
+   Consolas (0.550em), against Atkinson's 0.632em, so mono runs would widen
+   by 8 to 15% at the swap. Each face below is one local mono sized to
+   Atkinson's advance (size-adjust = 0.632 / its own advance, from the font
+   files), with Atkinson's ascent (0.984) and descent (0.316) rescaled to it,
+   so a line keeps its width and height through the swap. Where neither local
+   face exists, the stack falls through to the next family, as before. */
+@font-face {
+  font-family: 'Mono Cascadia Fallback';
+  src: local('Cascadia Code'), local('CascadiaCode-Regular'), local('Cascadia Mono'), local('CascadiaMono-Regular');
+  size-adjust: 107.87%;
+  ascent-override: 91.22%;
+  descent-override: 29.29%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Mono Consolas Fallback';
+  src: local('Consolas');
+  size-adjust: 114.95%;
+  ascent-override: 85.6%;
+  descent-override: 27.49%;
+  line-gap-override: 0%;
+}
+
 :root {
   color-scheme: dark;
 
@@ -248,7 +276,10 @@
        "we verify design" signal). Optical-size + soft axes for dark-mode
        tuning.
      --display: Fraunces Variable — brand/headline face, aliased to --serif.
-     --mono: Geist Mono Variable for check IDs, score readouts, token names.
+     --mono: Atkinson Hyperlegible Mono for labels, URLs, timestamps, score
+       units, check IDs and token names (brand ledger D65, replaced Geist
+       Mono 2026-10-12): the low-vision face, with every confusable pair
+       (0/O, 1/l/I, 5/S, 8/B) drawn distinct.
      The serif/sans split is the 2026 hybrid system: serifs for brand-level
      communication (trust/authority), sans for UI/data (efficiency). */
   --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
@@ -836,8 +867,8 @@ a {
 /* Code takes the site's mono face. The browser's own rule sets code, kbd,
    samp and pre in the generic monospace, which outranks the inherited face,
    so they drew in the OS mono (Consolas on Windows): 116 code elements on
-   /contracts, the page whose typography rules allow three faces with Geist
-   Mono for data (live audit 2026-10-11, V06). A component that sets its own
+   /contracts, the page whose typography rules allow three faces with the
+   mono for data (live audit 2026-10-11, V06). A component that sets its own
    face still wins. */
 code,
 kbd,

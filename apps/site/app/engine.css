@@ -38,7 +38,7 @@
    the category eyebrow, so it carries facts rather than a section name.
 
    One line at every width, scrolling sideways when a phone is too narrow for
-   it. The fallback mono face is wider than Geist Mono, so a wrapping line
+   it. The fallback mono face differs in width from the web face, so a wrapping line
    could be two lines tall before the font arrives and one line after, and
    everything under it would jump (measured: CLS 0.23 on /maturity, local
    build without font preloads). A line that never wraps is the same height
@@ -114,7 +114,7 @@
    line mid-fact, with a dot at the visible end) nor a wrapping row (a dot
    opened the next line, as on the leaderboard at 390) holds up there. Each
    fact is far shorter than the line, so the stack's height is the same in
-   the fallback face and in Geist Mono: no reflow when the font arrives,
+   the fallback face and in the web mono: no reflow when the font arrives,
    which is why the path never wrapped (CLS, above). One law on every page
    that carries the path, engine and data pages alike. */
 @container eg (width < 36rem) {
@@ -2987,19 +2987,18 @@ button.mt-row {
   color: var(--ink);
 }
 
-/* The comparison operators. Geist Mono's served subset stops short of
-   U+2264/2265, so a bare "≥" fell through --mono to its metric fallback
-   (Arial at 134.59%): a sans glyph 2px taller than the figures, thinner,
-   with its foot 1px off the line. The operator is set in a platform mono
-   face that draws it on a mono cell instead (SF Mono, Menlo, Cascadia,
-   Consolas, DejaVu Sans Mono), skipping the Arial fallback, and scaled to Geist
-   Mono's x-height (0.53, measured) so its strokes and width match the
-   figures beside it. Measured on /drift at 1440, Cascadia Mono: the foot
-   sits 0.5px above the figures' baseline, where Geist Mono's own ">" sits
-   (0.03em up), and the cell is Geist's 0.6em. */
+/* The comparison operators. The mono face's served subset (latin) stops
+   short of U+2264/2265, so a bare "≥" fell through --mono to its metric
+   fallback (Arial, scaled): a sans glyph taller than the figures, thinner,
+   with its foot off the line. The operator is set in a platform mono face
+   that draws it on a mono cell instead (SF Mono, Menlo, Cascadia, Consolas,
+   DejaVu Sans Mono), skipping the Arial fallback, and scaled to the mono
+   face's x-height so its strokes match the figures beside it: 0.496 for
+   Atkinson Hyperlegible Mono, from the font file (D65; it was 0.53 for Geist
+   Mono). */
 .eg-op {
   font-family: 'SF Mono', ui-monospace, Menlo, 'Cascadia Mono', 'Cascadia Code', Consolas, 'DejaVu Sans Mono', monospace;
-  font-size-adjust: 0.53;
+  font-size-adjust: 0.496;
 }
 
 /* The letter scale (engine-page.tsx, GradeLine): one item per grade, each

@@ -340,10 +340,11 @@
 
 /* A source line or a footnote keeps a reading measure (spec rule d), never
    the shell's width: a footnote under a full-width table ran 150 to 190
-   characters a line. 43.2em is 72 characters of Geist Mono (0.6em advance),
-   and an em does not change when the fallback face swaps out. */
+   characters a line. 45.5em is 72 characters of the mono face (Atkinson
+   Hyperlegible Mono advances 0.632em; it was 43.2em for Geist Mono's 0.6em,
+   D65), and an em does not change when the fallback face swaps out. */
 .dx-src {
-  max-width: 43.2em;
+  max-width: 45.5em;
   margin: 0;
   padding-block: var(--space-12);
   font: 500 1rem/1.25rem var(--mono);
@@ -1860,13 +1861,14 @@
    width, container eg), so twenty rows fill the shell in ten instead of
    running down its left half. */
 /* The id column is as wide as the page's longest id run (--dx-id-len, in
-   characters, set by the page): Geist Mono advances 0.6em and the id is set
-   at 0.84em of the row, so the run fits on one line ("x01, x02, x03" wrapped
-   in a fixed 4.5rem) and every label starts at one x. A narrower fallback
-   mono only leaves slack. */
+   characters, set by the page): the mono face advances 0.632em (Atkinson
+   Hyperlegible Mono, D65; Geist Mono was 0.6em) and the id is set at 0.84em
+   of the row, so the run fits on one line ("x01, x02, x03" wrapped in a fixed
+   4.5rem) and every label starts at one x. A narrower fallback mono only
+   leaves slack. */
 .dx-checks-cols .dx-check-head {
   display: grid;
-  grid-template-columns: calc(var(--dx-id-len, 9) * 0.6 * 0.84em) minmax(0, 1fr);
+  grid-template-columns: calc(var(--dx-id-len, 9) * 0.632 * 0.84em) minmax(0, 1fr);
   column-gap: var(--space-12);
 }
 
