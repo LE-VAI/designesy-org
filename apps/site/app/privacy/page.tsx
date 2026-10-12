@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { RouteLink } from '../lib/route-link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
@@ -221,7 +222,7 @@ export default function PrivacyPage() {
           <div className="row-stack" role="list">
             {OPEN_SCOPE.map((item, i) => (
               <div role="listitem" key={item.href}>
-                <Link
+                <RouteLink
                   href={item.href}
                   className="row"
                   data-cuelume-hover="bloom"
@@ -239,7 +240,7 @@ export default function PrivacyPage() {
                     <span className="row-side-line">{item.format}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>

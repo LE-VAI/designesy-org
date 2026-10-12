@@ -171,9 +171,9 @@ export default function KitsPage() {
           </Link>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
             One live kit is intentional. Machine export lives at{' '}
-            <Link href="/kits/design-review.json" data-cuelume-hover="tick">
+            <a href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
-            </Link>
+            </a>
             . The lane stays empty until the next package earns full anatomy.
           </p>
         </section>

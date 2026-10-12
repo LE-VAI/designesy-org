@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { RouteLink } from '../lib/route-link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
@@ -210,14 +210,14 @@ export default function AcousticTokensPage() {
                       {body}
                     </a>
                   ) : (
-                    <Link
+                    <RouteLink
                       href={row.href}
                       className="row"
                       data-cuelume-hover="bloom"
                       data-cuelume-press
                     >
                       {body}
-                    </Link>
+                    </RouteLink>
                   )}
                 </div>
               );

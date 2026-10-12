@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { RouteLink } from './route-link';
 import { initScrollPause } from './scroll-pause';
 import { Wordmark } from './brand-logotype';
 
@@ -165,7 +166,7 @@ export function Footer() {
               <div className="footer-dock-clip" ref={machineClipRef}>
                 <div className="footer-dock-track" ref={machineTrackRef}>
                   {machineItems.map((link, i) => (
-                    <Link
+                    <RouteLink
                       href={link.href}
                       key={`m-${link.href}-${i}`}
                       className="footer-dock-pill footer-dock-pill--machine"
@@ -175,7 +176,7 @@ export function Footer() {
                       tabIndex={i >= MACHINE_LINKS.length ? -1 : undefined}
                     >
                       {link.label}
-                    </Link>
+                    </RouteLink>
                   ))}
                 </div>
               </div>

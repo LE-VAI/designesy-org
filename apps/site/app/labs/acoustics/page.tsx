@@ -256,7 +256,7 @@ export default function AcousticsLabPage() {
             {' · '}
             <Link href="/acoustic-tokens">Token reference page</Link>
             {' · '}
-            <Link href="/acoustic-tokens.json">Machine export</Link>
+            <a href="/acoustic-tokens.json">Machine export</a>
           </p>
         </section>
 

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { a11yContract } from '../../lib/a11y-contract';
@@ -37,7 +36,7 @@ export default function A11yContractPage() {
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
             Version {c.version} · {c.status} ·{' '}
-            <Link href={c.machine_url}>machine export</Link>
+            <a href={c.machine_url}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/a11y.md" label="the accessibility contract" />
         </section>
@@ -109,7 +108,7 @@ export default function A11yContractPage() {
 
         <div className="status-note">
           Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
-          <Link href="/contracts/a11y.json">/contracts/a11y.json</Link>.
+          <a href="/contracts/a11y.json">/contracts/a11y.json</a>.
         </div>
       </main>
       <Footer />

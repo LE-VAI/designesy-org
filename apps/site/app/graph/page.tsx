@@ -232,7 +232,7 @@ export default function GraphPage() {
               </Link>
             </div>
             <div role="listitem">
-              <Link
+              <a
                 href="/graph.json"
                 className="row"
                 data-cuelume-hover="bloom"
@@ -247,7 +247,7 @@ export default function GraphPage() {
                   <span className="row-side-line">/graph.json</span>
                   <span className="row-side-arrow" aria-hidden="true" />
                 </span>
-              </Link>
+              </a>
             </div>
             <div role="listitem">
               <Link
