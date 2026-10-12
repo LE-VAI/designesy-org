@@ -522,13 +522,13 @@ export default function ContractsPage() {
             >
               Contract home
             </Link>
-            <Link
+            <a
               className="button ghost"
               href="/contracts/design-system.json"
               data-cuelume-press
             >
               Machine export
-            </Link>
+            </a>
           </div>
           <AgentActions mdPath="/contracts.md" label="the contracts index" />
         </section>
@@ -632,9 +632,9 @@ export default function ContractsPage() {
             </Link>
             {' · '}
             Machine export ·{' '}
-            <Link href="/contracts/design-system.json">
+            <a href="/contracts/design-system.json">
               /contracts/design-system.json
-            </Link>
+            </a>
             {' · '}
             Public review ·{' '}
             <Link href="/review/designesy-org">/review/designesy-org</Link>
@@ -1031,9 +1031,9 @@ export default function ContractsPage() {
           <Link href="/contracts/design-system">/contracts/design-system</Link>
           {' · '}
           Machine export:{' '}
-          <Link href="/contracts/design-system.json">
+          <a href="/contracts/design-system.json">
             /contracts/design-system.json
-          </Link>
+          </a>
           . When the human page and the live styles disagree, the live styles are
           authoritative until the contract is revised. Human and machine surfaces
           stay synchronized.

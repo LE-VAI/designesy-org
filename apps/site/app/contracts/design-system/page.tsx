@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { RouteLink } from '../../lib/route-link';
 import './design-system.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
@@ -298,7 +299,7 @@ export default function DesignSystemContractPage() {
           <div className="row-stack" role="list">
             {SURFACES.map((row, i) => (
               <div role="listitem" key={row.href}>
-                <Link
+                <RouteLink
                   href={row.href}
                   className="row"
                   data-cuelume-hover="whisper"
@@ -313,7 +314,7 @@ export default function DesignSystemContractPage() {
                     <span className="row-side-line">{row.href}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>

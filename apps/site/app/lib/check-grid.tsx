@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { RouteLink } from './route-link';
 import { useState, useCallback, type ReactNode } from 'react';
 import type { CheckItem } from './check-items';
 
@@ -231,14 +231,14 @@ export function CheckGrid({
               role="listitem"
               data-span={spans[i]}
             >
-              <Link
+              <RouteLink
                 href={item.href}
                 className={cellClass}
                 data-cuelume-hover="whisper"
                 data-cuelume-press
               >
                 {body}
-              </Link>
+              </RouteLink>
             </div>
           );
         }

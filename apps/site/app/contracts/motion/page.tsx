@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { motionContract } from '../../lib/motion-contract';
@@ -37,7 +36,7 @@ export default function MotionContractPage() {
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
             Version {c.version} · {c.status} ·{' '}
-            <Link href={c.machine_url}>machine export</Link>
+            <a href={c.machine_url}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/motion.md" label="the motion contract" />
         </section>
@@ -106,7 +105,7 @@ export default function MotionContractPage() {
 
         <div className="status-note">
           Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
-          <Link href="/contracts/motion.json">/contracts/motion.json</Link>.
+          <a href="/contracts/motion.json">/contracts/motion.json</a>.
         </div>
       </main>
       <Footer />

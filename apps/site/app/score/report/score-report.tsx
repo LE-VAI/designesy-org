@@ -2,8 +2,10 @@
 
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import Link from 'next/link';
+import { EngineBar } from '../../lib/engine/command-bar';
 import { ShareButton } from '../../lib/share-button';
 import { ReviewPrompt } from '../../lib/review-prompt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
@@ -18,6 +20,8 @@ import {
   statusCount,
   verdictLine,
   STATUS_LABEL,
+  RUN_UNREACHABLE,
+  runStopped,
 } from '../verdict';
 import { ResultReadout, ResultScale, CategoryList } from '../result-parts';
 import { ScoreEmptyRun } from '../score-empty-run';
@@ -79,7 +83,8 @@ type ScoreResponse = {
   error?: string;
 };
 
-type Status = 'loading' | 'ok' | 'error';
+// idle: no address in the link, so nothing has run and nothing has failed.
+type Status = 'idle' | 'loading' | 'ok' | 'error';
 
 const STATUS_ORDER: Record<string, number> = { FAIL: 0, WARN: 1, MANUAL: 2, SKIP: 3, PASS: 4 };
 
@@ -93,7 +98,10 @@ function normalizeInput(input: string): string {
 }
 
 export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
-  const [status, setStatus] = useState<Status>('loading');
+  const router = useRouter();
+  const [status, setStatus] = useState<Status>(initialUrl ? 'loading' : 'idle');
+  // The address typed into the empty page's URL bar.
+  const [draft, setDraft] = useState('');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
@@ -106,41 +114,56 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const retry = () => setAttempt((a) => a + 1);
 
   useEffect(() => {
+    // No address: the empty state asks for one (nothing ran, so nothing failed;
+    // it used to read "Score failed" with a "Try again" that had nothing to
+    // retry, live audit 2026-10-11, V09).
     if (!initialUrl) {
-      setError('No URL provided. Add ?url= to the address.');
-      setStatus('error');
+      setStatus('idle');
       return;
     }
 
     const normalized = normalizeInput(initialUrl);
 
+    // Each way a run can end without a result says what happened in plain
+    // words (verdict.ts). The browser's own text ("Failed to fetch", a JSON
+    // parse error) is never shown (V10); the engine's reason, when it gives
+    // one, is.
+    const fail = (message: string) => {
+      setError(message);
+      setStatus('error');
+    };
+
     async function runScore() {
       setStatus('loading');
       setError(null);
+      let res: Response;
       try {
-        const res = await fetch('/api/score', {
+        res = await fetch('/api/score', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: normalized, format: 'designesy', scope: 'auto' }),
         });
-
-        const data: ScoreResponse = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || `HTTP ${res.status}`);
-        }
-
-        if (!data.ok) {
-          throw new Error(data.error || 'Score failed');
-        }
-
-        setResult(data);
-        setScoredUrl(normalized);
-        setStatus('ok');
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setStatus('error');
+      } catch {
+        fail(RUN_UNREACHABLE);
+        return;
       }
+
+      let data: ScoreResponse;
+      try {
+        data = (await res.json()) as ScoreResponse;
+      } catch {
+        fail(runStopped(res.status));
+        return;
+      }
+
+      if (!res.ok || !data?.ok) {
+        fail(data?.error || runStopped(res.ok ? undefined : res.status));
+        return;
+      }
+
+      setResult(data);
+      setScoredUrl(normalized);
+      setStatus('ok');
     }
 
     runScore();
@@ -198,15 +221,17 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
   // into it once the page has painted, and it stays mounted on success too,
   // where it reads the result (focus is left alone, so nothing is said twice).
   const message =
-    status === 'loading'
-      ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
-      : status === 'error'
-        ? `Score failed. ${error ?? ''}`
-        : emptyRun && result
-          ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
-          : result
-            ? resultAnnouncement(result)
-            : '';
+    status === 'idle'
+      ? ''
+      : status === 'loading'
+        ? `Evaluating ${ENGINE_SCORED_CHECK_COUNT} contract checks against ${initialUrl}…`
+        : status === 'error'
+          ? `Score failed. ${error ?? ''}`
+          : emptyRun && result
+            ? `Could not read this site. ${emptyRunReason(result, scoredUrl)}`
+            : result
+              ? resultAnnouncement(result)
+              : '';
   useEffect(() => {
     const id = window.setTimeout(() => setLiveText(message), 150);
     return () => window.clearTimeout(id);
@@ -216,6 +241,31 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
       {liveText}
     </p>
   );
+
+  // No address in the link: nothing ran, so the page asks for one in the
+  // site's URL bar, and the report runs once the address is in its link.
+  if (status === 'idle') {
+    return (
+      <>
+      {live}
+      <div key="idle" className="report-start">
+        <h2>Name a site to report on</h2>
+        <p>
+          The report runs on the address in its link. Enter one and the{' '}
+          {ENGINE_SCORED_CHECK_COUNT} checks run here.
+        </p>
+        <EngineBar
+          fields={[{ value: draft, onChange: setDraft, label: 'Site URL to report on', placeholder: 'Any public URL, like stripe.com' }]}
+          onSubmit={() => router.push(`/score/report?url=${encodeURIComponent(draft.trim())}`)}
+          busy={false}
+          go="Open the report"
+          goBusy="Opening"
+          note="No login. The engine fetches the page itself."
+        />
+      </div>
+      </>
+    );
+  }
 
   if (status === 'loading') {
     return (

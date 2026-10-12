@@ -219,7 +219,8 @@ check('the report announces a finished run in the approved words', () => {
   const report = fs.readFileSync(path.join(APP, 'app', 'score', 'report', 'score-report.tsx'), 'utf8');
   assert.match(report, /role="status" aria-live="polite">\s*\{liveText\}\s*<\/p>/);
   assert.match(report, /resultAnnouncement\(result\)/);
-  assert.equal((report.match(/\{live\}/g) || []).length, 4, 'the live region is not in all four branches');
+  // Five branches: no address yet (idle), loading, failed, empty run, result.
+  assert.equal((report.match(/\{live\}/g) || []).length, 5, 'the live region is not in all five branches');
 });
 
 if (failures.length) {

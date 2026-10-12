@@ -33,7 +33,7 @@ export default function ReadinessContractPage() {
           <h1 className="surface-title" data-scramble>AI Readiness</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/readiness.md" label="the readiness contract" />
         </section>
@@ -122,15 +122,15 @@ export default function ReadinessContractPage() {
             <Link href="/readiness" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               AI Readiness score →
             </Link>
-            <Link href="/api/readiness" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/readiness" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The AI Readiness contract is the first automated scorer for the 6th
-          maturity axis: a scan replaces the questionnaire. <Link href={c.machine_url}>Machine export</Link>.
+          maturity axis: a scan replaces the questionnaire. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

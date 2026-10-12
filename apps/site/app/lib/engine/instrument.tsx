@@ -10,7 +10,6 @@
 // and result in the side column; activating it opens the matching finding.
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { DigitStrip } from '../digit-strip';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { bandOf, display } from './types';
@@ -172,9 +171,6 @@ export function Instrument(props: Props) {
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
-  // The reading counter's rows, 1..n: the strip steps one row per check, on
-  // the scan cursor's clock (engine.css, eg-read).
-  const readRows = useMemo(() => registry.checks.map((_, i) => i + 1), [registry.checks]);
 
   const enter = (id: string) => {
     if (leave.current) window.clearTimeout(leave.current);
@@ -584,18 +580,15 @@ export function Instrument(props: Props) {
         </span>
         <span className="eg-inst-state">
           <i className="eg-dot" aria-hidden="true" />
-          {phase === 'running' ? (
-            <>
-              <span className="eg-state-read" aria-hidden="true">
-                reading <DigitStrip values={readRows} at={0} className="eg-read-strip" />/{registry.checks.length}
-              </span>
-              <span className="eg-state-calm">reading {registry.checks.length} checks</span>
-            </>
-          ) : (
-            <span>
-              {registry.checks.length} checks · {stateLabel}
-            </span>
-          )}
+          {/* While a run is out, the time it has taken, counted from its start:
+              the engines answer once, at the end, so there is no per-check
+              progress to show. The bar used to roll "reading 3/72" on a CSS
+              loop that wrapped back to 1 with nothing received (live audit
+              2026-10-11, V11). Keyed by the phase, so each swap fades in. */}
+          <span key={phase}>
+            {registry.checks.length} checks · {stateLabel}
+            {phase === 'running' ? ` · ${Math.floor(elapsed / 1000)} s` : ''}
+          </span>
         </span>
       </div>
       <div className="eg-inst-body">

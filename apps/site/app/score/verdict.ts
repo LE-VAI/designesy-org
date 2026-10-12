@@ -203,6 +203,21 @@ export function emptyRunReason(r: VerdictInput, url: string): string {
   return `The engine reached ${url || 'the site'} but found no CSS it could check, so no checks ran. No score is reported for a page the engine could not read.`;
 }
 
+// A run that returned nothing at all, in words a visitor can act on: what
+// happened and what to do. The browser's own text never reaches the page: a
+// fetch that cannot connect throws "Failed to fetch" and a server error page
+// read as JSON throws "Unexpected token"; the report showed both raw (live
+// audit 2026-10-11, V10). An engine that answered with its own reason (the
+// site refused the fetch, a rate limit) keeps that reason; these are for when
+// there is none.
+export const RUN_UNREACHABLE = 'The scoring engine could not be reached. Check the connection and run it again.';
+
+/** An engine that answered, but with no result it could read (a server error
+    page, an empty body). */
+export function runStopped(status?: number): string {
+  return `The scoring engine stopped without a result${status ? ` (HTTP ${status})` : ''}. Run it again in a minute.`;
+}
+
 function joinWords(words: string[]): string {
   if (words.length <= 1) return words.join('');
   return `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`;

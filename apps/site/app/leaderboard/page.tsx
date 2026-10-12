@@ -329,7 +329,7 @@ export default function LeaderboardPage() {
           </dl>
           <p className="dx-src">
             Leaderboard v{LEADERBOARD_VERSION} · re-scored Mondays 10:00 UTC · JSON at{' '}
-            <Link href="/api/leaderboard">/api/leaderboard</Link> · submissions by POST to /api/leaderboard/submit
+            <a href="/api/leaderboard">/api/leaderboard</a> · submissions by POST to /api/leaderboard/submit
           </p>
         </section>
       </main>

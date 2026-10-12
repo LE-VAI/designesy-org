@@ -1201,13 +1201,13 @@ export default function MethodologyPage() {
                 <dl className="dx-defs">
                   <div>
                     <dt>
-                      <Link href="/api/leaderboard">/api/leaderboard</Link>
+                      <a href="/api/leaderboard">/api/leaderboard</a>
                     </dt>
                     <dd>JSON with each site&apos;s category scores. CORS-enabled.</dd>
                   </div>
                   <div>
                     <dt>
-                      <Link href="/api/leaderboard.csv">/api/leaderboard.csv</Link>
+                      <a href="/api/leaderboard.csv">/api/leaderboard.csv</a>
                     </dt>
                     <dd>RFC 4180 CSV with a header row, for spreadsheets.</dd>
                   </div>
@@ -1215,8 +1215,8 @@ export default function MethodologyPage() {
                 <p className="dx-src">
                   Contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · {ENGINE_CHECK_COUNT} checks in{' '}
                   {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · 6 hard-fail
-                  ceilings · engine at <Link href="/api/score">/api/score</Link> · contract at{' '}
-                  <Link href="/contracts/design-system.json">/contracts/design-system.json</Link>
+                  ceilings · engine at <a href="/api/score">/api/score</a> · contract at{' '}
+                  <a href="/contracts/design-system.json">/contracts/design-system.json</a>
                 </p>
               </section>
             </div>

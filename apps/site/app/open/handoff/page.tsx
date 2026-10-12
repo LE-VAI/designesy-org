@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { RouteLink } from '../../lib/route-link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { openIndex } from '../../lib/open-index';
@@ -117,9 +118,9 @@ export default function OpenHandoffPage() {
               /open
             </Link>{' '}
             and{' '}
-            <Link href="/open.json" data-cuelume-hover="tick">
+            <a href="/open.json" data-cuelume-hover="tick">
               /open.json
-            </Link>
+            </a>
             .
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -151,7 +152,7 @@ export default function OpenHandoffPage() {
           <div className="row-stack" role="list">
             {PRIMARY_PATHS.map((item, i) => (
               <div role="listitem" key={item.href}>
-                <Link
+                <RouteLink
                   href={item.href}
                   className="row"
                   data-cuelume-hover="bloom"
@@ -168,7 +169,7 @@ export default function OpenHandoffPage() {
                     <span className="row-side-line">{item.format}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { RouteLink } from '../../lib/route-link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
@@ -193,7 +194,7 @@ export default function PublicSurfaceReviewPage() {
           <div className="row-stack" role="list">
             {SCOPE.map((item, i) => (
               <div role="listitem" key={item.href}>
-                <Link
+                <RouteLink
                   href={item.href}
                   className="row"
                   data-cuelume-hover="bloom"
@@ -209,7 +210,7 @@ export default function PublicSurfaceReviewPage() {
                     <span className="row-side-line">{item.meta}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>
