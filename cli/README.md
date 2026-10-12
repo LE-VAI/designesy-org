@@ -2,10 +2,10 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-score-gate.png">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate — a URL flows in, the 42-check contract grid fires, the score counts up to 93% grade A, and the gate passes" width="960">
+  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate: a URL flows in, the contract grid fires check by check, the score counts up to its grade, and the gate passes" width="960">
 </picture>
 
-Score any URL against the **Designesy design-system contract** — 40 deterministic checks, one grade, no vibe-tax. **Runs locally — no server required.** Zero dependencies.
+Score any URL against the **Designesy design-system contract**: 44 deterministic checks, one grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
 
 ```bash
 npx designesy-score designesy.org
@@ -14,8 +14,8 @@ npx designesy-score designesy.org
 ## What's new in 1.0.0
 
 **The engine runs locally.** In 0.x, the CLI called the designesy.org API. In 1.0.0,
-it fetches the target URL, extracts CSS + `:root` tokens, and runs all 44 checks
-in-process. No server dependency, no rate limits, works even if designesy.org is down.
+it fetches the target URL, extracts CSS + `:root` tokens, and runs every check
+that needs no browser in-process (the browser checks return MANUAL). No server dependency, no rate limits, works even if designesy.org is down.
 
 - **`--scope` flag** — `contract` (strict) or `universal` (fair to external sites)
 - **Anti-slop + originality** in the report — 12 deduction patterns, 7 craft lifts
@@ -99,7 +99,7 @@ design-system contract score, use `designesy-score <url>`.
 
 ## What it scores
 
-The Designesy v0.4.0 design-system contract — 40 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM, no heuristics — every check is reproducible and grounded in the published contract.
+The Designesy v0.4.4 design-system contract, with 44 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 See the [full methodology](https://www.designesy.org/methodology).
 

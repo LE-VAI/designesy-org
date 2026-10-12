@@ -5,7 +5,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/designesy-mcp.svg)](https://pypi.org/project/designesy-mcp/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![MCP](https://img.shields.io/badge/MCP-2025.06.18-purple.svg)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-stdio_server-purple.svg)](https://modelcontextprotocol.io)
 
 **One-click install:**
 
@@ -158,11 +158,11 @@ The W3C Design Tokens Community Group published the spec's **first stable versio
 
 The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — there is no standard for motion token structure, reduced-motion markers, or animation accessibility. The [2026 State of Design Systems field report](https://www.thestackstories.com/blog/state-of-design-systems-2026-field-report) confirms this is the remaining friction point.
 
-`designesy_motion_score` fills this gap. It validates Lottie files against the Lottie spec v1.0.1 AND the Designesy §16 Ten Non-Negotiable Motion Standards — the only validator that checks both structural well-formedness and accessibility (reduced-motion markers, no deprecated versions). It is the verification layer for the spec's known blind spot.
+`designesy_motion_score` fills this gap. It validates Lottie files against the Lottie spec v1.0.1 AND the Designesy §16 Ten Non-Negotiable Motion Standards, so one call checks both structural well-formedness and accessibility (reduced-motion markers, no deprecated versions). It is the verification layer for the spec's known blind spot.
 
 ### Contract vs. opinion
 
-No competitor does contract-based deterministic scoring. Lighthouse is weighted heuristics. axe-core is rule violations. securityheaders.com is a single dimension. Designesy's 44-check contract-bound 0-100 score across 7 dimensions (tokens, motion, accessibility, cadence, takt, typography, copywriting) has no direct analog.
+Lighthouse weights audits into category scores. axe-core reports rule violations. securityheaders.com grades one dimension. Designesy scores a page 0-100 against a published contract: 44 checks across 14 weighted categories, each rule and weight public.
 
 ## Caching
 

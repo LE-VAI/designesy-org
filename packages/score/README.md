@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, runs all checks locally, with **no server required**. No required dependencies.
+Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with **no Designesy server required**; the browser checks return MANUAL. No required dependencies.
 
 ## Install
 
