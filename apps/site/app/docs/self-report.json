@@ -5,8 +5,8 @@
     "score": {
       "score": 100,
       "grade": "A",
-      "pass": 40,
-      "warn": 1,
+      "pass": 38,
+      "warn": 3,
       "fail": 0,
       "skip": 0,
       "checks": 41
@@ -18,7 +18,7 @@
       "warn": 1,
       "fail": 0,
       "checks": 12,
-      "tokenCount": 362,
+      "tokenCount": 364,
       "notes": [
         {
           "id": "d05",
