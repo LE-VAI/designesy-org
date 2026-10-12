@@ -96,12 +96,11 @@ const SPECIMEN = new Map([
   ['.demo-scale-spec', 'the Cadence lab rem-scale specimen (/labs/cadence)'],
 ]);
 
-/** Home-page rules in globals.css. The home rebuild (brand ledger D60) moves
-    them; this PR leaves them alone so the two do not collide. */
+/** Home-page rules in globals.css that the home rebuild (brand ledger D60,
+    #290) kept: they style only the home page's "This site, by category" badge,
+    and home.css (D60's sheet) sets its size at the label step. They move with
+    the home page's next change, not this gate's. */
 const HOME = new Map([
-  ['.state-marquee-header', 'home System status header (D60)'],
-  ['.state-marquee-pill', 'home System status pills (D60)'],
-  ['.field-card-status', 'home card status (D60)'],
   ['.section-heading-badge-label', 'home section badge (D60)'],
   ['.section-heading-badge-unit', 'home section badge (D60)'],
 ]);
