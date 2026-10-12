@@ -19,12 +19,14 @@
 //   [mark]  SCORED BY DESIGNESY           primer.style
 //           A 90.4 /100                     2026-10-11
 // Sizes from the brand review (ledger D61): label 10 px Schibsted 700 at
-// 0.08em, site and date 10 px Geist Mono, the reading 16 px. 10 px is the
+// 0.08em, site and date 10 px Atkinson Hyperlegible Mono (D65: it replaced
+// Geist Mono, 0.632em a character against 0.6em, so a 26-character host is
+// 8.3 px wider), the reading 16 px. 10 px is the
 // smallest text on the badge, an exception to the site's text floor (D59) for
 // a fixed-height graphic embedded at 1x in READMEs.
 // The reading follows the result page's readout: the grade letter and the
 // score in one face, the letter in its grade's text colour, no box around it,
-// "/100" small in Geist Mono. The face is Schibsted Grotesk 700, the site's UI
+// "/100" small in the mono. The face is Schibsted Grotesk 700, the site's UI
 // face, rather than the readout's Fraunces: at 15 px the display cut's 4 read
 // as an A (rendered at 1x, 2026-10-11).
 //

@@ -44,7 +44,7 @@ DIGITS = '0123456789'
 FACES = {
     'label': ('SchibstedGrotesk-700.ttf', 'Schibsted Grotesk 700: the label, the grade and the score', UPPER + DIGITS + ' .'),
     'body': ('SchibstedGrotesk-500.ttf', 'Schibsted Grotesk 500: the "Not scored" line', 'Not scored'),
-    'mono': ('GeistMono-400.ttf', 'Geist Mono 400: the host, the date and /100', LOWER + DIGITS + ' .-/…'),
+    'mono': ('AtkinsonHyperlegibleMono-400.ttf', 'Atkinson Hyperlegible Mono 400: the host, the date and /100', LOWER + DIGITS + ' .-/…'),
 }
 
 
