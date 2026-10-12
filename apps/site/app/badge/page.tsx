@@ -115,7 +115,9 @@ export default function BadgePage() {
               </li>
               <li>
                 <strong>A site with no score in the cache is scored once</strong>, by the same{' '}
-                {ENGINE_CHECK_COUNT} checks the score page runs, and later views read that result.
+                {ENGINE_CHECK_COUNT} checks the score page runs, and later views read that result. New
+                scores started by badges are rate limited; at the limit the badge reads &quot;Not
+                scored&quot; for a minute, then tries again.
               </li>
               <li>
                 <strong>The badge names the site it scored</strong>, and its link opens that site&apos;s

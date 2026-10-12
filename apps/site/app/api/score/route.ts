@@ -1,5 +1,6 @@
 import { NextResponse, after } from 'next/server';
 import { recordUsage, scoreClientOf } from '../../lib/usage';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { buildReceipt } from '../../lib/receipt';
@@ -5042,8 +5043,31 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 // a stale 95.7 after the engine fix had shipped. Keyed by commit, a new deploy
 // starts from a clean cache. Outside Vercel there is no commit, and the key is
 // stable for local runs.
+//
+// THE MISS GATE. unstable_cache calls the function below only when it has no
+// entry for the key (or refreshes a stale one), so the start of that function
+// is the one place that knows a fresh score is about to run. A caller that
+// must limit fresh scores, but never cached reads, runs scoreUrl inside
+// withScoreMissGate(gate, ...): the gate is awaited here, on a miss only, and
+// a gate that throws stops the score before any fetch (unstable_cache does not
+// cache a throw). The live badge does this (lib/badge/live-badge-route.ts,
+// limit in lib/badge/miss-limit.ts); every other caller passes no gate and is
+// unchanged. The gate travels in an AsyncLocalStorage, so it reaches the
+// cached function through unstable_cache without becoming a cache-key
+// argument. scripts/check-badge-miss-limit.js holds the wiring.
+const missGate = new AsyncLocalStorage<() => Promise<void>>();
+
+/** Run `run` (a scoreUrl call) with `gate` awaited before any fresh score it starts. */
+export function withScoreMissGate<T>(gate: () => Promise<void>, run: () => Promise<T>): Promise<T> {
+  return missGate.run(gate, run);
+}
+
 export const scoreUrl = unstable_cache(
-  async (targetUrl: string, scope?: ScoreScope) => scoreUrlUncached(targetUrl, scope),
+  async (targetUrl: string, scope?: ScoreScope) => {
+    const gate = missGate.getStore();
+    if (gate) await gate();
+    return scoreUrlUncached(targetUrl, scope);
+  },
   ['designesy-score', process.env.VERCEL_GIT_COMMIT_SHA ?? 'local'],
   { revalidate: SCORE_TTL_SECONDS, tags: ['score'] }
 );

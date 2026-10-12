@@ -11,22 +11,26 @@
 // function), never the time the image was served.
 //
 // COST
-// A badge view never starts a score of its own while the cache holds one for
-// the site. On a miss it runs the same single cached score a visitor's first
-// /score run would, and every later view (and the /score page) reads it. Three
-// things keep that cheap:
+// A badge view that the cache answers costs nothing and is never limited. A
+// cache miss starts a fresh score (fetch the site, run the engine), and that
+// path alone is limited:
 //   1. The URL is cut to its site (scheme, host, port; no path, query or
 //      fragment), so a query string cannot mint a new cache key per view:
 //      one key per site per day, per deploy.
-//   2. The response is CDN-cached (s-maxage 1 h, then stale-while-revalidate
+//   2. A miss runs only through scoreUrl's miss gate (withScoreMissGate), which
+//      asks lib/badge/miss-limit.ts first: 20 fresh scores per IP and 300 in
+//      all per hour, Upstash-backed, failing CLOSED. A refused miss draws
+//      "Not scored", cached 60 s, and no fetch happens. It is never a 429: a
+//      broken image in someone's README is worse than a neutral badge.
+//   3. The response is CDN-cached (s-maxage 1 h, then stale-while-revalidate
 //      for a day), so repeat views of an embed do not reach the function.
-//   3. A blocked or malformed URL is answered before any fetch and cached a
+//   4. A blocked or malformed URL is answered before any fetch and cached a
 //      day.
-// There is no per-IP limiter on this route (nor on /score/badge, which shares
-// it, or on the share-card images that call scoreUrl the same way): the edge
-// limiter (middleware.ts) spends an Upstash command on every request it sees,
-// and an image embedded in a popular page would spend the monthly budget that
-// the scoring API's own limit depends on (it ran out on 2026-09-16).
+// No limit sits on the views themselves: README embeds arrive through GitHub's
+// image proxy from a shared pool of IPs, and a per-view limit would refuse
+// legitimate cached views (and spend an Upstash command on each).
+// scripts/check-badge-miss-limit.js runs this route offline and holds all of
+// it: a miss is gated, a hit is not, a refusal fetches nothing.
 //
 // SAFETY
 // The URL is validated with the shared SSRF guard (app/lib/url-guard.ts),
@@ -35,9 +39,10 @@
 // address). Nothing from the request reaches the SVG except the site's host,
 // reduced to [a-z0-9.-] and escaped (live-badge.ts).
 
-import { autoDetectScope, scoreUrl } from '../../api/score/route';
+import { autoDetectScope, scoreUrl, withScoreMissGate } from '../../api/score/route';
 import { isValidUrl, normalizeInputUrl } from '../url-guard';
 import { renderLiveBadge, type BadgeTheme, type LiveBadgeState } from './live-badge';
+import { decideBadgeMiss, type MissDecision } from './miss-limit';
 
 /** Cache-Control per outcome. */
 export const BADGE_CACHE = {
@@ -47,7 +52,16 @@ export const BADGE_CACHE = {
   unread: 'public, max-age=300, s-maxage=300',
   /** No URL, or one the guard refuses: the answer cannot change. */
   refused: 'public, max-age=86400, s-maxage=86400',
+  /** A cache miss the miss limit refused: ask again in a minute. */
+  limited: 'public, max-age=60, s-maxage=60',
 } as const;
+
+/** Thrown by the miss gate to stop a fresh score before it starts. */
+class BadgeMissRefused extends Error {
+  constructor(readonly decision: MissDecision) {
+    super('badge miss refused');
+  }
+}
 
 /**
  * The site a badge URL names: `https://host[:port]/`, validated by the shared
@@ -69,14 +83,17 @@ export function siteOf(raw: string): string | null {
   return isValidUrl(site) ? site : null;
 }
 
-function svgResponse(state: LiveBadgeState, theme: BadgeTheme, cache: string): Response {
-  return new Response(renderLiveBadge(state, theme), {
-    headers: {
-      'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': cache,
-      'Access-Control-Allow-Origin': '*',
-    },
-  });
+function svgResponse(state: LiveBadgeState, theme: BadgeTheme, cache: string, miss?: MissDecision | null): Response {
+  const headers: Record<string, string> = {
+    'Content-Type': 'image/svg+xml; charset=utf-8',
+    'Cache-Control': cache,
+    'Access-Control-Allow-Origin': '*',
+  };
+  // On a miss, say whether the miss limiter ran (active, degraded, inactive),
+  // as the middleware does for the API routes: a skipped limiter must not look
+  // like a working one from the outside.
+  if (miss) headers['RateLimit-Limiter'] = miss.outcome;
+  return new Response(renderLiveBadge(state, theme), { headers });
 }
 
 /** GET handler body: `url` (required) and `theme` (`dark`, the default, or `light`). */
@@ -87,22 +104,35 @@ export async function liveBadgeResponse(request: Request): Promise<Response> {
   if (!site) return svgResponse({ kind: 'not-scored', host: null }, theme, BADGE_CACHE.refused);
 
   const host = new URL(site).hostname;
+  // Set only when the cache missed: the gate runs on a miss, never on a hit.
+  const miss: { decision: MissDecision | null } = { decision: null };
   try {
     // The same arguments POST /api/score passes for a run with the scope left
-    // on auto, so both read one cache entry.
-    const result = await scoreUrl(site, autoDetectScope(site));
+    // on auto, so both read one cache entry. The gate runs before a fresh
+    // score only; a refusal throws out of the cached function before any fetch.
+    const result = await withScoreMissGate(
+      async () => {
+        miss.decision = await decideBadgeMiss(request.headers);
+        if (!miss.decision.allowed) throw new BadgeMissRefused(miss.decision);
+      },
+      () => scoreUrl(site, autoDetectScope(site)),
+    );
     const date = typeof result.retrievedAt === 'string' ? result.retrievedAt.slice(0, 10) : '';
     // An unread site has no grade, and a score without the date of its run
     // cannot say when it was true: both draw "Not scored", never a letter.
     if (result.score === null || result.grade === null || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return svgResponse({ kind: 'not-scored', host }, theme, BADGE_CACHE.unread);
+      return svgResponse({ kind: 'not-scored', host }, theme, BADGE_CACHE.unread, miss.decision);
     }
     return svgResponse(
       { kind: 'scored', grade: result.grade, score: result.score, date, host },
       theme,
       BADGE_CACHE.scored,
+      miss.decision,
     );
-  } catch {
-    return svgResponse({ kind: 'not-scored', host }, theme, BADGE_CACHE.unread);
+  } catch (err) {
+    if (err instanceof BadgeMissRefused) {
+      return svgResponse({ kind: 'not-scored', host }, theme, BADGE_CACHE.limited, err.decision);
+    }
+    return svgResponse({ kind: 'not-scored', host }, theme, BADGE_CACHE.unread, miss.decision);
   }
 }

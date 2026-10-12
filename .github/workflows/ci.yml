@@ -313,6 +313,13 @@ jobs:
         if: always()
         run: node scripts/badge-renders.mjs --check
 
+      # The live badge starts a fresh score only behind its miss limiter (20
+      # per IP and 300 in all per hour, failing closed), and a cached view asks
+      # no limiter: the real badge routes and score engine, run offline.
+      - name: Badge miss limit
+        if: always()
+        run: node scripts/check-badge-miss-limit.js
+
       - name: Gate parity (build script vs CI)
         if: always()
         run: node scripts/check-gate-parity.js

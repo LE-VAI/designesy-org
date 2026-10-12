@@ -42,8 +42,12 @@ function fixtureResponse(body, status = 200) {
  *   answers node:dns/promises lookup() for the loaded modules (the URL guard's
  *   DNS check), so a gate can say what a name resolves to without live DNS.
  *   Omitted, the real resolver is used, as before.
+ * @param {Record<string, unknown>} [opts.stubs]  more bare-specifier stubs, or replacements
+ *   for the defaults below (a gate that needs a caching unstable_cache, say)
+ * @param {Record<string, (real: object) => object>} [opts.overrides]  more app-relative
+ *   module overrides, applied after the defaults (a fake limiter module, say)
  */
-function createHarness({ app, pages = {}, api = () => undefined, lookup }) {
+function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: extraStubs = {}, overrides: extraOverrides = {} }) {
   // Packages resolve from the loaded app first, then from this checkout, so a
   // bare source snapshot (git archive of another commit) runs without its own
   // node_modules.
@@ -91,12 +95,17 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup }) {
     '@upstash/ratelimit': { Ratelimit: class {} },
   };
   if (lookup) stubs['node:dns/promises'] = { ...require('node:dns/promises'), lookup };
+  Object.assign(stubs, extraStubs);
 
   // App-relative path stubs, applied after the real module loads.
   const overrides = {
     'app/lib/url-guard.ts': (real) => ({ ...real, safeFetch: serve }),
     'app/lib/usage.ts': (real) => ({ ...real, recordUsage: async () => {}, toolCallNames: () => [] }),
   };
+  for (const [file, fn] of Object.entries(extraOverrides)) {
+    const base = overrides[file];
+    overrides[file] = base ? (real) => fn(base(real)) : fn;
+  }
 
   function resolveLocal(from, spec) {
     const base = path.resolve(path.dirname(from), spec);
@@ -162,6 +171,15 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup }) {
     });
   }
 
+  /** GET a route module (path relative to the app) at `url`; returns { status, headers, text }. */
+  async function get(routeFile, url, headers = {}) {
+    const route = load(routeFile);
+    return offline(async () => {
+      const res = await route.GET(new Request(url, { headers }));
+      return { status: res.status, headers: res.headers, text: await res.text() };
+    });
+  }
+
   /** Call one tool registered by app/api/mcp/route.ts; returns { result, payload }. */
   async function callTool(name, args) {
     load('app/api/mcp/route.ts');
@@ -180,7 +198,7 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup }) {
     });
   }
 
-  return { load, post, callTool, calls, tools };
+  return { load, post, get, callTool, calls, tools };
 }
 
 module.exports = { createHarness };
