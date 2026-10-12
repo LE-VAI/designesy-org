@@ -635,7 +635,7 @@ export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
   if (rateLimited(ip)) {
     return NextResponse.json(
-      { ok: false, error: 'Audit rate limit exceeded. Maximum 5 browser audits per hour.' },
+      { ok: false, error: `Audit rate limit exceeded. Maximum ${RATE_LIMIT} browser audits per hour.` },
       { status: 429 }
     );
   }

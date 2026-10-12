@@ -19,7 +19,7 @@
 
 export const monitorContract = {
   id: 'designesy.monitor',
-  version: '0.1.2',
+  version: '0.1.3',
   status: 'provisional',
   name: 'Designesy Monitor Contract',
   kind: 'contract' as const,
@@ -67,7 +67,7 @@ export const monitorContract = {
   verification: {
     checks: [
       { id: 'm01', item: 'History supplied: the request carries earlier runs to compare against (nothing is scheduled or stored server-side)', pass: 'At least one earlier run supplied', fail: 'n/a', na: 'No history: drift needs a previous run; a first run sets the baseline and is not scored here' },
-      { id: 'm02', item: 'Last run fresh: ran within the cadence window', pass: 'Last run is within the cadence window', fail: 'Last run is stale (the monitor may have stopped)', warn: 'Last run is near the edge of the cadence window' },
+      { id: 'm02', item: 'Last run fresh: the newest supplied run is within the cadence window (the request names daily, weekly or monthly; weekly by default)', pass: 'Newest run is within one cadence window', fail: 'Newest run is more than two cadence windows old (the watch may have stopped)', warn: 'Newest run is between one and two cadence windows old (a run was missed)', na: 'No history, or no usable timestamp on the newest run: nothing to measure the gap from' },
       { id: 'm03', item: 'Drift delta vs baseline: score change since first run', pass: 'Score is stable or improved vs baseline', fail: 'Score degraded significantly vs baseline', warn: 'Score slipped slightly vs baseline' },
       { id: 'm04', item: 'Drift trend slope: 3-run trajectory', pass: 'Trend is flat or improving over the last 3 runs', fail: 'Trend is regressing over the last 3 runs', warn: 'Trend is flat but score is low' },
       { id: 'm05', item: 'New violations since last run: checks that newly fail', pass: 'No new violations since the previous run', fail: 'N checks newly failed since the previous run', warn: '1 check newly warned since the previous run' },
@@ -77,7 +77,7 @@ export const monitorContract = {
       { id: 'm09', item: 'Contract version drift: the design contract version this run is scored against (the version designesy_score reports) changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run (verify the change is intentional)', warn: 'Contract metadata changed (not version)' },
       { id: 'm10', item: 'Alert delivered: email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered (check the email address or RESEND_API_KEY)', warn: 'Alert surfaced in-UI only (no email provided or Resend key not set)' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP (m01 on a first run) is not scored. Score = (points / scored checks) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
+    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP (m01 and m02 on a first run) is not scored. Score = (points / scored checks) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
     validation_tools: {
       primary: 'Designesy monitor engine: on-demand re-scan + caller-supplied history + delta computation',
       method: 'Re-run the 12 drift checks on each call, compute deltas vs the baseline and the previous run in the history passed in, fire alerts on threshold breach',
