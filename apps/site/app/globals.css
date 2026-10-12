@@ -13135,11 +13135,15 @@ html[data-motion="paused"] .pricing-card::after {
 /* --------------------------------------------------------------------------
    v27 — Input font-size floor (iOS Safari auto-zoom prevention).
    Inputs below 16px trigger a layout-shift zoom on iPhone. 1rem = 16px.
+   A literal, not --text-body: the threshold is the platform's and stays 16px
+   whatever the type scale does, and the engine's v27 reads literals (the
+   token swap on 2026-10-12 turned this check from PASS to WARN on our own
+   score).
    -------------------------------------------------------------------------- */
 input,
 textarea,
 select {
-  font-size: var(--text-body);
+  font-size: 1rem;
 }
 
 /* --------------------------------------------------------------------------
