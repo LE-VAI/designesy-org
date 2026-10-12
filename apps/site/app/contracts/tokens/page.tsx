@@ -120,8 +120,10 @@ export default function TokensContractPage() {
         <div className="status-note">
           Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
           <a href="/contracts/tokens.json">/contracts/tokens.json</a>. The
-          live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) passes
-          all 10 conformance checks (verified 2026-08-09).
+          live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) scores
+          100, grade A, on the 10 conformance checks: 9 pass, and t07 does not
+          apply because the export declares no custom types (designesy_tokens_score,
+          2026-10-11).
         </div>
       </main>
       <Footer />

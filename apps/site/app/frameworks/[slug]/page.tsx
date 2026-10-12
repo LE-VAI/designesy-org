@@ -266,8 +266,8 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
             <div>
               <dt>Checks</dt>
               <dd>
-                Of the {ran} checks the engine ran, {site.pass} passed, {site.warn} warned, {site.fail} failed and {site.skip}{' '}
-                were skipped as not applicable.
+                Of the {ran} checks the engine scored, {site.pass} passed, {site.warn} warned, {site.fail} failed and {site.skip}{' '}
+                were skipped as not applicable. Checks that need a browser are left to a person and are not counted here.
               </dd>
             </div>
             <div>

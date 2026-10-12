@@ -12,11 +12,11 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Monitor contract',
   description:
-    `Designesy Monitor Contract v${monitorContract.version}: continuous design-drift monitoring. Re-scores a URL on a cadence, stores snapshots, computes drift deltas against the baseline, emails you when drift is detected, and surfaces regressions before they compound. 10 verification checks.`,
+    `Designesy Monitor Contract v${monitorContract.version}: design drift over time. Each call re-runs the drift checks on a URL and compares the result with the history you pass in, against the first snapshot and the last, with an optional email alert when drift is found. Nothing is scheduled, and the server keeps no history of its own. 10 verification checks.`,
   path: '/contracts/monitor',
   ogTitle: 'Monitor contract · Designesy',
   ogDescription:
-    'Continuous design-drift monitoring with email alerts: 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
+    'Design drift over time: each call compares a URL with the history you pass in. 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
   twitterDescription: 'Designesy monitor · designesy.org/contracts/monitor',
 });
 
@@ -86,10 +86,6 @@ export default function MonitorContractPage() {
               <dt>Drift shape</dt>
               <KvValue text={c.source_authority.drift_shape} />
             </dl>
-            <dl className="kv-cell">
-              <dt>Compounding</dt>
-              <KvValue text={c.source_authority.compounding} />
-            </dl>
             <dl className="kv-cell is-wide">
               <dt>Competitor lane</dt>
               <KvValue text={c.source_authority.competitor_lane} />
@@ -125,7 +121,12 @@ export default function MonitorContractPage() {
         </section>
 
         <section className="doctrine-section fade-up">
-          <h2 className="doctrine-heading">Cadence options</h2>
+          <h2 className="doctrine-heading">Cadence options (planned)</h2>
+          <p className="surface-note" style={{ marginBottom: '1rem' }}>
+            Nothing runs on a schedule today: version {c.version} runs when it is called, on the
+            history the caller passes in. These are the cadences the contract defines for a
+            scheduler.
+          </p>
           <div className="row-stack" role="list">
             {c.conformance.cadence_options.map((opt, i) => (
               <div key={opt.cadence} className="row" role="listitem">
@@ -213,8 +214,8 @@ export default function MonitorContractPage() {
         </section>
 
         <div className="status-note">
-          The monitor contract is the continuous-governance layer: it turns
-          every prior designesy surface from a snapshot into a watched series.{' '}
+          The monitor contract is the governance layer over time: each call
+          compares a URL with the history you pass in.{' '}
           <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>

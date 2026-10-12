@@ -112,8 +112,8 @@ export default function ReviewOfferPage() {
                 <h3>Contract score</h3>
                 <p>
                   The automated Designesy score: {ENGINE_CHECK_COUNT} checks
-                  across accessibility, tokens and drift, motion, readiness,
-                  and typography, with every failing check named.
+                  across typography, accessibility, color, motion, tokens and
+                  copy, with every failing check named.
                 </p>
               </div>
             </div>

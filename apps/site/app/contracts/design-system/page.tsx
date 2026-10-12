@@ -6,6 +6,7 @@ import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { designSystemContract } from '../../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../../hero-stats';
+import { ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 import { CheckGrid } from '../../lib/check-grid';
 import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
@@ -19,7 +20,7 @@ export const metadata: Metadata = pageMeta({
   path: '/contracts/design-system',
   ogTitle: `Design system contract · v${designSystemContract.version}: reference format`,
   ogDescription:
-    `A reference format for AI-readable design contracts. Input plus verification: tokens and prose, and ${ENGINE_CHECK_COUNT} automated checks that prove the output passes. Richer than design.md.`,
+    `A reference format for AI-readable design contracts. Input plus verification: tokens and prose, and ${ENGINE_CHECK_COUNT} checks (${ENGINE_SCORED_CHECK_COUNT} automated) that test whether the output passes. Richer than design.md.`,
   twitterDescription:
     'A reference format for AI-readable design contracts: input + verification. designesy.org/contracts/design-system',
 });
@@ -122,7 +123,7 @@ const ABSENT = 'Not covered';
 const COMPARISON: { layer: string; designMd: string; ours: string }[] = [
   { layer: 'Tokens', designMd: 'YAML frontmatter', ours: 'DTCG 2025.10 JSON + CORS endpoint' },
   { layer: 'Rationale prose', designMd: '9 markdown sections', ours: 'Adoption narratives + lab provenance' },
-  { layer: 'Verification', designMd: 'CLI linter + WCAG contrast', ours: `${ENGINE_CHECK_COUNT} automated checks, live score engine` },
+  { layer: 'Verification', designMd: 'CLI linter + WCAG contrast', ours: `${ENGINE_CHECK_COUNT} checks (${ENGINE_SCORED_CHECK_COUNT} automated), live score engine` },
   { layer: 'Anti-generic detection', designMd: ABSENT, ours: '12 anti-generic tells (AI sameness)' },
   { layer: 'Acoustic cues', designMd: ABSENT, ours: '10 named cue tokens + mapping rules' },
   { layer: 'Interface-feel (takt)', designMd: ABSENT, ours: 'Press scale, hit area, stagger rhythm' },
@@ -175,8 +176,8 @@ export default function DesignSystemContractPage() {
           <p className="surface-note">
             design.md (Google Labs, 26k+ stars) is the input layer: tokens and
             prose an agent reads to generate UI. This contract is input{' '}
-            <em>plus</em> verification: {ENGINE_CHECK_COUNT} automated checks that prove the
-            generated output actually passes. Acoustic cues, takt interface-feel,
+            <em>plus</em> verification: {ENGINE_CHECK_COUNT} checks ({ENGINE_SCORED_CHECK_COUNT} automated) that
+            test whether the generated output passes. Acoustic cues, takt interface-feel,
             copywriting principles, anti-generic tells, and provenance tracking
             have no design.md equivalent.
           </p>
@@ -257,9 +258,10 @@ export default function DesignSystemContractPage() {
             leaves open: <strong>generation is not verification</strong>. An
             agent can read a token file and still ship hardcoded hex, broken
             contrast, or the AI-default look. The {ENGINE_CHECK_COUNT}-check engine closes that
-            gap. With 42% of committed React now AI-generated (Belitsoft, State
-            of React Development 2026), the score is the compliance layer: it
-            checks the shipped design against the rules the agent was given.
+            gap. Developers report that 42% of the code they commit is now
+            AI-generated or assisted (Sonar, State of Code Developer Survey,
+            January 2026), so the score is the compliance layer: it checks the
+            shipped design against the rules the agent was given.
           </p>
         </section>
 
@@ -438,7 +440,7 @@ export default function DesignSystemContractPage() {
         <div className="status-note">
           Design system contract v{c.version}: a reference format for
           AI-readable design contracts. Input plus
-          verification: {ENGINE_CHECK_COUNT} automated checks on top of tokens
+          verification: {ENGINE_CHECK_COUNT} checks ({ENGINE_SCORED_CHECK_COUNT} automated) on top of tokens
           and prose. Live styles remain authoritative
           when they and this contract disagree. Human and machine surfaces stay
           synchronized.

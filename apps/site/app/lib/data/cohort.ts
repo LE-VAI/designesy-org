@@ -9,7 +9,7 @@
 // from one batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both
 // says both.
 
-import { SEED, LEADERBOARD_LAST_SCORED, LEADERBOARD_ENGINE_VERSION, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
+import { SEED, LEADERBOARD_LAST_SCORED, LEADERBOARD_ENGINE_VERSION, LEADERBOARD_VERSION, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES, BATCH_RUN_DATE } from '../../leaderboard/batch-data';
 import { CATEGORY_WEIGHTS } from '../check-definitions';
 
@@ -17,6 +17,9 @@ export { BATCH_RUN_DATE };
 export const SCORES_DATE = LEADERBOARD_LAST_SCORED;
 /** The engine version that produced the scores dated SCORES_DATE (not the repo's current engine). */
 export const SCORES_ENGINE_VERSION = LEADERBOARD_ENGINE_VERSION;
+/** The contract version those scores were measured against, in display form
+    (not the registry's current CONTRACT_VERSION, which can move between runs). */
+export const SCORES_CONTRACT_VERSION = `v${LEADERBOARD_VERSION}`;
 export const SELF_URL = 'https://www.designesy.org';
 
 export type CohortSite = {
@@ -193,6 +196,20 @@ export function categoryStats(key: string): { mean: number | null; scored: numbe
     failing: cats.filter((c) => c.fail > 0).length,
   };
 }
+
+/** "designesy.org (scored by its own engine), X and GitHub Primer": the sites
+    at one grade, named as the leaderboard names them. */
+export function namesAt(grade: Grade): string {
+  const names = COHORT.filter((s) => s.grade === grade).map((s) =>
+    s.self ? `${s.host} (scored by its own engine)` : s.name,
+  );
+  return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** The grade (or grades, on a tie) holding the most sites. */
+export const WIDEST_GRADES: Grade[] = GRADES.filter(
+  (g) => GRADE_COUNTS[g] === Math.max(...GRADES.map((x) => GRADE_COUNTS[x])),
+);
 
 export function bySlug(slug: string): CohortSite | undefined {
   return COHORT.find((s) => s.slug === slug);

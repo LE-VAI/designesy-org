@@ -98,6 +98,7 @@ const geistMono = Geist_Mono({
   ],
 });
 import {
+  LISTING_LINE,
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
   SITE_NAME,
@@ -160,8 +161,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${SITE_NAME} · Design intelligence infrastructure`,
-    description:
-      'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
+    description: LISTING_LINE,
     url: SITE_BASE,
     siteName: SITE_NAME,
     type: 'website',
@@ -170,8 +170,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: `${SITE_NAME} · Design intelligence infrastructure`,
-    description:
-      'Design intelligence infrastructure for a humane creative civilization.',
+    description: LISTING_LINE,
   },
   manifest: '/manifest.webmanifest',
   robots: {

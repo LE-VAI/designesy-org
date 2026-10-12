@@ -14,13 +14,13 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Drift monitor',
   description:
-    'Monitor any URL for design-drift over time: re-scores on a cadence, stores snapshots, computes deltas against the baseline, and emails you when drift is detected. 10 governance checks plus the 12 drift checks on every run.',
+    'Monitor any URL for design drift over time: each run you start is kept as a snapshot in your browser and compared with your first run and your last, with an optional email alert when drift is found. 10 governance checks plus the 12 drift checks on every run.',
   path: '/monitor',
 
   machineSibling: '/contracts/monitor.json',
   ogTitle: 'Drift monitor · Designesy',
   ogDescription:
-    'Continuous design-drift monitoring with email alerts: score deltas, trend slopes, new violations, token mutations.',
+    'Re-run a URL and compare each run with your first and your last: score deltas, trend slopes, new violations, token mutations, and an optional email alert.',
   twitterDescription: 'Designesy drift monitor · designesy.org/monitor',
 });
 
@@ -37,7 +37,7 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
         <EngineHead
           route="/monitor"
           name="Drift monitor"
-          thesis="Watch a URL for drift over time. Each run is kept as a snapshot in your browser and compared with your first run and your last, so a regression shows up on the run it lands."
+          thesis="Track a URL for drift over time. Each run you start is kept as a snapshot in your browser and sent with the next run, which is compared with your first run and your last, so a regression shows up on the run it lands. Nothing is scheduled, and the server keeps no history of its own."
           facts={[`${reg.count} governance checks`, `${drift.count} drift checks a run`, 'history in your browser']}
           contract={{ href: '/contracts/monitor', label: `contract ${reg.version} ${reg.status}` }}
         />

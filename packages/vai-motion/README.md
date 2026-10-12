@@ -82,7 +82,7 @@ grainShift.apply(document.querySelector('.stage'));
 
 ## Contract backing
 
-Every principle cites the designesy.org design-system contract (v0.4.0) — the machine-readable contract with 40 verification checks:
+Every principle cites the designesy.org design-system contract (v0.4.0), the machine-readable contract scored by the designesy.org verification engine:
 
 - **motion §ten_standards** — easing is deliberate; properties are explicit (transform/opacity only); entrances have opacity (never scale(0)); reduced-motion is handled
 - **--duration tokens** — 150/250/350/400/600ms; UI stays ≤300ms unless justified

@@ -30,13 +30,25 @@ import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { CohortStrip } from '../lib/data/strip';
 import { CategoryProfile, HeldTag } from '../lib/data/cells';
 
+// The share text counts the A grades from the cohort data at build. It used to
+// say "Designesy is the only A-grade site in the cohort" while three sites held
+// an A.
+const OG_A_COUNT = COHORT.filter((s) => s.grade === 'A').length;
+const OG_A_SELF = COHORT.some((s) => s.grade === 'A' && s.self);
+const OG_A_LINE =
+  OG_A_COUNT === 0
+    ? 'None reaches A.'
+    : OG_A_COUNT === 1
+      ? `One reaches A${OG_A_SELF ? ': designesy.org, self-scored and labelled' : ''}.`
+      : `${OG_A_COUNT} reach A${OG_A_SELF ? ', including designesy.org, self-scored and labelled' : ''}.`;
+
 export const metadata: Metadata = pageMeta({
   title: 'Leaderboard',
   description:
-    `Public design-verification leaderboard: 30 curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
+    `Public design-verification leaderboard: ${COHORT.length} curated sites scored by the deterministic ${ENGINE_CHECK_COUNT}-check Designesy engine. No LLM, no paywall, no pay-to-remove.`,
   path: '/leaderboard',
   ogDescription:
-    `30 sites scored by the same deterministic ${ENGINE_CHECK_COUNT}-check engine that scores designesy.org. Designesy is the only A-grade site in the cohort.`,
+    `${COHORT.length} sites scored by the same deterministic ${ENGINE_CHECK_COUNT}-check engine that scores designesy.org. ${OG_A_LINE}`,
   twitterDescription:
     'Public design-verification leaderboard · designesy.org/leaderboard',
 });

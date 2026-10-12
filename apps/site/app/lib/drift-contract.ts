@@ -1,9 +1,9 @@
 /**
  * Designesy Drift Contract v0.1.0 — machine-readable form.
  * Sibling contract governing AI-generated UI drift detection.
- * Source: Designesy research 2026-08-01 (Superdesign, DLS Lead, Codexical).
+ * Source: Designesy research 2026-08-01.
  *
- * The four documented 2026 drift failure modes:
+ * The four drift modes this contract names:
  *   1. Token fabrication — using token names that don't exist in the declared contract
  *   2. Within-session drift — spacing/color values changing across pages in one session
  *   3. Between-session amnesia — values from a previous session not reused
@@ -20,14 +20,12 @@ export const driftContract = {
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/drift',
   machine_url: 'https://www.designesy.org/contracts/drift.json',
-  updated: '2026-09-28',
+  updated: '2026-10-11',
   purpose:
-    'Drift is the named 2026 design-system crisis: AI-generated UI drifts off-contract in four documented ways. This contract defines the checks that detect drift deterministically from compiled CSS rather than prose advice.',
+    'AI-generated UI can drift off the tokens a site declares. This contract names four drift modes and defines the checks that detect drift deterministically from compiled CSS rather than prose advice.',
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-01',
-    drift_modes: 'Superdesign / DLS Lead / Codexical: four-mode drift taxonomy',
     scale_signal: 'OverlayQA: ~160 visual issues per AI-generated app (Jason Arbon, 1000+ checks)',
-    drift_rate: 'Figma 2025: 23% design-system drift in 8 weeks without formal review vs 4% with it',
     internal: 'designesy-core.v0.4.0: extends token + motion verification to drift detection',
   },
   conformance: {

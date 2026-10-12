@@ -75,7 +75,7 @@ const LADDER: {
   {
     name: 'Enterprise',
     title: 'Custom',
-    body: 'Private contract instance, private and staging URLs scored on your infrastructure, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
+    body: 'Private contract instance, private and staging URLs scored on your infrastructure, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
     status: 'By conversation',
     state: 'hold',
     action: { label: 'Contact us', href: 'mailto:hello@designesy.org' },
@@ -127,8 +127,9 @@ export default function ContinuityPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Offer ladder</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            No live prices on this page. Founding access opens after early
-            conversations. Open tools stay free either way.
+            Nothing on this page charges you yet: the prices below apply when
+            founding access opens, after early conversations. Open tools stay
+            free either way.
           </p>
           {/* Each row: the tier, its price and what it includes in the face
               (ending on the 7-line), and its state and action in the side

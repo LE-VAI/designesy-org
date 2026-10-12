@@ -26,7 +26,7 @@ export const guardrailsContract = {
     primary: 'Designesy research 2026-08-01',
     contract_shift: 'DLS Lead: "treat the design system as an API, not a library... CI fails if either side breaks the agreement"',
     types_not_suggestions: 'davekurian (dev.to): "tokens are types... you\'re removing the off-brand options from the API it consumes"',
-    adoption_signal: 'zeroheight Design Systems Report 2025: token adoption 84% (up from 56% in 2024), but 40% still sync tokens by hand',
+    adoption_signal: 'zeroheight Design Systems Reports 2025 and 2026: token adoption 84% (up from 56% in 2024, 2025 report), but 60% still sync tokens by hand (2026 report: only 40% of teams have a token pipeline)',
   },
   conformance: {
     output_bundle: [
@@ -35,7 +35,7 @@ export const guardrailsContract = {
       { component: 'agentRules', description: 'Markdown rules file (AGENTS.md format) with token allowlist, composition rules, and anti-patterns for AI coding agents' },
       { component: 'componentContract', description: 'Allowed component prop patterns derived from the token system: what props agents can use with which token values' },
       { component: 'antiPatterns', description: 'What NOT to do: inline values, fabricated tokens, off-system colors, magic numbers' },
-      { component: 'designMd', description: 'DESIGN.md-format file (Google open spec, google-labs-code/design.md, Apache-2.0): YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order. The de-facto AI-readable design-context standard' },
+      { component: 'designMd', description: 'DESIGN.md-format file (the open DESIGN.md format, google-labs-code/design.md, Apache-2.0, for describing a visual identity to coding agents): YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order' },
     ],
     emission_method:
       'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (Google open spec).',

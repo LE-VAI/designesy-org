@@ -1,4 +1,5 @@
 import { designSystemContract, CONTRACT_VERSION } from './design-system-contract';
+import { LISTING_LINE } from './site-meta';
 import { acousticTokens } from './acoustic-tokens';
 import { tokensContract } from './tokens-contract';
 import { a11yContract } from './a11y-contract';
@@ -53,7 +54,8 @@ export const openIndex = {
   updated: '2026-09-30',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
-    'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
+    LISTING_LINE +
+    ' Designesy publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
   thesis:
     'Open design intelligence means rules, prompts, and verification travel with the work, free of private taste and closed tools.',
   /**
@@ -442,7 +444,7 @@ export const openIndex = {
       title: 'Contract changelog',
       version: '0.1',
       status: 'live',
-      lede: 'Contract changes organized by 11 design dimensions (tokens, motion, cadence, accessibility, takt, poise, acoustics, copywriting, identity, security, verification). 14 entries from v0.1.0 to ' + CONTRACT_VERSION + '.',
+      lede: 'Contract changes organized by 11 design dimensions (tokens, motion, cadence, accessibility, takt, poise, acoustics, copywriting, identity, security, verification), from v0.1.0 to ' + CONTRACT_VERSION + '.',
       human_url: 'https://www.designesy.org/changelog',
       machine_url: null,
       path: '/changelog',
@@ -468,7 +470,7 @@ export const openIndex = {
       title: 'Spring physics validator',
       version: '0.1',
       status: 'live',
-      lede: 'Validate spring-based motion against an accessibility/reduced-motion contract. Simulates a damped harmonic oscillator, computes damping ratio and overshoot, and renders an accessibility verdict. 8 presets including M3 Expressive, iOS, and Framer Motion. Green-field validation capability no one else offers.',
+      lede: 'Validate spring-based motion against an accessibility/reduced-motion contract. Simulates a damped harmonic oscillator, computes damping ratio and overshoot, and renders an accessibility verdict. 8 presets including M3 Expressive, iOS, and Framer Motion.',
       human_url: 'https://www.designesy.org/spring-validator',
       machine_url: null,
       path: '/spring-validator',

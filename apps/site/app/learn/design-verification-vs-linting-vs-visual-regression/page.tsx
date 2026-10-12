@@ -43,7 +43,7 @@ const PRACTICES = [
     num: '03',
     name: 'Design verification',
     question: 'Does the live site keep the contract?',
-    input: 'A live URL, fetched the way a visitor fetches it',
+    input: 'A live URL: the HTML and CSS its server sends',
     output: 'A letter grade and per-check findings',
     scope: 'Tokens, rules, behavior, and verification: all four contract layers',
     fails: 'It cannot inspect what it cannot fetch. Pages behind auth, paywalls, or bot challenges are scored on what the verifier can receive.',
@@ -119,17 +119,17 @@ export default function ComparisonPage() {
               Linting catches token drift at authoring time. Regression
               catches pixel drift at shipping time. Verification catches
               contract drift at visitor time. Each one fails where the
-              others succeed, which is why mature teams run all three, and why
-              verification is the only one that can score a site you do
-              not control.
+              others succeed, which is why mature teams run all three.
+              Verification needs only a URL and a published contract, so it can
+              score a site you do not control.
             </p>
           </div>
           <p className="surface-note">
-            Linting and regression both require access to the source. A
-            visitor, a reviewer, a procurement team, or a design system
-            author evaluating someone else&rsquo;s site has neither.
-            Verification is the only practice in this set that takes a URL
-            and returns a grade.
+            Linting needs the source, and regression needs a baseline captured
+            earlier. A visitor, a reviewer, a procurement team, or a design
+            system author evaluating someone else&rsquo;s site usually has only
+            the URL. Of the three practices, verification is the one that takes
+            a URL alone and returns a grade.
           </p>
         </section>
 

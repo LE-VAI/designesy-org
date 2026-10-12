@@ -9,11 +9,11 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/verify-loop-poster.png">
-  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org against contract v0.4.1. Its 42 check cells, in 14 category rows, light up one by one while a log names each check and the pass count climbs. The verdict lands: grade A, 93%, with 39 checks passed, 3 left to a person, and none warning or failing.">
+  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org: one cell per check, in one row per category, lights as each check runs while a log names it, and the verdict lands with the grade and the pass count. Recorded from an earlier contract version; the live console shows the current one.">
 </picture>
 <p><sub>A 12-second loop, recorded from the homepage. It plays once and rests on the verdict, and shows a still frame if you prefer reduced motion. <a href="https://www.designesy.org/">Watch it run on designesy.org</a>.</sub></p>
 
-[designesy.org](https://www.designesy.org) — design-system contract verification, scoring, and review tools for AI agents.
+Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. Live at [designesy.org](https://www.designesy.org).
 
 ## Quick Start
 
@@ -48,7 +48,7 @@ pip install designesy-mcp && designesy-mcp
 
 The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
-**Designesy Contract Check** is a GitHub Action that scores any URL against a **44-check design-system contract** — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting — and fails your CI workflow when the score or grade drops below your threshold. No LLM, no heuristics, no vibe-tax: every check is deterministic, reproducible, and grounded in a published contract.
+**Designesy Contract Check** is a GitHub Action that scores any URL against a **44-check design-system contract** (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting) and fails your CI workflow when the score or grade drops below your threshold. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 ## Tools
 
@@ -63,6 +63,12 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 - `designesy_agent_json` — Get the /.well-known/agent.json discovery document.
 - `designesy_llms_txt` — Get the short /llms.txt agent brief.
 - `designesy_llms_full_txt` — Get the full /llms-full.txt brief as reference data (its ingest steps and paste-ready agent prompt stay in the published file).
+- `designesy_drift_score` — Score a live URL for UI drift: 12 checks on its custom properties and var() references.
+- `designesy_readiness_score` — Score a URL for AI readiness: 10 probes for machine-readable design artifacts (DTCG tokens, llms.txt, agent.json, an MCP endpoint, DESIGN.md and more).
+- `designesy_guardrails` — Generate a build-contract bundle for coding agents from a site's tokens: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns and DESIGN.md.
+- `designesy_monitor_score` — Re-run the drift checks against earlier snapshots and compute 10 monitor checks; can send a drift-alert email to an address you pass.
+- `designesy_compare` — Diff the tokens of two live URLs: added, removed, renamed, changed values, scale and contrast drift, and the score delta.
+- `designesy_report` — One composite report for a URL (score × 0.5 + drift × 0.3 + readiness × 0.2), with an interactive dashboard in hosts that support MCP Apps.
 
 ### Tool reference table
 
@@ -79,6 +85,12 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 | `designesy_agent_json` | Get the /.well-known/agent.json discovery document |
 | `designesy_llms_txt` | Get the short /llms.txt agent brief |
 | `designesy_llms_full_txt` | Get the full /llms-full.txt brief as reference data (its ingest steps and paste-ready agent prompt stay in the published file) |
+| `designesy_drift_score` | Score a live URL for UI drift (12 checks on custom properties and var() references) |
+| `designesy_readiness_score` | Score a URL for AI readiness (10 probes for machine-readable design artifacts) |
+| `designesy_guardrails` | Generate a build-contract bundle for coding agents from a site's tokens (6 files) |
+| `designesy_monitor_score` | Re-run drift checks against earlier snapshots; 10 monitor checks; optional drift-alert email |
+| `designesy_compare` | Diff the tokens of two live URLs, with the score delta |
+| `designesy_report` | Composite report for one URL (score, drift, readiness), with an MCP App dashboard |
 
 ## Live
 
@@ -101,7 +113,7 @@ The live site is verified against the design system contract — 44 deterministi
 - **44 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
 - **Copywriting principles** (added in v0.4.0) — 16 UX copy principles + 4 verification checks (button verb phrases, no trailing periods, descriptive link text, no ALL CAPS)
 - **10 Non-Negotiable Motion Standards** — deliberate easing, explicit properties, opacity entrances, keyboard stillness, no layout animation, touch gating, bounded duration, reduced-motion paths, asymmetric press, no ease-in
-- **10 acoustic cues** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume v0.1.0 engine, interaction-only
+- **19 acoustic cues** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume 0.2 engine (MIT), interaction-only
 - **9 open tensions** — documented, not hidden
 - **Spring physics** — default + momentum tokens via custom `$type: spring`
 - **Machine-readable** — W3C DTCG 2025.10 format + custom extensions
@@ -164,8 +176,7 @@ Designesy is a system.
 
 ## Related tools
 
-- **[Lyse](https://github.com/lyse-design/lyse)** — 258-check design system health scoring from your codebase (6 axes). Designesy scores any public URL; Lyse scores your repo. Complementary.
-- **[DSAF](https://github.com/cyberskill-official/design-system-audit-framework)** — 125-criterion LLM-assisted design system maturity audit across 20 categories. Designesy is deterministic URL scoring; DSAF is LLM-assisted maturity assessment. Different layers, same goal.
+- **[Lyse](https://github.com/lyse-labs/lyse)** — 258-check design system health scoring from your codebase (6 axes). Designesy scores any public URL; Lyse scores your repo. Complementary.
 - **[axe-core](https://github.com/dequelabs/axe-core)** — WCAG accessibility testing. Designesy checks design-contract compliance (tokens, motion, typography) — a different layer. They complement each other.
 - **[Lighthouse](https://github.com/GoogleChrome/lighthouse)** — Performance, accessibility, and SEO auditing. Designesy checks design-contract compliance — Lighthouse doesn't know what a design token is.
 
@@ -175,7 +186,7 @@ Designesy is a system.
 No. The MCP endpoint is stateless Streamable HTTP with no authentication. Sixteen of the 17 tools are read-only; `designesy_monitor_score` can send a drift-alert email to an address you pass.
 
 **Is it deterministic?**
-Yes. There is no LLM in the scoring loop — every check is deterministic and reproducible. The same URL will always produce the same score.
+Yes. There is no LLM in the scoring loop: every check is deterministic and reproducible. The same page, engine and contract always produce the same verdicts, and the receipt's digest lets anyone check that. A live URL can change between runs, and results are cached for 24 hours.
 
 **What does it score against?**
 The current Designesy design-system contract — 44 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).

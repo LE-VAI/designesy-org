@@ -49,10 +49,18 @@ export const MCP_SERVER_CARD_URL = `${MCP_ENDPOINT}/server-card`;
 export const MCP_REPOSITORY = 'https://github.com/LE-VAI/designesy-org';
 
 /**
- * Protocol revisions the hosted endpoint negotiates on initialize, each
- * confirmed by sending it and reading it back (2026-10-11).
+ * Protocol revisions the hosted endpoint speaks, each confirmed against the
+ * live endpoint on 2026-10-11:
+ *   - 2024-11-05 to 2025-11-25: sent on a legacy initialize and read back.
+ *   - 2026-07-28: the stateless revision, served per request. server/discover
+ *     (MCP-Protocol-Version: 2026-07-28, with the _meta envelope) answers
+ *     supportedVersions ["2026-07-28"], and tools/list under it returns all
+ *     tools. A legacy initialize that asks for 2026-07-28 is answered with
+ *     2025-11-25, so this one is not visible from initialize.
+ * SEP-2127: a client reads this list to decide whether it can attempt a
+ * connection, so a revision missing here turns away a client that would work.
  */
-export const MCP_SUPPORTED_PROTOCOL_VERSIONS = ['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25'] as const;
+export const MCP_SUPPORTED_PROTOCOL_VERSIONS = ['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25', '2026-07-28'] as const;
 
 /**
  * The v1 icon tile (brand ledger D53): the mark and its dot on the dark
