@@ -937,44 +937,6 @@ p {
   cursor: default;
 }
 
-/*
-  Hero text shimmer (jh3yy / AliGrids technique, polished).
-  background-clip + multi-stop signal sweep — brand blue family only,
-  dual highlight for depth, seamless linear loop. Dot stays signal breath.
-*/
-.wordmark-hero .wordmark-shimmer,
-.wordmark-hero .wordmark-shimmer *,
-.wordmark-shimmer,
-.wordmark-shimmer * {
-  background-image: linear-gradient(
-    100deg,
-    var(--shimmer-1) 0%,
-    var(--shimmer-2) 12%,
-    var(--ink) 22%,
-    var(--ink) 34%,
-    var(--shimmer-3) 42%,
-    var(--shimmer-4) 46.5%,
-    var(--shimmer-5) 49%,
-    var(--paper-white) 50.5%,
-    var(--shimmer-5) 52%,
-    var(--shimmer-4) 54.5%,
-    var(--shimmer-3) 58%,
-    var(--signal) 64%,
-    var(--ink) 72%,
-    var(--ink) 84%,
-    var(--shimmer-2) 92%,
-    var(--shimmer-1) 100%
-  );
-  background-size: 320% 100%;
-  background-position: 100% 50%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  animation: textShimmer 4.2s linear infinite !important;
-}
-
 .wordmark-hero .dot {
   /* signal-access — see .wordmark .dot note. The hero dot sits on the
      page surface (same near-black/near-white) and is a text node, so
@@ -985,16 +947,6 @@ p {
   margin-inline-start: -0.01em;
   transform: translateY(-0.02em);
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-
-@keyframes textShimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }
 
 @keyframes signalPulse {
@@ -1180,88 +1132,6 @@ p {
   outline-offset: 2px;
 }
 
-/* --- Theme Toggle ---
-   Single SVG that morphs sun → moon via mask slide.
-   Dark mode: sun visible (rays extended, mask circle offset).
-   Light mode: mask circle slides in to "bite" the sun into a crescent. */
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color var(--duration-quick) var(--ease-out),
-              background var(--duration-quick) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .theme-toggle:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-hover);
-  }
-}
-
-.theme-toggle:active {
-  transform: scale(0.96);
-}
-
-/* Sun core: the main circle that becomes the crescent */
-.theme-icon .sun-core {
-  transition: r var(--duration-fast) var(--ease-out);
-}
-
-/* Moon mask circle: offset far in dark (invisible), slides into view in light */
-.theme-icon .moon-mask-circle {
-  transition: cx var(--duration-fast) var(--ease-out),
-              cy var(--duration-fast) var(--ease-out);
-}
-
-/* Sun rays: visible in dark, scale to 0 in light */
-.theme-icon .sun-rays {
-  transition: opacity var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
-  transform-origin: center;
-}
-
-/* Dark mode (default): sun fully visible, mask hidden */
-[data-theme="dark"] .theme-icon .sun-core,
-:root:not([data-theme="light"]) .theme-icon .sun-core {
-  r: 5px;
-}
-
-[data-theme="dark"] .theme-icon .moon-mask-circle,
-:root:not([data-theme="light"]) .theme-icon .moon-mask-circle {
-  cx: 30px;
-  cy: 4px;
-}
-
-[data-theme="dark"] .theme-icon .sun-rays,
-:root:not([data-theme="light"]) .theme-icon .sun-rays {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-/* Light mode: rays retract, mask slides in to create crescent */
-[data-theme="light"] .theme-icon .sun-core {
-  r: 6px;
-}
-
-[data-theme="light"] .theme-icon .moon-mask-circle {
-  cx: 20px;
-  cy: 8px;
-}
-
-[data-theme="light"] .theme-icon .sun-rays {
-  opacity: 0;
-  transform: scale(0.5) rotate(90deg);
-}
-
 /* View Transitions: no default animation on root — we drive our own clip-path */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -1328,20 +1198,6 @@ p {
 }
 
 /* --- Sense toggles (sound + haptics) --- */
-
-.sense-toggles {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-8);
-  flex-shrink: 0;
-  /* No border-left divider: the preceding nav-links gap + consistent 32px
-     control heights already separate the clusters cleanly. The previous
-     1px hairline + 0.85rem padding was competing with the scroll-progress
-     gradient at the topbar bottom, reading as "two connected vertical
-     lines" on the nav (operator feedback 2026-08-02). Remove the divider;
-     the instrument register is cleaner without it. */
-  margin-left: var(--space-fine-40);
-}
 
 .sense-toggle {
   display: inline-flex;
@@ -2123,34 +1979,6 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 /* --- Hero --- */
 
-
-/*
-  Hero seam constellation
-  -----------------------
-  The five modular mark elements (dot, orbit quarter, square, triangle,
-  rounded quarter) dock on a vertical seam to the right of the hero copy.
-  Same grammar as the brand mark — crisp, solid, intentional — not washed
-  primitives floating in the void. Field-card marks are the dispersed form.
-*/
-.hero-seam {
-  position: absolute;
-  right: clamp(0rem, 2vw, 1.5rem);
-  top: 50%;
-  transform: translateY(-50%);
-  width: min(300px, 34vw);
-  height: min(300px, 46vh);
-  pointer-events: none;
-  z-index: 3;
-  display: none;
-  perspective: 640px;
-}
-
-@media (min-width: 860px) {
-  .hero-seam {
-    display: block;
-  }
-}
-
 /* Scroll-driven parallax — the constellation drifts up at 0.3x scroll
    speed, creating depth without GSAP. --scroll-y is set by ScrollDepth
    (rAF-throttled passive scroll listener). Reduced-motion users get
@@ -2171,17 +1999,6 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   transform-style: preserve-3d;
   transition: transform 120ms var(--ease-out);
   perspective: 500px;
-}
-
-/*
-  Per-shape hover groups — each shape is wrapped in a <g class="seam-shape">
-  so it can receive CSS 3D transforms (SVG child elements can't, but <g> can).
-  JS (EffectEnhancer) applies transform + color on hover.
-*/
-.hero-seam-mark .seam-shape {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease);
 }
 
 /*
@@ -2481,23 +2298,6 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   border-bottom: 1px solid var(--line-faint);
 }
 
-.pipeline-track::before {
-  content: "";
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 0.55rem;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--line) 8%,
-    var(--line) 92%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
 .pipeline-step {
   display: flex;
   flex-direction: column;
@@ -2515,33 +2315,9 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   background: var(--signal-dim);
 }
 
-.pipeline-step.is-end .pipeline-node-core {
-  background: var(--signal);
-  width: 0.4rem;
-  height: 0.4rem;
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.pipeline-step.is-end .pipeline-label {
-  color: var(--ink);
-}
-
-.pipeline-step.is-end .pipeline-num {
-  color: var(--signal-text);
-}
-
 @media (hover: hover) and (pointer: fine) {
   .pipeline-step:hover .pipeline-node {
     border-color: var(--signal-light);
-  }
-
-  .pipeline-step:hover .pipeline-node-core {
-    background: var(--signal-light);
-    transform: scale(1.15);
-  }
-
-  .pipeline-step:hover .pipeline-label {
-    color: var(--ink);
   }
 }
 
@@ -2668,28 +2444,12 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
     row-gap: var(--space-fine-45);
   }
   .surface-card-meta { grid-row: 1; }
-  .surface-card-label { grid-row: 2; }
-  .surface-card-desc { grid-row: 3; }
-  .surface-card-arrow { grid-row: 4; }
 }
 
 /* Pressed: the contract's press scale. The hover tilt and 1px lift are gone
    (the card holds still; its edges are shared with its neighbours). */
 a.surface-card:active {
   transform: scale(0.99);
-}
-
-
-@media (hover: hover) {
-  .surface-card:hover .surface-card-arrow {
-    color: var(--ink);
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-arrow {
-    transform: translateX(2px);
-  }
 }
 
 /*
@@ -2776,74 +2536,6 @@ a.surface-card:active {
 .surface-card > * {
   position: relative;
   z-index: 1;
-}
-
-/* --- Pillars (home "What the contract holds"): the same reading material.
-   Their older look lives in home.css (a 1px line border, a hover fill, a 2px
-   lift and a signal bar that scaled up the left edge on ::before); these
-   selectors carry the grid's class so they outrank it from this earlier
-   sheet, and ::before is fully restated as the rim. The pillar is its own
-   stacking context, so the contact light at z -1 sits over its fill and
-   under its text. --- */
-.pillar-grid > .pillar {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--mat-reading);
-  box-shadow: var(--elev-1);
-  transition: transform var(--duration-quick) var(--ease-out);
-}
-.pillar-grid > .pillar::before,
-.pillar-grid > .pillar::after {
-  content: "";
-  display: block;
-  position: absolute;
-  inset: 0;
-  width: auto;
-  border-radius: inherit;
-  transform: none;
-  pointer-events: none;
-  transition: opacity var(--mat-t-out);
-}
-.pillar-grid > .pillar::before {
-  z-index: 1;
-  padding: 1px;
-  background: var(--rim-hot);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: var(--rim-rest);
-}
-.pillar-grid > .pillar::after {
-  z-index: -1;
-  background: var(--glow-contact);
-  opacity: 0;
-}
-@media (hover: hover) {
-  .pillar-grid > .pillar:hover {
-    border-color: transparent;
-    background: var(--mat-reading);
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .pillar-grid > .pillar:hover {
-    transform: none;
-  }
-  .pillar-grid > .pillar:hover::before,
-  .pillar-grid > .pillar:hover::after {
-    opacity: 1;
-    transform: none;
-    transition: opacity var(--mat-t-in);
-  }
-}
-.pillar-grid > .pillar:active {
-  transform: scale(0.99);
-}
-.pillar-grid > .pillar:focus-visible::before {
-  opacity: 1;
-  transition: opacity var(--mat-t-in);
 }
 
 /* Focus-visible on a reading card: the 2px access outline, offset 2px, and
@@ -2996,10 +2688,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
     background: var(--signal-dim);
     border-color: var(--signal);
   }
-  .pipeline-step:hover .pipeline-node-core {
-    background: var(--signal);
-    transform: scale(1.2);
-  }
 }
 
 /* --- Underline: signal underline grows under nav links on hover --- */
@@ -3040,12 +2728,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 
 /* --- Surface card desc brightens on contact. The label no longer slides:
    claims hold still; the contact reads in the card's material. --- */
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-desc {
-    color: var(--ink);
-  }
-}
 
 /* --- Shake: non-link elements jitter on tap --- */
 .principle.is-shaking,
@@ -3344,31 +3026,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 @media (hover: hover) {
   .text-link:hover::after {
-    transform: scaleX(1);
-  }
-}
-
-/* --- Scope path links: signal underline grow --- */
-.scope-path-link,
-.scope-line a {
-  position: relative;
-}
-.scope-path-link::after,
-.scope-line a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  transform: scaleX(0);
-  transform-origin: left center;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: transform 200ms var(--ease-out);
-}
-@media (hover: hover) {
-  .scope-path-link:hover::after,
-.scope-line a:hover::after {
     transform: scaleX(1);
   }
 }
@@ -4606,28 +4263,6 @@ dl.definition-side {
   line-height: 1.5;
 }
 
-
-.scope-path,
-.scope-path-link {
-  color: var(--muted-dim);
-  font-size: var(--text-label);
-  font-variant-numeric: tabular-nums;
-}
-
-.scope-path::before,
-.scope-path-link::before {
-  content: "· ";
-  color: var(--muted-dim);
-}
-
-
-.avoid-list li::before {
-  content: "×";
-  color: var(--muted-dim);
-  font-weight: 600;
-  font-size: var(--text-body);
-}
-
 /* Two-column layout for larger content blocks, on the shell module: twelve
    tracks on the one gutter, and the columns take spans by the region's own
    width (it is its own size container, like .g12). The old 1fr 1fr on a 40px
@@ -5216,27 +4851,6 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-/* The live heartbeat (D35, D57): an outer halo in the flame, the dot and its
-   rim never fade. Its first consumers (the status marquee and the Four ways
-   LIVE dots on the home page) were retired with D60; it stays for the next
-   thing that is happening now. */
-@keyframes live-halo {
-  0%, 100% {
-    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 1px color-mix(in srgb, var(--activation) 0%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 5px color-mix(in srgb, var(--activation) 28%, transparent);
-  }
-}
-
-/* .layer-stack is a docs-only class; its width cap lives here. */
-@media (min-width: 860px) {
-  .layer-stack {
-    width: min(100%, 640px);
-    max-width: min(100%, 640px);
-  }
-}
-
 
 .row,
 .layer-item {
@@ -5442,12 +5056,6 @@ button.layer-item {
 .layer-item.is-checked:hover {
     opacity: 0.68;
   }
-}
-
-.pillar.is-checked .pillar-number {
-  text-decoration: line-through;
-  text-decoration-color: var(--muted-dim);
-  text-decoration-thickness: 1px;
 }
 
 .row.is-checked .row-index,
@@ -5800,12 +5408,6 @@ button.row {
 @media (hover: none), (pointer: coarse) {
   .definition.is-copyable .definition-copy-badge {
     opacity: 1;
-  }
-  pre.definition-code.is-copyable {
-    padding-top: 2rem;
-  }
-  pre.definition-code.is-copyable .definition-copy-badge {
-    top: var(--space-8);
   }
 }
 
@@ -7358,9 +6960,6 @@ html[data-motion="paused"] .lab-card:active {
 .demo-cell .poise-actions {
   justify-content: center;
 }
-.demo-cell .poise-sound-row {
-  justify-content: center;
-}
 
 @media (max-width: 560px) {
   .poise-actions {
@@ -8005,50 +7604,9 @@ html:not(.js-ready) .demo-stagger-bar {
     padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
   }
-
-  .pillar-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* Keep horizontal rail; densify type before stacking */
-  .pipeline-label {
-    font-size: var(--text-label);
-  }
-
-  .pipeline-note {
-    font-size: var(--text-label);
-    max-width: 6.5rem;
-  }
 }
 
 @media (max-width: 720px) {
-  .pipeline-track {
-    grid-template-columns: 1fr;
-  }
-
-  .pipeline-track::before {
-    left: 0.55rem;
-    right: auto;
-    top: 0.9rem;
-    bottom: 0.9rem;
-    width: 1px;
-    height: auto;
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      var(--line) 8%,
-      var(--line) 92%,
-      transparent 100%
-    );
-  }
 
   .pipeline-step {
     flex-direction: row;
@@ -8062,34 +7620,12 @@ html:not(.js-ready) .demo-stagger-bar {
   .pipeline-node {
     flex-shrink: 0;
   }
-
-  .pipeline-num {
-    margin-top: 0;
-    min-width: 1.5rem;
-  }
-
-  .pipeline-label {
-    min-width: 5.5rem;
-    font-size: var(--text-label);
-  }
-
-  .pipeline-note {
-    max-width: none;
-    margin-inline-start: auto;
-    text-align: right;
-    font-size: var(--text-label);
-  }
 }
 
 @media (max-width: 560px) {
   /* No .site-shell gutter override: the base rule's --shell-gutter is the
      header pill's inset at every width, and a fixed 16px here put content
      6px inside the pill between 400 and 560px. */
-
-  .pillar-grid,
-  .surface-list {
-    grid-template-columns: 1fr;
-  }
 
   .hero-actions {
     flex-direction: column;
@@ -8235,131 +7771,6 @@ a.field-card:active {
   color: color-mix(in srgb, var(--warn) 70%, var(--ink));
   border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
   background: transparent;
-}
-
-/*
-  Field marks = dispersed modular elements.
-  Same five-element grammar as the hero seam mark:
-    open     → signal dot (origin)
-    contract → square (structure)
-    lab      → orbit / circle (living)
-    kit      → rounded block (usable package)
-
-  Each piece keeps its own 3D personality when the card is engaged.
-*/
-.mark-glyph {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  perspective: 120px;
-  transform-style: preserve-3d;
-}
-
-
-/* Contract = infrastructure square */
-.mark-glyph--contract .mark-glyph-core {
-  border-radius: 0;
-  inset: 8px;
-  background: var(--signal);
-  animation: signalPulse 4.8s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--contract .mark-glyph-ring {
-  border-radius: var(--radius-sm);
-  border-color: var(--signal-dim);
-}
-
-/* Lab = orbit / living circle */
-.mark-glyph--lab .mark-glyph-core {
-  border-radius: 50%;
-  inset: 9px;
-  background: var(--signal-light);
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--lab .mark-glyph-ring {
-  border-radius: 50%;
-  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
-  border-top-color: transparent;
-  border-right-color: transparent;
-  transform: rotate(-18deg) translateZ(0);
-}
-
-/* Kit = stability rounded block */
-.mark-glyph--kit .mark-glyph-core {
-  border-radius: 0 0 6px 0;
-  inset: 8px;
-  background: var(--signal-light);
-  animation: signalPulse 3.8s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--kit .mark-glyph-ring {
-  border-radius: 0 0 10px 0;
-  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
-}
-
-/* Open = origin signal dot */
-.mark-glyph--open .mark-glyph-core {
-  border-radius: 50%;
-  inset: 9px;
-  background: var(--signal);
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--open .mark-glyph-ring {
-  border-radius: 50%;
-  border-color: var(--signal-dim);
-}
-
-/* Per-piece 3D on card engagement — fine pointer only */
-@media (hover: hover) and (pointer: fine) {
-  .field-card:hover .mark-glyph--open .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--open .mark-glyph-core {
-    transform: translateZ(10px) scale(1.12);
-  }
-
-  .field-card:hover .mark-glyph--open .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--open .mark-glyph-ring {
-    transform: translateZ(4px) scale(1.06);
-    border-color: var(--signal-light);
-  }
-
-  .field-card:hover .mark-glyph--contract .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--contract .mark-glyph-core {
-    transform: translateZ(8px) rotateX(-10deg) scale(1.06);
-  }
-
-  .field-card:hover .mark-glyph--contract .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--contract .mark-glyph-ring {
-    transform: translateZ(2px);
-  }
-
-  .field-card:hover .mark-glyph--lab .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--lab .mark-glyph-core {
-    transform: translateZ(10px) rotateY(-12deg) scale(1.08);
-  }
-
-  .field-card:hover .mark-glyph--lab .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--lab .mark-glyph-ring {
-    transform: rotate(-18deg) translateZ(5px) rotateY(-8deg) scale(1.05);
-    border-color: var(--signal-light);
-  }
-
-  .field-card:hover .mark-glyph--kit .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--kit .mark-glyph-core {
-    transform: translateZ(8px) rotateX(-6deg) rotateY(8deg) scale(1.05);
-  }
-
-  .field-card:hover .mark-glyph--kit .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--kit .mark-glyph-ring {
-    transform: translateZ(2px) rotateY(4deg);
-  }
-
-  .field-card:active .mark-glyph-core {
-    transform: translateZ(2px) scale(0.96) !important;
-    transition-duration: 100ms;
-  }
 }
 
 /* Prompt block (CopyPrompt, lib/copy-prompt.tsx): one reading surface with
@@ -8631,11 +8042,6 @@ html[data-motion="paused"] .copy-prompt-btn:active {
     opacity: 1;
   }
 
-  .wordmark-hero .wordmark-shimmer,
-  .text-shimmer {
-    animation-duration: 12s !important;
-  }
-
   /* Tier 2: Soften entrance animations — snap to final state instantly */
   .js-ready [data-reveal] {
     animation: none !important;
@@ -8711,10 +8117,6 @@ a.field-card:focus-visible {
 
 /* a.surface-card:focus-visible: the access outline and the hot rim, in the
    reading-material block (no fill change, no lift). */
-
-a.surface-card:focus-visible .surface-card-arrow {
-  color: var(--ink);
-}
 
 a.lab-card:focus-visible {
   border-color: var(--line-strong);
@@ -9552,11 +8954,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   to { opacity: 1; }
 }
 
-
-.score-hero-section .score-form {
-  margin-top: var(--space-32);
-}
-
 /* ── Score Form ─────────────────────────────────────────────────────────── */
 /* The URL bar itself is the shared control surface (lib/engine/command-bar);
    these rules place the results column it sits above. */
@@ -9779,11 +9176,6 @@ a.lab-card:focus-visible .lab-card-arrow {
    light and dark surfaces. The 18px width reserves space for the full
    3-dot cluster so flex gap is measured from the visual edge. */
 
-@keyframes scoreSpinnerPulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.85); }
-  50%      { opacity: 1;   transform: scale(1.1); }
-}
-
 /* ── Score Error Card ──────────────────────────────────────────────────── */
 
 .score-error-card {
@@ -9936,24 +9328,6 @@ a.lab-card:focus-visible .lab-card-arrow {
     display: none;
   }
 }
-
-
-.score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok-ink); }
-.score-grade-emblem.is-c { background: color-mix(in srgb, var(--grade-c) 12%, transparent); border-color: color-mix(in srgb, var(--grade-c) 30%, transparent); color: var(--warn-ink); }
-.score-grade-emblem.is-d { background: color-mix(in srgb, var(--grade-d-glow) 12%, transparent); border-color: color-mix(in srgb, var(--grade-d-glow) 30%, transparent); color: var(--grade-d-ink); }
-.score-grade-emblem.is-f { background: color-mix(in srgb, var(--grade-f) 12%, transparent); border-color: color-mix(in srgb, var(--grade-f) 30%, transparent); color: var(--error-ink); }
-
-
-/* Grade-colored arc fills — match the emblem grade colors */
-.score-grade-emblem.is-a .score-arc-fill { stroke: var(--grade-a); }
-.score-grade-emblem.is-c .score-arc-fill { stroke: var(--grade-c); }
-.score-grade-emblem.is-d .score-arc-fill { stroke: var(--grade-d); }
-.score-grade-emblem.is-f .score-arc-fill { stroke: var(--grade-f); }
-
-.score-grade-emblem.is-a .score-grade-glow { background: var(--grade-a); }
-.score-grade-emblem.is-c .score-grade-glow { background: var(--grade-c); }
-.score-grade-emblem.is-d .score-grade-glow { background: var(--grade-d-glow); }
-.score-grade-emblem.is-f .score-grade-glow { background: var(--grade-f); }
 
 .score-hero-meta {
   display: flex;
@@ -10465,16 +9839,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-score {
   font-size: var(--text-label);
   font-weight: 500;
-  font-variant-numeric: proportional-nums;
-}
-
-/* Standalone decimal figures take proportional digits. Schibsted Grotesk's
-   tabular figures give the period and the percent sign a digit's full advance
-   (10px against 4px for the period at 14px), so 67.9% read "67 . 9%".
-   Tabular figures stay where numbers line up in a column. The ring's figure
-   counts up, so its digits stay tabular (no wobble) and only its punctuation,
-   wrapped in .num-punct, is proportional. */
-.num-punct {
   font-variant-numeric: proportional-nums;
 }
 
@@ -11199,39 +10563,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   box-shadow: none;
 }
 
-/* ────────────────────────────────────────────────────────────────
-   Guardrails bundle tabs — sliding underline indicator
-   Same pattern as .score-filter-segmented: a useLayoutEffect measures
-   the active tab's offsetLeft/offsetWidth and sets --indicator-x /
-   --indicator-w on the container; a ::before pseudo-element slides
-   along the bottom border to underline the active tab.
-   ──────────────────────────────────────────────────────────────── */
-.bundle-tabs {
-  display: flex;
-  gap: var(--space-4);
-  border-bottom: 1px solid var(--line);
-  margin-bottom: var(--space-16);
-  flex-wrap: wrap;
-  position: relative;
-  --indicator-x: 0px;
-  --indicator-w: 0px;
-}
-
-.bundle-tabs::before {
-  content: '';
-  position: absolute;
-  bottom: -1px; /* sit on top of the container's bottom border */
-  left: 0;
-  height: 2px;
-  width: var(--indicator-w);
-  transform: translateX(var(--indicator-x));
-  background: var(--ink);
-  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
-              width var(--duration, 0.3s) var(--ease-out, ease-out);
-  pointer-events: none;
-  z-index: 1;
-}
-
 /* Sliding indicators snap under reduce. This block must come AFTER both base
    rules: it used to sit ~500 lines above them, where the later same-specificity
    `transition` won and both pills kept sliding 600ms under reduce (contract a10,
@@ -11696,21 +11027,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     padding: var(--space-20);
   }
 
-  
-  .score-grade-emblem {
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-
-  .score-grade-letter {
-    font-size: var(--text-h1);
-  }
-
-  
-  .score-progress-bar {
-    width: 100%;
-  }
-
   .score-site-url {
     max-width: 100%;
   }
@@ -11738,33 +11054,9 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   .score-controls-card {
     padding: var(--space-fine-85);
   }
-
-  .score-hero-section {
-    padding-top: var(--space-24);
-    padding-bottom: var(--space-28);
-  }
-
-  .score-hero-section .score-form {
-    margin-top: var(--space-16);
-  }
-
-  .score-contract-note {
-    margin-top: var(--space-16);
-    font-size: var(--text-label);
-    line-height: 1.5;
-  }
 }
 
 @media (max-width: 560px) {
-
-  .score-hero-section {
-    padding-top: var(--space-16);
-    padding-bottom: var(--space-20);
-  }
-
-  .score-hero-section .score-form {
-    margin-top: var(--space-12);
-  }
 
   .score-hint {
     font-size: var(--text-label);
@@ -11773,15 +11065,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
   .score-hero-card {
     padding: var(--space-16);
-  }
-
-  .score-grade-emblem {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .score-grade-letter {
-    font-size: var(--text-h1);
   }
 
   
@@ -11837,15 +11120,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 @media (max-width: 380px) {
-
-  .score-grade-emblem {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .score-grade-letter {
-    font-size: var(--text-h2);
-  }
 
   .score-metric-tile {
     padding: var(--space-8) var(--space-fine-35);
@@ -13275,12 +12549,6 @@ select {
   text-wrap: balance;
 }
 
-
-.score-tip-hint {
-  margin-top: var(--space-12);
-  display: flex;
-}
-
 .score-note {
   margin: 0;
   font-size: var(--text-label);
@@ -13982,18 +13250,6 @@ button.rs-row:focus-visible {
   50%      { stroke-dashoffset: -40; }
 }
 
-/* Square satellite — dashed ring orbiting the solid square's centroid. */
-.hero-seam-mark .seam-square-satellite {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: seamDockScatter 0.9s var(--ease-out) 0.26s both, seamSatelliteSpin 12s linear 1.5s infinite;
-}
-
-@keyframes seamSatelliteSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* Block — 8s sine bob. The smallest body wanders the most. */
 .hero-seam-mark .seam-block {
   animation: seamDockScatter 0.9s var(--ease-out) 0.34s both, seamBlockBob 8s var(--ease-in-out) 1.6s infinite;
@@ -14004,22 +13260,6 @@ button.rs-row:focus-visible {
   25%      { transform: translate(-6px, -8px); }
   50%      { transform: translate(-10px, 2px); }
   75%      { transform: translate(-4px, 8px); }
-}
-
-/* Triangle echo cascade — two ghost copies expand outward behind the solid,
-   staggered 1.5s apart so the blueprint breathes continuously. */
-.hero-seam-mark .seam-triangle-echo {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 1;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: seamTriangleEcho 6s var(--ease-out) 1.2s infinite;
-}
-
-.hero-seam-mark .seam-triangle-echo.is-echo-2 {
-  animation-delay: 4.2s;
 }
 
 @keyframes seamTriangleEcho {
@@ -14083,16 +13323,6 @@ button.rs-row:focus-visible {
   animation: none;
   stroke-dashoffset: 0;
   }
-
-  .hero-seam-mark .seam-square-satellite {
-  animation: none;
-  opacity: 0.5;
-  }
-
-  .hero-seam-mark .seam-triangle-echo {
-  animation: none;
-  opacity: 0;
-  }
 }
 
 /* MiniConstellation — the score-tool visual idiom shrunk to a 44px inline
@@ -14111,24 +13341,10 @@ button.rs-row:focus-visible {
    all of these via the seam reduced-motion block below.
 --------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  /* Satellite spin-up: the dashed ring's lazy 12s orbit tightens to 5s. */
-  .hero-seam-mark .seam-shape-square:hover .seam-square-satellite {
-    animation-duration: 5s;
-  }
-
-  /* Echo surge: triangle echoes flare briefly while hovered. */
-  .hero-seam-mark .seam-shape-triangle:hover .seam-triangle-echo {
-    animation-duration: 2.4s;
-  }
 
   /* Block tumble: the wanderer's bob becomes a slow 3/4-turn tumble. */
   .hero-seam-mark .seam-block:hover {
     animation: seamBlockTumble 2s var(--ease-in-out) infinite;
-  }
-
-  /* Orbit excite: breathing arc tightens its cycle. */
-  .hero-seam-mark .seam-shape-orbit:hover .seam-orbit {
-    animation-duration: 4s;
   }
 }
 
@@ -14147,71 +13363,6 @@ button.rs-row:focus-visible {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Hero construction field — Architectural Interface (midground depth layer)
-   ---------------------------------------------------------------------------
-   Replaces the hero-seam scatter on the landing hero with CAD construction
-   geometry orbiting a giant datum arc. Placement math is in hero-construction.tsx.
-   This block owns: stroke/fill language, studio-light glows, hover personalities
-   layered on the EffectEnhancer seam machinery, and the reduced-motion freeze.
---------------------------------------------------------------------------- */
-
-
-/* Datum arc — faint ink construction circle, one signal-light segment. */
-
-
-@keyframes hcSphereBloom {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.06); }
-}
-
-
-@keyframes hcChamferFloat {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50%      { transform: translateY(-10px) rotate(1.5deg); }
-}
-
-
-@keyframes hcPlaneDrift {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-9px); }
-}
-
-
-@keyframes hcRingSpin {
-  from { stroke-dashoffset: 0; }
-  to   { stroke-dashoffset: -389; } /* 2π×62 ≈ ring circumference */
-}
-
-
-@keyframes hcBoxFlicker {
-  0%, 18%, 100% { opacity: 0.75; }
-  6%            { opacity: 0.45; }
-  12%           { opacity: 0.9; }
-}
-
-/* Hover personalities (fine pointer, motion-allowed): excite each primitive's
-   own idle language. EffectEnhancer adds the magnetic drift + fill shift. */
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hc-prim-sphere:hover  .hc-bloom-field { animation-duration: 4.5s; }
-  .hc-prim-chamfer:hover .seam-shape     { animation-duration: 7s; }
-  .hc-prim-plane:hover   .seam-shape     { animation-duration: 8s; }
-  .hc-prim-ring:hover    .hc-ring-glow   { animation-duration: 9s; stroke-opacity: 0.4; }
-  .hc-prim-box:hover     .hc-box-edges   { animation-duration: 5s; }
-}
-
-/* Reduced-motion: the whole field freezes to a quiet exploded drawing —
-   no bloom pulse, no float, no flicker; the geometry stays fully drawn. */
-@media (prefers-reduced-motion: reduce) {
-  .hc-bloom-field,
-  .hc-ring-glow,
-  .hc-box-edges,
-  .hc-prim-chamfer .seam-shape,
-  .hc-prim-plane .seam-shape {
-    animation: none !important;
-  }
-  .hc-prim .seam-shape { transition: none; }
-}
 
 /* ---------------------------------------------------------------------------
    Hero — Architectural Interface editorial pass (v2, additive)
@@ -14258,20 +13409,6 @@ button.rs-row:focus-visible {
    the band is a tight signal-blue flash (--signal-light) that dips below the
    baseline ink in lightness and adds chroma, exactly how Linear/Stripe read
    motion on light surfaces in 2026. Same 47–53% window, same sweep math. */
-
-
-/* Continuous left→right sweep, eased so the band breathes instead of
-   crawling. 50%→100% is the dwell. With background-size 250%, the white
-   band (image coords 47–53%) lives at container coords 117.5–132.5% at
-   position 0% — fully off the right edge — and at −32.5…−17.5% at
-   position 100% — fully off the left edge. Both extremes render the same
-   flat base color, so the 100%→0% loop wrap is invisible. The band is
-   never parked OVER the word: resting face is flat, not a frozen gradient. */
-@keyframes hero-free-shimmer {
-  0% { background-position: 0% 0; }    /* band parked off the right edge */
-  50% { background-position: 100% 0; } /* band exited off the left edge */
-  100% { background-position: 100% 0; } /* dwell — restart is invisible */
-}
 
 
 [data-word] {
@@ -14418,28 +13555,6 @@ button.rs-row:focus-visible {
 /* Proof rail — quiet, single cluster, real values only. */
 
 
-/* Recent-scores — the real cohort leaders, hairline ledger rows. */
-
-
-.hero-proof-recent-grade {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: var(--text-label);
-  width: 1.45rem;
-  height: 1.45rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-strong);
-  color: var(--muted);
-}
-.hero-proof-recent-grade.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
-.hero-proof-recent-grade.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 40%, transparent); }
-.hero-proof-recent-grade.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 40%, transparent); }
-.hero-proof-recent-grade.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 40%, transparent); }
-.hero-proof-recent-grade.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 35%, transparent); }
-
 
 /* Narrow viewports: construction field hides (see .hero-construction), and
    the hero recent rail keeps its measure within the column. */
@@ -14542,17 +13657,6 @@ button.rs-row:focus-visible {
   }
   .section-heading-badge-unit {
     font-size: 0.6875rem; /* 11px */
-  }
-
-  /* -- Section heading row: ensure the badge stacks under the title with a
-     clean 12px gap and aligns flush-left (rag-right), never crowding the
-     two-line h2. -- */
-  .section-heading-row {
-    align-items: flex-start;
-    gap: var(--space-12);
-  }
-  .section-heading-badge {
-    align-items: flex-start;
   }
 }
 
@@ -14709,12 +13813,6 @@ button.rs-row:focus-visible {
   border-radius: var(--radius-sm);
   transition: color var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
     background var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.lottie-tip-close-label {
-  font-size: var(--text-label);
-  font-weight: 500;
-  letter-spacing: 0.01em;
 }
 
 @media (hover: hover) {
