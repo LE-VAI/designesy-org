@@ -14,7 +14,7 @@ import { CaseTitle, ScoreDelta, SourceList, StateChip, type Source } from '../ca
 export const metadata: Metadata = pageMeta({
   title: 'lovable.dev: A on arrival case study',
   description:
-    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs and the projection to A+.',
+    'Snapshot case study (2026-07-25): an AI-built site scored A on the Designesy contract without knowing it existed. A 93.2, 19 pass, 0 fail. The 3 remaining WARNs, and the projection with all three resolved.',
   path: '/work/lovable-dev',
   type: 'article',
   ogTitle: 'lovable.dev · A on arrival · Designesy',
@@ -72,7 +72,7 @@ const LESSONS = [
   'An AI-built site can score A on a contract it never read; good defaults are reachable from a competent generator',
   'Zero failures is the headline; the 3 WARNs are token-strictness gaps',
   'The 4 SKIPs come from the scoring deployment\'s limits; lovable.dev is not penalized for unrun checks',
-  'The projected A+ is one session of token tightening away; no architectural change required',
+  'Resolving the three WARNs is one session of token tightening; no architectural change required',
   'This is the strongest argument for the contract: it does not care who built the site, only what the visitor receives',
 ];
 
@@ -138,7 +138,7 @@ export default function LovableCaseStudy() {
                 <div>
                   <dt>Projected</dt>
                   <dd>
-                    <span className="cs-ghost">A+</span> unscored
+                    <span className="cs-ghost">A</span> unscored, no warnings
                   </dd>
                 </div>
                 <div>
@@ -158,15 +158,16 @@ export default function LovableCaseStudy() {
             date="2026-07-25"
             runs={[
               { label: 'Snapshot', note: `A · ${SCORE}`, counts: COUNTS },
-              { label: 'Projected', note: 'A+ · unscored', counts: PROJECTED, projected: true },
+              { label: 'Projected', note: 'A · unscored, no warnings', counts: PROJECTED, projected: true },
             ]}
             before={SCORE}
-            projected="A+"
+            projected="A"
             note={
               <>
                 <span className="sr-only">Grade A, {SCORE}, before only. </span>
-                Resolving the {COUNTS.warn} WARNs (v12, v16, v19) would land
-                lovable.dev at A+ with token tightening alone.
+                Resolving the {COUNTS.warn} WARNs (v12, v16, v19) would leave
+                lovable.dev at A with no warnings, from token tightening alone. There is no
+                grade above A.
               </>
             }
           />

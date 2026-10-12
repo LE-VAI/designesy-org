@@ -1097,10 +1097,11 @@ html[data-motion="paused"] .vc-glow {
 }
 
 /* ==========================================================================
-   Contract health: cell meters (contract-health-rack.tsx). Twenty cells a
-   meter, five points a cell; the leftover points show as one dimmer cell.
-   Where scroll-driven animation exists, meters fill cell by cell as the rack
-   scrolls in; everywhere else they are simply full.
+   This site, by category: cell meters (contract-health-rack.tsx). Twenty
+   cells a meter, five points a cell; the leftover points show as one dimmer
+   cell. Where scroll-driven animation exists, meters fill cell by cell as the
+   rack scrolls in and are full once it is wholly on screen; everywhere else
+   they are simply full.
    ========================================================================== */
 
 .hm {
@@ -1126,7 +1127,7 @@ html[data-motion="paused"] .vc-glow {
 
 .hm-row {
   display: grid;
-  grid-template-columns: 5.6rem minmax(0, 1fr) 2rem;
+  grid-template-columns: 7rem minmax(0, 1fr) 2.4rem;
   align-items: center;
   gap: 0.9rem;
 }
@@ -1206,10 +1207,10 @@ html[data-motion="paused"] .vc-glow {
     view-timeline-name: --hm;
   }
   @media (prefers-reduced-motion: no-preference) {
-    .hm-fill {
+    html:not([data-motion="paused"]) .hm-fill {
       animation: hm-fill linear both;
       animation-timeline: --hm;
-      animation-range: entry calc(15% + var(--hm-i) * 3%) cover calc(42% + var(--hm-i) * 3%);
+      animation-range: entry calc(15% + var(--hm-i) * 3%) entry 100%;
       animation-timing-function: steps(var(--hm-lit), end);
     }
   }
@@ -1225,7 +1226,7 @@ html[data-motion="paused"] .vc-glow {
     --hm-step: calc(var(--hm-cw) + var(--hm-gap));
   }
   .hm-row {
-    grid-template-columns: 4.8rem minmax(0, 1fr) 1.8rem;
+    grid-template-columns: 6.8rem minmax(0, 1fr) 2.2rem;
     gap: 0.6rem;
   }
 }
@@ -1233,6 +1234,15 @@ html[data-motion="paused"] .vc-glow {
 @media (forced-colors: active) {
   .hm-meter::before { background: GrayText; }
   .hm-fill { background: Highlight; }
+}
+
+/* What the rack leaves out, and the run it came from: small print under the
+   meters, in the panel's unit colour. */
+.home-health-note {
+  margin: var(--space-16) 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 /* --- Field cards: an icon tile names what each thing is ------------------ */

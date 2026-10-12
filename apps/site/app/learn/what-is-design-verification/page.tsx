@@ -7,7 +7,7 @@ import { checkItemsFromStrings } from '../../lib/check-items';
 import { pageMeta } from '../../lib/site-meta';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { AgentActions } from '../../lib/agent-actions';
-import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../../lib/check-definitions';
 
 export const metadata: Metadata = pageMeta({
   title: 'What is design verification?',
@@ -41,14 +41,14 @@ const CONTRACT_LAYERS = [
   {
     num: '04',
     name: 'Verification',
-    desc: `A runnable checklist (${ENGINE_CHECK_COUNT} automated checks in Designesy\'s case) that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.`,
+    desc: `A runnable checklist (${ENGINE_CHECK_COUNT} checks in Designesy\'s case, ${ENGINE_SCORED_CHECK_COUNT} of them automated) that scores a live URL against the tokens, rules, and behavior above and returns a letter grade.`,
   },
 ];
 
 const DISTINGUISHING_CHECKS = [
   {
     label: 'It runs against a live URL instead of a source tree',
-    desc: 'Design linting reads your code. Visual regression diffs your screenshots. Design verification fetches your production site the way a visitor would, then runs checks against the CSS and HTML the browser actually receives.',
+    desc: 'Design linting reads your code. Visual regression diffs your screenshots. Design verification fetches the HTML and CSS your production server sends, then runs checks against them.',
   },
   {
     label: 'It scores against a published contract instead of a private baseline',
@@ -160,7 +160,7 @@ export default function WhatIsDesignVerificationPage() {
                 Not visual regression
               </h3>
               <CheckGrid items={checkItemsFromStrings([
-                'Regression diffs screenshots; verification checks behavior',
+                'Regression diffs screenshots; verification checks the rules a page declares',
                 'Regression needs a baseline; verification needs a contract',
                 'Regression catches drift; verification catches broken promises',
               ])} />

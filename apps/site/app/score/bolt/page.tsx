@@ -13,7 +13,7 @@ export const metadata: Metadata = pageMeta({
   path: '/score/bolt',
   ogTitle: 'Score your Bolt site · Designesy',
   ogDescription:
-    `${ENGINE_CHECK_COUNT} automated verification checks against a real design contract. Built on Bolt? Score your site.`,
+    `${ENGINE_CHECK_COUNT} verification checks against a published design contract. Built on Bolt? Score your site.`,
   twitterDescription: 'Score your Bolt site · designesy.org/score/bolt',
 });
 
@@ -25,7 +25,7 @@ export default function ScoreBoltPage() {
       eyebrow="Score · Bolt"
       headline="Score your Bolt site"
       lede={`${ENGINE_CHECK_COUNT} checks. One grade. Built on Bolt? See how close you are to a published design contract.`}
-      body={`Bolt ships full-stack apps from prompts. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any Bolt-built URL and returns an honest grade (pass, fail, needs work, or does not apply) against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with bolt.new: score it live to see where it stands today.`}
+      body={`Bolt ships full-stack apps from prompts. The Designesy engine runs the same ${ENGINE_CHECK_COUNT} checks against any Bolt-built URL and returns an honest grade (pass, fail, needs work, or does not apply) against tokens, motion, typography, accessibility, and identity rules. The example below is prefilled with bolt.new: press Score to see where it stands today, or replace it with your own URL.`}
       exampleUrl="bolt.new"
     />
   );

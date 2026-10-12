@@ -184,9 +184,17 @@ const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
   { value: 'contract', label: 'Strict', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
 ];
 
-export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
+/**
+ * initialUrl is a deep link (/score?url=stripe.com): the form scores it once on
+ * mount. prefillUrl only fills the field, and nothing runs until the visitor
+ * presses Score. The platform landings (/score/bolt, /score/lovable, /score/v0)
+ * use prefillUrl: they used to pass their example as initialUrl, so every visit
+ * spent an engine run on a site the visitor had not asked about, under copy
+ * that called the example "prefilled".
+ */
+export function ScoreForm({ initialUrl = '', prefillUrl = '' }: { initialUrl?: string; prefillUrl?: string } = {}) {
   const [status, setStatus] = useState<Status>('idle');
-  const [url, setUrl] = useState(initialUrl);
+  const [url, setUrl] = useState(initialUrl || prefillUrl);
   const [scopeMode, setScopeMode] = useState<ScopeMode>('auto');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');

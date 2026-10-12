@@ -66,6 +66,18 @@ const FILES = [
   // builder, which check-mcp-tool-parity.js holds to the same words.
   'server.json',
   path.join('apps', 'site', 'app', 'lib', 'mcp-server-card.ts'),
+  // The npm packages' READMEs and descriptions (2026-10-11): cli/README.md and
+  // the root package.json stated check counts four and two below the engine's,
+  // because no gate read them.
+  path.join('cli', 'README.md'),
+  'package.json',
+  path.join('packages', 'score', 'README.md'),
+  path.join('packages', 'score', 'package.json'),
+  path.join('packages', 'cli', 'README.md'),
+  path.join('packages', 'cli', 'package.json'),
+  path.join('packages', 'vai-motion', 'README.md'),
+  // The PyPI summary carries the listing line (owner decision 2026-10-11).
+  path.join('packages', 'designesy-mcp', 'pyproject.toml'),
 ];
 
 const RULES = [
@@ -84,11 +96,6 @@ const RULES = [
 ];
 
 const LINE_EXEMPTIONS = [
-  {
-    file: /^README\.md$/,
-    line: /alt="The verify console scoring designesy\.org against contract v0\.4\.1/,
-    why: 'Alt text describing a recording made on v0.4.1; it describes the video, not the current contract.',
-  },
   {
     file: /^README\.md$/,
     line: /\*\*\[Lyse\]/,

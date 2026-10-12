@@ -129,8 +129,9 @@ export default function ReadinessContractPage() {
         </section>
 
         <div className="status-note">
-          The AI Readiness contract is the first automated scorer for the 6th
-          maturity axis: a scan replaces the questionnaire. <a href={c.machine_url}>Machine export</a>.
+          The AI Readiness contract reads AI readiness, the sixth axis of
+          zeroheight&apos;s maturity model, with an automated scan of the site in
+          place of a questionnaire. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

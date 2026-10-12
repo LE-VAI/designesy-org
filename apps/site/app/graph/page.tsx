@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMeta({
   path: '/graph',
   ogTitle: 'Graph · Designesy',
   ogDescription:
-    'Provenance chain from source to shipped work. No competitor exposes this chain publicly.',
+    'Provenance chain from source to shipped work, with public examples at every stage.',
   twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
