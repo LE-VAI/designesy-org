@@ -53,7 +53,9 @@
  *            centre pixel of a 2x screenshot is that colour exactly.
  *   one      exactly one ignition per landing, page wide: a mutation observer
  *            counts every dot that enters "sweep" or "lit". Also on
- *            /score/v0, /score/bolt and /score/lovable, which run on load.
+ *            /score/v0, /score/bolt and /score/lovable: they send no score
+ *            request on load (the example only fills the field), and one
+ *            press of Score lights exactly one dot.
  *            The page-wide claim (claimLanding) is also checked directly:
  *            two lamps in one landing get one ignition, the next landing
  *            gets its own.
@@ -739,10 +741,11 @@ async function run(browser, surfaceName, theme, mode, land) {
   }
 }
 
-/** A target landing scores its example on load: that landing lights one dot. */
+/** A target landing only prefills its example (ScoreForm prefillUrl): it
+ *  sends no score request on load, and one press of Score lights one dot. */
 async function onLoadCase(browser, route) {
   const failures = [];
-  const label = `one ignition (${route}, scores on load)`;
+  const label = `one ignition (${route}, scores when asked)`;
   const ctx = await newContext(browser, 'dark', 'motion', { dsf: 1 });
   try {
     let release;
@@ -756,8 +759,13 @@ async function onLoadCase(browser, route) {
     });
     const page = await ctx.newPage();
     await page.goto(`${BASE}${route}`, { waitUntil: 'load' });
+    await page.waitForTimeout(1500);
+    if (posted !== 0) failures.push(`expected no score request on load, saw ${posted}`);
+    const field = page.getByRole('textbox', { name: SURFACES.home.label });
+    if (!(await field.inputValue())) await field.fill('example.com');
+    await field.press('Enter');
     await page.locator('[data-ignite][data-phase="running"]').first().waitFor({ timeout: 15000 });
-    if (posted !== 1) failures.push(`expected one score request on load, saw ${posted}`);
+    if (posted !== 1) failures.push(`expected one score request after Score, saw ${posted}`);
     release();
     await page.locator('[data-ignite][data-phase="done"]').first().waitFor({ timeout: 15000 });
     await page.waitForTimeout(1800);
