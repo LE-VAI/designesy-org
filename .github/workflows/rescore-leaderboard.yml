@@ -100,6 +100,14 @@ jobs:
         run: |
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
+          # A second run on the same UTC day (a manual dispatch, then the
+          # Monday cron) found the first run's merged branch still on the
+          # remote: the push was rejected as non-fast-forward after the
+          # scoring had finished, and that week's data was lost (2026-10-12).
+          # Keep the plain name when it is free; otherwise add the run id.
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null; then
+            BRANCH="${BRANCH}-${GITHUB_RUN_ID}"
+          fi
           git config user.name 'LE-VAI'
           git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git checkout -b "${BRANCH}"
