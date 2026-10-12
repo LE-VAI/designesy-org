@@ -9,7 +9,9 @@
 //   m01 history supplied (PASS when the request carries at least one earlier run,
 //       SKIP otherwise: nothing is scheduled or stored server-side, the caller
 //       supplies the history, so a first run has nothing to compare against)
-//   m02 last run fresh (always PASS — this run is happening now)
+//   m02 last run fresh (the gap since the newest run in the supplied history,
+//       against the caller's cadence: daily, weekly (default) or monthly;
+//       SKIP with no history. Computed per request, outside the cache)
 //   m03 drift delta vs baseline (score change since first run)
 //   m04 drift trend slope (3-run trajectory: improving / flat / regressing)
 //   m05 new violations since last run (checks that newly fail)
@@ -297,8 +299,36 @@ function checkM01HistorySupplied(history: Snapshot[]): MonitorCheckResult {
   return { id: 'm01', item: 'History supplied', status: 'PASS', detail: `${history.length} earlier run${history.length === 1 ? '' : 's'} supplied: drift is measured against ${history.length === 1 ? 'it' : 'them'}` };
 }
 
-function checkM02LastRunFresh(): MonitorCheckResult {
-  return { id: 'm02', item: 'Last run fresh', status: 'PASS', detail: 'This run is happening now: within the cadence window' };
+// m02 used to PASS on every call ("This run is happening now: within the
+// cadence window"), which measured nothing: the run asking is always fresh.
+// What goes stale is the watch, the gap since the newest run the caller kept.
+// PASS within one cadence window, WARN within two (a run was missed), FAIL past
+// two (the watch may have stopped). It runs per request, outside the 24-hour
+// cache, because the gap keeps growing while a cached result stands still.
+const CADENCE_DAYS = { daily: 1, weekly: 7, monthly: 30 } as const;
+type Cadence = keyof typeof CADENCE_DAYS;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function checkM02LastRunFresh(history: Snapshot[], cadence: Cadence, now: number): MonitorCheckResult {
+  const item = 'Last run fresh';
+  if (history.length === 0) {
+    return { id: 'm02', item, status: 'SKIP', detail: 'No earlier run: freshness is measured from the newest run in the history you pass.' };
+  }
+  const last = Date.parse(String(history[history.length - 1]?.timestamp ?? ''));
+  if (!Number.isFinite(last) || last > now + 5 * 60 * 1000) {
+    return { id: 'm02', item, status: 'SKIP', detail: 'The newest run in the history has no usable timestamp, so its age cannot be measured.' };
+  }
+  const gap = Math.max(0, now - last);
+  const ago = gap < DAY_MS ? `${Math.round(gap / (60 * 60 * 1000))} h` : `${(gap / DAY_MS).toFixed(1)} days`;
+  const days = CADENCE_DAYS[cadence];
+  const window = `the ${cadence} window (${days} day${days === 1 ? '' : 's'})`;
+  if (gap <= days * DAY_MS) {
+    return { id: 'm02', item, status: 'PASS', detail: `Previous run ${ago} ago, within ${window}` };
+  }
+  if (gap <= 2 * days * DAY_MS) {
+    return { id: 'm02', item, status: 'WARN', detail: `Previous run ${ago} ago, past ${window}: a run was missed` };
+  }
+  return { id: 'm02', item, status: 'FAIL', detail: `Previous run ${ago} ago, more than two ${cadence} windows: the watch may have stopped` };
 }
 
 function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
@@ -585,7 +615,9 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
 
   // Run the 10 monitor checks
   const m01 = checkM01HistorySupplied(history);
-  const m02 = checkM02LastRunFresh();
+  // Placeholder: POST replaces it per request (the gap is time-dependent and
+  // this function's result is cached for 24 hours).
+  const m02 = checkM02LastRunFresh(history, 'weekly', Date.now());
   const m03 = checkM03DriftDelta(currentSnapshot, baseline);
   const m04 = checkM04TrendSlope([...history, currentSnapshot]);
   const m05 = checkM05NewViolations(currentSnapshot, previous);
@@ -605,24 +637,10 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
 
   const monitorChecks: MonitorCheckResult[] = [m01, m02, m03, m04, m05, m06, m07, m08, m09, m10];
 
-  // Monitor score = governance health, not design quality. A SKIP (m01 on a
-  // first run) is not scored, as in every other Designesy score.
-  const monitorPass = monitorChecks.filter((c) => c.status === 'PASS').length;
-  const monitorWarn = monitorChecks.filter((c) => c.status === 'WARN').length;
-  const monitorFail = monitorChecks.filter((c) => c.status === 'FAIL').length;
-  const monitorScored = monitorPass + monitorWarn + monitorFail;
-  const monitorPoints = monitorPass + monitorWarn * 0.5;
-  const monitorScore = monitorScored === 0 ? 0 : Math.round((monitorPoints / monitorScored) * 100);
-
   return {
     ok: true,
     url: targetUrl,
-    score: monitorScore,
-    grade: computeGrade(monitorScore),
-    pass: monitorPass,
-    warn: monitorWarn,
-    fail: monitorFail,
-    total: monitorChecks.length,
+    ...tallyMonitor(monitorChecks),
     currentSnapshot,
     baseline,
     previous,
@@ -630,6 +648,23 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
     monitorChecks,
     alerts,
   };
+}
+
+// Monitor score = governance health, not design quality. A SKIP (m01 and m02
+// on a first run) is not scored, as in every other Designesy score. POST calls
+// this again after it replaces m02 and m10, so the score always matches the
+// checks it is returned with (until 0.1.3 an m10 that changed after the cache
+// left the cached score and counts in place). Line comments, as in the rest of
+// this file: the drift-agreement gates strip block comments with a regex, and
+// the Accept header's any-type wildcard would open one that a block comment
+// here closes.
+function tallyMonitor(checks: MonitorCheckResult[]) {
+  const pass = checks.filter((c) => c.status === 'PASS').length;
+  const warn = checks.filter((c) => c.status === 'WARN').length;
+  const fail = checks.filter((c) => c.status === 'FAIL').length;
+  const scored = pass + warn + fail;
+  const score = scored === 0 ? 0 : Math.round(((pass + warn * 0.5) / scored) * 100);
+  return { score, grade: computeGrade(score), pass, warn, fail, total: checks.length };
 }
 
 // ── Cached wrapper ───────────────────────────────────────────────────────────
@@ -652,7 +687,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string; history?: Snapshot[]; email?: string };
+  let body: { url?: string; history?: Snapshot[]; email?: string; cadence?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -679,8 +714,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const cadenceRaw = typeof body.cadence === 'string' ? body.cadence.trim().toLowerCase() : 'weekly';
+  if (!Object.prototype.hasOwnProperty.call(CADENCE_DAYS, cadenceRaw)) {
+    return NextResponse.json(
+      { ok: false, error: 'cadence must be daily, weekly or monthly.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    );
+  }
+  const cadence = cadenceRaw as Cadence;
+
   const history = Array.isArray(body.history) ? body.history : [];
   const result = await scoreMonitor(targetUrl, history);
+
+  // m02 is time-dependent, so it is measured now, not read from the cache.
+  if (result.ok && result.monitorChecks) {
+    const i = result.monitorChecks.findIndex((c) => c.id === 'm02');
+    if (i >= 0) result.monitorChecks[i] = checkM02LastRunFresh(history, cadence, Date.now());
+  }
 
   // Send email alert after the cached result returns (outside cache so
   // the email param doesn't pollute the cache key). A per-URL+email cooldown
@@ -709,6 +759,8 @@ export async function POST(request: Request) {
       }
     }
   }
+
+  if (result.ok && result.monitorChecks) Object.assign(result, tallyMonitor(result.monitorChecks));
 
   return NextResponse.json(result, {
     status: result.ok ? 200 : 502,

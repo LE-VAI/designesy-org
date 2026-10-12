@@ -482,6 +482,22 @@ const UNIFORM = KNOBS.filter((k) => /^w[+-]/.test(k.key));
 const OAT = KNOBS.filter((k) => k.key.startsWith('oat-'));
 const OAT_MAX_FLIPS = Math.max(...OAT.map((k) => k.gradeChanges));
 const OAT_MAX_DELTA = Math.max(...OAT.map((k) => k.maxScoreDelta));
+// The method's judgment calls, ranked by the most grades any of their knobs
+// moves in this report. Read from the data, because the order changes between
+// runs: on 2026-09-28 slop came second; on 2026-10-12 originality and the bands
+// both moved more grades than slop did.
+const JUDGMENT_CALLS = ([
+  ['the WARN credit', ['warn-0.25', 'warn-0.75']],
+  ['the originality lift', ['orig+5']],
+  ['the slop deduction', ['slop+5']],
+  ['the grade bands', ['bands-tight', 'bands-loose']],
+  ['the accessibility floor', ['a11y-50', 'a11y-70']],
+  ['the ceilings', ['nocaps', 'no-anyfail']],
+] as const)
+  .map(([name, keys]) => ({ name, flips: Math.max(0, ...keys.map((k) => knob(k)?.gradeChanges ?? 0)) }))
+  .filter((c) => c.flips > 0)
+  .sort((a, b) => b.flips - a.flips);
+const [TOP_CALL, ...NEXT_CALLS] = JUDGMENT_CALLS;
 
 type RankRow = { url: string; baselineRank: number; bestRank: number; worstRank: number; bandWidth: number };
 const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineRank - b.baselineRank);
@@ -971,7 +987,7 @@ export default function MethodologyPage() {
                   <summary>
                     <span className="dx-study-title">Sensitivity</span>
                     <span className="dx-study-line">
-                      {KNOBS.length} perturbations; the WARN credit moves the most grades ({knob('warn-0.75')?.gradeChanges} of{' '}
+                      {KNOBS.length} perturbations; {TOP_CALL?.name} moves the most grades ({TOP_CALL?.flips} of{' '}
                       {SENSITIVITY.sites})
                     </span>
                   </summary>
@@ -985,8 +1001,8 @@ export default function MethodologyPage() {
                       <p>
                         <strong>Uniform weight changes do nothing.</strong> Scaling every weight by 10 or 20 per cent in either
                         direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} and no rank:
-                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> the WARN credit,
-                        then slop and originality. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
+                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> {TOP_CALL?.name}{' '}
+                        ({TOP_CALL?.flips} grades), then {NEXT_CALLS.slice(0, 2).map((c) => `${c.name} (${c.flips})`).join(' and ')}. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
                         and {fmt(OAT_MAX_DELTA)} points.
                       </p>
                     </div>

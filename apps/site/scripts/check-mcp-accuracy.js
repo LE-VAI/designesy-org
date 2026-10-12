@@ -66,6 +66,11 @@
  *   monitor-m01          m01 SKIPs a first run (no history: nothing is scheduled or
  *                        stored server-side) and is then not scored; PASSes with history
  *   monitor-m09          m09 reports the contract version designesy_score reads
+ *   monitor-m02          m02 measures the gap since the newest supplied run
+ *                        against the cadence (PASS within one window, WARN
+ *                        within two, FAIL past two, SKIP with no history), an
+ *                        unknown cadence is a 400, and every result's score
+ *                        and counts match the checks it returns
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -415,6 +420,46 @@ async function monitorM01() {
   return { findings, measured: `first run m01 ${m01First && m01First.status} score ${first.body.score}; with history m01 ${m01Second && m01Second.status} score ${second.body.score}` };
 }
 
+async function monitorM02() {
+  // m02 PASSed on every call ("This run is happening now"), which measured
+  // nothing. It now ages the newest run the caller kept against the cadence.
+  const findings = [];
+  const h = siteHarness();
+  const url = FIXTURES.site.url;
+  const first = await h.post('app/api/monitor/route.ts', { url });
+  const snap = first.body.currentSnapshot;
+  const ago = (days) => ({ ...snap, timestamp: new Date(Date.now() - days * 86400000).toISOString() });
+  const cases = [
+    ['first run', {}, 'SKIP'],
+    ['weekly, 3 days', { history: [ago(3)] }, 'PASS'],
+    ['weekly, 10 days', { history: [ago(10)] }, 'WARN'],
+    ['weekly, 20 days', { history: [ago(20)] }, 'FAIL'],
+    ['daily, 3 days', { history: [ago(3)], cadence: 'daily' }, 'FAIL'],
+    ['monthly, 20 days', { history: [ago(20)], cadence: 'monthly' }, 'PASS'],
+    ['unreadable timestamp', { history: [{ ...snap, timestamp: 'yesterday' }] }, 'SKIP'],
+  ];
+  const seen = [];
+  for (const [label, extra, want] of cases) {
+    const r = await h.post('app/api/monitor/route.ts', { url, ...extra });
+    const checks = r.body.monitorChecks || [];
+    const m02 = checks.find((c) => c.id === 'm02');
+    seen.push(`${label} ${m02 ? m02.status : 'missing'}`);
+    if (!m02 || m02.status !== want) {
+      findings.push({ id: `monitor-m02:${label.replace(/[^a-z0-9]+/gi, '-')}`, why: `${label}: m02 is ${m02 ? `${m02.status} ("${m02.detail}")` : 'missing'}; it must be ${want}.` });
+    }
+    const scored = checks.filter((c) => c.status !== 'SKIP');
+    const points = scored.reduce((sum, c) => sum + (c.status === 'PASS' ? 1 : c.status === 'WARN' ? 0.5 : 0), 0);
+    const want2 = scored.length ? Math.round((points / scored.length) * 100) : 0;
+    const counts = ['PASS', 'WARN', 'FAIL'].map((st) => checks.filter((c) => c.status === st).length);
+    if (r.body.score !== want2 || r.body.pass !== counts[0] || r.body.warn !== counts[1] || r.body.fail !== counts[2]) {
+      findings.push({ id: `monitor-m02:tally-${label.replace(/[^a-z0-9]+/gi, '-')}`, why: `${label}: the result says score ${r.body.score} (${r.body.pass}/${r.body.warn}/${r.body.fail}); its checks give ${want2} (${counts.join('/')}).` });
+    }
+  }
+  const bad = await h.post('app/api/monitor/route.ts', { url, history: [ago(1)], cadence: 'hourly' });
+  if (bad.status !== 400) findings.push({ id: 'monitor-m02:cadence-400', why: `cadence "hourly" returned ${bad.status}; an unknown cadence must be a 400.` });
+  return { findings, measured: seen.join('; ') };
+}
+
 async function compareRounding() {
   const findings = [];
   const h = siteHarness();
@@ -575,6 +620,7 @@ const CHECKS = [
   ['export-dtcg', exportDtcg],
   ['guardrails-dtcg', guardrailsDtcg],
   ['monitor-m01', monitorM01],
+  ['monitor-m02', monitorM02],
   ['monitor-m09', monitorM09],
   ['compare-rounding', compareRounding],
 ];
