@@ -44,6 +44,7 @@
   ],
   "engineOnly": [
     "const:CONTRACT_VERSION",
+    "const:MAX_REDIRECT_HOPS",
     "fn:httpsFetch",
     "fn:isPrivateIPv4",
     "fn:isValidUrl",

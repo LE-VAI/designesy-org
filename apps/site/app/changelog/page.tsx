@@ -418,6 +418,21 @@ const CHANGELOG: ChangelogEntry[] = [
       "The mono text on this site is the text a reader cannot guess from context: hosts, check IDs, scores and dates. Atkinson Hyperlegible Mono is the Braille Institute's face for low-vision readers, and it draws every confusable pair (0 and O, 1, l and I, 5 and S, 8 and B) distinct. Named sizes replace one-off values, so a page cannot drift off the scale. No check, weight or verdict changed.",
     source: 'Designesy design system contract v0.4.5, adoption history; Atkinson Hyperlegible Mono 2.001 (SIL Open Font License 1.1)',
   },
+
+  // ── v0.4.5 (engine 1.3.1): accuracy fixes ──
+  {
+    version: 'v0.4.5 · engine 1.3.1',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.3.1: four checks read what the page renders',
+    description:
+      'v26 no longer counts a face named with the word fallback, such as a metric-matched stand-in drawn only until the real face loads, as a typeface choice. v27 reads font-size: var(--token) in a field rule through the :root tokens, so a field set to a 1rem token is the 16px floor it renders as, and one set to a 0.875rem token fails. v38 drops the keycaps a button marks up as kbd, and plain ctrl+s style hints in any case, from button labels, and accepts Get, Set, Try and a short list of call-to-action verbs (Flip, Learn, Sign, Join, Expand, Select, Read). v43 counts --destructive, the error role in shadcn/ui, as an error colour. The npm engine stops after three redirects instead of following a loop.',
+    checks: ['v26', 'v27', 'v38', 'v43'],
+    rationale:
+      'Each defect was a warning on a page that was right, this site among them: four families counted where three render, a 16px input read as unset, and a keycap button read as the words ctrl and i. A warning on correct work teaches readers to ignore warnings. v42 is unchanged: Tailwind v4 writes only the theme variables a project uses, so a sheet full of hue-named tokens is using them.',
+    source: 'engine 1.3.1 entry in CHANGELOG.md; Tailwind CSS v4 theme documentation (only used CSS variables are generated); shadcn/ui theming (--destructive)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -450,6 +465,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.4 · engine 1.3.0', date: '2026-10-11', checks: 44, title: 'No A beside a failing check', summary: 'Any FAIL caps the score at 89.9 and a v44 FAIL at 65; v34 fails only a named AI chat surface; v06 and v22 read CSS Color 4; v42 and v43 follow aliases. The contract is unchanged.' },
   { version: 'v0.4.4', date: '2026-10-11', checks: 44, title: 'Identity v1 colour system', summary: 'Azure replaces the old blue as --signal, with Deep Azure for light-theme text and new action tokens. Token values only: no check, weight or verdict changed.' },
   { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
+  { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

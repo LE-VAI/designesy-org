@@ -463,7 +463,7 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.3.0"
+OFFLINE_ENGINE_MIRRORS = "1.3.1"
 OFFLINE_CONTRACT_VERSION = "v0.4.5"
 
 # The live engine's checks that this engine does not run, in the live engine's
@@ -1596,13 +1596,55 @@ def _has_zoomable_field(html: str) -> bool:  # hasZoomableField
     return False
 
 
-def _check_input_font_floor(css: str, html: str) -> dict[str, str]:  # checkInputFontFloor
+def _is_field_selector(selector: str) -> bool:  # isFieldSelector
+    """v27 helper (engine 1.3.1): the subject of some selector in the list is an
+    input, textarea or select element, or carries the exact class .input or
+    .field, and is not a pseudo-element."""
+    clean = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub(" ", selector)
+    for part in _split_css_top_level(clean, ","):
+        compounds = _js_re(r"\s*[>+~]\s*|\s+").split(_js_trim(part))
+        subject = compounds[-1] if compounds and compounds[-1] else ""
+        if "::" in subject:
+            continue
+        if _js_re(r"(?:^|[^\w.#:-])(?:input|textarea|select)(?![\w-])", "i").search(subject) or _js_re(
+            r"\.(?:input|field)(?![\w-])", "i"
+        ).search(subject):
+            return True
+    return False
+
+
+def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolveFontSizeVars
+    """v27 helper (engine 1.3.1): in each rule that styles a field, every
+    `font-size: var(...)` is rewritten to its :root token value; a value that
+    does not resolve, and every other rule, is left as written."""
+    if "var(" not in css:
+        return css
+
+    def decl(m: "re.Match[str]") -> str:
+        offset = m.start()
+        # JS lastIndexOf(c, i) searches positions <= i; rfind(c, 0, i + 1) is the same.
+        open_ = css.rfind("{", 0, offset + 1)
+        if open_ < 0 or css.rfind("}", 0, offset + 1) > open_:
+            return m.group(0)
+        start = max(css.rfind("}", 0, max(open_, 0)), css.rfind("{", 0, max(open_, 0)), css.rfind(";", 0, max(open_, 0))) + 1
+        if not _is_field_selector(css[start:open_]):
+            return m.group(0)
+        sub = _substitute_css_vars(m.group(2), [tokens])
+        return m.group(0) if sub is None else m.group(1) + _js_trim(sub)
+
+    return _js_re(r"(font-size\s*:\s*)(var\([^;{}]*\))", "gi").sub(decl, css)
+
+
+def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None = None) -> dict[str, str]:  # checkInputFontFloor
     """v27 (engine 1.1.0). A sub-16px input rule FAILs and a declared 16px
     floor PASSes, from the CSS alone. With neither, the page's own markup
     decides: no field iOS Safari can zoom into reads SKIP (it used to WARN),
-    and a text field with no floor still WARNs.
+    and a text field with no floor still WARNs. From engine 1.3.1 a
+    `font-size: var(...)` in a rule that styles a field is read through the
+    :root token table first (_resolve_font_size_vars).
     """
     item = "Input font-size ≥16px (prevents iOS Safari auto-zoom)"
+    css = _resolve_font_size_vars(css, tokens or {})
     input_re = _js_re(r"(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "gi")
     below: list[str] = []
     for m in input_re.finditer(css):
@@ -2025,7 +2067,7 @@ def _offline_checks(
         _check_font_synthesis(css),
         _check_underline_position(css),
         _check_skip_ink(css),
-        _check_input_font_floor(css, html),
+        _check_input_font_floor(css, html, raw_tokens),
     ]
     return effective, raw_tokens, _scrub_check_details(_apply_scope_filter(checks, effective))
 
