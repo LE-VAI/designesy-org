@@ -219,6 +219,10 @@ jobs:
         if: always()
         run: node scripts/check-hero-a11y-name.js
 
+      - name: Console tally name
+        if: always()
+        run: node scripts/check-console-tally-name.js
+
       - name: Extractor brace bound
         if: always()
         run: node scripts/check-extractor-brace-bound.js

@@ -202,6 +202,20 @@ function choreography(rows: Row[], cells: Cell[]) {
   return { css: css.join('\n'), tally, logEnd: logY(n + 1) };
 }
 
+/** How each tally reads aloud: the visible word, with what its number counts.
+ *  Each phrase ends with the visible label, so the two read as one fact
+ *  (scripts/check-console-tally-name.js holds them together). */
+const TALLY_SPOKEN: Record<keyof Tally, string> = {
+  np: 'automated checks pass',
+  nm: 'checks are run by a person',
+  nw: 'warn',
+  nf: 'fail',
+  nr: 'automated checks ran',
+};
+
+const listOf = (items: string[]) =>
+  items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+
 const STATUS_LABEL: Record<Status, string> = {
   pass: 'Pass',
   warn: 'Warn',
@@ -213,7 +227,7 @@ const STATUS_LABEL: Record<Status, string> = {
 /** A number that rolls: a strip of every value it takes, one line showing. */
 function Digits({ name, max, value }: { name: string; max: number; value: number }) {
   return (
-    <span className="vc-num">
+    <span className="vc-num" data-value={value}>
       <span
         className="vc-num-strip"
         style={{ '--vc-na': `vcn-${name}`, transform: `translateY(-${(value * DIGIT_LH).toFixed(3)}em)` } as CSSProperties}
@@ -258,10 +272,6 @@ export function VerifyConsole({
     '--vc-dlh': `${DIGIT_LH}em`,
   } as CSSProperties;
 
-  const summary = reconciled
-    ? `${host} verified against contract ${contract}: all ${tally.np} automated checks pass and ${tally.nm} checks are run by a person. Score ${scoreText}%, grade ${grade}, measured ${measured}.`
-    : `${host} verified against contract ${contract}: ${pass} pass, ${warn} warn, ${fail} fail. Score ${scoreText}%, grade ${grade}, measured ${measured}.`;
-
   const tallies: { key: keyof Tally; label: string; cls: string }[] = reconciled
     ? [
         { key: 'np', label: 'pass', cls: 'is-pass' },
@@ -270,6 +280,14 @@ export function VerifyConsole({
         { key: 'nf', label: 'fail', cls: 'is-fail' },
       ]
     : [{ key: 'nr', label: 'ran', cls: 'is-ran' }];
+
+  // The accessible name is read from the tally the window shows, never from
+  // the seed counts beside it. When the counts do not reconcile the window
+  // says "41 ran" (it will not invent which check warned), and the name used
+  // to say "40 pass, 1 warn, 0 fail": two numbers for one fact, depending on
+  // whether you could see the screen. The visible tally is the canonical one.
+  const spokenTally = listOf(tallies.map((t) => `${tally[t.key]} ${TALLY_SPOKEN[t.key]}`));
+  const summary = `${host} verified against contract ${contract}: ${spokenTally}. Score ${scoreText}%, grade ${grade}, measured ${measured}.`;
 
   return (
     <figure className="vc" data-reconciled={reconciled ? 'yes' : 'no'}>
@@ -290,10 +308,7 @@ export function VerifyConsole({
             </svg>
             {host}
           </span>
-          <span className="vc-bar-contract">
-            <span className="vc-live" />
-            Contract {contract}
-          </span>
+          <span className="vc-bar-contract">Contract {contract}</span>
         </div>
 
         <div className="vc-body" aria-hidden="true">
@@ -363,7 +378,7 @@ export function VerifyConsole({
 
             <ul className="vc-tally">
               {tallies.map((t) => (
-                <li key={t.key}>
+                <li key={t.key} data-tally={t.label}>
                   <i className={t.cls} />
                   <Digits name={t.key} max={Math.max(1, tally[t.key])} value={tally[t.key]} /> {t.label}
                 </li>

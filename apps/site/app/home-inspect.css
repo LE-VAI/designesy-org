@@ -196,7 +196,7 @@
 }
 
 .inspect-step-n {
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   letter-spacing: 0.06em;
   color: var(--muted-dim);
 }
@@ -205,7 +205,7 @@
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(1.45rem, 1.1rem + 1vw, 2rem);
+  font-size: clamp(var(--text-h3), 1.1rem + 1vw, var(--text-h2));
   line-height: 1.12;
   letter-spacing: -0.015em;
   text-wrap: balance;
@@ -215,7 +215,7 @@
 .inspect-step-text {
   margin: 0;
   max-width: 30rem;
-  font-size: 1.02rem;
+  font-size: var(--text-body);
   line-height: 1.6;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -412,7 +412,7 @@
 /* Its text starts on the window's edge, not 4px inside it. */
 .inspect-caption {
   margin: 0.8rem 0 0;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted-dim);
 }
@@ -433,7 +433,7 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   cursor: pointer;
 }
 
