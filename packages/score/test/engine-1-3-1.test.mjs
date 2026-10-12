@@ -5,7 +5,8 @@
  *     ends in it ("Fraunces Fallback Tuned" is a metric-matched stand-in).
  *   - v27 reads `font-size: var(--token)` in a rule that styles a field through
  *     the :root tokens, before both the below-16px scan and the floor test.
- *   - v38 strips keycap hints written in lower case ("ctrl i", "ctrl+s") and
+ *   - v38 drops the text of <kbd> keycaps (read from the markup) and plain
+ *     "+key" hints in any case ("ctrl+s"), keeps "Shift A" as a label, and
  *     accepts get, set, try and a short list of CTA verbs.
  *   - v43 counts --destructive (shadcn/ui's error role) as the error family.
  *   - httpsFetch (the npm engine's fetch) stops after 3 redirects.
@@ -102,13 +103,39 @@ describe('v27: font-size: var() in a field rule is read through the :root tokens
   });
 });
 
-describe('v38: lower-case keycaps are hints, and get / set / try are verbs', () => {
+describe('v38: <kbd> keycaps are hints, and get / set / try are verbs', () => {
   const btn = (inner, attrs = '') => page(`<button type="button"${attrs}>${inner}</button>`);
 
   it('reads the flame-flip keycap button by its verb (PASS)', async () => {
     const html = page('<button type="button" class="flip-keys"><span class="sr-only">Flip to the flame: </span><kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd></button>');
     const c = await check('v38', html, '');
     assert.equal(c.status, 'PASS', c.detail);
+  });
+
+  it('reads "Flip to the flame: <kbd>ctrl</kbd> + <kbd>i</kbd>" by its verb (PASS)', async () => {
+    const c = await check('v38', btn('Flip to the flame: <kbd>ctrl</kbd> <span aria-hidden=true>+</span> <kbd>i</kbd>'), '');
+    assert.equal(c.status, 'PASS', c.detail);
+  });
+
+  it('a button holding only <kbd> keycaps and no aria-label is judged as an icon-only button', async () => {
+    const icon = await check('v38', btn('<svg viewBox="0 0 1 1"></svg>'), '');
+    const keys = await check('v38', btn('<kbd>ctrl</kbd> <kbd>k</kbd>'), '');
+    assert.deepEqual([keys.status, keys.detail], [icon.status, icon.detail]);
+  });
+
+  it('strips a plain-text lower-case "+key" hint, so the aria-label is judged', async () => {
+    const c = await check('v38', btn('ctrl+k', ' aria-label="Open search"'), '');
+    assert.equal(c.status, 'PASS', c.detail);
+  });
+
+  it('control: "Find <kbd>⌘</kbd><kbd>K</kbd>" reads as its verb (PASS)', async () => {
+    assert.equal((await check('v38', btn('Find <kbd>⌘</kbd><kbd>K</kbd>'), '')).status, 'PASS');
+  });
+
+  it('control: plain-text "Shift A" stays a label (WARN, as in 1.3.0)', async () => {
+    const c = await check('v38', btn('Shift A'), '');
+    assert.equal(c.status, 'WARN');
+    assert.match(c.detail, /"Shift A"/);
   });
 
   it('strips a lower-case keycap pair, so an icon button is judged by its aria-label', async () => {
@@ -123,7 +150,7 @@ describe('v38: lower-case keycaps are hints, and get / set / try are verbs', () 
     assert.doesNotMatch(c.detail, /ctrl/);
   });
 
-  for (const label of ['Find⌘K', 'FindCtrlK', 'Save ctrl+s', 'Save Ctrl+S']) {
+  for (const label of ['Find⌘K', 'FindCtrlK', 'Save ctrl+s', 'Save Ctrl+S', 'Find ctrl+k']) {
     it(`control: "${label}" reads as its verb (PASS)`, async () => {
       assert.equal((await check('v38', btn(label), '')).status, 'PASS');
     });

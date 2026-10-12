@@ -43,14 +43,18 @@ redirect limit can only turn a site that redirects more than three times into
   var(--text-label) }` (12.8px) as an input below 16px, because v27's literal
   scan matches `.field` anywhere in a selector; that literal scan is
   unchanged.
-- **v38 strips keyboard hints written in lower case.** `<kbd>ctrl</kbd> <span
-  aria-hidden="true">+</span> <kbd>i</kbd>` reads "ctrl i" once the hidden
-  "+" is dropped, and was judged as words: designesy.org's flip button WARNed
-  as "Flip to the flame: ctrl  i". The modifier (ctrl, cmd, shift, alt,
-  option, command) now matches in any case when it stands as its own word,
-  followed by a "+key" chain or one letter after a space. A word after a space
-  is still a label: "Alt text" and "Option 2" are not eaten, and "Halt" keeps
-  its ending. "Find⌘K", "FindCtrlK" and "Save Ctrl+S" read as before.
+- **v38 reads keycaps from the markup.** The text of `<kbd>` elements
+  (keyboard input, by the HTML definition) is dropped before the verb check,
+  as `aria-hidden` content already was, with any "+" left between them.
+  designesy.org's flip button, `<kbd>ctrl</kbd> <span
+  aria-hidden="true">+</span> <kbd>i</kbd>` after a hidden "Flip to the
+  flame:", WARNed as "Flip to the flame: ctrl  i"; it now reads "Flip to the
+  flame:" and PASSes. A button whose only text is keycaps is judged as an
+  icon-only button is: by its aria-label, or not at all. In plain text, a
+  "+key" hint is now stripped in any case ("ctrl+k", "Save ctrl+s"), when the
+  modifier stands as its own word. Text is not otherwise read as keycaps:
+  "Shift A", "Alt text" and "Option 2" are labels, as in 1.3.0, and "Find⌘K",
+  "FindCtrlK" and "Save Ctrl+S" read as before.
 - **v38 knows get, set and try.** The check's own comment said "Get X", "Set
   X" and "Try X" were allowed, but none of the three was in the verb list, so
   "Get started" and "Try it free" WARNed on every site. Added with them, each

@@ -3706,21 +3706,38 @@ function checkButtonTextVerb(html: string): CheckResult {
   // label, not a shortcut, and must not be eaten.
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
-  // Engine 1.3.1: the same hint in any case. Keycaps are often written in
-  // lower case: <kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd>
-  // reads "ctrl  i" once the aria-hidden "+" is stripped, and TEXT_SHORTCUT_RE
-  // (capitalised modifiers, capital fused keys) read it as words. Here the
-  // modifier is case-insensitive but must stand as its own word (the start of
-  // the label or after a space), so "Halt" and "Adoption" keep their endings,
-  // and the adjacency rule stays: the key is a "+key" chain, or ONE letter
-  // after a space. A real word after a space ("Alt text") is a label and is
-  // not eaten; neither is a digit ("Option 2" names a choice).
-  const SPACED_SHORTCUT_RE =
-    /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:(?:\s*\+\s*|\s+)(?:ctrl|cmd|shift|alt|option|command))*(?:\s*\+\s*[a-z0-9]+|\s+[a-z])$/i;
+  // Engine 1.3.1: a "+key" hint written in lower case ("Save ctrl+s",
+  // "Find ctrl+k") is a hint too. The modifier is case-insensitive here but
+  // must stand as its own word (the start of the label or after a space), so
+  // "Halt+1" is untouched, and only the plus form is read: a modifier followed
+  // by a space and a letter ("Shift A") is a label, as it was in 1.3.0.
+  const PLUS_SHORTCUT_RE =
+    /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:\s*\+\s*[a-z0-9]+)+$/i;
   const stripShortcut = (s: string): string =>
-    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(SPACED_SHORTCUT_RE, '').trim();
+    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(PLUS_SHORTCUT_RE, '').trim();
+  // Engine 1.3.1: keycaps are read from the markup, not guessed from text.
+  // A <kbd> element is keyboard input (HTML Living Standard, the kbd element),
+  // a hint beside the label rather than the label, so its text is dropped
+  // before the verb check, innermost first so nested keycaps
+  // (<kbd><kbd>Ctrl</kbd>+<kbd>K</kbd></kbd>) go too. designesy.org's flip
+  // button, <kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd>
+  // after a hidden lead, read as "Flip to the flame: ctrl  i" in 1.3.0. A "+"
+  // left between dropped keycaps is dropped with them. A button whose only
+  // text is keycaps is then empty and is judged as an icon-only button: by its
+  // aria-label when it has one, and not at all when it does not.
+  const labelText = (inner: string): string => {
+    const visible = stripAriaHidden(inner);
+    let out = visible;
+    for (let i = 0; i < 4; i++) {
+      const next = out.replace(/<kbd\b[^>]*>(?:(?!<kbd\b)[\s\S])*?<\/kbd>/gi, ' ');
+      if (next === out) break;
+      out = next;
+    }
+    const text = out.replace(/<[^>]*>/g, '').trim();
+    return out === visible ? text : text.replace(/(?:\s*\+)+$/, '').trim();
+  };
   while ((m = buttonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
@@ -3742,7 +3759,7 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = stripShortcut(text);
     if (!text) {
