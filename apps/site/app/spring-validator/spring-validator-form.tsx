@@ -205,7 +205,7 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
   {
     name: 'Bouncy (risky)',
     params: { stiffness: 400, damping: 10, mass: 1 },
-    source: 'High overshoot, a likely vestibular trigger',
+    source: 'High overshoot, past the contract\'s 10% threshold',
   },
   {
     name: 'Critically damped',
@@ -227,30 +227,30 @@ const PRESETS: { name: string; params: SpringParams; source: string }[] = [
 // number, so the live region speaks only when the verdict changes.
 const VERDICT: Record<SpringResult['verdict'], { word: string; detail: string; reason: string }> = {
   safe: {
-    word: 'Safe',
-    detail: 'no reduced-motion concern',
-    reason: 'Overshoot of 2% or less is imperceptible. No reduced-motion rule needed.',
+    word: 'Pass',
+    detail: 'no reduced-motion rule required',
+    reason: 'Overshoot of 2% or less is under the contract\'s threshold. The contract requires no reduced-motion rule.',
   },
   caution: {
     word: 'Caution',
-    detail: 'minor overshoot',
-    reason: 'Overshoot over 2% is perceptible. Add a reduced-motion rule.',
+    detail: 'overshoot over 2%',
+    reason: 'Overshoot over 2% crosses the contract\'s threshold. Add a reduced-motion rule.',
   },
   violation: {
     word: 'Violation',
     detail: 'overshoot requires suppression',
-    reason: 'Overshoot over 10% is a vestibular trigger. Suppress it under reduced motion.',
+    reason: 'Overshoot over 10% crosses the contract\'s suppression threshold. Suppress it under reduced motion.',
   },
 };
 
 // What the overshoot readout says about its own value, on the verdict's
 // thresholds, and the state it is tinted with: none and subtle sit inside
-// Safe, visible is Caution, vestibular risk is Violation.
+// the contract's limit, visible is Caution, large is Violation.
 function overshootBand(pct: number): { label: string; tone: 'pass' | 'warn' | 'fail' } {
   if (pct < 0.5) return { label: 'none', tone: 'pass' };
   if (pct <= 2) return { label: 'subtle', tone: 'pass' };
   if (pct <= 10) return { label: 'visible', tone: 'warn' };
-  return { label: 'vestibular risk', tone: 'fail' };
+  return { label: 'large', tone: 'fail' };
 }
 
 // A settle time is infinite when damping is zero; say so instead of
@@ -384,9 +384,9 @@ export function SpringValidator() {
                 </>
               ) : (
                 <>
-                  Damping ratio ζ = {result.dampingRatio.toFixed(3)} produces no
-                  perceptible overshoot. This spring is safe for vestibular
-                  sensitivity without explicit reduced-motion suppression.
+                  Damping ratio ζ = {result.dampingRatio.toFixed(3)} keeps overshoot
+                  at 2% or less, under the contract&apos;s threshold, so the contract
+                  requires no reduced-motion rule for this spring.
                 </>
               )}
             </p>
@@ -636,8 +636,8 @@ function checklistOf(r: SpringResult): { reducedMotion: CheckRow[]; budget: Chec
     reducedMotion: [
       {
         state: r.verdict === 'safe' ? 'pass' : 'fail',
-        label: 'Spring does not produce perceptible overshoot (>2%)',
-        detail: 'If overshoot > 2%, the spring is visible to vestibular-sensitive users',
+        label: 'Overshoot is 2% or less (the contract\'s threshold)',
+        detail: 'Above 2% overshoot, the contract requires a reduced-motion rule',
       },
       {
         state: required ? 'pass' : 'na',
@@ -645,13 +645,13 @@ function checklistOf(r: SpringResult): { reducedMotion: CheckRow[]; budget: Chec
         detail: required
           ? 'Required above 2% overshoot: the CSS snippet carries the rule, so ship it with the spring'
           : r.classification === 'underdamped'
-            ? 'Not required: overshoot of 2% or less is imperceptible'
+            ? 'Not required: overshoot is 2% or less, under the contract\'s threshold'
             : 'Not required: the spring does not oscillate',
       },
       {
         state: r.verdict === 'violation' ? 'fail' : 'pass',
-        label: 'Overshoot ≤ 10% (not a vestibular trigger)',
-        detail: 'Overshoot > 10% is clearly visible and likely triggers discomfort',
+        label: 'Overshoot ≤ 10% (the contract\'s suppression threshold)',
+        detail: 'Above 10%, the contract requires suppressing the spring under reduced motion',
       },
     ],
     budget: [

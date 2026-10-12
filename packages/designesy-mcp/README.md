@@ -14,7 +14,7 @@
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](cursor://anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
 
-A **stdio MCP server** exposing [designesy.org](https://www.designesy.org)'s design-intelligence infrastructure as native agent tools. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
+Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. This package is the **stdio MCP server** that exposes [designesy.org](https://www.designesy.org)'s tools to agents. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
 
 Zero external dependencies. Pure Python stdlib. Implements the [Model Context Protocol](https://modelcontextprotocol.io) JSON-RPC 2.0 over stdio.
 

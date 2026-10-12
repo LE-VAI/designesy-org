@@ -86,10 +86,6 @@ export default function MonitorContractPage() {
               <dt>Drift shape</dt>
               <KvValue text={c.source_authority.drift_shape} />
             </dl>
-            <dl className="kv-cell">
-              <dt>Compounding</dt>
-              <KvValue text={c.source_authority.compounding} />
-            </dl>
             <dl className="kv-cell is-wide">
               <dt>Competitor lane</dt>
               <KvValue text={c.source_authority.competitor_lane} />

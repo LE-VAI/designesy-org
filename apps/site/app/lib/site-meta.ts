@@ -1,12 +1,21 @@
 import type { Metadata } from 'next';
+import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 /** Canonical public host — apex 308s to www. */
 export const SITE_BASE = 'https://www.designesy.org';
 
 export const SITE_NAME = 'Designesy';
 
-export const SITE_DEFAULT_DESCRIPTION =
-  'Design intelligence infrastructure for a humane creative civilization. Canonical public source for portable design judgment: contracts, kits, labs, and field checks people and agents can fetch, run, and cite.';
+/**
+ * The confirmed one-liner (owner decision 2026-10-11), the line server.json and
+ * the MCP Server Card publish. The check count is the engine's own constant, so
+ * the line cannot fall behind the registry; the static copies (server.json,
+ * package descriptions, READMEs) are held to the same count by
+ * scripts/check-readme-facts.js.
+ */
+export const LISTING_LINE = `Design quality gate for AI-generated UI: score any URL on ${ENGINE_CHECK_COUNT} deterministic checks, A–F grade.`;
+
+export const SITE_DEFAULT_DESCRIPTION = LISTING_LINE;
 
 /**
  * Build consistent page metadata: title, description, canonical, OG, Twitter.

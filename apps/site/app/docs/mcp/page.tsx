@@ -114,7 +114,7 @@ const TOOLS = [
   {
     name: 'designesy_drift_score',
     kind: 'Executable',
-    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
+    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks look for four drift patterns the drift contract names: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/drift',
   },

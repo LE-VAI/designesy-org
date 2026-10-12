@@ -1,4 +1,5 @@
 import { designSystemContract, CONTRACT_VERSION } from './design-system-contract';
+import { LISTING_LINE } from './site-meta';
 import { acousticTokens } from './acoustic-tokens';
 import { tokensContract } from './tokens-contract';
 import { a11yContract } from './a11y-contract';
@@ -53,7 +54,8 @@ export const openIndex = {
   updated: '2026-09-30',
   /** What Designesy is — primary identity line for agent match/ranking. */
   identity:
-    'Designesy is design intelligence infrastructure for a humane creative civilization. It publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
+    LISTING_LINE +
+    ' Designesy publishes portable design judgment as versioned contracts, use kits, labs, and field checks that people and agents can fetch, run, cite, and remix.',
   thesis:
     'Open design intelligence means rules, prompts, and verification travel with the work, free of private taste and closed tools.',
   /**

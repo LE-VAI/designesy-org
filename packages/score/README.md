@@ -1,6 +1,6 @@
 # @designesy/score
 
-Standalone 44-check design-contract scoring engine. Fetches a URL, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with **no Designesy server required**; the browser checks return MANUAL. No required dependencies.
+Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. This is the standalone engine: it fetches a URL, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with **no Designesy server required**; the browser checks return MANUAL. No required dependencies.
 
 ## Install
 

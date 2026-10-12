@@ -66,12 +66,12 @@ const TIERS = [
     name: 'Enterprise',
     price: 'Custom',
     suffix: '',
-    sub: 'Private scoring on your own infrastructure: a private contract instance, SSO, audit trail, on-prem. For teams shipping with agents at scale.',
+    sub: 'Private scoring on your own infrastructure: a private contract instance, audit trail, on-prem. For teams shipping with agents at scale.',
     bullets: [
       'Everything in Continuity',
       'Private and staging URLs scored on your infrastructure',
       'Private contract instance (on-prem or VPC)',
-      'SSO/SAML + audit trail',
+      'Audit trail',
       'Unlimited sites + 1-year history',
       'On-prem scoring engine + dedicated CSM + SLA',
     ],
@@ -314,8 +314,8 @@ export default function PricingPage() {
                 DTCG tokens in place of the Designesy contract. Continuity
                 watches your contract over time with scheduled scans, drift
                 alerts, and history. Enterprise runs a private contract instance
-                on your own infrastructure (on-prem or VPC) with SSO and an
-                audit trail.
+                on your own infrastructure (on-prem or VPC) with an audit
+                trail.
               </p>
             </details>
             <details className="pricing-faq-item">
@@ -448,7 +448,7 @@ export default function PricingPage() {
                   <td><span className="pricing-compare-check">✓</span></td>
                 </tr>
                 <tr>
-                  <td>SSO/SAML + audit trail</td>
+                  <td>Audit trail</td>
                   <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                   <td><span className="pricing-compare-dash" aria-hidden="true">–</span><span className="sr-only">Not included</span></td>
                   <td><span className="pricing-compare-check">✓</span></td>

@@ -1,7 +1,7 @@
 {
   "name": "designesy-score",
   "version": "1.0.5",
-  "description": "Score any URL against the Designesy 44-check design-contract engine: runs locally with no Designesy server; browser checks return MANUAL. Zero dependencies.",
+  "description": "Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. Runs locally with no Designesy server; browser checks return MANUAL.",
   "license": "MIT",
   "author": "Designesy",
   "homepage": "https://www.designesy.org",

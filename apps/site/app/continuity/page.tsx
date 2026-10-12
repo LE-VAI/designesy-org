@@ -75,7 +75,7 @@ const LADDER: {
   {
     name: 'Enterprise',
     title: 'Custom',
-    body: 'Private contract instance, private and staging URLs scored on your infrastructure, SSO/SAML, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
+    body: 'Private contract instance, private and staging URLs scored on your infrastructure, unlimited sites, on-prem scoring, dedicated CSM + SLA.',
     status: 'By conversation',
     state: 'hold',
     action: { label: 'Contact us', href: 'mailto:hello@designesy.org' },

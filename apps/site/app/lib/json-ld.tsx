@@ -2,6 +2,8 @@
  * Server-side JSON-LD injector. No client JS.
  * Pass one object or an array of schema.org graphs.
  */
+import { LISTING_LINE } from './site-meta';
+
 export function JsonLd({ data }: { data: Record<string, unknown> | Record<string, unknown>[] }) {
   const payload = Array.isArray(data) ? data : [data];
   return (
@@ -22,8 +24,7 @@ export function organizationJsonLd() {
     legalName: 'Designesy LLC',
     url: 'https://www.designesy.org',
     email: 'hello@designesy.org',
-    description:
-      'Design intelligence infrastructure for a humane creative civilization.',
+    description: LISTING_LINE,
     // At least 112x112 for search engines' logo use; /icon is 32x32.
     logo: 'https://www.designesy.org/brand/designesy-icon-512.png',
     sameAs: [
@@ -39,8 +40,7 @@ export function websiteJsonLd() {
     '@type': 'WebSite',
     name: 'Designesy',
     url: 'https://www.designesy.org',
-    description:
-      'Design intelligence infrastructure: contracts, kits, labs, and field checks for people and agents.',
+    description: LISTING_LINE,
     publisher: {
       '@type': 'Organization',
       name: 'Designesy LLC',

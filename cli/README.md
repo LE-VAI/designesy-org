@@ -5,7 +5,7 @@
   <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate: a URL flows in, the contract grid fires check by check, the score counts up to its grade, and the gate passes" width="960">
 </picture>
 
-Score any URL against the **Designesy design-system contract**: 44 deterministic checks, one grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
+Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
 
 ```bash
 npx designesy-score designesy.org

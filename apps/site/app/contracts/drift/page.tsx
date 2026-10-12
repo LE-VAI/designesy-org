@@ -12,7 +12,7 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Drift contract',
   description:
-    'Designesy Drift Contract v0.1.0 detects the four documented AI-generated UI drift failure modes: token fabrication, within-session drift, between-session amnesia, silent breaking changes. 12 verification checks.',
+    'Designesy Drift Contract v0.1.0 names four AI-generated UI drift modes (token fabrication, within-session drift, between-session amnesia, silent breaking changes) and detects the first two with 12 verification checks; the other two need history and version tracking.',
   path: '/contracts/drift',
   ogTitle: 'Drift contract · Designesy',
   ogDescription:
@@ -22,13 +22,13 @@ export const metadata: Metadata = pageMeta({
 
 const c = driftContract;
 
-// The two statistics, read out of the contract's own sentences so the figure
-// cannot drift from its source. If a sentence is reworded and no longer
-// matches, the cell prints the sentence instead.
+// The statistic, read out of the contract's own sentence so the figure cannot
+// drift from its source. If the sentence is reworded and no longer matches,
+// the cell prints the sentence instead.
 //   "OverlayQA: ~160 visual issues per AI-generated app (Jason Arbon, 1000+ checks)"
+// The taxonomy attribution and the drift-rate statistic were removed
+// (owner decision 2026-10-11): no source for either could be found.
 const SCALE = /^(.+?):\s*(~?\d[\d,]*)\s+(.+?)\s*\((.+)\)$/.exec(c.source_authority.scale_signal);
-//   "Figma 2025: 23% design-system drift in 8 weeks without formal review vs 4% with it"
-const RATE = /^(.+?):\s*(\d+%)\s+(.+?)\s+without\s+(.+?)\s+vs\s+(\d+%)\s+with it$/.exec(c.source_authority.drift_rate);
 
 // The checks that detect each mode, and the limit the contract's own open
 // questions name for it. Ids are the verification list's own.
@@ -58,31 +58,12 @@ export default function DriftContractPage() {
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">Source authority</h2>
           <div className="kv-grid">
-            <dl className="kv-cell">
-              <dt>Drift taxonomy</dt>
-              <KvValue text={c.source_authority.drift_modes} />
-            </dl>
-            <dl className="kv-cell">
+            <dl className="kv-cell is-wide">
               <dt>Scale of the problem</dt>
               {SCALE ? (
                 <KvFigures figures={[{ value: SCALE[2], caption: SCALE[3] }]} source={`${SCALE[1]} · ${SCALE[4]}`} />
               ) : (
                 <KvValue text={c.source_authority.scale_signal} />
-              )}
-            </dl>
-            <dl className="kv-cell">
-              <dt>Drift rate</dt>
-              {RATE ? (
-                <KvFigures
-                  figures={[
-                    { value: RATE[2], caption: `without ${RATE[4]}` },
-                    { value: RATE[5], caption: `with ${RATE[4]}` },
-                  ]}
-                  note={RATE[3]}
-                  source={RATE[1]}
-                />
-              ) : (
-                <KvValue text={c.source_authority.drift_rate} />
               )}
             </dl>
             <dl className="kv-cell is-foot">

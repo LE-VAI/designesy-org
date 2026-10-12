@@ -9,7 +9,7 @@ import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { LottieHint } from '../lib/lottie-hint';
 import { ReadingProgress } from '../lib/reading-progress';
-import { pageMeta } from '../lib/site-meta';
+import { pageMeta, LISTING_LINE } from '../lib/site-meta';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import selfReportRaw from './self-report.json';
 import { fmtScore } from '../score/verdict';
@@ -232,12 +232,9 @@ export default function DocsPage() {
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Context surface</p>
           <h1 className="surface-title" data-scramble>Docs</h1>
-          <p className="surface-lede">
-            Designesy is design intelligence infrastructure for a humane creative
-            civilization.
-          </p>
+          <p className="surface-lede">{LISTING_LINE}</p>
           <p className="surface-note">
-            It turns sources into principles, principles into contracts,
+            Designesy turns sources into principles, principles into contracts,
             contracts into tools, and tools into better designed work. This is
             the public orientation layer: selected doctrine, language, and
             context for anyone who wants to understand what Designesy is and how

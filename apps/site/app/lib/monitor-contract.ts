@@ -30,9 +30,8 @@ export const monitorContract = {
     'Monitor is the governance layer over time: each call re-runs the drift checks on a URL and compares the result with the history the caller passes in, computing deltas against the first snapshot (the baseline) and the one before, so a regression shows on the run it lands. Nothing is scheduled, and the server keeps no history of its own (each result is cached for 24 hours); /monitor keeps the history in your browser.',
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-01',
-    temporal_gap: 'Into Design Systems 2026: "weekly audits at cents per report, drift detection without dedicated headcount"',
-    drift_shape: 'Design Systems Collective 2026 (Enara): "the system surfaces the shape of how drift happens, the only way to stop it before it compounds"',
-    compounding: 'Lollylop 2026: "visual bugs are invisible to code reviews, every sprint adds a little more, drift catches it before it compounds"',
+    temporal_gap: 'Into Design Systems 2026: "Weekly audits at cents per report. Drift detection without dedicated headcount."',
+    drift_shape: 'Cristian Morales Achiardi, Design Systems Collective 2026: "It surfaces the shape of how drift happens, which is the only way to stop it before it compounds."',
     competitor_lane: 'URL-scoped production fetch + design-token-aware checks + trend over the history the caller supplies',
   },
   conformance: {
