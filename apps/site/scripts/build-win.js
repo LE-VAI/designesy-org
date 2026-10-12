@@ -17,7 +17,7 @@ const shim = path.join(siteRoot, 'node24-win-readlink-shim.cjs');
 const nextBin = path.join(siteRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
 
 const steps = [
-  ['next build', [nextBin, 'build']],
+  ['next build', [nextBin, 'build', '--webpack']],
   ['check-contract-drift', [path.join(siteRoot, 'scripts', 'check-contract-drift.js')]],
   ['check-catalog-version-binding', [path.join(siteRoot, 'scripts', 'check-catalog-version-binding.js')]],
   ['check-contract-lock', [path.join(siteRoot, 'scripts', 'check-contract-lock.js')]],

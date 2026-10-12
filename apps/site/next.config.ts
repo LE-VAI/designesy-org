@@ -144,6 +144,19 @@ const MARKDOWN_ROUTES = [
 const markdownPublicPath = (route: string) => (route === 'index' ? '/' : '/' + route);
 const markdownFilePath = (route: string) => (route === 'index' ? '/index.md' : '/' + route + '.md');
 
+// BUNDLER. The build and dev scripts (package.json) and CI pass `--webpack`;
+// Next 16 builds with Turbopack by default. Turbopack's CSS pipeline
+// (lightningcss) changed this site's compiled CSS in ways that show on screen.
+// Both reproduced on Next 16.4.0 with a one-file app:
+//   - `backdrop-filter` is dropped when it comes before `-webkit-backdrop-filter`
+//     in a rule (14 rules here; the header capsule's blur dies in Chrome).
+//     vercel/next.js#78302.
+//   - `translate` / `rotate` / `scale` are dropped, or merged into `transform` in
+//     the wrong order, when `transform` is declared in the same rule (.ix-pin
+//     loses its offset). parcel-bundler/lightningcss#426.
+// With --webpack the compiled CSS keeps every declaration that main's did and
+// differs only by vendor prefixes the Next 16 browser floor no longer needs.
+// Move to Turbopack when both are fixed upstream and the CSS diff is clean.
 const nextConfig: NextConfig = {
   // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
   // under bin/. Next's server bundler (esbuild/webpack) relocates node_modules
