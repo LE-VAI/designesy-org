@@ -28,15 +28,6 @@
   overflow: hidden;
 }
 
-.hero-eyebrow {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-fine-160);
-}
-
 .hero-title {
   margin-bottom: var(--space-fine-135);
   /* LCP element: ensure it paints immediately, not gated by entrance animation */
@@ -71,57 +62,11 @@
   transition: transform 200ms var(--ease-out);
 }
 
-.principle-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(0.9rem, 1.6vw, 1.25rem);
-  align-items: start;
-}
-
-@media (min-width: 880px) {
-  .principle-layout {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.principle-cell {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.85rem, 1.4vw, 1.1rem);
-}
-
 .health-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
-}
-
-
-@media (max-width: 640px) {
-  .principle-cell {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-.section-heading-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(1rem, 2.6vw, 2rem);
-  flex-wrap: wrap;
-}
-
-.section-heading-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-fine-20);
-  padding: var(--space-fine-45) var(--space-fine-70);
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) * 0.6);
-  background: var(--surface);
 }
 
 .section-heading-badge-label {
@@ -136,15 +81,6 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-fine-40);
-}
-
-.section-heading-badge-numeral {
-  font-size: var(--text-lead);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
 
 .section-heading-badge-unit {
@@ -174,25 +110,6 @@
   transition: transform 200ms var(--ease-out);
 }
 
-.principle-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(0.9rem, 1.6vw, 1.25rem);
-  align-items: start;
-}
-
-@media (min-width: 880px) {
-  .principle-layout {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.principle-cell {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.85rem, 1.4vw, 1.1rem);
-}
-
 .health-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -201,20 +118,8 @@
 }
 
 
-@media (max-width: 640px) {
-  .principle-cell {
-    grid-template-columns: 1fr;
-  }
-}
-
-
 .section-more {
   margin-top: var(--space-32);
-}
-
-
-.fade-up-delay-5 {
-  animation-delay: 0.40s;
 }
 
 .fade-in {
@@ -263,29 +168,6 @@
   font-weight: 600;
   color: var(--muted-dim);
   transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
-}
-
-.mark-glyph-core,
-.mark-glyph-ring {
-  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease),
-    background 180ms var(--ease), opacity 180ms var(--ease);
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.mark-glyph-core {
-  position: absolute;
-  inset: 9px;
-  background: var(--signal);
-  transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
-}
-
-.mark-glyph-ring {
-  position: absolute;
-  inset: 2px;
-  border: 1px solid var(--signal-dim);
-  opacity: 0.9;
-  transform: translateZ(0);
 }
 
 
@@ -395,71 +277,12 @@
 
 .hero-display-line.is-accent { color: var(--ink); }
 
-.hero-word-free {
-  /* No padding-left — the U+00A0 alone gives the natural word space. The old
-     0.14em "optical kern" double-spaced the gap (nbsp ≈ 0.25em + 0.14em pad
-     ≈ 0.39em vs the ~0.25em a real Inter word space holds), and the hard
-     background-clip boundary on the left edge of the f read as a second
-     barrier on top of the space. At rest the gradient band is parked fully
-     off-word (background-size: 250%), so there is no clip artifact to defend
-     against — the padding was dead weight that only widened the gap. */
-  padding-left: 0;
-  /* Flat base face (var(--ink)-adjacent light gray) with a NARROW pure-white
-     band at 47–53%. With background-size 250% the band lives at container
-     coords 117.5–132.5% — fully off the right edge of the word at rest, so
-     the resting face reads as flat typography, not a gradient. The band is
-     tighter (6% of image) and brighter (pure var(--paper-white)) than the old 12% mix. */
-  background-image: linear-gradient(
-    104deg,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%),
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 47%,
-    var(--paper-white) 50%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 53%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%)
-  );
-  background-size: 250% 100%;
-  background-position: 0% 0; /* band parked fully off the right edge */
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent; /* fallback guard — overridden below where clip is unsupported */
-  /* No glow — the shimmer band alone carries the emphasis. A text-shadow
-     here reads as a static halo that fights the sweep. */
-  /* Sweep left → right on an infinite loop with a built-in dwell. Because
-     the default background-repeat tiles the gradient seamlessly (edge stops
-     match), and both park positions leave the band fully off-word, the loop
-     wrap is invisible and the band is never parked ON the word — the "stuck
-     gradient" failure the old 118%/-118% keyframes produced. */
-  animation: hero-free-shimmer 3.6s cubic-bezier(0.42, 0, 0.2, 1) 1s infinite;
-}
-
-[data-theme="light"] .hero-word-free {
-  background-image: linear-gradient(
-    104deg,
-    var(--ink),
-    var(--ink) 47%,
-    color-mix(in srgb, var(--signal-light) 82%, var(--ink) 18%) 50%,
-    var(--ink) 53%,
-    var(--ink)
-  );
-}
-
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .hero-word-free {
     color: var(--ink);
     -webkit-text-fill-color: currentColor;
     animation: none;
     background-image: none;
-    text-shadow: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-word-free {
-    animation: none;
-    background-image: none;
-    color: var(--ink);
-    -webkit-text-fill-color: currentColor;
     text-shadow: none;
   }
 }
@@ -478,11 +301,6 @@
   .hero {
     padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
-  }
-
-
-  .surface-grid {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -518,14 +336,6 @@
   }
   .section-heading-badge-unit {
     font-size: 0.6875rem;
-  }
-
-  .section-heading-row {
-    align-items: flex-start;
-    gap: var(--space-12);
-  }
-  .section-heading-badge {
-    align-items: flex-start;
   }
 
   .score-hero-input {
