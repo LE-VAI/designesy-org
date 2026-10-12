@@ -64,12 +64,23 @@ export function wordChildren(body: string) {
   ];
 }
 
-/** The mark, as SVG children in its 512 box (y down). */
-export function markChildren(body: string) {
+/** The mark, as SVG children in its 512 box (y down). `small` draws the
+    favicon variant the small lockup uses (D66). */
+export function markChildren(body: string, small = false) {
+  const shapes = small ? SMALL_MARK_BODY : MARK_BODY;
+  const dot = small ? SMALL_MARK_DOT : MARK_DOT;
   return [
-    ...MARK_BODY.map((d, i) => <path key={`m${i}`} d={d} fill={body} />),
-    <circle key="dot" cx={MARK_DOT.cx} cy={MARK_DOT.cy} r={MARK_DOT.r} fill={LOGO_AZURE} />,
+    ...shapes.map((d, i) => <path key={`m${i}`} d={d} fill={body} />),
+    <circle key="dot" cx={dot.cx} cy={dot.cy} r={dot.r} fill={LOGO_AZURE} />,
   ];
+}
+
+/** The horizontal lockup's geometry: the small master at mark heights of 48px
+    and under (D66), the standard one above. */
+export function lockupGeometry(small: boolean) {
+  return small
+    ? { viewBox: SMALL_LOCKUP_VIEWBOX, mark: SMALL_LOCKUP_MARK_TRANSFORM, word: SMALL_LOCKUP_WORD_TRANSFORM }
+    : { viewBox: LOCKUP_VIEWBOX, mark: LOCKUP_MARK_TRANSFORM, word: LOCKUP_WORD_TRANSFORM };
 }
 
 /** designesy. : the wordmark alone (footer). Decorative; the caller names it. */
@@ -81,13 +92,15 @@ export function Wordmark({ className }: { className?: string }) {
   );
 }
 
-/** The mark and the wordmark, horizontal (header). Decorative; the caller names it. */
-export function Lockup({ className }: { className?: string }) {
+/** The mark and the wordmark, horizontal (header). Decorative; the caller
+    names it. `small` for a mark 48px tall or less (D66). */
+export function Lockup({ className, small = false }: { className?: string; small?: boolean }) {
+  const g = lockupGeometry(small);
   return (
-    <svg className={className} viewBox={LOCKUP_VIEWBOX} aria-hidden="true" focusable="false" overflow="visible">
+    <svg className={className} viewBox={g.viewBox} aria-hidden="true" focusable="false" overflow="visible">
       <g transform="scale(1,-1)">
-        <g transform={LOCKUP_MARK_TRANSFORM}>{markChildren('currentColor')}</g>
-        <g transform={LOCKUP_WORD_TRANSFORM}>{wordChildren('currentColor')}</g>
+        <g transform={g.mark}>{markChildren('currentColor', small)}</g>
+        <g transform={g.word}>{wordChildren('currentColor')}</g>
       </g>
     </svg>
   );
@@ -114,17 +127,5 @@ export const SMALL_MARK_DOT = { cx: 336, cy: 96, r: 60 } as const;
 
 /** The small lockup: the favicon-variant mark and the wordmark. Decorative; the caller names it. */
 export function SmallLockup({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox={SMALL_LOCKUP_VIEWBOX} aria-hidden="true" focusable="false" overflow="visible">
-      <g transform="scale(1,-1)">
-        <g transform={SMALL_LOCKUP_MARK_TRANSFORM}>
-          {SMALL_MARK_BODY.map((d, i) => (
-            <path key={`s${i}`} d={d} fill="currentColor" />
-          ))}
-          <circle cx={SMALL_MARK_DOT.cx} cy={SMALL_MARK_DOT.cy} r={SMALL_MARK_DOT.r} fill={LOGO_AZURE} />
-        </g>
-        <g transform={SMALL_LOCKUP_WORD_TRANSFORM}>{wordChildren('currentColor')}</g>
-      </g>
-    </svg>
-  );
+  return <Lockup className={className} small />;
 }

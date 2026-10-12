@@ -385,7 +385,7 @@ export default function DocsPage() {
           </div>
           <div className="doctrine-cols">
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to imply
               </h3>
               <CheckGrid items={checkItemsFromStrings([
@@ -398,7 +398,7 @@ export default function DocsPage() {
                 ])} />
             </div>
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 What to avoid
               </h3>
               <CheckGrid items={checkItemsFromStrings([

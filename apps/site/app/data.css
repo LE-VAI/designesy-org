@@ -28,6 +28,7 @@
   --dx-plain: color-mix(in srgb, var(--ink) 58%, transparent);
   --dx-range: color-mix(in srgb, var(--ink) 45%, transparent);
   --dx-t: var(--duration-fast) var(--ease-out);
+  --tone-ink: var(--ink);
 }
 
 
@@ -45,6 +46,25 @@
 .dx [data-tone="fail"] { --tone: var(--dx-fail); }
 .dx [data-tone="plain"] { --tone: var(--dx-plain); }
 
+/* A grade is drawn in the grade palette, never in a band tone (brand ledger
+   D56): the letter in --grade-*-ink, the tint, rim, dot and bar in --grade-*.
+   The three tones above stay for category bars (D48). */
+.dx [data-grade="a"] { --tone: var(--grade-a); --tone-ink: var(--grade-a-ink); }
+.dx [data-grade="b"] { --tone: var(--grade-b); --tone-ink: var(--grade-b-ink); }
+.dx [data-grade="c"] { --tone: var(--grade-c); --tone-ink: var(--grade-c-ink); }
+.dx [data-grade="d"] { --tone: var(--grade-d); --tone-ink: var(--grade-d-ink); }
+.dx [data-grade="f"] { --tone: var(--grade-f); --tone-ink: var(--grade-f-ink); }
+
+/* A chip sets its letter on its own 14% tint, and a row under the pointer
+   lifts the ground again, so the plain -ink (tuned for bare surfaces, D18)
+   measured as low as 4.13:1 (light A on the self row) and 4.34:1 (dark F on a
+   hovered row). Drawn 80% -ink and 20% --ink, the letter keeps its grade's
+   hue and holds 5.05:1 or more in light and 5.34:1 or more in dark, at rest
+   and hovered, the self row included. */
+.dx .dx-grade[data-grade] {
+  color: color-mix(in srgb, var(--tone-ink) 80%, var(--ink));
+}
+
 /* --- Head extras: the page's actions under its thesis ------------------- */
 
 .dx-actions {
@@ -61,7 +81,7 @@
 .dx-actions .score-share-btn {
   height: 2.75rem;
   padding: 0 var(--space-20);
-  font-size: 0.875rem;
+  font-size: 1rem;
   border-radius: var(--radius);
 }
 
@@ -238,7 +258,7 @@
 }
 
 .dx-stats dt {
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -269,7 +289,7 @@
 
 .dx-stats dd small {
   margin-left: var(--space-4);
-  font: 500 0.8125rem/1 var(--sans);
+  font: 500 0.8rem/1 var(--sans);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   color: var(--muted-dim);
@@ -301,7 +321,7 @@
 
 .dx-fig-note {
   max-width: 36rem;
-  font: 400 0.875rem/1.5 var(--sans);
+  font: 400 1rem/1.5 var(--sans);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -326,7 +346,7 @@
   max-width: 43.2em;
   margin: 0;
   padding-block: var(--space-12);
-  font: 500 0.72rem/1.25rem var(--mono);
+  font: 500 1rem/1.25rem var(--mono);
   color: var(--muted-dim);
 }
 
@@ -351,7 +371,7 @@
   gap: var(--space-8);
   min-height: 2.75rem;
   list-style: none;
-  font: 500 0.8125rem/1.25rem var(--sans);
+  font: 500 0.8rem/1.25rem var(--sans);
   color: var(--muted);
   cursor: pointer;
   transition: color var(--dx-t);
@@ -420,7 +440,7 @@
 .dx-table {
   width: 100%;
   border-collapse: collapse;
-  font: 400 0.875rem/1.45 var(--sans);
+  font: 400 1rem/1.45 var(--sans);
 }
 
 .dx-table thead {
@@ -439,7 +459,7 @@
    dark (the lifted top) and 4.49:1 light (the raised foot); --muted holds
    6.9:1 and 6.7:1. */
 .dx-table thead th {
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -461,7 +481,7 @@
 }
 
 .dx-table td[data-num] {
-  font: 500 0.8125rem/1.45 var(--mono);
+  font: 500 1rem/1.45 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -476,7 +496,7 @@
    a token that cannot fit a line on its own, so a column keeps its longest
    token's width. A row's own name (the row header) never wraps at all. */
 .dx-table code {
-  font: 500 0.78rem/1.4 var(--mono);
+  font: 500 0.8rem/1.4 var(--mono);
   color: var(--ink);
   overflow-wrap: break-word;
 }
@@ -506,7 +526,7 @@
 }
 
 .dx-toc .dx-num {
-  font: 500 0.75rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted-dim);
 }
@@ -596,7 +616,7 @@
     content: attr(data-label) / "";
     display: block;
     margin-bottom: var(--space-2);
-    font: 500 0.6875rem/1rem var(--mono);
+    font: 500 0.8rem/1rem var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-dim);
@@ -650,7 +670,7 @@
     left: 0;
     top: 0;
     width: 5.5rem;
-    font: 500 0.6875rem/calc(0.875rem * 1.45) var(--mono);
+    font: 500 0.8rem/calc(0.875rem * 1.45) var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-dim);
@@ -664,7 +684,7 @@
   padding: 1px var(--space-6);
   border-radius: 999px;
   box-shadow: inset 0 0 0 1px var(--line-strong);
-  font: 600 0.625rem/1.4 var(--mono);
+  font: 600 0.8rem/1.4 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink);
@@ -692,7 +712,7 @@
   gap: var(--space-4) var(--space-12);
   min-height: var(--space-24);
   margin: 0;
-  font: 400 0.875rem/1.5rem var(--sans);
+  font: 400 1rem/1.5rem var(--sans);
   color: var(--muted);
 }
 
@@ -702,7 +722,7 @@
 }
 
 .dx-readout-num {
-  font: 500 0.875rem/1 var(--mono);
+  font: 500 1rem/1 var(--mono);
   color: var(--ink);
 }
 
@@ -710,12 +730,12 @@
   padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--tone);
-  font: 600 0.75rem/1 var(--mono);
-  color: var(--ink);
+  font: 600 0.8rem/1 var(--mono);
+  color: var(--tone-ink);
 }
 
 .dx-readout-meta {
-  font: 400 0.8125rem/1 var(--sans);
+  font: 400 0.8rem/1 var(--sans);
   color: var(--muted-dim);
 }
 
@@ -751,7 +771,7 @@
   position: absolute;
   top: var(--space-6);
   left: var(--space-8);
-  font: 600 0.6875rem/1 var(--mono);
+  font: 600 0.8rem/1 var(--mono);
   color: var(--muted);
 }
 
@@ -808,7 +828,7 @@
 .dx-axis,
 .dx-median {
   position: relative;
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
 }
 
 .dx-axis {
@@ -880,12 +900,12 @@
   grid-area: label;
   display: grid;
   gap: var(--space-2);
-  font: 500 0.875rem/1.3 var(--sans);
+  font: 500 0.8rem/1.3 var(--sans);
   color: var(--ink);
 }
 
 .dx-bar-label small {
-  font: 400 0.72rem/1.3 var(--mono);
+  font: 400 0.8rem/1.3 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -931,7 +951,7 @@
 
 .dx-bar-val {
   grid-area: val;
-  font: 500 0.8125rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   text-align: right;
   color: var(--ink);
 }
@@ -945,7 +965,7 @@
   align-items: center;
   gap: var(--space-8);
   margin: var(--space-12) 0 0;
-  font: 400 0.8125rem/1.25rem var(--sans);
+  font: 400 0.8rem/1.25rem var(--sans);
   color: var(--muted);
 }
 
@@ -1063,12 +1083,12 @@
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--tone) 14%, transparent);
   box-shadow: inset 0 0 0 1px var(--tone);
-  font: 600 0.8125rem/1 var(--mono);
-  color: var(--ink);
+  font: 600 0.8rem/1 var(--mono);
+  color: var(--tone-ink);
 }
 
 .dx-delta {
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--muted-dim);
   white-space: nowrap;
 }
@@ -1086,7 +1106,7 @@
   padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--line);
-  font: 500 0.6875rem/1.3 var(--mono);
+  font: 500 0.8rem/1.3 var(--mono);
   letter-spacing: 0.04em;
   color: var(--muted);
 }
@@ -1236,7 +1256,7 @@
   padding-block: max(var(--space-2), calc((1.5rem - 1.3em) / 2));
   /* and at least 24px wide: a one-letter name ("X") was an 11px target. */
   min-width: var(--space-24);
-  font: 600 0.9375rem/1.3 var(--sans);
+  font: 600 1rem/1.3 var(--sans);
   color: var(--ink);
   text-decoration: none;
 }
@@ -1255,7 +1275,7 @@
   align-items: center;
   gap: var(--space-4) var(--space-8);
   margin-top: var(--space-2);
-  font: 400 0.8125rem/1.4 var(--sans);
+  font: 400 0.8rem/1.4 var(--sans);
   color: var(--muted-dim);
 }
 
@@ -1276,7 +1296,7 @@
 
 .dx-rank-v {
   min-width: 2.6em;
-  font: 600 0.9375rem/1.2 var(--mono);
+  font: 600 1rem/1.2 var(--mono);
 }
 
 .dx-rank-score .dx-delta {
@@ -1366,14 +1386,14 @@
 }
 
 .dx-defs dt {
-  font: 600 0.9375rem/1.4 var(--sans);
+  font: 600 1rem/1.4 var(--sans);
   color: var(--ink);
 }
 
 .dx-defs dd {
   max-width: 36rem;
   margin: var(--space-6) 0 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--muted);
   text-wrap: pretty;
@@ -1397,7 +1417,7 @@
 
 .dx-toc-label {
   margin: 0 0 var(--space-8);
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1425,7 +1445,7 @@
   padding: 0 var(--space-12);
   border-radius: var(--radius-md);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.8125rem/1.25 var(--sans);
+  font: 500 0.8rem/1.25 var(--sans);
   color: var(--muted);
   text-decoration: none;
   white-space: nowrap;
@@ -1532,7 +1552,7 @@
 .dx-defs code,
 .dx-callout code,
 .dx-checks code {
-  font: 500 0.84em/1 var(--mono);
+  font: 500 inherit/1 var(--mono);
   color: var(--ink);
 }
 
@@ -1559,7 +1579,7 @@
 .dx-formula {
   margin: 0;
   padding: var(--space-20) var(--space-24);
-  font: 400 0.8125rem/1.7 var(--mono);
+  font: 400 0.8rem/1.7 var(--mono);
   color: var(--ink);
   white-space: pre;
   tab-size: 2;
@@ -1582,7 +1602,7 @@
 @container dxformula (width < 40rem) {
   .dx-formula {
     padding: var(--space-16);
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
@@ -1621,14 +1641,14 @@
 }
 
 .dx-band-range {
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
 .dx-bands dd {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -1695,13 +1715,13 @@
 }
 
 .dx-check-item {
-  font: 500 0.9375rem/1.4 var(--sans);
+  font: 500 1rem/1.4 var(--sans);
   color: var(--ink);
 }
 
 .dx-check-how {
   max-width: 40rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--muted);
   text-wrap: pretty;
@@ -1773,12 +1793,12 @@
 .dx-study-line,
 .dx-group-meta {
   grid-column: 2;
-  font: 400 0.875rem/1.45 var(--sans);
+  font: 400 0.8rem/1.45 var(--sans);
   color: var(--muted);
 }
 
 .dx-group-meta {
-  font: 500 0.75rem/1.45 var(--mono);
+  font: 500 0.8rem/1.45 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -1799,7 +1819,7 @@
 .dx-group-note {
   max-width: 38rem;
   margin: 0 0 var(--space-8);
-  font-size: 0.9375rem;
+  font-size: 1rem;
   line-height: 1.6;
   color: var(--muted);
   text-wrap: pretty;

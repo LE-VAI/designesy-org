@@ -306,7 +306,7 @@ export default function McpDocsPage() {
               className="mono-link"
               style={{
                 whiteSpace: 'nowrap',
-                fontSize: '0.875rem',
+                fontSize: '0.8rem',
                 // 44px target. This class carries no CSS rule of its own, so the
                 // link defaulted to display:block and measured 144x22px -- a real
                 // target with no vertical area.
@@ -332,7 +332,7 @@ export default function McpDocsPage() {
               </p>
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',
@@ -358,7 +358,7 @@ export default function McpDocsPage() {
               </p>
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',
@@ -379,7 +379,7 @@ export default function McpDocsPage() {
                   the engine's total less the checks it ran. */}
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',

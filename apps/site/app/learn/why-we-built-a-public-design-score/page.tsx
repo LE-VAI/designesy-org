@@ -84,7 +84,7 @@ export default function WhyPublicScorePage() {
           <h2 className="doctrine-heading">What it costs</h2>
           <div className="doctrine-cols">
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 We give up
               </h3>
               <CheckGrid items={checkItemsFromStrings([
@@ -94,7 +94,7 @@ export default function WhyPublicScorePage() {
               ], { avoid: true })} />
             </div>
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 We get
               </h3>
               <CheckGrid items={checkItemsFromStrings([

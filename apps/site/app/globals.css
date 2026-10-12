@@ -219,7 +219,6 @@
   --grade-f-ink: var(--grade-f);
   --grade-d-glow: #FB7185;   /* D is rose (D5): the orange is the brand's flame, not a grade */
   --signal-pos: #34d399;     /* emerald for positive signal points */
-  --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
   --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
   --amber-notice: #c9a227;   /* amber for score-drawer remediation heading */
 
@@ -607,7 +606,6 @@ read-along {
   --grade-b-light: var(--grade-b-ink);
   --grade-d-glow: #C9216C;
   --signal-pos: #059669;
-  --live: #15803d;
   --error-text: var(--error-ink);
   --amber-notice: var(--warn-ink);
 
@@ -745,7 +743,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-optical-sizing: auto;
-  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
+  font-size: 1rem;
   line-height: 1.55;
   letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
@@ -867,7 +865,7 @@ p {
 /* --- Wordmark (CSS-only signal-dot) --- */
 
 .wordmark {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--ink);
@@ -1095,7 +1093,7 @@ p {
   flex: 0 0 auto;
   position: relative;
   padding: var(--space-8) var(--space-fine-65);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   color: var(--muted);
   border-radius: var(--radius-sm);
@@ -1409,7 +1407,7 @@ html[data-motion="paused"] :is(
     border-radius: var(--radius);
     color: var(--muted);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
   }
@@ -1441,7 +1439,9 @@ html[data-motion="paused"] :is(
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.82rem;
+  /* "Find" reads at the nav links' size (D68 body); its Ctrl K keycap stays
+     at the label step, as a shortcut hint. */
+  font-size: 1rem;
   cursor: pointer;
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
@@ -1470,7 +1470,7 @@ html[data-motion="paused"] :is(
   align-items: center;
   gap: 1px;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -1480,7 +1480,7 @@ html[data-motion="paused"] :is(
 }
 
 .cmdk-kbd-mod {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 /* Icon-only search below 1024px. It was icon-only only below 720, so between
@@ -1641,7 +1641,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   outline: none;
   color: var(--ink);
   font: inherit;
-  font-size: 1.06rem; /* 17px — legible against glass, above 16px iOS floor */
+  font-size: 1rem; /* 17px — legible against glass, above 16px iOS floor */
   letter-spacing: -0.005em;
 }
 
@@ -1670,7 +1670,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-esc {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1718,7 +1718,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-group-label {
-  font-size: 0.64rem;
+  font-size: 0.8rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1741,7 +1741,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: background 120ms var(--ease), color 120ms var(--ease);
 }
@@ -1777,7 +1777,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-item-meta {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.3;
   overflow: hidden;
@@ -1836,7 +1836,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-item-enter {
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1898,7 +1898,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-empty-title {
   color: var(--ink);
-  font-size: 0.94rem;
+  font-size: 1rem;
   margin: 0 0 var(--space-fine-35);
   font-weight: 500;
   letter-spacing: -0.005em;
@@ -1926,14 +1926,14 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-35);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1;
 }
 
 .cmdk-footer-hint kbd {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-5);
@@ -1961,7 +1961,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   }
   .cmdk-item {
     padding: var(--space-12) var(--space-12) var(--space-12) var(--space-fine-85);
-    font-size: 0.92rem;
+    font-size: 1rem;
   }
   .cmdk-footer {
     padding: var(--space-fine-55) var(--space-fine-95);
@@ -1991,7 +1991,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
     background: none;
     color: var(--signal-text);
     font: inherit;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
   }
@@ -2068,12 +2068,12 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .sense-toggle-icon {
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
 .haptics-toggle .sense-toggle-icon {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   letter-spacing: 0;
 }
 
@@ -2255,7 +2255,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 .hero-actions .score-share-btn {
   height: 44px;
   padding: 0 var(--space-20);
-  font-size: 0.875rem;
+  font-size: 1rem;
   border-radius: var(--radius);
 }
 @supports (animation-timeline: view()) {
@@ -2338,7 +2338,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   justify-content: center;
   min-height: 44px;
   padding: var(--space-fine-65) var(--space-20);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   border-radius: var(--radius);
@@ -3108,58 +3108,14 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   }
 }
 
-/* --- Definitions: the signal accent is state, never rest. The 3px bar on
-   the left edge draws in (scaleY, transform only) while the pointer is on a
-   copyable definition, while it holds keyboard focus, and while it reads
-   Copied. At rest the card is plain reading material: the resting 3px
-   signal border was the generic callout stripe. --- */
+/* --- Definitions: plain reading material. No edge stripe in any state
+   (brand ledger D62): the 3px signal bar that drew in on hover, focus and
+   Copied was the side-stripe card pattern. Focus has its ring and Copied its
+   badge, so nothing is lost. --- */
 .definition {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-}
-.definition::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 300ms var(--ease-out);
-  z-index: 1;
-  pointer-events: none;
-}
-@media (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    transform: scaleY(1);
-  }
-}
-.definition.is-copyable:focus-visible::after,
-.definition.is-copied::after {
-  transform: scaleY(1);
-}
-/* Reduced motion, tiered: the second-pass guard hides the bar outright; for
-   its states it comes back as an opacity fade at the 150ms entry (inside the
-   200ms allowance) instead of drawing in. */
-@media (prefers-reduced-motion: reduce) {
-  .definition.is-copyable::after {
-    display: block;
-    transform: none;
-    opacity: 0;
-    transition: opacity var(--mat-t-in);
-  }
-  .definition.is-copyable:focus-visible::after,
-  .definition.is-copied::after {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    opacity: 1;
-  }
 }
 
 /* --- Buttons: signal glow ring on hover (primary) --- */
@@ -3224,7 +3180,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
   font-family: var(--sans);
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.005em;
@@ -3240,7 +3196,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .principle-body p {
   transition: color 200ms var(--ease);
   text-wrap: pretty;
-  font-size: 0.87rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.6;
   max-width: 100%;
@@ -3503,7 +3459,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* --- Reduced motion: disable all second-pass effects --- */
 @media (prefers-reduced-motion: reduce) {
   .lab-card::after,
-  .definition::after,
   .button.primary::after,
   .button.ghost::after,
   button.pillar::before,
@@ -3542,7 +3497,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .status-badge {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3670,7 +3625,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .footer-dock-label {
   display: block;
   padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3755,7 +3710,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   gap: var(--space-fine-35);
   flex-shrink: 0;
   padding: var(--space-fine-30) var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--muted);
   background: var(--surface-raised);
@@ -3801,7 +3756,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
 }
 
 /* Neutral dot accent before each machine pill: --muted at .7 holds 4:1 on
@@ -3972,7 +3927,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-eyebrow {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -3981,15 +3936,18 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-title {
-  font-size: clamp(2.4rem, 2.4rem + 1.4vw, 3.5rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
+  /* One page-title style (brand ledger D58): Fraunces 700, the published
+     contract's heading weight, at the instrument title's size, leading,
+     tracking and optical size (.eg-title, engine.css), so a document page and
+     an engine page open on the same title. It was 400 at up to 56px, a second
+     H1 system on 55 routes. */
+  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
   margin-bottom: var(--space-16);
   text-wrap: balance;
-  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
-     dark-mode contrast. */
-  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
 }
 
 .surface-lede {
@@ -4001,7 +3959,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-note {
-  font-size: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.6;
   max-width: min(100%, 580px);
@@ -4065,7 +4023,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .principle-num {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--signal-text);
   letter-spacing: 0.08em;
@@ -4081,7 +4039,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-15);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -4209,7 +4167,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
 }
 
 .definition p {
-  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
+  font-size: 1rem;
   color: var(--ink);
   line-height: 1.5;
   text-wrap: pretty;
@@ -4230,7 +4188,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
    at this size) put the 20px heading at 1.67x the label. */
 .definition-label,
 .definition .definition-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4348,7 +4306,7 @@ dl.definition-side {
 }
 
 .definition-side dt {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4359,14 +4317,14 @@ dl.definition-side {
 .definition-side dd {
   margin: 0;
   min-width: 0;
-  font: 500 0.8125rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .definition-side p {
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
 }
@@ -4387,7 +4345,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 0.8rem/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -4509,7 +4467,7 @@ dl.definition-side {
   position: relative;
   display: block;
   padding-left: var(--space-28);
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.5;
   min-width: 0;
@@ -4538,7 +4496,7 @@ dl.definition-side {
 .scope-path,
 .scope-path-link {
   color: var(--muted-dim);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -4804,7 +4762,7 @@ dl.definition-side {
   row-gap: var(--space-4);
   min-width: 0;
   margin-top: var(--space-4);
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 0.8rem/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -4839,7 +4797,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 0.8rem/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -5089,7 +5047,7 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 
 .docs-card-grid .row-index {
   font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   padding-top: 0.15em;
@@ -5100,7 +5058,7 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 .docs-card-grid .row .row-title {
   display: block;
   min-height: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .docs-card-grid .row-meta {
@@ -5193,10 +5151,12 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   border-top: 1px solid var(--line-faint);
 }
 
+/* Hover lifts the row's ground and firms its rule in the line colour; a
+   signal-coloured left edge is the side-stripe pattern (brand ledger D62). */
 @media (hover: hover) {
   .row:hover,
 .layer-item:hover {
-    border-left-color: var(--signal);
+    border-left-color: var(--line-strong);
     background: var(--surface-soft);
   }
 }
@@ -5215,7 +5175,7 @@ button.row:active {
 
 .row-index,
 .layer-num {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   /* --signal (var(--signal)) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
      --signal-light (var(--signal-light)) is 3.68:1 — passes AA-large (3:1) for the
@@ -5237,7 +5197,7 @@ button.row:active {
 .row-body,
 .layer-body {
   min-width: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -5292,7 +5252,7 @@ button.row {
   display: block;
   margin-top: var(--space-fine-15);
   color: var(--muted-dim);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   overflow-wrap: break-word;
   text-wrap: pretty;
@@ -5477,7 +5437,7 @@ html[data-motion="paused"] .row-check::before {
    at the row's end; centred in a 224-301px share row it floated 115px below
    its title. */
 .row-copy-badge {
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.04em;
@@ -5664,7 +5624,7 @@ button.row {
   top: var(--space-20);
   right: var(--space-24);
   z-index: 1;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 650;
   line-height: 1rem;
   letter-spacing: 0.06em;
@@ -6135,7 +6095,7 @@ button.check-cell {
 }
 
 .check-cell-arrow {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.5;
   transition: transform 160ms var(--ease-out), color 160ms var(--ease);
@@ -6159,9 +6119,11 @@ button.check-cell {
   will-change: transform, opacity;
 }
 
-/* avoid items show an X in the activation accent instead of a blue checkmark */
+/* Avoid items show an X instead of the checkmark, in the text colour: the
+   shape carries "avoid". It took the flame's ink, and the flame means
+   something happening now, nothing else (brand ledger D57). */
 .check-cell.is-avoid .check-cell-check {
-  color: var(--activation-ink);
+  color: var(--ink);
 }
 
 @keyframes check-pop {
@@ -6228,7 +6190,7 @@ button.check-cell {
 }
 
 .check-cell-index {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
@@ -6253,7 +6215,7 @@ button.check-cell {
    splits while a line is free); ordinary words wrap at spaces first, and
    nothing hyphenates. */
 .check-cell-title {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 650;
   letter-spacing: -0.012em;
   color: var(--ink);
@@ -6264,7 +6226,7 @@ button.check-cell {
 }
 
 .check-cell-meta {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.42;
   text-wrap: pretty;
@@ -6280,7 +6242,9 @@ button.check-cell {
    shorter than its cell never needs the break. */
 :is(.check-cell-title, .check-cell-meta) code {
   font-family: var(--mono);
-  font-size: 0.92em;
+  /* The label step (D68): a token sets as one unit, and at the 16px title
+     size "prefers-reduced-motion" overran its cell at 1088px. */
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0;
   white-space: nowrap;
@@ -6314,7 +6278,7 @@ button.check-cell {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6442,7 +6406,7 @@ button.check-cell {
   }
 
   .check-cell-title {
-    font-size: 0.92rem;
+    font-size: 1rem;
   }
 }
 
@@ -6485,7 +6449,7 @@ button.check-cell {
   }
   .nav-links a {
     padding: var(--space-fine-40) var(--space-8);
-    font-size: 0.8rem;
+    font-size: 1rem;
   }
   .wordmark {
     flex: 0 0 auto;
@@ -6655,7 +6619,7 @@ button.check-cell {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
     appearance: none;
@@ -6676,11 +6640,11 @@ button.check-cell {
     outline-offset: 2px;
   }
   .nav-drawer-close-icon {
-    font-size: 0.9rem;
+    font-size: 1rem;
     line-height: 1;
   }
   .nav-drawer-close-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     letter-spacing: 0.02em;
   }
   .nav-drawer a {
@@ -6689,7 +6653,7 @@ button.check-cell {
     min-height: 2.75rem;
     padding: var(--space-fine-85) var(--space-12);
     margin-bottom: var(--space-fine-15);
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 500;
     color: var(--muted);
     border-radius: var(--radius-sm);
@@ -6767,7 +6731,7 @@ button.check-cell {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     color: var(--ink);
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
   .nav-drawer-studio svg {
     flex: none;
@@ -6792,7 +6756,7 @@ button.check-cell {
   .nav-drawer-group-label {
     margin: 0 0 var(--space-4);
     padding: 0 var(--space-12);
-    font: 500 0.6875rem/1rem var(--mono);
+    font: 500 0.8rem/1rem var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-dim);
@@ -6809,7 +6773,7 @@ button.check-cell {
     min-height: 2.75rem;
     margin: 0;
     padding: var(--space-6) var(--space-12);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     line-height: 1.2;
   }
 }
@@ -6875,7 +6839,7 @@ button.check-cell {
   border-radius: var(--radius);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.55;
   text-wrap: pretty;
@@ -7047,7 +7011,7 @@ button.check-cell {
    step, so a re-run step reads as words and an address. */
 .row-url {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: inherit;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -7117,7 +7081,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-status {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7134,7 +7098,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-lede {
-  font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
+  font-size: 1.25rem;
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
@@ -7142,7 +7106,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-desc {
-  font-size: 0.88rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.55;
   max-width: min(100%, 420px);
@@ -7234,7 +7198,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-side dt {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7440,7 +7404,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-label {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.12em;
@@ -7461,7 +7425,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-note {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   line-height: 1.5;
   border-top: 1px solid var(--line-faint);
@@ -7470,7 +7434,7 @@ html[data-motion="paused"] .lab-card:active {
 
 .demo-cell-note code {
   color: var(--signal-text);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
 }
 
 /* ==========================================================================
@@ -7675,7 +7639,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-head {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7685,7 +7649,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-row {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
   border-top: 1px solid var(--line-faint);
 }
@@ -7942,11 +7906,11 @@ html:not(.js-ready) .demo-stagger-bar {
 
   /* Keep horizontal rail; densify type before stacking */
   .pipeline-label {
-    font-size: 0.76rem;
+    font-size: 0.8rem;
   }
 
   .pipeline-note {
-    font-size: 0.66rem;
+    font-size: 0.8rem;
     max-width: 6.5rem;
   }
 }
@@ -7992,14 +7956,14 @@ html:not(.js-ready) .demo-stagger-bar {
 
   .pipeline-label {
     min-width: 5.5rem;
-    font-size: 0.88rem;
+    font-size: 0.8rem;
   }
 
   .pipeline-note {
     max-width: none;
     margin-inline-start: auto;
     text-align: right;
-    font-size: 0.72rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -8345,7 +8309,7 @@ a.field-card:active {
   min-width: 0;
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0.08em;
@@ -8364,7 +8328,7 @@ a.field-card:active {
   padding: calc(var(--space-16) - 0.275em) var(--space-fine-135) var(--space-20);
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -8439,7 +8403,7 @@ a.field-card:active {
   background: var(--surface-raised);
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.03em;
@@ -8668,7 +8632,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line-strong);
   background: var(--surface-raised);
   color: var(--ink);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   text-decoration: none;
@@ -8876,7 +8840,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   opacity: 0;
@@ -8987,7 +8951,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .effect-label {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -8995,7 +8959,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .effect-desc {
-  font-size: 0.68rem;
+  font-size: 1rem;
   color: var(--muted-dim);
   line-height: 1.4;
   z-index: 2;
@@ -9398,7 +9362,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 1rem;
   text-wrap: pretty;
 }
 
@@ -9583,7 +9547,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-output-side dt {
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9591,7 +9555,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-output-side dd {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink);
 }
@@ -9625,7 +9589,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-empty-run-eyebrow {
   margin: 0;
-  font: 600 0.6875rem/1rem var(--mono);
+  font: 600 0.8rem/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9643,7 +9607,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-empty-run-reason {
   margin: 0;
   max-width: 66ch;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -9734,7 +9698,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-error-msg {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
 }
 
@@ -9781,7 +9745,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-welcome-title {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -9790,7 +9754,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-hint {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.55;
   margin: 0;
@@ -10017,14 +9981,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-val {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .score-metric-lbl {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -10069,7 +10033,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-width: 6.5rem;
   height: 2.25rem;
   padding: var(--space-fine-10) var(--space-12);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
   /* Elevation: card gradient + hairline top highlight (the site's glass cue)
@@ -10135,7 +10099,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-audit-error {
   margin: var(--space-8) 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--warn-ink);
   font-weight: 500;
 }
@@ -10188,7 +10152,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 .audit-progress-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -10206,7 +10170,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: var(--space-fine-55);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
   opacity: 0;
   animation: auditStepIn var(--duration) var(--ease-out) forwards;
@@ -10269,7 +10233,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-tokens-badge {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-weight: 500;
 }
@@ -10326,29 +10290,20 @@ a.lab-card:focus-visible .lab-card-arrow {
   box-shadow: var(--inner-light), 0 4px 16px color-mix(in srgb, var(--signal) 15%, transparent);
 }
 
-/* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
-.score-engine-tile-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--tile-hue, var(--line));
-}
-
-/* A tile takes its grade's colour from the contract's grade tokens: the bar
-   (a mark) in --grade-*, the letter and score (text) in --grade-*-ink. It used
-   a 90/70 status rule of its own, so a D drew red and a B drew yellow. */
-.score-engine-tile[data-grade="a"] { --tile-hue: var(--grade-a); --tile-ink: var(--grade-a-ink); }
-.score-engine-tile[data-grade="b"] { --tile-hue: var(--grade-b); --tile-ink: var(--grade-b-ink); }
-.score-engine-tile[data-grade="c"] { --tile-hue: var(--grade-c); --tile-ink: var(--grade-c-ink); }
-.score-engine-tile[data-grade="d"] { --tile-hue: var(--grade-d); --tile-ink: var(--grade-d-ink); }
-.score-engine-tile[data-grade="f"] { --tile-hue: var(--grade-f); --tile-ink: var(--grade-f-ink); }
+/* A tile takes its grade's colour from the contract's grade tokens: the letter
+   and score (text) in --grade-*-ink. It used a 90/70 status rule of its own,
+   so a D drew red and a B drew yellow. The grade-coloured 2px top bar is gone
+   (brand ledger D62, no coloured edge stripes on cards): the letter carries
+   the grade, and the tile keeps its neutral line border. */
+.score-engine-tile[data-grade="a"] { --tile-ink: var(--grade-a-ink); }
+.score-engine-tile[data-grade="b"] { --tile-ink: var(--grade-b-ink); }
+.score-engine-tile[data-grade="c"] { --tile-ink: var(--grade-c-ink); }
+.score-engine-tile[data-grade="d"] { --tile-ink: var(--grade-d-ink); }
+.score-engine-tile[data-grade="f"] { --tile-ink: var(--grade-f-ink); }
 .score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
 .score-engine-tile-score small {
   margin-left: var(--space-2);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -10360,7 +10315,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-label {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -10370,7 +10325,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Result text holds 12px (0.75rem): the tile's check count, the report's
    check statuses and the run time were set at 10.4 and 10.9px. */
 .score-engine-tile-count {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -10384,7 +10339,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-grade.is-empty {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--error-ink);
 }
@@ -10394,7 +10349,7 @@ a.lab-card:focus-visible .lab-card-arrow {
    opacity 0.7 the figure measured 3.93:1 on the tile in dark (R22). A lighter
    weight keeps it a step under the grade letter. */
 .score-engine-tile-score {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
   font-variant-numeric: proportional-nums;
 }
@@ -10412,7 +10367,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-pwf {
   /* What needs attention, in the category lines' words; 12px, the results
      floor (it was 11.2px). */
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -10571,7 +10526,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-check-group-count {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -10725,7 +10680,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signals-eyebrow {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -10735,7 +10690,7 @@ html[data-motion="paused"] .score-check-group::after {
 .score-signals-net {
   display: flex;
   gap: var(--space-8);
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -10787,7 +10742,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 /* The count chip: the check group count's tinted pill, with no border. */
 .score-signals-group-chip {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -10881,7 +10836,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signal-evidence {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted);
   line-height: 1.4;
   word-break: break-word;
@@ -10900,7 +10855,7 @@ html[data-motion="paused"] .score-check-group::after {
   align-items: center;
   gap: var(--space-6);
   min-height: 1.5rem;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -10944,7 +10899,7 @@ html[data-motion="paused"] .score-check-group::after {
   line-clamp: 2;
   overflow: hidden;
   margin-top: var(--space-4);
-  font: 400 0.6875rem/1.45 var(--mono);
+  font: 400 0.8rem/1.45 var(--mono);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -11103,7 +11058,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   align-items: center;
   justify-content: center;
   gap: var(--space-fine-35);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--muted);
   background: transparent;
@@ -11177,7 +11132,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Copy button — pushed to the right, styled as an outlined button */
 
 .score-tab-count {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   padding: var(--space-1) var(--space-5);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 10%, transparent);
@@ -11296,7 +11251,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   background: var(--surface-soft);
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -11323,7 +11278,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Full --muted, no opacity: at .7 the count measured 3.97:1 on the chip, and
    it was only ever off screen in the old sideways strip. */
 .score-chip-num {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -11351,7 +11306,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-empty-desc {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -11465,7 +11420,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-card-status-pill {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: var(--space-2) var(--space-6);
@@ -11480,14 +11435,14 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
 .score-card-id {
-  font-size: 0.725rem;
+  font-size: 0.8rem;
   font-family: var(--mono);
   color: var(--muted);
   font-weight: 600;
 }
 
 .score-card-cat {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* muted-dim (var(--muted-dim)) on the card surface (~#19191d) is 4.25:1 — below
@@ -11499,7 +11454,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-card-title {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
   margin: 0;
@@ -11556,7 +11511,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   /* Same card-surface AA repair as .score-card-cat: muted-dim is 4.25:1
      at 11.2px on ~#19191d; --muted clears 4.5:1 comfortably. */
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .score-card-drawer {
@@ -11580,7 +11535,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-drawer-heading {
-  font-size: 0.675rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* --signal inside the drawer fails AA at 10.8px; --signal-access is the
@@ -11591,7 +11546,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-drawer-detail {
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.5;
   margin: 0;
@@ -11634,7 +11589,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-grade-letter {
-    font-size: 2.5rem;
+    font-size: 2.441rem;
   }
 
   
@@ -11661,7 +11616,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
      the indicator moves on both axes. */
   .score-filter-tab {
     padding: 0 var(--space-fine-60);
-    font-size: 0.75rem;
+    font-size: 1rem;
     white-space: nowrap;
   }
 
@@ -11681,7 +11636,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
   .score-contract-note {
     margin-top: var(--space-16);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     line-height: 1.5;
   }
 }
@@ -11698,7 +11653,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-hint {
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     margin-top: var(--space-12);
   }
 
@@ -11712,12 +11667,12 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-grade-letter {
-    font-size: 2.25rem;
+    font-size: 2.441rem;
   }
 
   
   .score-metric-val {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .score-controls-card {
@@ -11775,7 +11730,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-grade-letter {
-    font-size: 2rem;
+    font-size: 1.953rem;
   }
 
   .score-metric-tile {
@@ -11783,11 +11738,11 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   }
 
   .score-metric-val {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .score-metric-lbl {
-    font-size: 0.6875rem;
+    font-size: 0.8rem;
   }
 }
 
@@ -12059,7 +12014,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-title {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -12072,7 +12027,7 @@ html[data-motion="paused"] .pricing-card::after {
 .score-history-clear {
   background: none;
   border: none;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   cursor: pointer;
   padding: var(--space-8) var(--space-12);
@@ -12124,7 +12079,7 @@ html[data-motion="paused"] .pricing-card::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   background: var(--surface-soft);
@@ -12132,13 +12087,15 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line);
 }
 
-/* Grade tints reuse the existing is-a/is-b/is-c/is-d/is-f grade palette
-   defined for score-hero-card. Same tokens, no new colors. */
-.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal-text)); border-color: var(--grade-a-line, var(--line-strong)); }
-.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal-text)); border-color: var(--grade-b-line, var(--line)); }
-.score-history-emblem.is-c { color: var(--grade-c-text, var(--muted)); border-color: var(--grade-c-line, var(--line)); }
-.score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
-.score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
+/* A past score's grade in the grade palette (brand ledger D56): the letter in
+   --grade-*-ink, the rim in --grade-*. The old fallbacks drew A and B in the
+   brand's Azure and C, D and F in grey, since nothing set the --grade-*-text
+   properties they read first. */
+.score-history-emblem.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
+.score-history-emblem.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 45%, transparent); }
+.score-history-emblem.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 45%, transparent); }
+.score-history-emblem.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 45%, transparent); }
+.score-history-emblem.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 45%, transparent); }
 
 .score-history-body {
   flex: 1;
@@ -12150,7 +12107,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-url {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -12159,7 +12116,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-meta {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-variant-numeric: proportional-nums;
 }
@@ -12169,7 +12126,7 @@ html[data-motion="paused"] .pricing-card::after {
   background: none;
   border: 1px solid var(--line);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   padding: var(--space-8) var(--space-fine-85);
   min-height: 44px;
   border-radius: var(--radius-sm);
@@ -12185,7 +12142,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-foot {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
@@ -12482,7 +12439,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-url {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
   margin-bottom: var(--space-4);
@@ -12490,7 +12447,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-contract {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -12517,7 +12474,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-count--manual { color: var(--muted); background: var(--surface-soft); }
 
 .report-hero-floor {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--warn-ink);
   margin-top: var(--space-8);
 }
@@ -12576,7 +12533,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-weight {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
 }
 
@@ -12590,7 +12547,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-detail {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
 }
 
@@ -12602,7 +12559,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-not-measured p {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.6;
 }
@@ -12628,7 +12585,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-section-title {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--ink);
   display: flex;
@@ -12637,7 +12594,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-section-score {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
   font-weight: 400;
   font-variant-numeric: proportional-nums;
@@ -12674,7 +12631,7 @@ html[data-motion="paused"] .pricing-card::after {
   gap: var(--space-12);
   padding: var(--space-fine-60) var(--space-fine-85);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1rem;
   transition: background var(--duration-fast) var(--ease);
   min-height: 2.75rem;
 }
@@ -12687,7 +12644,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-status {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
@@ -12703,7 +12660,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-check-id {
   flex-shrink: 0;
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
   min-width: 2rem;
 }
@@ -12717,7 +12674,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-detail {
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: var(--muted);
   max-width: 40%;
   overflow: hidden;
@@ -12728,7 +12685,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-check-remediation {
   padding: var(--space-12) var(--space-fine-85);
   border-top: 1px solid var(--line-faint);
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.55;
   background: var(--surface);
@@ -12752,7 +12709,7 @@ html[data-motion="paused"] .pricing-card::after {
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--error) 8%, transparent);
   color: var(--error-ink);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1.5;
 }
@@ -12780,7 +12737,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-slop-title {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--warn-ink);
@@ -12788,7 +12745,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-slop-convergence {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -12813,13 +12770,13 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-slop-finding-id {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   flex-shrink: 0;
 }
 
 .report-slop-finding-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink);
   flex: 1;
@@ -12844,7 +12801,7 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
   padding: var(--space-12) var(--space-fine-85);
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
 }
 
@@ -13194,7 +13151,7 @@ select {
   /* The verdict sentence under the readout (B′). Plain: the blue rule beside
      it and the check icon went, since blue means selected and links, and a
      check mark on a D said "passed". */
-  font-size: clamp(0.95rem, 0.95rem + 0.2vw, 1.075rem);
+  font-size: 1rem;
   font-weight: 500;
   letter-spacing: -0.006em;
   line-height: 1.42;
@@ -13239,7 +13196,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-20);
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   padding: var(--space-2) var(--space-7);
@@ -13274,7 +13231,7 @@ select {
   margin-left: var(--space-8);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-family: var(--mono);
   white-space: nowrap;
@@ -13289,7 +13246,7 @@ select {
   margin-left: var(--space-8);
   padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--line-strong);
@@ -13298,7 +13255,7 @@ select {
 
 /* "31 of 44 checks scored", beside the URL and the rules. */
 .score-scored-line {
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -13407,7 +13364,7 @@ select {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 2px;
-  font: 500 0.75rem/1.2 var(--sans);
+  font: 500 0.8rem/1.2 var(--sans);
   color: var(--muted-dim);
 }
 .rs-ticks > span {
@@ -13417,7 +13374,7 @@ select {
   text-align: left;
 }
 .rs-ticks b {
-  font: 500 0.75rem/1.2 var(--mono);
+  font: 500 0.8rem/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   margin-left: 0.3em;
   color: var(--muted-dim);
@@ -13433,13 +13390,14 @@ select {
   gap: var(--space-12);
   min-width: 0;
 }
-/* Four keys in 276px of text: an 8px gap keeps them on one line in the
-   311px a 390 phone gives the score form (a 12px gap needed 312). */
+/* Four keys on one line in the 311px a 390 phone gives the score form. At
+   the 12.8px floor (D59) the 8px gap and 6px swatch margin wrapped it; a 6px
+   gap and a 4px margin keep it to one line (results-readout R2). */
 .rs-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-6) var(--space-8);
-  font-size: 0.75rem;
+  gap: var(--space-6) var(--space-6);
+  font-size: 0.8rem;
   /* A set line, so the two-column layout can drop the readout to the first
      row exactly (below). */
   line-height: 1rem;
@@ -13450,7 +13408,7 @@ select {
   width: var(--space-8);
   height: var(--space-8);
   border-radius: 2px;
-  margin-right: var(--space-6);
+  margin-right: var(--space-4);
   background: var(--tone);
 }
 .rs-list {
@@ -13487,7 +13445,7 @@ select {
   width: 100%;
   padding: var(--space-10) var(--space-4);
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: inherit;
   text-align: left;
   background: transparent;
@@ -13537,7 +13495,7 @@ button.rs-row:focus-visible {
 }
 .rs-val {
   text-align: right;
-  font: 600 0.9375rem/1 var(--mono);
+  font: 600 1rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--tone-ink);
 }
@@ -13546,7 +13504,7 @@ button.rs-row:focus-visible {
    needs a browser run") wrapped in the 251px under the name and bar at 390. */
 .rs-detail {
   grid-column: 1 / -1;
-  font: 400 0.8125rem/1.35 var(--sans);
+  font: 400 0.8rem/1.35 var(--sans);
   color: var(--muted);
 }
 
@@ -13590,7 +13548,7 @@ button.rs-row:focus-visible {
   border: none;
   padding: var(--space-4) 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -13613,7 +13571,7 @@ button.rs-row:focus-visible {
 
 .score-rubric-formula {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--muted);
   font-family: var(--mono);
@@ -13624,7 +13582,7 @@ button.rs-row:focus-visible {
 }
 
 .score-rubric-formula sub {
-  font-size: 0.85em;
+  font-size: 0.8rem;
 }
 
 .score-rubric-weights {
@@ -13640,7 +13598,7 @@ button.rs-row:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 
 .score-rubric-weight-label {
@@ -13689,7 +13647,7 @@ button.rs-row:focus-visible {
    was uppercase signal blue; blue means selected and links). */
 .score-verify-log-title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -13786,7 +13744,7 @@ button.rs-row:focus-visible {
   align-items: center;
   gap: var(--space-8);
   margin: var(--space-28) 0 0;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -13823,7 +13781,7 @@ button.rs-row:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-fine-55);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--muted);
   opacity: 0;
   animation: verifyStepIn var(--duration) var(--ease-out) forwards;
@@ -13870,7 +13828,7 @@ button.rs-row:focus-visible {
   
   
   .score-verdict-line {
-    font-size: 0.92rem;
+    font-size: 1rem;
   }
 
   .score-url-time {
@@ -14352,7 +14310,7 @@ button.rs-row:focus-visible {
 .hero-proof-recent-grade {
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   width: 1.45rem;
   height: 1.45rem;
   display: inline-flex;
@@ -14449,7 +14407,7 @@ button.rs-row:focus-visible {
 
   /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
   .principle-body p {
-    font-size: 0.9375rem; /* 15px */
+    font-size: 1rem; /* 15px */
     line-height: 1.55;
   }
   /* The card title holds its desktop 16px: weight and ink rank it over the
@@ -14572,7 +14530,7 @@ button.rs-row:focus-visible {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  font-size: 0.8125rem;
+  font-size: 1rem;
   color: var(--muted);
   line-height: 1.4;
   position: relative;
@@ -14631,7 +14589,7 @@ button.rs-row:focus-visible {
   background: none;
   border: none;
   color: var(--muted-dim);
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -14640,7 +14598,7 @@ button.rs-row:focus-visible {
 }
 
 .lottie-tip-close-label {
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
@@ -14982,7 +14940,7 @@ button.rs-row:focus-visible {
 .listen-dur {
   min-width: 1.75rem;
   text-align: end;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -15053,8 +15011,10 @@ button.rs-row:focus-visible {
 }
 
 
+/* Playing is happening now, so the listen button takes the flame; the row
+   only lifts its ground. An orange left edge was a coloured stripe (brand
+   ledger D62). */
 .row--listen.is-playing {
-  border-left-color: var(--activation);
   background: var(--surface-soft);
 }
 
@@ -15087,40 +15047,12 @@ button.rs-row:focus-visible {
   margin-top: var(--space-fine-30);
 }
 
-/* The 3px spine on a check row says its STATUS, never its category: fail
-   in --error, warn in --warn, manual and not-applicable in --muted-dim, and
-   a pass carries none. It used to take a hue per category from the state
-   tokens (accessibility --ok, identity --error, cadence and copywriting
-   grade hues), so a FAIL accessibility check wore the pass green beside its
-   red FAIL pill and every passing identity check wore red. The category is
-   named by the mono chip; the status by the pill, which the spine repeats
-   at a glance (colour never carries alone). The row's data-status is the
-   status (score-form.tsx); a row without one reads it from its pill. */
+/* A check row carries no edge stripe (brand ledger D62, no coloured edge
+   stripes anywhere). The 3px status spine on fail, warn, manual and skip rows
+   repeated what the row's status pill and its group header already say, in
+   the side-stripe pattern. */
 .score-card-item::before {
   content: none;
-}
-
-.score-card-item:is(
-  [data-status='fail'], [data-status='warn'], [data-status='manual'], [data-status='skip'],
-  :not([data-status]):has(> .score-card-main .score-card-status-pill:is(.is-fail, .is-warn, .is-manual, .is-skip))
-)::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: var(--space-8);
-  bottom: var(--space-8);
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--muted-dim);
-  pointer-events: none;
-}
-
-.score-card-item:is([data-status='fail'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-fail))::before {
-  background: var(--error);
-}
-
-.score-card-item:is([data-status='warn'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-warn))::before {
-  background: var(--warn);
 }
 
 /* --------------------------------------------------------------------------
@@ -15172,7 +15104,7 @@ button.rs-row:focus-visible {
 
 .docs-toc-heading {
   margin: 0 0 var(--space-12, 12px);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -15254,7 +15186,7 @@ button.rs-row:focus-visible {
     min-height: 2.75rem;
   }
   .docs-toc-summary-label {
-    font-size: 0.68rem;
+    font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -15302,7 +15234,7 @@ button.rs-row:focus-visible {
   border-radius: var(--radius-sm);
   background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-family: var(--mono, ui-monospace, monospace);
   letter-spacing: 0.02em;
   text-decoration: none;
@@ -15661,7 +15593,7 @@ html[data-motion="paused"] .topbar .topbar-right::before {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: color var(--duration-fast) var(--ease),
@@ -15853,13 +15785,13 @@ html[data-motion="paused"] .senses-panel {
 }
 
 .senses-row-label {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
 }
 
 .senses-row-hint {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -15983,7 +15915,7 @@ html[data-motion="paused"] .senses-panel {
   border-radius: var(--radius-md);
   background: var(--signal);
   color: var(--paper-on-signal);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   white-space: nowrap;
   transition: background-color var(--duration-fast) var(--ease),
@@ -16102,7 +16034,7 @@ html[data-motion="paused"] .senses-panel {
   box-shadow: var(--specular), var(--elev-3);
   color: var(--muted);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 600;
   transform: none;
   opacity: 1;
@@ -16164,7 +16096,7 @@ html[data-motion="paused"] .senses-panel {
     bottom: max(1rem, env(safe-area-inset-bottom));
     height: 2.75rem;
     padding: 0 var(--space-12);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
   .director-dock-label {
     display: inline;
@@ -16343,7 +16275,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
       var(--rim) border-box;
     box-shadow: var(--specular), var(--elev-2);
     color: var(--ink);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;

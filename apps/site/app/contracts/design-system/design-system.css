@@ -30,7 +30,7 @@
     content: attr(data-label);
     display: block;
     margin-bottom: var(--space-2);
-    font: 600 0.6875rem/1.35 var(--sans);
+    font: 600 0.8rem/1.35 var(--sans);
     font-variant-numeric: normal;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -51,7 +51,7 @@
    paper). */
 .ds-adopted {
   margin-inline-start: var(--space-4);
-  font: 500 0.8125rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   color: var(--muted);
