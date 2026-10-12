@@ -83,6 +83,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.brand-eq-term,
+.brand-nowrap {
+  white-space: nowrap;
+}
+
 /* --- Specimen grounds and the mark's dot --- */
 
 .brand-stage {
@@ -286,6 +291,11 @@
   font-family: var(--mono);
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+/* The grades open a second group inside the colour section. */
+.brand-section .brand-subhead {
+  margin-top: var(--space-24);
 }
 
 .brand-grades {

@@ -67,7 +67,8 @@ const INVERTED = AZURE_RGB.map((c) => 255 - c);
 if (INVERTED.join() !== channels(FLAME).join()) {
   throw new Error(`/brand: --activation ${FLAME} is not the inverse of --signal ${AZURE}`);
 }
-const ARITHMETIC = `255 − (${AZURE_RGB.join(', ')}) = (${INVERTED.join(', ')})`;
+// Each triple stays on one line; a narrow screen breaks the line at the "=".
+const ARITHMETIC = [`(${AZURE_RGB.join(', ')})`, `(${INVERTED.join(', ')})`] as const;
 
 const SWATCHES = [
   {
@@ -124,7 +125,12 @@ const SPECIMEN_SITE =
   SEED.find((s) => s.url === 'https://stripe.com' && s.score !== null) ??
   SEED.find((s) => s.score !== null);
 if (!SPECIMEN_SITE) throw new Error('/brand: the leaderboard has no scored site for the data specimen');
-const DATA_LINE = `${SPECIMEN_SITE.grade} ${SPECIMEN_SITE.score} /100 · ${new URL(SPECIMEN_SITE.url).hostname.replace(/^www\./, '')} · ${SPECIMEN_SITE.scoredAt ?? LEADERBOARD_LAST_SCORED}`;
+// Three readings, each kept on one line: grade and score, host, date.
+const DATA_PARTS = [
+  `${SPECIMEN_SITE.grade} ${SPECIMEN_SITE.score} /100`,
+  new URL(SPECIMEN_SITE.url).hostname.replace(/^www\./, ''),
+  SPECIMEN_SITE.scoredAt ?? LEADERBOARD_LAST_SCORED,
+];
 
 // Every icon in the family, in the masters' order. Keyed by name so the type
 // checker fails here if an icon is added to brand-icons.tsx and not shown.
@@ -212,7 +218,13 @@ export default function BrandPage() {
               <Mark dot="flame" className="brand-flip-mark" />
             </div>
           </div>
-          <figcaption className="brand-eq">{ARITHMETIC}</figcaption>
+          {/* A <p> inside the caption so the markdown twin keeps the line. */}
+          <figcaption>
+            <p className="brand-eq">
+              255 − <span className="brand-eq-term">{ARITHMETIC[0]}</span> ={' '}
+              <span className="brand-eq-term">{ARITHMETIC[1]}</span>
+            </p>
+          </figcaption>
         </figure>
 
         <section className="brand-section" aria-labelledby="brand-logo">
@@ -293,7 +305,7 @@ export default function BrandPage() {
               </li>
             ))}
           </ul>
-          <h3>Grades are a separate data palette</h3>
+          <h3 className="brand-subhead">Grades are a separate data palette</h3>
           <p className="brand-fine">
             Scores use their own five-colour scale in both themes (dark above, light below), and never borrow Azure or
             the flame.
@@ -333,7 +345,14 @@ export default function BrandPage() {
                   renders in the site's mono token, --mono, so it shows today's
                   face until D65 points that token at the new one, and then
                   changes with it and with no edit here. */}
-              <span className="brand-type-data">{DATA_LINE}</span>
+              <span className="brand-type-data">
+                {DATA_PARTS.map((part, i) => (
+                  <span key={part}>
+                    {i > 0 ? ' · ' : null}
+                    <span className="brand-nowrap">{part}</span>
+                  </span>
+                ))}
+              </span>
             </li>
             <li className="brand-type-row">
               <span className="brand-mono">Logotype</span>
