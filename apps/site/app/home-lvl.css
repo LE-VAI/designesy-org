@@ -1198,7 +1198,7 @@ html[data-motion="paused"] .vc-glow {
    meters, in the panel's unit colour. */
 .home-health-note {
   margin: var(--space-16) 0 0;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
 }
