@@ -9,7 +9,17 @@
 // from one batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both
 // says both.
 
-import { SEED, LEADERBOARD_LAST_SCORED, LEADERBOARD_ENGINE_VERSION, LEADERBOARD_VERSION, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
+import {
+  SEED,
+  LEADERBOARD_LAST_SCORED,
+  LEADERBOARD_ENGINE_VERSION,
+  LEADERBOARD_VERSION,
+  staleLabel,
+  type Grade,
+  type SeedSite,
+  type CategoryBreakdown,
+  type Relationship,
+} from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES, BATCH_RUN_DATE } from '../../leaderboard/batch-data';
 import { CATEGORY_WEIGHTS } from '../check-definitions';
 
@@ -29,7 +39,8 @@ export type CohortSite = {
   name: string;
   score: number;
   grade: Grade;
-  rank: number;
+  /** Rank among the sites measured on the latest run; null for a stale site. */
+  rank: number | null;
   tier: number;
   category: string;
   prevScore: number | null;
@@ -41,11 +52,23 @@ export type CohortSite = {
   self: boolean;
   /** The engine could not read the site on the last run; the score is held over. */
   unreachable: boolean;
+  /** Not re-scored on the latest run: shown with its last score, never ranked. */
+  stale: boolean;
+  /** "last scored <date> · could not re-score", or null for a current site. */
+  staleLabel: string | null;
   scoredAt: string | null;
   categories: Record<string, CategoryBreakdown> | null;
   seededBecause: string;
   coi: string | null;
   liveScoreUrl: string | null;
+  /** 'operator' (Designesy runs it), 'competitor' (a competing product), or null. */
+  relationship: Relationship | null;
+};
+
+/** The words on a labelled entry, wherever it is listed. */
+export const RELATIONSHIP_LABEL: Record<Relationship, string> = {
+  operator: 'operated by Designesy',
+  competitor: 'competing product',
 };
 
 export function hostOf(url: string): string {
@@ -75,7 +98,7 @@ function toSite(s: SeedSite): CohortSite {
     name: s.name,
     score: s.score as number,
     grade: s.grade as Grade,
-    rank: s.rank as number,
+    rank: s.rank,
     tier: s.tier,
     category: s.category,
     prevScore: s.prevScore,
@@ -86,18 +109,32 @@ function toSite(s: SeedSite): CohortSite {
     tokens: s.tokens,
     self: s.url === SELF_URL,
     unreachable: !!s.unreachable,
+    stale: s.status === 'stale',
+    staleLabel: s.status === 'stale' ? staleLabel(s.scoredAt) : null,
     scoredAt: s.scoredAt ?? null,
     categories: BATCH_CATEGORY_SCORES[s.url] ?? null,
     seededBecause: s.seededBecause,
     coi: s.coiDisclosure ?? null,
     liveScoreUrl: s.liveScoreUrl ?? null,
+    relationship: s.relationship ?? null,
   };
 }
 
-/** Scored sites, in rank order. */
-export const COHORT: CohortSite[] = SEED.filter((s) => s.score !== null && s.grade !== null && s.rank !== null)
+/** Scored sites: the ranked ones in rank order, then the stale ones (a last
+    score the latest run could not renew), highest first. */
+export const COHORT: CohortSite[] = SEED.filter((s) => s.score !== null && s.grade !== null)
   .map(toSite)
-  .sort((a, b) => a.rank - b.rank);
+  .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || b.score - a.score);
+
+/** The ranking: sites measured on the latest run. */
+export const RANKED: CohortSite[] = COHORT.filter((s) => s.rank !== null);
+/** Sites the latest run could not re-score, shown apart from the ranking. */
+export const STALE: CohortSite[] = COHORT.filter((s) => s.stale);
+
+/** "rank 4 of 27", or the stale label for a site outside the ranking. */
+export function rankText(s: CohortSite): string {
+  return s.rank !== null ? `rank ${s.rank} of ${RANKED.length}` : (s.staleLabel ?? 'not ranked');
+}
 
 /** Seed entries with no score yet (none today; the page says so when there are). */
 export const UNSCORED = SEED.filter((s) => s.score === null);
@@ -127,6 +164,7 @@ export const COHORT_STATS = {
   min: Math.min(...scores),
   max: Math.max(...scores),
   heldOver: COHORT.filter((s) => s.unreachable).length,
+  ranked: RANKED.length,
 };
 
 export const GRADES: Grade[] = ['A', 'B', 'C', 'D', 'F'];

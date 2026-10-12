@@ -22,7 +22,7 @@
 // data /api/leaderboard serves, cannot drift; it changes when the weekly
 // re-score lands.
 import { liveBadgeResponse } from '../../lib/badge/live-badge-route';
-import { SEED, LEADERBOARD_LAST_SCORED } from '../../leaderboard/seed';
+import { SEED, LEADERBOARD_LAST_SCORED, staleLabel } from '../../leaderboard/seed';
 
 // Grade → shields colour, as a bare hex. A grade takes only its grade token,
 // never a brand colour or a shields named colour (brand ledger D5, D37): the
@@ -72,15 +72,16 @@ export async function GET(request: Request) {
 
   const site = hostOf(params.get('site') ?? '');
   const row = SEED.find((s) => hostOf(s.url) === site);
-  // A held-over score (site unreachable on the last run) is labelled as such and
-  // greyed, with its own measurement date -- never presented as current.
+  // A score the latest run could not renew (site unreachable) is labelled in
+  // the leaderboard's own words, "last scored <date> · could not re-score", and
+  // greyed: never presented as current.
   const body =
     row && row.score !== null && row.grade
       ? {
           schemaVersion: 1,
           label: 'contract score',
           message: row.unreachable
-            ? `${row.score}/100 ${row.grade} (held over from ${row.scoredAt ?? 'an earlier run'})`
+            ? `${row.score}/100 ${row.grade} (${staleLabel(row.scoredAt)})`
             : `${row.score}/100 ${row.grade}`,
           color: row.unreachable ? NEUTRAL_COLOR : (GRADE_COLOR[row.grade] ?? NEUTRAL_COLOR),
           lastScored: row.scoredAt ?? LEADERBOARD_LAST_SCORED,

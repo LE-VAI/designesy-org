@@ -37,6 +37,7 @@ import {
   fmt,
   round1,
   scoreTone,
+  rankText,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { BarList } from '../lib/data/bars';
@@ -267,7 +268,7 @@ export default function StateOfCompliancePage() {
                   One system up close: Material 3
                 </h2>
                 <p className="eg-section-sub">
-                  m3.material.io · {fmt(M3.score)} · grade {M3.grade} · rank {M3.rank} of {COHORT_STATS.count}
+                  m3.material.io · {fmt(M3.score)} · grade {M3.grade} · {rankText(M3)}
                 </p>
               </div>
             </div>
@@ -354,7 +355,7 @@ export default function StateOfCompliancePage() {
                   {s.grade}
                 </span>,
                 fmt(s.score),
-                s.rank,
+                s.rank ?? 'not ranked',
                 s.pass,
                 s.warn,
                 s.fail,

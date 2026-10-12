@@ -6,7 +6,7 @@
 
 import Link from 'next/link';
 import { BATCH_CATEGORIES, fmt, type CohortSite } from './cohort';
-import { CategoryProfile, HeldTag } from './cells';
+import { CategoryProfile, SiteTags } from './cells';
 
 export function SiteTable({
   sites,
@@ -53,7 +53,7 @@ export function SiteTable({
           {sites.map((s) => (
             <tr key={s.url} id={rowId?.(s)} data-self={s.slug === current || undefined}>
               <td data-num className="dx-rank-n">
-                {s.rank}
+                {s.rank ?? <span className="sr-only">not ranked</span>}
               </td>
               <th scope="row" className="dx-rank-site">
                 {s.slug === current ? (
@@ -70,10 +70,7 @@ export function SiteTable({
                         group joins the meta line; only one is ever shown. */}
                     {group && <span className="dx-rank-meta-group"> · {s.category}</span>}
                   </span>
-                  {s.self && <span className="dx-tag">self-scored</span>}
-                  {s.unreachable && (
-                    <HeldTag date={s.scoredAt} />
-                  )}
+                  <SiteTags s={s} />
                 </span>
               </th>
               {group && (

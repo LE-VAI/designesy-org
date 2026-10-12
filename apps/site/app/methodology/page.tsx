@@ -782,12 +782,12 @@ export default function MethodologyPage() {
                       caption={`Composite score of every leaderboard site, weekly run of ${SCORES_DATE}.`}
                       head={['Site', 'Rank', 'Grade', 'Score']}
                       numeric={[1, 3]}
-                      rows={COHORT.map((s) => [s.name, s.rank, s.grade, fmt(s.score)])}
+                      rows={COHORT.map((s) => [s.name, s.rank ?? 'not ranked', s.grade, fmt(s.score)])}
                     />
                   }
                 >
                   <CohortStrip
-                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable }))}
+                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable, heldLabel: s.staleLabel }))}
                     median={COHORT_STATS.median}
                     label={`Composite scores of ${COHORT_STATS.count} sites from 40 to 100: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}; median ${fmt(COHORT_STATS.median)}.`}
                     idle={<span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>}
@@ -1209,13 +1209,17 @@ export default function MethodologyPage() {
                     <dt>
                       <a href="/api/leaderboard">/api/leaderboard</a>
                     </dt>
-                    <dd>JSON with each site&apos;s category scores. CORS-enabled.</dd>
+                    <dd>
+                      JSON with each site&apos;s category scores, its status (current and ranked, or stale: last scored on an
+                      earlier run because the latest could not re-score it), its relationship to Designesy (operator or
+                      competitor) with a disclosure, and the address for disputes. CORS-enabled.
+                    </dd>
                   </div>
                   <div>
                     <dt>
                       <a href="/api/leaderboard.csv">/api/leaderboard.csv</a>
                     </dt>
-                    <dd>RFC 4180 CSV with a header row, for spreadsheets.</dd>
+                    <dd>RFC 4180 CSV with a header row, for spreadsheets. The same status, relationship and disclosure columns.</dd>
                   </div>
                 </dl>
                 <p className="dx-src">

@@ -1533,6 +1533,22 @@
   color: var(--ink);
 }
 
+/* A second table under the first (the leaderboard's sites the latest run
+   could not re-score) opens with its own heading, a section's gap below. */
+.dx-table-box + .dx-h3 {
+  margin-top: var(--space-32);
+}
+
+/* A line of prose after a table (the dispute line) or after the head's
+   actions (an entry's disclosure) stands a step apart from it. */
+.dx-table-box + .dx-lead {
+  margin-top: var(--space-20);
+}
+
+.dx-actions + .dx-lead {
+  margin-top: var(--space-16);
+}
+
 .dx-prose p {
   max-width: 40rem;
   margin: 0 0 var(--space-16);
