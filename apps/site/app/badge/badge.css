@@ -287,6 +287,19 @@
   object-fit: contain;
 }
 
+/* The live badge section is the page's lead, and on phones its note
+   ("One image per site...") outsizes the header's text and is the LCP
+   element: at 412 it painted 680ms after FCP while the section faded in from
+   opacity 0 (scripts/check-lcp-entrance.js, CI). It rises without fading, as
+   the page header and the case-study summary do (globals.css, "Page header
+   first-paint"). Scoped to no-preference, so reduced motion keeps
+   .fade-up's animation: none. */
+@media (prefers-reduced-motion: no-preference) {
+  #badge-live.doctrine-section.fade-up {
+    animation-name: riseUp;
+  }
+}
+
 /* The live builder's cards follow the command bar with a full step. */
 .eg-bar + .badge-live-snippets {
   margin-top: var(--space-32);

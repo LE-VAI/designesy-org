@@ -89,8 +89,9 @@ export default function BadgePage() {
           <AgentActions mdPath="/badge.md" label="the badge page" />
         </section>
 
-        {/* --- The live badge: the lead embed --- */}
-        <section className="doctrine-section fade-up fade-up-delay-1" aria-labelledby="badge-live-h">
+        {/* --- The live badge: the lead embed. It holds the page's LCP
+            paragraph on phones, so it rises without fading (badge.css). --- */}
+        <section id="badge-live" className="doctrine-section fade-up fade-up-delay-1" aria-labelledby="badge-live-h">
           <h2 className="doctrine-heading" id="badge-live-h">
             Live badge
           </h2>
