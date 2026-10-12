@@ -72,11 +72,11 @@ import { DigitStrip, stripValues } from './digit-strip';
 const STEPS = [
   {
     title: 'It reads the page you ship',
-    text: 'The engine loads the live URL the way a visitor does and walks what actually rendered: markup, tokens, type, spacing, and motion.',
+    text: 'The engine fetches the HTML your server sends and the stylesheets it links, and reads markup, tokens, type, spacing and motion from them. It runs no JavaScript, so it grades what arrives over the wire.',
   },
   {
     title: 'It measures instead of guessing',
-    text: 'Contrast is computed, never eyeballed. Line length, type scale, and target size are read off the page, each against a threshold the contract publishes.',
+    text: 'Contrast is computed, never eyeballed. Line length, type scale, and target size are read from the CSS the page ships, each against a threshold the contract publishes.',
   },
   {
     title: 'Each finding pins to its element',

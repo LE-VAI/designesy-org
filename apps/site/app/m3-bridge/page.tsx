@@ -27,7 +27,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'M3 → DTCG Bridge',
   description:
-    'Convert Material 3 design tokens to W3C DTCG 2025.10 format. M3\'s DSP export was archived October 2024 and doesn\'t emit DTCG. This bridge converts M3 token CSS or JSON to the W3C standard format, then validates the output.',
+    'Convert Material 3 design tokens to W3C DTCG 2025.10 format. M3\'s DSP export was archived October 2024 and doesn\'t emit DTCG. This bridge converts M3 token CSS or JSON to the DTCG 2025.10 format, the first stable report of the W3C Design Tokens Community Group, then validates the output.',
   path: '/m3-bridge',
   ogTitle: 'M3 → DTCG Bridge · Designesy',
   ogDescription:

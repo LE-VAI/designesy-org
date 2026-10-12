@@ -5,7 +5,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
-import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../lib/check-definitions';
 import {
   REVIEW_CHECKOUT_URL,
   REVIEW_CTA_LABEL,
@@ -20,11 +20,11 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Pricing',
   description:
-    'Designesy pricing: open core stays free, CI gate and score API included. Continuity adds scheduled scans, drift alerts, and score history at $29 a month for 5 sites. Enterprise runs private scoring on your own infrastructure.',
+    'Designesy pricing: open core stays free, CI gate and score API included. Continuity, on a waitlist today, will add scheduled scans, drift alerts, and score history at $29 a month for 5 sites. Enterprise runs private scoring on your own infrastructure.',
   path: '/pricing',
   ogTitle: 'Pricing · Designesy',
   ogDescription:
-    'Open core free forever, CI gate included. Continuity at $29 a month for 5 sites: scheduled scans and drift alerts. Enterprise for private, on-prem scoring.',
+    'Open core free forever, CI gate included. Continuity, on a waitlist today: $29 a month for 5 sites, with scheduled scans and drift alerts. Enterprise for private, on-prem scoring.',
 });
 
 const TIERS = [
@@ -92,8 +92,8 @@ export default function PricingPage() {
           </h1>
           <p className="surface-lede">
             Score any site against the contract for free, forever, and gate your
-            CI on it. Continuity adds scheduled scans, drift alerts, and score
-            history at $29 a month for 5 sites. Enterprise runs the engine on your
+            CI on it. Continuity, on a waitlist today, will add scheduled scans,
+            drift alerts, and score history at $29 a month for 5 sites. Enterprise runs the engine on your
             own infrastructure. A Designesy Review puts a person on your store
             or app flow, one time, for {REVIEW_PRICE}.
           </p>
@@ -208,7 +208,7 @@ export default function PricingPage() {
             <dl className="definition-side">
               <div>
                 <dt>Score</dt>
-                <dd>{ENGINE_CHECK_COUNT} automated checks, each failure named</dd>
+                <dd>{ENGINE_CHECK_COUNT} checks ({ENGINE_SCORED_CHECK_COUNT} automated), each failure named</dd>
               </div>
               <div>
                 <dt>Review</dt>
@@ -300,9 +300,9 @@ export default function PricingPage() {
               </summary>
               <p className="pricing-faq-a">
                 No hard cap. The free tier scores any URL with the full {ENGINE_CHECK_COUNT}-check
-                engine and keeps your last 5 scores in your browser. Continuity
-                adds scheduled scans, server-side history, and email drift
-                alerts.
+                engine and keeps your last 5 scores in your browser. Continuity,
+                once it opens, adds scheduled scans, server-side history, and
+                email drift alerts.
               </p>
             </details>
             <details className="pricing-faq-item">

@@ -27,17 +27,17 @@ export const monitorContract = {
   machine_url: 'https://www.designesy.org/contracts/monitor.json',
   updated: '2026-10-11',
   purpose:
-    'Monitor is the continuous-governance layer: re-score a URL on a cadence, store snapshots, compute drift deltas against the baseline, and surface regressions before they compound. Every prior designesy surface is a snapshot: monitor turns them into a watched series.',
+    'Monitor is the governance layer over time: each call re-runs the drift checks on a URL and compares the result with the history the caller passes in, computing deltas against the first snapshot (the baseline) and the one before, so a regression shows on the run it lands. Nothing is scheduled, and the server keeps no history of its own (each result is cached for 24 hours); /monitor keeps the history in your browser.',
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-01',
     temporal_gap: 'Into Design Systems 2026: "weekly audits at cents per report, drift detection without dedicated headcount"',
     drift_shape: 'Design Systems Collective 2026 (Enara): "the system surfaces the shape of how drift happens, the only way to stop it before it compounds"',
     compounding: 'Lollylop 2026: "visual bugs are invisible to code reviews, every sprint adds a little more, drift catches it before it compounds"',
-    competitor_lane: 'Designesy 2026 scan: no competitor combines URL-scoped production fetch + design-token-aware checks + scheduled cadence + trend-over-time',
+    competitor_lane: 'URL-scoped production fetch + design-token-aware checks + trend over the history the caller supplies',
   },
   conformance: {
     monitoring_model:
-      'Register a URL + cadence (daily/weekly/monthly). On each run, re-execute the 12 drift checks (d01-d12) and store a snapshot. Compute deltas against the first-run baseline: score delta, new violations, resolved violations, token-set mutations, and trend slope across the last 3 runs. Alert when score degrades beyond a threshold or when new violations appear.',
+      'Each call re-executes the 12 drift checks (d01-d12) on the URL and returns a snapshot; the caller keeps it and passes the earlier snapshots back as history on the next call. Deltas are computed against the first snapshot in that history (the baseline): score delta, new violations, resolved violations, token-set mutations, and trend slope across the last 3 runs. Alert when score degrades beyond a threshold or when new violations appear.',
     snapshot_structure: [
       { field: 'url', description: 'The watched URL' },
       { field: 'timestamp', description: 'ISO 8601 run timestamp' },
@@ -80,13 +80,13 @@ export const monitorContract = {
     ],
     scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP (m01 on a first run) is not scored. Score = (points / scored checks) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
     validation_tools: {
-      primary: 'Designesy monitor engine: scheduled re-scan + snapshot storage + delta computation',
-      method: 'Re-run the 12 drift checks on cadence, store snapshots, compute deltas vs baseline and previous run, fire alerts on threshold breach',
+      primary: 'Designesy monitor engine: on-demand re-scan + caller-supplied history + delta computation',
+      method: 'Re-run the 12 drift checks on each call, compute deltas vs the baseline and the previous run in the history passed in, fire alerts on threshold breach',
       browser_only: 'None: all checks are static CSS analysis + snapshot diffing, no browser needed',
     },
   },
   relationship_to_core: {
-    'designesy.org /drift': 'Monitor is /drift + a scheduler + a snapshot store + delta computation: the temporal layer over the drift radar',
+    'designesy.org /drift': 'Monitor is /drift + caller-supplied history + delta computation: the temporal layer over the drift radar',
     'designesy.org /score': 'Score is the onboarding run; monitor is the retention loop',
     'designesy.org /guardrails': 'Guardrails emits the fix; monitor verifies the fix held',
     '§6 Systems Enable Freedom': 'A watched system is the freedom boundary maintained over time',
@@ -95,7 +95,7 @@ export const monitorContract = {
     'Snapshot storage is client-side (localStorage) in v0.1.0: production monitoring needs server-side persistence (database or KV store)',
     'Email alerting (m10) requires RESEND_API_KEY env var + verified sending domain (monitor@designesy.org): without the key, alerts surface in-UI only',
     'Scheduled cadence (daily/weekly/monthly) requires a cron runner (Vercel Cron Jobs): v0.1.0 monitors on manual trigger only',
-    'Cross-page drift (drift mode 2) requires crawling multiple pages: the monitor currently watches the single registered URL',
+    'Cross-page drift (drift mode 2) requires crawling multiple pages: the monitor checks the single URL it is given',
     'The 3-run trend slope (m04) needs 3 snapshots: the first 2 runs will show insufficient data',
     'Contract version drift (m09) reports the design contract version a run is scored against; snapshots do not record it yet, so a change between runs is stated rather than compared (until v0.1.1 m09 read the scanned site agent.json version, which on designesy.org is the catalog version)',
   ],

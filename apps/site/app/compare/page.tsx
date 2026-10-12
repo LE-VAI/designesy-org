@@ -25,7 +25,7 @@ export const metadata: Metadata = pageMeta({
   // the one every caller already uses.
   title: 'Compare',
   description:
-    'Compare two design systems from live URLs: diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta. The only URL-scoped design-token diff engine. 8 emission checks plus score delta on both sites.',
+    'Compare two design systems from live URLs: diff tokens added, removed, renamed, value-changed, scale drift, contrast drift, and structure delta, token by token. 8 emission checks plus score delta on both sites.',
   path: '/compare',
 
   machineSibling: '/contracts/compare.json',

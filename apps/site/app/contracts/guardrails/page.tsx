@@ -26,8 +26,11 @@ const c = guardrailsContract;
 // The adoption statistic, read out of the contract's own sentence so the
 // figure cannot drift from its source (the sentence prints if it stops
 // matching).
-//   "zeroheight Design Systems Report 2025: token adoption 84% (up from 56% in
-//    2024), but 40% still sync tokens by hand"
+//   "zeroheight Design Systems Reports 2025 and 2026: token adoption 84% (up
+//    from 56% in 2024, 2025 report), but 60% still sync tokens by hand (2026
+//    report: only 40% of teams have a token pipeline)"
+// The second figure used to read "40% still sync tokens by hand": the 2026
+// report says 40% HAVE a pipeline, so 60% sync by hand.
 const ADOPTION = /^(.+?):\s*(.+?)\s+(\d+%)\s+\((.+?)\),\s*but\s+(\d+%)\s+(.+)$/.exec(c.source_authority.adoption_signal);
 
 // Each bundle key is emitted by one check, and that check names the file

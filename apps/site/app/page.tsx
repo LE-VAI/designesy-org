@@ -12,7 +12,15 @@ import { ToggleRow } from './lib/toggle-row';
 import { StateMarquee } from './lib/state-marquee';
 import { pageMeta } from './lib/site-meta';
 import { ScoreForm } from './score/score-form';
-import { ContractHealthRack, CONTRACT_HEALTH_DIMS, CONTRACT_HEALTH_MEAN } from './contract-health-rack';
+import {
+  ContractHealthRack,
+  SELF_CATEGORY_DIMS,
+  SELF_BROWSER_ONLY,
+  SELF_NOT_RECORDED,
+  SELF_CATEGORY_DATE,
+  SELF_CATEGORY_ENGINE,
+} from './contract-health-rack';
+import { ENGINE_SCORED_CHECK_COUNT, ENGINE_MANUAL_CHECK_COUNT } from './lib/check-definitions';
 import { VerifyConsole, VC_TIMING } from './lib/verify-console';
 import { PlayWhenVisible } from './lib/play-when-visible';
 import { InspectSequence } from './lib/inspect-sequence';
@@ -22,9 +30,11 @@ import {
   CONTRACT_VERSION,
   SELF_SCORE,
   SELF_GRADE,
-  COHORT_SCORED_COUNT,
+  COHORT_RESCORED_COUNT,
+  COHORT_HELD_OVER_COUNT,
   COHORT_TOTAL_COUNT,
   COHORT_LAST_SCORED,
+  MEASURED_CONTRACT_VERSION,
   RECENT_SCORES,
   LOWEST_SCORE,
   LOWEST_GRADE,
@@ -92,7 +102,16 @@ const HERO_HEADLINE = `${HERO_LINE_1} ${HERO_LINE_2_PREFIX}${HERO_ACCENT}.`;
 // A pillar's source, when it has one, is a footnote under the grid (marked
 // with `note`), so the cards hold the same four or five lines: inline, the
 // citation ran card 02 to eight.
-const PILLAR_SOURCE = 'Belitsoft, State of React Development 2026';
+//
+// The 42% is Sonar's: "Developers report that 42% of the code they commit is
+// currently AI-generated or assisted" (State of Code Developer Survey, more than
+// 1,100 professional developers, published 2026-01-08). It covers all code and
+// it is the developers' own estimate. The card used to call it "42% of committed
+// React" and credit Belitsoft, whose 2026 React report restates Sonar's survey.
+const PILLAR_SOURCE = {
+  name: 'Sonar, State of Code Developer Survey, January 2026',
+  href: 'https://www.sonarsource.com/blog/state-of-code-developer-survey-report-the-current-reality-of-ai-coding/',
+};
 
 const PILLARS: { number: string; title: string; text: string; note?: string }[] = [
   {
@@ -103,18 +122,18 @@ const PILLARS: { number: string; title: string; text: string; note?: string }[] 
   {
     number: '02',
     title: 'Verification as proof',
-    text: `${ENGINE_CHECK_COUNT} automated checks prove the contract is met. With 42% of committed React now AI-generated, the score measures what shipped: the rendered page a visitor meets.`,
+    text: `${ENGINE_SCORED_CHECK_COUNT} automated checks read what shipped: the page your server sends. Developers report that 42% of the code they commit is now AI-generated or assisted.`,
     note: '1',
   },
   {
     number: '03',
     title: 'Anti-generic by design',
-    text: 'Twelve anti-generic tells detect when a surface has defaulted to the AI mean. No generator has this. The contract is the structural defense against AI sameness.',
+    text: 'Twelve anti-slop rules take up to 20 points off for recognisable template patterns, and seven craft signals add up to 8 back. Every rule and signal is published on the methodology page.',
   },
   {
     number: '04',
-    title: 'Multi-surface hardening',
-    text: 'Every new surface that ingests the contract stress-tests it. Each failure closes a gap the AI tools left open. The contract gets stronger with every generation.',
+    title: 'Versioned in the open',
+    text: 'Every contract change is versioned and dated, with the checks it touched and the reason for it, in the public changelog.',
   },
 ];
 
@@ -269,7 +288,17 @@ const PRINCIPLES = [
   'Responsibility is a design material',
 ].map((title) => ({ title }));
 
-const pctMean = Math.round(CONTRACT_HEALTH_MEAN * 100);
+// The note under the category rack names its run and what it leaves out, from
+// the data.
+const listOf = (items: string[]) =>
+  items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+const HEALTH_NOTE = [
+  `Category scores for designesy.org from its own engine (${SELF_CATEGORY_ENGINE}), in the leaderboard batch.`,
+  SELF_BROWSER_ONLY.length > 0 ? `${listOf(SELF_BROWSER_ONLY)} need a browser, so they are not scored here.` : '',
+  SELF_NOT_RECORDED.length > 0 ? `The batch does not record ${listOf(SELF_NOT_RECORDED)} by category.` : '',
+]
+  .filter(Boolean)
+  .join(' ');
 
 export default function HomePage() {
   return (
@@ -335,7 +364,7 @@ export default function HomePage() {
             score={SELF_SCORE}
             grade={SELF_GRADE}
             measured={COHORT_LAST_SCORED}
-            contract={CONTRACT_VERSION}
+            contract={MEASURED_CONTRACT_VERSION}
             pass={SELF_COUNTS.pass}
             warn={SELF_COUNTS.warn}
             fail={SELF_COUNTS.fail}
@@ -343,7 +372,8 @@ export default function HomePage() {
 
           <div className="hero-cohort" role="group" aria-label="This week's cohort">
             <span className="hero-cohort-label">
-              Cohort, week of {COHORT_LAST_SCORED}: <b>{COHORT_SCORED_COUNT}</b> of {COHORT_TOTAL_COUNT} sites scored
+              Cohort, week of {COHORT_LAST_SCORED}: <b>{COHORT_RESCORED_COUNT}</b> of {COHORT_TOTAL_COUNT} sites rescored
+              {COHORT_HELD_OVER_COUNT > 0 && <>, {COHORT_HELD_OVER_COUNT} held over</>}
             </span>
             <ul className="hero-cohort-list">
               {RECENT_SCORES.filter((s) => !s.isSelf)
@@ -363,7 +393,7 @@ export default function HomePage() {
                 ))}
               {LOWEST_SCORE !== null && (
                 <li className="hero-cohort-low">
-                  Lowest <span data-tabular>{LOWEST_SCORE}%</span>
+                  Lowest <span data-tabular>{LOWEST_SCORE.toFixed(1)}</span>
                   <span className={`hero-cohort-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
                 </li>
               )}
@@ -386,8 +416,9 @@ export default function HomePage() {
               Every check, run against the page.
             </h2>
             <p className="surface-lede">
-              Each of the {ENGINE_CHECK_COUNT} checks inspects a part of the page. A finding pins to
-              the element it flags, named by the check that caught it.
+              Each of the {ENGINE_CHECK_COUNT} checks reads one part of the page. A finding names the
+              check that caught it and the rule it broke, and points to the element where the check
+              can name one.
             </p>
           </div>
           <InspectSequence />
@@ -404,8 +435,9 @@ export default function HomePage() {
           <p className="surface-lede home-statement-lede">
             When AI can generate any interface, trust goes to the sites that hold together:
             consistent type, coherent motion, a steady rhythm. The contract makes that coherence
-            checkable. {ENGINE_CHECK_COUNT} checks run against the live page, and each one passes or
-            fails in the open.
+            checkable: {ENGINE_SCORED_CHECK_COUNT} of its {ENGINE_CHECK_COUNT} checks run on the HTML
+            and CSS a page ships, {ENGINE_MANUAL_CHECK_COUNT} need a browser, and every verdict comes
+            back with its reason.
           </p>
           <div className="pillar-grid home-pillars">
             {PILLARS.map((pillar) => (
@@ -425,13 +457,17 @@ export default function HomePage() {
             ))}
           </div>
           <p className="home-pillar-note">
-            <sup>1</sup> The 42% figure: {PILLAR_SOURCE}.
+            <sup>1</sup> The 42% figure:{' '}
+            <a className="text-link" href={PILLAR_SOURCE.href} target="_blank" rel="noopener noreferrer">
+              {PILLAR_SOURCE.name}
+            </a>
+            . It covers all code, as estimated by the developers surveyed.
           </p>
         </section>
 
-        {/* --- The contract: nine principles and the health rack ---
-            All nine principles as CheckGrid cells beside the instrument that
-            measures the contract's own health. */}
+        {/* --- The contract: nine principles and this site by category ---
+            All nine principles as CheckGrid cells beside the engine's category
+            scores for designesy.org, read from the leaderboard batch. */}
         <section className="section home-principles" aria-labelledby="principles-title">
           <p className="section-eyebrow">The contract</p>
           <div className="home-principles-grid g12">
@@ -456,15 +492,18 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
-            <aside className="health-panel home-health" aria-label={`Contract health mean ${pctMean} out of 100 across ${CONTRACT_HEALTH_DIMS.length} dimensions`}>
+            <aside
+              className="health-panel home-health"
+              aria-label={`designesy.org by category: ${SELF_CATEGORY_DIMS.length} category scores from its own engine, batch run of ${SELF_CATEGORY_DATE}`}
+            >
               <div className="home-health-head">
-                <span className="section-heading-badge-label">Contract health</span>
+                <span className="section-heading-badge-label">This site, by category</span>
                 <span className="section-heading-badge-value">
-                  <span className="section-heading-badge-numeral" data-tabular>{pctMean}</span>
-                  <span className="section-heading-badge-unit">· {CONTRACT_HEALTH_DIMS.length} dimensions</span>
+                  <span className="section-heading-badge-unit">scored {SELF_CATEGORY_DATE}</span>
                 </span>
               </div>
               <ContractHealthRack />
+              <p className="home-health-note">{HEALTH_NOTE}</p>
             </aside>
           </div>
         </section>

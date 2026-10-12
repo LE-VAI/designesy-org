@@ -195,7 +195,7 @@ const CHECKS: CheckDef[] = [
     id: 'v24',
     item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)',
     category: 'accessibility',
-    how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. This is the WCAG 2.2 Target Size Minimum (AA). Full verification needs a browser to measure rendered dimensions.',
+    how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. 44px is WCAG 2.2 SC 2.5.5 Target Size (Enhanced), level AAA; the AA minimum, SC 2.5.8, is 24px, and the contract holds the stricter bar. Full verification needs a browser to measure rendered dimensions.',
   },
   {
     id: 'v25',
@@ -329,7 +329,7 @@ const CHECKS: CheckDef[] = [
     id: 'v36',
     item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers',
     category: 'security',
-    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0.',
   },
 
   // ── Spec (4%) — v0.4.0 ──

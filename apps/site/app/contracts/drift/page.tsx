@@ -177,9 +177,8 @@ export default function DriftContractPage() {
         </section>
 
         <div className="status-note">
-          The drift contract is the first scoring engine that detects
-          AI-generated UI drift deterministically: 12 checks against compiled
-          CSS. <a href={c.machine_url}>Machine export</a>.
+          The drift contract scores AI-generated UI drift deterministically:
+          12 checks against compiled CSS. <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

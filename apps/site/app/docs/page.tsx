@@ -115,8 +115,8 @@ const LAYERS = [
     num: '07',
     name: 'Graph',
     desc: 'living knowledge tree with provenance',
-    access: 'Internal',
-    where: 'not published as a public browser',
+    access: 'Public',
+    where: '/graph and its machine export /graph.json',
   },
   {
     num: '08',
@@ -442,7 +442,7 @@ export default function DocsPage() {
               next rule; between the sections it hung 95px down with its
               bottom edge on the next section's border-top. */}
           <div className="status-note">
-            Designesy is a live operating model. Graph and logs remain internal by
+            Designesy is a live operating model. Logs remain internal by
             design. What is public here (principles, architecture, voice,
             contracts, labs, kits, and review) is the real system.
           </div>
