@@ -10,6 +10,7 @@ import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
 import { ScrollRegions } from './lib/scroll-regions';
+import { FlameFlipShortcut } from './lib/flame-flip';
 
 /*
   Brand faces — self-hosted at build time by next/font.
@@ -242,6 +243,9 @@ export default function RootLayout({
         <ScrambleEnhancer />
         <ScrollDepth />
         <ScrollRegions />
+        {/* Ctrl+I flips the page to the flame (brand D69): one keydown
+            listener; the flip itself loads on the first press. */}
+        <FlameFlipShortcut />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits
             behind all content (z-index 0 with grid + noise). Pure CSS, no
             JS. Replaces the old hero-bounded mesh that showed a cutoff at
