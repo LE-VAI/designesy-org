@@ -41,17 +41,19 @@ export function FlameFlipShortcut() {
 }
 
 /** The keycaps beside the footer wordmark: a real button, so it is reachable
-    by Tab and activated by Enter and Space, with the site's focus ring. */
+    by Tab and activated by Enter and Space, with the site's focus ring.
+    Named from its content, "Flip to the flame: ctrl i": the hidden lead says
+    what it does, and the name contains the visible keycaps, so a voice user
+    can say what they see (WCAG 2.5.3 Label in Name; an aria-label of
+    "Control I" did not contain "ctrl"). The spaces only reach the name: in
+    the inline-flex row they render nothing, and the absolute .sr-only span
+    takes no part in the row's gap. */
 export function FlameFlipKeys() {
   return (
-    <button
-      type="button"
-      className="flip-keys"
-      aria-label="Flip to the flame (Control I)"
-      onClick={flip}
-    >
-      <kbd>ctrl</kbd>
-      <span aria-hidden="true">+</span>
+    <button type="button" className="flip-keys" onClick={flip}>
+      <span className="sr-only">Flip to the flame: </span>
+      <kbd>ctrl</kbd>{' '}
+      <span aria-hidden="true">+</span>{' '}
       <kbd>i</kbd>
     </button>
   );

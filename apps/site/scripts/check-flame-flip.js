@@ -37,8 +37,8 @@
  *              layer runs no animation; the swap is whole and immediate (the
  *              probe reads the flame at once, with no circle), holds at
  *              1499ms and is gone at 1501ms.
- *   keyboard   the footer keycaps are a <button> named "Flip to the flame
- *              (Control I)", reached by Tab from the control before it, with
+ *   keyboard   the footer keycaps are a <button> named "Flip to the flame:
+ *              ctrl i" (the visible keycaps inside the name, WCAG 2.5.3), reached by Tab from the control before it, with
  *              a visible focus ring (pixels change); Enter runs the flip and
  *              so does Space. Ctrl+I and Command+I run it from the page.
  *              Ctrl+Shift+I and Ctrl+Alt+I do not. Ctrl+I inside an input, a
@@ -455,14 +455,18 @@ async function keyboardRun(browser, theme) {
       if (i > 0) {
         tabbable[i - 1].setAttribute('data-ff-prev', '');
       }
-      return { tag: b.tagName, type: b.type, name: b.getAttribute('aria-label'), index: i, height: b.getBoundingClientRect().height };
+      return { tag: b.tagName, type: b.type, ariaLabel: b.getAttribute('aria-label'), index: i, height: b.getBoundingClientRect().height };
     });
     if (!info) {
       failures.push('no footer .flip-keys button');
       return failures.map((f) => `${label}: ${f}`);
     }
     if (info.tag !== 'BUTTON' || info.type !== 'button') failures.push(`keycaps are <${info.tag.toLowerCase()} type=${info.type}>, expected <button type=button>`);
-    if (info.name !== 'Flip to the flame (Control I)') failures.push(`keycaps named "${info.name}"`);
+    // The name is computed from content, as assistive tech computes it: an
+    // aria-label would replace it and could drop the visible "ctrl".
+    if (info.ariaLabel !== null) failures.push(`keycaps carry aria-label "${info.ariaLabel}"; the name must come from the content`);
+    const named = await page.getByRole('button', { name: 'Flip to the flame: ctrl i', exact: true }).count();
+    if (named !== 1) failures.push(`${named} buttons named "Flip to the flame: ctrl i", expected 1`);
     if (info.height < 44) failures.push(`keycaps are ${info.height}px tall, under the 44px target`);
     await page.locator('[data-ff-prev]').scrollIntoViewIfNeeded();
     await page.locator('[data-ff-prev]').focus();
