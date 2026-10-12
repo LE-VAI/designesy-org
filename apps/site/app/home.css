@@ -1224,9 +1224,22 @@
   transition: text-decoration-color var(--duration-quick) var(--ease);
 }
 
+/* Keyboard focus on the home's in-text links (the hero line, the ledger's
+   facts and evidence) takes the house in-text treatment (globals.css,
+   a.text-link:focus-visible): a signal fill with the text in paper, not the
+   ring. The ring is drawn 5px out, and here a glyph sits closer than that:
+   the "·" before the hero line (2.95px away, measured by
+   check-focus-visibility), the next row's text under a ledger fact, the
+   commas between the evidence links. */
+.home-hero-held:focus-visible,
 .home .home-ledger-fact a:focus-visible,
 .home .home-ledger-evidence a:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  background-color: var(--signal-access);
+  color: var(--paper);
   text-decoration-color: currentColor;
+  box-shadow: none;
 }
 
 @media (hover: hover) {
