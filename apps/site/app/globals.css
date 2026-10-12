@@ -287,6 +287,19 @@
   --display: var(--serif);
   --mono: var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
+  /* Type scale (brand ledger D68): a Major Third (x1.25) on the 16px root, so
+     no two adjacent steps sit closer than 25%. Theme-agnostic, so it lives
+     here once and not in the light block. Every text size on a covered sheet
+     reads one of these (scripts/check-type-scale.js); below --text-lead,
+     hierarchy comes from weight and colour, not more sizes. Display titles
+     keep their clamp() sizes. Named in the contract (typography.scale). */
+  --text-label: 0.8rem;    /* 12.8px  labels, meta, captions, mono caps. The floor for all text */
+  --text-body: 1rem;       /* 16px    reading and interface text; the reading floor */
+  --text-lead: 1.25rem;    /* 20px    lead paragraphs, card titles, secondary readouts */
+  --text-h3: 1.563rem;     /* 25px */
+  --text-h2: 1.953rem;     /* 31.25px */
+  --text-h1: 2.441rem;     /* 39px    the in-content h1 floor; page titles use the display clamp */
+
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
      VALUES for --surface / --surface-raised / --surface-lifted are untouched

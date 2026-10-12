@@ -1,9 +1,9 @@
 {
   "$comment": "Written by `npm run update-contract-lock` in apps/site. Do not edit by hand: scripts/check-contract-lock.js says what the hash covers and excludes. A new hash goes with a new version.",
   "contract": "designesy.design-system",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "scheme": 1,
-  "sha256": "22f54a0b9f06fa5c0e9745d001e3c2ed5d3792843441d14a861fb155309f39ef",
+  "sha256": "4b8a4c00e709c5c1cd8cae81d4d8a5623ec371c5ee3e5fa0d581611cb35ed582",
   "excluded": [
     "adoption_history",
     "full_contract_url",
@@ -23,7 +23,7 @@
     "accessibility": "6d029a15a9ac60efc93b6e4586bcdc22abe7203032ef16d4d0996842421e1665",
     "acoustic": "ba4d6f3a6f2dd5093fb1491b97c23da69713cfed8b83f8dc727c239d0c00884b",
     "anti_patterns": "ee6473030d14bb0ed06311f737b55d60317b8f0d961a671cb319796319c06a3a",
-    "cadence": "e7c1522ccbcf2f4698115a52c7d8fe3867acedc989a9ecb4822aa137441b5591",
+    "cadence": "fc9f6e98f6f73ae4a455903b55f00a07062f71fb50f86df1a9dddd9ba54be76d",
     "colors": "ac124f785a0a6bf48917ce27c5cb520249405fe0b8a3d0149aef7b60adb0049c",
     "components": "2bc979d1d17dac93ef3bd71a964cbdb894cafe193771e4f30a8f577cc622cba1",
     "copywriting": "038245754edd6a9977a50e7d9d1dbf3afae6684bfa95973ac2a60fa3479a2253",
@@ -38,7 +38,7 @@
     "shadows": "01a207e1c05273eeaaa398cd40d6dace57ddba38c554b5431022eaff5e4f082a",
     "surfaces_and_lines": "11863c511139a93acc43f14033ea8ef8dc5e8ccbeceba3020f609942b46a1aa0",
     "takt": "e702451a494afc7d249ced6e931ded4bc3d854b8b9aa69c646284418a2609e7f",
-    "typography": "c34548d189b092d5481117c0cc6c14e0e7fc74b50c1bee528722ee3ac97864d3",
+    "typography": "dd21aead917b1ac30f0d409af92ea0e17742630e2011d50fcca3b6a0ba64f72e",
     "verification": "9cc3ff5cc6606601619bc9f8b4734be36adc8e9a86d6c975fc7b3864ae702659"
   }
 }

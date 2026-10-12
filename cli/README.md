@@ -99,7 +99,7 @@ design-system contract score, use `designesy-score <url>`.
 
 ## What it scores
 
-The Designesy v0.4.4 design-system contract, with 44 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
+The Designesy v0.4.5 design-system contract, with 44 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 See the [full methodology](https://www.designesy.org/methodology).
 

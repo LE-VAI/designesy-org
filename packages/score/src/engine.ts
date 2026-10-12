@@ -4566,7 +4566,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
  * the site served v0.4.3; test/engine-1-2-0.test.mjs now reads the site's
  * contract source and fails when the two differ.
  */
-export const CONTRACT_VERSION = 'v0.4.4';
+export const CONTRACT_VERSION = 'v0.4.5';
 
 /**
  * The one verdict rule, shared by every emission format.
