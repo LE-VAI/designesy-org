@@ -279,7 +279,7 @@ async function main() {
     const score = read('app/api/score/route.ts');
     assert.match(
       score,
-      /export const scoreUrl = unstable_cache\(\s*async \(targetUrl: string, scope\?: ScoreScope\) => \{\s*const gate = missGate\.getStore\(\);\s*if \(gate\) await gate\(\);\s*return scoreUrlUncached\(targetUrl, scope\);/,
+      /export const scoreUrl = unstable_cache\(\s*async \(targetUrl: string, scope\?: ScoreScope\) => \{\s*const gate = currentScoreMissGate\(\);\s*if \(gate\) await gate\(\);\s*return scoreUrlUncached\(targetUrl, scope\);/,
     );
   });
 

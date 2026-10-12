@@ -39,7 +39,8 @@
 // address). Nothing from the request reaches the SVG except the site's host,
 // reduced to [a-z0-9.-] and escaped (live-badge.ts).
 
-import { autoDetectScope, scoreUrl, withScoreMissGate } from '../../api/score/route';
+import { autoDetectScope, scoreUrl } from '../../api/score/route';
+import { withScoreMissGate } from '../score-miss-gate';
 import { isValidUrl, normalizeInputUrl } from '../url-guard';
 import { renderLiveBadge, type BadgeTheme, type LiveBadgeState } from './live-badge';
 import { decideBadgeMiss, type MissDecision } from './miss-limit';
