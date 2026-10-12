@@ -451,8 +451,11 @@ export default function ChangelogPage() {
           <AgentActions mdPath="/changelog.md" label="the changelog" />
         </section>
 
-        {/* Dimension tabs */}
-        <section className="doctrine-section fade-up fade-up-delay-1">
+        {/* Dimension tabs and the log, newest entry first. #changelog-log
+            rises without fading (globals.css, "Page header first-paint"):
+            the newest entry can be the largest text on the page, and an
+            entrance from opacity 0 would hold LCP back by the fade. */}
+        <section id="changelog-log" className="doctrine-section fade-up fade-up-delay-1">
           {/* Dimension jump links (changelog.css): they wrap into balanced
               rows, never one orphan tab, and each count is its own quiet
               badge. */}
