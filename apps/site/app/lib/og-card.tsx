@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { ReactNode } from 'react';
 import { ImageResponse } from 'next/og';
 import {
   LOCKUP_MARK_TRANSFORM,
@@ -97,6 +98,11 @@ export type OgCardProps = {
    * own copy leaves it off, so its card matches it (/brand, D71).
    */
   endorsement?: boolean;
+  /**
+   * Art the caller draws in the tile's place (top right), for a page whose
+   * own picture says more than an icon would; it replaces the icon tile.
+   */
+  art?: ReactNode;
 };
 
 /**
@@ -134,9 +140,10 @@ export function renderOgCard({
   badge,
   icon,
   endorsement = true,
+  art,
 }: OgCardProps) {
-  const tileIcon = icon === undefined ? defaultIcon(kind, path) : icon;
-  const textWidth = tileIcon ? 720 : 960;
+  const tileIcon = art ? null : icon === undefined ? defaultIcon(kind, path) : icon;
+  const textWidth = art || tileIcon ? 720 : 960;
   const titleSize = title.length > 40 ? 58 : title.length > 28 ? 66 : 76;
 
   return new ImageResponse(
@@ -248,6 +255,10 @@ export function renderOgCard({
             <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
           ) : null}
         </div>
+
+        {art ? (
+          <div style={{ position: 'absolute', right: 72, top: 168, display: 'flex' }}>{art}</div>
+        ) : null}
 
         {tileIcon ? (
           <div

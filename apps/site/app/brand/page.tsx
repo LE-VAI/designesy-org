@@ -103,7 +103,7 @@ const SWATCHES = [
     name: 'Ink',
     hex: INK,
     label: WHITE,
-    role: 'The ground of the dark theme and the text of the light one.',
+    role: 'The ground of the dark theme, and the label on Azure fills.',
     pair: `White on ink ${ratio(WHITE, INK)}:1`,
   },
 ];
