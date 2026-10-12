@@ -1036,6 +1036,10 @@
 .home .home-principle-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  /* The list shares its grid row with the category panel, which can be the
+     taller of the two: the rows keep their own height and sit at the top
+     instead of spreading to the panel's. */
+  align-content: start;
   column-gap: var(--space-32);
   margin: var(--space-8) 0 0;
   padding: 0;
