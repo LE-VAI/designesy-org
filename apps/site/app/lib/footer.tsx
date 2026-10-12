@@ -132,7 +132,7 @@ export function Footer() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/badge.svg"
-              alt="Verified by Designesy badge: see our live score"
+              alt="Scored by Designesy: see our live score"
               width={156}
               height={32}
               style={{ display: 'block' }}

@@ -120,7 +120,9 @@ function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
   if (route === '/' || route === '/report' || route.startsWith('/score')) return 'score';
   if (route === '/leaderboard') return 'leaderboard';
   if (route === '/monitor') return 'monitor';
-  if (route === '/badge') return 'verify';
+  // The badge shows a grade, so its tile is the score icon (the dot marks
+  // the active grade).
+  if (route === '/badge') return 'score';
   return null;
 }
 

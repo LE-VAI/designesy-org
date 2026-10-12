@@ -195,7 +195,7 @@ const SURFACES = [
   {
     href: '/badge',
     label: 'Badge',
-    desc: 'Embed the Verified by Designesy badge, linked to a live score',
+    desc: 'Embed your live score: the grade, the score and the date it was measured',
     meta: 'SVG embed',
   },
   {

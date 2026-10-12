@@ -2,6 +2,7 @@ import { NextResponse, after } from 'next/server';
 import { recordUsage, scoreClientOf } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 
@@ -181,8 +182,9 @@ function rateLimited(ip: string): boolean {
 
 // ── URL Normalization & Validation ─────────────────────────────────────────
 // Shared hardened guard in app/lib/url-guard.ts — imported above and re-
-// exported here for backwards compatibility with app/score/opengraph-image.tsx
-// and app/score/badge/route.ts, which import from '../api/score/route'.
+// exported here for backwards compatibility with app/score/opengraph-image.tsx,
+// which imports from '../api/score/route'. The live badge
+// (app/lib/badge/live-badge-route.ts) imports the guard directly.
 
 export { normalizeInputUrl, isValidUrl };
 
@@ -5041,8 +5043,15 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 // a stale 95.7 after the engine fix had shipped. Keyed by commit, a new deploy
 // starts from a clean cache. Outside Vercel there is no commit, and the key is
 // stable for local runs.
+//
+// The miss gate (lib/score-miss-gate.ts): a caller that set one is asked here,
+// on a miss only, before a fresh score starts. The live badge does.
 export const scoreUrl = unstable_cache(
-  async (targetUrl: string, scope?: ScoreScope) => scoreUrlUncached(targetUrl, scope),
+  async (targetUrl: string, scope?: ScoreScope) => {
+    const gate = currentScoreMissGate();
+    if (gate) await gate();
+    return scoreUrlUncached(targetUrl, scope);
+  },
   ['designesy-score', process.env.VERCEL_GIT_COMMIT_SHA ?? 'local'],
   { revalidate: SCORE_TTL_SECONDS, tags: ['score'] }
 );

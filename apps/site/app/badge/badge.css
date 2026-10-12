@@ -278,6 +278,33 @@
   display: block;
 }
 
+/* The live badge's width follows its content (154 to 356px): it keeps its
+   44px height and narrows, letterboxed, when a phone's pane is narrower. */
+.badge-snippet-specimen .badge-live-img {
+  block-size: 44px;
+  inline-size: auto;
+  max-inline-size: 100%;
+  object-fit: contain;
+}
+
+/* The live badge section is the page's lead, and on phones its note
+   ("One image per site...") outsizes the header's text and is the LCP
+   element: at 412 it painted 680ms after FCP while the section faded in from
+   opacity 0 (scripts/check-lcp-entrance.js, CI). It rises without fading, as
+   the page header and the case-study summary do (globals.css, "Page header
+   first-paint"). Scoped to no-preference, so reduced motion keeps
+   .fade-up's animation: none. */
+@media (prefers-reduced-motion: no-preference) {
+  #badge-live.doctrine-section.fade-up {
+    animation-name: riseUp;
+  }
+}
+
+/* The live builder's cards follow the command bar with a full step. */
+.eg-bar + .badge-live-snippets {
+  margin-top: var(--space-32);
+}
+
 .inline-code {
   font-family: var(--mono);
   font-size: 0.8em;
@@ -330,9 +357,8 @@
 /* ── Grade scale ────────────────────────────────────────────────────────
    The rows outrank the note that annotates them: 14px rows with tabular
    figures, the note at caption size (it was 16.8px over 12.48px rows, because
-   .definition p out-specified .definition-note). The status takes the row's
-   far end, a pill where the grade qualifies, so both ends of the row hold
-   something instead of 900px of empty band. */
+   .definition p out-specified .definition-note). Each row is the letter and
+   its band; the live badge shows every grade, so no row "qualifies". */
 .badge-grade-table {
   display: flex;
   flex-direction: column;
@@ -341,7 +367,7 @@
 }
 
 .badge-grade-table .badge-grade-row {
-  grid-template-columns: 2.5rem 4.5rem minmax(0, 1fr);
+  grid-template-columns: 2.5rem minmax(0, 1fr);
   min-height: 2.75rem;
 }
 
@@ -358,19 +384,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.badge-grade-table .badge-grade-status {
-  justify-self: end;
-  font-size: 0.875rem;
-  color: var(--muted);
-}
-
-.badge-grade-table .badge-grade-row.is-qualifying .badge-grade-status {
-  padding: var(--space-2) var(--space-10);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ok) 12%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 35%, transparent);
-  color: var(--ok-ink);
-}
 
 .definition .definition-note {
   margin-top: var(--space-12);
