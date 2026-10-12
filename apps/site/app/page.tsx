@@ -351,7 +351,7 @@ const LEDGER: LedgerRow[] = [
     fact: 'Machine feeds',
     evidence: (
       <>
-        <Link href="/open.json">open.json</Link> and <Link href="/llms.txt">llms.txt</Link>
+        <a href="/open.json">open.json</a> and <a href="/llms.txt">llms.txt</a>
       </>
     ),
     state: 'published',
