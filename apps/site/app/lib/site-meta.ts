@@ -15,6 +15,20 @@ export const SITE_NAME = 'Designesy';
  */
 export const LISTING_LINE = `Design quality gate for AI-generated UI: score any URL on ${ENGINE_CHECK_COUNT} deterministic checks, A–F grade.`;
 
+/**
+ * The one address the site publishes for people to write to: the footer,
+ * security.txt, agent.json and the JSON-LD use it too. Every mailto that asks a
+ * person to get in touch (a question about the Review, a leaderboard dispute, a
+ * site proposed for the leaderboard) reads it from here, so a change of address
+ * is one edit.
+ */
+export const SITE_CONTACT_EMAIL = 'hello@designesy.org';
+
+/** A mailto link to SITE_CONTACT_EMAIL with its subject filled in. */
+export function contactMailto(subject: string): string {
+  return `mailto:${SITE_CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+}
+
 export const SITE_DEFAULT_DESCRIPTION = LISTING_LINE;
 
 /**

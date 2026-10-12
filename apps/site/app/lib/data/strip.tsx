@@ -14,10 +14,13 @@ export type StripSite = {
   name: string;
   score: number;
   grade: string;
-  rank: number;
+  /** null: not ranked, because the latest run could not re-score the site. */
+  rank: number | null;
   self?: boolean;
   /** Held over: the engine could not read the site on the last run. */
   held?: boolean;
+  /** For a held-over site: "last scored <date> · could not re-score". */
+  heldLabel?: string | null;
 };
 
 // Each band, its dots and the readout's chip are drawn in the grade palette
@@ -57,7 +60,7 @@ export function CohortStrip({
   const dots = useMemo(() => {
     const placed: { score: number; row: number }[] = [];
     return [...sites]
-      .sort((a, b) => a.score - b.score || a.rank - b.rank)
+      .sort((a, b) => a.score - b.score || (a.rank ?? Infinity) - (b.rank ?? Infinity))
       .map((s) => {
         let row = 0;
         while (placed.some((p) => p.row === row && Math.abs(p.score - s.score) < GAP)) row++;
@@ -109,9 +112,14 @@ export function CohortStrip({
               {d.grade}
             </span>
             <span className="dx-readout-meta">
-              rank <span className="dx-num">{d.rank}</span>
+              {d.rank !== null ? (
+                <>
+                  rank <span className="dx-num">{d.rank}</span>
+                </>
+              ) : (
+                (d.heldLabel ?? 'not ranked')
+              )}
               {d.self ? ', self-scored' : ''}
-              {d.held ? ', held over' : ''}
             </span>
           </>
         ) : (
