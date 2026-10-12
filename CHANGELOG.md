@@ -6,6 +6,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.3.1 and @designesy/score 0.8.1** (npm, not yet published). Four
+checks stop warning on pages that are right, and the npm engine stops
+following a redirect loop. No check is added, no weight or ceiling moves, and
+contract v0.4.5 is unchanged. The hosted /score page and API change when the
+site deploys; the PyPI server's offline engine carries the v27 change with the
+next designesy-mcp release.
+
+**Which grades can move.** v26, v27, v38 and v43 move WARN to PASS where the
+page was right, so scores move up or not at all, with one exception: v27 now
+reads a field whose font size comes from a token, so a field set to a token
+under 16px FAILs where it read WARN (carbondesignsystem.com, below). The
+redirect limit can only turn a site that redirects more than three times into
+"could not read".
+
+### Fixed (engine 1.3.1)
+
+- **v26 skips any face named with the word "fallback"**, not only a name that
+  ends in it. A metric-matched stand-in drawn until the real face loads is not
+  a typeface choice. designesy.org's "Fraunces Fallback Tuned" (Times New
+  Roman under `size-adjust`) was counted: before, "4 families (recommended
+  ≤3): fraunces fallback tuned, fraunces, schibsted grotesk, atkinson
+  hyperlegible mono" (WARN); after, "3 family/families: fraunces, schibsted
+  grotesk, atkinson hyperlegible mono" (PASS). The match is on the whole word,
+  so a family called "Fallbackish" still counts.
+- **v27 reads `font-size: var(--token)` in a rule that styles a field** through
+  the `:root` tokens, before both the below-16px scan and the 16px floor test.
+  Before, `input, textarea, select { font-size: var(--text-body) }` with
+  `--text-body: 1rem` read WARN ("no explicit input font-size ≥16px
+  detected"), though it renders at 16px; after, PASS. A `0.875rem` token
+  FAILs ("0.875rem (14px)"). A `var()` that does not resolve reads as before.
+  Only rules whose selector styles the field itself are resolved (an `input`,
+  `textarea` or `select` element, or the exact class `.input` or `.field`, as
+  the subject; not a pseudo-element). Resolving every rule would have read
+  designesy.org's card caption `.field-card-meta { font-size:
+  var(--text-label) }` (12.8px) as an input below 16px, because v27's literal
+  scan matches `.field` anywhere in a selector; that literal scan is
+  unchanged.
+- **v38 strips keyboard hints written in lower case.** `<kbd>ctrl</kbd> <span
+  aria-hidden="true">+</span> <kbd>i</kbd>` reads "ctrl i" once the hidden
+  "+" is dropped, and was judged as words: designesy.org's flip button WARNed
+  as "Flip to the flame: ctrl  i". The modifier (ctrl, cmd, shift, alt,
+  option, command) now matches in any case when it stands as its own word,
+  followed by a "+key" chain or one letter after a space. A word after a space
+  is still a label: "Alt text" and "Option 2" are not eaten, and "Halt" keeps
+  its ending. "Find⌘K", "FindCtrlK" and "Save Ctrl+S" read as before.
+- **v38 knows get, set and try.** The check's own comment said "Get X", "Set
+  X" and "Try X" were allowed, but none of the three was in the verb list, so
+  "Get started" and "Try it free" WARNed on every site. Added with them, each
+  justified in the source as a verb when it leads a button label: flip, learn,
+  sign (in, up, out), join, expand, select, read. Left out because they are
+  common nouns too: switch, watch. explore, collapse, toggle, choose and
+  compare already passed by their ending. v38 stays a WARN-only heuristic.
+- **v43 counts `--destructive` as the error role**, the name shadcn/ui gives
+  it. Before, a shadcn theme with `--success`, `--warning`, `--destructive`
+  and `--info` found 3/4 families and reported error missing; after, 4/4.
+- **The npm engine follows at most three redirects.** `httpsFetch` re-checked
+  each redirect target against the SSRF guard but counted nothing, though its
+  comment said "Follow up to 3 redirects", so a redirect loop recursed without
+  end. A fourth redirect now fails closed, as a refused target does, and a
+  response reached through a redirect reports `redirected: true` with the last
+  hop's URL. The hosted route fetches through `safeFetch`, which already
+  stopped at five.
+
+### Not changed
+
+- **v42 is unchanged.** Tailwind CSS v4 writes only the theme variables a
+  project uses ("only used CSS variables will be generated in the final CSS
+  output", tailwindcss.com/docs/theme), so the 226 hue-named colour tokens
+  x.com ships are tokens its stylesheet uses, and v42's WARN on it is right.
+
+### Measured (engine 1.3.1)
+
+The calibration corpus (32 fixtures), the recorded parity page and every
+existing input of the offline golden give the same verdict, detail and score
+under 1.3.0 and 1.3.1; the golden gains eleven v27 inputs. The 30 leaderboard
+URLs, each fetched once on 2026-10-12 and scored by both builds on the same
+bytes (scope auto-detected; 26 fetched, nytimes.com, getdesy.com,
+awwwards.com and cssdesignawards.com did not answer). Scores move on two sites:
+
+| Site | 1.3.0 | 1.3.1 | Why |
+|---|---|---|---|
+| wikipedia.org | 83.8 B | 84.7 B | v38 WARN to PASS: "Read Wikipedia in your language" leads with a verb |
+| carbondesignsystem.com | 82.8 B | 81.8 B | v27 WARN to FAIL: `.cds--number input[type=text]` takes `var(--cds-body-compact-01-font-size)`, 0.875rem in its `:root`, and the page's search field is 14px too |
+
+www.designesy.org stays 100 A (it was already at the clamp); its v26, v27 and
+v38 move WARN to PASS. v38's detail lists fewer flagged labels on linear.app
+(38 to 37), zeroheight.com (7 to 4), radix-ui.com (2 to 1, "Sign in") and
+github.com (11 to 9), with the verdict still WARN. The other 19 are unchanged.
+
+---
+
 **Engine 1.3.0 and @designesy/score 0.8.0** (npm, not yet published). A page
 with a failing check can no longer score an A. The hosted MCP tools and
 /api/monitor change when the site deploys; the PyPI server's own code (the

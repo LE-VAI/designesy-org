@@ -57,6 +57,9 @@ const OUT = join(HERE, '..', 'corpus.json');
  * ceiling (broken-transition-all and broken-input-zoom 94.4 A to 89.9 B,
  * broken-status-hue-as-text 69.4 to 65, broken-status-hue-dark-scheme 70 C
  * to 65 D). No pinned verdict changes.
+ *
+ * Engine 1.3.1 (2026-10-12) adds no fixture either, and no fixture's verdict,
+ * detail or score moves under it (v26, v27, v38 and v43 accuracy fixes).
  */
 const CORPUS_VERSION = '1.3.0';
 
@@ -66,7 +69,7 @@ const CORPUS_VERSION = '1.3.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.3.0';
+const ENGINE_VERSION = '1.3.1';
 
 async function build() {
   const rows = await runCorpus();

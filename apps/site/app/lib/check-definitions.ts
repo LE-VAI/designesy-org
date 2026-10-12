@@ -200,5 +200,13 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      var() aliases, and a palette that role tokens alias
  *                      is not counted as hue names. The CHANGELOG entry
  *                      lists the leaderboard score movement.
+ *   1.3.1  2026-10-12  accuracy fixes, no new check. v26 skips any face named
+ *                      with the word "fallback" (a metric-matched stand-in);
+ *                      v27 reads font-size: var() in field rules through the
+ *                      :root tokens; v38 strips lower-case keycap hints and
+ *                      accepts get, set, try and a short list of CTA verbs;
+ *                      v43 counts --destructive as the error role. The npm
+ *                      engine stops after 3 redirects. The CHANGELOG entry
+ *                      lists what moves.
  */
-export const ENGINE_VERSION = '1.3.0';
+export const ENGINE_VERSION = '1.3.1';

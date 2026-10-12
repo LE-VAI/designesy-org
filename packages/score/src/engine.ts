@@ -261,28 +261,46 @@ const BROWSER_HEADERS: Record<string, string> = {
   'Upgrade-Insecure-Requests': '1',
 };
 
-function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000): Promise<{ ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string }> {
+/** Redirects httpsFetch follows before it gives up (engine 1.3.1). */
+const MAX_REDIRECT_HOPS = 3;
+
+type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string };
+
+/**
+ * GET a URL, following each 3xx with a Location by hand. Every redirect target
+ * is re-validated with isValidUrl first (the SSRF guard), and at most
+ * MAX_REDIRECT_HOPS redirects are followed. Until engine 1.3.1 the comment said
+ * "Follow up to 3 redirects" but nothing counted them, so a redirect loop
+ * recursed until the process gave out. A redirect past the limit fails closed,
+ * the same way a refused target does. A response reached through at least one
+ * redirect reports redirected: true and the final hop's URL as finalUrl; before
+ * 1.3.1 redirected was true only when the LAST response was itself a 3xx, so a
+ * followed redirect read redirected: false. `hop` counts the redirects already
+ * followed; callers leave it at 0.
+ */
+function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
     let resolved = false;
-    const done = (r: { ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string }) => {
+    const done = (r: HttpsFetchOutcome) => {
       if (resolved) return;
       resolved = true;
       resolve(r);
     };
     try {
       const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
-        // Follow one redirect manually (3xx → Location)
+        // Follow a redirect manually (3xx → Location)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           try {
             const next = new URL(res.headers.location, url).href;
             res.resume();
-            // SSRF guard: re-validate every redirect target before following it
-            if (!isValidUrl(next)) {
+            // SSRF guard: re-validate every redirect target before following
+            // it. Hop limit: a chain longer than MAX_REDIRECT_HOPS (a loop
+            // among them) fails closed the same way.
+            if (!isValidUrl(next) || hop >= MAX_REDIRECT_HOPS) {
               done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
               return;
             }
-            // Follow up to 3 redirects
-            httpsFetch(next, headers, timeoutMs).then(done);
+            httpsFetch(next, headers, timeoutMs, hop + 1).then(done);
             return;
           } catch { /* fall through */ }
         }
@@ -290,7 +308,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
         res.setEncoding('utf-8');
         res.on('data', (chunk: string) => { body += chunk; });
         res.on('end', () => {
-          done({ ok: (res.statusCode || 0) < 400, status: res.statusCode || 0, text: body, redirected: res.statusCode !== undefined && res.statusCode >= 300 && res.statusCode < 400, finalUrl: url });
+          done({ ok: (res.statusCode || 0) < 400, status: res.statusCode || 0, text: body, redirected: hop > 0, finalUrl: url });
         });
         res.on('error', () => done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url }));
       });
@@ -1090,7 +1108,13 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
     // the adjusted @font-face. Those are not additional typeface choices — they
     // are the same family's fallback metrics — so they must not count as
     // palette drift.
-    if (/\sfallback$/.test(stack)) continue;
+    //
+    // Engine 1.3.1: the WORD fallback anywhere in the name, not only as its
+    // last word. A hand-tuned face can carry a suffix after it: designesy.org's
+    // "Fraunces Fallback Tuned" is Times New Roman under size-adjust, drawn only
+    // before Fraunces loads, and `\sfallback$` counted it as a fourth family
+    // (v26 WARN, "4 families: fraunces fallback tuned, fraunces, ...").
+    if (/\bfallback\b/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -1098,6 +1122,55 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
   if (count <= 3) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'PASS', detail: `${count} family/families: ${list}` };
   if (count <= 5) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'WARN', detail: `${count} families (recommended ≤3): ${list}` };
   return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families, palette drift (recommended ≤3): ${list}` };
+}
+
+/**
+ * v27 helper (engine 1.3.1): does this rule's selector style a form field
+ * itself? True when the subject (the last compound) of any selector in the
+ * list is an input, textarea or select element, or carries the exact class
+ * .input or .field, and is not a pseudo-element (::placeholder does not set
+ * the size iOS Safari reads). ".field-card-meta", ".input-hint", "::selection",
+ * ".field label" and "user-select" are not fields.
+ */
+function isFieldSelector(selector: string): boolean {
+  const clean = selector.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  return splitCssTopLevel(clean, ',').some((part) => {
+    const compounds = part.trim().split(/\s*[>+~]\s*|\s+/);
+    const subject = compounds[compounds.length - 1] || '';
+    if (subject.indexOf('::') >= 0) return false;
+    return /(?:^|[^\w.#:-])(?:input|textarea|select)(?![\w-])/i.test(subject)
+      || /\.(?:input|field)(?![\w-])/i.test(subject);
+  });
+}
+
+/**
+ * v27 helper (engine 1.3.1): in each rule whose selector styles a field
+ * (isFieldSelector), every `font-size: var(...)` declaration is rewritten to
+ * its value from the :root token table, through substituteCssVars (var()
+ * chains, and a var()'s own fallback where no token declares the name). A
+ * value that does not resolve is left exactly as written, and so is every rule
+ * that does not style a field: v27's literal scan matches its keywords
+ * anywhere before a brace, so resolving var() in every rule would have read
+ * designesy.org's `.field-card-meta { font-size: var(--text-label) }` (12.8px,
+ * a card caption) as an input below 16px. Only values that start with var(
+ * are touched; calc(), clamp() and min()/max() stay as written, as before.
+ *
+ * The scan is anchored on each `font-size: var(` and reads its rule's selector
+ * backwards from the opening brace, so its cost is linear in the sheet. A
+ * whole-sheet rule regex (`([^{}]*)\{([^{}]*)\}`) is quadratic on a long
+ * @media prelude: measured at +4.5 s on five 43 KB preludes.
+ */
+function resolveFontSizeVars(css: string, tokens: Record<string, string>): string {
+  if (css.indexOf('var(') < 0) return css;
+  return css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, (decl: string, lead: string, value: string, offset: number) => {
+    const open = css.lastIndexOf('{', offset);
+    // Not inside a rule body (a stray declaration, or a brace closed between).
+    if (open < 0 || css.lastIndexOf('}', offset) > open) return decl;
+    const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
+    if (!isFieldSelector(css.slice(start, open))) return decl;
+    const sub = substituteCssVars(value, [tokens]);
+    return sub === null ? decl : lead + sub.trim();
+  });
 }
 
 /**
@@ -1126,12 +1199,20 @@ function hasZoomableField(html: string): boolean {
 // unchanged: a sub-16px input rule still FAILs and a declared floor still PASSes,
 // because both describe the stylesheet that fields rendered later by script
 // would also inherit.
-function checkInputFontFloor(css: string, html: string): CheckResult {
+//
+// Since engine 1.3.1 a font-size written as var() is read through the :root
+// token table first (resolveFontSizeVars), so `input { font-size:
+// var(--text-body) }` with `--text-body: 1rem` is the 16px floor it renders as.
+// Both regexes below read literals only; before 1.3.1 that rule read WARN ("no
+// explicit input font-size ≥16px detected") on designesy.org. A var() the table
+// cannot resolve is left as written, so it reads as it did before.
+function checkInputFontFloor(css: string, html: string, tokens: Record<string, string> = {}): CheckResult {
+  const sheet = resolveFontSizeVars(css, tokens);
   // Find input/textarea/select rules with font-size < 16px or < 1rem.
   const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
   const below: string[] = [];
   let m;
-  while ((m = inputRe.exec(css)) !== null) {
+  while ((m = inputRe.exec(sheet)) !== null) {
     const val = parseFloat(m[1]);
     const unit = m[2].toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
@@ -1141,8 +1222,8 @@ function checkInputFontFloor(css: string, html: string): CheckResult {
     // Also check: is there a global input font-size ≥16px? (e.g. `input { font-size: 1rem }`)
     // The strict form `input\s*\{` matches standalone rules; the grouped form
     // `input,...,{` matches selectors merged by CSS minifiers (e.g. `input,textarea,select{font-size:1rem}`).
-    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css)
-      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
+    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet)
+      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet);
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
     if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
     return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
@@ -1391,7 +1472,8 @@ function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
     const segments = name.toLowerCase().split(/[-_]/);
     if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
     if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;
-    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative'].includes(s))) families.error = true;
+    // 'destructive' is shadcn/ui's error role (--destructive); engine 1.3.1.
+    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative', 'destructive'].includes(s))) families.error = true;
     if (segments.some((s) => ['info', 'notice', 'informational'].includes(s))) families.info = true;
   }
   const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
@@ -3205,6 +3287,25 @@ const RECOGNIZED_BUTTON_COMMANDS = new Set([
   'find', 'replace', 'navigate', 'run', 'score', 'review', 'verify',
   'detect', 'assess', 'enforce', 'dismiss', 'analyze', 'inspect', 'check',
   'evaluate', 'validate', 'test', 'monitor', 'track', 'measure', 'scan',
+  // Engine 1.3.1. get, set and try: the comment in checkButtonTextVerb said
+  // "Get X", "Set X" and "Try X" were allowed, but none of the three was in
+  // this set, so "Get started" and "Try it free" read WARN on any site.
+  'get', 'set', 'try',
+  // Imperative CTA verbs that the suffix heuristic in isVerbLike misses (it
+  // already accepts explore, collapse, toggle, choose and compare by their -e
+  // ending). Each is read as a verb at the start of a button label, and none
+  // names a thing a button would be labelled with on its own:
+  //   flip    "Flip card", "Flip to the flame": a command, no noun label use
+  //   learn   "Learn more": verb only
+  //   sign    "Sign in", "Sign up", "Sign out": the noun reading does not
+  //           lead a button label
+  //   join    "Join the waitlist": verb only
+  //   expand  "Expand all", "Expand section": verb only
+  //   select  "Select all", "Select plan": an imperative in button use
+  //   read    "Read more", "Read the guide": an imperative in button use
+  // Left out on purpose: switch and watch, which are common nouns ("Switch",
+  // a toggle's name; "Watch", a product) as well as verbs.
+  'flip', 'learn', 'sign', 'join', 'expand', 'select', 'read',
 ]);
 
 function isVerbLike(word: string): boolean {
@@ -3306,12 +3407,25 @@ function checkButtonTextVerb(html: string): CheckResult {
   // label, not a shortcut, and must not be eaten.
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
+  // Engine 1.3.1: the same hint in any case. Keycaps are often written in
+  // lower case: <kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd>
+  // reads "ctrl  i" once the aria-hidden "+" is stripped, and TEXT_SHORTCUT_RE
+  // (capitalised modifiers, capital fused keys) read it as words. Here the
+  // modifier is case-insensitive but must stand as its own word (the start of
+  // the label or after a space), so "Halt" and "Adoption" keep their endings,
+  // and the adjacency rule stays: the key is a "+key" chain, or ONE letter
+  // after a space. A real word after a space ("Alt text") is a label and is
+  // not eaten; neither is a digit ("Option 2" names a choice).
+  const SPACED_SHORTCUT_RE =
+    /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:(?:\s*\+\s*|\s+)(?:ctrl|cmd|shift|alt|option|command))*(?:\s*\+\s*[a-z0-9]+|\s+[a-z])$/i;
+  const stripShortcut = (s: string): string =>
+    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(SPACED_SHORTCUT_RE, '').trim();
   while ((m = buttonRe.exec(html)) !== null) {
     let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     // Icon-only button with an accessible name: use the aria-label verb.
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
@@ -3331,7 +3445,7 @@ function checkButtonTextVerb(html: string): CheckResult {
   while ((m = roleButtonRe.exec(html)) !== null) {
     let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
     text = text.replace(ICON_PREFIX_RE, '').trim();
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
@@ -3386,7 +3500,9 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (RECOGNIZED_BUTTON_COMMANDS.has(firstWord)) continue;
     // Allow if first word is verb-like
     if (isVerbLike(firstWord)) continue;
-    // Allow "Get X", "Set X", "Try X" patterns (Get/Set/Try are in the set)
+    // "Get X", "Set X", "Try X" are allowed above: get, set and try are in
+    // RECOGNIZED_BUTTON_COMMANDS (since engine 1.3.1; this comment claimed it
+    // before they were).
     // If we get here, the first word is likely a noun → potential violation
     violations.push(`"${text}"`);
   }
@@ -4080,7 +4196,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
     checkFontFamilyCount(css, tokens),
-    checkInputFontFloor(css, html),
+    checkInputFontFloor(css, html, rawTokens),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
     checkSemanticColorVocabulary(tokens),
