@@ -3598,6 +3598,13 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      reaches 5px out; the flame flip's keycaps sit on that row, D69). Taken
      from the footer's own top padding, so nothing moves. */
   padding-top: var(--space-8);
+  /* The overflow clips at the padding box, and nothing padded the foot (the
+     shell pads the sides, the rule above the top). The contact link is the
+     last row, flush with this box's foot, so its ring (2px outline at a 3px
+     offset: 5px out, the 4px halo inside that) lost its bottom 5px on every
+     route (390px, 2026-10-11). Room below for the ring; the overflow still
+     contains the dock. */
+  padding-bottom: var(--space-8);
 }
 
 .footer-meta {
