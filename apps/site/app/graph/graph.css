@@ -253,7 +253,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 /* The stage number is an index, as on every row list: quiet at rest, the
    signal text only on contact. */
 .chain-cell-num {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 700;
   color: var(--muted-dim);
   letter-spacing: 0.05em;
@@ -274,7 +274,7 @@ html[data-motion="paused"] .chain-cell-main::after {
    stays, so the node (centred on it) does not move. */
 .chain-cell-title {
   font-family: var(--sans);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3rem;
   letter-spacing: -0.005em;
@@ -284,7 +284,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 }
 
 .chain-cell-definition {
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.55;
   margin-bottom: var(--space-fine-65);
@@ -301,7 +301,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 }
 
 .chain-cell-examples li {
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--muted-dim);
   line-height: 1.45;
   padding-left: var(--space-16);
@@ -321,7 +321,7 @@ html[data-motion="paused"] .chain-cell-main::after {
    beside or under it. */
 .chain-cell-fact dt {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -349,7 +349,7 @@ html[data-motion="paused"] .chain-cell-main::after {
   justify-content: space-between;
   gap: var(--space-12);
   min-height: 1.5rem;
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   text-decoration: none;
@@ -401,14 +401,14 @@ html[data-motion="paused"] .chain-cell-route:hover .chain-cell-route-arrow {
 /* The hand-off: the next stage's number (the face's index vocabulary) and
    its name in ink. */
 .chain-cell-next {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 500;
   line-height: 1.4;
   color: var(--ink);
 }
 
 .chain-cell-next-num {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }

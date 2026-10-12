@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Schibsted_Grotesk, Geist_Mono } from 'next/font/google';
+import { Fraunces, Schibsted_Grotesk, Atkinson_Hyperlegible_Mono } from 'next/font/google';
 import './globals.css';
 import { SiteAnalytics } from './lib/site-analytics';
 import { CuelumeBinder } from './lib/cuelume-binder';
@@ -83,11 +83,33 @@ const schibsted = Schibsted_Grotesk({
   ],
 });
 
-const geistMono = Geist_Mono({
+/*
+  Mono face for labels, URLs, timestamps, score units and code. Atkinson
+  Hyperlegible Mono replaced Geist Mono on 2026-10-12 (brand ledger D65).
+
+  Why: it is the Braille Institute's low-vision face (SIL OFL 1.1). Every
+  confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct, and the site's mono
+  text is exactly the text a reader cannot guess from context: hosts, check
+  IDs, scores, dates and token names. That fits "Inclusion is structural"
+  better than a mono picked for looks.
+
+  Cost, measured from the font files: the advance is 0.632em (Geist Mono 0.6em),
+  so a mono run is 5.3% wider; the x-height is 0.496em (Geist Mono 0.53em), so
+  lower case reads a little smaller at one size. The tight surfaces were
+  re-fitted for the width.
+
+  Weights: one variable file, 200 to 800 (the site uses 400 to 700).
+  next/font has no metrics for this family, so it generates no adjusted
+  fallback; the first two fallbacks are local monos sized to Atkinson's
+  advance and line metrics in globals.css (top), so the swap keeps widths.
+*/
+const atkinsonMono = Atkinson_Hyperlegible_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-mono',
   fallback: [
+    'Mono Cascadia Fallback',
+    'Mono Consolas Fallback',
     'ui-monospace',
     'SF Mono',
     'Cascadia Code',
@@ -194,7 +216,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${schibsted.variable} ${geistMono.variable}`}
+      className={`${fraunces.variable} ${schibsted.variable} ${atkinsonMono.variable}`}
     >
       <head>
         {/* Set js-ready before CSS paints so [data-reveal] hidden state

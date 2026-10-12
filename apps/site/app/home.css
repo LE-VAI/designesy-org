@@ -3,25 +3,12 @@
    this to the / route only. Class names are un-hashed.
    The JSX keeps using className="hero" etc. unchanged. */
 
-/* --- Type scale, home-scoped (brand D68) ----------------------------------
-   The Major Third ladder the brand ruled for the site (x1.25 on a 16px root):
-   label 12.8px is the floor for every text node, mono caps included; body
-   16px is reading and UI text. Below the lead step, hierarchy comes from
-   weight and colour, not from more sizes. Display titles keep their clamps
-   (D58). Declared on the home root and not on :root: these names join :root
-   and the contract with the next contract bump, and this block is deleted
-   then. Every size this page sets below the lead step reads one of these.
-   The two role="img" instrument drawings (the verify console's face and the
-   inspection window) are exempt from the floor as images, like the D61
-   badge: their aria-labels carry what they show (D72). */
-.home {
-  --text-label: 0.8rem;
-  --text-body: 1rem;
-  --text-lead: 1.25rem;
-  --text-h3: 1.563rem;
-  --text-h2: 1.953rem;
-  --text-h1: 2.441rem;
-}
+/* --- Type scale (brand D68) ------------------------------------------------
+   The --text-* steps live on :root (globals.css) and in the contract
+   (v0.4.5); this sheet reads them. Every size this page sets below the lead
+   step reads one of them. The two role="img" instrument drawings (the verify
+   console's face and the inspection window) are exempt from the floor as
+   images, like the D61 badge: their aria-labels carry what they show (D72). */
 
 .hero {
   position: relative;

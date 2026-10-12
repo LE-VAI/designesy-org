@@ -341,10 +341,9 @@ export default function BrandPage() {
             </li>
             <li className="brand-type-row">
               <span className="brand-mono">Data · Atkinson Hyperlegible Mono</span>
-              {/* The data face is decided (D65) and ships separately: this line
-                  renders in the site's mono token, --mono, so it shows today's
-                  face until D65 points that token at the new one, and then
-                  changes with it and with no edit here. */}
+              {/* The data face (D65) is the site's mono token, --mono, which
+                  points at Atkinson Hyperlegible Mono: this line renders in the
+                  face it names. */}
               <span className="brand-type-data">
                 {DATA_PARTS.map((part, i) => (
                   <span key={part}>

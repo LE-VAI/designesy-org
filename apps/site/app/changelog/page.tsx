@@ -404,6 +404,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'The contract states the identity v1 colour system that designesy.org serves. It changes token values only: no check, weight or verdict changed.',
     source: 'Designesy design system contract v0.4.4, adoption history',
   },
+
+  // ── v0.4.5: the mono face and the type scale ──
+  {
+    version: 'v0.4.5',
+    date: '2026-10-12',
+    dimension: 'cadence',
+    change: 'modified',
+    title: 'Atkinson Hyperlegible Mono and the type scale',
+    description:
+      'Atkinson Hyperlegible Mono replaces Geist Mono for labels, URLs, timestamps, score units and code. The type scale becomes six tokens on a Major Third over a 16px root: --text-label 0.8rem, the floor for all text, --text-body 1rem, --text-lead 1.25rem, --text-h3 1.563rem, --text-h2 1.953rem and --text-h1 2.441rem, no two adjacent steps closer than 25%.',
+    rationale:
+      "The mono text on this site is the text a reader cannot guess from context: hosts, check IDs, scores and dates. Atkinson Hyperlegible Mono is the Braille Institute's face for low-vision readers, and it draws every confusable pair (0 and O, 1, l and I, 5 and S, 8 and B) distinct. Named sizes replace one-off values, so a page cannot drift off the scale. No check, weight or verdict changed.",
+    source: 'Designesy design system contract v0.4.5, adoption history; Atkinson Hyperlegible Mono 2.001 (SIL Open Font License 1.1)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -435,6 +449,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.3 · engine 1.2.0', date: '2026-10-09', checks: 44, title: 'Status text and paused entrances', summary: 'v44 status colors used as text meet contrast in every theme; v45 pausing motion keeps content visible. S2 and S8 stop firing on components and prose. The contract is unchanged.' },
   { version: 'v0.4.4 · engine 1.3.0', date: '2026-10-11', checks: 44, title: 'No A beside a failing check', summary: 'Any FAIL caps the score at 89.9 and a v44 FAIL at 65; v34 fails only a named AI chat surface; v06 and v22 read CSS Color 4; v42 and v43 follow aliases. The contract is unchanged.' },
   { version: 'v0.4.4', date: '2026-10-11', checks: 44, title: 'Identity v1 colour system', summary: 'Azure replaces the old blue as --signal, with Deep Azure for light-theme text and new action tokens. Token values only: no check, weight or verdict changed.' },
+  { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

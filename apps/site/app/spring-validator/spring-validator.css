@@ -43,7 +43,7 @@
 
 .sv-eyebrow {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.08em;
@@ -93,7 +93,7 @@
   border-radius: 0;
   background: var(--surface);
   color: var(--muted);
-  font: 500 0.8rem/1.2 var(--sans);
+  font: 500 var(--text-label)/1.2 var(--sans);
   text-align: center;
   cursor: pointer;
   transition: transform 160ms var(--ease-out);
@@ -243,7 +243,7 @@
 .sv-bar-state {
   flex-wrap: wrap;
   border-top: 1px solid var(--line-faint);
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--muted);
 }
 
@@ -266,7 +266,7 @@
 
 .sv-title {
   margin: 0;
-  font: 600 0.8rem/1.2 var(--sans);
+  font: 600 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0;
   color: var(--ink);
   white-space: nowrap;
@@ -279,7 +279,7 @@
   border-radius: var(--radius-sm);
   background: var(--surface-soft);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -342,14 +342,14 @@
 }
 
 .sv-answer-word {
-  font: 600 1.563rem/1.15 var(--sans);
+  font: 600 var(--text-h3)/1.15 var(--sans);
   letter-spacing: -0.015em;
   color: var(--sv-hue);
 }
 
 .sv-answer-reason {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
   text-wrap: pretty;
@@ -455,7 +455,7 @@ html[data-motion="paused"] .sv-answer-glow {
   align-items: center;
   gap: var(--space-6);
   min-height: var(--space-44);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   cursor: pointer;
 }
@@ -528,7 +528,7 @@ html[data-motion="paused"] .sv-answer-glow {
 /* Labels sit on a halo of the face's own material (paint-order: stroke), so
    a grid line or the fallback curve never cuts through a glyph. */
 .sv-chart-label {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   fill: var(--muted);
   paint-order: stroke;
   stroke: var(--surface-raised);
@@ -549,13 +549,13 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-note {
   max-width: 62ch;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--muted);
 }
 
 .sv-note code {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
 }
 
 /* --- Side: parameters over readouts, on one module --- */
@@ -607,13 +607,13 @@ html[data-motion="paused"] .sv-answer-glow {
 }
 
 .sv-param-label {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--muted);
 }
 
 .sv-param-value {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -621,7 +621,7 @@ html[data-motion="paused"] .sv-answer-glow {
 }
 
 .sv-param-unit {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--muted-dim);
 }
@@ -638,7 +638,7 @@ html[data-motion="paused"] .sv-answer-glow {
 }
 
 .sv-metric-label {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.35;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -654,7 +654,7 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-metric-value {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -662,7 +662,7 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-metric-hint {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -695,7 +695,7 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-checklist-title {
   margin: 0 0 var(--space-12);
-  font: 600 1rem/1.3 var(--sans);
+  font: 600 var(--text-body)/1.3 var(--sans);
   letter-spacing: 0;
   color: var(--ink);
 }
@@ -707,7 +707,7 @@ html[data-motion="paused"] .sv-answer-glow {
    group opens on a hairline, 16px under the last row of the first. */
 .sv-checks-head {
   margin: 0 0 var(--space-10);
-  font: 600 0.8rem/1.35 var(--sans);
+  font: 600 var(--text-label)/1.35 var(--sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -750,7 +750,7 @@ html[data-motion="paused"] .sv-answer-glow {
   margin-top: 0.1rem;
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px currentColor;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 700;
   color: color-mix(in srgb, var(--warn) 70%, var(--ink));
 }
@@ -778,14 +778,14 @@ html[data-motion="paused"] .sv-answer-glow {
 }
 
 .sv-check-label {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--ink);
 }
 
 .sv-check-detail {
   margin-top: 0.15rem;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -809,7 +809,7 @@ html[data-motion="paused"] .sv-answer-glow {
   min-height: 2.5rem;
   padding: var(--space-6) var(--space-16);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--muted);
 }
 
@@ -820,7 +820,7 @@ html[data-motion="paused"] .sv-answer-glow {
   border: 0;
   background: none;
   color: var(--ink);
-  font: 0.8rem/1.6 var(--mono);
+  font: var(--text-label)/1.6 var(--mono);
   tab-size: 2;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -836,12 +836,12 @@ html[data-motion="paused"] .sv-answer-glow {
 }
 
 .sv-cta .button {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .sv-cta-note {
   margin-inline-start: auto;
-  font-size: 1rem;
+  font-size: var(--text-body);
   color: var(--muted-dim);
 }
 

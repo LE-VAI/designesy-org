@@ -7,7 +7,7 @@
    serif belongs to the page title. */
 .layer-heading {
   font-family: var(--sans);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 700;
   letter-spacing: -0.005em;
   color: var(--ink);
@@ -175,7 +175,7 @@
   margin: 0 0 var(--space-12);
   padding: 0;
   list-style: none;
-  font: 400 0.8rem/1.5 var(--mono);
+  font: 400 var(--text-label)/1.5 var(--mono);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -195,7 +195,7 @@
   border-radius: var(--radius);
   background: var(--mat-reading);
   color: var(--ink);
-  font: 400 0.8rem/1.6 var(--mono);
+  font: 400 var(--text-label)/1.6 var(--mono);
 }
 
 .mcp-pre > code {
@@ -231,7 +231,7 @@
    executable tools asked for an undefined --accent and rendered in ink). */
 .mcp-kind {
   margin-inline-start: var(--space-8);
-  font: 600 0.8rem/1 var(--sans);
+  font: 600 var(--text-label)/1 var(--sans);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--muted);
@@ -279,7 +279,7 @@
    caption grey (--muted-dim at 13px, about Lc 38) did not. */
 .mcp-tools .row-meta {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.55;
 }
 
@@ -288,7 +288,7 @@
    serif). */
 .mcp-client {
   margin: 0 0 var(--space-8);
-  font: 700 1rem/1.35 var(--sans);
+  font: 700 var(--text-body)/1.35 var(--sans);
   letter-spacing: -0.005em;
   color: var(--ink);
 }

@@ -32,7 +32,7 @@ const T = OG_T;
  * next/font WOFF2 files, and with no fonts passed every card rendered in a
  * default sans that matched nothing on the site. Read once per process.
  * Fraunces 600 sets titles, Fraunces 700 (the 144pt cut) the score numerals,
- * Schibsted Grotesk the running text and Geist Mono the labels.
+ * Schibsted Grotesk the running text and Atkinson Hyperlegible Mono the labels.
  */
 type OgFont = { name: string; data: Buffer; weight: 400 | 500 | 600 | 700; style: 'normal' };
 let fontCache: OgFont[] | null = null;
@@ -44,7 +44,7 @@ export function ogFonts(): OgFont[] {
     { name: 'Fraunces', data: readFileSync(join(dir, 'Fraunces-700.ttf')), weight: 700, style: 'normal' },
     { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-500.ttf')), weight: 500, style: 'normal' },
     { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-700.ttf')), weight: 700, style: 'normal' },
-    { name: 'Geist Mono', data: readFileSync(join(dir, 'GeistMono-400.ttf')), weight: 400, style: 'normal' },
+    { name: 'Atkinson Hyperlegible Mono', data: readFileSync(join(dir, 'AtkinsonHyperlegibleMono-400.ttf')), weight: 400, style: 'normal' },
   ];
   return fontCache;
 }
@@ -126,7 +126,7 @@ function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
 
 /**
  * Portable share card for designesy.org handoffs (identity v1, the brand-world
- * og-generic composition): the lockup, a Geist Mono eyebrow, the Fraunces
+ * og-generic composition): the lockup, a mono eyebrow, the Fraunces
  * claim, the lede, and the page's icon in a raised tile. The VAI link is the
  * quiet text "A VAI project" (D24).
  * Used by route-level opengraph-image files.
@@ -175,7 +175,7 @@ export function renderOgCard({
             <div
               style={{
                 display: 'flex',
-                fontFamily: '"Geist Mono"',
+                fontFamily: '"Atkinson Hyperlegible Mono"',
                 fontSize: 18,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -202,7 +202,7 @@ export function renderOgCard({
           <div
             style={{
               display: 'flex',
-              fontFamily: '"Geist Mono"',
+              fontFamily: '"Atkinson Hyperlegible Mono"',
               fontSize: 20,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -250,7 +250,7 @@ export function renderOgCard({
             marginTop: 'auto',
           }}
         >
-          <div style={{ display: 'flex', fontFamily: '"Geist Mono"', fontSize: 22, color: T.muted }}>{path}</div>
+          <div style={{ display: 'flex', fontFamily: '"Atkinson Hyperlegible Mono"', fontSize: 22, color: T.muted }}>{path}</div>
           {endorsement ? (
             <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
           ) : null}
