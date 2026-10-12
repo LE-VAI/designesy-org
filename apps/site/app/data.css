@@ -55,6 +55,16 @@
 .dx [data-grade="d"] { --tone: var(--grade-d); --tone-ink: var(--grade-d-ink); }
 .dx [data-grade="f"] { --tone: var(--grade-f); --tone-ink: var(--grade-f-ink); }
 
+/* A chip sets its letter on its own 14% tint, and a row under the pointer
+   lifts the ground again, so the plain -ink (tuned for bare surfaces, D18)
+   measured as low as 4.13:1 (light A on the self row) and 4.34:1 (dark F on a
+   hovered row). Drawn 80% -ink and 20% --ink, the letter keeps its grade's
+   hue and holds 5.05:1 or more in light and 5.34:1 or more in dark, at rest
+   and hovered, the self row included. */
+.dx .dx-grade[data-grade] {
+  color: color-mix(in srgb, var(--tone-ink) 80%, var(--ink));
+}
+
 /* --- Head extras: the page's actions under its thesis ------------------- */
 
 .dx-actions {
