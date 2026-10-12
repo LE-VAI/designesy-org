@@ -93,7 +93,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
   },
   "https://www.designesy.org": {
     "cadence": { score: 95.8, weight: 18, pass: 11, fail: 0, warn: 1, skip: 0 },
-    "accessibility": { score: 100, weight: 15, pass: 7, fail: 0, warn: 0, skip: 0 },
+    "accessibility": { score: 92.9, weight: 15, pass: 6, fail: 0, warn: 1, skip: 0 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 5, fail: 0, warn: 0, skip: 0 },
     "tokens": { score: 100, weight: 9, pass: 2, fail: 0, warn: 0, skip: 0 },

@@ -63,11 +63,11 @@
   "https://www.designesy.org": {
     "score": 100,
     "grade": "A",
-    "pass": 40,
+    "pass": 38,
     "fail": 0,
-    "warn": 1,
+    "warn": 3,
     "skip": 0,
-    "tokens": 222,
+    "tokens": 227,
     "scoredAt": "2026-10-12"
   },
   "https://designesy.ai.studio": {
@@ -108,9 +108,8 @@
     "fail": 2,
     "warn": 8,
     "skip": 12,
-    "tokens": 183,
-    "scoredAt": "2026-10-11",
-    "unreachable": true
+    "tokens": 182,
+    "scoredAt": "2026-10-12"
   },
   "https://roastbyai.com": {
     "score": 81.7,
@@ -260,7 +259,7 @@
     "fail": 4,
     "warn": 6,
     "skip": 8,
-    "tokens": 577,
+    "tokens": 597,
     "scoredAt": "2026-10-12"
   },
   "https://notion.so": {
