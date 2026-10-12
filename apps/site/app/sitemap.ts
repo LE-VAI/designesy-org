@@ -222,6 +222,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.55,
     },
     {
+      url: `${BASE}/brand`,
+      lastModified: NOW,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${BASE}/continuity`,
       lastModified: NOW,
       changeFrequency: 'weekly',
