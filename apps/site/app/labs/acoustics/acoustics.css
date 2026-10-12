@@ -14,7 +14,7 @@
 }
 
 .cue-pref-note {
-  font-size: 0.85rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -222,7 +222,7 @@ html[data-audio="on"] .cue-rack-off {
 }
 
 .cue-cell-cue {
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;

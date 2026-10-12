@@ -751,20 +751,20 @@
 
 .cs-score {
   padding-bottom: 0.55rem;
-  font: 500 1.5rem/1.25 var(--mono);
+  font: 500 1.563rem/1.25 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 /* The superseded verdict: smaller and quieter, still above 4.5:1. */
 .cs-glyph.is-was {
-  font-size: 2rem;
+  font-size: 1.953rem;
   color: var(--muted);
 }
 
 .cs-score.is-was {
   padding-bottom: 0.3rem;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 
@@ -785,7 +785,7 @@
 }
 
 .cs-glyph.is-projected {
-  font-size: 2rem;
+  font-size: 1.953rem;
   color: var(--muted);
 }
 
@@ -811,14 +811,14 @@
 .cs-side-note,
 .cs-face-note {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
 }
 
 .cs-side-note b {
-  font: 600 0.95rem/1 var(--mono);
+  font: 600 0.8rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ok-ink);
 }
@@ -934,7 +934,7 @@
 }
 
 .cs-post-label {
-  font: 500 0.82rem/1.3 var(--sans);
+  font: 500 0.8rem/1.3 var(--sans);
   color: var(--ink);
 }
 
@@ -1140,7 +1140,7 @@
    probe in "617 views" and "9/9 passed"), hence the 1px. */
 .cs-unit {
   padding-bottom: calc(0.7rem - 1px);
-  font: 500 0.86rem/1 var(--sans);
+  font: 500 0.8rem/1 var(--sans);
   color: var(--muted);
 }
 
@@ -1148,7 +1148,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: 2.2rem;
+  font-size: 2.441rem;
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -1156,7 +1156,7 @@
 
 .cs-readout-sub {
   margin: 0;
-  font: 500 0.86rem/1.4 var(--mono);
+  font: 500 0.8rem/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }

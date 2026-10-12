@@ -603,7 +603,7 @@
    side pane used to list it apart from the row it describes. */
 .eg-group-note {
   margin: var(--space-10) 0 0;
-  font-size: 0.8rem;
+  font-size: 1rem;
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -735,7 +735,7 @@
 
 .eg-cell-label {
   align-self: end;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 500;
   line-height: 1.3;
   color: var(--ink);
@@ -891,7 +891,7 @@
 
 .eg-side-note {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -920,7 +920,7 @@
 }
 
 .eg-score {
-  font: 500 1.5rem/1 var(--mono);
+  font: 500 1.563rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -942,7 +942,7 @@
 /* What a named verdict is made of ("Contract, drift and readiness ..."). */
 .eg-verdict-note {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 1rem;
   line-height: 1.4;
   color: var(--muted);
 }
@@ -989,7 +989,7 @@
 }
 
 .eg-verdict-row.is-rest .eg-grade {
-  font-size: 1.5rem;
+  font-size: 1.563rem;
   line-height: 1;
 }
 
@@ -1021,7 +1021,7 @@
 
 .eg-running-line {
   margin: 0;
-  font: 500 0.92rem/1.4 var(--sans);
+  font: 500 1rem/1.4 var(--sans);
   color: var(--ink);
 }
 
@@ -1113,7 +1113,7 @@
 }
 
 .eg-tally b {
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -1154,7 +1154,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -1164,14 +1164,14 @@
 }
 
 .eg-start-detail {
-  font-size: 0.82rem;
+  /* The finding shows whole, unclamped. At the body size (D68) the drift
+     detail needs four lines in the side pane at 1440 and six at 390, and a
+     three- or five-line clamp cut its last clause ("(0 runtime tokens
+     excluded)"). */
+  font-size: 1rem;
   line-height: 1.45;
   color: var(--muted);
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .eg-share {
@@ -1193,7 +1193,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
-  font: 500 0.8rem/1 var(--sans);
+  font: 500 1rem/1 var(--sans);
   text-decoration: none;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -1236,7 +1236,7 @@
 
 .eg-figs dd {
   margin: 0;
-  font: 500 1.35rem/1.1 var(--mono);
+  font: 500 1.25rem/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -1263,7 +1263,7 @@
 .eg-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1329,7 +1329,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.84rem;
+  font-size: 1rem;
   line-height: 1.45;
   color: var(--ink);
 }
@@ -1375,7 +1375,7 @@
 }
 
 .eg-watch-host {
-  font: 500 0.86rem/1.3 var(--mono);
+  font: 500 0.8rem/1.3 var(--mono);
 }
 
 /* Before a run: a reference drawn from the engine's contract. */
@@ -1403,7 +1403,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-12);
-  font-size: 0.86rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1411,7 +1411,7 @@
 
 .eg-ref dd {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 1rem;
   line-height: 1.45;
   color: var(--muted);
 }
@@ -1459,7 +1459,7 @@
 
 .eg-probe-title {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1481,7 +1481,7 @@
 
 .eg-probe dd {
   margin: 0 0 var(--space-6);
-  font-size: 0.86rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -1763,7 +1763,7 @@
   align-items: center;
   gap: var(--space-8);
   min-width: 0;
-  font-size: 0.84rem;
+  font-size: 1rem;
 }
 
 .eg-diff-mid > .eg-lamp {
@@ -1909,7 +1909,7 @@
 
 .eg-file .eg-cell-label {
   align-self: start;
-  font: 500 0.84rem/1.25 var(--mono);
+  font: 500 0.8rem/1.25 var(--mono);
   overflow-wrap: anywhere;
 }
 
@@ -1944,7 +1944,7 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-12);
-  font: 500 0.86rem/1.3 var(--mono);
+  font: 500 0.8rem/1.3 var(--mono);
   color: var(--ink);
 }
 
@@ -2042,7 +2042,7 @@
 }
 
 .eg-weight-name {
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -2146,7 +2146,7 @@
 .eg-engine-name {
   display: grid;
   gap: var(--space-4);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -2244,7 +2244,7 @@
 
 .eg-engine-score {
   justify-self: end;
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2375,7 +2375,7 @@
 
 .mt-axis-desc {
   margin: var(--space-8) 0 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -2402,7 +2402,7 @@
   column-gap: var(--space-12);
   margin: 0 0 var(--mt-prompt-gap, var(--space-12));
   padding-inline-start: var(--space-14);
-  font-size: var(--mt-prompt-size, 0.98rem);
+  font-size: var(--mt-prompt-size, 1rem);
   font-weight: 600;
   line-height: var(--mt-prompt-lh, 1.4);
   color: var(--ink);
@@ -2434,7 +2434,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
   color: var(--ink);
-  font: 400 0.9rem/1.4 var(--sans);
+  font: 400 1rem/1.4 var(--sans);
   text-align: left;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -2551,7 +2551,7 @@ button.mt-row {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  font-size: 0.88rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.3;
 }
@@ -2587,7 +2587,7 @@ button.mt-row {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 0.8rem/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2611,7 +2611,7 @@ button.mt-row {
 }
 
 .mt-overall-stage {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -2741,13 +2741,13 @@ button.mt-row {
 }
 
 .eg-row-title {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.35;
 }
 
 .eg-row-detail {
-  font-size: 0.86rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -2782,7 +2782,7 @@ button.mt-row {
   display: grid;
   gap: var(--space-4);
   padding: 0 var(--space-16) var(--space-16) calc(var(--space-16) + 1.4rem + 3rem + 2 * var(--space-12));
-  font-size: 0.86rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2824,7 +2824,7 @@ button.mt-row {
   padding: var(--space-20);
   border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--muted);
 }
 
@@ -2835,7 +2835,7 @@ button.mt-row {
 
 .eg-error p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 1rem;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2903,7 +2903,7 @@ button.mt-row {
 
 .eg-step-title {
   margin: var(--space-6) 0 0;
-  font-size: 0.98rem;
+  font-size: 1rem;
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink);
@@ -2911,7 +2911,7 @@ button.mt-row {
 
 .eg-step p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 1rem;
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -2921,7 +2921,7 @@ button.mt-row {
    ("--md-" over "sys-color-primary" on /m3-bridge), set in the prose's
    code face. */
 .eg-step code {
-  font: 400 max(0.8rem, 0.88em)/1 var(--mono);
+  font: 400 inherit/1 var(--mono);
   color: var(--ink);
   white-space: nowrap;
 }
@@ -3063,7 +3063,7 @@ button.mt-row {
 }
 
 .eg-prose code {
-  font: 400 max(0.8rem, 0.88em)/1 var(--mono);
+  font: 400 inherit/1 var(--mono);
   color: var(--ink);
 }
 
@@ -3107,7 +3107,7 @@ button.mt-row {
 }
 
 .m3-pipe b {
-  font: 500 1.35rem/1.1 var(--mono);
+  font: 500 1.25rem/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -3225,7 +3225,7 @@ button.mt-row {
   place-items: center;
   min-height: 6rem;
   color: var(--muted-dim);
-  font-size: 1.1rem;
+  font-size: 1rem;
   letter-spacing: 0.1em;
 }
 
@@ -3280,12 +3280,12 @@ button.mt-row {
 }
 
 .eg-go-title {
-  font-size: 0.98rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
 .eg-go-desc {
-  font-size: 0.86rem;
+  font-size: 1rem;
   line-height: 1.45;
   color: var(--muted);
 }

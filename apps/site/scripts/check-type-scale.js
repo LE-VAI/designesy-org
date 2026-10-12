@@ -48,7 +48,7 @@ const SITE = path.join(__dirname, '..');
 const LADDER = ['0.8rem', '1rem', '1.25rem', '1.563rem', '1.953rem', '2.441rem'];
 
 /** On: sizes must be one of the six steps (D68). Off: the floor alone (D59). */
-const ENFORCE_LADDER = false;
+const ENFORCE_LADDER = true;
 
 /** The sheets on the scale. Add a sheet here once its sizes are moved. */
 const COVERED = [

@@ -353,7 +353,7 @@
 .kv-mono,
 .kv-cell > dd.kv-mono {
   font-family: var(--mono);
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -374,7 +374,7 @@
 }
 
 .kv-cell > dd.kv-note {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--muted);
 }
@@ -406,7 +406,7 @@
 
 .kv-figure-cap {
   max-width: 14rem;
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   color: var(--muted);
 }
@@ -421,7 +421,7 @@
 }
 
 .kv-cell.is-foot > dd {
-  font: 500 0.8125rem/1.45 var(--mono);
+  font: 500 0.8rem/1.45 var(--mono);
   color: var(--muted);
 }
 
@@ -523,7 +523,7 @@
    as it is written in the machine export. */
 .row-title.contract-ident {
   font-family: var(--mono);
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -577,7 +577,7 @@
 .row-side.report-weight > .report-weight-num {
   grid-column: 2;
   font-family: var(--sans);
-  font-size: 2rem;
+  font-size: 1.953rem;
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -589,7 +589,7 @@
    column; it drops to 1.5rem there so it does not outweigh the title. */
 @container rows (width < 64rem) {
   .row-side.report-weight > .report-weight-num {
-    font-size: 1.5rem;
+    font-size: 1.563rem;
   }
 }
 

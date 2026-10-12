@@ -43,7 +43,7 @@
 }
 
 .badge-variant-label {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -307,7 +307,7 @@
 
 .inline-code {
   font-family: var(--mono);
-  font-size: max(0.8rem, 0.8em);
+  font-size: inherit;
   padding: var(--space-fine-10) var(--space-fine-30);
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -332,7 +332,7 @@
   max-width: 66ch;
   position: relative;
   padding-left: var(--space-32);
-  font-size: 0.875rem;
+  font-size: 1rem;
   line-height: 1.55;
   color: var(--muted);
   counter-increment: badge-step;
@@ -379,7 +379,7 @@
 }
 
 .badge-grade-table .badge-grade-min {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -387,7 +387,7 @@
 
 .definition .definition-note {
   margin-top: var(--space-12);
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   color: var(--muted);
 }
@@ -398,13 +398,13 @@
   }
 
   .badge-steps li {
-    font-size: 0.8rem;
+    font-size: 1rem;
   }
 }
 
 @media (max-width: 720px) {
   .badge-steps li {
-    font-size: 0.85rem;
+    font-size: 1rem;
     padding-left: var(--space-28);
   }
 

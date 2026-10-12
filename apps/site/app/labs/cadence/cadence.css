@@ -60,14 +60,14 @@
 }
 
 .demo-tracking-row > .demo-tracking-heading {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ink);
 }
 
 .demo-tracking-row > .demo-tracking-body {
-  font-size: 0.9rem;
+  font-size: 1rem;
   letter-spacing: 0;
   color: var(--ink);
 }
@@ -101,7 +101,7 @@
 }
 
 .demo-body-lh {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.55;
   color: var(--muted);
   margin: 0;
@@ -142,7 +142,7 @@
   display: grid;
   grid-template-columns: 2.5rem minmax(3.5rem, 1fr);
   gap: var(--space-12);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--ink);
 }
 
@@ -163,7 +163,7 @@
 }
 
 .demo-select {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--ink);
   line-height: 1.55;
   user-select: text;

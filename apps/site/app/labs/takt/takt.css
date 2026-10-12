@@ -34,7 +34,7 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   padding: var(--space-fine-70) var(--space-24);
   cursor: pointer;
