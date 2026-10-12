@@ -3565,7 +3565,8 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 
 .footer {
   border-top: 1px solid var(--line);
-  padding: var(--space-48) 0 var(--space-40);
+  /* 48px above the content in all: 40 here and 8 inside .footer-inner. */
+  padding: var(--space-40) 0 var(--space-40);
   margin-top: var(--space-32);
 }
 
@@ -3593,6 +3594,10 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      still contain the dock. */
   min-width: 0;
   overflow: hidden;
+  /* Room inside the clip for a focus ring on the first row (the house ring
+     reaches 5px out; the flame flip's keycaps sit on that row, D69). Taken
+     from the footer's own top padding, so nothing moves. */
+  padding-top: var(--space-8);
 }
 
 .footer-meta {

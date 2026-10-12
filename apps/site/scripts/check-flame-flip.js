@@ -487,6 +487,23 @@ async function keyboardRun(browser, theme) {
     let changed = 0;
     for (let y = 0; y < a.h; y++) for (let x = 0; x < a.w; x++) if (!near(a.px(x, y), b.px(x, y), 24)) changed++;
     if (changed < (box.w + box.h) * 2 * DSF) failures.push(`focus ring changes ${changed} px, under the box perimeter`);
+    // The ring shows on every side: something changes in each band from 1 to
+    // 7px outside the box (a parent's overflow once clipped the top).
+    const pad = 8 * DSF;
+    const bw = Math.round(box.w * DSF);
+    const bh = Math.round(box.h * DSF);
+    const band = (x0, y0, x1, y1) => {
+      let n = 0;
+      for (let y = Math.max(0, y0); y < Math.min(a.h, y1); y++) for (let x = Math.max(0, x0); x < Math.min(a.w, x1); x++) if (!near(a.px(x, y), b.px(x, y), 24)) n++;
+      return n;
+    };
+    const sides = {
+      top: band(pad, pad - 7 * DSF, pad + bw, pad - DSF),
+      bottom: band(pad, pad + bh + DSF, pad + bw, pad + bh + 7 * DSF),
+      left: band(pad - 7 * DSF, pad, pad - DSF, pad + bh),
+      right: band(pad + bw + DSF, pad, pad + bw + 7 * DSF, pad + bh),
+    };
+    for (const [side, n] of Object.entries(sides)) if (n < 4) failures.push(`focus ring: nothing drawn on the ${side} (${n} px changed)`);
 
     // Enter and Space on the focused button.
     for (const key of ['Enter', 'Space']) {
