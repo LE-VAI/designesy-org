@@ -13396,12 +13396,13 @@ select {
   gap: var(--space-12);
   min-width: 0;
 }
-/* Four keys in 276px of text: an 8px gap keeps them on one line in the
-   311px a 390 phone gives the score form (a 12px gap needed 312). */
+/* Four keys on one line in the 311px a 390 phone gives the score form. At
+   the 12.8px floor (D59) the 8px gap and 6px swatch margin wrapped it; a 6px
+   gap and a 4px margin keep it to one line (results-readout R2). */
 .rs-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-6) var(--space-8);
+  gap: var(--space-6) var(--space-6);
   font-size: 0.8rem;
   /* A set line, so the two-column layout can drop the readout to the first
      row exactly (below). */
@@ -13413,7 +13414,7 @@ select {
   width: var(--space-8);
   height: var(--space-8);
   border-radius: 2px;
-  margin-right: var(--space-6);
+  margin-right: var(--space-4);
   background: var(--tone);
 }
 .rs-list {
