@@ -184,9 +184,11 @@ export function SourceList({ items }: { items: Source[] }) {
    The panel
    ------------------------------------------------------------------------ */
 
-// 'done' is a confirmed fact (shipped, measured): the check glyph, not a lit
-// dot (brand ledger D57; the flame is only for something happening now).
-type Lamp = 'pass' | 'done' | 'warn' | 'pending';
+// 'done' is a confirmed fact (shipped, verified with a public proof link):
+// the check glyph, not a lit dot. 'none' is a state stated in words alone (a
+// pending build, a measurement window): no glyph and no dot (brand ledger
+// D57; the flame is only for something happening now).
+type Lamp = 'pass' | 'done' | 'warn' | 'pending' | 'none';
 
 function Panel({
   label,

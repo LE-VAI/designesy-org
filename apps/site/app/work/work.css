@@ -334,6 +334,13 @@
   content: "✓";
 }
 
+/* None: the words say it all (a pending build, a measurement window), so the
+   slot stays, empty, to keep the rows' columns aligned (D57). */
+.cs-led[data-lamp="none"] {
+  background: none;
+  box-shadow: none;
+}
+
 /* Pending: a hollow lamp, nothing lit yet. */
 .cs-led[data-lamp="pending"] {
   background: transparent;
