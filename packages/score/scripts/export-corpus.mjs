@@ -51,6 +51,12 @@ const OUT = join(HERE, '..', 'corpus.json');
  * 3.51:1, the ink mix PASS at 5.76:1, a failing prefers-color-scheme dark
  * block, large text at 3:1) and v45 (a paused opacity-0 entrance FAIL, the
  * negative-delay override PASS, no pause scope SKIP).
+ *
+ * Engine 1.3.0 (2026-10-11) adds no fixture, so the corpus version stands;
+ * four observed scores move under the no-A-with-a-FAIL rule and the v44
+ * ceiling (broken-transition-all and broken-input-zoom 94.4 A to 89.9 B,
+ * broken-status-hue-as-text 69.4 to 65, broken-status-hue-dark-scheme 70 C
+ * to 65 D). No pinned verdict changes.
  */
 const CORPUS_VERSION = '1.3.0';
 
@@ -60,7 +66,7 @@ const CORPUS_VERSION = '1.3.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.2.0';
+const ENGINE_VERSION = '1.3.0';
 
 async function build() {
   const rows = await runCorpus();

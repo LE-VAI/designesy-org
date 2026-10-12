@@ -43,8 +43,8 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   // with zero checks. Both checks classify the site's own :root color tokens
   // against universal role-vs-hue naming principles (not Designesy's token
   // names), so they are site-agnostic and need no scope-tier registration.
-  { id: 'v42', item: 'Semantic color vocabulary: tokens named by role rather than hue', category: 'semantic', type: 'auto', threshold: '≥60% role-named color tokens with ≥3 distinct roles', pass: 'color tokens named by role (ink/paper/surface/danger/success…)', fail: 'n/a (WARN only)', warn: 'color vocabulary leans on hue names (blue-500, slate-900…)', ceiling: null },
-  { id: 'v43', item: 'Semantic status colors: ok/warn/error/info state roles present', category: 'semantic', type: 'auto', threshold: '3+ of 4 status color families (ok, warn, error, info)', pass: 'status states expressed as semantic color roles', fail: 'n/a (WARN only)', warn: 'missing status color families', ceiling: null },
+  { id: 'v42', item: 'Semantic color vocabulary: tokens named by role rather than hue', category: 'semantic', type: 'auto', threshold: '≥60% role-named color tokens with ≥3 distinct roles; var() aliases followed, and hue-named primitives that role tokens alias are the palette layer, not counted', pass: 'color tokens named by role (ink/paper/surface/danger/success…)', fail: 'n/a (WARN only)', warn: 'color vocabulary leans on hue names (blue-500, slate-900…)', ceiling: null },
+  { id: 'v43', item: 'Semantic status colors: ok/warn/error/info state roles present', category: 'semantic', type: 'auto', threshold: '3+ of 4 status color families (ok, warn, error, info); var() aliases followed', pass: 'status states expressed as semantic color roles', fail: 'n/a (WARN only)', warn: 'missing status color families', ceiling: null },
 
   // ── Responsive (weight 3) ──
   { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', type: 'manual', threshold: 'no overflow-x at 375px, 720px, 860px, 1080px+', pass: 'no horizontal overflow at any breakpoint', fail: 'content overflows horizontally', warn: 'n/a', ceiling: 70 },
@@ -101,11 +101,13 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   // it as a mark WARNs at most, and so do neutral text under a status name and
   // a pairing whose surface the sheet cannot attest (an ancestor in a hover or
   // open state with no declared fill).
-  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, and 3:1 for a graphic (an svg, icon or glyph, a progress bar, a color named for an icon, a currentColor fill; WCAG 1.4.11), in every declared theme, on the surface the sheet attests; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) that has a hue (Oklch chroma 0.06 or more) is under its threshold in a theme, on an attested surface', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; neutral text (white or grey) under a status name is under its threshold; a surface the sheet cannot attest (an ancestor in a hover, active, focus, expanded or open state that paints no declared fill); a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: null },
+  // Engine 1.3.0: a v44 FAIL caps the score at 65, as a v06 FAIL does (owner
+  // decision 2026-10-11); before 1.3.0 v44 had no ceiling.
+  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, and 3:1 for a graphic (an svg, icon or glyph, a progress bar, a color named for an icon, a currentColor fill; WCAG 1.4.11), in every declared theme, on the surface the sheet attests; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) that has a hue (Oklch chroma 0.06 or more) is under its threshold in a theme, on an attested surface', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; neutral text (white or grey) under a status name is under its threshold; a surface the sheet cannot attest (an ancestor in a hover, active, focus, expanded or open state that paints no declared fill); a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: 65 },
 
   // ── Identity (weight 6) ──
   { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', type: 'auto', threshold: 'h1, title, meta description, landmark element', pass: 'all semantic signals present', fail: '3+ missing signals', warn: '1-2 missing', ceiling: null },
-  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction if AI surface present', pass: 'no AI surface or disclosure present', fail: 'AI surface detected but no disclosure', warn: 'ambiguous AI surface (manual review)', ceiling: null },
+  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction where an AI chat surface is present (EU AI Act Art. 50(1) is a duty on the provider of the AI system)', pass: 'no AI surface, or a disclosure present', fail: 'a positively identified AI chat surface (a chatbot container, an AI input, a chatbot, AI-widget or Dialogflow script) with no disclosure', warn: 'a possible AI surface to review (a live-chat vendor, a generic chat container or assistant script, page text about AI) with no disclosure', ceiling: null },
 
   // ── Security (weight 5) ──
   { id: 'v36', item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers', category: 'security', type: 'auto', threshold: 'no confusable Unicode in CSS identifiers', pass: 'no confusables detected', fail: 'confusable characters found', warn: 'n/a', ceiling: null },
@@ -189,5 +191,14 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      rules stop firing on components and prose, and the npm
  *                      engine's accessibility floor matches this one. The
  *                      CHANGELOG entry lists the leaderboard score movement.
+ *   1.3.0  2026-10-11  no A while any check FAILs (owner decision): any FAIL
+ *                      caps the score at 89.9, after the originality lift,
+ *                      and v44 caps at 65 as v06 does. v34 FAILs only a
+ *                      positively identified AI chat surface and cites SB
+ *                      1001 and Colorado SB 26-189; v06 and v22 read CSS
+ *                      Color 4 and :root, :host tokens; v42 and v43 follow
+ *                      var() aliases, and a palette that role tokens alias
+ *                      is not counted as hue names. The CHANGELOG entry
+ *                      lists the leaderboard score movement.
  */
-export const ENGINE_VERSION = '1.2.0';
+export const ENGINE_VERSION = '1.3.0';

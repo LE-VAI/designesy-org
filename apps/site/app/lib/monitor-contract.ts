@@ -1,5 +1,5 @@
 /**
- * Designesy Monitor Contract v0.1.1 — machine-readable form.
+ * Designesy Monitor Contract v0.1.2 — machine-readable form.
  * Sibling contract governing continuous design-drift monitoring.
  * Source: Into Design Systems 2026 (Morales Achiardi / Enara),
  *          Design Systems Collective 2026, Lollypop agentic governance,
@@ -19,13 +19,13 @@
 
 export const monitorContract = {
   id: 'designesy.monitor',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'provisional',
   name: 'Designesy Monitor Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/monitor',
   machine_url: 'https://www.designesy.org/contracts/monitor.json',
-  updated: '2026-10-10',
+  updated: '2026-10-11',
   purpose:
     'Monitor is the continuous-governance layer: re-score a URL on a cadence, store snapshots, compute drift deltas against the baseline, and surface regressions before they compound. Every prior designesy surface is a snapshot: monitor turns them into a watched series.',
   source_authority: {
@@ -67,7 +67,7 @@ export const monitorContract = {
   },
   verification: {
     checks: [
-      { id: 'm01', item: 'Schedule registered: URL + cadence recorded', pass: 'Monitor registered with cadence and alert target', fail: 'No monitor registered (the URL is not being watched)' },
+      { id: 'm01', item: 'History supplied: the request carries earlier runs to compare against (nothing is scheduled or stored server-side)', pass: 'At least one earlier run supplied', fail: 'n/a', na: 'No history: drift needs a previous run; a first run sets the baseline and is not scored here' },
       { id: 'm02', item: 'Last run fresh: ran within the cadence window', pass: 'Last run is within the cadence window', fail: 'Last run is stale (the monitor may have stopped)', warn: 'Last run is near the edge of the cadence window' },
       { id: 'm03', item: 'Drift delta vs baseline: score change since first run', pass: 'Score is stable or improved vs baseline', fail: 'Score degraded significantly vs baseline', warn: 'Score slipped slightly vs baseline' },
       { id: 'm04', item: 'Drift trend slope: 3-run trajectory', pass: 'Trend is flat or improving over the last 3 runs', fail: 'Trend is regressing over the last 3 runs', warn: 'Trend is flat but score is low' },
@@ -78,7 +78,7 @@ export const monitorContract = {
       { id: 'm09', item: 'Contract version drift: the design contract version this run is scored against (the version designesy_score reports) changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run (verify the change is intentional)', warn: 'Contract metadata changed (not version)' },
       { id: 'm10', item: 'Alert delivered: email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered (check the email address or RESEND_API_KEY)', warn: 'Alert surfaced in-UI only (no email provided or Resend key not set)' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0. Score = (points/10) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
+    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP (m01 on a first run) is not scored. Score = (points / scored checks) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
     validation_tools: {
       primary: 'Designesy monitor engine: scheduled re-scan + snapshot storage + delta computation',
       method: 'Re-run the 12 drift checks on cadence, store snapshots, compute deltas vs baseline and previous run, fire alerts on threshold breach',

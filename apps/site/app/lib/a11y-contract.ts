@@ -1,5 +1,5 @@
 /**
- * Designesy Accessibility Contract v0.1.1 — machine-readable form.
+ * Designesy Accessibility Contract v0.1.2 — machine-readable form.
  * Sibling contract governing axe-core 4.13.0 + WCAG 2.2 AA accessibility verification.
  * Source: internal contract markdown (not for public distribution).
  *
@@ -9,13 +9,13 @@
 
 export const a11yContract = {
   id: 'designesy.a11y',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'provisional',
   name: 'Designesy Accessibility Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/a11y',
   machine_url: 'https://www.designesy.org/contracts/a11y.json',
-  updated: '2026-10-01',
+  updated: '2026-10-11',
   purpose:
     'Accessibility is structural: it shapes the first version rather than the last audit. This contract makes that principle machine-checkable.',
   source_authority: {
@@ -28,9 +28,9 @@ export const a11yContract = {
   },
   conformance: {
     level: 'WCAG 2.2 Level AA (includes all A and AA from WCAG 2.0, 2.1, 2.2)',
-    axe_tag: 'wcag22aa (includes wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22a, wcag22aa)',
+    axe_tag: 'wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa (axe-core tags are not cumulative: wcag22aa alone marks only the WCAG 2.2 AA additions, so a WCAG 2.2 AA run lists all five; axe-core defines no wcag22a tag)',
     ruleset_export_command: 'axe ruleset --wcag22 designesy-a11y-ruleset.json',
-    rules_in_scope: '~75+ rules covering color contrast, keyboard, ARIA, forms, headings, landmarks, language, motion, target size',
+    rules_in_scope: '70 axe-core 4.13.0 rules carry one of the five tags (counted with axe.getRules on 2026-10-11)',
     brand_customization: {
       branding: { brand: 'designesy', application: 'designesy-a11y' },
       checks: [
@@ -53,7 +53,7 @@ export const a11yContract = {
   },
   verification: {
     checks: [
-      { id: 'a01', item: 'No WCAG 2.2 AA violations (axe-core wcag22aa ruleset)', pass: '0 violations', fail: 'Any violation' },
+      { id: 'a01', item: 'No WCAG 2.2 AA violations (axe-core rules tagged wcag2a, wcag2aa, wcag21a, wcag21aa or wcag22aa)', pass: '0 violations', fail: 'Any violation' },
       { id: 'a02', item: 'Color contrast passes AA 4.5:1 (normal), 3:1 (large)', pass: 'All pass', fail: 'Any fail' },
       { id: 'a03', item: 'Keyboard navigation: tab order, focus-visible, no keyboard traps', pass: 'All pass', fail: 'Any fail' },
       { id: 'a04', item: 'ARIA correctness: roles, labels, required children', pass: 'All pass', fail: 'Any fail' },
@@ -67,8 +67,8 @@ export const a11yContract = {
     ],
     scoring: '11 checks. PASS=1, WARN=0.5, FAIL=0, N/A=excluded. Score = (points/applicable) × 100. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
-      primary: "@axe-core/playwright 4.13.0: AxeBuilder({ page }).withTags(['wcag2a','wcag21aa','wcag22aa']).analyze()",
-      cli: "@axe-core/cli: axe --tags wcag2a,wcag21aa,wcag22aa <url>",
+      primary: "@axe-core/playwright 4.13.0: AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']).analyze()",
+      cli: "@axe-core/cli: axe --tags wcag2a,wcag2aa,wcag21a,wcag21aa,wcag22aa <url>",
       designesy_specific: 'a10, a11 require custom validator in the control-plane adapter',
     },
   },

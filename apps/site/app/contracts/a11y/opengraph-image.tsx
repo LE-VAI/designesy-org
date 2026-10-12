@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { a11yContract } from '../../lib/a11y-contract';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -11,6 +12,6 @@ export default function OpenGraphImage() {
     lede: 'WCAG 2.2 AA via axe-core 4.13.0. Brand customization, provenance chain, 11 verification checks.',
     path: 'designesy.org/contracts/a11y',
     kind: 'contract',
-    badge: 'v0.1.1',
+    badge: `v${a11yContract.version}`,
   });
 }
