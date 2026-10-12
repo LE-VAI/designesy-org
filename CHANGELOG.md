@@ -12,6 +12,12 @@ with a failing check can no longer score an A. The hosted MCP tools and
 offline engine, the accessibility kit's Python twin) ships with the next
 designesy-mcp release. Contract v0.4.4 is unchanged.
 
+**Grades: any FAIL now caps at B.** If a CI gate of yours requires an A and
+needs time to adjust, pin the previous engine while you fix the failing
+checks: `npx @designesy/score@0.7.2 <url>` on the command line, or
+`engine-version: 0.7.2` in designesy/score-action (v1.2.0 or later). The
+hosted /score page and API always run the current engine.
+
 ### Changed (engine 1.3.0)
 
 - **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
