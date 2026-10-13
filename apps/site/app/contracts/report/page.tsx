@@ -13,7 +13,7 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Report contract',
   description:
-    'Designesy Report Contract v0.1.0: the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.',
+    `Designesy Report Contract v${reportContract.version}: the synthesis capstone. Fetch one URL, fire score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade. 8 synthesis checks.`,
   path: '/contracts/report',
   ogTitle: 'Report contract · Designesy',
   ogDescription:

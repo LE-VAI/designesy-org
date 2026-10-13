@@ -7,7 +7,7 @@
 //
 // All 12 checks are static CSS/HTML analysis — no browser needed.
 //
-// Contract: /contracts/drift.json (designesy.drift v0.1.0)
+// Contract: /contracts/drift.json (designesy.drift; the version is lib/drift-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';

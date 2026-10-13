@@ -28,7 +28,7 @@
 // alert email to that address when any alert condition fires. Without the
 // key or email, alerts are surfaced in-UI only (graceful degradation).
 //
-// Contract: /contracts/monitor.json (designesy.monitor v0.1.0)
+// Contract: /contracts/monitor.json (designesy.monitor; the version is lib/monitor-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';

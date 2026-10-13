@@ -7,7 +7,7 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 //
 // Composite: score × 0.5 + drift × 0.3 + readiness × 0.2
 //
-// Contract: /contracts/report.json (designesy.report v0.1.0)
+// Contract: /contracts/report.json (designesy.report; the version is lib/report-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
