@@ -1,5 +1,5 @@
 /**
- * Designesy Guardrails Contract v0.1.0 — machine-readable form.
+ * Designesy Guardrails Contract — machine-readable form (the version is `version` below).
  * Sibling contract governing AI-build guardrail emission.
  * Source: DLS Lead "tokens are a contract, not a library",
  *          davekurian "tokens are types" (dev.to),
@@ -13,13 +13,13 @@
 
 export const guardrailsContract = {
   id: 'designesy.guardrails',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Guardrails Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/guardrails',
   machine_url: 'https://www.designesy.org/contracts/guardrails.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Guardrails are the product layer: ingest a design system, emit a frozen build contract for AI coding agents (the file the agent reads, plus the lint config that enforces it). "Tokens are a contract, not a library."',
   source_authority: {
@@ -38,7 +38,7 @@ export const guardrailsContract = {
       { component: 'designMd', description: 'DESIGN.md-format file (the open DESIGN.md format, google-labs-code/design.md, Apache-2.0, for describing a visual identity to coding agents): YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order' },
     ],
     emission_method:
-      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (Google open spec).',
+      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (the open DESIGN.md format).',
   },
   verification: {
     checks: [
