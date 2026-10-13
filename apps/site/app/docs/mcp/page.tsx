@@ -158,7 +158,7 @@ const TOOLS = [
 const CLIENT_CONFIGS = [
   {
     client: 'Claude Code (CLI)',
-    file: '.mcp.json (project root, shared)\n~/.claude.json (your own; claude mcp add writes here)',
+    file: '.mcp.json (project root, shared)\n~/.claude.json (your own; claude mcp add writes here for this project, add --scope user for every project)',
     config: `{
   "mcpServers": {
     "designesy": {
@@ -347,9 +347,12 @@ export default function McpDocsPage() {
                   themes: 140 scans, 0 violations. The line used to name
                   axe-core 4.13.0 "pinned to current npm latest", verified
                   2026-08-30; the repo pins 4.12.1 and npm's latest is 4.14.0.
-                  Automated rules cover part of WCAG, not all of it. */}
+                  Automated rules cover part of WCAG, not all of it. axe has
+                  no wcag22a tag (4.12.1 to 4.14.0): its only WCAG 2.2 rule,
+                  target-size, is tagged wcag22aa, so the line names 2.2 at
+                  AA only. */}
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                axe-core 4.12.1, automated rules for WCAG 2.0 to 2.2, A and AA · 70 pages, light and dark · measured 2026-10-11
+                axe-core 4.12.1, automated rules for WCAG 2.0 and 2.1 at A and AA, and 2.2 at AA · 70 pages, light and dark · measured 2026-10-11
               </p>
             </div>
             <div className="surface-card mcp-card">

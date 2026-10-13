@@ -13,9 +13,11 @@
  * diff; this script only executes the list it is given.
  *
  * WHAT IT ASSERTS, and where the bar sits
- *   A. axe-core wcag2a2a — the same engine and ruleset as rater B in
- *      blind-comparison.mjs (cdnjs 4.10.2, the version this repo already pins).
- *      SERIOUS and CRITICAL violations fail the gate. Moderate and minor are
+ *   A. axe-core (the devDependency package-lock.json pins) with the five
+ *      WCAG tags the a11y contract names (AXE_TAGS below). Until 2026-10-13
+ *      the filter read 'wcag2a2a', a tag axe does not have: axe then runs no
+ *      rules and reports no violations, so this part could never fail. A
+ *      route where axe runs no rules is now a failure. SERIOUS and CRITICAL violations fail the gate. Moderate and minor are
  *      reported per route but do not block: the round-3 triage list is the
  *      minors lane, and a gate that fails on 131 known minors is a gate
  *      someone deletes.
@@ -134,12 +136,19 @@ async function launch() {
   return { browser: await chromium.launch({ args, executablePath, headless: true }), connected: false };
 }
 
-/** The in-page probe. Runs axe wcag2a2a and reads heading + landmark
- *  structure in one pass, so each route costs one navigation. */
-const PROBE = async () => {
+/** The a11y contract's five tags (lib/a11y-contract.ts, validation_tools.primary). */
+const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
+/** The in-page probe. Runs axe on AXE_TAGS and reads heading + landmark
+ *  structure in one pass, so each route costs one navigation. rulesRun counts
+ *  every rule axe evaluated, inapplicable ones included: an unknown tag makes
+ *  it 0. */
+const PROBE = async (tags) => {
   const axeRes = await axe.run(document, {
-    runOnly: { type: 'tag', values: ['wcag2a2a'] },
+    runOnly: { type: 'tag', values: tags },
   });
+  const rulesRun = axeRes.passes.length + axeRes.violations.length +
+    axeRes.incomplete.length + axeRes.inapplicable.length;
   const violations = axeRes.violations.map((v) => ({
     id: v.id,
     impact: v.impact,
@@ -172,7 +181,7 @@ const PROBE = async () => {
     navigation: !!document.querySelector('nav, [role="navigation"]'),
     contentinfo: !!document.querySelector('footer, [role="contentinfo"]'),
   };
-  return { violations, first, skip, levels: levels.length, landmarks };
+  return { violations, rulesRun, first, skip, levels: levels.length, landmarks };
 };
 
 async function sweep(page, route, findings) {
@@ -180,8 +189,11 @@ async function sweep(page, route, findings) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
   await page.waitForTimeout(1200);
   await page.addScriptTag({ content: axeSource() });
-  const data = await page.evaluate(PROBE);
+  const data = await page.evaluate(PROBE, AXE_TAGS);
 
+  if (data.rulesRun === 0) {
+    findings.push({ route, kind: 'axe-no-rules', detail: `axe ran no rules for ${AXE_TAGS.join(', ')}` });
+  }
   const serious = data.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
   if (serious.length) {
     findings.push({
