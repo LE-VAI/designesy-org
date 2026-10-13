@@ -50,8 +50,10 @@ function isPrivateHost(host: string): boolean {
   );
 }
 
-/** What the engine will read for a typed value, or what the value still lacks. */
-export function checkUrl(raw: string, reads: 'page' | 'origin' = 'page'): FieldCheck | null {
+/** What the engine will read for a typed value, or what the value still lacks.
+    page reads the URL as typed; origin probes the site's origin (readiness);
+    site reads the site's home page, the one URL a badge scores. */
+export function checkUrl(raw: string, reads: 'page' | 'origin' | 'site' = 'page'): FieldCheck | null {
   const v = raw.trim();
   if (!v) return null;
   const miss = (plain: string): FieldCheck => ({ ok: false, text: plain, plain });
@@ -66,7 +68,7 @@ export function checkUrl(raw: string, reads: 'page' | 'origin' = 'page'): FieldC
   const host = u.hostname.toLowerCase();
   if (isPrivateHost(host)) return miss('The engine reads public sites. Local and private addresses are out of its reach.');
   if (!host.includes('.')) return miss(`Add the domain ending, like ${host}.com.`);
-  const target = reads === 'origin' ? u.origin : u.href;
+  const target = reads === 'origin' ? u.origin : reads === 'site' ? `${u.origin}/` : u.href;
   const verb = reads === 'origin' ? 'Probes' : 'Reads';
   return { ok: true, text: <>{verb} <b>{target}</b></>, plain: `${verb} ${target}`, verb, target };
 }
@@ -89,8 +91,9 @@ type Field = {
   optional?: boolean;
   /** A letter shown in the well instead of the globe (the compare pair: A, B). */
   mark?: string;
-  /** readiness probes the origin, every other engine reads the page. */
-  reads?: 'page' | 'origin';
+  /** readiness probes the origin, the badge reads the site's home page,
+      every other engine reads the page. */
+  reads?: 'page' | 'origin' | 'site';
 };
 
 function check(f: Field): FieldCheck | null {

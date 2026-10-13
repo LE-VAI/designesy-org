@@ -1,7 +1,8 @@
 name: "Designesy Contract Check"
 description: >-
-  Score any URL against a 44-check design contract; fail CI on regression.
-  SARIF + baseline ratchet supported.
+  Design quality gate for AI-generated UI:
+  score any URL on 44 deterministic checks, A–F grade.
+  Fails CI on regression; SARIF and baseline ratchet supported.
 author: "designesy"
 branding:
   icon: "check-circle"

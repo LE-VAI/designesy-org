@@ -5,12 +5,13 @@
  * on or in them stays readable.
  *
  * WHY THIS EXISTS
- * The badge at /score/badge is an SVG string, so it cannot read a CSS custom
- * property: its colours are literals in app/score/badge/route.ts. When
- * identity v1 moved the tokens, the badge kept filling grades A and B with
- * the retired brand blue #3358e8 and C, D and F with hues that were never
- * grade tokens (brand ledger D37). A token swap cannot see a literal, so this
- * gate ties the literals back to the tokens.
+ * The live badge (/api/badge?url=, also served at /score/badge) is an SVG
+ * string, so it cannot read a CSS custom property: its colours are literals in
+ * app/lib/badge/live-badge.ts. When identity v1 moved the tokens, the badge of
+ * the time kept filling grades A and B with the retired brand blue #3358e8
+ * and C, D and F with hues that were never grade tokens (brand ledger D37). A
+ * token swap cannot see a literal, so this gate ties the literals back to the
+ * tokens.
  *
  * The same ruling covers two more surfaces that #260 left behind. The
  * shields endpoint at /api/badge passed shields' named colours (D was
@@ -19,16 +20,19 @@
  * --signal-light, a brand blue.
  *
  * WHAT IT ASSERTS
- * The SVG badge (app/score/badge/route.ts):
- *   1. GRADE_FILL in the badge route has exactly the grades A, B, C, D, F.
- *   2. Each fill equals that grade's --grade-* base in the light block of
- *      app/globals.css. The badge sits on other people's pages and does not
- *      follow their theme, and the light bases are the set built to hold 3:1
- *      against white.
- *   3. Each letter colour is white or ink (#010102) and is at least 4.5:1 on
- *      its fill (WCAG 2.x).
- *   4. Each fill is at least 3:1 against a white (#ffffff) and a near-black
- *      (#010102) host page.
+ * The live badge (app/lib/badge/live-badge.ts). It carries its own ground, a
+ * dark one and a light one, and each colour on a ground is that theme's token
+ * (brand verdict D61, Q3: the letter sits on the badge's ground, so it takes
+ * that ground's -ink):
+ *   1. GRADE_INK has exactly the grades A, B, C, D, F for each ground.
+ *   2. Each dark letter is the :root --grade-<g>-ink and each light letter the
+ *      [data-theme="light"] --grade-<g>-ink in app/globals.css (resolved
+ *      through var()), the grade's text token.
+ *   3. BADGE_GROUND's grounds are the dark --paper and the light --surface,
+ *      and its ink and muted are each theme's --ink and --muted.
+ *   4. Every text colour on a ground (ink, muted, each grade letter) is at
+ *      least 4.5:1 on it (WCAG 2.x), and so is the label of each static image
+ *      (public/badge.svg on the dark ground, badge-light.svg on the light).
  *
  * The shields endpoint (app/api/badge/route.ts):
  *   5. GRADE_COLOR has exactly the grades A, B, C, D, F, each a bare six-digit
@@ -40,8 +44,8 @@
  *      0.69, else #333 (badge-maker's colorsForBackground; every colour here
  *      was checked against a real img.shields.io render). That text is at
  *      least 4.5:1 on the colour.
- *   7. NEUTRAL_COLOR (unreachable, not scored, not listed) is the SVG badge's
- *      NEUTRAL_FILL, and shields' text on it is at least 4.5:1.
+ *   7. NEUTRAL_COLOR (unreachable, not scored, not listed) is a neutral grey
+ *      (equal channels), and shields' text on it is at least 4.5:1.
  *
  * The report page (app/score/report/score-report.tsx):
  *   8. No grade in GRADE_COLOR reads a brand token (--signal*, --action*,
@@ -62,15 +66,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const APP = path.join(__dirname, '..');
-const ROUTE = path.join(APP, 'app', 'score', 'badge', 'route.ts');
+const BADGE = path.join(APP, 'app', 'lib', 'badge', 'live-badge.ts');
+const STATIC = { dark: path.join(APP, 'public', 'badge.svg'), light: path.join(APP, 'public', 'badge-light.svg') };
 const SHIELDS_ROUTE = path.join(APP, 'app', 'api', 'badge', 'route.ts');
 const REPORT = path.join(APP, 'app', 'score', 'report', 'score-report.tsx');
 const CSS = path.join(APP, 'app', 'globals.css');
 const GRADES = ['A', 'B', 'C', 'D', 'F'];
-const LETTER_COLOURS = ['#ffffff', '#010102'];
-const HOSTS = ['#ffffff', '#010102'];
 const TEXT_MIN = 4.5;
-const GRAPHIC_MIN = 3;
 // shields' named colours (badge-maker), with its semantic aliases.
 const SHIELDS_NAMED = [
   'brightgreen', 'green', 'yellowgreen', 'yellow', 'orange', 'red', 'blue', 'grey', 'gray',
@@ -101,6 +103,19 @@ function block(css, selector) {
     else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
   }
   return null;
+}
+
+/** A custom property's hex in a block, resolved through var() inside that block. */
+function resolve(body, name, where, seen = new Set()) {
+  if (seen.has(name)) throw new Error(`globals.css ${where}: ${name} refers to itself`);
+  seen.add(name);
+  const m = body.match(new RegExp(`(?:^|[\\s;{])${name}:\\s*([^;]+);`));
+  if (!m) throw new Error(`globals.css ${where}: no ${name}`);
+  const v = m[1].trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase();
+  const ref = v.match(/^var\((--[\w-]+)\)$/);
+  if (ref) return resolve(body, ref[1], where, seen);
+  throw new Error(`globals.css ${where}: ${name} is ${v}, not a hex or a var()`);
 }
 
 /** The light block's hex --grade-<g><suffix> for each grade ('' bases, '-ink' text). */
@@ -136,14 +151,38 @@ function stringMap(src, name, file) {
   return out;
 }
 
-function badgeFills(src) {
-  const m = src.match(/const GRADE_FILL[^=]*=\s*\{([\s\S]*?)\n\};/);
-  if (!m) throw new Error('badge route: GRADE_FILL not found');
+/** GRADE_INK's { A: '#hex', ... } per ground. */
+function gradeInk(src) {
+  const m = src.match(/export const GRADE_INK[^=]*=\s*\{([\s\S]*?)\n\};/);
+  if (!m) throw new Error('live-badge.ts: GRADE_INK not found');
   const out = {};
-  const re = /^\s*([A-Z]):\s*\{\s*fill:\s*'(#[0-9a-fA-F]{6})',\s*text:\s*'(#[0-9a-fA-F]{6})'\s*\},?\s*$/gm;
-  let e;
-  while ((e = re.exec(m[1]))) out[e[1]] = { fill: e[2].toLowerCase(), text: e[3].toLowerCase() };
+  for (const ground of ['dark', 'light']) {
+    const g = m[1].match(new RegExp(`${ground}:\\s*\\{([\\s\\S]*?)\\}`));
+    if (!g) throw new Error(`live-badge.ts: GRADE_INK has no ${ground} ground`);
+    out[ground] = {};
+    const re = /([A-Z]):\s*'(#[0-9a-fA-F]{6})'/g;
+    let e;
+    while ((e = re.exec(g[1]))) out[ground][e[1]] = e[2].toLowerCase();
+  }
   return out;
+}
+
+/** BADGE_GROUND's { ground, ink, muted } per ground. */
+function badgeGround(src) {
+  const out = {};
+  for (const ground of ['dark', 'light']) {
+    const m = src.match(new RegExp(`\\n\\s*${ground}: \\{ ground: '(#[0-9a-fA-F]{6})', rim: '[^']*', ink: '(#[0-9a-fA-F]{6})', muted: '(#[0-9a-fA-F]{6})'`));
+    if (!m) throw new Error(`live-badge.ts: BADGE_GROUND has no ${ground} entry`);
+    out[ground] = { ground: m[1].toLowerCase(), ink: m[2].toLowerCase(), muted: m[3].toLowerCase() };
+  }
+  return out;
+}
+
+/** A static image's label fill: the outlined label is its one transformed path. */
+function staticLabel(svg, file) {
+  const m = svg.match(/<path fill="(#[0-9a-fA-F]{6})" transform=/);
+  if (!m) throw new Error(`${file}: no outlined label`);
+  return m[1].toLowerCase();
 }
 
 function selfTest() {
@@ -169,7 +208,7 @@ function selfTest() {
 
 /** The shields endpoint: grade colours are grade tokens, and the text shields
  *  paints on them is readable. */
-function checkShields(src, bases, inks, neutralFill, findings) {
+function checkShields(src, bases, inks, findings) {
   const rows = [];
   const literals = [...src.matchAll(/'([^'\n]*)'/g)].map((m) => m[1]);
   const named = [...new Set(literals.filter((v) => SHIELDS_NAMED.includes(v.toLowerCase())))];
@@ -219,8 +258,9 @@ function checkShields(src, bases, inks, neutralFill, findings) {
     const colour = `#${neutral[1].toLowerCase()}`;
     const text = shieldsText(colour);
     const ratio = +contrast(text, colour).toFixed(2);
-    rows.push({ grade: '-', colour, token: 'NEUTRAL_FILL', text, textOnColour: ratio });
-    if (colour !== neutralFill) findings.push(`shields endpoint: NEUTRAL_COLOR ${colour} is not the SVG badge's NEUTRAL_FILL ${neutralFill}`);
+    rows.push({ grade: '-', colour, token: 'neutral', text, textOnColour: ratio });
+    const [r, g, b] = [1, 3, 5].map((i) => colour.slice(i, i + 2));
+    if (!(r === g && g === b)) findings.push(`shields endpoint: NEUTRAL_COLOR ${colour} is not a neutral grey`);
     if (ratio < TEXT_MIN) findings.push(`shields endpoint: shields text ${text} on NEUTRAL_COLOR ${colour} is ${ratio}:1, under ${TEXT_MIN}:1`);
   }
   return rows;
@@ -283,52 +323,65 @@ function main() {
   }
   const css = fs.readFileSync(CSS, 'utf8');
   const tokens = lightGradeTokens(css);
-  const inks = lightGradeTokens(css, '-ink');
-  const badgeSrc = fs.readFileSync(ROUTE, 'utf8');
-  const fills = badgeFills(badgeSrc);
-  const neutralFill = (badgeSrc.match(/const NEUTRAL_FILL\s*=\s*\{\s*fill:\s*'(#[0-9a-fA-F]{6})'/) || [])[1];
-  if (!neutralFill) throw new Error('badge route: NEUTRAL_FILL not found');
+  const badgeSrc = fs.readFileSync(BADGE, 'utf8');
+  const darkBody = block(css, ':root');
+  const lightBody = block(css, '[data-theme="light"]');
+  if (!darkBody || !lightBody) throw new Error('globals.css: no :root or [data-theme="light"] block');
+  const inks = { dark: {}, light: lightGradeTokens(css, '-ink') };
+  for (const g of GRADES) inks.dark[g] = resolve(darkBody, `--grade-${g.toLowerCase()}-ink`, ':root');
+  const want = {
+    dark: { ground: resolve(darkBody, '--paper', ':root'), ink: resolve(darkBody, '--ink', ':root'), muted: resolve(darkBody, '--muted', ':root') },
+    light: { ground: resolve(lightBody, '--surface', 'light'), ink: resolve(lightBody, '--ink', 'light'), muted: resolve(lightBody, '--muted', 'light') },
+  };
+  const letters = gradeInk(badgeSrc);
+  const grounds = badgeGround(badgeSrc);
   const findings = [];
   const rows = [];
 
-  const extra = Object.keys(fills).filter((g) => !GRADES.includes(g));
-  if (extra.length) findings.push(`GRADE_FILL has grades outside A-F: ${extra.join(', ')}`);
-
-  for (const g of GRADES) {
-    const f = fills[g];
-    if (!f) {
-      findings.push(`grade ${g}: no { fill, text } entry in GRADE_FILL`);
-      continue;
+  for (const ground of ['dark', 'light']) {
+    const have = grounds[ground];
+    for (const k of ['ground', 'ink', 'muted']) {
+      const token = k === 'ground' ? (ground === 'dark' ? '--paper' : '--surface') : `--${k}`;
+      if (have[k] !== want[ground][k]) findings.push(`live badge ${ground}: ${k} ${have[k]} is not the ${ground} ${token} ${want[ground][k]}`);
     }
-    const row = {
-      grade: g,
-      fill: f.fill,
-      token: tokens[g],
-      text: f.text,
-      textOnFill: +contrast(f.text, f.fill).toFixed(2),
-      vsWhite: +contrast(f.fill, HOSTS[0]).toFixed(2),
-      vsInk: +contrast(f.fill, HOSTS[1]).toFixed(2),
-    };
-    rows.push(row);
-    if (f.fill !== tokens[g]) findings.push(`grade ${g}: fill ${f.fill} is not light --grade-${g.toLowerCase()} ${tokens[g]}`);
-    if (!LETTER_COLOURS.includes(f.text)) findings.push(`grade ${g}: letter ${f.text} is neither white nor ink #010102`);
-    if (row.textOnFill < TEXT_MIN) findings.push(`grade ${g}: letter ${f.text} on ${f.fill} is ${row.textOnFill}:1, under ${TEXT_MIN}:1`);
-    if (row.vsWhite < GRAPHIC_MIN) findings.push(`grade ${g}: fill ${f.fill} on a white page is ${row.vsWhite}:1, under ${GRAPHIC_MIN}:1`);
-    if (row.vsInk < GRAPHIC_MIN) findings.push(`grade ${g}: fill ${f.fill} on a near-black page is ${row.vsInk}:1, under ${GRAPHIC_MIN}:1`);
+    const extra = Object.keys(letters[ground]).filter((g) => !GRADES.includes(g));
+    if (extra.length) findings.push(`live badge ${ground}: GRADE_INK has grades outside A-F: ${extra.join(', ')}`);
+    const texts = [
+      ['ink', have.ink, '--ink'],
+      ['muted', have.muted, '--muted'],
+      ...GRADES.map((g) => [g, letters[ground][g], `--grade-${g.toLowerCase()}-ink`]),
+    ];
+    for (const [name, colour, token] of texts) {
+      if (!colour) {
+        findings.push(`live badge ${ground}: grade ${name} has no entry in GRADE_INK`);
+        continue;
+      }
+      const ratio = +contrast(colour, have.ground).toFixed(2);
+      rows.push({ ground, name, colour, token, onGround: ratio });
+      if (GRADES.includes(name) && colour !== inks[ground][name]) {
+        findings.push(`live badge ${ground}: grade ${name} letter ${colour} is not the ${ground} ${token} ${inks[ground][name]}`);
+      }
+      if (ratio < TEXT_MIN) findings.push(`live badge ${ground}: ${name} ${colour} on ${have.ground} is ${ratio}:1, under ${TEXT_MIN}:1`);
+    }
+    const file = path.basename(STATIC[ground]);
+    const label = staticLabel(fs.readFileSync(STATIC[ground], 'utf8'), file);
+    const ratio = +contrast(label, have.ground).toFixed(2);
+    rows.push({ ground, name: 'static label', colour: label, token: file, onGround: ratio });
+    if (ratio < TEXT_MIN) findings.push(`${file}: label ${label} on ${have.ground} is ${ratio}:1, under ${TEXT_MIN}:1`);
   }
 
-  const shields = checkShields(fs.readFileSync(SHIELDS_ROUTE, 'utf8'), tokens, inks, neutralFill.toLowerCase(), findings);
+  const shields = checkShields(fs.readFileSync(SHIELDS_ROUTE, 'utf8'), tokens, inks.light, findings);
   const report = checkReport(fs.readFileSync(REPORT, 'utf8'), findings, css);
 
   const ok = findings.length === 0;
   if (asJson) {
     console.log(JSON.stringify({ ok, rows, shields, report, findings }, null, 2));
   } else {
-    console.log(`badge-grade-tokens: ${rows.length} SVG badge grades, ${shields.length} shields colours, ${report.length} report grades read, ${findings.length} findings`);
-    console.log('  SVG badge (/score/badge)');
-    console.log('  grade  fill     letter   letter/fill  fill/#ffffff  fill/#010102');
+    console.log(`badge-grade-tokens: ${rows.length} badge text colours, ${shields.length} shields colours, ${report.length} report grades read, ${findings.length} findings`);
+    console.log('  live badge (/api/badge?url=, /score/badge) and static images: text on the badge ground');
+    console.log('  ground  text          colour   token                  ratio');
     for (const r of rows) {
-      console.log(`  ${r.grade}      ${r.fill}  ${r.text}  ${r.textOnFill.toFixed(2).padEnd(11)}  ${r.vsWhite.toFixed(2).padEnd(12)}  ${r.vsInk.toFixed(2)}`);
+      console.log(`  ${r.ground.padEnd(6)}  ${r.name.padEnd(12)}  ${r.colour}  ${r.token.padEnd(21)}  ${r.onGround.toFixed(2)}`);
     }
     console.log('  shields endpoint (/api/badge); text is the colour shields paints');
     console.log('  grade  colour        token           text     text/colour');

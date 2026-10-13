@@ -1,14 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { ReactNode } from 'react';
 import { ImageResponse } from 'next/og';
-import {
-  LOCKUP_MARK_TRANSFORM,
-  LOCKUP_VIEWBOX,
-  LOCKUP_WORD_TRANSFORM,
-  LOGO_AZURE,
-  markChildren,
-  wordChildren,
-} from './brand-logotype';
+import { LOGO_AZURE, lockupGeometry, markChildren, wordChildren } from './brand-logotype';
 import { BrandIcon, type BrandIconName } from './brand-icons';
 
 export const OG_SIZE = { width: 1200, height: 630 };
@@ -38,7 +32,7 @@ const T = OG_T;
  * next/font WOFF2 files, and with no fonts passed every card rendered in a
  * default sans that matched nothing on the site. Read once per process.
  * Fraunces 600 sets titles, Fraunces 700 (the 144pt cut) the score numerals,
- * Schibsted Grotesk the running text and Geist Mono the labels.
+ * Schibsted Grotesk the running text and Atkinson Hyperlegible Mono the labels.
  */
 type OgFont = { name: string; data: Buffer; weight: 400 | 500 | 600 | 700; style: 'normal' };
 let fontCache: OgFont[] | null = null;
@@ -50,7 +44,7 @@ export function ogFonts(): OgFont[] {
     { name: 'Fraunces', data: readFileSync(join(dir, 'Fraunces-700.ttf')), weight: 700, style: 'normal' },
     { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-500.ttf')), weight: 500, style: 'normal' },
     { name: 'Schibsted Grotesk', data: readFileSync(join(dir, 'SchibstedGrotesk-700.ttf')), weight: 700, style: 'normal' },
-    { name: 'Geist Mono', data: readFileSync(join(dir, 'GeistMono-400.ttf')), weight: 400, style: 'normal' },
+    { name: 'Atkinson Hyperlegible Mono', data: readFileSync(join(dir, 'AtkinsonHyperlegibleMono-400.ttf')), weight: 400, style: 'normal' },
   ];
   return fontCache;
 }
@@ -61,12 +55,17 @@ export function ogFonts(): OgFont[] {
  * master's padding, so the dot (x 366) is never cropped.
  */
 export function OgLockup({ height }: { height: number }) {
-  const [, , vbW, vbH] = LOCKUP_VIEWBOX.split(' ').map(Number);
+  // The mark is 74% of the lockup's height, so a lockup up to 65px tall has a
+  // mark of 48px or less and takes the small master (D66), as the header does.
+  // Every card draws it 46px tall.
+  const small = height <= 65;
+  const g = lockupGeometry(small);
+  const [, , vbW, vbH] = g.viewBox.split(' ').map(Number);
   return (
-    <svg width={Math.round((height * vbW) / vbH)} height={height} viewBox={LOCKUP_VIEWBOX}>
+    <svg width={Math.round((height * vbW) / vbH)} height={height} viewBox={g.viewBox}>
       <g transform="scale(1,-1)">
-        <g transform={LOCKUP_MARK_TRANSFORM}>{markChildren(T.logo)}</g>
-        <g transform={LOCKUP_WORD_TRANSFORM}>{wordChildren(T.logo)}</g>
+        <g transform={g.mark}>{markChildren(T.logo, small)}</g>
+        <g transform={g.word}>{wordChildren(T.logo)}</g>
       </g>
     </svg>
   );
@@ -92,6 +91,16 @@ export type OgCardProps = {
   badge?: string;
   /** The icon in the card's tile; null for none. Defaults by kind and path. */
   icon?: BrandIconName | null;
+  /**
+   * The quiet endorsement line (D24). On by default; false for a page whose
+   * own copy leaves it off, so its card matches it (/brand, D71).
+   */
+  endorsement?: boolean;
+  /**
+   * Art the caller draws in the tile's place (top right), for a page whose
+   * own picture says more than an icon would; it replaces the icon tile.
+   */
+  art?: ReactNode;
 };
 
 /**
@@ -109,13 +118,15 @@ function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
   if (route === '/' || route === '/report' || route.startsWith('/score')) return 'score';
   if (route === '/leaderboard') return 'leaderboard';
   if (route === '/monitor') return 'monitor';
-  if (route === '/badge') return 'verify';
+  // The badge shows a grade, so its tile is the score icon (the dot marks
+  // the active grade).
+  if (route === '/badge') return 'score';
   return null;
 }
 
 /**
  * Portable share card for designesy.org handoffs (identity v1, the brand-world
- * og-generic composition): the lockup, a Geist Mono eyebrow, the Fraunces
+ * og-generic composition): the lockup, a mono eyebrow, the Fraunces
  * claim, the lede, and the page's icon in a raised tile. The VAI link is the
  * quiet text "A VAI project" (D24).
  * Used by route-level opengraph-image files.
@@ -128,9 +139,11 @@ export function renderOgCard({
   kind = 'default',
   badge,
   icon,
+  endorsement = true,
+  art,
 }: OgCardProps) {
-  const tileIcon = icon === undefined ? defaultIcon(kind, path) : icon;
-  const textWidth = tileIcon ? 720 : 960;
+  const tileIcon = art ? null : icon === undefined ? defaultIcon(kind, path) : icon;
+  const textWidth = art || tileIcon ? 720 : 960;
   const titleSize = title.length > 40 ? 58 : title.length > 28 ? 66 : 76;
 
   return new ImageResponse(
@@ -162,7 +175,7 @@ export function renderOgCard({
             <div
               style={{
                 display: 'flex',
-                fontFamily: '"Geist Mono"',
+                fontFamily: '"Atkinson Hyperlegible Mono"',
                 fontSize: 18,
                 letterSpacing: '0.06em',
                 textTransform: 'uppercase',
@@ -189,7 +202,7 @@ export function renderOgCard({
           <div
             style={{
               display: 'flex',
-              fontFamily: '"Geist Mono"',
+              fontFamily: '"Atkinson Hyperlegible Mono"',
               fontSize: 20,
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -237,9 +250,15 @@ export function renderOgCard({
             marginTop: 'auto',
           }}
         >
-          <div style={{ display: 'flex', fontFamily: '"Geist Mono"', fontSize: 22, color: T.muted }}>{path}</div>
-          <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
+          <div style={{ display: 'flex', fontFamily: '"Atkinson Hyperlegible Mono"', fontSize: 22, color: T.muted }}>{path}</div>
+          {endorsement ? (
+            <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
+          ) : null}
         </div>
+
+        {art ? (
+          <div style={{ position: 'absolute', right: 72, top: 168, display: 'flex' }}>{art}</div>
+        ) : null}
 
         {tileIcon ? (
           <div

@@ -518,23 +518,65 @@ function trace(where, op, phase) {
   process.stderr.write(`[dock] +${ms(performance.now())}ms ${where} ${op} ${phase}\n`);
 }
 
+// --- page operation limit -------------------------------------------------------
+
+// A page can stop answering: on CI an in-page walk or reveal (both wait on
+// requestAnimationFrame) sometimes never returned, for 12 to 15 minutes, until
+// the step's 960 s bound killed the whole attempt. Every operation on a page
+// is therefore limited to OP_LIMIT_MS. A page that exceeds it is closed and
+// its job (one route at one width, both themes) runs once more on its own, in
+// a fresh context, while the other workers carry on. A second timeout fails
+// the gate as TIMEOUT, naming the page and the step.
+//
+// 40 s is about three times the slowest operation that finished in 51 traced
+// CI runs of this gate (a walk of the stripe.com result at 320, 11.8 s; the
+// slowest reveal was 5.7 s). It is shorter than goto's own 60 s timeout, so a
+// load that slow is retried too; none in those runs took more than 2.1 s.
+const OP_LIMIT_MS = 40000;
+
+class PageTimeout extends Error {
+  constructor(where, op) {
+    super(`${op} did not finish within ${OP_LIMIT_MS / 1000} s`);
+    this.where = where;
+    this.op = op;
+  }
+}
+
 /** Runs one browser operation between a start and an end line. A throw is
- *  traced as "fail" and rethrown untouched, so callers behave as before. */
-async function step(where, op, fn) {
+ *  traced as "fail" and rethrown untouched, so callers behave as before.
+ *  With a limit, an operation still running when it expires is traced as
+ *  "timeout" and a PageTimeout is thrown; the operation itself is abandoned
+ *  (closing its context ends it), and its later rejection is expected. */
+async function step(where, op, fn, limitMs = 0) {
   const id = ++opSeq;
   inFlight.set(id, { where, op, t0: performance.now() });
   trace(where, op, 'start');
+  let timer = null;
   try {
-    const value = await fn();
+    const work = Promise.resolve().then(fn);
+    let value;
+    if (limitMs) {
+      work.catch(() => {});
+      const expiry = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new PageTimeout(where, op)), limitMs);
+      });
+      value = await Promise.race([work, expiry]);
+    } else {
+      value = await work;
+    }
     trace(where, op, 'end');
     return value;
   } catch (e) {
-    trace(where, op, 'fail');
+    trace(where, op, e instanceof PageTimeout ? 'timeout' : 'fail');
     throw e;
   } finally {
+    clearTimeout(timer);
     inFlight.delete(id);
   }
 }
+
+/** A step on a page or its context: limited to OP_LIMIT_MS. */
+const pstep = (where, op, fn) => step(where, op, fn, OP_LIMIT_MS);
 
 function dumpInFlight() {
   if (traceStopped) return;
@@ -585,10 +627,12 @@ function assess(job, walk, row) {
   row.ok = row.violations.length === 0;
 }
 
-/** One route at one width: loaded once, walked once per theme. */
+/** One route at one width: loaded once, walked once per theme. A
+ *  PageTimeout leaves through every catch here (the context is closed on the
+ *  way out) so runJobWithRetry can run the job again in a fresh context. */
 async function runJob(browser, job, result, themes) {
   const at0 = place(job, themes[0]);
-  const ctx = await step(at0, 'newContext', () =>
+  const ctx = await pstep(at0, 'newContext', () =>
     browser.newContext({
       viewport: { width: job.vp.w, height: job.vp.h },
       deviceScaleFactor: 1,
@@ -597,104 +641,134 @@ async function runJob(browser, job, result, themes) {
       colorScheme: themes[0],
     }),
   );
-  const page = await step(at0, 'newPage', () => ctx.newPage());
-  if (SAFE_AREA && job.vp.mobile) {
-    const cdp = await step(at0, 'newCDPSession', () => ctx.newCDPSession(page));
-    await step(at0, 'setSafeAreaInsetsOverride', () =>
-      cdp.send('Emulation.setSafeAreaInsetsOverride', {
-        insets: { top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: SAFE_AREA, bottomMax: SAFE_AREA },
-      }),
-    );
-  }
-  const rows = themes.map((theme) => ({ route: job.label, width: job.vp.w, theme, ok: false, violations: [] }));
   try {
-    if (job.state) {
-      await step(at0, 'route.mock', () =>
-        page.route('**/api/score', (route) =>
-          route.request().method() === 'POST'
-            ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) })
-            : route.continue(),
-        ),
+    const page = await pstep(at0, 'newPage', () => ctx.newPage());
+    if (SAFE_AREA && job.vp.mobile) {
+      const cdp = await pstep(at0, 'newCDPSession', () => ctx.newCDPSession(page));
+      await pstep(at0, 'setSafeAreaInsetsOverride', () =>
+        cdp.send('Emulation.setSafeAreaInsetsOverride', {
+          insets: { top: 0, topMax: 0, left: 0, leftMax: 0, right: 0, rightMax: 0, bottom: SAFE_AREA, bottomMax: SAFE_AREA },
+        }),
       );
     }
-    // Arrive from another page, so the Back pill has history to offer
-    // (phones drop the Back pill, so they skip the hop).
-    if (job.vp.w > 720) {
-      await step(at0, 'goto.robots', () => page.goto(BASE + '/robots.txt', { waitUntil: 'load', timeout: 60000 }));
-    }
-    await step(at0, 'goto', () => page.goto(BASE + job.route, { waitUntil: 'load', timeout: 60000 }));
-    if (job.state) await step(at0, 'results.ready', () => job.state.ready(page));
-    await step(at0, 'fonts', () =>
-      page.evaluate(async () => {
-        try {
-          await document.fonts.ready;
-        } catch {
-          /* no FontFaceSet */
-        }
-      }),
-    );
-    // One pass down and back so every reveal, count-up and lazy block has
-    // run, then the pills held still and, with --break, held up.
-    await step(at0, 'reveal', () =>
-      page.evaluate(async () => {
-        const frame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
-        const h = document.documentElement.scrollHeight;
-        for (let y = 0; y < h; y += innerHeight) {
-          scrollTo({ top: y, left: 0, behavior: 'instant' });
-          await frame();
-        }
-        scrollTo({ top: 0, left: 0, behavior: 'instant' });
-        await frame();
-      }),
-    );
-    await step(at0, 'settle.wait', () => page.waitForTimeout(job.state ? 1200 : 400));
-    await step(at0, 'addStyleTag', () => page.addStyleTag({ content: PILL_STILL + (BREAK ? PILL_FORCED : '') }));
-    await step(at0, 'installProbe', () =>
-      page.evaluate(installProbe, {
-        pills: PILLS,
-        controls: CONTROLS,
-        values: VALUES,
-        valueClass: VALUE_CLASS.source,
-        tol: 0.5,
-        fine: 6,
-        fineSpan: 72,
-        coarse: Number(opt('--coarse', '1.8')),
-        anchors: job.state ? job.state.anchors : null,
-      }),
-    );
-    for (let i = 0; i < themes.length; i++) {
-      const row = rows[i];
-      const at = place(job, themes[i]);
-      try {
-        if (i > 0) {
-          // The next theme as a visitor switching it gets it: the scheme and
-          // the site's own data-theme, which its stylesheet keys on.
-          await step(at, 'emulateMedia', () => page.emulateMedia({ colorScheme: themes[i] }));
-          await step(at, 'setTheme', () =>
-            page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), themes[i]),
-          );
-          await step(at, 'theme.wait', () => page.waitForTimeout(150));
-        }
-        const theme = await step(at, 'readTheme', () =>
-          page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+    const rows = themes.map((theme) => ({ route: job.label, width: job.vp.w, theme, ok: false, violations: [] }));
+    try {
+      if (job.state) {
+        await pstep(at0, 'route.mock', () =>
+          page.route('**/api/score', (route) =>
+            route.request().method() === 'POST'
+              ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(result) })
+              : route.continue(),
+          ),
         );
-        if (theme !== themes[i]) throw new Error(`page is in ${theme}, not ${themes[i]}`);
-        let walk = await step(at, 'walk', () => page.evaluate(() => window.__dockProbe.walk()));
-        // Late content moved the page under the walk: walk it again, once.
-        if (walk.grew) walk = await step(at, 'walk.again', () => page.evaluate(() => window.__dockProbe.walk()));
-        assess(job, walk, row);
-      } catch (e) {
+      }
+      // Arrive from another page, so the Back pill has history to offer
+      // (phones drop the Back pill, so they skip the hop).
+      if (job.vp.w > 720) {
+        await pstep(at0, 'goto.robots', () => page.goto(BASE + '/robots.txt', { waitUntil: 'load', timeout: 60000 }));
+      }
+      await pstep(at0, 'goto', () => page.goto(BASE + job.route, { waitUntil: 'load', timeout: 60000 }));
+      if (job.state) await pstep(at0, 'results.ready', () => job.state.ready(page));
+      await pstep(at0, 'fonts', () =>
+        page.evaluate(async () => {
+          try {
+            await document.fonts.ready;
+          } catch {
+            /* no FontFaceSet */
+          }
+        }),
+      );
+      // One pass down and back so every reveal, count-up and lazy block has
+      // run, then the pills held still and, with --break, held up.
+      await pstep(at0, 'reveal', () =>
+        page.evaluate(async () => {
+          const frame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
+          const h = document.documentElement.scrollHeight;
+          for (let y = 0; y < h; y += innerHeight) {
+            scrollTo({ top: y, left: 0, behavior: 'instant' });
+            await frame();
+          }
+          scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          await frame();
+        }),
+      );
+      await pstep(at0, 'settle.wait', () => page.waitForTimeout(job.state ? 1200 : 400));
+      await pstep(at0, 'addStyleTag', () => page.addStyleTag({ content: PILL_STILL + (BREAK ? PILL_FORCED : '') }));
+      await pstep(at0, 'installProbe', () =>
+        page.evaluate(installProbe, {
+          pills: PILLS,
+          controls: CONTROLS,
+          values: VALUES,
+          valueClass: VALUE_CLASS.source,
+          tol: 0.5,
+          fine: 6,
+          fineSpan: 72,
+          coarse: Number(opt('--coarse', '1.8')),
+          anchors: job.state ? job.state.anchors : null,
+        }),
+      );
+      for (let i = 0; i < themes.length; i++) {
+        const row = rows[i];
+        const at = place(job, themes[i]);
+        try {
+          if (i > 0) {
+            // The next theme as a visitor switching it gets it: the scheme and
+            // the site's own data-theme, which its stylesheet keys on.
+            await pstep(at, 'emulateMedia', () => page.emulateMedia({ colorScheme: themes[i] }));
+            await pstep(at, 'setTheme', () =>
+              page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), themes[i]),
+            );
+            await pstep(at, 'theme.wait', () => page.waitForTimeout(150));
+          }
+          const theme = await pstep(at, 'readTheme', () =>
+            page.evaluate(() => document.documentElement.getAttribute('data-theme')),
+          );
+          if (theme !== themes[i]) throw new Error(`page is in ${theme}, not ${themes[i]}`);
+          let walk = await pstep(at, 'walk', () => page.evaluate(() => window.__dockProbe.walk()));
+          // Late content moved the page under the walk: walk it again, once.
+          if (walk.grew) walk = await pstep(at, 'walk.again', () => page.evaluate(() => window.__dockProbe.walk()));
+          assess(job, walk, row);
+        } catch (e) {
+          if (e instanceof PageTimeout) throw e;
+          row.violations.push({ id: 'LOAD', why: String(e && e.message ? e.message : e).slice(0, 200) });
+        }
+      }
+    } catch (e) {
+      if (e instanceof PageTimeout) throw e;
+      for (const row of rows) {
         row.violations.push({ id: 'LOAD', why: String(e && e.message ? e.message : e).slice(0, 200) });
       }
     }
-  } catch (e) {
-    for (const row of rows) {
-      row.violations.push({ id: 'LOAD', why: String(e && e.message ? e.message : e).slice(0, 200) });
-    }
+    return rows;
   } finally {
-    await step(place(job, themes[themes.length - 1]), 'context.close', () => ctx.close()).catch(() => {});
+    await pstep(place(job, themes[themes.length - 1]), 'context.close', () => ctx.close()).catch(() => {});
   }
-  return rows;
+}
+
+/** runJob, run once more in a fresh context when a page operation outlives
+ *  OP_LIMIT_MS. Only the job is retried; the other workers carry on. A second
+ *  timeout becomes a TIMEOUT finding on each of the job's rows. */
+async function runJobWithRetry(browser, job, result, themes) {
+  let first;
+  try {
+    return await runJob(browser, job, result, themes);
+  } catch (e) {
+    if (!(e instanceof PageTimeout)) throw e;
+    first = e;
+  }
+  process.stderr.write(
+    `[dock] +${ms(performance.now())}ms ${first.where} ${first.op} timed out after ${OP_LIMIT_MS / 1000} s: ` +
+      'page closed, job retried once in a fresh context\n',
+  );
+  try {
+    return await runJob(browser, job, result, themes);
+  } catch (e) {
+    if (!(e instanceof PageTimeout)) throw e;
+    const why =
+      `${e.op} (${e.where.split(' ').pop()}) did not finish within ${OP_LIMIT_MS / 1000} s on the retry; ` +
+      `the first run stopped in ${first.op} (${first.where.split(' ').pop()})`;
+    return themes.map((theme) => ({ route: job.label, width: job.vp.w, theme, ok: false, violations: [{ id: 'TIMEOUT', step: e.op, why }] }));
+  }
 }
 
 async function main() {
@@ -743,7 +817,7 @@ async function main() {
       while (next < jobs.length) {
         const job = jobs[next++];
         const t = Date.now();
-        const got = await runJob(browser, job, result, themes);
+        const got = await runJobWithRetry(browser, job, result, themes);
         rows.push(...got);
         if (VERBOSE) {
           const bad = got.filter((r) => !r.ok).length;

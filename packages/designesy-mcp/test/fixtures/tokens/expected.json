@@ -628,7 +628,7 @@
     "contract_version": "0.1.2",
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
-    "total_tokens": 45,
+    "total_tokens": 51,
     "score": 100,
     "grade": "A",
     "pass_count": 9,
@@ -647,19 +647,19 @@
         "id": "t02",
         "name": "Token groups present (top-level non-$ keys)",
         "status": "PASS",
-        "detail": "6 token groups found: color, radius, shadow, motion, interaction..."
+        "detail": "7 token groups found: color, radius, shadow, motion, interaction..."
       },
       {
         "id": "t03",
         "name": "Every token has $type (direct or inherited)",
         "status": "PASS",
-        "detail": "45/45 tokens have $type"
+        "detail": "51/51 tokens have $type"
       },
       {
         "id": "t04",
         "name": "Every token has $value",
         "status": "PASS",
-        "detail": "45/45 tokens have $value"
+        "detail": "51/51 tokens have $value"
       },
       {
         "id": "t05",
@@ -683,13 +683,13 @@
         "id": "t08",
         "name": "Dimension units are valid CSS length units (px, rem preferred)",
         "status": "PASS",
-        "detail": "All 5 dimension token(s) use valid units (px, rem, em, %, etc.)"
+        "detail": "All 11 dimension token(s) use valid units (px, rem, em, %, etc.)"
       },
       {
         "id": "t09",
         "name": "Token naming hierarchy: tokens organized into nested groups",
         "status": "PASS",
-        "detail": "6 token group(s) with nested hierarchy: color, radius, shadow, motion, interaction..."
+        "detail": "7 token group(s) with nested hierarchy: color, radius, shadow, motion, interaction..."
       },
       {
         "id": "t10",

@@ -50,6 +50,13 @@
 //   /api/readiness/*   50/hr   — AI readiness check
 //   /api/compare/*     30/hr   — design system comparison
 //
+// Not here, by design: the live badge (/api/badge?url=, /score/badge). Its
+// views are images, many arriving through GitHub's image proxy from a shared
+// pool of IPs, and a cached badge costs nothing, so a per-request limit would
+// block legitimate views. Only its cache miss (a fresh score) is limited, in
+// the route: 20 per IP and 300 in all per hour, failing CLOSED
+// (app/lib/badge/miss-limit.ts).
+//
 // Graceful degradation: if UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN
 // env vars are not set, rate limiting is skipped (the site still works, just
 // without edge-level rate limiting). The in-memory limiters in route files
@@ -58,79 +65,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import { clientIp, getLimiter, type LimiterOutcome } from './app/lib/rate-limit';
 
-// ── Upstash rate limiters (lazy init, edge-compatible) ──────────────────────
+// ── Upstash rate limiters ───────────────────────────────────────────────────
 //
-// Lazy-initialized so the module doesn't crash if env vars aren't set.
-// Vercel reuses edge instances (Fluid Compute), so the limiter is typically
-// initialized once and reused across requests.
-
-const limiters = new Map<string, Ratelimit | null>();
-
-function getLimiter(
-  prefix: string,
-  window: ReturnType<typeof Ratelimit.fixedWindow>,
-): Ratelimit | null {
-  if (limiters.has(prefix)) return limiters.get(prefix)!;
-  const limiter = createLimiter(prefix, window);
-  limiters.set(prefix, limiter);
-  return limiter;
-}
-
-// `Ratelimit.fixedWindow()` returns an `Algorithm<RegionContext>` — the
-// type isn't exported, so we use ReturnType to stay type-safe without
-// reaching into internals.
-function createLimiter(
-  prefix: string,
-  limiter: ReturnType<typeof Ratelimit.fixedWindow>,
-): Ratelimit | null {
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  // Graceful degradation: no Upstash env vars → skip rate limiting.
-  if (!redisUrl || !redisToken) return null;
-
-  // Construction can throw too (malformed URL, bad token shape), and that throw
-  // would happen at module init rather than inside the guarded call. Return null
-  // so the caller degrades to "no rate limiting" instead of failing the request.
-  try {
-    const redis = new Redis({
-      url: redisUrl,
-      token: redisToken,
-    });
-
-    return new Ratelimit({
-      redis,
-      limiter,
-      prefix: `designesy:${prefix}`,
-      // analytics: false — deliberately.
-      //
-      // With analytics on, the docs state "every time we call ratelimit.limit(),
-      // analytics will be sent to the Redis database" — an extra write per
-      // guarded request, on top of the limit check itself. That multiplier sits
-      // directly on the monthly command quota, and on 2026-09-16 the free tier's
-      // quota ran out (ERR max requests limit exceeded, Limit 500000, Usage
-      // 500002), which silently disabled rate limiting on all nine guarded
-      // routes. The dashboard's analytics charts are not worth spending the
-      // protection's own budget on; the limiter should be as cheap as possible.
-      analytics: false,
-    });
-  } catch (err) {
-    console.error(
-      `[middleware] could not construct rate limiter "${prefix}" — running without it:`,
-      err instanceof Error ? err.message : String(err),
-    );
-    return null;
-  }
-}
+// Construction (lazy, one limiter per prefix, analytics off) and the client-IP
+// rule live in app/lib/rate-limit.ts, shared with the live badge's miss limit.
+// What this file decides is its own: the API routes below fail OPEN when the
+// limiter is missing or its backend does not answer (see checkRateLimit).
 
 // ── Rate limit check ────────────────────────────────────────────────────────
 //
 // Returns a 429 NextResponse if rate limited, or null if OK (caller continues
 // to the route handler).
-
-type LimiterOutcome = 'active' | 'degraded' | 'inactive';
 
 async function checkRateLimit(
   request: NextRequest,
@@ -140,15 +87,8 @@ async function checkRateLimit(
   // 'inactive' — no limiter object at all (env vars missing / construction threw)
   if (!limiter) return { blocked: null, outcome: 'inactive' };
 
-  // Next.js 15 removed `request.ip` from NextRequest. Vercel sets the
-  // `x-forwarded-for` and `x-real-ip` headers on every edge request — both
-  // are populated by Vercel's proxy layer and are trustworthy on Vercel.
-  // (In local dev, neither may be set; we fall back to 'unknown' which
-  // collapses all local requests into one bucket — acceptable for dev.)
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip')?.trim() ||
-    'unknown';
+  // The x-forwarded-for / x-real-ip rule (app/lib/rate-limit.ts).
+  const ip = clientIp(request.headers);
 
   // FAIL OPEN on any limiter error.
   //

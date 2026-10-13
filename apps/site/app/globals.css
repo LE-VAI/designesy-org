@@ -48,6 +48,34 @@
   line-gap-override: 0%;
 }
 
+/* Mono fallbacks, matched to Atkinson Hyperlegible Mono (brand ledger D65).
+   next/font has no metrics for this family, so it generates no adjusted
+   fallback, and before the web face arrives the stack would paint in the
+   platform mono: Cascadia Code on Windows 11 (0.586em a character) or
+   Consolas (0.550em), against Atkinson's 0.632em, so mono runs would widen
+   by 8 to 15% at the swap. Each face below is one local mono sized to
+   Atkinson's advance (size-adjust = 0.632 / its own advance, from the font
+   files), with Atkinson's ascent (0.984) and descent (0.316) rescaled to it,
+   so a line keeps its width and height through the swap. Where neither local
+   face exists, the stack falls through to the next family, as before. */
+@font-face {
+  font-family: 'Mono Cascadia Fallback';
+  src: local('Cascadia Code'), local('CascadiaCode-Regular'), local('Cascadia Mono'), local('CascadiaMono-Regular');
+  size-adjust: 107.87%;
+  ascent-override: 91.22%;
+  descent-override: 29.29%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Mono Consolas Fallback';
+  src: local('Consolas');
+  size-adjust: 114.95%;
+  ascent-override: 85.6%;
+  descent-override: 27.49%;
+  line-gap-override: 0%;
+}
+
 :root {
   color-scheme: dark;
 
@@ -219,7 +247,6 @@
   --grade-f-ink: var(--grade-f);
   --grade-d-glow: #FB7185;   /* D is rose (D5): the orange is the brand's flame, not a grade */
   --signal-pos: #34d399;     /* emerald for positive signal points */
-  --live: #22c55e;           /* "is-live" status dot (same green as grade A) */
   --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
   --amber-notice: #c9a227;   /* amber for score-drawer remediation heading */
 
@@ -249,13 +276,29 @@
        "we verify design" signal). Optical-size + soft axes for dark-mode
        tuning.
      --display: Fraunces Variable — brand/headline face, aliased to --serif.
-     --mono: Geist Mono Variable for check IDs, score readouts, token names.
+     --mono: Atkinson Hyperlegible Mono for labels, URLs, timestamps, score
+       units, check IDs and token names (brand ledger D65, replaced Geist
+       Mono 2026-10-12): the low-vision face, with every confusable pair
+       (0/O, 1/l/I, 5/S, 8/B) drawn distinct.
      The serif/sans split is the 2026 hybrid system: serifs for brand-level
      communication (trust/authority), sans for UI/data (efficiency). */
   --sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, Helvetica, sans-serif;
   --serif: var(--font-display), 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
   --display: var(--serif);
   --mono: var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+
+  /* Type scale (brand ledger D68): a Major Third (x1.25) on the 16px root, so
+     no two adjacent steps sit closer than 25%. Theme-agnostic, so it lives
+     here once and not in the light block. Every text size on a covered sheet
+     reads one of these (scripts/check-type-scale.js); below --text-lead,
+     hierarchy comes from weight and colour, not more sizes. Display titles
+     keep their clamp() sizes. Named in the contract (typography.scale). */
+  --text-label: 0.8rem;    /* 12.8px  labels, meta, captions, mono caps. The floor for all text */
+  --text-body: 1rem;       /* 16px    reading and interface text; the reading floor */
+  --text-lead: 1.25rem;    /* 20px    lead paragraphs, card titles, secondary readouts */
+  --text-h3: 1.563rem;     /* 25px */
+  --text-h2: 1.953rem;     /* 31.25px */
+  --text-h1: 2.441rem;     /* 39px    the in-content h1 floor; page titles use the display clamp */
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
@@ -607,7 +650,6 @@ read-along {
   --grade-b-light: var(--grade-b-ink);
   --grade-d-glow: #C9216C;
   --signal-pos: #059669;
-  --live: #15803d;
   --error-text: var(--error-ink);
   --amber-notice: var(--warn-ink);
 
@@ -745,7 +787,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-optical-sizing: auto;
-  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
+  font-size: var(--text-body);
   line-height: 1.55;
   letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
@@ -835,6 +877,19 @@ a {
   text-decoration: none;
 }
 
+/* Code takes the site's mono face. The browser's own rule sets code, kbd,
+   samp and pre in the generic monospace, which outranks the inherited face,
+   so they drew in the OS mono (Consolas on Windows): 116 code elements on
+   /contracts, the page whose typography rules allow three faces with the
+   mono for data (live audit 2026-10-11, V06). A component that sets its own
+   face still wins. */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--mono);
+}
+
 h1,
 h2,
 h3,
@@ -854,7 +909,7 @@ p {
 /* --- Wordmark (CSS-only signal-dot) --- */
 
 .wordmark {
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--ink);
@@ -882,44 +937,6 @@ p {
   cursor: default;
 }
 
-/*
-  Hero text shimmer (jh3yy / AliGrids technique, polished).
-  background-clip + multi-stop signal sweep — brand blue family only,
-  dual highlight for depth, seamless linear loop. Dot stays signal breath.
-*/
-.wordmark-hero .wordmark-shimmer,
-.wordmark-hero .wordmark-shimmer *,
-.wordmark-shimmer,
-.wordmark-shimmer * {
-  background-image: linear-gradient(
-    100deg,
-    var(--shimmer-1) 0%,
-    var(--shimmer-2) 12%,
-    var(--ink) 22%,
-    var(--ink) 34%,
-    var(--shimmer-3) 42%,
-    var(--shimmer-4) 46.5%,
-    var(--shimmer-5) 49%,
-    var(--paper-white) 50.5%,
-    var(--shimmer-5) 52%,
-    var(--shimmer-4) 54.5%,
-    var(--shimmer-3) 58%,
-    var(--signal) 64%,
-    var(--ink) 72%,
-    var(--ink) 84%,
-    var(--shimmer-2) 92%,
-    var(--shimmer-1) 100%
-  );
-  background-size: 320% 100%;
-  background-position: 100% 50%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text !important;
-  background-clip: text !important;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  animation: textShimmer 4.2s linear infinite !important;
-}
-
 .wordmark-hero .dot {
   /* signal-access — see .wordmark .dot note. The hero dot sits on the
      page surface (same near-black/near-white) and is a text node, so
@@ -930,16 +947,6 @@ p {
   margin-inline-start: -0.01em;
   transform: translateY(-0.02em);
   animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-
-@keyframes textShimmer {
-  0% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
 }
 
 @keyframes signalPulse {
@@ -1082,7 +1089,7 @@ p {
   flex: 0 0 auto;
   position: relative;
   padding: var(--space-8) var(--space-fine-65);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 500;
   color: var(--muted);
   border-radius: var(--radius-sm);
@@ -1123,88 +1130,6 @@ p {
 .topbar .senses-trigger:focus-visible,
 .topbar .topbar-cta:focus-visible {
   outline-offset: 2px;
-}
-
-/* --- Theme Toggle ---
-   Single SVG that morphs sun → moon via mask slide.
-   Dark mode: sun visible (rays extended, mask circle offset).
-   Light mode: mask circle slides in to "bite" the sun into a crescent. */
-
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color var(--duration-quick) var(--ease-out),
-              background var(--duration-quick) var(--ease-out);
-}
-
-@media (hover: hover) {
-  .theme-toggle:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-hover);
-  }
-}
-
-.theme-toggle:active {
-  transform: scale(0.96);
-}
-
-/* Sun core: the main circle that becomes the crescent */
-.theme-icon .sun-core {
-  transition: r var(--duration-fast) var(--ease-out);
-}
-
-/* Moon mask circle: offset far in dark (invisible), slides into view in light */
-.theme-icon .moon-mask-circle {
-  transition: cx var(--duration-fast) var(--ease-out),
-              cy var(--duration-fast) var(--ease-out);
-}
-
-/* Sun rays: visible in dark, scale to 0 in light */
-.theme-icon .sun-rays {
-  transition: opacity var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
-  transform-origin: center;
-}
-
-/* Dark mode (default): sun fully visible, mask hidden */
-[data-theme="dark"] .theme-icon .sun-core,
-:root:not([data-theme="light"]) .theme-icon .sun-core {
-  r: 5px;
-}
-
-[data-theme="dark"] .theme-icon .moon-mask-circle,
-:root:not([data-theme="light"]) .theme-icon .moon-mask-circle {
-  cx: 30px;
-  cy: 4px;
-}
-
-[data-theme="dark"] .theme-icon .sun-rays,
-:root:not([data-theme="light"]) .theme-icon .sun-rays {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
-}
-
-/* Light mode: rays retract, mask slides in to create crescent */
-[data-theme="light"] .theme-icon .sun-core {
-  r: 6px;
-}
-
-[data-theme="light"] .theme-icon .moon-mask-circle {
-  cx: 20px;
-  cy: 8px;
-}
-
-[data-theme="light"] .theme-icon .sun-rays {
-  opacity: 0;
-  transform: scale(0.5) rotate(90deg);
 }
 
 /* View Transitions: no default animation on root — we drive our own clip-path */
@@ -1273,20 +1198,6 @@ p {
 }
 
 /* --- Sense toggles (sound + haptics) --- */
-
-.sense-toggles {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-8);
-  flex-shrink: 0;
-  /* No border-left divider: the preceding nav-links gap + consistent 32px
-     control heights already separate the clusters cleanly. The previous
-     1px hairline + 0.85rem padding was competing with the scroll-progress
-     gradient at the topbar bottom, reading as "two connected vertical
-     lines" on the nav (operator feedback 2026-08-02). Remove the divider;
-     the instrument register is cleaner without it. */
-  margin-left: var(--space-fine-40);
-}
 
 .sense-toggle {
   display: inline-flex;
@@ -1396,7 +1307,7 @@ html[data-motion="paused"] :is(
     border-radius: var(--radius);
     color: var(--muted);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: var(--text-body);
     font-weight: 500;
     cursor: pointer;
   }
@@ -1408,7 +1319,7 @@ html[data-motion="paused"] :is(
   .motion-toggle-row-icon {
     width: 1.25rem;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: var(--text-label);
   }
 }
 
@@ -1428,7 +1339,9 @@ html[data-motion="paused"] :is(
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.82rem;
+  /* "Find" reads at the nav links' size (D68 body); its Ctrl K keycap stays
+     at the label step, as a shortcut hint. */
+  font-size: var(--text-body);
   cursor: pointer;
   transition: color 0.2s var(--ease), border-color 0.2s var(--ease),
     background 0.2s var(--ease);
@@ -1457,7 +1370,7 @@ html[data-motion="paused"] :is(
   align-items: center;
   gap: 1px;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   background: var(--surface-soft);
   border: 1px solid var(--line);
@@ -1467,7 +1380,7 @@ html[data-motion="paused"] :is(
 }
 
 .cmdk-kbd-mod {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
 }
 
 /* Icon-only search below 1024px. It was icon-only only below 720, so between
@@ -1628,7 +1541,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   outline: none;
   color: var(--ink);
   font: inherit;
-  font-size: 1.06rem; /* 17px — legible against glass, above 16px iOS floor */
+  font-size: var(--text-body); /* 17px — legible against glass, above 16px iOS floor */
   letter-spacing: -0.005em;
 }
 
@@ -1657,7 +1570,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-esc {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1705,7 +1618,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-group-label {
-  font-size: 0.64rem;
+  font-size: var(--text-label);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1728,7 +1641,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   cursor: pointer;
   transition: background 120ms var(--ease), color 120ms var(--ease);
 }
@@ -1764,7 +1677,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .cmdk-item-meta {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   line-height: 1.3;
   overflow: hidden;
@@ -1823,7 +1736,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-item-enter {
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1885,7 +1798,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-empty-title {
   color: var(--ink);
-  font-size: 0.94rem;
+  font-size: var(--text-body);
   margin: 0 0 var(--space-fine-35);
   font-weight: 500;
   letter-spacing: -0.005em;
@@ -1893,7 +1806,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .cmdk-empty-sub {
   color: var(--muted-dim);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   margin: 0;
   line-height: 1.45;
 }
@@ -1913,14 +1826,14 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-35);
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   line-height: 1;
 }
 
 .cmdk-footer-hint kbd {
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: var(--text-label);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-5);
@@ -1944,11 +1857,11 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
     padding: var(--space-16) var(--space-fine-95);
   }
   .cmdk-input {
-    font-size: 1rem; /* exactly 16px — iOS zoom floor */
+    font-size: var(--text-body); /* exactly 16px — iOS zoom floor */
   }
   .cmdk-item {
     padding: var(--space-12) var(--space-12) var(--space-12) var(--space-fine-85);
-    font-size: 0.92rem;
+    font-size: var(--text-body);
   }
   .cmdk-footer {
     padding: var(--space-fine-55) var(--space-fine-95);
@@ -1978,7 +1891,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
     background: none;
     color: var(--signal-text);
     font: inherit;
-    font-size: 0.95rem;
+    font-size: var(--text-body);
     font-weight: 500;
     cursor: pointer;
   }
@@ -2055,44 +1968,16 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 
 .sense-toggle-icon {
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   line-height: 1;
 }
 
 .haptics-toggle .sense-toggle-icon {
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   letter-spacing: 0;
 }
 
 /* --- Hero --- */
-
-
-/*
-  Hero seam constellation
-  -----------------------
-  The five modular mark elements (dot, orbit quarter, square, triangle,
-  rounded quarter) dock on a vertical seam to the right of the hero copy.
-  Same grammar as the brand mark — crisp, solid, intentional — not washed
-  primitives floating in the void. Field-card marks are the dispersed form.
-*/
-.hero-seam {
-  position: absolute;
-  right: clamp(0rem, 2vw, 1.5rem);
-  top: 50%;
-  transform: translateY(-50%);
-  width: min(300px, 34vw);
-  height: min(300px, 46vh);
-  pointer-events: none;
-  z-index: 3;
-  display: none;
-  perspective: 640px;
-}
-
-@media (min-width: 860px) {
-  .hero-seam {
-    display: block;
-  }
-}
 
 /* Scroll-driven parallax — the constellation drifts up at 0.3x scroll
    speed, creating depth without GSAP. --scroll-y is set by ScrollDepth
@@ -2114,17 +1999,6 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   transform-style: preserve-3d;
   transition: transform 120ms var(--ease-out);
   perspective: 500px;
-}
-
-/*
-  Per-shape hover groups — each shape is wrapped in a <g class="seam-shape">
-  so it can receive CSS 3D transforms (SVG child elements can't, but <g> can).
-  JS (EffectEnhancer) applies transform + color on hover.
-*/
-.hero-seam-mark .seam-shape {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease);
 }
 
 /*
@@ -2242,7 +2116,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 .hero-actions .score-share-btn {
   height: 44px;
   padding: 0 var(--space-20);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   border-radius: var(--radius);
 }
 @supports (animation-timeline: view()) {
@@ -2325,7 +2199,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   justify-content: center;
   min-height: 44px;
   padding: var(--space-fine-65) var(--space-20);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
   letter-spacing: -0.005em;
   border-radius: var(--radius);
@@ -2424,23 +2298,6 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   border-bottom: 1px solid var(--line-faint);
 }
 
-.pipeline-track::before {
-  content: "";
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 0.55rem;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--line) 8%,
-    var(--line) 92%,
-    transparent 100%
-  );
-  pointer-events: none;
-}
-
 .pipeline-step {
   display: flex;
   flex-direction: column;
@@ -2458,33 +2315,9 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   background: var(--signal-dim);
 }
 
-.pipeline-step.is-end .pipeline-node-core {
-  background: var(--signal);
-  width: 0.4rem;
-  height: 0.4rem;
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.pipeline-step.is-end .pipeline-label {
-  color: var(--ink);
-}
-
-.pipeline-step.is-end .pipeline-num {
-  color: var(--signal-text);
-}
-
 @media (hover: hover) and (pointer: fine) {
   .pipeline-step:hover .pipeline-node {
     border-color: var(--signal-light);
-  }
-
-  .pipeline-step:hover .pipeline-node-core {
-    background: var(--signal-light);
-    transform: scale(1.15);
-  }
-
-  .pipeline-step:hover .pipeline-label {
-    color: var(--ink);
   }
 }
 
@@ -2611,28 +2444,12 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
     row-gap: var(--space-fine-45);
   }
   .surface-card-meta { grid-row: 1; }
-  .surface-card-label { grid-row: 2; }
-  .surface-card-desc { grid-row: 3; }
-  .surface-card-arrow { grid-row: 4; }
 }
 
 /* Pressed: the contract's press scale. The hover tilt and 1px lift are gone
    (the card holds still; its edges are shared with its neighbours). */
 a.surface-card:active {
   transform: scale(0.99);
-}
-
-
-@media (hover: hover) {
-  .surface-card:hover .surface-card-arrow {
-    color: var(--ink);
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-arrow {
-    transform: translateX(2px);
-  }
 }
 
 /*
@@ -2719,74 +2536,6 @@ a.surface-card:active {
 .surface-card > * {
   position: relative;
   z-index: 1;
-}
-
-/* --- Pillars (home "What the contract holds"): the same reading material.
-   Their older look lives in home.css (a 1px line border, a hover fill, a 2px
-   lift and a signal bar that scaled up the left edge on ::before); these
-   selectors carry the grid's class so they outrank it from this earlier
-   sheet, and ::before is fully restated as the rim. The pillar is its own
-   stacking context, so the contact light at z -1 sits over its fill and
-   under its text. --- */
-.pillar-grid > .pillar {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--radius);
-  background: var(--mat-reading);
-  box-shadow: var(--elev-1);
-  transition: transform var(--duration-quick) var(--ease-out);
-}
-.pillar-grid > .pillar::before,
-.pillar-grid > .pillar::after {
-  content: "";
-  display: block;
-  position: absolute;
-  inset: 0;
-  width: auto;
-  border-radius: inherit;
-  transform: none;
-  pointer-events: none;
-  transition: opacity var(--mat-t-out);
-}
-.pillar-grid > .pillar::before {
-  z-index: 1;
-  padding: 1px;
-  background: var(--rim-hot);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  opacity: var(--rim-rest);
-}
-.pillar-grid > .pillar::after {
-  z-index: -1;
-  background: var(--glow-contact);
-  opacity: 0;
-}
-@media (hover: hover) {
-  .pillar-grid > .pillar:hover {
-    border-color: transparent;
-    background: var(--mat-reading);
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .pillar-grid > .pillar:hover {
-    transform: none;
-  }
-  .pillar-grid > .pillar:hover::before,
-  .pillar-grid > .pillar:hover::after {
-    opacity: 1;
-    transform: none;
-    transition: opacity var(--mat-t-in);
-  }
-}
-.pillar-grid > .pillar:active {
-  transform: scale(0.99);
-}
-.pillar-grid > .pillar:focus-visible::before {
-  opacity: 1;
-  transition: opacity var(--mat-t-in);
 }
 
 /* Focus-visible on a reading card: the 2px access outline, offset 2px, and
@@ -2939,10 +2688,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
     background: var(--signal-dim);
     border-color: var(--signal);
   }
-  .pipeline-step:hover .pipeline-node-core {
-    background: var(--signal);
-    transform: scale(1.2);
-  }
 }
 
 /* --- Underline: signal underline grows under nav links on hover --- */
@@ -2983,12 +2728,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 
 /* --- Surface card desc brightens on contact. The label no longer slides:
    claims hold still; the contact reads in the card's material. --- */
-
-@media (hover: hover) and (pointer: fine) {
-  .surface-card:hover .surface-card-desc {
-    color: var(--ink);
-  }
-}
 
 /* --- Shake: non-link elements jitter on tap --- */
 .principle.is-shaking,
@@ -3095,58 +2834,14 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   }
 }
 
-/* --- Definitions: the signal accent is state, never rest. The 3px bar on
-   the left edge draws in (scaleY, transform only) while the pointer is on a
-   copyable definition, while it holds keyboard focus, and while it reads
-   Copied. At rest the card is plain reading material: the resting 3px
-   signal border was the generic callout stripe. --- */
+/* --- Definitions: plain reading material. No edge stripe in any state
+   (brand ledger D62): the 3px signal bar that drew in on hover, focus and
+   Copied was the side-stripe card pattern. Focus has its ring and Copied its
+   badge, so nothing is lost. --- */
 .definition {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-}
-.definition::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 300ms var(--ease-out);
-  z-index: 1;
-  pointer-events: none;
-}
-@media (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    transform: scaleY(1);
-  }
-}
-.definition.is-copyable:focus-visible::after,
-.definition.is-copied::after {
-  transform: scaleY(1);
-}
-/* Reduced motion, tiered: the second-pass guard hides the bar outright; for
-   its states it comes back as an opacity fade at the 150ms entry (inside the
-   200ms allowance) instead of drawing in. */
-@media (prefers-reduced-motion: reduce) {
-  .definition.is-copyable::after {
-    display: block;
-    transform: none;
-    opacity: 0;
-    transition: opacity var(--mat-t-in);
-  }
-  .definition.is-copyable:focus-visible::after,
-  .definition.is-copied::after {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
-  .definition.is-copyable:hover::after {
-    opacity: 1;
-  }
 }
 
 /* --- Buttons: signal glow ring on hover (primary) --- */
@@ -3211,7 +2906,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .principle-body h3 {
   transition: transform 200ms var(--ease-out), color 200ms var(--ease);
   font-family: var(--sans);
-  font-size: 1.125rem;
+  font-size: var(--text-lead);
   font-weight: 650;
   line-height: 1.35;
   letter-spacing: -0.005em;
@@ -3227,7 +2922,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .principle-body p {
   transition: color 200ms var(--ease);
   text-wrap: pretty;
-  font-size: 0.87rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.6;
   max-width: 100%;
@@ -3331,31 +3026,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 @media (hover: hover) {
   .text-link:hover::after {
-    transform: scaleX(1);
-  }
-}
-
-/* --- Scope path links: signal underline grow --- */
-.scope-path-link,
-.scope-line a {
-  position: relative;
-}
-.scope-path-link::after,
-.scope-line a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  transform: scaleX(0);
-  transform-origin: left center;
-  bottom: -1px;
-  height: 1px;
-  background: var(--signal);
-  transition: transform 200ms var(--ease-out);
-}
-@media (hover: hover) {
-  .scope-path-link:hover::after,
-.scope-line a:hover::after {
     transform: scaleX(1);
   }
 }
@@ -3490,7 +3160,6 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* --- Reduced motion: disable all second-pass effects --- */
 @media (prefers-reduced-motion: reduce) {
   .lab-card::after,
-  .definition::after,
   .button.primary::after,
   .button.ghost::after,
   button.pillar::before,
@@ -3529,7 +3198,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .status-badge {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3553,7 +3222,8 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 
 .footer {
   border-top: 1px solid var(--line);
-  padding: var(--space-48) 0 var(--space-40);
+  /* 48px above the content in all: 40 here and 8 inside .footer-inner. */
+  padding: var(--space-40) 0 var(--space-40);
   margin-top: var(--space-32);
 }
 
@@ -3581,6 +3251,17 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      still contain the dock. */
   min-width: 0;
   overflow: hidden;
+  /* Room inside the clip for a focus ring on the first row (the house ring
+     reaches 5px out; the flame flip's keycaps sit on that row, D69). Taken
+     from the footer's own top padding, so nothing moves. */
+  padding-top: var(--space-8);
+  /* The overflow clips at the padding box, and nothing padded the foot (the
+     shell pads the sides, the rule above the top). The contact link is the
+     last row, flush with this box's foot, so its ring (2px outline at a 3px
+     offset: 5px out, the 4px halo inside that) lost its bottom 5px on every
+     route (390px, 2026-10-11). Room below for the ring; the overflow still
+     contains the dock. */
+  padding-bottom: var(--space-8);
 }
 
 .footer-meta {
@@ -3591,7 +3272,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      column edge everything above them ends on. */
   flex: 1 1 100%;
   gap: var(--space-fine-35);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   min-width: 0;
   max-width: 100%;
@@ -3621,6 +3302,64 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
    the badge, so at rest the 0.85 dimmed the ring as well (2.76:1 measured). */
 .footer-badge:focus-visible {
   opacity: 1;
+}
+
+/* The wordmark and the flame flip's keycaps share the footer's first row. */
+.footer-mark {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* The flame flip's keycaps (brand ledger D69): "ctrl + i" in the mono face,
+   a real button (lib/flame-flip.tsx) with the house focus ring. 44px tall
+   like the wordmark beside it, so the hit area meets the target size. */
+.flip-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-fine-35);
+  min-height: 2.75rem;
+  padding: 0 var(--space-8);
+  font: 500 var(--text-label)/1 var(--mono);
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.flip-keys kbd {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-fine-12) var(--space-8);
+}
+
+@media (hover: hover) {
+  .flip-keys:hover kbd {
+    border-color: var(--muted);
+  }
+}
+
+/* The flame flip's layer (lib/flame-flip-run.ts creates it on the first
+   trigger). It inverts what lies beneath it: Azure #0A94FF reads as the
+   flame #F56B00, its exact inverse. Clipped to a circle from the header
+   logo's dot, which the run animates; hidden (display: none, so no backdrop
+   pass) whenever it is not running. It never takes a pointer event. */
+.flame-flip {
+  position: fixed;
+  inset: 0;
+  /* Over the page, its chrome and popovers; under the scrim, the drawer,
+     dialogs and toasts. Derived from the stacking scale, not a new step. */
+  z-index: calc(var(--z-popover) + 20);
+  pointer-events: none;
+  -webkit-backdrop-filter: invert(1);
+  backdrop-filter: invert(1);
+  clip-path: circle(0px at 0 0);
 }
 
 /*
@@ -3657,7 +3396,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .footer-dock-label {
   display: block;
   padding: var(--space-fine-40) var(--space-12) var(--space-fine-30);
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3742,7 +3481,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   gap: var(--space-fine-35);
   flex-shrink: 0;
   padding: var(--space-fine-30) var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--muted);
   background: var(--surface-raised);
@@ -3788,7 +3527,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   font-family: var(--mono);
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
 }
 
 /* Neutral dot accent before each machine pill: --muted at .7 holds 4:1 on
@@ -3914,7 +3653,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .footer-link {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   transition: color 0.2s var(--ease);
 }
@@ -3959,7 +3698,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-eyebrow {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -3968,15 +3707,18 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-title {
-  font-size: clamp(2.4rem, 2.4rem + 1.4vw, 3.5rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  line-height: 1.08;
+  /* One page-title style (brand ledger D58): Fraunces 700, the published
+     contract's heading weight, at the instrument title's size, leading,
+     tracking and optical size (.eg-title, engine.css), so a document page and
+     an engine page open on the same title. It was 400 at up to 56px, a second
+     H1 system on 55 routes. */
+  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
   margin-bottom: var(--space-16);
   text-wrap: balance;
-  /* Fraunces: opsz 80 for large page-title optical size, SOFT 50 for
-     dark-mode contrast. */
-  font-variation-settings: 'opsz' 80, 'SOFT' 50, 'WONK' 0;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
 }
 
 .surface-lede {
@@ -3988,7 +3730,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-note {
-  font-size: clamp(0.875rem, 0.85rem + 0.15vw, 0.95rem);
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.6;
   max-width: min(100%, 580px);
@@ -4015,7 +3757,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
    the display serif: the serif belongs to the page title. */
 .doctrine-heading {
   font-family: var(--sans);
-  font-size: 1.25rem;
+  font-size: var(--text-lead);
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -4052,7 +3794,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .principle-num {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--signal-text);
   letter-spacing: 0.08em;
@@ -4068,7 +3810,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-15);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -4196,7 +3938,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
 }
 
 .definition p {
-  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
+  font-size: var(--text-body);
   color: var(--ink);
   line-height: 1.5;
   text-wrap: pretty;
@@ -4217,7 +3959,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
    at this size) put the 20px heading at 1.67x the label. */
 .definition-label,
 .definition .definition-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4335,7 +4077,7 @@ dl.definition-side {
 }
 
 .definition-side dt {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -4346,14 +4088,14 @@ dl.definition-side {
 .definition-side dd {
   margin: 0;
   min-width: 0;
-  font: 500 0.8125rem/1rem var(--mono);
+  font: 500 var(--text-label)/1rem var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .definition-side p {
-  font-size: 0.8125rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted);
 }
@@ -4374,7 +4116,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -4496,7 +4238,7 @@ dl.definition-side {
   position: relative;
   display: block;
   padding-left: var(--space-28);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.5;
   min-width: 0;
@@ -4519,28 +4261,6 @@ dl.definition-side {
   color: var(--signal-text);
   font-weight: 600;
   line-height: 1.5;
-}
-
-
-.scope-path,
-.scope-path-link {
-  color: var(--muted-dim);
-  font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.scope-path::before,
-.scope-path-link::before {
-  content: "· ";
-  color: var(--muted-dim);
-}
-
-
-.avoid-list li::before {
-  content: "×";
-  color: var(--muted-dim);
-  font-weight: 600;
-  font-size: 1rem;
 }
 
 /* Two-column layout for larger content blocks, on the shell module: twelve
@@ -4791,7 +4511,7 @@ dl.definition-side {
   row-gap: var(--space-4);
   min-width: 0;
   margin-top: var(--space-4);
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -4826,7 +4546,7 @@ dl.definition-side {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -5076,7 +4796,7 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 
 .docs-card-grid .row-index {
   font-family: var(--mono, ui-monospace, monospace);
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   padding-top: 0.15em;
@@ -5087,11 +4807,11 @@ html[data-motion="paused"] a.row:hover .row-side-arrow {
 .docs-card-grid .row .row-title {
   display: block;
   min-height: 0;
-  font-size: 0.95rem;
+  font-size: var(--text-body);
 }
 
 .docs-card-grid .row-meta {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
 }
 
 /* Reduced motion, tiered: the press scale goes; the rim fade is opacity and
@@ -5131,338 +4851,6 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   }
 }
 
-/*
-  State marquee — sits beside the row-stack on desktop, filling the
-  right-side negative space with an auto-scrolling vertical marquee
-  of status pills. Pure CSS animation, no JS. Duplicated content for
-  seamless loop. Respects prefers-reduced-motion.
-*/
-
-
-.state-marquee {
-  display: none;
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--surface);
-  position: relative;
-  /* Vertical drag is owned by JS (initScrollPause 'vertical'); let the
-     browser handle only horizontal page pan so touch drags don't get
-     hijacked into page scroll. Mirrors the footer dock's pan-y. */
-  touch-action: pan-x;
-  /* Bottom fade only. The top fade ran 6% of a ~1300px column, so it veiled
-     the "System status" label and the pause toggle to a fraction of their
-     contrast. The header's own --surface gradient now does the top fade:
-     pills slide under a solid title band and dissolve at its lower edge. */
-  mask-image: linear-gradient(
-    180deg,
-    var(--paper) 0%,
-    var(--paper) 94%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    180deg,
-    var(--paper) 0%,
-    var(--paper) 94%,
-    transparent 100%
-  );
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
-}
-
-.state-marquee-header {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: var(--space-fine-85) var(--space-16) var(--space-8);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  background: linear-gradient(to bottom, var(--surface) 60%, transparent);
-  pointer-events: none;
-}
-
-/* Two identical groups and no padding inside the track: half its height is
-   exactly one period, so the -50% loop has no seam (state-marquee.tsx). The
-   top offset is a margin, which the percentage does not count. */
-.state-marquee-track {
-  display: flex;
-  flex-direction: column;
-  margin-top: var(--space-36);
-  padding: 0 var(--space-16);
-  animation: state-marquee-scroll 36s linear infinite;
-}
-
-.state-marquee-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-fine-55);
-  padding-bottom: var(--space-fine-55);
-}
-
-.state-marquee:hover .state-marquee-track {
-  animation-play-state: paused;
-}
-
-/* User-controlled pause (WCAG 2.2.2) — the toggle button adds
-   .state-marquee--user-paused to the aside. This freezes the
-   track regardless of hover state, giving the user full control. */
-.state-marquee--user-paused .state-marquee-track {
-  animation-play-state: paused;
-}
-
-/* A drawn 24px control at full strength. It was a 9px text glyph at opacity
-   .5 (about 2:1, under the 3:1 non-text floor). Now the icon is an SVG in
-   --muted (over 7:1 on --surface in both themes) inside a --muted-dim frame
-   (4.8:1 dark, 4.9:1 light), so both the mark and the boundary clear 3:1.
-   Its right edge sits on the pills' 16px inset, opposite the label's. */
-.state-marquee-toggle {
-  position: absolute;
-  top: var(--space-8);
-  right: var(--space-16);
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 1px solid var(--muted-dim);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--muted);
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
-}
-.state-marquee-toggle svg {
-  display: block;
-  width: var(--space-12);
-  height: var(--space-12);
-  fill: currentColor;
-}
-
-.state-marquee-toggle:focus-visible {
-  border-color: var(--muted);
-  color: var(--ink);
-  outline: 2px solid var(--signal-access);
-  outline-offset: 1px;
-}
-
-@media (hover: hover) {
-  .state-marquee-toggle:hover {
-    border-color: var(--muted);
-    color: var(--ink);
-    outline: 2px solid var(--signal-light);
-    outline-offset: 1px;
-  }
-}
-
-/* Manual scroll mode — set via JS on hover. Style the scrollbar sleek. */
-.state-marquee::-webkit-scrollbar {
-  width: 3px;
-}
-.state-marquee::-webkit-scrollbar-track {
-  background: transparent;
-}
-.state-marquee::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border-radius: 3px;
-}
-.state-marquee:hover {
-  cursor: grab;
-}
-
-/* During an active drag, suppress hover effects and transitions on all
-   pills so they don't flicker as the pointer passes over them. Also
-   disable pointer events on pills so drag pointermove never gets
-   interrupted by a child element stealing the pointer. Mirrors the
-   footer dock's --dragging behavior. */
-.state-marquee--dragging {
-  cursor: grabbing !important;
-  user-select: none;
-}
-.state-marquee--dragging .state-marquee-pill {
-  pointer-events: none;
-  transition: none;
-  transform: none !important;
-}
-
-@keyframes state-marquee-scroll {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
-}
-
-.state-marquee-pill {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  flex-shrink: 0;
-  /* 44px minimum. Measured 447x37px: wide, but 7px short. These are real
-     <a> links with pointer-events: auto -- no inline exception applies. */
-  min-height: 44px;
-  padding: var(--space-8) var(--space-fine-80);
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  transition: transform 160ms var(--ease-out),
-    background 160ms var(--ease),
-    border-color 160ms var(--ease),
-    color 160ms var(--ease);
-}
-
-/* Pills are links — hover lifts and brightens like the footer dock */
-@media (hover: hover) {
-  .state-marquee-pill:hover {
-    transform: scale(1.04);
-    border-color: var(--line-strong);
-  }
-  .state-marquee-pill--live:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-  .state-marquee-pill--adopted:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-  .state-marquee-pill--info:hover {
-    color: var(--ink);
-    background: var(--surface-hover);
-  }
-}
-
-/* Keyboard path: the house ring, --signal-access, as every focus rule takes
-   it (see :focus-visible). --focus-ring resolves to the same token in both
-   themes (#0A94FF dark, #016ABB light), so a ring drawn with either is the
-   same ring. Offset outside the pill so the ring never clips against the
-   marquee's mask gradient. */
-.state-marquee-pill:focus-visible {
-  outline: 2px solid var(--signal-access);
-  outline-offset: 2px;
-  border-color: var(--signal-access);
-}
-
-/* Live (D31): a neutral pill in the text colour; the small pulsing dot in
-   --activation is its only orange. */
-.state-marquee-pill--live {
-  color: var(--ink);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--live::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--activation);
-  flex-shrink: 0;
-  animation: marquee-pulse 2s var(--ease-in-out) infinite;
-}
-@keyframes marquee-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-/* Live dot, light theme (D35): the flame alone is 2.55 to 3.01:1 on the
-   light surfaces, so the dot carries a 1px --activation-ink rim (4.56 to
-   5.37:1). The heartbeat is an outer halo; the dot and its rim never fade.
-   Static under reduced motion. Dark keeps its dot as it is. */
-[data-theme="light"] .state-marquee-pill--live::before,
-[data-theme="light"] .field-card-status.is-live::before {
-  opacity: 1;
-  box-shadow: 0 0 0 1px var(--activation-ink);
-}
-[data-theme="light"] .state-marquee-pill--live::before {
-  animation: live-halo 2s var(--ease-in-out) infinite;
-}
-[data-theme="light"] .field-card-status.is-live::before {
-  animation: live-halo 3.2s var(--ease-in-out) infinite;
-}
-@keyframes live-halo {
-  0%, 100% {
-    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 1px color-mix(in srgb, var(--activation) 0%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 1px var(--activation-ink), 0 0 0 5px color-mix(in srgb, var(--activation) 28%, transparent);
-  }
-}
-/* Static under reduced motion in both themes (D36): no halo in light, and
-   no ambient opacity pulse on the dark field-card dot. The light rim stays. */
-@media (prefers-reduced-motion: reduce) {
-  .state-marquee-pill--live::before,
-  .field-card-status.is-live::before {
-    animation: none !important;
-    opacity: 1;
-  }
-}
-
-/* Adopted — filled with checkmark */
-.state-marquee-pill--adopted {
-  color: var(--ink);
-  background: var(--surface-raised);
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--adopted::before {
-  content: "✓";
-  color: var(--signal-text);
-  font-weight: 700;
-  font-size: 0.72rem;
-  flex-shrink: 0;
-}
-
-/* Info — outline only, muted */
-.state-marquee-pill--info {
-  color: var(--muted);
-  background: transparent;
-  border: 1px solid var(--line);
-}
-.state-marquee-pill--info::before {
-  content: "·";
-  color: var(--signal-text);
-  font-weight: 700;
-  font-size: 0.9rem;
-  line-height: 0;
-  flex-shrink: 0;
-}
-
-/* Desktop enhancement for .state-layout and .state-marquee was migrated to
-   home.css (it must load AFTER the desktop-default .state-layout rule in
-   home.css to avoid the cascade-order bug — home.css loads after globals.css).
-   .row-stack width constraint moved to home.css too; .layer-stack width
-   stays here since it's a docs-only class not affected by home.css. */
-@media (min-width: 860px) {
-  .layer-stack {
-    width: min(100%, 640px);
-    max-width: min(100%, 640px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* Stopped, not slowed. A 120s crawl is still continuous motion, and the
-     a11y contract's a10 asks reduce to DISABLE animation. The track becomes
-     a plain scrollable list: the aria-hidden duplicate that only existed to
-     make the loop seamless is dropped, so nothing reads twice. */
-  .state-marquee-track {
-    animation: none;
-  }
-  .state-marquee {
-    overflow-y: auto;
-  }
-  .state-marquee-group[aria-hidden="true"] {
-    display: none;
-  }
-  .state-marquee-pill--live::before {
-    animation: none;
-  }
-}
 
 .row,
 .layer-item {
@@ -5491,10 +4879,12 @@ html[data-motion="paused"] .docs-card-grid .row::before {
   border-top: 1px solid var(--line-faint);
 }
 
+/* Hover lifts the row's ground and firms its rule in the line colour; a
+   signal-coloured left edge is the side-stripe pattern (brand ledger D62). */
 @media (hover: hover) {
   .row:hover,
 .layer-item:hover {
-    border-left-color: var(--signal);
+    border-left-color: var(--line-strong);
     background: var(--surface-soft);
   }
 }
@@ -5513,7 +4903,7 @@ button.row:active {
 
 .row-index,
 .layer-num {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 700;
   /* --signal (var(--signal)) is 2.32:1 on --paper — below WCAG 1.4.3 AA.
      --signal-light (var(--signal-light)) is 3.68:1 — passes AA-large (3:1) for the
@@ -5535,7 +4925,7 @@ button.row:active {
 .row-body,
 .layer-body {
   min-width: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.5;
 }
@@ -5590,7 +4980,7 @@ button.row {
   display: block;
   margin-top: var(--space-fine-15);
   color: var(--muted-dim);
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   overflow-wrap: break-word;
   text-wrap: pretty;
@@ -5666,12 +5056,6 @@ button.layer-item {
 .layer-item.is-checked:hover {
     opacity: 0.68;
   }
-}
-
-.pillar.is-checked .pillar-number {
-  text-decoration: line-through;
-  text-decoration-color: var(--muted-dim);
-  text-decoration-thickness: 1px;
 }
 
 .row.is-checked .row-index,
@@ -5775,7 +5159,7 @@ html[data-motion="paused"] .row-check::before {
    at the row's end; centred in a 224-301px share row it floated 115px below
    its title. */
 .row-copy-badge {
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.04em;
@@ -5962,7 +5346,7 @@ button.row {
   top: var(--space-20);
   right: var(--space-24);
   z-index: 1;
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   font-weight: 650;
   line-height: 1rem;
   letter-spacing: 0.06em;
@@ -6024,12 +5408,6 @@ button.row {
 @media (hover: none), (pointer: coarse) {
   .definition.is-copyable .definition-copy-badge {
     opacity: 1;
-  }
-  pre.definition-code.is-copyable {
-    padding-top: 2rem;
-  }
-  pre.definition-code.is-copyable .definition-copy-badge {
-    top: var(--space-8);
   }
 }
 
@@ -6433,7 +5811,7 @@ button.check-cell {
 }
 
 .check-cell-arrow {
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   line-height: 1.5;
   transition: transform 160ms var(--ease-out), color 160ms var(--ease);
@@ -6457,9 +5835,11 @@ button.check-cell {
   will-change: transform, opacity;
 }
 
-/* avoid items show an X in the activation accent instead of a blue checkmark */
+/* Avoid items show an X instead of the checkmark, in the text colour: the
+   shape carries "avoid". It took the flame's ink, and the flame means
+   something happening now, nothing else (brand ledger D57). */
 .check-cell.is-avoid .check-cell-check {
-  color: var(--activation-ink);
+  color: var(--ink);
 }
 
 @keyframes check-pop {
@@ -6526,7 +5906,7 @@ button.check-cell {
 }
 
 .check-cell-index {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
@@ -6551,7 +5931,7 @@ button.check-cell {
    splits while a line is free); ordinary words wrap at spaces first, and
    nothing hyphenates. */
 .check-cell-title {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   font-weight: 650;
   letter-spacing: -0.012em;
   color: var(--ink);
@@ -6562,7 +5942,7 @@ button.check-cell {
 }
 
 .check-cell-meta {
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   line-height: 1.42;
   text-wrap: pretty;
@@ -6578,7 +5958,9 @@ button.check-cell {
    shorter than its cell never needs the break. */
 :is(.check-cell-title, .check-cell-meta) code {
   font-family: var(--mono);
-  font-size: 0.92em;
+  /* The label step (D68): a token sets as one unit, and at the 16px title
+     size "prefers-reduced-motion" overran its cell at 1088px. */
+  font-size: var(--text-label);
   font-weight: 500;
   letter-spacing: 0;
   white-space: nowrap;
@@ -6612,7 +5994,7 @@ button.check-cell {
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -6740,7 +6122,7 @@ button.check-cell {
   }
 
   .check-cell-title {
-    font-size: 0.92rem;
+    font-size: var(--text-body);
   }
 }
 
@@ -6783,11 +6165,11 @@ button.check-cell {
   }
   .nav-links a {
     padding: var(--space-fine-40) var(--space-8);
-    font-size: 0.8rem;
+    font-size: var(--text-body);
   }
   .wordmark {
     flex: 0 0 auto;
-    font-size: 1rem;
+    font-size: var(--text-body);
   }
   .sense-toggles,
   .sound-toggle,
@@ -6953,7 +6335,7 @@ button.check-cell {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: var(--text-body);
     font-weight: 500;
     cursor: pointer;
     appearance: none;
@@ -6974,11 +6356,11 @@ button.check-cell {
     outline-offset: 2px;
   }
   .nav-drawer-close-icon {
-    font-size: 0.9rem;
+    font-size: var(--text-body);
     line-height: 1;
   }
   .nav-drawer-close-label {
-    font-size: 0.85rem;
+    font-size: var(--text-label);
     letter-spacing: 0.02em;
   }
   .nav-drawer a {
@@ -6987,7 +6369,7 @@ button.check-cell {
     min-height: 2.75rem;
     padding: var(--space-fine-85) var(--space-12);
     margin-bottom: var(--space-fine-15);
-    font-size: 1.1rem;
+    font-size: var(--text-body);
     font-weight: 500;
     color: var(--muted);
     border-radius: var(--radius-sm);
@@ -7065,7 +6447,7 @@ button.check-cell {
     border: 1px solid var(--line);
     border-radius: var(--radius);
     color: var(--ink);
-    font-size: 0.95rem;
+    font-size: var(--text-body);
   }
   .nav-drawer-studio svg {
     flex: none;
@@ -7090,7 +6472,7 @@ button.check-cell {
   .nav-drawer-group-label {
     margin: 0 0 var(--space-4);
     padding: 0 var(--space-12);
-    font: 500 0.6875rem/1rem var(--mono);
+    font: 500 var(--text-label)/1rem var(--mono);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted-dim);
@@ -7107,7 +6489,7 @@ button.check-cell {
     min-height: 2.75rem;
     margin: 0;
     padding: var(--space-6) var(--space-12);
-    font-size: 0.9375rem;
+    font-size: var(--text-body);
     line-height: 1.2;
   }
 }
@@ -7173,7 +6555,7 @@ button.check-cell {
   border-radius: var(--radius);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   color: var(--muted);
   line-height: 1.55;
   text-wrap: pretty;
@@ -7251,7 +6633,7 @@ button.check-cell {
 }
 
 .lab-meta-item {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -7345,7 +6727,7 @@ button.check-cell {
    step, so a re-run step reads as words and an address. */
 .row-url {
   font-family: var(--mono);
-  font-size: 0.92em;
+  font-size: inherit;
   font-weight: 500;
   letter-spacing: 0;
 }
@@ -7415,7 +6797,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-status {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7432,7 +6814,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-lede {
-  font-size: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
+  font-size: var(--text-lead);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
@@ -7440,7 +6822,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-desc {
-  font-size: 0.88rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.55;
   max-width: min(100%, 420px);
@@ -7449,7 +6831,7 @@ html[data-motion="paused"] .lab-card:active {
 
 .lab-card-arrow {
   margin-top: var(--space-12);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--muted-dim);
   transition: color 0.2s var(--ease);
@@ -7532,7 +6914,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-side dt {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -7541,7 +6923,7 @@ html[data-motion="paused"] .lab-card:active {
 
 .lab-card-side dd {
   margin: 0;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   text-align: end;
@@ -7576,9 +6958,6 @@ html[data-motion="paused"] .lab-card:active {
   margin-bottom: 0;
 }
 .demo-cell .poise-actions {
-  justify-content: center;
-}
-.demo-cell .poise-sound-row {
   justify-content: center;
 }
 
@@ -7738,7 +7117,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-label {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: 0.12em;
@@ -7759,7 +7138,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .demo-cell-note {
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   line-height: 1.5;
   border-top: 1px solid var(--line-faint);
@@ -7768,7 +7147,7 @@ html[data-motion="paused"] .lab-card:active {
 
 .demo-cell-note code {
   color: var(--signal-text);
-  font-size: 0.74rem;
+  font-size: var(--text-label);
 }
 
 /* ==========================================================================
@@ -7973,7 +7352,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-head {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7983,7 +7362,7 @@ html:not(.js-ready) .demo-stagger-bar {
 }
 
 .token-table-row {
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
   border-top: 1px solid var(--line-faint);
 }
@@ -8000,7 +7379,7 @@ html:not(.js-ready) .demo-stagger-bar {
 
 .token-table-row code {
   color: var(--ink);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   word-break: break-word;
 }
 
@@ -8115,6 +7494,13 @@ html:not(.js-ready) .demo-stagger-bar {
    /review/acoustics, /review/cadence and /review/poise at both widths), so
    it rises without fading too. The sections after it keep the full fadeUp.
 
+   The /changelog log is the same case again. Its section
+   (section#changelog-log.doctrine-section) holds the entries, newest first,
+   and a long newest entry outsizes the header's lede: the engine 1.3.0
+   entry won LCP at 1440 and painted 668ms after FCP behind the fade. The
+   whole log rises without fading, so no entry, whatever its length, can
+   hold LCP back.
+
    Reduced motion: scoped to no-preference, so the reduce block below
    (.fade-up: animation none) is never outranked and the rise does not run.
    Paused motion: .fade-up is in "One-shot entrances end", so the rise jumps
@@ -8132,7 +7518,8 @@ html:not(.js-ready) .demo-stagger-bar {
 
 @media (prefers-reduced-motion: no-preference) {
   .surface-header.fade-up,
-  #summary.doctrine-section.fade-up {
+  #summary.doctrine-section.fade-up,
+  #changelog-log.doctrine-section.fade-up {
     animation-name: riseUp;
   }
 }
@@ -8217,50 +7604,9 @@ html:not(.js-ready) .demo-stagger-bar {
     padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
   }
-
-  .pillar-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* Keep horizontal rail; densify type before stacking */
-  .pipeline-label {
-    font-size: 0.76rem;
-  }
-
-  .pipeline-note {
-    font-size: 0.66rem;
-    max-width: 6.5rem;
-  }
 }
 
 @media (max-width: 720px) {
-  .pipeline-track {
-    grid-template-columns: 1fr;
-  }
-
-  .pipeline-track::before {
-    left: 0.55rem;
-    right: auto;
-    top: 0.9rem;
-    bottom: 0.9rem;
-    width: 1px;
-    height: auto;
-    background: linear-gradient(
-      180deg,
-      transparent 0%,
-      var(--line) 8%,
-      var(--line) 92%,
-      transparent 100%
-    );
-  }
 
   .pipeline-step {
     flex-direction: row;
@@ -8274,34 +7620,12 @@ html:not(.js-ready) .demo-stagger-bar {
   .pipeline-node {
     flex-shrink: 0;
   }
-
-  .pipeline-num {
-    margin-top: 0;
-    min-width: 1.5rem;
-  }
-
-  .pipeline-label {
-    min-width: 5.5rem;
-    font-size: 0.88rem;
-  }
-
-  .pipeline-note {
-    max-width: none;
-    margin-inline-start: auto;
-    text-align: right;
-    font-size: 0.72rem;
-  }
 }
 
 @media (max-width: 560px) {
   /* No .site-shell gutter override: the base rule's --shell-gutter is the
      header pill's inset at every width, and a fixed 16px here put content
      6px inside the pill between 400 and 560px. */
-
-  .pillar-grid,
-  .surface-list {
-    grid-template-columns: 1fr;
-  }
 
   .hero-actions {
     flex-direction: column;
@@ -8341,7 +7665,9 @@ html:not(.js-ready) .demo-stagger-bar {
 
 /*
   Field card kind language (existing tokens only):
-  - contract = structure / agreement → square mark, steadier breath, signal edge
+  - contract = structure / agreement → square mark, steadier breath; on the
+    home page the featured card's full border is the set's one accent, and no
+    card carries a one-sided edge stripe (D60, D62)
   - lab      = living experiment    → circle mark, full wordmark breath, signal-light lift
 */
 .field-card {
@@ -8350,7 +7676,6 @@ html:not(.js-ready) .demo-stagger-bar {
   gap: var(--space-fine-45);
   padding: var(--space-fine-135) var(--space-fine-135) var(--space-20);
   border: 1px solid var(--line);
-  border-left: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   text-decoration: none;
@@ -8359,42 +7684,11 @@ html:not(.js-ready) .demo-stagger-bar {
     background 0.2s var(--ease);
 }
 
-.field-card--open {
-  border-left-color: var(--signal);
-}
-
-.field-card--contract {
-  border-left-color: var(--signal);
-}
-
-/* The non-featured kit cards carry no edge accent. A one-sided colour stripe
-   is the side-stripe card pattern the anti-generic check targets, and it also
-   weakened the featured contract card below it, whose full signal border is
-   the deliberate accent of the set. The eyebrow chip and the icon tile mark
-   these cards; nothing needs the stripe. (Judge round 3, 2026-10-04.) */
-.field-card--kit {
-  border-left-color: var(--line);
-}
 
 @media (hover: hover) {
   .field-card:hover {
     border-color: var(--line-strong);
     background: var(--surface-raised);
-  }
-  .field-card--open:hover,
-.field-card--contract:hover {
-    border-left-color: var(--signal);
-    border-color: var(--line-strong);
-  }
-  .field-card--lab:hover {
-    border-left-color: var(--signal-light);
-    border-color: var(--line-strong);
-  }
-  /* The kit card's hover keeps the border lift and drops the edge colour with
-     its resting stripe (see the .field-card--kit note above). */
-  .field-card--kit:hover {
-    border-left-color: var(--line-strong);
-    border-color: var(--line-strong);
   }
 }
 
@@ -8409,37 +7703,6 @@ a.field-card:active {
       rotateY(var(--tilt-ry, 0deg))
       translateY(-2px);
   }
-}
-
-
-.field-card-status {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  font-variant-numeric: tabular-nums;
-}
-
-.field-card-status.is-live {
-  display: flex;
-  align-items: center;
-  gap: 0.45em;
-  color: var(--ink);
-}
-
-/* The heartbeat lives on a dot, never on the word. signalPulse fades to 0.55
-   opacity, and on the word "Live" that took 5.41:1 down to #384892 on #0a0a0c,
-   under 4.5:1 at the dim end of every beat (axe 4.13.0, 2026-10-02). Same
-   shape as the status marquee's live pill: solid text, pulsing dot. */
-.field-card-status.is-live::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--activation);
-  flex-shrink: 0;
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
 }
 
 
@@ -8510,131 +7773,6 @@ a.field-card:active {
   background: transparent;
 }
 
-/*
-  Field marks = dispersed modular elements.
-  Same five-element grammar as the hero seam mark:
-    open     → signal dot (origin)
-    contract → square (structure)
-    lab      → orbit / circle (living)
-    kit      → rounded block (usable package)
-
-  Each piece keeps its own 3D personality when the card is engaged.
-*/
-.mark-glyph {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
-  perspective: 120px;
-  transform-style: preserve-3d;
-}
-
-
-/* Contract = infrastructure square */
-.mark-glyph--contract .mark-glyph-core {
-  border-radius: 0;
-  inset: 8px;
-  background: var(--signal);
-  animation: signalPulse 4.8s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--contract .mark-glyph-ring {
-  border-radius: var(--radius-sm);
-  border-color: var(--signal-dim);
-}
-
-/* Lab = orbit / living circle */
-.mark-glyph--lab .mark-glyph-core {
-  border-radius: 50%;
-  inset: 9px;
-  background: var(--signal-light);
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--lab .mark-glyph-ring {
-  border-radius: 50%;
-  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
-  border-top-color: transparent;
-  border-right-color: transparent;
-  transform: rotate(-18deg) translateZ(0);
-}
-
-/* Kit = stability rounded block */
-.mark-glyph--kit .mark-glyph-core {
-  border-radius: 0 0 6px 0;
-  inset: 8px;
-  background: var(--signal-light);
-  animation: signalPulse 3.8s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--kit .mark-glyph-ring {
-  border-radius: 0 0 10px 0;
-  border-color: color-mix(in srgb, var(--signal-light) 40%, transparent);
-}
-
-/* Open = origin signal dot */
-.mark-glyph--open .mark-glyph-core {
-  border-radius: 50%;
-  inset: 9px;
-  background: var(--signal);
-  animation: signalPulse 3.2s var(--ease-in-out) infinite;
-}
-
-.mark-glyph--open .mark-glyph-ring {
-  border-radius: 50%;
-  border-color: var(--signal-dim);
-}
-
-/* Per-piece 3D on card engagement — fine pointer only */
-@media (hover: hover) and (pointer: fine) {
-  .field-card:hover .mark-glyph--open .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--open .mark-glyph-core {
-    transform: translateZ(10px) scale(1.12);
-  }
-
-  .field-card:hover .mark-glyph--open .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--open .mark-glyph-ring {
-    transform: translateZ(4px) scale(1.06);
-    border-color: var(--signal-light);
-  }
-
-  .field-card:hover .mark-glyph--contract .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--contract .mark-glyph-core {
-    transform: translateZ(8px) rotateX(-10deg) scale(1.06);
-  }
-
-  .field-card:hover .mark-glyph--contract .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--contract .mark-glyph-ring {
-    transform: translateZ(2px);
-  }
-
-  .field-card:hover .mark-glyph--lab .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--lab .mark-glyph-core {
-    transform: translateZ(10px) rotateY(-12deg) scale(1.08);
-  }
-
-  .field-card:hover .mark-glyph--lab .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--lab .mark-glyph-ring {
-    transform: rotate(-18deg) translateZ(5px) rotateY(-8deg) scale(1.05);
-    border-color: var(--signal-light);
-  }
-
-  .field-card:hover .mark-glyph--kit .mark-glyph-core,
-  .field-card:focus-visible .mark-glyph--kit .mark-glyph-core {
-    transform: translateZ(8px) rotateX(-6deg) rotateY(8deg) scale(1.05);
-  }
-
-  .field-card:hover .mark-glyph--kit .mark-glyph-ring,
-  .field-card:focus-visible .mark-glyph--kit .mark-glyph-ring {
-    transform: translateZ(2px) rotateY(4deg);
-  }
-
-  .field-card:active .mark-glyph-core {
-    transform: translateZ(2px) scale(0.96) !important;
-    transition-duration: 100ms;
-  }
-}
-
 /* Prompt block (CopyPrompt, lib/copy-prompt.tsx): one reading surface with
    its own title bar. Tier 1 reading material, the recipe every other reading
    card takes ("Reading material, the rest of tier 1"): --mat-reading,
@@ -8696,7 +7834,7 @@ a.field-card:active {
   min-width: 0;
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0.08em;
@@ -8715,7 +7853,7 @@ a.field-card:active {
   padding: calc(var(--space-16) - 0.275em) var(--space-fine-135) var(--space-20);
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: break-word;
@@ -8790,7 +7928,7 @@ a.field-card:active {
   background: var(--surface-raised);
   color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.03em;
@@ -8904,11 +8042,6 @@ html[data-motion="paused"] .copy-prompt-btn:active {
     opacity: 1;
   }
 
-  .wordmark-hero .wordmark-shimmer,
-  .text-shimmer {
-    animation-duration: 12s !important;
-  }
-
   /* Tier 2: Soften entrance animations — snap to final state instantly */
   .js-ready [data-reveal] {
     animation: none !important;
@@ -8985,10 +8118,6 @@ a.field-card:focus-visible {
 /* a.surface-card:focus-visible: the access outline and the hot rim, in the
    reading-material block (no fill change, no lift). */
 
-a.surface-card:focus-visible .surface-card-arrow {
-  color: var(--ink);
-}
-
 a.lab-card:focus-visible {
   border-color: var(--line-strong);
   background: var(--surface-raised);
@@ -9019,7 +8148,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line-strong);
   background: var(--surface-raised);
   color: var(--ink);
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   font-weight: 600;
   letter-spacing: -0.01em;
   text-decoration: none;
@@ -9227,7 +8356,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: -0.01em;
   opacity: 0;
@@ -9338,7 +8467,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .effect-label {
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -9346,7 +8475,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .effect-desc {
-  font-size: 0.68rem;
+  font-size: var(--text-body);
   color: var(--muted-dim);
   line-height: 1.4;
   z-index: 2;
@@ -9749,7 +8878,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   border: 1px solid var(--line);
   background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   text-wrap: pretty;
 }
 
@@ -9797,9 +8926,6 @@ a.lab-card:focus-visible .lab-card-arrow {
     animation-duration: 8s !important;
     opacity: 0.35 !important;
   }
-  .state-marquee-pill--live::before {
-    animation-duration: 4s !important;
-  }
   .wordmark .dot {
     animation-duration: 12s !important;
   }
@@ -9826,11 +8952,6 @@ a.lab-card:focus-visible .lab-card-arrow {
 @keyframes check-fade {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-
-.score-hero-section .score-form {
-  margin-top: var(--space-32);
 }
 
 /* ── Score Form ─────────────────────────────────────────────────────────── */
@@ -9937,7 +9058,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-output-side dt {
-  font: 500 0.6875rem/1rem var(--mono);
+  font: 500 var(--text-label)/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9945,7 +9066,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-output-side dd {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--ink);
 }
@@ -9979,7 +9100,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-empty-run-eyebrow {
   margin: 0;
-  font: 600 0.6875rem/1rem var(--mono);
+  font: 600 var(--text-label)/1rem var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -9997,7 +9118,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-empty-run-reason {
   margin: 0;
   max-width: 66ch;
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -10019,7 +9140,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   align-items: center;
   gap: var(--space-8);
   min-width: 0;
-  font: 400 0.8rem/1.4 var(--mono);
+  font: 400 var(--text-label)/1.4 var(--mono);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -10055,11 +9176,6 @@ a.lab-card:focus-visible .lab-card-arrow {
    light and dark surfaces. The 18px width reserves space for the full
    3-dot cluster so flex gap is measured from the visual edge. */
 
-@keyframes scoreSpinnerPulse {
-  0%, 100% { opacity: 0.3; transform: scale(0.85); }
-  50%      { opacity: 1;   transform: scale(1.1); }
-}
-
 /* ── Score Error Card ──────────────────────────────────────────────────── */
 
 .score-error-card {
@@ -10088,7 +9204,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-error-msg {
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 
@@ -10135,7 +9251,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-welcome-title {
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -10144,7 +9260,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-hint {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   color: var(--muted);
   line-height: 1.55;
   margin: 0;
@@ -10213,24 +9329,6 @@ a.lab-card:focus-visible .lab-card-arrow {
   }
 }
 
-
-.score-grade-emblem.is-a { background: color-mix(in srgb, var(--grade-a) 12%, transparent); border-color: color-mix(in srgb, var(--grade-a) 30%, transparent); color: var(--ok-ink); }
-.score-grade-emblem.is-c { background: color-mix(in srgb, var(--grade-c) 12%, transparent); border-color: color-mix(in srgb, var(--grade-c) 30%, transparent); color: var(--warn-ink); }
-.score-grade-emblem.is-d { background: color-mix(in srgb, var(--grade-d-glow) 12%, transparent); border-color: color-mix(in srgb, var(--grade-d-glow) 30%, transparent); color: var(--grade-d-ink); }
-.score-grade-emblem.is-f { background: color-mix(in srgb, var(--grade-f) 12%, transparent); border-color: color-mix(in srgb, var(--grade-f) 30%, transparent); color: var(--error-ink); }
-
-
-/* Grade-colored arc fills — match the emblem grade colors */
-.score-grade-emblem.is-a .score-arc-fill { stroke: var(--grade-a); }
-.score-grade-emblem.is-c .score-arc-fill { stroke: var(--grade-c); }
-.score-grade-emblem.is-d .score-arc-fill { stroke: var(--grade-d); }
-.score-grade-emblem.is-f .score-arc-fill { stroke: var(--grade-f); }
-
-.score-grade-emblem.is-a .score-grade-glow { background: var(--grade-a); }
-.score-grade-emblem.is-c .score-grade-glow { background: var(--grade-c); }
-.score-grade-emblem.is-d .score-grade-glow { background: var(--grade-d-glow); }
-.score-grade-emblem.is-f .score-grade-glow { background: var(--grade-f); }
-
 .score-hero-meta {
   display: flex;
   flex-direction: column;
@@ -10275,7 +9373,7 @@ a.lab-card:focus-visible .lab-card-arrow {
    the URL itself breaks only when it alone is wider than the chip, with the
    whole value still on screen. */
 .score-url-text {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-family: var(--mono);
   min-width: 0;
@@ -10371,14 +9469,14 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-metric-val {
-  font-size: 1.35rem;
+  font-size: var(--text-lead);
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .score-metric-lbl {
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -10423,7 +9521,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   min-width: 6.5rem;
   height: 2.25rem;
   padding: var(--space-fine-10) var(--space-12);
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   font-weight: 600;
   border-radius: var(--radius-sm);
   /* Elevation: card gradient + hairline top highlight (the site's glass cue)
@@ -10489,7 +9587,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-audit-error {
   margin: var(--space-8) 0 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--warn-ink);
   font-weight: 500;
 }
@@ -10542,7 +9640,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 .audit-progress-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -10560,7 +9658,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   display: flex;
   align-items: center;
   gap: var(--space-fine-55);
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   color: var(--muted);
   opacity: 0;
   animation: auditStepIn var(--duration) var(--ease-out) forwards;
@@ -10623,7 +9721,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-tokens-badge {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-weight: 500;
 }
@@ -10680,29 +9778,20 @@ a.lab-card:focus-visible .lab-card-arrow {
   box-shadow: var(--inner-light), 0 4px 16px color-mix(in srgb, var(--signal) 15%, transparent);
 }
 
-/* Top accent bar — 2px, grade-colored. NOT a left border (AI-tell). */
-.score-engine-tile-top {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--tile-hue, var(--line));
-}
-
-/* A tile takes its grade's colour from the contract's grade tokens: the bar
-   (a mark) in --grade-*, the letter and score (text) in --grade-*-ink. It used
-   a 90/70 status rule of its own, so a D drew red and a B drew yellow. */
-.score-engine-tile[data-grade="a"] { --tile-hue: var(--grade-a); --tile-ink: var(--grade-a-ink); }
-.score-engine-tile[data-grade="b"] { --tile-hue: var(--grade-b); --tile-ink: var(--grade-b-ink); }
-.score-engine-tile[data-grade="c"] { --tile-hue: var(--grade-c); --tile-ink: var(--grade-c-ink); }
-.score-engine-tile[data-grade="d"] { --tile-hue: var(--grade-d); --tile-ink: var(--grade-d-ink); }
-.score-engine-tile[data-grade="f"] { --tile-hue: var(--grade-f); --tile-ink: var(--grade-f-ink); }
+/* A tile takes its grade's colour from the contract's grade tokens: the letter
+   and score (text) in --grade-*-ink. It used a 90/70 status rule of its own,
+   so a D drew red and a B drew yellow. The grade-coloured 2px top bar is gone
+   (brand ledger D62, no coloured edge stripes on cards): the letter carries
+   the grade, and the tile keeps its neutral line border. */
+.score-engine-tile[data-grade="a"] { --tile-ink: var(--grade-a-ink); }
+.score-engine-tile[data-grade="b"] { --tile-ink: var(--grade-b-ink); }
+.score-engine-tile[data-grade="c"] { --tile-ink: var(--grade-c-ink); }
+.score-engine-tile[data-grade="d"] { --tile-ink: var(--grade-d-ink); }
+.score-engine-tile[data-grade="f"] { --tile-ink: var(--grade-f-ink); }
 .score-engine-tile[data-grade] .score-engine-tile-grade { color: var(--tile-ink); }
 .score-engine-tile-score small {
   margin-left: var(--space-2);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -10714,7 +9803,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-label {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -10724,13 +9813,13 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* Result text holds 12px (0.75rem): the tile's check count, the report's
    check statuses and the run time were set at 10.4 and 10.9px. */
 .score-engine-tile-count {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   color: var(--muted-dim);
 }
 
 .score-engine-tile-grade {
-  font-size: 1.25rem;
+  font-size: var(--text-lead);
   font-weight: 800;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -10738,7 +9827,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 }
 
 .score-engine-tile-grade.is-empty {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--error-ink);
 }
@@ -10748,25 +9837,15 @@ a.lab-card:focus-visible .lab-card-arrow {
    opacity 0.7 the figure measured 3.93:1 on the tile in dark (R22). A lighter
    weight keeps it a step under the grade letter. */
 .score-engine-tile-score {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   font-weight: 500;
-  font-variant-numeric: proportional-nums;
-}
-
-/* Standalone decimal figures take proportional digits. Schibsted Grotesk's
-   tabular figures give the period and the percent sign a digit's full advance
-   (10px against 4px for the period at 14px), so 67.9% read "67 . 9%".
-   Tabular figures stay where numbers line up in a column. The ring's figure
-   counts up, so its digits stay tabular (no wobble) and only its punctuation,
-   wrapped in .num-punct, is proportional. */
-.num-punct {
   font-variant-numeric: proportional-nums;
 }
 
 .score-engine-tile-pwf {
   /* What needs attention, in the category lines' words; 12px, the results
      floor (it was 11.2px). */
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -10919,13 +9998,13 @@ html[data-motion="paused"] .score-check-group::after {
 .score-check-group-dot.is-manual { background: var(--muted-dim); }
 
 .score-check-group-label {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
 }
 
 .score-check-group-count {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -10972,7 +10051,7 @@ html[data-motion="paused"] .score-check-group::after {
 /* ── Clickable scored URL link ────────────────────────────────────────────── */
 
 .score-url-link {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-family: var(--mono);
   overflow: hidden;
@@ -11079,7 +10158,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signals-eyebrow {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -11089,7 +10168,7 @@ html[data-motion="paused"] .score-check-group::after {
 .score-signals-net {
   display: flex;
   gap: var(--space-8);
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -11104,7 +10183,7 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signals-group-title {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
   margin: 0;
@@ -11141,7 +10220,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 /* The count chip: the check group count's tinted pill, with no border. */
 .score-signals-group-chip {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
   border-radius: 999px;
@@ -11210,7 +10289,7 @@ html[data-motion="paused"] .score-check-group::after {
    direction and the hue repeats it. Left-aligned in a fixed column, so the
    points, the LED above and the head's eyebrow all start on the inset. */
 .score-signal-points {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: var(--signals-pos-text);
@@ -11229,13 +10308,13 @@ html[data-motion="paused"] .score-check-group::after {
 }
 
 .score-signal-label {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
 }
 
 .score-signal-evidence {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted);
   line-height: 1.4;
   word-break: break-word;
@@ -11254,7 +10333,7 @@ html[data-motion="paused"] .score-check-group::after {
   align-items: center;
   gap: var(--space-6);
   min-height: 1.5rem;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -11298,7 +10377,7 @@ html[data-motion="paused"] .score-check-group::after {
   line-clamp: 2;
   overflow: hidden;
   margin-top: var(--space-4);
-  font: 400 0.6875rem/1.45 var(--mono);
+  font: 400 var(--text-label)/1.45 var(--mono);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -11457,7 +10536,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   align-items: center;
   justify-content: center;
   gap: var(--space-fine-35);
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--muted);
   background: transparent;
@@ -11484,39 +10563,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   box-shadow: none;
 }
 
-/* ────────────────────────────────────────────────────────────────
-   Guardrails bundle tabs — sliding underline indicator
-   Same pattern as .score-filter-segmented: a useLayoutEffect measures
-   the active tab's offsetLeft/offsetWidth and sets --indicator-x /
-   --indicator-w on the container; a ::before pseudo-element slides
-   along the bottom border to underline the active tab.
-   ──────────────────────────────────────────────────────────────── */
-.bundle-tabs {
-  display: flex;
-  gap: var(--space-4);
-  border-bottom: 1px solid var(--line);
-  margin-bottom: var(--space-16);
-  flex-wrap: wrap;
-  position: relative;
-  --indicator-x: 0px;
-  --indicator-w: 0px;
-}
-
-.bundle-tabs::before {
-  content: '';
-  position: absolute;
-  bottom: -1px; /* sit on top of the container's bottom border */
-  left: 0;
-  height: 2px;
-  width: var(--indicator-w);
-  transform: translateX(var(--indicator-x));
-  background: var(--ink);
-  transition: transform var(--duration, 0.3s) var(--ease-out, ease-out),
-              width var(--duration, 0.3s) var(--ease-out, ease-out);
-  pointer-events: none;
-  z-index: 1;
-}
-
 /* Sliding indicators snap under reduce. This block must come AFTER both base
    rules: it used to sit ~500 lines above them, where the later same-specificity
    `transition` won and both pills kept sliding 600ms under reduce (contract a10,
@@ -11531,7 +10577,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Copy button — pushed to the right, styled as an outlined button */
 
 .score-tab-count {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   padding: var(--space-1) var(--space-5);
   border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 10%, transparent);
@@ -11589,7 +10635,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     inset 0 0 0 1px var(--lv-well-line),
     inset 0 1px 2px color-mix(in srgb, var(--paper) 30%, transparent);
   color: var(--ink);
-  font: 400 1rem/1.5 var(--sans);
+  font: 400 var(--text-body)/1.5 var(--sans);
   caret-color: var(--signal-access);
   transition: box-shadow var(--duration-fast) var(--ease-out);
 }
@@ -11650,7 +10696,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   background: var(--surface-soft);
   border: 1px solid var(--line);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
@@ -11677,7 +10723,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 /* Full --muted, no opacity: at .7 the count measured 3.97:1 on the chip, and
    it was only ever off screen in the old sideways strip. */
 .score-chip-num {
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -11705,7 +10751,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-empty-desc {
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -11819,7 +10865,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-card-status-pill {
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   font-weight: 800;
   letter-spacing: 0.08em;
   padding: var(--space-2) var(--space-6);
@@ -11834,14 +10880,14 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-card-status-pill.is-manual { background: var(--surface-soft); color: var(--muted); border: 1px solid var(--line); }
 
 .score-card-id {
-  font-size: 0.725rem;
+  font-size: var(--text-label);
   font-family: var(--mono);
   color: var(--muted);
   font-weight: 600;
 }
 
 .score-card-cat {
-  font-size: 0.6875rem;
+  font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* muted-dim (var(--muted-dim)) on the card surface (~#19191d) is 4.25:1 — below
@@ -11853,7 +10899,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-card-title {
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
   margin: 0;
@@ -11910,7 +10956,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   /* Same card-surface AA repair as .score-card-cat: muted-dim is 4.25:1
      at 11.2px on ~#19191d; --muted clears 4.5:1 comfortably. */
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: var(--text-label);
 }
 
 .score-card-drawer {
@@ -11934,7 +10980,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-drawer-heading {
-  font-size: 0.675rem;
+  font-size: var(--text-label);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   /* --signal inside the drawer fails AA at 10.8px; --signal-access is the
@@ -11945,7 +10991,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 }
 
 .score-drawer-detail {
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.5;
   margin: 0;
@@ -11981,21 +11027,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     padding: var(--space-20);
   }
 
-  
-  .score-grade-emblem {
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-
-  .score-grade-letter {
-    font-size: 2.5rem;
-  }
-
-  
-  .score-progress-bar {
-    width: 100%;
-  }
-
   .score-site-url {
     max-width: 100%;
   }
@@ -12015,7 +11046,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
      the indicator moves on both axes. */
   .score-filter-tab {
     padding: 0 var(--space-fine-60);
-    font-size: 0.75rem;
+    font-size: var(--text-body);
     white-space: nowrap;
   }
 
@@ -12023,36 +11054,12 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   .score-controls-card {
     padding: var(--space-fine-85);
   }
-
-  .score-hero-section {
-    padding-top: var(--space-24);
-    padding-bottom: var(--space-28);
-  }
-
-  .score-hero-section .score-form {
-    margin-top: var(--space-16);
-  }
-
-  .score-contract-note {
-    margin-top: var(--space-16);
-    font-size: 0.78rem;
-    line-height: 1.5;
-  }
 }
 
 @media (max-width: 560px) {
 
-  .score-hero-section {
-    padding-top: var(--space-16);
-    padding-bottom: var(--space-20);
-  }
-
-  .score-hero-section .score-form {
-    margin-top: var(--space-12);
-  }
-
   .score-hint {
-    font-size: 0.78rem;
+    font-size: var(--text-label);
     margin-top: var(--space-12);
   }
 
@@ -12060,18 +11067,9 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
     padding: var(--space-16);
   }
 
-  .score-grade-emblem {
-    width: 4rem;
-    height: 4rem;
-  }
-
-  .score-grade-letter {
-    font-size: 2.25rem;
-  }
-
   
   .score-metric-val {
-    font-size: 1.1rem;
+    font-size: var(--text-body);
   }
 
   .score-controls-card {
@@ -12123,25 +11121,16 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
 @media (max-width: 380px) {
 
-  .score-grade-emblem {
-    width: 3.5rem;
-    height: 3.5rem;
-  }
-
-  .score-grade-letter {
-    font-size: 2rem;
-  }
-
   .score-metric-tile {
     padding: var(--space-8) var(--space-fine-35);
   }
 
   .score-metric-val {
-    font-size: 0.95rem;
+    font-size: var(--text-body);
   }
 
   .score-metric-lbl {
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
   }
 }
 
@@ -12156,16 +11145,6 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   padding: var(--space-8) var(--space-12);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-}
-
-.badge-grade-row.is-qualifying {
-  border-color: color-mix(in srgb, var(--ok) 25%, transparent);
-  background: color-mix(in srgb, var(--grade-a) 4%, transparent);
-}
-
-
-.badge-grade-row.is-qualifying .badge-grade-status {
-  color: var(--ok-ink);
 }
 
 
@@ -12423,7 +11402,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-title {
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -12436,7 +11415,7 @@ html[data-motion="paused"] .pricing-card::after {
 .score-history-clear {
   background: none;
   border: none;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
   cursor: pointer;
   padding: var(--space-8) var(--space-12);
@@ -12488,7 +11467,7 @@ html[data-motion="paused"] .pricing-card::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.02em;
   background: var(--surface-soft);
@@ -12496,13 +11475,15 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line);
 }
 
-/* Grade tints reuse the existing is-a/is-b/is-c/is-d/is-f grade palette
-   defined for score-hero-card. Same tokens, no new colors. */
-.score-history-emblem.is-a { color: var(--grade-a-text, var(--signal-text)); border-color: var(--grade-a-line, var(--line-strong)); }
-.score-history-emblem.is-b { color: var(--grade-b-text, var(--signal-text)); border-color: var(--grade-b-line, var(--line)); }
-.score-history-emblem.is-c { color: var(--grade-c-text, var(--muted)); border-color: var(--grade-c-line, var(--line)); }
-.score-history-emblem.is-d { color: var(--grade-d-text, var(--muted)); border-color: var(--grade-d-line, var(--line)); }
-.score-history-emblem.is-f { color: var(--grade-f-text, var(--muted)); border-color: var(--grade-f-line, var(--line)); }
+/* A past score's grade in the grade palette (brand ledger D56): the letter in
+   --grade-*-ink, the rim in --grade-*. The old fallbacks drew A and B in the
+   brand's Azure and C, D and F in grey, since nothing set the --grade-*-text
+   properties they read first. */
+.score-history-emblem.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
+.score-history-emblem.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 45%, transparent); }
+.score-history-emblem.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 45%, transparent); }
+.score-history-emblem.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 45%, transparent); }
+.score-history-emblem.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 45%, transparent); }
 
 .score-history-body {
   flex: 1;
@@ -12514,7 +11495,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-url {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -12523,7 +11504,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-meta {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-variant-numeric: proportional-nums;
 }
@@ -12533,7 +11514,7 @@ html[data-motion="paused"] .pricing-card::after {
   background: none;
   border: 1px solid var(--line);
   color: var(--text);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   padding: var(--space-8) var(--space-fine-85);
   min-height: 44px;
   border-radius: var(--radius-sm);
@@ -12549,7 +11530,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .score-history-foot {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
   margin: 0;
   line-height: 1.5;
@@ -12772,6 +11753,29 @@ html[data-motion="paused"] .pricing-card::after {
   padding: var(--space-32) 0;
 }
 
+/* No address in the link (/score/report with no ?url=): the page asks for one
+   in the site's own URL bar. Nothing ran, so nothing reads as a failure. */
+.report-start {
+  display: grid;
+  gap: var(--space-16);
+  max-width: 44rem;
+  padding: var(--space-32) 0;
+}
+
+/* Its title is a subhead in the body's size: the report page's own title above
+   it is a 1.25rem sans heading, and a display-face h2 drew larger than it. */
+.report-start h2 {
+  font-family: var(--sans);
+  font-size: inherit;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: normal;
+}
+
+.report-start p {
+  color: var(--muted);
+}
+
 /* --- Report hero --- */
 
 .report-hero {
@@ -12812,7 +11816,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-pct {
-  font-size: 1.25rem;
+  font-size: var(--text-lead);
   color: var(--muted);
   font-weight: 400;
 }
@@ -12823,7 +11827,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-url {
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
   margin-bottom: var(--space-4);
@@ -12831,7 +11835,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-contract {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -12844,7 +11848,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-count {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   font-weight: 600;
   padding: var(--space-4) var(--space-fine-65);
   border-radius: 99px;
@@ -12858,13 +11862,13 @@ html[data-motion="paused"] .pricing-card::after {
 .report-count--manual { color: var(--muted); background: var(--surface-soft); }
 
 .report-hero-floor {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   color: var(--warn-ink);
   margin-top: var(--space-8);
 }
 
 .report-hero-scored {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   margin-top: var(--space-8);
 }
@@ -12892,7 +11896,7 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   transition: border-color var(--duration-fast) var(--ease),
     color var(--duration-fast) var(--ease),
@@ -12917,7 +11921,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-weight {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -12931,7 +11935,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-cat-detail {
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -12943,7 +11947,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-not-measured p {
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.6;
 }
@@ -12969,7 +11973,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-section-title {
-  font-size: 1.15rem;
+  font-size: var(--text-lead);
   font-weight: 700;
   color: var(--ink);
   display: flex;
@@ -12978,7 +11982,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-section-score {
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   color: var(--muted);
   font-weight: 400;
   font-variant-numeric: proportional-nums;
@@ -12987,7 +11991,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-section-meta {
   display: flex;
   gap: var(--space-16);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -13015,7 +12019,7 @@ html[data-motion="paused"] .pricing-card::after {
   gap: var(--space-12);
   padding: var(--space-fine-60) var(--space-fine-85);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   transition: background var(--duration-fast) var(--ease);
   min-height: 2.75rem;
 }
@@ -13028,7 +12032,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-status {
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
@@ -13044,7 +12048,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-check-id {
   flex-shrink: 0;
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
   min-width: 2rem;
 }
@@ -13058,7 +12062,7 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-check-detail {
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   color: var(--muted);
   max-width: 40%;
   overflow: hidden;
@@ -13069,7 +12073,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-check-remediation {
   padding: var(--space-12) var(--space-fine-85);
   border-top: 1px solid var(--line-faint);
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.55;
   background: var(--surface);
@@ -13093,7 +12097,7 @@ html[data-motion="paused"] .pricing-card::after {
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--error) 8%, transparent);
   color: var(--error-ink);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   font-weight: 500;
   line-height: 1.5;
 }
@@ -13121,7 +12125,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-slop-title {
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--warn-ink);
@@ -13129,7 +12133,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-slop-convergence {
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
   margin-bottom: var(--space-16);
 }
@@ -13154,13 +12158,13 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-slop-finding-id {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   flex-shrink: 0;
 }
 
 .report-slop-finding-label {
-  font-size: 0.85rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
   flex: 1;
@@ -13168,14 +12172,14 @@ html[data-motion="paused"] .pricing-card::after {
 
 .report-slop-finding-deduction {
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--warn-ink);
   flex-shrink: 0;
 }
 
 .report-slop-finding-evidence {
   margin-top: var(--space-4);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
   padding-left: var(--space-40);
 }
@@ -13185,7 +12189,7 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line-faint);
   border-radius: var(--radius-sm);
   padding: var(--space-12) var(--space-fine-85);
-  font-size: 0.85rem;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 
@@ -13212,7 +12216,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-version {
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -13416,7 +12420,7 @@ html[data-motion="paused"] .pricing-card::after {
 input,
 textarea,
 select {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 /* --------------------------------------------------------------------------
@@ -13535,7 +12539,7 @@ select {
   /* The verdict sentence under the readout (B′). Plain: the blue rule beside
      it and the check icon went, since blue means selected and links, and a
      check mark on a D said "passed". */
-  font-size: clamp(0.95rem, 0.95rem + 0.2vw, 1.075rem);
+  font-size: var(--text-body);
   font-weight: 500;
   letter-spacing: -0.006em;
   line-height: 1.42;
@@ -13545,15 +12549,9 @@ select {
   text-wrap: balance;
 }
 
-
-.score-tip-hint {
-  margin-top: var(--space-12);
-  display: flex;
-}
-
 .score-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted-dim);
 }
@@ -13580,7 +12578,7 @@ select {
   display: inline-flex;
   align-items: center;
   gap: var(--space-fine-20);
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   padding: var(--space-2) var(--space-7);
@@ -13615,7 +12613,7 @@ select {
   margin-left: var(--space-8);
   padding-left: var(--space-8);
   border-left: 1px solid var(--line);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-family: var(--mono);
   white-space: nowrap;
@@ -13630,7 +12628,7 @@ select {
   margin-left: var(--space-8);
   padding: var(--space-fine-10) var(--space-8);
   border-radius: var(--radius-sm);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--line-strong);
@@ -13639,7 +12637,7 @@ select {
 
 /* "31 of 44 checks scored", beside the URL and the rules. */
 .score-scored-line {
-  font-size: 0.8125rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -13702,7 +12700,7 @@ select {
   font-variant-numeric: proportional-nums;
 }
 .rs-num small {
-  font: 500 1rem/1 var(--mono);
+  font: 500 var(--text-body)/1 var(--mono);
   color: var(--muted);
   letter-spacing: 0;
   margin-left: var(--space-6);
@@ -13748,7 +12746,7 @@ select {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 2px;
-  font: 500 0.75rem/1.2 var(--sans);
+  font: 500 var(--text-label)/1.2 var(--sans);
   color: var(--muted-dim);
 }
 .rs-ticks > span {
@@ -13758,7 +12756,7 @@ select {
   text-align: left;
 }
 .rs-ticks b {
-  font: 500 0.75rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   margin-left: 0.3em;
   color: var(--muted-dim);
@@ -13774,13 +12772,14 @@ select {
   gap: var(--space-12);
   min-width: 0;
 }
-/* Four keys in 276px of text: an 8px gap keeps them on one line in the
-   311px a 390 phone gives the score form (a 12px gap needed 312). */
+/* Four keys on one line in the 311px a 390 phone gives the score form. At
+   the 12.8px floor (D59) the 8px gap and 6px swatch margin wrapped it; a 6px
+   gap and a 4px margin keep it to one line (results-readout R2). */
 .rs-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-6) var(--space-8);
-  font-size: 0.75rem;
+  gap: var(--space-6) var(--space-6);
+  font-size: var(--text-label);
   /* A set line, so the two-column layout can drop the readout to the first
      row exactly (below). */
   line-height: 1rem;
@@ -13791,7 +12790,7 @@ select {
   width: var(--space-8);
   height: var(--space-8);
   border-radius: 2px;
-  margin-right: var(--space-6);
+  margin-right: var(--space-4);
   background: var(--tone);
 }
 .rs-list {
@@ -13828,7 +12827,7 @@ select {
   width: 100%;
   padding: var(--space-10) var(--space-4);
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: var(--text-body);
   color: inherit;
   text-align: left;
   background: transparent;
@@ -13878,7 +12877,7 @@ button.rs-row:focus-visible {
 }
 .rs-val {
   text-align: right;
-  font: 600 0.9375rem/1 var(--mono);
+  font: 600 var(--text-body)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--tone-ink);
 }
@@ -13887,7 +12886,7 @@ button.rs-row:focus-visible {
    needs a browser run") wrapped in the 251px under the name and bar at 390. */
 .rs-detail {
   grid-column: 1 / -1;
-  font: 400 0.8125rem/1.35 var(--sans);
+  font: 400 var(--text-label)/1.35 var(--sans);
   color: var(--muted);
 }
 
@@ -13931,7 +12930,7 @@ button.rs-row:focus-visible {
   border: none;
   padding: var(--space-4) 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -13954,7 +12953,7 @@ button.rs-row:focus-visible {
 
 .score-rubric-formula {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   line-height: 1.55;
   color: var(--muted);
   font-family: var(--mono);
@@ -13965,7 +12964,7 @@ button.rs-row:focus-visible {
 }
 
 .score-rubric-formula sub {
-  font-size: 0.85em;
+  font-size: var(--text-label);
 }
 
 .score-rubric-weights {
@@ -13981,7 +12980,7 @@ button.rs-row:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-fine-60);
-  font-size: 0.72rem;
+  font-size: var(--text-label);
 }
 
 .score-rubric-weight-label {
@@ -14030,9 +13029,125 @@ button.rs-row:focus-visible {
    was uppercase signal blue; blue means selected and links). */
 .score-verify-log-title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
+}
+
+/* The loading ignition (brand D51, rulings D54; lib/engine/ignition.ts). One
+   Azure dot (--signal) per score loader: the lone dot on the score form's
+   run line, or the dot in the four-engine instrument's mark. Its container
+   carries data-ignite and the run's data-phase. While a run is out the dot
+   breathes; when a result lands it sweeps to the flame (--activation), rings
+   once, holds, and swaps back. These are status and instrument dots only:
+   the mark in the logo and lockup artwork (header, footer, OG) never carries
+   data-ignite, so nothing here reaches it.
+
+   The fill is the dot's ::before, so a fade touches the fill alone. On light
+   the dot itself draws a 1px rim of the fill's deep counterpart:
+   --signal-access on Azure (D49), --activation-ink on the flame (D35), swept
+   between the two with the fill. The rim never fades, and its width is
+   divided by the breath's scale, so it is 1px in every frame. The ring sits
+   under the dot, so at scale 1 it is hidden and only its growth shows. */
+@property --ig-s {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+@property --ig-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+[data-ignite] > .ig-dot,
+[data-ignite] > .ig-halo {
+  grid-area: 1 / 1;
+  border-radius: 50%;
+}
+
+[data-ignite] > .ig-dot {
+  --ig-fill: var(--signal);
+  position: relative;
+  background: none;
+  transform: scale(var(--ig-s));
+}
+
+[data-ignite] > .ig-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ig-fill);
+  opacity: var(--ig-a);
+}
+
+[data-ignite] > .ig-dot[data-lamp="lit"] {
+  --ig-fill: var(--activation);
+}
+
+[data-ignite] > .ig-halo {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--activation);
+  opacity: 0;
+}
+
+[data-theme="light"] [data-ignite] > .ig-dot {
+  --ig-rim: var(--signal-access);
+  box-shadow: 0 0 0 calc(1px / var(--ig-s)) var(--ig-rim);
+}
+
+[data-theme="light"] [data-ignite] > .ig-dot[data-lamp="lit"] {
+  --ig-rim: var(--activation-ink);
+}
+
+/* The breath: scale and the fill's opacity, never the dot's own opacity, so
+   the rim holds. Only with motion allowed and not paused, so reduced motion
+   and the site's "Pause motion" stop it live, mid-run, without a reload. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion="paused"]) [data-ignite][data-phase="running"] > .ig-dot {
+    animation: ig-breathe 1600ms ease-in-out infinite;
+  }
+}
+
+@keyframes ig-breathe {
+  0%,
+  100% { --ig-s: 1; --ig-a: 1; }
+  50% { --ig-s: 0.86; --ig-a: 0.72; }
+}
+
+/* The score form's run line: the lone dot and what is being scored. It
+   stands over the loader while the run is out and over the result once it
+   lands, so the dot that breathed is the dot that lights. The loading card
+   below keeps the same words for screen readers; this line is drawn only. */
+.score-run-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: var(--space-28) 0 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.score-lamp {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 8px;
+  height: 8px;
+}
+
+.score-lamp > i {
+  width: 8px;
+  height: 8px;
+}
+
+.score-run-line + .score-verify-log,
+.score-run-line + .score-results {
+  margin-top: var(--space-12);
 }
 
 .score-verify-log-list {
@@ -14048,7 +13163,7 @@ button.rs-row:focus-visible {
   display: flex;
   align-items: center;
   gap: var(--space-fine-55);
-  font-size: 0.82rem;
+  font-size: var(--text-label);
   color: var(--muted);
   opacity: 0;
   animation: verifyStepIn var(--duration) var(--ease-out) forwards;
@@ -14095,7 +13210,7 @@ button.rs-row:focus-visible {
   
   
   .score-verdict-line {
-    font-size: 0.92rem;
+    font-size: var(--text-body);
   }
 
   .score-url-time {
@@ -14135,18 +13250,6 @@ button.rs-row:focus-visible {
   50%      { stroke-dashoffset: -40; }
 }
 
-/* Square satellite — dashed ring orbiting the solid square's centroid. */
-.hero-seam-mark .seam-square-satellite {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: seamDockScatter 0.9s var(--ease-out) 0.26s both, seamSatelliteSpin 12s linear 1.5s infinite;
-}
-
-@keyframes seamSatelliteSpin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-
 /* Block — 8s sine bob. The smallest body wanders the most. */
 .hero-seam-mark .seam-block {
   animation: seamDockScatter 0.9s var(--ease-out) 0.34s both, seamBlockBob 8s var(--ease-in-out) 1.6s infinite;
@@ -14157,22 +13260,6 @@ button.rs-row:focus-visible {
   25%      { transform: translate(-6px, -8px); }
   50%      { transform: translate(-10px, 2px); }
   75%      { transform: translate(-4px, 8px); }
-}
-
-/* Triangle echo cascade — two ghost copies expand outward behind the solid,
-   staggered 1.5s apart so the blueprint breathes continuously. */
-.hero-seam-mark .seam-triangle-echo {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 1;
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: seamTriangleEcho 6s var(--ease-out) 1.2s infinite;
-}
-
-.hero-seam-mark .seam-triangle-echo.is-echo-2 {
-  animation-delay: 4.2s;
 }
 
 @keyframes seamTriangleEcho {
@@ -14236,16 +13323,6 @@ button.rs-row:focus-visible {
   animation: none;
   stroke-dashoffset: 0;
   }
-
-  .hero-seam-mark .seam-square-satellite {
-  animation: none;
-  opacity: 0.5;
-  }
-
-  .hero-seam-mark .seam-triangle-echo {
-  animation: none;
-  opacity: 0;
-  }
 }
 
 /* MiniConstellation — the score-tool visual idiom shrunk to a 44px inline
@@ -14264,24 +13341,10 @@ button.rs-row:focus-visible {
    all of these via the seam reduced-motion block below.
 --------------------------------------------------------------------------- */
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  /* Satellite spin-up: the dashed ring's lazy 12s orbit tightens to 5s. */
-  .hero-seam-mark .seam-shape-square:hover .seam-square-satellite {
-    animation-duration: 5s;
-  }
-
-  /* Echo surge: triangle echoes flare briefly while hovered. */
-  .hero-seam-mark .seam-shape-triangle:hover .seam-triangle-echo {
-    animation-duration: 2.4s;
-  }
 
   /* Block tumble: the wanderer's bob becomes a slow 3/4-turn tumble. */
   .hero-seam-mark .seam-block:hover {
     animation: seamBlockTumble 2s var(--ease-in-out) infinite;
-  }
-
-  /* Orbit excite: breathing arc tightens its cycle. */
-  .hero-seam-mark .seam-shape-orbit:hover .seam-orbit {
-    animation-duration: 4s;
   }
 }
 
@@ -14300,71 +13363,6 @@ button.rs-row:focus-visible {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Hero construction field — Architectural Interface (midground depth layer)
-   ---------------------------------------------------------------------------
-   Replaces the hero-seam scatter on the landing hero with CAD construction
-   geometry orbiting a giant datum arc. Placement math is in hero-construction.tsx.
-   This block owns: stroke/fill language, studio-light glows, hover personalities
-   layered on the EffectEnhancer seam machinery, and the reduced-motion freeze.
---------------------------------------------------------------------------- */
-
-
-/* Datum arc — faint ink construction circle, one signal-light segment. */
-
-
-@keyframes hcSphereBloom {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50%      { opacity: 1;   transform: scale(1.06); }
-}
-
-
-@keyframes hcChamferFloat {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50%      { transform: translateY(-10px) rotate(1.5deg); }
-}
-
-
-@keyframes hcPlaneDrift {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-9px); }
-}
-
-
-@keyframes hcRingSpin {
-  from { stroke-dashoffset: 0; }
-  to   { stroke-dashoffset: -389; } /* 2π×62 ≈ ring circumference */
-}
-
-
-@keyframes hcBoxFlicker {
-  0%, 18%, 100% { opacity: 0.75; }
-  6%            { opacity: 0.45; }
-  12%           { opacity: 0.9; }
-}
-
-/* Hover personalities (fine pointer, motion-allowed): excite each primitive's
-   own idle language. EffectEnhancer adds the magnetic drift + fill shift. */
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hc-prim-sphere:hover  .hc-bloom-field { animation-duration: 4.5s; }
-  .hc-prim-chamfer:hover .seam-shape     { animation-duration: 7s; }
-  .hc-prim-plane:hover   .seam-shape     { animation-duration: 8s; }
-  .hc-prim-ring:hover    .hc-ring-glow   { animation-duration: 9s; stroke-opacity: 0.4; }
-  .hc-prim-box:hover     .hc-box-edges   { animation-duration: 5s; }
-}
-
-/* Reduced-motion: the whole field freezes to a quiet exploded drawing —
-   no bloom pulse, no float, no flicker; the geometry stays fully drawn. */
-@media (prefers-reduced-motion: reduce) {
-  .hc-bloom-field,
-  .hc-ring-glow,
-  .hc-box-edges,
-  .hc-prim-chamfer .seam-shape,
-  .hc-prim-plane .seam-shape {
-    animation: none !important;
-  }
-  .hc-prim .seam-shape { transition: none; }
-}
 
 /* ---------------------------------------------------------------------------
    Hero — Architectural Interface editorial pass (v2, additive)
@@ -14411,20 +13409,6 @@ button.rs-row:focus-visible {
    the band is a tight signal-blue flash (--signal-light) that dips below the
    baseline ink in lightness and adds chroma, exactly how Linear/Stripe read
    motion on light surfaces in 2026. Same 47–53% window, same sweep math. */
-
-
-/* Continuous left→right sweep, eased so the band breathes instead of
-   crawling. 50%→100% is the dwell. With background-size 250%, the white
-   band (image coords 47–53%) lives at container coords 117.5–132.5% at
-   position 0% — fully off the right edge — and at −32.5…−17.5% at
-   position 100% — fully off the left edge. Both extremes render the same
-   flat base color, so the 100%→0% loop wrap is invisible. The band is
-   never parked OVER the word: resting face is flat, not a frozen gradient. */
-@keyframes hero-free-shimmer {
-  0% { background-position: 0% 0; }    /* band parked off the right edge */
-  50% { background-position: 100% 0; } /* band exited off the left edge */
-  100% { background-position: 100% 0; } /* dwell — restart is invisible */
-}
 
 
 [data-word] {
@@ -14571,28 +13555,6 @@ button.rs-row:focus-visible {
 /* Proof rail — quiet, single cluster, real values only. */
 
 
-/* Recent-scores — the real cohort leaders, hairline ledger rows. */
-
-
-.hero-proof-recent-grade {
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 0.74rem;
-  width: 1.45rem;
-  height: 1.45rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-strong);
-  color: var(--muted);
-}
-.hero-proof-recent-grade.is-a { color: var(--grade-a-ink); border-color: color-mix(in srgb, var(--grade-a) 45%, transparent); }
-.hero-proof-recent-grade.is-b { color: var(--grade-b-ink); border-color: color-mix(in srgb, var(--grade-b) 40%, transparent); }
-.hero-proof-recent-grade.is-c { color: var(--grade-c-ink); border-color: color-mix(in srgb, var(--grade-c) 40%, transparent); }
-.hero-proof-recent-grade.is-d { color: var(--grade-d-ink); border-color: color-mix(in srgb, var(--grade-d) 40%, transparent); }
-.hero-proof-recent-grade.is-f { color: var(--grade-f-ink); border-color: color-mix(in srgb, var(--grade-f) 35%, transparent); }
-
 
 /* Narrow viewports: construction field hides (see .hero-construction), and
    the hero recent rail keeps its measure within the column. */
@@ -14674,13 +13636,13 @@ button.rs-row:focus-visible {
 
   /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
   .principle-body p {
-    font-size: 0.9375rem; /* 15px */
+    font-size: var(--text-body); /* 15px */
     line-height: 1.55;
   }
   /* The card title holds its desktop 16px: weight and ink rank it over the
      15px muted body, and 18.75px crowded the 20px section heading (1.07). */
   .principle-body h3 {
-    font-size: 1rem;
+    font-size: var(--text-body);
     line-height: 1.35;
   }
 
@@ -14695,17 +13657,6 @@ button.rs-row:focus-visible {
   }
   .section-heading-badge-unit {
     font-size: 0.6875rem; /* 11px */
-  }
-
-  /* -- Section heading row: ensure the badge stacks under the title with a
-     clean 12px gap and aligns flush-left (rag-right), never crowding the
-     two-line h2. -- */
-  .section-heading-row {
-    align-items: flex-start;
-    gap: var(--space-12);
-  }
-  .section-heading-badge {
-    align-items: flex-start;
   }
 }
 
@@ -14797,7 +13748,7 @@ button.rs-row:focus-visible {
   background: var(--surface-raised);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  font-size: 0.8125rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.4;
   position: relative;
@@ -14856,18 +13807,12 @@ button.rs-row:focus-visible {
   background: none;
   border: none;
   color: var(--muted-dim);
-  font-size: 0.75rem;
+  font-size: var(--text-body);
   line-height: 1;
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: color var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
     background var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1));
-}
-
-.lottie-tip-close-label {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
 }
 
 @media (hover: hover) {
@@ -15207,7 +14152,7 @@ button.rs-row:focus-visible {
 .listen-dur {
   min-width: 1.75rem;
   text-align: end;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -15264,7 +14209,7 @@ button.rs-row:focus-visible {
 }
 
 /* The house ring, --signal-access (--focus-ring resolves to the same token;
-   see .state-marquee-pill:focus-visible). */
+   see :focus-visible). */
 .listen-btn:focus-visible {
   outline: 2px solid var(--signal-access);
   outline-offset: 2px;
@@ -15278,8 +14223,10 @@ button.rs-row:focus-visible {
 }
 
 
+/* Playing is happening now, so the listen button takes the flame; the row
+   only lifts its ground. An orange left edge was a coloured stripe (brand
+   ledger D62). */
 .row--listen.is-playing {
-  border-left-color: var(--activation);
   background: var(--surface-soft);
 }
 
@@ -15312,40 +14259,12 @@ button.rs-row:focus-visible {
   margin-top: var(--space-fine-30);
 }
 
-/* The 3px spine on a check row says its STATUS, never its category: fail
-   in --error, warn in --warn, manual and not-applicable in --muted-dim, and
-   a pass carries none. It used to take a hue per category from the state
-   tokens (accessibility --ok, identity --error, cadence and copywriting
-   grade hues), so a FAIL accessibility check wore the pass green beside its
-   red FAIL pill and every passing identity check wore red. The category is
-   named by the mono chip; the status by the pill, which the spine repeats
-   at a glance (colour never carries alone). The row's data-status is the
-   status (score-form.tsx); a row without one reads it from its pill. */
+/* A check row carries no edge stripe (brand ledger D62, no coloured edge
+   stripes anywhere). The 3px status spine on fail, warn, manual and skip rows
+   repeated what the row's status pill and its group header already say, in
+   the side-stripe pattern. */
 .score-card-item::before {
   content: none;
-}
-
-.score-card-item:is(
-  [data-status='fail'], [data-status='warn'], [data-status='manual'], [data-status='skip'],
-  :not([data-status]):has(> .score-card-main .score-card-status-pill:is(.is-fail, .is-warn, .is-manual, .is-skip))
-)::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: var(--space-8);
-  bottom: var(--space-8);
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--muted-dim);
-  pointer-events: none;
-}
-
-.score-card-item:is([data-status='fail'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-fail))::before {
-  background: var(--error);
-}
-
-.score-card-item:is([data-status='warn'], :not([data-status]):has(> .score-card-main .score-card-status-pill.is-warn))::before {
-  background: var(--warn);
 }
 
 /* --------------------------------------------------------------------------
@@ -15392,12 +14311,12 @@ button.rs-row:focus-visible {
   position: sticky;
   top: 6rem;
   align-self: start;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
 }
 
 .docs-toc-heading {
   margin: 0 0 var(--space-12, 12px);
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -15479,7 +14398,7 @@ button.rs-row:focus-visible {
     min-height: 2.75rem;
   }
   .docs-toc-summary-label {
-    font-size: 0.68rem;
+    font-size: var(--text-label);
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -15487,7 +14406,7 @@ button.rs-row:focus-visible {
   }
   .docs-toc-summary-current {
     color: var(--ink);
-    font-size: 0.8rem;
+    font-size: var(--text-label);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -15527,7 +14446,7 @@ button.rs-row:focus-visible {
   border-radius: var(--radius-sm);
   background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   font-family: var(--mono, ui-monospace, monospace);
   letter-spacing: 0.02em;
   text-decoration: none;
@@ -15886,7 +14805,7 @@ html[data-motion="paused"] .topbar .topbar-right::before {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 500;
   cursor: pointer;
   transition: color var(--duration-fast) var(--ease),
@@ -16078,13 +14997,13 @@ html[data-motion="paused"] .senses-panel {
 }
 
 .senses-row-label {
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
 }
 
 .senses-row-hint {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted);
 }
@@ -16208,7 +15127,7 @@ html[data-motion="paused"] .senses-panel {
   border-radius: var(--radius-md);
   background: var(--signal);
   color: var(--paper-on-signal);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
   white-space: nowrap;
   transition: background-color var(--duration-fast) var(--ease),
@@ -16327,7 +15246,7 @@ html[data-motion="paused"] .senses-panel {
   box-shadow: var(--specular), var(--elev-3);
   color: var(--muted);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: var(--text-label);
   font-weight: 600;
   transform: none;
   opacity: 1;
@@ -16389,7 +15308,7 @@ html[data-motion="paused"] .senses-panel {
     bottom: max(1rem, env(safe-area-inset-bottom));
     height: 2.75rem;
     padding: 0 var(--space-12);
-    font-size: 0.78rem;
+    font-size: var(--text-label);
   }
   .director-dock-label {
     display: inline;
@@ -16568,7 +15487,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
       var(--rim) border-box;
     box-shadow: var(--specular), var(--elev-2);
     color: var(--ink);
-    font-size: 0.78rem;
+    font-size: var(--text-label);
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
@@ -16775,13 +15694,6 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
   }
   /* In-text links: see the block after this one, which covers tablets (touch
      screens wider than the phone block's 720px) and phones together. */
-  /* The marquee's pause toggle is a drawn 24px square: its hit area grows,
-     its drawing does not. */
-  .state-marquee-toggle::after {
-    content: "";
-    position: absolute;
-    inset: -10px;
-  }
 }
 
 /* In-text links on touch (2026-10-03). The 44px target used to come from

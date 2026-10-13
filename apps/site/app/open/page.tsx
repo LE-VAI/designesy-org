@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { RouteLink } from '../lib/route-link';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { openIndex } from '../lib/open-index';
@@ -173,15 +174,15 @@ export default function OpenPage() {
             <span className="status-badge">Public</span>
             <span className="lab-meta-item">
               Machine ·{' '}
-              <Link href="/open.json" data-cuelume-hover="chime">
+              <a href="/open.json" data-cuelume-hover="chime">
                 /open.json
-              </Link>
+              </a>
             </span>
             <span className="lab-meta-item">
               Agents ·{' '}
-              <Link href="/llms.txt" data-cuelume-hover="chime">
+              <a href="/llms.txt" data-cuelume-hover="chime">
                 /llms.txt
-              </Link>
+              </a>
             </span>
             <span className="lab-meta-item">
               Stack · contracts · kits · labs · reviews · tools
@@ -257,9 +258,9 @@ export default function OpenPage() {
                           <span className="open-path-sep" aria-hidden="true">
                             ·
                           </span>
-                          <Link href={pkg.machine_path} data-cuelume-hover="chime">
+                          <a href={pkg.machine_path} data-cuelume-hover="chime">
                             {breakablePath(pkg.machine_path)}
-                          </Link>
+                          </a>
                         </span>
                       ) : null}
                     </span>
@@ -282,7 +283,7 @@ export default function OpenPage() {
           <div className="row-stack" role="list">
             {o.machine_exports.map((item, i) => (
               <div role="listitem" key={item.path}>
-                <Link
+                <RouteLink
                   className="row"
                   href={item.path}
                   data-cuelume-hover="bloom"
@@ -299,7 +300,7 @@ export default function OpenPage() {
                     <span className="row-side-line">{item.path}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>

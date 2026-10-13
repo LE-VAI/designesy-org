@@ -6,6 +6,206 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.3.1 and @designesy/score 0.8.1** (npm, not yet published). Four
+checks stop warning on pages that are right, and the npm engine stops
+following a redirect loop. No check is added, no weight or ceiling moves, and
+contract v0.4.5 is unchanged. The hosted /score page and API change when the
+site deploys; the PyPI server's offline engine carries the v27 change with the
+next designesy-mcp release.
+
+**Which grades can move.** v26, v27, v38 and v43 move WARN to PASS where the
+page was right, so scores move up or not at all, with one exception: v27 now
+reads a field whose font size comes from a token, so a field set to a token
+under 16px FAILs where it read WARN (carbondesignsystem.com, below). The
+redirect limit can only turn a site that redirects more than three times into
+"could not read".
+
+### Fixed (engine 1.3.1)
+
+- **v26 skips any face named with the word "fallback"**, not only a name that
+  ends in it. A metric-matched stand-in drawn until the real face loads is not
+  a typeface choice. designesy.org's "Fraunces Fallback Tuned" (Times New
+  Roman under `size-adjust`) was counted: before, "4 families (recommended
+  ≤3): fraunces fallback tuned, fraunces, schibsted grotesk, atkinson
+  hyperlegible mono" (WARN); after, "3 family/families: fraunces, schibsted
+  grotesk, atkinson hyperlegible mono" (PASS). The match is on the whole word,
+  so a family called "Fallbackish" still counts.
+- **v27 reads `font-size: var(--token)` in a rule that styles a field** through
+  the `:root` tokens, before both the below-16px scan and the 16px floor test.
+  Before, `input, textarea, select { font-size: var(--text-body) }` with
+  `--text-body: 1rem` read WARN ("no explicit input font-size ≥16px
+  detected"), though it renders at 16px; after, PASS. A `0.875rem` token
+  FAILs ("0.875rem (14px)"). A `var()` that does not resolve reads as before.
+  Only rules whose selector styles the field itself are resolved (an `input`,
+  `textarea` or `select` element, or the exact class `.input` or `.field`, as
+  the subject; not a pseudo-element). Resolving every rule would have read
+  designesy.org's card caption `.field-card-meta { font-size:
+  var(--text-label) }` (12.8px) as an input below 16px, because v27's literal
+  scan matches `.field` anywhere in a selector; that literal scan is
+  unchanged.
+- **v38 reads keycaps from the markup.** The text of `<kbd>` elements
+  (keyboard input, by the HTML definition) is dropped before the verb check,
+  as `aria-hidden` content already was, with any "+" left between them.
+  designesy.org's flip button, `<kbd>ctrl</kbd> <span
+  aria-hidden="true">+</span> <kbd>i</kbd>` after a hidden "Flip to the
+  flame:", WARNed as "Flip to the flame: ctrl  i"; it now reads "Flip to the
+  flame:" and PASSes. A button whose only text is keycaps is judged as an
+  icon-only button is: by its aria-label, or not at all. In plain text, a
+  "+key" hint is now stripped in any case ("ctrl+k", "Save ctrl+s"), when the
+  modifier stands as its own word. Text is not otherwise read as keycaps:
+  "Shift A", "Alt text" and "Option 2" are labels, as in 1.3.0, and "Find⌘K",
+  "FindCtrlK" and "Save Ctrl+S" read as before.
+- **v38 knows get, set and try.** The check's own comment said "Get X", "Set
+  X" and "Try X" were allowed, but none of the three was in the verb list, so
+  "Get started" and "Try it free" WARNed on every site. Added with them, each
+  justified in the source as a verb when it leads a button label: flip, learn,
+  sign (in, up, out), join, expand, select, read. Left out because they are
+  common nouns too: switch, watch. explore, collapse, toggle, choose and
+  compare already passed by their ending. v38 stays a WARN-only heuristic.
+- **v43 counts `--destructive` as the error role**, the name shadcn/ui gives
+  it. Before, a shadcn theme with `--success`, `--warning`, `--destructive`
+  and `--info` found 3/4 families and reported error missing; after, 4/4.
+- **The npm engine follows at most three redirects.** `httpsFetch` re-checked
+  each redirect target against the SSRF guard but counted nothing, though its
+  comment said "Follow up to 3 redirects", so a redirect loop recursed without
+  end. A fourth redirect now fails closed, as a refused target does, and a
+  response reached through a redirect reports `redirected: true` with the last
+  hop's URL. The hosted route fetches through `safeFetch`, which already
+  stopped at five.
+
+### Not changed
+
+- **v42 is unchanged.** Tailwind CSS v4 writes only the theme variables a
+  project uses ("only used CSS variables will be generated in the final CSS
+  output", tailwindcss.com/docs/theme), so the 226 hue-named colour tokens
+  x.com ships are tokens its stylesheet uses, and v42's WARN on it is right.
+
+### Measured (engine 1.3.1)
+
+The calibration corpus (32 fixtures), the recorded parity page and every
+existing input of the offline golden give the same verdict, detail and score
+under 1.3.0 and 1.3.1; the golden gains eleven v27 inputs. The 30 leaderboard
+URLs, each fetched once on 2026-10-12 and scored by both builds on the same
+bytes (scope auto-detected; 26 fetched, nytimes.com, getdesy.com,
+awwwards.com and cssdesignawards.com did not answer). Scores move on two sites:
+
+| Site | 1.3.0 | 1.3.1 | Why |
+|---|---|---|---|
+| wikipedia.org | 83.8 B | 84.7 B | v38 WARN to PASS: "Read Wikipedia in your language" leads with a verb |
+| carbondesignsystem.com | 82.8 B | 81.8 B | v27 WARN to FAIL: `.cds--number input[type=text]` takes `var(--cds-body-compact-01-font-size)`, 0.875rem in its `:root`, and the page's search field is 14px too |
+
+www.designesy.org stays 100 A (it was already at the clamp); its v26, v27 and
+v38 move WARN to PASS. v38's detail lists fewer flagged labels on linear.app
+(38 to 37), zeroheight.com (7 to 4), radix-ui.com (2 to 1, "Sign in") and
+github.com (11 to 9), with the verdict still WARN. The other 19 are unchanged.
+
+---
+
+**Engine 1.3.0 and @designesy/score 0.8.0** (npm, not yet published). A page
+with a failing check can no longer score an A. The hosted MCP tools and
+/api/monitor change when the site deploys; the PyPI server's own code (the
+offline engine, the accessibility kit's Python twin) ships with the next
+designesy-mcp release. Contract v0.4.4 is unchanged.
+
+**Grades: any FAIL now caps at B.** If a CI gate of yours requires an A and
+needs time to adjust, pin the previous engine while you fix the failing
+checks: `npx @designesy/score@0.7.2 <url>` on the command line, or
+`engine-version: 0.7.2` in designesy/score-action (v1.2.0 or later). The
+hosted /score page and API always run the current engine.
+
+### Changed (engine 1.3.0)
+
+- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+  the score at 89.9, a B at most, and `hardFailCeilingReason` says which
+  checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
+  ceilings stay lower and win where they apply. Every cap runs after the
+  originality lift, so the lift can carry a score up to a cap and never past
+  one. Before, a page could score 100 / A beside its own FAIL verdicts, and
+  the review printed **Block** and **Grade A** together.
+- **v44 caps at 65**, as v06 does: both are measured WCAG contrast failures
+  on text. The status-text page the core-logic audit built (status word
+  `#b07d04` on white at 3.63:1) scored 100 / A; it scores 65 / D.
+- **v34 FAILs only a positively identified AI chat surface**: a container or
+  input that names itself a chatbot or an AI assistant, or a chatbot,
+  AI-widget or Dialogflow script, with no disclosure. Live-chat vendors
+  (Intercom, Drift, Zendesk, LiveChat, Tawk, Crisp), a generic chat container
+  or "assistant" script, and page text about AI WARN "possible AI surface:
+  review". The word "gpt" no longer counts, so Google Publisher Tag
+  (`gpt.js`, an ad tag) is not an AI surface. The detail says Article 50(1)
+  "may require" a disclosure and names the duty as the AI system provider's.
+- **v06 and v22 read CSS Color 4**, through the parser v44 already used:
+  `oklch()`, `oklab()`, space-syntax `rgb()` and `hsl()`, hex of 4 and 8
+  digits, `color-mix()`, `light-dark()` (light side) and `var()` fallbacks.
+  Translucent text is composited over the paper under it. Before, a sheet
+  written in `oklch()` SKIPped both checks, and a page with text at 1.58:1
+  scored 100 / A. Where a sheet declares `--muted-foreground`, v06 measures
+  it as the muted text: in the shadcn convention `--muted` is a surface.
+- **Tokens declared as `:root, :host { }`** (the block Tailwind v4 writes its
+  theme into) are extracted. Before, such a sheet extracted no tokens.
+- **v42 and v43 follow `var()` aliases**, and a palette that role tokens alias
+  is not a hue vocabulary. `--error: var(--red-700)` counts as a role-named
+  colour token (it was dropped, which inverted the verdict for the structure
+  v42's own remediation recommends). Hue-named primitives that a role token
+  reaches through its aliases are the palette layer and leave v42's role
+  share; a hue-named token no role token references still counts against it.
+  This is the two-tier structure DTCG 2025.10 (§3.8 aliases), Spectrum
+  (primitive tokens "are typically used indirectly through semantic tokens as
+  an alias") and Primer (base tokens "are generally used as a reference for
+  functional tokens") describe.
+
+### Fixed (engine 1.3.0)
+
+- **v34 citations.** California's bot-disclosure law is SB 1001 (Bus. & Prof.
+  Code §§17940-17943); AB 2659 (2023-24), cited before, is a salvageable
+  personal property bill. Colorado SB 24-205 was repealed and re-enacted by
+  SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs
+  automated decision-making in consequential decisions; "Colorado AI Act (Feb
+  2026)" was stale. EU AI Act Article 50 applies from 2026-08-02.
+- **A colour value named like an Object.prototype key** (`constructor`,
+  `toString`) threw inside the colour parser and failed the whole score; it
+  now reads as unresolvable.
+
+### MCP tools and the offline engine
+
+- **The offline engine grades on the live bands**, A 90, B 80, C 70, D 60
+  (it used 95, 85, 75, 60: 92% read B), applies the 89.9 cap on a FAIL, and
+  reads colour and `:root, :host` tokens as the live engine does.
+- **`designesy_a11y_score`** (hosted and PyPI): the generated Playwright
+  script runs `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa`; `wcag22aa`
+  alone selected one axe-core rule (`target-size`). A page where no rule
+  applied is "not scored" instead of grade F. With a `config` the script
+  threw "axe is not defined"; it now passes axe-core's source with the
+  `axe.configure()` call to AxeBuilder as `axeSource`. The accessibility
+  contract moves to 0.1.2 (a01 and the ruleset text).
+  The `url` argument is written into the script as a string literal; a quote
+  in it used to end the literal and turn the rest into code.
+- **`designesy_monitor_score`**: m01 is "History supplied" (PASS with at
+  least one earlier run, SKIP on a first run, which is then not scored)
+  instead of an unconditional PASS; the alert email no longer says the URL
+  was registered. The monitor contract moves to 0.1.2.
+
+### Measured (engine 1.3.0)
+
+The 30 leaderboard URLs, each fetched once on 2026-10-11 and scored by the
+1.2.0 build and this one on the same bytes (scope auto-detected; 27 fetched,
+nytimes.com, getdesy.com and cssdesignawards.com did not answer). Grades move
+on four sites, scores on eight:
+
+| Site | 1.2.0 | 1.3.0 | Why |
+|---|---|---|---|
+| primer.style | 90.4 A | 89.9 B | v11 and v13 FAIL: the 89.9 cap |
+| github.com | 70 C | 65 D | v44 FAIL (status text): the new 65 ceiling |
+| x.com | 90.2 A | 86.7 B | its theme is a `:root, :host` block, read for the first time: v42 finds 5 role-named against 226 hue-named colour tokens, and no role token aliases any of them (197 are referenced straight from the stylesheet's rules); v43 finds no ok/warn/error/info |
+| stripe.com | 67.9 D | 70 C | v42 WARN to PASS: with aliases followed it counts 226 role-named against 59 hue-named colour tokens; 39 hue primitives that role tokens alias are the palette layer |
+| vercel.com | 84.6 B | 81.1 B | as x.com: 1 role-named against 12 hue-named, v43 no status families |
+| designesy.ai.studio | 77.5 C | 74.5 C | its 25 Tailwind hue tokens are read, no role token aliases them, all 25 are used straight from its rules |
+| carbondesignsystem.com | 81.6 B | 82.8 B | v06 and v22 SKIP to PASS: its `oklch()` tokens are measured (`--muted-foreground` 4.73:1) |
+| fwa.org | 51.5 F | 54.6 F | v42 SKIP to PASS: 13 role tokens that alias colours now count |
+
+The other 19 scores are unchanged. No v34 status changes on any of the 27.
+
+---
+
 **@designesy/score 0.7.2** (npm), released on its own (`score-v0.7.2`). The
 engine reports design contract v0.4.4, the version designesy.org serves; 0.7.1
 reports v0.4.3. Engine 1.2.0 and its 44 checks keep their number.

@@ -40,7 +40,7 @@ const idOf = (c: string) => `fw-${c.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 // page is not seven frames around single rows.
 const MULTI = GROUPS.filter((g) => g.sites.length > 1);
 const SINGLE = GROUPS.filter((g) => g.sites.length === 1);
-const SINGLE_SITES = SINGLE.flatMap((g) => g.sites).sort((a, b) => a.rank - b.rank);
+const SINGLE_SITES = SINGLE.flatMap((g) => g.sites).sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || b.score - a.score);
 
 export default function FrameworksIndexPage() {
   return (

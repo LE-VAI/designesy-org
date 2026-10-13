@@ -1,12 +1,35 @@
 import type { Metadata } from 'next';
+import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 /** Canonical public host — apex 308s to www. */
 export const SITE_BASE = 'https://www.designesy.org';
 
 export const SITE_NAME = 'Designesy';
 
-export const SITE_DEFAULT_DESCRIPTION =
-  'Design intelligence infrastructure for a humane creative civilization. Canonical public source for portable design judgment: contracts, kits, labs, and field checks people and agents can fetch, run, and cite.';
+/**
+ * The confirmed one-liner (owner decision 2026-10-11), the line server.json and
+ * the MCP Server Card publish. The check count is the engine's own constant, so
+ * the line cannot fall behind the registry; the static copies (server.json,
+ * package descriptions, READMEs) are held to the same count by
+ * scripts/check-readme-facts.js.
+ */
+export const LISTING_LINE = `Design quality gate for AI-generated UI: score any URL on ${ENGINE_CHECK_COUNT} deterministic checks, A–F grade.`;
+
+/**
+ * The one address the site publishes for people to write to: the footer,
+ * security.txt, agent.json and the JSON-LD use it too. Every mailto that asks a
+ * person to get in touch (a question about the Review, a leaderboard dispute, a
+ * site proposed for the leaderboard) reads it from here, so a change of address
+ * is one edit.
+ */
+export const SITE_CONTACT_EMAIL = 'hello@designesy.org';
+
+/** A mailto link to SITE_CONTACT_EMAIL with its subject filled in. */
+export function contactMailto(subject: string): string {
+  return `mailto:${SITE_CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+}
+
+export const SITE_DEFAULT_DESCRIPTION = LISTING_LINE;
 
 /**
  * Build consistent page metadata: title, description, canonical, OG, Twitter.
@@ -58,6 +81,7 @@ const MARKDOWN_ROUTES = new Set([
   'm3-bridge',
   'open/handoff',
   'privacy',
+  'brand',
   'review/acoustics',
   'review/cadence',
   'review/designesy-org',

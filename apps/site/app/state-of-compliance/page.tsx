@@ -13,7 +13,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
-import { ENGINE_CHECK_COUNT, CONTRACT_VERSION } from '../hero-stats';
+import { ENGINE_CHECK_COUNT } from '../hero-stats';
 import { CATEGORY_WEIGHTS } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import {
@@ -26,6 +26,9 @@ import {
   BATCH_RUN_DATE,
   SCORES_DATE,
   SCORES_ENGINE_VERSION,
+  SCORES_CONTRACT_VERSION,
+  WIDEST_GRADES,
+  namesAt,
   CATEGORY_LABELS,
   WEIGHT_TOTAL,
   categoryStats,
@@ -33,22 +36,30 @@ import {
   byUrl,
   fmt,
   round1,
-  toneOf,
   scoreTone,
+  rankText,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { BarList } from '../lib/data/bars';
 
+// Every number in the share text is derived from the same cohort data as the
+// page, at build. The description used to carry typed figures ("Material 3
+// scores 59/F. Only 1 site passes.") that the data had long since left behind.
+const META_M3 = byUrl('https://m3.material.io');
+const META_A = GRADE_COUNTS.A;
+const META_A_LINE = `${META_A} ${META_A === 1 ? 'reaches' : 'reach'} A`;
+const META_M3_LINE = META_M3 ? ` Material 3 scores ${fmt(META_M3.score)}, a ${META_M3.grade}.` : '';
+
 export const metadata: Metadata = pageMeta({
   title: 'State of Design Compliance',
   description:
-    `The first deterministic report on design-system contract compliance across the web. 30 sites scored against a ${ENGINE_CHECK_COUNT}-check engine. Material 3 scores 59/F. Only 1 site passes. Computed scores, with no surveys or votes.`,
+    `Edition 1: ${COHORT_STATS.count} sites scored on one deterministic ${ENGINE_CHECK_COUNT}-check engine. Median ${fmt(COHORT_STATS.median)}; ${META_A_LINE}, ${GRADE_COUNTS.D + GRADE_COUNTS.F} land in D or F.${META_M3_LINE} Computed scores, with no surveys or votes.`,
   path: '/state-of-compliance',
   ogTitle: 'State of Design Compliance · Designesy',
   ogDescription:
-    '30 sites. 40 deterministic checks. 1 A-grade. Material 3 scores 59/F. The first computed report on design compliance, measured rather than surveyed.',
+    `${COHORT_STATS.count} sites. ${ENGINE_CHECK_COUNT} deterministic checks. ${META_A_LINE}, median ${fmt(COHORT_STATS.median)}.${META_M3_LINE} Measured, not surveyed.`,
   twitterDescription:
-    'State of Design Compliance: 30 sites scored, only 1 passes. Material 3 scores 59/F. designesy.org/state-of-compliance',
+    `State of Design Compliance: ${COHORT_STATS.count} sites scored, ${META_A_LINE}.${META_M3_LINE} designesy.org/state-of-compliance`,
 });
 
 export const revalidate = 3600;
@@ -97,7 +108,7 @@ export default function StateOfCompliancePage() {
           route="/state-of-compliance"
           name="State of Design Compliance"
           thesis={`Edition 1: ${COHORT_STATS.count} sites, one deterministic engine, ${ENGINE_CHECK_COUNT} checks. Every figure here comes from the same data as the public leaderboard; none of it is surveyed, voted on or self-reported.`}
-          facts={[`edition 1`, `index v${COMPLIANCE_INDEX_VERSION}`, `contract ${CONTRACT_VERSION}`, `scored ${SCORES_DATE}`]}
+          facts={[`edition 1`, `index v${COMPLIANCE_INDEX_VERSION}`, `contract ${SCORES_CONTRACT_VERSION}`, `scored ${SCORES_DATE}`]}
           contract={{ href: '/leaderboard', label: 'the leaderboard' }}
         >
           <div className="dx-actions">
@@ -122,7 +133,7 @@ export default function StateOfCompliancePage() {
           </div>
           <p className="dx-lead">
             {COHORT_STATS.count} sites across five tiers: frontier references, competitors, design-system exemplars,
-            inspiration and high-traffic surfaces, scored against contract {CONTRACT_VERSION} and re-scored every week.
+            inspiration and high-traffic surfaces, scored against contract {SCORES_CONTRACT_VERSION} and re-scored every week.
           </p>
           <dl className="dx-stats">
             <div>
@@ -152,8 +163,13 @@ export default function StateOfCompliancePage() {
             title="How the grades fall"
             note={
               <>
-                Sites per grade. {GRADE_COUNTS.D} of {COHORT_STATS.count} land in D, the widest band; {GRADE_COUNTS.A} reaches A, and
-                that one is designesy.org, scored by its own engine.
+                Sites per grade.{' '}
+                {WIDEST_GRADES.length === 1
+                  ? `${GRADE_COUNTS[WIDEST_GRADES[0]]} of ${COHORT_STATS.count} land in ${WIDEST_GRADES[0]}, the widest band.`
+                  : `${WIDEST_GRADES.join(' and ')} tie as the widest bands, ${GRADE_COUNTS[WIDEST_GRADES[0]]} sites each.`}{' '}
+                {GRADE_COUNTS.A === 0
+                  ? 'No site reaches A.'
+                  : `${GRADE_COUNTS.A} ${GRADE_COUNTS.A === 1 ? 'reaches' : 'reach'} A: ${namesAt('A')}.`}
               </>
             }
             source={`Weekly run of ${SCORES_DATE}, engine ${SCORES_ENGINE_VERSION}.`}
@@ -180,7 +196,7 @@ export default function StateOfCompliancePage() {
                 meta: BAND_TEXT[g],
                 value: GRADE_COUNTS[g],
                 display: String(GRADE_COUNTS[g]),
-                tone: toneOf(g),
+                grade: g,
               }))}
             />
           </DataFigure>
@@ -252,7 +268,7 @@ export default function StateOfCompliancePage() {
                   One system up close: Material 3
                 </h2>
                 <p className="eg-section-sub">
-                  m3.material.io · {fmt(M3.score)} · grade {M3.grade} · rank {M3.rank} of {COHORT_STATS.count}
+                  m3.material.io · {fmt(M3.score)} · grade {M3.grade} · {rankText(M3)}
                 </p>
               </div>
             </div>
@@ -335,11 +351,11 @@ export default function StateOfCompliancePage() {
                   {s.name}
                   {s.self ? ' (self-scored)' : ''}
                 </Link>,
-                <span key="g" className="dx-grade" data-tone={toneOf(s.grade)}>
+                <span key="g" className="dx-grade" data-grade={s.grade.toLowerCase()}>
                   {s.grade}
                 </span>,
                 fmt(s.score),
-                s.rank,
+                s.rank ?? 'not ranked',
                 s.pass,
                 s.warn,
                 s.fail,
@@ -414,7 +430,7 @@ export default function StateOfCompliancePage() {
           </dl>
           <p className="dx-src">
             State of Design Compliance · edition 1 · compliance index v{COMPLIANCE_INDEX_VERSION} · {COHORT_STATS.count} sites ·
-            contract {CONTRACT_VERSION} · engine {SCORES_ENGINE_VERSION} · scored {SCORES_DATE} · categories from the batch of{' '}
+            contract {SCORES_CONTRACT_VERSION} · engine {SCORES_ENGINE_VERSION} · scored {SCORES_DATE} · categories from the batch of{' '}
             {BATCH_RUN_DATE}
           </p>
         </section>

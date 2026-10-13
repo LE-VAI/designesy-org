@@ -108,7 +108,7 @@ function renderScoreCard(siteUrl: string, score: ScoreResult) {
         {/* Top row: the lockup, and the site with its reading */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
           <OgLockup height={46} />
-          <div style={{ display: 'flex', fontFamily: '"Geist Mono"', fontSize: 20, color: T.muted }}>
+          <div style={{ display: 'flex', fontFamily: '"Atkinson Hyperlegible Mono"', fontSize: 20, color: T.muted }}>
             {`${displayUrl} · ${reading}`}
           </div>
         </div>
@@ -119,7 +119,7 @@ function renderScoreCard(siteUrl: string, score: ScoreResult) {
           <div style={{ display: 'flex', marginLeft: 22, fontSize: 150, fontWeight: 700, lineHeight: 1, color: T.ink }}>
             {fmtScore(score.score ?? 0)}
           </div>
-          <div style={{ display: 'flex', marginLeft: 22, fontFamily: '"Geist Mono"', fontSize: 34, color: T.muted }}>/100</div>
+          <div style={{ display: 'flex', marginLeft: 22, fontFamily: '"Atkinson Hyperlegible Mono"', fontSize: 34, color: T.muted }}>/100</div>
         </div>
 
         {/* The grade band, this grade lit */}
@@ -156,7 +156,7 @@ function renderScoreCard(siteUrl: string, score: ScoreResult) {
             marginTop: 'auto',
           }}
         >
-          <div style={{ display: 'flex', fontFamily: '"Geist Mono"', fontSize: 22, color: T.muted }}>designesy.org/score</div>
+          <div style={{ display: 'flex', fontFamily: '"Atkinson Hyperlegible Mono"', fontSize: 22, color: T.muted }}>designesy.org/score</div>
           <div style={{ display: 'flex', fontSize: 20, fontWeight: 500, color: T.mutedDim }}>{OG_ENDORSEMENT}</div>
         </div>
       </div>

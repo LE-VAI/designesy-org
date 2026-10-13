@@ -216,7 +216,7 @@ export default function TileCaseStudyPage() {
           <ViewsReadout
             label="Engagement for Tile on X, 2026-07-13: views in the first 24 hours against the 20 to 60 view noise floor"
             date="2026-07-13"
-            lamp="live"
+            lamp="none"
             posts={[
               { label: 'Root post', views: 617 },
               { label: 'Try-it reply', views: 61 },

@@ -38,7 +38,7 @@ See [@designesy/tokens](https://www.npmjs.com/package/@designesy/tokens) for ful
 
 ### `designesy score <url>`
 
-Scores a URL against the 44-check Designesy design-contract engine. Fetches the page, extracts CSS + `:root` tokens, runs all checks locally — no server required.
+Scores a URL against the 44-check Designesy design-contract engine. Fetches the page, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with no Designesy server; the browser checks return MANUAL.
 
 See [@designesy/score](https://www.npmjs.com/package/@designesy/score) for full documentation.
 

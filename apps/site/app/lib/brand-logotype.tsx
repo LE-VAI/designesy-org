@@ -64,12 +64,23 @@ export function wordChildren(body: string) {
   ];
 }
 
-/** The mark, as SVG children in its 512 box (y down). */
-export function markChildren(body: string) {
+/** The mark, as SVG children in its 512 box (y down). `small` draws the
+    favicon variant the small lockup uses (D66). */
+export function markChildren(body: string, small = false) {
+  const shapes = small ? SMALL_MARK_BODY : MARK_BODY;
+  const dot = small ? SMALL_MARK_DOT : MARK_DOT;
   return [
-    ...MARK_BODY.map((d, i) => <path key={`m${i}`} d={d} fill={body} />),
-    <circle key="dot" cx={MARK_DOT.cx} cy={MARK_DOT.cy} r={MARK_DOT.r} fill={LOGO_AZURE} />,
+    ...shapes.map((d, i) => <path key={`m${i}`} d={d} fill={body} />),
+    <circle key="dot" cx={dot.cx} cy={dot.cy} r={dot.r} fill={LOGO_AZURE} />,
   ];
+}
+
+/** The horizontal lockup's geometry: the small master at mark heights of 48px
+    and under (D66), the standard one above. */
+export function lockupGeometry(small: boolean) {
+  return small
+    ? { viewBox: SMALL_LOCKUP_VIEWBOX, mark: SMALL_LOCKUP_MARK_TRANSFORM, word: SMALL_LOCKUP_WORD_TRANSFORM }
+    : { viewBox: LOCKUP_VIEWBOX, mark: LOCKUP_MARK_TRANSFORM, word: LOCKUP_WORD_TRANSFORM };
 }
 
 /** designesy. : the wordmark alone (footer). Decorative; the caller names it. */
@@ -81,14 +92,40 @@ export function Wordmark({ className }: { className?: string }) {
   );
 }
 
-/** The mark and the wordmark, horizontal (header). Decorative; the caller names it. */
-export function Lockup({ className }: { className?: string }) {
+/** The mark and the wordmark, horizontal (header). Decorative; the caller
+    names it. `small` for a mark 48px tall or less (D66). */
+export function Lockup({ className, small = false }: { className?: string; small?: boolean }) {
+  const g = lockupGeometry(small);
   return (
-    <svg className={className} viewBox={LOCKUP_VIEWBOX} aria-hidden="true" focusable="false" overflow="visible">
+    <svg className={className} viewBox={g.viewBox} aria-hidden="true" focusable="false" overflow="visible">
       <g transform="scale(1,-1)">
-        <g transform={LOCKUP_MARK_TRANSFORM}>{markChildren('currentColor')}</g>
-        <g transform={LOCKUP_WORD_TRANSFORM}>{wordChildren('currentColor')}</g>
+        <g transform={g.mark}>{markChildren('currentColor', small)}</g>
+        <g transform={g.word}>{wordChildren('currentColor')}</g>
       </g>
     </svg>
   );
+}
+
+// The small lockup (D66), for a mark 48px tall or less: the master
+// designesy-lockup-horizontal.small.currentcolor.v1.svg, unchanged. Its mark is
+// the favicon variant (module 120, gutter 40, corners r 7.5, dot r 60), whose
+// wider gutters stay open at 16 to 48px; the word is the same nine glyphs, and
+// the mark's dot centre still sits on the i's tittle centre.
+export const SMALL_LOCKUP_VIEWBOX = '-80 -1625 10566 2104';
+export const SMALL_LOCKUP_MARK_TRANSFORM = 'matrix(3.51118 0 0 -3.51118 -407.3 1671.3)';
+export const SMALL_LOCKUP_WORD_TRANSFORM = 'translate(1404.5 0)';
+
+/** The favicon-variant mark's four body shapes (512 box, corners r 7.5). */
+export const SMALL_MARK_BODY: readonly string[] = [
+  'M116.27 308.00A120.00 120.00 0 0 1 228.00 196.27A7.50 7.50 0 0 1 236.00 203.75L236.00 308.50A7.50 7.50 0 0 1 228.50 316.00L123.75 316.00A7.50 7.50 0 0 1 116.27 308.00Z',
+  'M283.50 196.00L388.50 196.00A7.50 7.50 0 0 1 396.00 203.50L396.00 308.50A7.50 7.50 0 0 1 388.50 316.00L283.50 316.00A7.50 7.50 0 0 1 276.00 308.50L276.00 203.50A7.50 7.50 0 0 1 283.50 196.00Z',
+  'M128.80 463.20L223.20 368.80A7.50 7.50 0 0 1 236.00 374.11L236.00 468.50A7.50 7.50 0 0 1 228.50 476.00L134.11 476.00A7.50 7.50 0 0 1 128.80 463.20Z',
+  'M283.50 356.00L388.25 356.00A7.50 7.50 0 0 1 395.73 364.00A120.00 120.00 0 0 1 284.00 475.73A7.50 7.50 0 0 1 276.00 468.25L276.00 363.50A7.50 7.50 0 0 1 283.50 356.00Z',
+];
+/** The favicon-variant mark's dot. */
+export const SMALL_MARK_DOT = { cx: 336, cy: 96, r: 60 } as const;
+
+/** The small lockup: the favicon-variant mark and the wordmark. Decorative; the caller names it. */
+export function SmallLockup({ className }: { className?: string }) {
+  return <Lockup className={className} small />;
 }

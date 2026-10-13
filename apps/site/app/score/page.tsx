@@ -62,9 +62,9 @@ export async function generateMetadata({
     // they had arrived where they aimed. Aligned to the majority term its own
     // URL already uses.
     //
-    // "Verify/Verified" is NOT retired — it is the badge product's name
-    // ("Verified by Designesy"), a different artifact from the scoring engine,
-    // and it keeps that vocabulary.
+    // The badge product is worded "Scored by Designesy" since 2026-10-11
+    // (owner decision): "Verified by Designesy" read as a seal on every site,
+    // F included.
     title: 'Score',
     description:
       `Four engines. One combined score. Contract score (${ENGINE_CHECK_COUNT} checks), drift (12), AI readiness (10), and guardrails (6), all on one URL. Real-time. No login.`,
@@ -75,7 +75,7 @@ export async function generateMetadata({
     // (42+12+10+6) — a literal that had drifted from the engines it described,
     // on the page whose job is to count them. Deriving it means adding a check
     // to any engine updates this line automatically.
-    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} automated checks across 4 engines: score, drift, AI readiness, guardrails. Enter a URL, get a combined score.`,
+    ogDescription: `${ENGINE_CHECK_COUNT + DRIFT_CHECK_COUNT + READINESS_CHECK_COUNT + GUARDRAILS_CHECK_COUNT} checks across 4 engines: score, drift, AI readiness, guardrails. Enter a URL, get a combined score.`,
   });
 
   // When a URL is being scored, explicitly point social images to the dynamic
@@ -155,7 +155,7 @@ export default function ScorePage() {
           items={[
             { title: 'Read the contract behind the checks', desc: `The ${CONTRACT_VERSION} design system contract, with every rule the ${ENGINE_CHECK_COUNT} checks enforce.`, route: '/contracts/design-system' },
             { title: 'See where others land', desc: 'The public leaderboard, scored by the same engine and dated.', route: '/leaderboard' },
-            { title: 'Watch a site over time', desc: 'Monitor re-runs the drift checks and compares every run with your first.', route: '/monitor' },
+            { title: 'Track a site over time', desc: 'Each Monitor run re-checks drift and compares the result with your earlier runs, kept in your browser.', route: '/monitor' },
           ]}
         />
       </main>

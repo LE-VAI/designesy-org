@@ -155,6 +155,9 @@ const SURFACES = [
   'app/score/bolt/page.tsx',
   'app/score/opengraph-image.tsx',
   'app/score/badge/route.ts',
+  'app/lib/badge/live-badge.ts',
+  'app/badge/page.tsx',
+  'app/badge/live-badge-builder.tsx',
   'app/lib/engine/instrument.tsx',
   'app/report/page.tsx',
   'app/report/report-form.tsx',
@@ -211,12 +214,26 @@ check("share card and badge draw grades in the grade tokens, never a brand colou
   const og = read('app/score/opengraph-image.tsx');
   const bands = Object.fromEntries([...og.matchAll(/grade: '([A-F])', color: '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
   assert.deepEqual(bands, dark, 'opengraph-image.tsx BANDS');
-  // The badge sits on any host page: its fills are the light graphic bases.
-  const badge = read('app/score/badge/route.ts');
-  const fills = Object.fromEntries([...badge.matchAll(/([A-F]): \{ fill: '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
-  assert.deepEqual(fills, light, 'badge/route.ts GRADE_FILL');
-  // No grade in a brand colour: the brand blues never name a grade.
-  for (const [rel, src] of [['opengraph-image.tsx', og], ['badge/route.ts', badge], ['result-parts.tsx', read('app/score/result-parts.tsx')]]) {
+  // The live badge carries its own ground, dark and light, and its letter is
+  // that ground's grade text token, --grade-<g>-ink (brand verdict D61).
+  const inkOf = (block, g) => {
+    const v = (block.match(new RegExp(`--grade-${g}-ink:\\s*([^;]+);`)) || [])[1]?.trim();
+    const ref = v?.match(/^var\((--grade-[a-f])\)$/);
+    return (ref ? token(block, g) : v)?.toLowerCase();
+  };
+  const darkInk = Object.fromEntries(grades.map((g) => [g.toUpperCase(), inkOf(darkBlock, g)]));
+  const lightInk = Object.fromEntries(grades.map((g) => [g.toUpperCase(), inkOf(lightBlock, g)]));
+  const badge = read('app/lib/badge/live-badge.ts');
+  const inkTable = badge.match(/export const GRADE_INK[^=]*=\s*\{([\s\S]*?)\n\};/)?.[1] ?? '';
+  const letters = (ground) =>
+    Object.fromEntries(
+      [...(inkTable.match(new RegExp(`${ground}:\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? '').matchAll(/([A-F]): '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]),
+    );
+  assert.deepEqual(letters('dark'), darkInk, 'live-badge.ts GRADE_INK.dark');
+  assert.deepEqual(letters('light'), lightInk, 'live-badge.ts GRADE_INK.light');
+  // No grade in a brand colour: the brand blues never name a grade. (The
+  // mark's Azure dot is artwork and lives in lib/badge/mark.ts.)
+  for (const [rel, src] of [['opengraph-image.tsx', og], ['lib/badge/live-badge.ts', badge], ['result-parts.tsx', read('app/score/result-parts.tsx')]]) {
     assert.doesNotMatch(src, /#(36a7ff|0a94ff|3358e8|0133cb)/i, `${rel} draws with a brand blue`);
   }
 });

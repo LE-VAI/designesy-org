@@ -38,8 +38,16 @@ function fixtureResponse(body, status = 200) {
  * @param {string} opts.app      apps/site directory whose code is loaded
  * @param {Record<string, unknown>} [opts.pages]  url -> body served by safeFetch and fetch
  * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not (return undefined for 404)
+ * @param {(hostname: string, options?: object) => Promise<Array<{ address: string, family: number }>>} [opts.lookup]
+ *   answers node:dns/promises lookup() for the loaded modules (the URL guard's
+ *   DNS check), so a gate can say what a name resolves to without live DNS.
+ *   Omitted, the real resolver is used, as before.
+ * @param {Record<string, unknown>} [opts.stubs]  more bare-specifier stubs, or replacements
+ *   for the defaults below (a gate that needs a caching unstable_cache, say)
+ * @param {Record<string, (real: object) => object>} [opts.overrides]  more app-relative
+ *   module overrides, applied after the defaults (a fake limiter module, say)
  */
-function createHarness({ app, pages = {}, api = () => undefined }) {
+function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: extraStubs = {}, overrides: extraOverrides = {} }) {
   // Packages resolve from the loaded app first, then from this checkout, so a
   // bare source snapshot (git archive of another commit) runs without its own
   // node_modules.
@@ -86,12 +94,18 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
     '@upstash/redis': { Redis: class {} },
     '@upstash/ratelimit': { Ratelimit: class {} },
   };
+  if (lookup) stubs['node:dns/promises'] = { ...require('node:dns/promises'), lookup };
+  Object.assign(stubs, extraStubs);
 
   // App-relative path stubs, applied after the real module loads.
   const overrides = {
     'app/lib/url-guard.ts': (real) => ({ ...real, safeFetch: serve }),
     'app/lib/usage.ts': (real) => ({ ...real, recordUsage: async () => {}, toolCallNames: () => [] }),
   };
+  for (const [file, fn] of Object.entries(extraOverrides)) {
+    const base = overrides[file];
+    overrides[file] = base ? (real) => fn(base(real)) : fn;
+  }
 
   function resolveLocal(from, spec) {
     const base = path.resolve(path.dirname(from), spec);
@@ -145,15 +159,24 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
   }
 
   /** POST a JSON body to a route module (path relative to the app) and parse the reply. */
-  async function post(routeFile, body) {
+  async function post(routeFile, body, headers = {}) {
     const route = load(routeFile);
     return offline(async () => {
       const res = await route.POST(new Request('https://harness.test/api', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify(body),
       }));
       return { status: res.status, body: await res.json() };
+    });
+  }
+
+  /** GET a route module (path relative to the app) at `url`; returns { status, headers, text }. */
+  async function get(routeFile, url, headers = {}) {
+    const route = load(routeFile);
+    return offline(async () => {
+      const res = await route.GET(new Request(url, { headers }));
+      return { status: res.status, headers: res.headers, text: await res.text() };
     });
   }
 
@@ -175,7 +198,7 @@ function createHarness({ app, pages = {}, api = () => undefined }) {
     });
   }
 
-  return { load, post, callTool, calls, tools };
+  return { load, post, get, callTool, calls, tools };
 }
 
 module.exports = { createHarness };

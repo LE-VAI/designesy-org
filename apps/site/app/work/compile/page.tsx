@@ -57,7 +57,7 @@ const DIMENSIONS = [
     observation:
       'Dark default, reduced-motion safe, mobile responsive. System font stack. No required audio or motion. Compilation engine covers seven design domains: motion, color, typography, spacing, shape, interaction, acoustic.',
     judgment:
-      'Inclusion is structural. The seven-domain coverage makes acoustic and interaction first-class domains. No other tool compiles acoustic tokens.',
+      'Inclusion is structural. The seven-domain coverage makes acoustic and interaction first-class domains.',
     action: 'Keep the seven-domain coverage. The acoustic domain is a Designesy differentiator.',
   },
   {

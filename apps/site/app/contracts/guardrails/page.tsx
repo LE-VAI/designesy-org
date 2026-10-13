@@ -26,8 +26,15 @@ const c = guardrailsContract;
 // The adoption statistic, read out of the contract's own sentence so the
 // figure cannot drift from its source (the sentence prints if it stops
 // matching).
-//   "zeroheight Design Systems Report 2025: token adoption 84% (up from 56% in
-//    2024), but 40% still sync tokens by hand"
+//   "zeroheight Design Systems Reports 2025 and 2026: token adoption 86%
+//    (2026 report; the 2025 report measured a rise from 56% to 84%), but 60%
+//    have no token automation and sync tokens by hand (2026 report: only 40%
+//    of teams have a token pipeline)"
+// The second figure used to read "40% still sync tokens by hand": the 2026
+// report says 40% HAVE a pipeline, so 60% sync by hand. The first read 84%
+// "up from 56% in 2024": 84% is the 2025 report's figure (the 2026 report,
+// "What's included in your design system?", gives 86%), and the 2025 report
+// does not date the 56%.
 const ADOPTION = /^(.+?):\s*(.+?)\s+(\d+%)\s+\((.+?)\),\s*but\s+(\d+%)\s+(.+)$/.exec(c.source_authority.adoption_signal);
 
 // Each bundle key is emitted by one check, and that check names the file
@@ -62,7 +69,7 @@ export default function GuardrailsContractPage() {
           <h1 className="surface-title" data-scramble>Guardrails</h1>
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
-            Version {c.version} · {c.status} · <Link href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</Link>
+            Version {c.version} · {c.status} · <a href={c.machine_url.replace('https://www.designesy.org', '')}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/guardrails.md" label="the guardrails contract" />
         </section>
@@ -162,16 +169,16 @@ export default function GuardrailsContractPage() {
             <Link href="/guardrails" className="button primary" data-cuelume-hover="tick" data-cuelume-press="tick">
               Generate guardrails →
             </Link>
-            <Link href="/api/guardrails" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
+            <a href="/api/guardrails" className="button ghost" data-cuelume-hover="tick" data-cuelume-press="tick">
               API endpoint
-            </Link>
+            </a>
           </div>
         </section>
 
         <div className="status-note">
           The guardrails emitter is the product layer: it turns a design
           system into the file AI agents read and the lint that enforces it.{' '}
-          <Link href={c.machine_url}>Machine export</Link>.
+          <a href={c.machine_url}>Machine export</a>.
         </div>
       </main>
 

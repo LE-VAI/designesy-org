@@ -114,6 +114,8 @@ AI coding agents. Updated ${c.updated}.
 - Lede: ${c.typography.lede}
 - Supporting note: ${c.typography.supporting_note}
 - Rule: ${c.typography.rule}
+- Scale: ${c.typography.scale.rule}
+- Scale tokens: ${[c.typography.scale.label, c.typography.scale.body, c.typography.scale.lead, c.typography.scale.h3, c.typography.scale.h2, c.typography.scale.h1].map((t) => `\`${t.token}\` ${t.value}`).join(', ')}
 
 ## Rules: Interaction (Poise, adopted v${c.interaction.adopted_in})
 

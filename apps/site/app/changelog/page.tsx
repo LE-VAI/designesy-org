@@ -14,7 +14,8 @@ import './changelog.css';
 import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
-import { CONTRACT_VERSION } from '../hero-stats';
+import { CONTRACT_VERSION, ENGINE_CHECK_COUNT } from '../hero-stats';
+import { CATEGORY_WEIGHTS } from '../lib/check-definitions';
 import { AgentActions } from '../lib/agent-actions';
 
 export const revalidate = 3600;
@@ -68,6 +69,19 @@ const DIMENSION_LABELS: Record<Dimension, string> = {
 // entry that ADDED a security check read as a failure: a category never
 // borrows a state colour; its label names it.
 
+// ── Category weight, stated as the engine applies it ─────────────────────────
+// Weights are relative and sum to 117 (methodology): a category's share of the
+// score is its weight over the total. Entries used to call a weight of 18 "18%"
+// and a weight of 15 "the highest single category" beside the 18. Derived from
+// CATEGORY_WEIGHTS, so a reweighting cannot leave the prose behind.
+const WEIGHT_TOTAL = Object.values(CATEGORY_WEIGHTS).reduce((a, b) => a + b, 0);
+const HEAVIEST = Math.max(...Object.values(CATEGORY_WEIGHTS));
+function weightOf(category: string): string {
+  const w = CATEGORY_WEIGHTS[category];
+  const share = Math.round((w / WEIGHT_TOTAL) * 1000) / 10;
+  return `Weight ${w} of ${WEIGHT_TOTAL} (${share}% of the score)${w === HEAVIEST ? ', the heaviest category' : ''}.`;
+}
+
 // ── Changelog entries ───────────────────────────────────────────────────────
 
 interface ChangelogEntry {
@@ -94,7 +108,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Two scored checks for token presence: --paper foundation variable at :root, and token layer depth (primitive → semantic → component).',
     checks: ['v01', 'v02'],
     rationale:
-      'Token architecture is the substrate: without a root surface variable and layered tokens, every other dimension is ad-hoc. 9% weight.',
+      `Token architecture is the substrate: without a root surface variable and layered tokens, every other dimension is ad-hoc. ${weightOf('tokens')}`,
     source: 'Designesy design system contract v0.1.0',
   },
   {
@@ -120,7 +134,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Six checks: contrast ratios, touch targets (44px), heading hierarchy, input font floor (16px), button-text contrast, forced-colors readiness.',
     checks: ['v11', 'v12', 'v13', 'v14', 'v15', 'v16'],
     rationale:
-      'Accessibility carries the a11y floor: if this category scores below 60%, the overall grade is capped at C. 15% weight, the highest single category.',
+      `Accessibility carries the a11y floor: if this category scores below 60%, the overall grade is capped at C. ${weightOf('accessibility')}`,
     source: 'WCAG 2.2 AA, APCA contrast model',
   },
   {
@@ -146,7 +160,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'One check: UTS #39 confusable detection in token names and CSS identifiers. Prevents Cyrillic/Greek homoglyph shadowing attacks.',
     checks: ['v36'],
     rationale:
-      'Designesy is the only design verification engine that checks this surface. Homoglyph attacks in CSS identifiers can spoof brand colors and redirect trust.',
+      'Homoglyph attacks in CSS identifiers can spoof brand colors and redirect trust, and a linter that reads values does not read names.',
     source: 'Unicode Technical Standard #39',
   },
   {
@@ -203,7 +217,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Lab Three typography rules promoted to contract: font-smoothing, rem-based sizes, line-height, text-wrap (balance/pretty), tabular-nums, selection styling, font-synthesis, underline-position, skip-ink. 12 checks, the largest category.',
     checks: ['v14', 'v15', 'v16', 'v17', 'v18', 'v19', 'v20', 'v26', 'v28', 'x01', 'x02', 'x03'],
     rationale:
-      'Cadence is typography rendering discipline: the difference between type that looks crisp and type that looks fuzzy. 18% weight, the highest-weighted category. Most sites fail here because font-synthesis and text-wrap are rarely declared.',
+      `Cadence is typography rendering discipline: the difference between type that looks crisp and type that looks fuzzy. ${weightOf('cadence')} Most sites fail here because font-synthesis and text-wrap are rarely declared.`,
     source: 'Lab Three · Cadence typography experiments, NY Times editorial reference',
   },
 
@@ -230,9 +244,9 @@ const CHANGELOG: ChangelogEntry[] = [
     title: 'UX copy principles adopted',
     description:
       'Four heuristic checks: button verb phrases (no "Click Here"), no trailing periods on interactive elements, descriptive link text (WCAG 2.4.4), no ALL CAPS in body copy. Grounded in NN/g, Microsoft Fluent, IBM Carbon, and WCAG.',
-    checks: ['v36', 'v37', 'v38', 'v39'],
+    checks: ['v38', 'v39', 'v40', 'v41'],
     rationale:
-      'Copy is design: "Click Here" is an accessibility failure and a usability smell. 8% weight. New in v0.4.0.',
+      `Copy is design: "Click Here" is an accessibility failure and a usability smell. ${weightOf('copywriting')} New in v0.4.0.`,
     source: 'NN/g, Microsoft Fluent, IBM Carbon, WCAG 2.4.4',
   },
   {
@@ -254,7 +268,7 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'added',
     title: 'Spec-layer integration (DESIGN.md)',
     description:
-      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own 42-check contract verification.',
+      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own contract verification.',
     checks: ['v37'],
     rationale:
       'DESIGN.md is the AI-agent-facing spec file. With it, AI coding tools build from your system instead of around it. The check validates its presence and structure.',
@@ -361,6 +375,64 @@ const CHANGELOG: ChangelogEntry[] = [
       'Both defects shipped on this site and passed every check the engine had: the CSS was valid and the default view looked right. The light warning color wrote status words at 3.51 to 1, and the pause control emptied whole pages for the visitors who had asked for less motion. A check that catches its own author is the one worth publishing.',
     source: 'WCAG 2.2 SC 1.4.3 and 2.2.2, CSS Animations Level 1 (animation-play-state), engine 1.2.0 entry in CHANGELOG.md',
   },
+
+  // ── v0.4.4 (engine 1.3.0): no A beside a failing check ──
+  {
+    version: 'v0.4.4 · engine 1.3.0',
+    date: '2026-10-11',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.3.0: no A while any check fails',
+    description:
+      'A page with a failing check can no longer score an A: any FAIL caps the score at 89.9, a B, and every cap applies after the originality lift, which can carry a score up to a cap but never past it. v44, status colors used as text, caps at 65 as v06 does. v34 fails only a chat surface that names itself a chatbot or an AI assistant; a live-chat widget, an ad tag or page text about AI is at most a review item, and its text cites California SB 1001 and Colorado SB 26-189 and names Article 50(1) as a duty on the provider of the AI system. v06 and v22 read oklch(), space-syntax rgb() and hsl(), 8-digit hex, and tokens declared as :root, :host. v42 and v43 follow var() aliases, and hue-named primitives that role tokens alias form the palette layer, which sits outside the role share.',
+    checks: ['v06', 'v22', 'v34', 'v42', 'v43', 'v44'],
+    rationale:
+      'The engine could report its own failing WCAG contrast check and an A for the same page, and its review printed Block and Grade A together. A grade beside its own failing verdict says two things at once, so the owner chose the stricter reading.',
+    source: 'Owner decision (2026-10-11), WCAG 2.2 SC 1.4.3 and 1.4.11, EU AI Act Article 50, California Bus. & Prof. Code §17940-17943, Colorado SB 26-189, CSS Color 4, engine 1.3.0 entry in CHANGELOG.md',
+  },
+
+  // ── v0.4.4: identity v1 colour system ──
+  {
+    version: 'v0.4.4',
+    date: '2026-10-11',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Identity v1 colour system',
+    description:
+      'Azure #0A94FF replaces the previous blue as --signal. In the light theme, text, links, focus and selected states take Deep Azure #016ABB (--signal-access, --signal-deep), and text on an Azure fill is ink #010102 (--paper-on-signal, 6.65 to 1). Activated Orange #F56B00 replaces the previous yellow (light text #B04D00), and grade D moves to rose. New tokens: --signal-deep, --signal-teal, --action, --on-action, --action-pressed and --paper-white.',
+    rationale:
+      'The contract states the identity v1 colour system that designesy.org serves. It changes token values only: no check, weight or verdict changed.',
+    source: 'Designesy design system contract v0.4.4, adoption history',
+  },
+
+  // ── v0.4.5: the mono face and the type scale ──
+  {
+    version: 'v0.4.5',
+    date: '2026-10-12',
+    dimension: 'cadence',
+    change: 'modified',
+    title: 'Atkinson Hyperlegible Mono and the type scale',
+    description:
+      'Atkinson Hyperlegible Mono replaces Geist Mono for labels, URLs, timestamps, score units and code. The type scale becomes six tokens on a Major Third over a 16px root: --text-label 0.8rem, the floor for all text, --text-body 1rem, --text-lead 1.25rem, --text-h3 1.563rem, --text-h2 1.953rem and --text-h1 2.441rem, no two adjacent steps closer than 25%.',
+    rationale:
+      "The mono text on this site is the text a reader cannot guess from context: hosts, check IDs, scores and dates. Atkinson Hyperlegible Mono is the Braille Institute's face for low-vision readers, and it draws every confusable pair (0 and O, 1, l and I, 5 and S, 8 and B) distinct. Named sizes replace one-off values, so a page cannot drift off the scale. No check, weight or verdict changed.",
+    source: 'Designesy design system contract v0.4.5, adoption history; Atkinson Hyperlegible Mono 2.001 (SIL Open Font License 1.1)',
+  },
+
+  // ── v0.4.5 (engine 1.3.1): accuracy fixes ──
+  {
+    version: 'v0.4.5 · engine 1.3.1',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.3.1: four checks read what the page renders',
+    description:
+      'v26 no longer counts a face named with the word fallback, such as a metric-matched stand-in drawn only until the real face loads, as a typeface choice. v27 reads font-size: var(--token) in a field rule through the :root tokens, so a field set to a 1rem token is the 16px floor it renders as, and one set to a 0.875rem token fails. v38 drops the keycaps a button marks up as kbd, and plain ctrl+s style hints in any case, from button labels, and accepts Get, Set, Try and a short list of call-to-action verbs (Flip, Learn, Sign, Join, Expand, Select, Read). v43 counts --destructive, the error role in shadcn/ui, as an error colour. The npm engine stops after three redirects instead of following a loop.',
+    checks: ['v26', 'v27', 'v38', 'v43'],
+    rationale:
+      'Each defect was a warning on a page that was right, this site among them: four families counted where three render, a 16px input read as unset, and a keycap button read as the words ctrl and i. A warning on correct work teaches readers to ignore warnings. v42 is unchanged: Tailwind v4 writes only the theme variables a project uses, so a sheet full of hue-named tokens is using them.',
+    source: 'engine 1.3.1 entry in CHANGELOG.md; Tailwind CSS v4 theme documentation (only used CSS variables are generated); shadcn/ui theming (--destructive)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -381,15 +453,19 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.1.0', date: '2026-06-15', checks: 22, title: 'Initial contract', summary: 'Tokens, motion, accessibility, identity, security. Deterministic engine.' },
   { version: 'v0.1.1', date: '2026-06-28', checks: 24, title: 'Poise adopted', summary: 'Interaction rules adopted from Lab One.' },
   { version: 'v0.1.2', date: '2026-07-05', checks: 26, title: 'Takt adopted', summary: 'Interface-feel rules adopted from Lab Two.' },
-  { version: 'v0.1.3', date: '2026-07-12', checks: 38, title: 'Cadence adopted', summary: 'Typography rules adopted from Lab Three. 12 checks, the largest category at 18% weight.' },
+  { version: 'v0.1.3', date: '2026-07-12', checks: 38, title: 'Cadence adopted', summary: `Typography rules adopted from Lab Three. 12 checks, the largest category. ${weightOf('cadence')}` },
   { version: 'v0.3.0', date: '2026-07-20', checks: 38, title: 'Acoustics adopted', summary: 'Mapping rules adopted from Lab Four. Cuelume v0.2.2 sound engine.' },
   { version: 'v0.4.0', date: '2026-07-28', checks: 40, title: 'Copywriting adopted', summary: '4 copywriting checks. Spec-layer integration (DESIGN.md). Independence firewall + compliance_index_version.' },
   { version: 'v0.4.0 · engine 1.12.0', date: '2026-08-30', checks: 42, title: 'Semantic category wired', summary: 'v42 color vocabulary + v43 status colors. Reserved weight 12 now scored.' },
   { version: 'v0.4.1', date: '2026-09-28', checks: 42, title: 'Editorial revision', summary: 'The contract text follows the public-copy rules. No rule, value, token or check changed.' },
-  { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens. Current version.' },
+  { version: 'v0.4.2', date: '2026-10-04', checks: 42, title: 'Alignment pass', summary: 'One shell edge at every width, a 12-column grid with its 7|5 seam, material and elevation recipes as tokens, the accessibility tint tokens, and the reduced-motion tiering stated as it now behaves. Adds public tokens.' },
   { version: 'v0.4.3', date: '2026-10-09', checks: 42, title: 'Text-contrast pass', summary: 'Every status, grade and activation colour gains a text token that reads at 4.5 to 1 or better in both themes; light --muted-dim darkens. No check or verdict changed.' },
   { version: 'v0.4.2 · engine 1.1.0', date: '2026-10-08', checks: 42, title: 'Engine baseline fixes', summary: 'v05 accepts opt-in motion, v27 skips pages with no field, v14 and v18 become optional for external sites, and the token validator uses the 13 DTCG types. The contract is unchanged.' },
   { version: 'v0.4.3 · engine 1.2.0', date: '2026-10-09', checks: 44, title: 'Status text and paused entrances', summary: 'v44 status colors used as text meet contrast in every theme; v45 pausing motion keeps content visible. S2 and S8 stop firing on components and prose. The contract is unchanged.' },
+  { version: 'v0.4.4 · engine 1.3.0', date: '2026-10-11', checks: 44, title: 'No A beside a failing check', summary: 'Any FAIL caps the score at 89.9 and a v44 FAIL at 65; v34 fails only a named AI chat surface; v06 and v22 read CSS Color 4; v42 and v43 follow aliases. The contract is unchanged.' },
+  { version: 'v0.4.4', date: '2026-10-11', checks: 44, title: 'Identity v1 colour system', summary: 'Azure replaces the old blue as --signal, with Deep Azure for light-theme text and new action tokens. Token values only: no check, weight or verdict changed.' },
+  { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
+  { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {
@@ -423,8 +499,8 @@ export default function ChangelogPage() {
           <p className="surface-lede">
             Every contract change, organized by design dimension. Track what
             was added, modified, adopted, and deprecated across versions, from
-            the initial {CHANGELOG.filter((e) => e.version === 'v0.1.0').length}-check
-            contract through the current {CONTRACT_VERSION} 42-check engine.
+            the initial v0.1.0 contract through the current{' '}
+            {CONTRACT_VERSION} contract and its {ENGINE_CHECK_COUNT}-check engine.
           </p>
           <p className="surface-note">
             Pattern from Artificial Analysis: changelog organized by modality
@@ -435,8 +511,11 @@ export default function ChangelogPage() {
           <AgentActions mdPath="/changelog.md" label="the changelog" />
         </section>
 
-        {/* Dimension tabs */}
-        <section className="doctrine-section fade-up fade-up-delay-1">
+        {/* Dimension tabs and the log, newest entry first. #changelog-log
+            rises without fading (globals.css, "Page header first-paint"):
+            the newest entry can be the largest text on the page, and an
+            entrance from opacity 0 would hold LCP back by the fade. */}
+        <section id="changelog-log" className="doctrine-section fade-up fade-up-delay-1">
           {/* Dimension jump links (changelog.css): they wrap into balanced
               rows, never one orphan tab, and each count is its own quiet
               badge. */}

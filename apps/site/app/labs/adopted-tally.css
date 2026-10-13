@@ -34,7 +34,7 @@
 .lab-tally-count {
   margin: 0;
   padding-inline-end: var(--space-12);
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   white-space: nowrap;

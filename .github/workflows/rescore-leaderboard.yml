@@ -2,10 +2,8 @@ name: Rescore Leaderboard
 
 # Weekly re-score of all leaderboard seed sites against the live designesy.org
 # /api/score engine. Computes delta-since-last-week badges and opens a PR
-# against main with the updated seed.ts + snapshot.json. The PR then runs
-# the protected-branch CI gate (Build site + Build & test MCP package) and
-# is auto-merged once those checks pass — this keeps leaderboard data fresh
-# without manual batch runs.
+# against main with the updated seed.ts + snapshot.json. The PR is landed by a
+# person after its full CI passes (v4, below); this workflow does not merge.
 #
 # History: prior to 2026-08-25 this workflow pushed directly to main. After
 # main was locked down with branch protection (PR-only + required CI
@@ -19,11 +17,21 @@ name: Rescore Leaderboard
 # step also read BRANCH from `env:`, where `$(date ...)` is never expanded, so
 # it polled a branch that does not exist, timed out, and exited 0: every week
 # read "success" while the PR sat stranded and the leaderboard went stale.
-# v3 starts CI itself with workflow_dispatch (which always runs, and whose
-# checks land on the PR's head commit), merges only when branch protection
-# reports CLEAN, and fails the run on a failed check, a stale branch or a
-# timeout. leaderboard-freshness.yml independently alarms if the public data
-# is more than 8 days old, whatever the cause.
+# v3 started CI itself with workflow_dispatch and waited to merge.
+#
+# v4 (2026-10-11): v3's premise did not hold. On PR #242 (2026-10-10) the
+# dispatched run passed all five required checks by 09:05 and the PR stayed
+# BLOCKED until 09:17, when the wait timed out: the pull_request run waiting
+# for approval kept it blocked, and only re-running that run by hand (09:22)
+# made it mergeable. On PR #273 (2026-10-11) the held run was re-run by hand
+# while this workflow was still waiting, and the wait then merged on UNSTABLE,
+# before the three non-required "Visual gates" jobs had finished; a merge made
+# with GITHUB_TOKEN also starts no push CI on main. So this workflow no longer
+# starts CI or merges. It re-scores, opens the PR and stops. A person (the
+# owner's Monday landing task) starts the held CI runs, checks the data, and
+# merges only when every check, the visual gates included, has passed and
+# GitHub reports CLEAN. Owner decision, 2026-10-11. leaderboard-freshness.yml
+# independently alarms if the public data is more than 8 days old.
 #
 # The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
 # scores as a JSON response — it can't write to the repo. This workflow IS
@@ -46,16 +54,14 @@ on:
 
 permissions:
   contents: write            # needed to push the leaderboard branch
-  pull-requests: write       # needed to open the auto-PR
-  actions: write            # needed to start CI on the PR branch (workflow_dispatch)
+  pull-requests: write       # needed to open the PR
 
 jobs:
   rescore:
     runs-on: ubuntu-latest
-    # Re-scoring 30 sites against the live engine takes ~7 min, and the wait
-    # for CI allows 20 more -- 15 min timed out mid-wait on the first 42-check
-    # run (2026-08-31), stranding an auto-mergeable PR.
-    timeout-minutes: 35
+    # Re-scoring 30 sites against the live engine takes ~7 min. The run no
+    # longer waits for CI (v4), so 20 minutes leaves room for slow fetches.
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -94,6 +100,14 @@ jobs:
         run: |
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
+          # A second run on the same UTC day (a manual dispatch, then the
+          # Monday cron) found the first run's merged branch still on the
+          # remote: the push was rejected as non-fast-forward after the
+          # scoring had finished, and that week's data was lost (2026-10-12).
+          # Keep the plain name when it is free; otherwise add the run id.
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null; then
+            BRANCH="${BRANCH}-${GITHUB_RUN_ID}"
+          fi
           git config user.name 'LE-VAI'
           git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git checkout -b "${BRANCH}"
@@ -116,60 +130,25 @@ jobs:
           gh label create leaderboard --description "Leaderboard data refresh" --color 0E8A16 || true
           gh label create automated --description "Automated workflow output" --color D4C5F9 || true
 
-          # Open a PR. The branch protection rules on main require
-          # CI / Build site + CI / Build & test MCP package to pass; both
-          # are quick and will gate the auto-merge below.
+          # Open a PR. Branch protection on main requires the five build and
+          # test jobs; the landing also waits for the three Visual gates parts.
           gh pr create \
             --base main \
             --head "${BRANCH}" \
             --title "chore(leaderboard): weekly re-score ${DATE_STAMP}" \
             --body "Automated weekly re-score of the leaderboard cohort. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Diff is expected to be small score deltas + the prevScore field on each row.
 
-          No code review needed — this is the canonical write path for the public leaderboard (was failing weekly for 3 weeks before the PR-flow fix). CI gate: CI / Build site + CI / Build & test MCP package." \
+          This is the canonical write path for the public leaderboard. Its CI waits for approval because github-actions[bot] opened it. Landing: start the held CI runs, check the data, and merge only when every check, the three Visual gates parts included, has passed and the PR is CLEAN." \
             --label "leaderboard,automated" \
             --assignee LE-VAI
 
-      - name: Start CI on the PR branch
+      - name: Leave the PR for the Monday landing
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # The pull_request run GitHub opened for this PR waits for an approval
-          # no one gives. A workflow_dispatch started with GITHUB_TOKEN always
-          # runs, and its check runs land on the same head commit, which is what
-          # branch protection reads. Chosen by the repo owner, 2026-10-08.
-          gh workflow run ci.yml --ref "${BRANCH}"
-
-      - name: Wait for required checks, then merge
-        if: steps.changes.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          # Every way this can end without a merge fails the run, so a stranded
-          # PR shows red. The old loop exited 0 on all of them.
-          for i in $(seq 1 40); do
-            sleep 30
-            STATE=$(gh pr view "${BRANCH}" --json mergeStateStatus --jq '.mergeStateStatus') || STATE=UNKNOWN
-            FAILED=$(gh pr checks "${BRANCH}" --required --json bucket               --jq '[.[] | select(.bucket == "fail" or .bucket == "cancel")] | length' 2>/dev/null) || true
-            FAILED=${FAILED:-0}
-            echo "Attempt $i: merge state ${STATE}, ${FAILED} required check(s) failed"
-            if [ "${FAILED}" != "0" ]; then
-              echo "::error::A required check failed on ${BRANCH}; the PR is left open for review."
-              exit 1
-            fi
-            case "${STATE}" in
-              CLEAN|HAS_HOOKS|UNSTABLE)
-                # Branch protection is satisfied; gh refuses the merge otherwise.
-                gh pr merge "${BRANCH}" --squash --delete-branch
-                echo "Merged ${BRANCH}."
-                exit 0
-                ;;
-              BEHIND|DIRTY)
-                echo "::error::${BRANCH} is ${STATE} against main. Re-run this workflow to re-score from the current main."
-                exit 1
-                ;;
-            esac
-          done
-          echo "::error::Required checks did not finish within 20 minutes; ${BRANCH} is left open."
-          exit 1
+          # The PR's CI waits for approval because github-actions[bot] opened
+          # it. The landing (start the held runs, check the data, merge when
+          # every check has passed and the PR is CLEAN) is a person's step.
+          PR_URL=$(gh pr view "${BRANCH}" --json url --jq '.url')
+          echo "Opened ${PR_URL}; its CI waits for approval and it is merged by hand." | tee -a "$GITHUB_STEP_SUMMARY"

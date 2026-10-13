@@ -90,7 +90,7 @@
    They set in the UI face at 600 with open tracking. Two classes, so the
    rule outranks .principle-body h3 wherever the sheets land. */
 .principle-body .cs-check-title {
-  font: 600 1rem/1.35 var(--sans);
+  font: 600 var(--text-body)/1.35 var(--sans);
   letter-spacing: 0;
 }
 
@@ -119,7 +119,7 @@
 }
 
 .cs-move-arrow {
-  font: 500 0.8rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -136,7 +136,7 @@
   padding: var(--space-5) var(--space-8) var(--space-5) var(--space-6);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cs-hue) 48%, transparent);
-  font: 600 0.7rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   letter-spacing: 0.06em;
   color: var(--cs-ink);
   white-space: nowrap;
@@ -233,7 +233,7 @@
   min-height: 2.9rem;
   padding-inline: var(--space-16);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.78rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -279,7 +279,7 @@
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -290,7 +290,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -308,8 +308,38 @@
 }
 
 .cs-led[data-lamp="pass"] { --cs-lamp: var(--lv-pass-a); }
-.cs-led[data-lamp="live"] { --cs-lamp: var(--live); }
+
+/* Light theme: the pass lamp's Azure is 2.19 to 2.58:1 on the light surfaces,
+   under the 3:1 a status mark needs, so it takes a 1px ring of its own ink
+   (brand ledger D49, D67). The warn lamp's --warn holds 3.08:1 or more. */
+[data-theme="light"] .cs-led[data-lamp="pass"] {
+  box-shadow: 0 0 0 1px var(--signal-access), 0 0 0 3px color-mix(in srgb, var(--cs-lamp) 18%, transparent);
+}
 .cs-led[data-lamp="warn"] { --cs-lamp: var(--warn); }
+
+/* Done: a confirmed fact (a shipped site, a closed measurement) reads as the
+   site's check glyph, not a lamp (brand ledger D57). It was a green dot, and
+   green is grade A's. */
+.cs-led[data-lamp="done"] {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font: 700 var(--text-label)/1 var(--sans);
+  color: var(--signal-text);
+}
+
+.cs-led[data-lamp="done"]::before {
+  content: "✓";
+}
+
+/* None: the words say it all (a pending build, a measurement window), so the
+   slot stays, empty, to keep the rows' columns aligned (D57). */
+.cs-led[data-lamp="none"] {
+  background: none;
+  box-shadow: none;
+}
 
 /* Pending: a hollow lamp, nothing lit yet. */
 .cs-led[data-lamp="pending"] {
@@ -344,7 +374,7 @@
 /* Labels sit in --muted, not --muted-dim: the instrument's top stop
    (--surface-lifted) leaves --muted-dim at 4.4:1. */
 .cs-label {
-  font: 500 0.6875rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -431,14 +461,14 @@
 }
 
 .cs-run-label {
-  font: 600 0.72rem/1.2 var(--mono);
+  font: 600 var(--text-label)/1.2 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink);
 }
 
 .cs-run-note {
-  font: 500 0.78rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -481,7 +511,7 @@
   justify-content: flex-end;
   gap: var(--space-12);
   min-width: 0;
-  font: 500 0.78rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   white-space: nowrap;
@@ -549,7 +579,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6) var(--space-16);
-  font: 400 0.78rem/1.25 var(--sans);
+  font: 400 var(--text-label)/1.25 var(--sans);
   color: var(--muted);
 }
 
@@ -560,7 +590,7 @@
 }
 
 .cs-tally-item b {
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -593,7 +623,7 @@
   column-gap: var(--space-16);
   padding-top: var(--space-8);
   border-top: 1px solid var(--line-faint);
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -689,7 +719,7 @@
   border-radius: var(--radius-sm);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--lv-well-line);
-  font: 500 0.72rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   color: var(--ink);
 }
 
@@ -728,26 +758,26 @@
 
 .cs-score {
   padding-bottom: 0.55rem;
-  font: 500 1.5rem/1.25 var(--mono);
+  font: 500 var(--text-h3)/1.25 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 /* The superseded verdict: smaller and quieter, still above 4.5:1. */
 .cs-glyph.is-was {
-  font-size: 2rem;
+  font-size: var(--text-h2);
   color: var(--muted);
 }
 
 .cs-score.is-was {
   padding-bottom: 0.3rem;
-  font-size: 0.95rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
 .cs-verdict-arrow {
   padding-bottom: 0.7rem;
-  font: 500 1rem/1 var(--mono);
+  font: 500 var(--text-body)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -762,12 +792,12 @@
 }
 
 .cs-glyph.is-projected {
-  font-size: 2rem;
+  font-size: var(--text-h2);
   color: var(--muted);
 }
 
 .cs-projected-label {
-  font: 500 0.6875rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -788,14 +818,14 @@
 .cs-side-note,
 .cs-face-note {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
 }
 
 .cs-side-note b {
-  font: 600 0.95rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ok-ink);
 }
@@ -865,13 +895,13 @@
 
 .cs-scale-proj {
   justify-self: end;
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
 .cs-scale-ticks {
   display: flex;
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -911,7 +941,7 @@
 }
 
 .cs-post-label {
-  font: 500 0.82rem/1.3 var(--sans);
+  font: 500 var(--text-label)/1.3 var(--sans);
   color: var(--ink);
 }
 
@@ -973,13 +1003,13 @@
 }
 
 .cs-post.is-absent .cs-post-value {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
 .cs-post-value {
   justify-self: end;
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   white-space: nowrap;
@@ -1017,7 +1047,7 @@
   align-items: center;
   gap: var(--space-8);
   margin: 0;
-  font: 400 0.78rem/1.3 var(--sans);
+  font: 400 var(--text-label)/1.3 var(--sans);
   color: var(--muted);
 }
 
@@ -1117,7 +1147,7 @@
    probe in "617 views" and "9/9 passed"), hence the 1px. */
 .cs-unit {
   padding-bottom: calc(0.7rem - 1px);
-  font: 500 0.86rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -1125,7 +1155,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: 2.2rem;
+  font-size: var(--text-h1);
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -1133,7 +1163,7 @@
 
 .cs-readout-sub {
   margin: 0;
-  font: 500 0.86rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -1246,7 +1276,7 @@
 }
 
 .work-row-status {
-  font: 500 0.78rem/1.3 var(--sans);
+  font: 500 var(--text-label)/1.3 var(--sans);
   color: var(--ink);
 }
 
@@ -1260,7 +1290,7 @@
   padding: var(--space-5) var(--space-8);
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--cs-hue);
-  font: 600 0.7rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   letter-spacing: 0.04em;
   color: var(--cs-ink);
   font-variant-numeric: tabular-nums;
@@ -1282,7 +1312,7 @@
    so a phone line never holds one stray word ("domains", "skip"). A segment
    wider than its line (a 320px phone) still breaks rather than overflow. */
 .work-row-readout {
-  font: 500 0.74rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   text-wrap: balance;

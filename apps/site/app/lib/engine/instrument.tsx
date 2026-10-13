@@ -10,12 +10,12 @@
 // and result in the side column; activating it opens the matching finding.
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { DigitStrip } from '../digit-strip';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
-import { bandOf, display } from './types';
+import { display } from './types';
 import { registerStyle } from './lattice';
 import { fmtScore, statusCountWords } from '../../score/verdict';
+import { useIgnition } from './ignition';
 
 export type Face = 'tiles' | 'paths' | 'files' | 'engines' | 'diff';
 
@@ -85,6 +85,9 @@ type Props = {
   restGrade?: boolean;
   /** Replaces the whole resting side (the converter's output frame). */
   restSide?: ReactNode;
+  /** The loading ignition (lib/engine/ignition.ts): the mark's dot breathes
+      while a run is out and lights when a verdict lands. The score only. */
+  ignite?: boolean;
 };
 
 // The status words every result surface uses (score/verdict.ts STATUS_LABEL),
@@ -118,7 +121,7 @@ export function GradeScale({ score, grade }: { score?: number; grade?: string })
           <span
             key={z.grade}
             className={`eg-scale-zone${here === z ? ' is-here' : ''}`}
-            data-band={grade ? bandOf(grade) : undefined}
+            data-grade={grade ? grade.toLowerCase() : undefined}
             style={{ '--w': z.w } as CSSProperties}
           />
         ))}
@@ -162,12 +165,12 @@ export function Instrument(props: Props) {
   const leave = useRef<number | null>(null);
   const uid = useId();
   const { live: elapsed, took } = useElapsed(phase);
+  const lampDot = useRef<HTMLElement | null>(null);
+  const lampHalo = useRef<HTMLElement | null>(null);
+  useIgnition(lampDot, lampHalo, phase, !!verdict, !!props.ignite);
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
-  // The reading counter's rows, 1..n: the strip steps one row per check, on
-  // the scan cursor's clock (engine.css, eg-read).
-  const readRows = useMemo(() => registry.checks.map((_, i) => i + 1), [registry.checks]);
 
   const enter = (id: string) => {
     if (leave.current) window.clearTimeout(leave.current);
@@ -414,9 +417,11 @@ export function Instrument(props: Props) {
   const stateLabel =
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
-  // The verdict light's hue: the grade's band once a verdict lands, the fail
-  // hue when the run stops without one. No band, no light.
-  const lightBand = phase === 'done' && verdict ? bandOf(verdict.grade) : phase === 'error' ? 'fail' : undefined;
+  // The verdict light's hue: the verdict's grade once it lands, in the grade
+  // palette (brand ledger D56); the fail hue when the run stops without one.
+  // No verdict and no stop, no light.
+  const lightGrade = phase === 'done' && verdict ? verdict.grade.toLowerCase() : undefined;
+  const lightBand = phase === 'error' ? 'fail' : undefined;
 
   // The probe (a check under the pointer or keyboard focus) is drawn OVER the
   // resting side, not instead of it; see the eg-side render below.
@@ -555,10 +560,17 @@ export function Instrument(props: Props) {
           moves (engine.css). Signal while a run is out; the verdict's hue
           once, when the answer lands. */}
       <i className="eg-inst-glow" aria-hidden="true" />
-      <i className="eg-inst-verdict" aria-hidden="true" data-band={lightBand} />
+      <i className="eg-inst-verdict" aria-hidden="true" data-grade={lightGrade} data-band={lightBand} />
       <div className="eg-inst-bar">
         <span className="eg-inst-app">
-          <i className="eg-mark" aria-hidden="true"><i /></i>
+          {props.ignite ? (
+            <i className="eg-mark" aria-hidden="true" data-ignite="" data-phase={phase}>
+              <i className="ig-halo" ref={lampHalo} />
+              <i className="ig-dot" ref={lampDot} />
+            </i>
+          ) : (
+            <i className="eg-mark" aria-hidden="true"><i /></i>
+          )}
           {name}
         </span>
         <span className="eg-inst-target">
@@ -570,18 +582,15 @@ export function Instrument(props: Props) {
         </span>
         <span className="eg-inst-state">
           <i className="eg-dot" aria-hidden="true" />
-          {phase === 'running' ? (
-            <>
-              <span className="eg-state-read" aria-hidden="true">
-                reading <DigitStrip values={readRows} at={0} className="eg-read-strip" />/{registry.checks.length}
-              </span>
-              <span className="eg-state-calm">reading {registry.checks.length} checks</span>
-            </>
-          ) : (
-            <span>
-              {registry.checks.length} checks · {stateLabel}
-            </span>
-          )}
+          {/* While a run is out, the time it has taken, counted from its start:
+              the engines answer once, at the end, so there is no per-check
+              progress to show. The bar used to roll "reading 3/72" on a CSS
+              loop that wrapped back to 1 with nothing received (live audit
+              2026-10-11, V11). Keyed by the phase, so each swap fades in. */}
+          <span key={phase}>
+            {registry.checks.length} checks · {stateLabel}
+            {phase === 'running' ? ` · ${Math.floor(elapsed / 1000)} s` : ''}
+          </span>
         </span>
       </div>
       <div className="eg-inst-body">

@@ -15,17 +15,24 @@ const CASE_SNAPSHOTS: Record<string, { grade: string; score: string; date: strin
 };
 
 // The copy payload of THE OUTPUT card: its sentence, without the side key.
+//
+// What is kept, from the code: /api/score caches each result by URL and scope
+// for 24 hours (SCORE_TTL_SECONDS, unstable_cache, keyed per deploy); the
+// engine counts calls per day and per client with no URL or address, and those
+// counts expire after 400 days (lib/usage.ts, USAGE_TTL_DAYS); the form keeps
+// the visitor's last five scores in their own browser (lib/score-history.ts).
+// This card used to say "No backend. No data kept."
 const OUTPUT_TEXT =
-  "A letter grade, a per-check breakdown (pass, fail, needs work, does not apply), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. No backend. No data kept. The score is the artifact.";
+  "A letter grade, a per-check breakdown (pass, fail, needs work, does not apply), the tokens extracted from your site's :root, and a copyable receipt citing the contract version. No login. The server serves each result from a cache for 24 hours before it scores that URL again, and it counts calls per day, with no URL or address, keeping those counts for 400 days. Your last five scores stay in this browser. The score is the artifact.";
 
 /**
  * Shared shell for target-specific score landing pages
  * (/score/lovable, /score/v0, /score/bolt). Each landing page supplies
  * its own copy + example URL; this component keeps the layout consistent.
  *
- * The example URL is prefilled into ScoreForm via initialUrl — the visitor
- * can edit it to their own URL or just hit Score to run the engine against
- * the example. Either way the engine runs the same checks.
+ * The example URL only fills the ScoreForm field (prefillUrl): nothing runs
+ * until the visitor presses Score, on the example or on their own URL. A
+ * landing with no example leaves the field empty.
  */
 export type TargetLandingProps = {
   /** Platform name, e.g. 'Lovable' */
@@ -40,8 +47,8 @@ export type TargetLandingProps = {
   lede: string;
   /** Body paragraph expanding the value prop */
   body: string;
-  /** Example URL to prefill into the ScoreForm */
-  exampleUrl: string;
+  /** Example URL to prefill into the ScoreForm (not scored until the visitor asks) */
+  exampleUrl?: string;
   /** The score that exampleUrl got, if known (e.g. 'A · 93.2') */
   exampleScore?: string;
   /** Case study link for the proof section */
@@ -98,7 +105,7 @@ export function TargetLanding({
               </>
             )}
           </p>
-          <ScoreForm initialUrl={exampleUrl} />
+          <ScoreForm prefillUrl={exampleUrl} />
         </section>
 
         {caseStudyHref && caseStudyTitle && (
@@ -150,13 +157,16 @@ export function TargetLanding({
                 A letter grade, a per-check breakdown (pass, fail, needs work, does not apply),
                 the tokens extracted from your site&rsquo;s <code>:root</code>,
                 and a copyable receipt citing the contract version. No login.
-                No backend. No data kept. The score is the artifact.
+                The server serves each result from a cache for 24 hours before it
+                scores that URL again, and it counts calls per day, with no URL or
+                address, keeping those counts for 400 days. Your last five scores
+                stay in this browser. The score is the artifact.
               </p>
             </div>
             <dl className="score-output-side">
               <div>
                 <dt>Grade</dt>
-                <dd>A to F, with the percentage</dd>
+                <dd>A to F, with the score out of 100</dd>
               </div>
               <div>
                 <dt>Checks</dt>
@@ -167,8 +177,13 @@ export function TargetLanding({
                 <dd>Cites contract {CONTRACT_VERSION}</dd>
               </div>
               <div>
-                <dt>Data kept</dt>
-                <dd>None</dd>
+                <dt>Kept</dt>
+                <dd>
+                  Results by URL, 24 hours · daily call counts, 400 days ·{' '}
+                  <Link href="/privacy" className="text-link">
+                    Privacy
+                  </Link>
+                </dd>
               </div>
             </dl>
           </div>

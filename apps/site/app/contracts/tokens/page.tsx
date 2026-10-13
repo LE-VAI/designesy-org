@@ -37,7 +37,7 @@ export default function TokensContractPage() {
           <p className="surface-lede">{c.purpose}</p>
           <p className="surface-note">
             Version {c.version} · {c.status} ·{' '}
-            <Link href={c.machine_url}>machine export</Link>
+            <a href={c.machine_url}>machine export</a>
           </p>
           <AgentActions mdPath="/contracts/tokens.md" label="the tokens contract" />
         </section>
@@ -119,9 +119,11 @@ export default function TokensContractPage() {
 
         <div className="status-note">
           Sibling contract to the design system {CONTRACT_VERSION}. Machine export at{' '}
-          <Link href="/contracts/tokens.json">/contracts/tokens.json</Link>. The
-          live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) passes
-          all 10 conformance checks (verified 2026-08-09).
+          <a href="/contracts/tokens.json">/contracts/tokens.json</a>. The
+          live DTCG export (<Link href="/export/dtcg">/export/dtcg</Link>) scores
+          100, grade A, on the 10 conformance checks: 9 pass, and t07 does not
+          apply because the export declares no custom types (designesy_tokens_score,
+          2026-10-11).
         </div>
       </main>
       <Footer />

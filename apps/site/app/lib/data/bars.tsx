@@ -17,6 +17,8 @@ export type Bar = {
   /** The value as printed; one decimal by default. */
   display?: string;
   tone?: 'pass' | 'warn' | 'fail' | 'plain';
+  /** A bar that stands for a grade takes that grade's colour (D56), not a tone. */
+  grade?: string;
   /** A reference value on the same scale, drawn as a tick. */
   mark?: number | null;
   /** A second line under the label (a weight, a count). */
@@ -44,7 +46,12 @@ export function BarList({
     <>
       <div className="dx-bars" role="img" aria-label={label}>
         {bars.map((b) => (
-          <div className="dx-bar" key={b.key} data-tone={b.value === null ? 'none' : b.tone ?? 'plain'}>
+          <div
+            className="dx-bar"
+            key={b.key}
+            data-tone={b.value === null ? 'none' : b.grade ? undefined : b.tone ?? 'plain'}
+            data-grade={b.value !== null && b.grade ? b.grade.toLowerCase() : undefined}
+          >
             <span className="dx-bar-label">
               {b.label}
               {b.meta && <small>{b.meta}</small>}

@@ -128,9 +128,9 @@ export default function DesignReviewKitPage() {
             Shows a human share line. Click copies the full agent prompt:
             paste it into your AI tool, replace the placeholders, run the review.
             Human face: this page. Machine face:{' '}
-            <Link href="/kits/design-review.json" data-cuelume-hover="tick">
+            <a href="/kits/design-review.json" data-cuelume-hover="tick">
               /kits/design-review.json
-            </Link>
+            </a>
             . Catalog:{' '}
             <Link href="/open" data-cuelume-hover="tick">
               /open

@@ -15,7 +15,7 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Drift radar',
   description:
-    'Score any URL for AI-generated UI drift: 12 checks detect token fabrication, value variance, and off-contract patterns. The four documented 2026 drift failure modes, scored deterministically from compiled CSS.',
+    'Score any URL for AI-generated UI drift: 12 checks detect token fabrication, value variance, and off-contract patterns, scored deterministically from compiled CSS.',
   path: '/drift',
 
   machineSibling: '/contracts/drift.json',

@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Schibsted_Grotesk, Geist_Mono } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Fraunces, Schibsted_Grotesk, Atkinson_Hyperlegible_Mono } from 'next/font/google';
+import { SiteAnalytics } from './lib/site-analytics';
 import { CriticalCss } from './lib/critical-css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
@@ -11,6 +10,7 @@ import { EffectEnhancer } from './lib/effect-enhancer';
 import { ScrambleEnhancer } from './lib/scramble-enhancer';
 import { ScrollDepth } from './lib/scroll-depth';
 import { ScrollRegions } from './lib/scroll-regions';
+import { FlameFlipShortcut } from './lib/flame-flip';
 
 /*
   Brand faces — self-hosted at build time by next/font.
@@ -84,11 +84,33 @@ const schibsted = Schibsted_Grotesk({
   ],
 });
 
-const geistMono = Geist_Mono({
+/*
+  Mono face for labels, URLs, timestamps, score units and code. Atkinson
+  Hyperlegible Mono replaced Geist Mono on 2026-10-12 (brand ledger D65).
+
+  Why: it is the Braille Institute's low-vision face (SIL OFL 1.1). Every
+  confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct, and the site's mono
+  text is exactly the text a reader cannot guess from context: hosts, check
+  IDs, scores, dates and token names. That fits "Inclusion is structural"
+  better than a mono picked for looks.
+
+  Cost, measured from the font files: the advance is 0.632em (Geist Mono 0.6em),
+  so a mono run is 5.3% wider; the x-height is 0.496em (Geist Mono 0.53em), so
+  lower case reads a little smaller at one size. The tight surfaces were
+  re-fitted for the width.
+
+  Weights: one variable file, 200 to 800 (the site uses 400 to 700).
+  next/font has no metrics for this family, so it generates no adjusted
+  fallback; the first two fallbacks are local monos sized to Atkinson's
+  advance and line metrics in globals.css (top), so the swap keeps widths.
+*/
+const atkinsonMono = Atkinson_Hyperlegible_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-mono',
   fallback: [
+    'Mono Cascadia Fallback',
+    'Mono Consolas Fallback',
     'ui-monospace',
     'SF Mono',
     'Cascadia Code',
@@ -99,6 +121,7 @@ const geistMono = Geist_Mono({
   ],
 });
 import {
+  LISTING_LINE,
   SITE_BASE,
   SITE_DEFAULT_DESCRIPTION,
   SITE_NAME,
@@ -197,8 +220,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${SITE_NAME} · Design intelligence infrastructure`,
-    description:
-      'Design intelligence infrastructure for a humane creative civilization. Sources into principles, principles into contracts, contracts into tools.',
+    description: LISTING_LINE,
     url: SITE_BASE,
     siteName: SITE_NAME,
     type: 'website',
@@ -207,8 +229,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: `${SITE_NAME} · Design intelligence infrastructure`,
-    description:
-      'Design intelligence infrastructure for a humane creative civilization.',
+    description: LISTING_LINE,
   },
   manifest: '/manifest.webmanifest',
   robots: {
@@ -232,7 +253,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${schibsted.variable} ${geistMono.variable}`}
+      className={`${fraunces.variable} ${schibsted.variable} ${atkinsonMono.variable}`}
     >
       <head>
         <CriticalCss />
@@ -267,6 +288,9 @@ export default function RootLayout({
         <ScrambleEnhancer />
         <ScrollDepth />
         <ScrollRegions />
+        {/* Ctrl+I flips the page to the flame (brand D69): one keydown
+            listener; the flip itself loads on the first press. */}
+        <FlameFlipShortcut />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits
             behind all content (z-index 0 with grid + noise). Pure CSS, no
             JS. Replaces the old hero-bounded mesh that showed a cutoff at
@@ -285,8 +309,10 @@ export default function RootLayout({
             pills come last, where a floating control belongs. */}
         <BackButton />
         <DirectorDock />
-        <Analytics />
-        <SpeedInsights />
+        {/* Analytics and Speed Insights never receive a query string or
+            fragment: /score?url=… would otherwise send the address a visitor
+            scored (lib/analytics-url.ts). */}
+        <SiteAnalytics />
       </body>
     </html>
   );

@@ -38,7 +38,7 @@
    the category eyebrow, so it carries facts rather than a section name.
 
    One line at every width, scrolling sideways when a phone is too narrow for
-   it. The fallback mono face is wider than Geist Mono, so a wrapping line
+   it. The fallback mono face differs in width from the web face, so a wrapping line
    could be two lines tall before the font arrives and one line after, and
    everything under it would jump (measured: CLS 0.23 on /maturity, local
    build without font preloads). A line that never wraps is the same height
@@ -56,7 +56,7 @@
   margin: calc(-1 * var(--space-6)) 0 calc(var(--space-20) - var(--space-6));
   overflow-x: auto;
   scrollbar-width: none;
-  font: 500 0.74rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -114,7 +114,7 @@
    line mid-fact, with a dot at the visible end) nor a wrapping row (a dot
    opened the next line, as on the leaderboard at 390) holds up there. Each
    fact is far shorter than the line, so the stack's height is the same in
-   the fallback face and in Geist Mono: no reflow when the font arrives,
+   the fallback face and in the web mono: no reflow when the font arrives,
    which is why the path never wrapped (CLS, above). One law on every page
    that carries the path, engine and data pages alike. */
 @container eg (width < 36rem) {
@@ -194,6 +194,21 @@
 
 @container bench (width >= 64rem) {
   .eg-bench > .eg-bar:not(.is-pair):not(:has(.is-area)) {
+    grid-column: full-start / split;
+  }
+}
+
+/* A failed run's notice stands directly under the bar (/score), on the bar's
+   own columns, so the reason sits under the URL it is about and inside the
+   first screen on a phone (it was under the instrument, 1,100px below the
+   fold at 390). The bench's row gap spaces it; the card's own top margin is
+   for the forms that stack it in flow. */
+.eg-bench > .score-error-card {
+  margin-top: 0;
+}
+
+@container bench (width >= 64rem) {
+  .eg-bench > .eg-bar:not(.is-pair):not(:has(.is-area)) + .score-error-card {
     grid-column: full-start / split;
   }
 }
@@ -289,11 +304,17 @@
   box-shadow: var(--glow-verdict);
 }
 
-.eg-inst-verdict[data-band="warn"] { --vc-hue: var(--lv-warn-a); }
 .eg-inst-verdict[data-band="fail"] { --vc-hue: var(--lv-fail-a); }
 
+/* A verdict lights in its grade's colour (brand ledger D56), never a band's. */
+.eg-inst-verdict[data-grade="a"] { --vc-hue: var(--grade-a); }
+.eg-inst-verdict[data-grade="b"] { --vc-hue: var(--grade-b); }
+.eg-inst-verdict[data-grade="c"] { --vc-hue: var(--grade-c); }
+.eg-inst-verdict[data-grade="d"] { --vc-hue: var(--grade-d); }
+.eg-inst-verdict[data-grade="f"] { --vc-hue: var(--grade-f); }
+
 /* 1950ms = 150 in + 1200 hold + 600 decay. */
-.eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band] {
+.eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
   animation: eg-verdict-glow 1950ms var(--ease-out) both;
 }
 
@@ -312,7 +333,7 @@
   min-height: 2.9rem;
   padding: 0 var(--space-16);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.78rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -352,7 +373,7 @@
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -371,7 +392,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -434,23 +455,26 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--lv-ink-accent) 20%, transparent);
 }
 
-/* The running LED: working means moving. Opacity .35 to 1 on a 1.5s breath
-   (12s / 8, a divisor of the site's master period); a run that lands stops
-   it, and resolved means still. Reduced motion and the motion switch keep
-   the colour and drop the pulse (Motion, below). */
+/* The running LED: working means moving. Its halo breathes on a 1.5s cycle
+   (12s / 8, a divisor of the site's master period); the dot itself never
+   fades (brand ledger D54, D57: a live pulse is a halo, never the dot's
+   opacity). A run that lands stops it, and resolved means still. Reduced
+   motion and the motion switch keep the colour and the resting ring and drop
+   the breath (Motion, below). */
 @keyframes eg-led {
   0%,
-  100% { opacity: 1; }
-  50% { opacity: 0.35; }
+  100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--lv-ink-accent) 0%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--lv-ink-accent) 28%, transparent); }
 }
 
 .eg-inst[data-phase="running"] .eg-dot {
   animation: eg-led 1.5s var(--ease-in-out) infinite;
 }
 
-/* The state reads the run: "12 checks · ready", then "reading 3/12" while the
-   cursor steps through the registry, then "done in 1.2 s". Each swap fades in
-   150ms (allowed under reduced motion); the resting first paint does not. */
+/* The state reads the run: "12 checks · ready", then "12 checks · checking ·
+   3 s", the seconds since the run began (the engines answer once, at the end,
+   so no count of checks read is shown), then "done in 1.2 s". Each swap fades
+   in 150ms (allowed under reduced motion); the resting first paint does not. */
 .eg-inst-state > span {
   white-space: nowrap;
 }
@@ -463,80 +487,6 @@
   from { opacity: 0; }
 }
 
-/* The reading counter: a digit strip (lib/digit-strip) of 1..n, one row
-   showing, stepped by the same clock as the scan cursor (n x 110ms, steps(n)),
-   so "reading 3" shows while the third lamp is lit. The strip's mechanics are
-   repeated here, scoped, because the shared rules live in home-inspect.css,
-   which an engine page does not load. Both lines share the strip's 1.25em
-   line, so the digits sit on the text's baseline. */
-.eg-state-read {
-  line-height: 1.25;
-}
-
-/* The strip writes --ds-lh and --ds-at inline (lib/digit-strip); the same
-   values are declared here so the sheet never references a property it does
-   not declare (the site's own drift checks read stylesheets, d02 and d11). */
-.eg-inst-state .digit-strip {
-  --ds-lh: 1.25em;
-  --ds-at: 0;
-  display: inline-block;
-  height: var(--ds-lh);
-  overflow: hidden;
-  line-height: var(--ds-lh);
-  font-variant-numeric: tabular-nums;
-  vertical-align: top;
-}
-
-.eg-inst-state .digit-strip-rows {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  transform: translateY(calc(var(--ds-at) * -1 * var(--ds-lh)));
-}
-
-.eg-inst-state .digit-strip-rows > span {
-  display: block;
-  height: var(--ds-lh);
-}
-
-/* A row is a whole pixel. 1.25em of the state's 0.72rem is 14.4px, so the
-   strip stepped by 14.4px and landed between device pixels: the counter's
-   digit drew 0.5px above "/12" beside it (measured on /drift at 1440, DPR
-   4). Rounded, every step is an integer translate. The line around it
-   takes the same rounded height, so the row's baseline is the text's. The
-   strip writes --ds-lh inline (lib/digit-strip), so the override needs the
-   !important; behind @supports, because a custom property that fails to
-   compute would leave the strip with no height at all. */
-@supports (width: round(1.5px, 1px)) {
-  .eg-state-read {
-    line-height: round(1.25em, 1px);
-  }
-  .eg-inst-state .digit-strip {
-    --ds-lh: round(1.25em, 1px) !important;
-  }
-}
-
-.eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
-  animation: eg-read calc(var(--n-all) * 110ms) steps(var(--n-all), jump-end) infinite;
-}
-
-@keyframes eg-read {
-  to { transform: translateY(calc(var(--n-all) * -1 * var(--ds-lh))); }
-}
-
-/* With motion off the count cannot step, so the calm line says what is
-   running instead; it is always the line a screen reader reads (the strip
-   is aria-hidden). */
-.eg-state-calm {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* The target pill receives the host when a run starts: it rises 4px into
    place and fades in, 150ms. The resting "waiting for a URL" never moves. */
 .eg-inst-target > [data-host] {
@@ -547,9 +497,20 @@
   from { opacity: 0; transform: translateY(4px); }
 }
 
+/* A finished run is a confirmed fact, so the LED becomes the check glyph the
+   site uses for one (brand ledger D57), not a coloured dot: the green it took
+   was grade A's, and orange is only for something happening now. */
 .eg-inst[data-phase="done"] .eg-dot {
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 18%, transparent);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  font: 700 var(--text-label)/1 var(--sans);
+  color: var(--signal-text);
+}
+
+.eg-inst[data-phase="done"] .eg-dot::before {
+  content: "✓";
 }
 
 .eg-inst[data-phase="error"] .eg-dot {
@@ -617,7 +578,7 @@
 }
 
 .eg-label {
-  font: 500 0.6875rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -625,14 +586,14 @@
 
 .eg-group-hint {
   margin: 0 0 var(--space-12);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
 }
 
 .eg-count {
-  font: 500 0.7rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -642,7 +603,7 @@
    side pane used to list it apart from the row it describes. */
 .eg-group-note {
   margin: var(--space-10) 0 0;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -768,13 +729,13 @@
 }
 
 .eg-cell-id {
-  font: 500 0.7rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
 .eg-cell-label {
   align-self: end;
-  font-size: 0.84rem;
+  font-size: var(--text-label);
   font-weight: 500;
   line-height: 1.3;
   color: var(--ink);
@@ -832,6 +793,22 @@
   box-shadow: inset 0 0 0 1px var(--lv-fail-b), inset 0 1px 0 var(--lv-shine);
 }
 
+/* Light theme: every other status lamp whose fill is under 3:1 on a light
+   surface takes a 1px ring of its own ink, as PASS does above (brand ledger
+   D67, extending D49). Measured on paper, surface, raised and lifted: the
+   WARN fill's top stop #e0a917 is 1.81 to 2.13:1, FAIL's #ef5b5b falls to
+   2.82:1 on lifted, and the SKIP/MANUAL hatch is about 1.5:1. The minicells
+   and the scale marker take no ring: each repeats a figure printed beside it. */
+[data-theme="light"] [data-status="WARN"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="WARN"] {
+  box-shadow: 0 0 0 1px var(--warn-ink), inset 0 0 0 1px var(--lv-warn-b), inset 0 1px 0 var(--lv-shine);
+}
+
+[data-theme="light"] [data-status="FAIL"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="FAIL"] {
+  box-shadow: 0 0 0 1px var(--error-ink), inset 0 0 0 1px var(--lv-fail-b), inset 0 1px 0 var(--lv-shine);
+}
+
 /* Skipped or checked by a person: hatched, the drawing convention for
    "a different material". */
 [data-status="SKIP"] > .eg-cell-top .eg-lamp,
@@ -840,6 +817,14 @@
 .eg-lamp[data-status="MANUAL"] {
   background: repeating-linear-gradient(135deg, var(--lv-hatch) 0 1px, transparent 1px 4px);
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
+}
+
+/* Light: the hatch's ring is its status word's ink (--muted), D67. */
+[data-theme="light"] [data-status="SKIP"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] [data-status="MANUAL"] > .eg-cell-top .eg-lamp,
+[data-theme="light"] .eg-lamp[data-status="SKIP"],
+[data-theme="light"] .eg-lamp[data-status="MANUAL"] {
+  box-shadow: 0 0 0 1px var(--muted);
 }
 
 .eg-cell[data-status="PASS"] { --tone: color-mix(in srgb, var(--lv-pass-a) 34%, transparent); }
@@ -906,7 +891,7 @@
 
 .eg-side-note {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -935,14 +920,14 @@
 }
 
 .eg-score {
-  font: 500 1.5rem/1 var(--mono);
+  font: 500 var(--text-h3)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
 .eg-score small {
   margin-left: 2px;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -957,7 +942,7 @@
 /* What a named verdict is made of ("Contract, drift and readiness ..."). */
 .eg-verdict-note {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--text-body);
   line-height: 1.4;
   color: var(--muted);
 }
@@ -1004,7 +989,7 @@
 }
 
 .eg-verdict-row.is-rest .eg-grade {
-  font-size: 1.5rem;
+  font-size: var(--text-h3);
   line-height: 1;
 }
 
@@ -1036,12 +1021,12 @@
 
 .eg-running-line {
   margin: 0;
-  font: 500 0.92rem/1.4 var(--sans);
+  font: 500 var(--text-body)/1.4 var(--sans);
   color: var(--ink);
 }
 
 .eg-elapsed {
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1075,9 +1060,13 @@
   box-shadow: none;
 }
 
-.eg-scale-zone.is-here[data-band="pass"] { background: linear-gradient(180deg, var(--lv-pass-a), var(--lv-pass-b)); }
-.eg-scale-zone.is-here[data-band="warn"] { background: linear-gradient(180deg, var(--lv-warn-a), var(--lv-warn-b)); }
-.eg-scale-zone.is-here[data-band="fail"] { background: linear-gradient(180deg, var(--lv-fail-a), var(--lv-fail-b)); }
+/* The zone the score lands in takes its grade's colour (brand ledger D56): a
+   B is lime, not the brand's Azure, and a D is rose, not C's amber. */
+.eg-scale-zone.is-here[data-grade="a"] { background: var(--grade-a); }
+.eg-scale-zone.is-here[data-grade="b"] { background: var(--grade-b); }
+.eg-scale-zone.is-here[data-grade="c"] { background: var(--grade-c); }
+.eg-scale-zone.is-here[data-grade="d"] { background: var(--grade-d); }
+.eg-scale-zone.is-here[data-grade="f"] { background: var(--grade-f); }
 
 .eg-scale-marker {
   --at: 0;
@@ -1095,7 +1084,7 @@
 .eg-scale-ticks {
   display: flex;
   gap: 2px;
-  font: 500 0.6875rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1113,7 +1102,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -1124,7 +1113,7 @@
 }
 
 .eg-tally b {
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
@@ -1165,7 +1154,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
 }
@@ -1175,14 +1164,14 @@
 }
 
 .eg-start-detail {
-  font-size: 0.82rem;
+  /* The finding shows whole, unclamped. At the body size (D68) the drift
+     detail needs four lines in the side pane at 1440 and six at 390, and a
+     three- or five-line clamp cut its last clause ("(0 runtime tokens
+     excluded)"). */
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
   overflow-wrap: anywhere;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .eg-share {
@@ -1204,7 +1193,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line);
   color: var(--ink);
-  font: 500 0.8rem/1 var(--sans);
+  font: 500 var(--text-body)/1 var(--sans);
   text-decoration: none;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -1239,7 +1228,7 @@
 }
 
 .eg-figs dt {
-  font: 500 0.66rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1247,19 +1236,19 @@
 
 .eg-figs dd {
   margin: 0;
-  font: 500 1.35rem/1.1 var(--mono);
+  font: 500 var(--text-lead)/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
 .eg-figs dd small {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
 .eg-quiet {
   margin: 0;
-  font: 500 0.74rem/1.5 var(--mono);
+  font: 500 var(--text-label)/1.5 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1274,7 +1263,7 @@
 .eg-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1291,7 +1280,7 @@
 }
 
 .eg-table th {
-  font: 500 0.66rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1305,7 +1294,7 @@
 
 .eg-table td:first-child,
 .eg-table code {
-  font: 500 0.8rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--ink);
 }
 
@@ -1340,7 +1329,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.84rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--ink);
 }
@@ -1386,7 +1375,7 @@
 }
 
 .eg-watch-host {
-  font: 500 0.86rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
 }
 
 /* Before a run: a reference drawn from the engine's contract. */
@@ -1414,7 +1403,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-12);
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1422,13 +1411,13 @@
 
 .eg-ref dd {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
 }
 
 .eg-ref-where {
-  font: 500 0.6875rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   white-space: nowrap;
 }
@@ -1441,14 +1430,14 @@
 }
 
 .eg-ref-rows dd {
-  font: 500 0.74rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
 
 .eg-ref-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -1464,13 +1453,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
 .eg-probe-title {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -1484,7 +1473,7 @@
 }
 
 .eg-probe dt {
-  font: 500 0.66rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -1492,7 +1481,7 @@
 
 .eg-probe dd {
   margin: 0 0 var(--space-6);
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -1506,7 +1495,7 @@
   gap: var(--space-8) var(--space-16);
   padding: var(--space-12) var(--space-20);
   border-top: 1px solid var(--line-faint);
-  font: 500 0.7rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1575,7 +1564,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font: 500 0.8rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
 }
 
 .eg-paths-origin {
@@ -1663,7 +1652,7 @@
 }
 
 .eg-path-checks {
-  font: 400 0.8rem/1.3 var(--sans);
+  font: 400 var(--text-label)/1.3 var(--sans);
   color: var(--muted-dim);
 }
 
@@ -1693,7 +1682,7 @@
 .eg-diff-head {
   padding: 0 var(--space-10) var(--space-10);
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.72rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -1747,13 +1736,13 @@
 .eg-diff-a {
   justify-self: end;
   text-align: right;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
 }
 
 .eg-diff-b {
   justify-self: start;
-  font: 500 0.8rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
 }
 
@@ -1774,7 +1763,7 @@
   align-items: center;
   gap: var(--space-8);
   min-width: 0;
-  font-size: 0.84rem;
+  font-size: var(--text-body);
 }
 
 .eg-diff-mid > .eg-lamp {
@@ -1786,7 +1775,7 @@
    label column. It was centred over a left-set spine and shared no edge
    with the list it heads. */
 .eg-diff-head .eg-diff-mid {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
 }
 
 .eg-diff-head .eg-diff-count {
@@ -1912,7 +1901,7 @@
 .eg-file-where {
   padding-top: var(--space-6);
   border-top: 1px solid var(--line-faint);
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -1920,12 +1909,12 @@
 
 .eg-file .eg-cell-label {
   align-self: start;
-  font: 500 0.84rem/1.25 var(--mono);
+  font: 500 var(--text-label)/1.25 var(--mono);
   overflow-wrap: anywhere;
 }
 
 .eg-file-meta {
-  font: 500 0.7rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1955,12 +1944,12 @@
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--space-4) var(--space-12);
-  font: 500 0.86rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--ink);
 }
 
 .eg-viewer-name small {
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -1975,7 +1964,7 @@
   margin: 0;
   padding: var(--space-16) var(--space-20);
   overflow: auto;
-  font: 400 0.8rem/1.65 var(--mono);
+  font: 400 var(--text-label)/1.65 var(--mono);
   color: var(--ink);
   tab-size: 2;
 }
@@ -2053,7 +2042,7 @@
 }
 
 .eg-weight-name {
-  font-size: 0.84rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
@@ -2063,7 +2052,7 @@
    and in the narrow segments it wraps in one face and not the other. */
 .eg-weight-meta {
   min-height: 2.7em;
-  font: 500 0.72rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -2148,7 +2137,7 @@
 .eg-engine-ask {
   grid-column: 3;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -2157,13 +2146,13 @@
 .eg-engine-name {
   display: grid;
   gap: var(--space-4);
-  font-size: 0.86rem;
+  font-size: var(--text-label);
   font-weight: 600;
   color: var(--ink);
 }
 
 .eg-engine-name small {
-  font: 500 0.7rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2255,7 +2244,7 @@
 
 .eg-engine-score {
   justify-self: end;
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2295,7 +2284,7 @@
 .mt-grid {
   /* The question prompt's measures, shared by the prompt and the matrix
      beside it (64rem, below), so the two cannot drift apart. */
-  --mt-prompt-size: 0.98rem;
+  --mt-prompt-size: var(--text-body);
   --mt-prompt-lh: 1.4;
   --mt-prompt-gap: var(--space-12);
   display: grid;
@@ -2380,13 +2369,13 @@
 
 .mt-axis-meta {
   margin: 0 0 var(--space-12);
-  font: 500 0.74rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
 }
 
 .mt-axis-desc {
   margin: var(--space-8) 0 0;
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -2413,7 +2402,7 @@
   column-gap: var(--space-12);
   margin: 0 0 var(--mt-prompt-gap, var(--space-12));
   padding-inline-start: var(--space-14);
-  font-size: var(--mt-prompt-size, 0.98rem);
+  font-size: var(--mt-prompt-size, var(--text-body));
   font-weight: 600;
   line-height: var(--mt-prompt-lh, 1.4);
   color: var(--ink);
@@ -2423,7 +2412,7 @@
 .mt-q-num {
   justify-self: center;
   padding-top: 0.15rem;
-  font: 500 0.74rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2445,7 +2434,7 @@
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
   color: var(--ink);
-  font: 400 0.9rem/1.4 var(--sans);
+  font: 400 var(--text-body)/1.4 var(--sans);
   text-align: left;
   cursor: pointer;
   transition: transform var(--eg-t-press);
@@ -2475,7 +2464,7 @@
   height: 1.6rem;
   border-radius: var(--radius-sm);
   background: var(--lv-well-line);
-  font: 600 0.72rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -2562,13 +2551,13 @@ button.mt-row {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
-  font-size: 0.88rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3;
 }
 
 .mt-row-name small {
-  font: 500 0.68rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2598,7 +2587,7 @@ button.mt-row {
   grid-column: 2;
   grid-row: 1;
   justify-self: end;
-  font: 500 0.86rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -2622,7 +2611,7 @@ button.mt-row {
 }
 
 .mt-overall-stage {
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
 }
@@ -2676,7 +2665,7 @@ button.mt-row {
 
 .eg-section-sub {
   margin: var(--space-8) 0 0;
-  font: 500 0.76rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -2741,7 +2730,7 @@ button.mt-row {
 
 .eg-row-id {
   padding-top: 0.2rem;
-  font: 500 0.74rem/1.2 var(--mono);
+  font: 500 var(--text-label)/1.2 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -2752,13 +2741,13 @@ button.mt-row {
 }
 
 .eg-row-title {
-  font-size: 0.95rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.35;
 }
 
 .eg-row-detail {
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -2766,14 +2755,16 @@ button.mt-row {
 
 .eg-row-status {
   padding-top: 0.2rem;
-  font: 600 0.7rem/1.2 var(--mono);
+  font: 600 var(--text-label)/1.2 var(--mono);
   letter-spacing: 0.06em;
   color: var(--muted);
 }
 
 .eg-row[data-status="FAIL"] .eg-row-status { color: var(--error-ink); }
 .eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
-.eg-row[data-status="PASS"] .eg-row-status { color: var(--ok-ink); }
+/* One hue family per status (brand ledger D67): PASS reads in the Azure of its
+   lamp, not the green of a score band (80 and up, D48/D56). */
+.eg-row[data-status="PASS"] .eg-row-status { color: var(--signal-access); }
 
 .eg-chev {
   margin-top: 0.3rem;
@@ -2791,7 +2782,7 @@ button.mt-row {
   display: grid;
   gap: var(--space-4);
   padding: 0 var(--space-16) var(--space-16) calc(var(--space-16) + 1.4rem + 3rem + 2 * var(--space-12));
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2801,7 +2792,7 @@ button.mt-row {
 }
 
 .eg-row-more b {
-  font: 500 0.66rem/1.3 var(--mono);
+  font: 500 var(--text-label)/1.3 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -2833,7 +2824,7 @@ button.mt-row {
   padding: var(--space-20);
   border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font-size: 0.9rem;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 
@@ -2844,7 +2835,7 @@ button.mt-row {
 
 .eg-error p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -2905,14 +2896,14 @@ button.mt-row {
   border-radius: var(--radius-sm);
   background: var(--paper);
   box-shadow: inset 0 0 0 1px var(--line-strong);
-  font: 500 0.66rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   z-index: 1;
 }
 
 .eg-step-title {
   margin: var(--space-6) 0 0;
-  font-size: 0.98rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink);
@@ -2920,7 +2911,7 @@ button.mt-row {
 
 .eg-step p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--text-body);
   line-height: 1.55;
   color: var(--muted);
   text-wrap: pretty;
@@ -2930,7 +2921,7 @@ button.mt-row {
    ("--md-" over "sys-color-primary" on /m3-bridge), set in the prose's
    code face. */
 .eg-step code {
-  font: 400 0.88em/1 var(--mono);
+  font: 400 inherit/1 var(--mono);
   color: var(--ink);
   white-space: nowrap;
 }
@@ -2975,7 +2966,7 @@ button.mt-row {
   border-radius: var(--radius-lg);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  font: 500 0.78rem/1.6 var(--mono);
+  font: 500 var(--text-label)/1.6 var(--mono);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -2996,19 +2987,18 @@ button.mt-row {
   color: var(--ink);
 }
 
-/* The comparison operators. Geist Mono's served subset stops short of
-   U+2264/2265, so a bare "≥" fell through --mono to its metric fallback
-   (Arial at 134.59%): a sans glyph 2px taller than the figures, thinner,
-   with its foot 1px off the line. The operator is set in a platform mono
-   face that draws it on a mono cell instead (SF Mono, Menlo, Cascadia,
-   Consolas, DejaVu Sans Mono), skipping the Arial fallback, and scaled to Geist
-   Mono's x-height (0.53, measured) so its strokes and width match the
-   figures beside it. Measured on /drift at 1440, Cascadia Mono: the foot
-   sits 0.5px above the figures' baseline, where Geist Mono's own ">" sits
-   (0.03em up), and the cell is Geist's 0.6em. */
+/* The comparison operators. The mono face's served subset (latin) stops
+   short of U+2264/2265, so a bare "≥" fell through --mono to its metric
+   fallback (Arial, scaled): a sans glyph taller than the figures, thinner,
+   with its foot off the line. The operator is set in a platform mono face
+   that draws it on a mono cell instead (SF Mono, Menlo, Cascadia, Consolas,
+   DejaVu Sans Mono), skipping the Arial fallback, and scaled to the mono
+   face's x-height so its strokes match the figures beside it: 0.496 for
+   Atkinson Hyperlegible Mono, from the font file (D65; it was 0.53 for Geist
+   Mono). */
 .eg-op {
   font-family: 'SF Mono', ui-monospace, Menlo, 'Cascadia Mono', 'Cascadia Code', Consolas, 'DejaVu Sans Mono', monospace;
-  font-size-adjust: 0.53;
+  font-size-adjust: 0.496;
 }
 
 /* The letter scale (engine-page.tsx, GradeLine): one item per grade, each
@@ -3059,7 +3049,7 @@ button.mt-row {
 .eg-prose p {
   max-width: 65ch;
   margin: var(--space-16) 0 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.65;
   color: var(--muted);
   text-wrap: pretty;
@@ -3072,7 +3062,7 @@ button.mt-row {
 }
 
 .eg-prose code {
-  font: 400 0.88em/1 var(--mono);
+  font: 400 inherit/1 var(--mono);
   color: var(--ink);
 }
 
@@ -3116,7 +3106,7 @@ button.mt-row {
 }
 
 .m3-pipe b {
-  font: 500 1.35rem/1.1 var(--mono);
+  font: 500 var(--text-lead)/1.1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -3137,7 +3127,7 @@ button.mt-row {
 }
 
 .m3-pipe span {
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -3160,14 +3150,14 @@ button.mt-row {
 }
 
 .m3-map dt {
-  font: 500 0.72rem/1.35 var(--mono);
+  font: 500 var(--text-label)/1.35 var(--mono);
   color: var(--ink);
   overflow-wrap: anywhere;
 }
 
 .m3-map dd {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   line-height: 1.4;
   color: var(--muted-dim);
   text-wrap: pretty;
@@ -3209,7 +3199,7 @@ button.mt-row {
   border: 1px solid var(--lv-well-line);
   border-radius: var(--radius-lg);
   background: var(--lv-well);
-  font: 400 0.75rem/1.6 var(--mono);
+  font: 400 var(--text-label)/1.6 var(--mono);
   color: var(--muted);
   tab-size: 2;
   white-space: pre;
@@ -3234,7 +3224,7 @@ button.mt-row {
   place-items: center;
   min-height: 6rem;
   color: var(--muted-dim);
-  font-size: 1.1rem;
+  font-size: var(--text-body);
   letter-spacing: 0.1em;
 }
 
@@ -3289,18 +3279,18 @@ button.mt-row {
 }
 
 .eg-go-title {
-  font-size: 0.98rem;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 
 .eg-go-desc {
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   line-height: 1.45;
   color: var(--muted);
 }
 
 .eg-go-route {
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
 }
 
@@ -3400,13 +3390,11 @@ button.mt-row {
 
 /* Tiered: movement and loops stop, the state still reads. The LED keeps its
    colour without the pulse; the verdict light (a 1.2s hold) does not land;
-   the host fades in place (150ms, inside the allowance) without rising; the
-   counter cannot step, so the calm line shows instead of the strip. State
-   swaps keep their 150ms fade. */
+   the host fades in place (150ms, inside the allowance) without rising.
+   State swaps keep their 150ms fade. */
 @media (prefers-reduced-motion: reduce) {
   .eg-inst[data-phase="running"] .eg-dot,
-  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
-  .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+  .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
     animation: none;
   }
   .eg-inst-target > [data-host] {
@@ -3415,22 +3403,10 @@ button.mt-row {
   .eg-inst-glow {
     transition: opacity var(--duration-quick) var(--ease-out);
   }
-  .eg-state-read {
-    display: none;
-  }
-  .eg-state-calm {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip-path: none;
-  }
 }
 
 html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-dot,
-html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict[data-band],
-html[data-motion="paused"] .eg-inst[data-phase="running"] .eg-read-strip .digit-strip-rows {
+html[data-motion="paused"] .eg-inst:is([data-phase="done"], [data-phase="error"]) > .eg-inst-verdict:is([data-band], [data-grade]) {
   animation: none;
 }
 
@@ -3440,19 +3416,6 @@ html[data-motion="paused"] .eg-inst-target > [data-host] {
 
 html[data-motion="paused"] .eg-inst-glow {
   transition: opacity var(--duration-quick) var(--ease-out);
-}
-
-html[data-motion="paused"] .eg-state-read {
-  display: none;
-}
-
-html[data-motion="paused"] .eg-state-calm {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip-path: none;
 }
 
 @keyframes eg-host-fade {

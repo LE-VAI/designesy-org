@@ -1,7 +1,7 @@
 {
   "name": "@designesy/score",
-  "version": "0.7.2",
-  "description": "Standalone 44-check design-contract scoring engine: fetches a URL, extracts CSS + tokens, and runs all checks locally. No required dependencies.",
+  "version": "0.8.1",
+  "description": "Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. Runs locally; browser checks return MANUAL. No required dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
   "homepage": "https://www.designesy.org/score",

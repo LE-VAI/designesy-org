@@ -189,7 +189,7 @@ const MONITOR = build(
   'monitor',
   monitorContract,
   {
-    m01: 'Watch registered',
+    m01: 'History supplied',
     m02: 'Run on time',
     m03: 'Against the baseline',
     m04: 'Three-run trend',
@@ -206,7 +206,7 @@ const MONITOR = build(
     m05: 'change', m06: 'change', m08: 'change', m09: 'change',
   },
   [
-    { id: 'watch', label: 'The watch', hint: 'The monitor is registered, running, and can reach you.' },
+    { id: 'watch', label: 'The watch', hint: 'Earlier runs to compare against, a run on time, and alerts that can reach you.' },
     { id: 'trend', label: 'The trend', hint: 'Where the score is heading across runs.' },
     { id: 'change', label: 'What changed', hint: 'Checks, tokens and contract since the last run.' },
   ],

@@ -60,8 +60,10 @@ import { DigitStrip, stripValues } from './digit-strip';
  * WHAT IS TRUE HERE
  * The page is a demo, and the section says so. The findings are the engine's
  * real checks with their real thresholds: v03 (a :focus-visible rule must
- * exist) and v06 (body text at least 4.5 to 1). Neither carries a score
- * ceiling, so the page grades A. The counts are derived from the registry
+ * exist) and v06 (body text at least 4.5 to 1). Neither carries a ceiling
+ * of its own, but v03 FAILs, and from engine 1.3.0 any FAIL caps the score
+ * at 89.9, so the page grades B (it graded A until then). The counts are
+ * derived from the registry
  * (lib/check-definitions): pass is the engine's total less the two findings,
  * so the tally, the counter and the accessible name can never disagree with
  * the engine.
@@ -70,11 +72,11 @@ import { DigitStrip, stripValues } from './digit-strip';
 const STEPS = [
   {
     title: 'It reads the page you ship',
-    text: 'The engine loads the live URL the way a visitor does and walks what actually rendered: markup, tokens, type, spacing, and motion.',
+    text: 'The engine fetches the HTML your server sends and the stylesheets it links, and reads markup, tokens, type, spacing and motion from them. It runs no JavaScript, so it grades what arrives over the wire.',
   },
   {
     title: 'It measures instead of guessing',
-    text: 'Contrast is computed, never eyeballed. Line length, type scale, and target size are read off the page, each against a threshold the contract publishes.',
+    text: 'Contrast is computed, never eyeballed. Line length, type scale, and target size are read from the CSS the page ships, each against a threshold the contract publishes.',
   },
   {
     title: 'Each finding pins to its element',
@@ -82,7 +84,7 @@ const STEPS = [
   },
   {
     title: 'One grade, with the evidence attached',
-    text: 'Findings roll up into one score. Neither finding here carries a score ceiling, so the page grades A, and every result links back to the rule that produced it.',
+    text: 'Findings roll up into one score. A failing check caps it at 89.9, so with v03 failing the page grades B, and every result links back to the rule that produced it.',
   },
 ] as const;
 
@@ -122,7 +124,7 @@ const FADE_QUICK = 150; // starting or stopping: within the 200ms reduced-motion
 // Below it the type is too small to read, and the stage rests resolved.
 const FIT_MIN = 0.75;
 
-const LABEL = `Demo on a generic page, inspected in four steps. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. Neither finding caps the score: ${PASS} pass, ${WARN} warn, ${FAIL} fail, grade A.`;
+const LABEL = `Demo on a generic page, inspected in four steps. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. The v03 failure caps the grade at B: ${PASS} pass, ${WARN} warn, ${FAIL} fail, grade B.`;
 
 /** A numbered pin, as drawn on the page and repeated in the log. */
 function Pin({ n, tone, inLog }: { n: number; tone: 'warn' | 'fail'; inLog?: boolean }) {
@@ -692,13 +694,13 @@ export function InspectSequence() {
             </div>
 
             <div className="ix-verdict">
-              <span className="ix-verdict-grade">A</span>
+              <span className="ix-verdict-grade">B</span>
               <span className="ix-verdict-body">
                 <span className="ix-verdict-tally">
                   <b>{PASS}</b> pass · <b>{WARN}</b> warn · <b>{FAIL}</b> fail
                 </span>
                 <TallyBar className="ix-verdict-bar" />
-                <span className="ix-verdict-note">Neither finding carries a score ceiling.</span>
+                <span className="ix-verdict-note">A failing check caps the grade at B.</span>
               </span>
             </div>
 
@@ -736,8 +738,8 @@ export function InspectSequence() {
               <span className="ix-log-line" data-n="4">
                 <Queued k="grade" />
                 <b className="ix-log-k">graded</b>
-                <b className="ix-log-grade">A</b>
-                <span className="ix-log-v ix-log-wide">A · {TALLY}</span>
+                <b className="ix-log-grade">B</b>
+                <span className="ix-log-v ix-log-wide">B · {TALLY}</span>
                 <span className="ix-log-v ix-log-rows">
                   <span>{TALLY}</span>
                   <TallyBar className="ix-log-bar" />

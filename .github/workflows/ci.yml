@@ -27,9 +27,8 @@ on:
     branches: [main]
   push:
     branches: [main]
-  # Started by rescore-leaderboard.yml on its PR branch: CI on a PR opened by
-  # github-actions[bot] waits for a human approval (GitHub, 2026-06-11), but a
-  # dispatch always runs, and its checks land on the same head commit.
+  # Manual runs. A dispatched run does not unblock a PR whose own pull_request
+  # run is waiting for approval (PR #242, 2026-10-10); re-run that run instead.
   workflow_dispatch:
 
 # Cancel superseded runs on the same ref — saves CI minutes.
@@ -141,6 +140,14 @@ jobs:
         if: always()
         run: node scripts/check-audit-rescore.mjs
 
+      # The full audit reaches public addresses only: the route refuses private,
+      # loopback, link-local, CGNAT and IPv6 hosts after a DNS lookup, and the
+      # browser it drives refuses them on every request, redirect hops included
+      # (app/lib/browser-guard.ts).
+      - name: Audit SSRF guard
+        if: always()
+        run: node scripts/check-audit-ssrf.js
+
       # One value reads one way on every result surface: the words, the score
       # format, the colour rules and the grade colours of the share card and
       # badge (app/score/verdict.ts is the one source).
@@ -219,6 +226,10 @@ jobs:
         if: always()
         run: node scripts/check-hero-a11y-name.js
 
+      - name: Console tally name
+        if: always()
+        run: node scripts/check-console-tally-name.js
+
       - name: Extractor brace bound
         if: always()
         run: node scripts/check-extractor-brace-bound.js
@@ -245,6 +256,14 @@ jobs:
       - name: JSX glue
         if: always()
         run: node scripts/check-jsx-glue.js
+
+      # next/link prefetches its href as a page, so a link to an endpoint or a
+      # file sent GET ?_rsc= to it: POST-only API routes answered 405 and logged
+      # a console error on 71 of 74 routes (live audit 2026-10-11). Endpoints
+      # and files take a plain <a> (or RouteLink, app/lib/route-link.tsx).
+      - name: Link targets
+        if: always()
+        run: node scripts/check-link-targets.js
 
       # A palette "Mentioned on" row is one clean line: whole words, the match
       # early and intact, no orphan quote or bracket at the cuts, an ellipsis
@@ -297,6 +316,37 @@ jobs:
       - name: Critical CSS coverage
         if: always()
         run: node scripts/check-critical-css.mjs
+
+      # Analytics never receive a query string or fragment: /score?url=… sent
+      # the address a visitor scored to Web Analytics and Speed Insights. Runs
+      # the shipped beforeSend hook on a table of addresses and checks that
+      # every <Analytics> and <SpeedInsights> passes it.
+      - name: Analytics redaction
+        if: always()
+        run: node scripts/check-analytics-redaction.js
+
+      # The static badge images match their renderer, and the renderer still
+      # draws the live badge set the brand review approved
+      # (scripts/fixtures/live-badge, ledger D61). A meant change rewrites the
+      # set with `npm run badge-renders` and goes back for review.
+      - name: Badge renders
+        if: always()
+        run: node scripts/badge-renders.mjs --check
+
+      # The live badge starts a fresh score only behind its miss limiter (20
+      # per IP and 300 in all per hour, failing closed), and a cached view asks
+      # no limiter: the real badge routes and score engine, run offline.
+      - name: Badge miss limit
+        if: always()
+        run: node scripts/check-badge-miss-limit.js
+
+      # Text sizes stay on the brand's type scale in the sheets moved onto it
+      # (brand ledger D59, D68): nothing under the 0.8rem floor, and with the
+      # ladder on, only the six steps (or a clamp, var or inherit). Display
+      # numerals and the home page's rules are exempt, each with its reason.
+      - name: Type scale
+        if: always()
+        run: node scripts/check-type-scale.js
 
       - name: Gate parity (build script vs CI)
         if: always()
@@ -609,7 +659,8 @@ jobs:
   # status and LCP gates arrived; on a pull request it hit its 25-minute limit
   # inside Dock clearance. The parts run side by side, balanced by the step
   # times of a green run on main (38086271824):
-  #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17
+  #   part 1  edges 79 s, glass 48, motion 120, LCP 48, keyboard 22, status 17,
+  #           ignition (added later, about 30 locally)
   #   part 2  focus visibility 187, a11y sweep 101 (the full set), and
   #           a11y modes 59 (added later; its first run, 38099424155)
   #   part 3  dock clearance 443 (304-443 across that day's green runs)
@@ -742,6 +793,22 @@ jobs:
       # in one live region that was there before it (or an alert).
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
+
+      # The score's loading ignition (brand D51, rulings D54) runs on a fake
+      # clock and every frame is read: the OKLCH sweep, the ring, the hold, the
+      # swap back, the light rim at full strength through the breath, the calm
+      # path's instant swaps (no intermediate colour) under reduced motion and
+      # under "Pause motion", and exactly one ignition per landing.
+      - name: Loading ignition
+        run: node scripts/check-ignition.js --base http://127.0.0.1:3422 --channel chrome
+
+      # The flame flip (brand D69): nothing loads before the first trigger;
+      # the circle opens from the logo's dot, holds and closes on its timings;
+      # Azure under the layer reads the flame exactly; clicks pass through it;
+      # the calm path swaps whole; the keycaps and Ctrl+I work by keyboard and
+      # never inside a text field; nothing persists.
+      - name: Flame flip
+        run: node scripts/check-flame-flip.js --base http://127.0.0.1:3422 --channel chrome
 
       - name: Summarize
         if: always()
@@ -933,6 +1000,12 @@ jobs:
       # longest last, so the last line names the route, width, theme and step
       # that hung. The step shell runs `bash -e`, so the exit code is captured
       # with `|| rc=$?`.
+      #
+      # That trace showed every hang was one page's walk or reveal, the other
+      # pages long done, so the script now limits each page operation to 40 s
+      # and runs a stuck page once more in a fresh context; a second timeout
+      # fails the gate as TIMEOUT, naming the page and the step. The 960 s
+      # bound and its retry stay as the outer net.
       - name: Dock clearance
         shell: bash
         run: |

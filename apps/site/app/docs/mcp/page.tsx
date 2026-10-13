@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { RouteLink } from '../../lib/route-link';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
@@ -7,6 +7,8 @@ import { AgentActions } from '../../lib/agent-actions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT, ENGINE_MANUAL_CHECK_COUNT, ENGINE_VERSION } from '../../lib/check-definitions';
 import { openIndex } from '../../lib/open-index';
+import { LEADERBOARD_ENGINE_VERSION } from '../../leaderboard/seed';
+import selfReportRaw from '../self-report.json';
 import '../docs.css';
 
 export const metadata: Metadata = pageMeta({
@@ -21,6 +23,15 @@ export const metadata: Metadata = pageMeta({
 });
 
 const ENDPOINT = 'https://www.designesy.org/api/mcp';
+
+// The contract-score card reads designesy.org's own reading from
+// self-report.json, which the weekly re-score writes from the live engine
+// (scripts/rescore-leaderboard.mjs), in the same run that records the engine
+// version in seed.ts. It used to print every scored check as PASS, derived
+// from the registry, while the engine returned 40 PASS and 1 WARN.
+type ScoreReading = { score: number; grade: string; pass: number; warn: number; fail: number; skip?: number; checks: number | null };
+const SELF = (selfReportRaw as { generatedAt: string; engines: { score: ScoreReading } } | null) ?? null;
+const SELF_SCORE = SELF?.engines.score ?? null;
 
 const TOOLS = [
   {
@@ -103,7 +114,7 @@ const TOOLS = [
   {
     name: 'designesy_drift_score',
     kind: 'Executable',
-    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks detect the four documented 2026 drift failure modes: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
+    desc: 'Score a live URL for AI-generated UI drift. Its 12 checks look for four drift patterns the drift contract names: token fabrication (var() references with no fallback to custom properties declared nowhere: not in a stylesheet, a <style> block or a style attribute), within-session drift (spacing/color/radius value variance), between-session amnesia (inconsistent font stacks, shadows, transitions), and silent breaking changes (z-index chaos, alias chains that end in an undeclared property). Fetches the URL, extracts all CSS, parses custom property declarations and var() references.',
     args: 'url?: string (defaults to designesy.org)',
     source: '/api/drift',
   },
@@ -131,7 +142,7 @@ const TOOLS = [
   {
     name: 'designesy_compare',
     kind: 'Executable',
-    desc: 'Diff two design systems from live URLs, using the only URL-scoped design-token diff engine. Fetches both URLs in parallel, extracts their :root custom properties, and produces a structured diff across 8 dimensions: tokens added, removed, renamed (Levenshtein ≤ 2), value-changed, scale-stop-changed, contrast-drift-per-pair (WCAG ratio), structure-delta (token count + category distribution), and score-delta (runs /score on both URLs). Use this to answer "what actually changed between two design systems" or "how does our design system differ from a reference".',
+    desc: 'Diff two design systems from live URLs, token by token. Fetches both URLs in parallel, extracts their :root custom properties, and produces a structured diff across 8 dimensions: tokens added, removed, renamed (Levenshtein ≤ 2), value-changed, scale-stop-changed, contrast-drift-per-pair (WCAG ratio), structure-delta (token count + category distribution), and score-delta (runs /score on both URLs). Use this to answer "what actually changed between two design systems" or "how does our design system differ from a reference".',
     args: 'urlA: string (first URL), urlB: string (second URL)',
     source: '/api/compare',
   },
@@ -147,7 +158,7 @@ const TOOLS = [
 const CLIENT_CONFIGS = [
   {
     client: 'Claude Code (CLI)',
-    file: '~/.claude.json or ~/.claude/settings.json',
+    file: '.mcp.json (project root, shared)\n~/.claude.json (your own; claude mcp add writes here for this project, add --scope user for every project)',
     config: `{
   "mcpServers": {
     "designesy": {
@@ -156,7 +167,7 @@ const CLIENT_CONFIGS = [
     }
   }
 }`,
-    note: 'Claude Code (the CLI agent) supports Streamable HTTP natively via type: "http". This is separate from Claude Desktop (below).',
+    note: 'Claude Code (the CLI agent) supports Streamable HTTP natively via type: "http". Or skip the JSON: claude mcp add --transport http designesy ' + ENDPOINT + '. This is separate from Claude Desktop (below).',
   },
   {
     client: 'Cursor',
@@ -259,7 +270,7 @@ export default function McpDocsPage() {
           <div className="definition">
             <p className="definition-label">Registry</p>
             <p>
-              <code>io.github.LE-VAI/designesy-org</code> v1.3.1 on{' '}
+              <code>io.github.LE-VAI/designesy-org</code> on{' '}
               <code>registry.modelcontextprotocol.io</code>
             </p>
           </div>
@@ -290,12 +301,12 @@ export default function McpDocsPage() {
               </p>
             </div>
             <a
-              href="https://registry.modelcontextprotocol.io/v0.1/servers/io.github.LE-VAI%2Fdesignesy-org/versions/1.3.1"
+              href="https://registry.modelcontextprotocol.io/v0.1/servers/io.github.LE-VAI%2Fdesignesy-org/versions/latest"
               rel="noopener noreferrer"
               className="mono-link"
               style={{
                 whiteSpace: 'nowrap',
-                fontSize: '0.875rem',
+                fontSize: '0.8rem',
                 // 44px target. This class carries no CSS rule of its own, so the
                 // link defaulted to display:block and measured 144x22px -- a real
                 // target with no vertical area.
@@ -321,7 +332,7 @@ export default function McpDocsPage() {
               </p>
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',
@@ -329,8 +340,19 @@ export default function McpDocsPage() {
               >
                 0 violations
               </p>
+              {/* Re-measured 2026-10-11 on a production build: axe-core 4.12.1
+                  (the site's pinned devDependency) with the wcag2a, wcag2aa,
+                  wcag21a, wcag21aa and wcag22aa tags, on every sitemap page
+                  that stays on designesy.org (70), in the light and dark
+                  themes: 140 scans, 0 violations. The line used to name
+                  axe-core 4.13.0 "pinned to current npm latest", verified
+                  2026-08-30; the repo pins 4.12.1 and npm's latest is 4.14.0.
+                  Automated rules cover part of WCAG, not all of it. axe has
+                  no wcag22a tag (4.12.1 to 4.14.0): its only WCAG 2.2 rule,
+                  target-size, is tagged wcag22aa, so the line names 2.2 at
+                  AA only. */}
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                axe-core 4.13.0 · wcag22aa · pinned to current npm latest (verified 2026-08-30 via registry check)
+                axe-core 4.12.1, automated rules for WCAG 2.0 and 2.1 at A and AA, and 2.2 at AA · 70 pages, light and dark · measured 2026-10-11
               </p>
             </div>
             <div className="surface-card mcp-card">
@@ -339,39 +361,39 @@ export default function McpDocsPage() {
               </p>
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',
                 }}
               >
-                90% A
+                100 A
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                /export/dtcg · 9/10 checks pass · 1 WARN (custom types non-standard, namespaced designesy.* per t07) · verified 2026-08-30
+                /export/dtcg · 9 of 10 checks pass, 1 does not apply (t07: no custom types) · designesy_tokens_score, 2026-10-11
               </p>
             </div>
             <div className="surface-card mcp-card">
               <p className="definition-label" style={{ marginBottom: '0.5rem' }}>
                 Contract score
               </p>
-              {/* designesy.org scored by engine 1.2.0 on 2026-10-09: every
-                  scored check passes, the browser-only checks read MANUAL, no
-                  slop is deducted, and the originality lift is clamped at 100.
-                  The counts are read from the registry so they always sum to
-                  the engine's total. */}
+              {/* designesy.org as the engine last scored it: read from
+                  self-report.json (see SELF above). The browser-only checks are
+                  the engine's total less the checks it ran. */}
               <p
                 style={{
-                  fontSize: '1.5rem',
+                  fontSize: '1.563rem',
                   fontWeight: 600,
                   margin: 0,
                   color: 'var(--ink)',
                 }}
               >
-                100% A
+                {SELF_SCORE ? `${SELF_SCORE.score} ${SELF_SCORE.grade}` : 'See the live score'}
               </p>
               <p className="surface-note" style={{ marginTop: '0.25rem', marginBottom: 0 }}>
-                {ENGINE_CHECK_COUNT}-check engine {ENGINE_VERSION} · {ENGINE_SCORED_CHECK_COUNT} PASS / 0 FAIL / 0 WARN / 0 SKIP / {ENGINE_MANUAL_CHECK_COUNT} MANUAL
+                {SELF && SELF_SCORE
+                  ? `${ENGINE_CHECK_COUNT}-check engine ${LEADERBOARD_ENGINE_VERSION} · ${SELF_SCORE.pass} PASS / ${SELF_SCORE.fail} FAIL / ${SELF_SCORE.warn} WARN / ${SELF_SCORE.skip ?? 0} SKIP / ${ENGINE_CHECK_COUNT - (SELF_SCORE.checks ?? ENGINE_SCORED_CHECK_COUNT)} MANUAL · scored ${SELF.generatedAt}`
+                  : `${ENGINE_CHECK_COUNT}-check engine ${ENGINE_VERSION} · ${ENGINE_SCORED_CHECK_COUNT} automated, ${ENGINE_MANUAL_CHECK_COUNT} manual`}
               </p>
             </div>
           </div>
@@ -476,8 +498,11 @@ export default function McpDocsPage() {
             <p>
               5-minute in-memory cache on read-only tools. Vercel Fluid
               Compute reuses warm instances, so cache hits are common. The
-              executable tool (designesy_score) is never cached; every score
-              request hits the live engine.
+              tools that score a URL (designesy_score, drift, readiness,
+              guardrails, monitor, compare and report) call the site&apos;s own
+              engines, which cache each result for 24 hours per URL. A
+              designesy_score receipt carries retrieved_at, the time the page
+              was read.
             </p>
           </div>
           <div className="definition">
@@ -491,9 +516,9 @@ export default function McpDocsPage() {
           <p className="surface-note">
             The seven read-only tools fetch the same public machine exports
             that any HTTP client can fetch directly. The MCP server adds
-            structured tool schemas, Zod validation, and a single
-            authenticated endpoint, useful for agents that prefer the MCP
-            protocol over raw HTTP.
+            structured tool schemas, Zod validation, and a single public
+            endpoint with no key or sign-in, useful for agents that prefer the
+            MCP protocol over raw HTTP.
           </p>
         </section>
 
@@ -505,11 +530,14 @@ export default function McpDocsPage() {
           <pre className="mcp-pre">
             <code data-scroll-region="curl test command">{`curl -X POST ${ENDPOINT} \\
   -H "Content-Type: application/json" \\
+  -H "Accept: application/json, text/event-stream" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</code>
           </pre>
           <p className="surface-note" style={{ marginTop: '1rem' }}>
-            The response is a JSON-RPC 2.0 message listing all seventeen tools
-            with their schemas.
+            The response is one server-sent event carrying a JSON-RPC 2.0
+            result that lists all seventeen tools with their schemas. The
+            Accept header must name both types; without it the endpoint answers
+            HTTP 406.
           </p>
         </section>
 
@@ -520,7 +548,7 @@ export default function McpDocsPage() {
           <div className="row-stack" role="list">
             {RELATED.map((item, i) => (
               <div role="listitem" key={item.href}>
-                <Link
+                <RouteLink
                   href={item.href}
                   className="row"
                   data-cuelume-hover="bloom"
@@ -535,7 +563,7 @@ export default function McpDocsPage() {
                     <span className="row-side-line">{item.href}</span>
                     <span className="row-side-arrow" aria-hidden="true" />
                   </span>
-                </Link>
+                </RouteLink>
               </div>
             ))}
           </div>

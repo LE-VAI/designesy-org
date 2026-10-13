@@ -116,6 +116,7 @@ const MARKDOWN_ROUTES = [
   'm3-bridge',
   'open/handoff',
   'privacy',
+  'brand',
   'review/acoustics',
   'review/cadence',
   'review/designesy-org',

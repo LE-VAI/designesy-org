@@ -195,7 +195,7 @@ const CHECKS: CheckDef[] = [
     id: 'v24',
     item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)',
     category: 'accessibility',
-    how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. This is the WCAG 2.2 Target Size Minimum (AA). Full verification needs a browser to measure rendered dimensions.',
+    how: 'Searches CSS for min-height or min-width ≥ 44px on button/a/input/select selectors. PASS if found. 44px is WCAG 2.2 SC 2.5.5 Target Size (Enhanced), level AAA; the AA minimum, SC 2.5.8, is 24px, and the contract holds the stricter bar. Full verification needs a browser to measure rendered dimensions.',
   },
   {
     id: 'v25',
@@ -329,7 +329,7 @@ const CHECKS: CheckDef[] = [
     id: 'v36',
     item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers',
     category: 'security',
-    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
+    how: 'Scans token names, CSS class/id selectors, and url() refs for non-ASCII confusable characters (Cyrillic, Greek, fullwidth) using a Unicode confusable detector. PASS when 0 confusables. FAIL when token-name confusables found (shadowing risk, e.g. --соlor-bg with Cyrillic с vs --color-bg). WARN for class/id/url confusables. Provenance: Unicode Technical Standard #39, Unicode 16.0.0.',
   },
 
   // ── Spec (4%) — v0.4.0 ──
@@ -419,7 +419,7 @@ const CATEGORY_NOTES: Record<string, string> = {
 };
 
 const BAND_NOTES: Record<string, string> = {
-  A: 'Ships the contract’s primitives and passes nearly every check the engine can run.',
+  A: 'Ships the contract’s primitives and passes nearly every check the engine can run, with none failing.',
   B: 'A solid foundation, with a few checks missing or warned.',
   C: 'Clear gaps in cadence, motion or accessibility. The accessibility floor caps a site here.',
   D: 'Gaps across several categories.',
@@ -453,8 +453,9 @@ const FORMULA: string[] = [
   '# Step 4: accessibility floor',
   'if (a11yPct < 60) score = min( score, 70 )',
   '',
-  '# Step 5: hard-fail ceilings',
-  'if (v06 FAIL) score = min( score, 65 )              # contrast',
+  '# Step 5: hard-fail ceilings, after the lift (it never carries a score past one)',
+  'if (any check FAILs) score = min( score, 89.9 )     # no A beside a FAIL',
+  'if (v06 | v44 FAIL) score = min( score, 65 )        # contrast, status text',
   'if (v22 | v02 | v16 FAIL) score = min( score, 70 )  # CTA contrast, overflow, rem',
   'if (v24 | v25 FAIL) score = min( score, 75 )        # touch targets, headings',
   '',
@@ -467,7 +468,7 @@ const STEPS = [
   { title: 'Subtract slop', text: 'Twelve anti-slop rules take up to 20 points off for recognisable template patterns.' },
   { title: 'Add originality', text: 'Seven kinds of craft add up to 8 points, halved when the slop is heavy.' },
   { title: 'Apply the floor', text: 'Accessibility under 60 caps the score at 70, a C.' },
-  { title: 'Apply the ceilings', text: 'Six severe failures cap the score at 65, 70 or 75.' },
+  { title: 'Apply the ceilings', text: 'Any failing check caps the score at 89.9, a B. Seven severe failures cap it at 65, 70 or 75.' },
 ];
 
 // Validation reports (scripts/*.json), with their own dates.
@@ -481,6 +482,22 @@ const UNIFORM = KNOBS.filter((k) => /^w[+-]/.test(k.key));
 const OAT = KNOBS.filter((k) => k.key.startsWith('oat-'));
 const OAT_MAX_FLIPS = Math.max(...OAT.map((k) => k.gradeChanges));
 const OAT_MAX_DELTA = Math.max(...OAT.map((k) => k.maxScoreDelta));
+// The method's judgment calls, ranked by the most grades any of their knobs
+// moves in this report. Read from the data, because the order changes between
+// runs: on 2026-09-28 slop came second; on 2026-10-12 originality and the bands
+// both moved more grades than slop did.
+const JUDGMENT_CALLS = ([
+  ['the WARN credit', ['warn-0.25', 'warn-0.75']],
+  ['the originality lift', ['orig+5']],
+  ['the slop deduction', ['slop+5']],
+  ['the grade bands', ['bands-tight', 'bands-loose']],
+  ['the accessibility floor', ['a11y-50', 'a11y-70']],
+  ['the ceilings', ['nocaps', 'no-anyfail']],
+] as const)
+  .map(([name, keys]) => ({ name, flips: Math.max(0, ...keys.map((k) => knob(k)?.gradeChanges ?? 0)) }))
+  .filter((c) => c.flips > 0)
+  .sort((a, b) => b.flips - a.flips);
+const [TOP_CALL, ...NEXT_CALLS] = JUDGMENT_CALLS;
 
 type RankRow = { url: string; baselineRank: number; bestRank: number; worstRank: number; bandWidth: number };
 const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineRank - b.baselineRank);
@@ -532,7 +549,9 @@ const ORIGINALITY = [
 ];
 
 const CEILINGS = [
+  { id: 'any', name: 'Any failing check', cap: 89.9, why: 'A check the page fails cannot stand beside an A, so the grade is a B at most (engine 1.3.0).' },
   { id: 'v06', name: 'Contrast readable', cap: 65, why: 'Text many readers cannot read: a failure of basic legibility.' },
+  { id: 'v44', name: 'Status text contrast', cap: 65, why: 'The words that report errors, warnings and success fall below WCAG contrast (engine 1.3.0).' },
   { id: 'v22', name: 'CTA contrast', cap: 70, why: 'The primary call to action is hard to read.' },
   { id: 'v02', name: 'Horizontal overflow', cap: 70, why: 'Content is cut off or scrolls sideways on small viewports.' },
   { id: 'v16', name: 'Rem scale', cap: 70, why: 'A root font size under 16px sets off iOS Safari’s auto-zoom.' },
@@ -738,7 +757,8 @@ export default function MethodologyPage() {
                   Grade bands
                 </h2>
                 <p className="dx-lead">
-                  The letter is a threshold on the number: F under 60, then a grade every ten points. An A needs 90.
+                  The letter is a threshold on the number: F under 60, then a grade every ten points. An A needs 90 and no failing
+                  check: any FAIL caps the score at 89.9.
                 </p>
                 <div className="dx-scale" aria-hidden="true">
                   <GradeScale />
@@ -747,7 +767,7 @@ export default function MethodologyPage() {
                   {[...GRADES].map((g) => (
                     <div key={g}>
                       <dt>
-                        <span className="dx-grade" data-tone={g === 'A' || g === 'B' ? 'pass' : g === 'F' ? 'fail' : 'warn'}>
+                        <span className="dx-grade" data-grade={g.toLowerCase()}>
                           {g}
                         </span>
                         <span className="dx-band-range">{BAND_RANGE[g]}</span>
@@ -778,12 +798,12 @@ export default function MethodologyPage() {
                       caption={`Composite score of every leaderboard site, weekly run of ${SCORES_DATE}.`}
                       head={['Site', 'Rank', 'Grade', 'Score']}
                       numeric={[1, 3]}
-                      rows={COHORT.map((s) => [s.name, s.rank, s.grade, fmt(s.score)])}
+                      rows={COHORT.map((s) => [s.name, s.rank ?? 'not ranked', s.grade, fmt(s.score)])}
                     />
                   }
                 >
                   <CohortStrip
-                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable }))}
+                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable, heldLabel: s.staleLabel }))}
                     median={COHORT_STATS.median}
                     label={`Composite scores of ${COHORT_STATS.count} sites from 40 to 100: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}; median ${fmt(COHORT_STATS.median)}.`}
                     idle={<span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>}
@@ -879,12 +899,14 @@ export default function MethodologyPage() {
                   Hard-fail ceilings
                 </h2>
                 <p className="dx-lead">
-                  Some failures cap the score whatever else is strong: a site that fails on contrast or overflows its viewport cannot
-                  be an A. These are failures of integrity, and they apply after the accessibility floor.
+                  A page with a failing check is never an A: any FAIL caps the score at 89.9, a B. Some failures cap it lower,
+                  whatever else is strong: a site that fails on contrast or overflows its viewport is held to a C or a D. Every cap
+                  applies after the originality lift and the accessibility floor, so the lift can carry a score up to a cap but
+                  never past it.
                 </p>
                 <div className="dx-table-box">
                   <DataTable
-                    caption="The six hard-fail ceilings: the failing check, the cap, and why."
+                    caption="The hard-fail ceilings: the failing check, the cap, and why."
                     head={['Check', 'Cap', 'Why']}
                     numeric={[1]}
                     rows={CEILINGS.map((c) => [
@@ -965,7 +987,7 @@ export default function MethodologyPage() {
                   <summary>
                     <span className="dx-study-title">Sensitivity</span>
                     <span className="dx-study-line">
-                      {KNOBS.length} perturbations; the WARN credit moves the most grades ({knob('warn-0.75')?.gradeChanges} of{' '}
+                      {KNOBS.length} perturbations; {TOP_CALL?.name} moves the most grades ({TOP_CALL?.flips} of{' '}
                       {SENSITIVITY.sites})
                     </span>
                   </summary>
@@ -979,8 +1001,8 @@ export default function MethodologyPage() {
                       <p>
                         <strong>Uniform weight changes do nothing.</strong> Scaling every weight by 10 or 20 per cent in either
                         direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} and no rank:
-                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> the WARN credit,
-                        then slop and originality. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
+                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> {TOP_CALL?.name}{' '}
+                        ({TOP_CALL?.flips} grades), then {NEXT_CALLS.slice(0, 2).map((c) => `${c.name} (${c.flips})`).join(' and ')}. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
                         and {fmt(OAT_MAX_DELTA)} points.
                       </p>
                     </div>
@@ -1201,22 +1223,26 @@ export default function MethodologyPage() {
                 <dl className="dx-defs">
                   <div>
                     <dt>
-                      <Link href="/api/leaderboard">/api/leaderboard</Link>
+                      <a href="/api/leaderboard">/api/leaderboard</a>
                     </dt>
-                    <dd>JSON with each site&apos;s category scores. CORS-enabled.</dd>
+                    <dd>
+                      JSON with each site&apos;s category scores, its status (current and ranked, or stale: last scored on an
+                      earlier run because the latest could not re-score it), its relationship to Designesy (operator or
+                      competitor) with a disclosure, and the address for disputes. CORS-enabled.
+                    </dd>
                   </div>
                   <div>
                     <dt>
-                      <Link href="/api/leaderboard.csv">/api/leaderboard.csv</Link>
+                      <a href="/api/leaderboard.csv">/api/leaderboard.csv</a>
                     </dt>
-                    <dd>RFC 4180 CSV with a header row, for spreadsheets.</dd>
+                    <dd>RFC 4180 CSV with a header row, for spreadsheets. The same status, relationship and disclosure columns.</dd>
                   </div>
                 </dl>
                 <p className="dx-src">
                   Contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · {ENGINE_CHECK_COUNT} checks in{' '}
-                  {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · 6 hard-fail
-                  ceilings · engine at <Link href="/api/score">/api/score</Link> · contract at{' '}
-                  <Link href="/contracts/design-system.json">/contracts/design-system.json</Link>
+                  {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · {CEILINGS.length} hard-fail
+                  ceilings · engine at <a href="/api/score">/api/score</a> · contract at{' '}
+                  <a href="/contracts/design-system.json">/contracts/design-system.json</a>
                 </p>
               </section>
             </div>

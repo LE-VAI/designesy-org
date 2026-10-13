@@ -218,12 +218,16 @@ export function MonitorForm({
         ]}
         onSubmit={() => start(url)}
         busy={phase === 'running'}
-        go="Run the watch"
-        goBusy="Watching"
+        go="Run a check"
+        goBusy="Checking"
         note="History stays in this browser. The email is used for drift alerts and nothing else."
       />
+      {/* One pattern for every instrument run (brand ledger D74): Azure while
+          the watch runs, the flame (the D51/D54 ignition) when its result
+          lands. */}
       <Instrument
         name="Drift monitor"
+        ignite
         registry={registry}
         face="tiles"
         phase={phase}
@@ -243,7 +247,7 @@ export function MonitorForm({
         }
         error={
           <>
-            <p><b>{host || 'This URL'}</b> could not be watched.</p>
+            <p><b>{host || 'This URL'}</b> could not be checked.</p>
             <p>{error}</p>
           </>
         }
@@ -252,7 +256,7 @@ export function MonitorForm({
         restNote="Run a URL and each governance check lights. The first run sets the baseline; later runs compare against it."
         restCard={
           <div className="eg-ref">
-            <span className="eg-label">{watches.length ? 'Watched from this browser' : 'How a watch works'}</span>
+            <span className="eg-label">{watches.length ? 'Run from this browser' : 'How a run works'}</span>
             {watches.length ? (
               <ul className="eg-watches">
                 {watches.map((w) => (

@@ -151,8 +151,8 @@ export default function PauseCaseStudyPage() {
           <p className="surface-note">
             If your site has a pause control or a reduced-motion rule that pauses animations, turn
             it on and reload a page that fades in. If the content does not appear, the same rule is
-            holding it on its first frame. We plan to add this check to the score engine in its
-            next version, so a score will report it for any URL.
+            holding it on its first frame. The score engine now runs this check as v45 (engine
+            1.2.0), so a score reports it for any URL.
           </p>
           <div className="row-stack" role="list">
             <div role="listitem">

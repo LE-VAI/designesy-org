@@ -106,6 +106,8 @@ function main() {
     'check-lcp-entrance.js',
     'qa-keyboard.js',
     'check-status-messages.js',
+    'check-ignition.js',
+    'check-flame-flip.js',
     'check-a11y-modes.js',
     'check-results-readout.js',
     'a11y-sweep.js',

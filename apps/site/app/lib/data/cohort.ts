@@ -9,7 +9,17 @@
 // from one batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both
 // says both.
 
-import { SEED, LEADERBOARD_LAST_SCORED, LEADERBOARD_ENGINE_VERSION, type Grade, type SeedSite, type CategoryBreakdown } from '../../leaderboard/seed';
+import {
+  SEED,
+  LEADERBOARD_LAST_SCORED,
+  LEADERBOARD_ENGINE_VERSION,
+  LEADERBOARD_VERSION,
+  staleLabel,
+  type Grade,
+  type SeedSite,
+  type CategoryBreakdown,
+  type Relationship,
+} from '../../leaderboard/seed';
 import { BATCH_CATEGORY_SCORES, BATCH_RUN_DATE } from '../../leaderboard/batch-data';
 import { CATEGORY_WEIGHTS } from '../check-definitions';
 
@@ -17,6 +27,9 @@ export { BATCH_RUN_DATE };
 export const SCORES_DATE = LEADERBOARD_LAST_SCORED;
 /** The engine version that produced the scores dated SCORES_DATE (not the repo's current engine). */
 export const SCORES_ENGINE_VERSION = LEADERBOARD_ENGINE_VERSION;
+/** The contract version those scores were measured against, in display form
+    (not the registry's current CONTRACT_VERSION, which can move between runs). */
+export const SCORES_CONTRACT_VERSION = `v${LEADERBOARD_VERSION}`;
 export const SELF_URL = 'https://www.designesy.org';
 
 export type CohortSite = {
@@ -26,7 +39,8 @@ export type CohortSite = {
   name: string;
   score: number;
   grade: Grade;
-  rank: number;
+  /** Rank among the sites measured on the latest run; null for a stale site. */
+  rank: number | null;
   tier: number;
   category: string;
   prevScore: number | null;
@@ -38,11 +52,23 @@ export type CohortSite = {
   self: boolean;
   /** The engine could not read the site on the last run; the score is held over. */
   unreachable: boolean;
+  /** Not re-scored on the latest run: shown with its last score, never ranked. */
+  stale: boolean;
+  /** "last scored <date> · could not re-score", or null for a current site. */
+  staleLabel: string | null;
   scoredAt: string | null;
   categories: Record<string, CategoryBreakdown> | null;
   seededBecause: string;
   coi: string | null;
   liveScoreUrl: string | null;
+  /** 'operator' (Designesy runs it), 'competitor' (a competing product), or null. */
+  relationship: Relationship | null;
+};
+
+/** The words on a labelled entry, wherever it is listed. */
+export const RELATIONSHIP_LABEL: Record<Relationship, string> = {
+  operator: 'operated by Designesy',
+  competitor: 'competing product',
 };
 
 export function hostOf(url: string): string {
@@ -72,7 +98,7 @@ function toSite(s: SeedSite): CohortSite {
     name: s.name,
     score: s.score as number,
     grade: s.grade as Grade,
-    rank: s.rank as number,
+    rank: s.rank,
     tier: s.tier,
     category: s.category,
     prevScore: s.prevScore,
@@ -83,18 +109,32 @@ function toSite(s: SeedSite): CohortSite {
     tokens: s.tokens,
     self: s.url === SELF_URL,
     unreachable: !!s.unreachable,
+    stale: s.status === 'stale',
+    staleLabel: s.status === 'stale' ? staleLabel(s.scoredAt) : null,
     scoredAt: s.scoredAt ?? null,
     categories: BATCH_CATEGORY_SCORES[s.url] ?? null,
     seededBecause: s.seededBecause,
     coi: s.coiDisclosure ?? null,
     liveScoreUrl: s.liveScoreUrl ?? null,
+    relationship: s.relationship ?? null,
   };
 }
 
-/** Scored sites, in rank order. */
-export const COHORT: CohortSite[] = SEED.filter((s) => s.score !== null && s.grade !== null && s.rank !== null)
+/** Scored sites: the ranked ones in rank order, then the stale ones (a last
+    score the latest run could not renew), highest first. */
+export const COHORT: CohortSite[] = SEED.filter((s) => s.score !== null && s.grade !== null)
   .map(toSite)
-  .sort((a, b) => a.rank - b.rank);
+  .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || b.score - a.score);
+
+/** The ranking: sites measured on the latest run. */
+export const RANKED: CohortSite[] = COHORT.filter((s) => s.rank !== null);
+/** Sites the latest run could not re-score, shown apart from the ranking. */
+export const STALE: CohortSite[] = COHORT.filter((s) => s.stale);
+
+/** "rank 4 of 27", or the stale label for a site outside the ranking. */
+export function rankText(s: CohortSite): string {
+  return s.rank !== null ? `rank ${s.rank} of ${RANKED.length}` : (s.staleLabel ?? 'not ranked');
+}
 
 /** Seed entries with no score yet (none today; the page says so when there are). */
 export const UNSCORED = SEED.filter((s) => s.score === null);
@@ -124,6 +164,7 @@ export const COHORT_STATS = {
   min: Math.min(...scores),
   max: Math.max(...scores),
   heldOver: COHORT.filter((s) => s.unreachable).length,
+  ranked: RANKED.length,
 };
 
 export const GRADES: Grade[] = ['A', 'B', 'C', 'D', 'F'];
@@ -141,8 +182,10 @@ export const GRADE_BANDS: { grade: Grade; min: number; max: number }[] = [
   { grade: 'A', min: 90, max: 100 },
 ];
 
-/** A and B pass, C and D warn, F fails: the band a grade is drawn in, shared
-    with the engine instruments (lib/engine/types bandOf). */
+/** A and B pass, C and D warn, F fails: the three-tier band of a grade, for
+    category bars on the grade thresholds (D48). A grade itself is never drawn
+    in a band: chips, dots, zones and grade bars take data-grade and the grade
+    palette (brand ledger D56). */
 export function toneOf(grade: string): 'pass' | 'warn' | 'fail' {
   return grade === 'A' || grade === 'B' ? 'pass' : grade === 'C' || grade === 'D' ? 'warn' : 'fail';
 }
@@ -193,6 +236,20 @@ export function categoryStats(key: string): { mean: number | null; scored: numbe
     failing: cats.filter((c) => c.fail > 0).length,
   };
 }
+
+/** "designesy.org (scored by its own engine), X and GitHub Primer": the sites
+    at one grade, named as the leaderboard names them. */
+export function namesAt(grade: Grade): string {
+  const names = COHORT.filter((s) => s.grade === grade).map((s) =>
+    s.self ? `${s.host} (scored by its own engine)` : s.name,
+  );
+  return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** The grade (or grades, on a tie) holding the most sites. */
+export const WIDEST_GRADES: Grade[] = GRADES.filter(
+  (g) => GRADE_COUNTS[g] === Math.max(...GRADES.map((x) => GRADE_COUNTS[x])),
+);
 
 export function bySlug(slug: string): CohortSite | undefined {
   return COHORT.find((s) => s.slug === slug);

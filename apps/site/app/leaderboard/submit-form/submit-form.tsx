@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { EngineBar, Well } from '../../lib/engine/command-bar';
+import { SITE_CONTACT_EMAIL } from '../../lib/site-meta';
 
 type SubmitResult = {
   ok: boolean;
@@ -64,7 +65,7 @@ export function SubmitForm() {
             </div>
           </details>
         }
-        note="Scored on submit. Reviewed for the seed list at the next weekly run."
+        note={`Scored on submit, then discarded. To propose a site for the leaderboard, email ${SITE_CONTACT_EMAIL}.`}
       />
 
       {result && (

@@ -46,7 +46,7 @@
 .learn-compare-card .learn-compare-key {
   display: block;
   margin-bottom: var(--space-4);
-  font: 600 0.75rem/1rem var(--sans);
+  font: 600 var(--text-label)/1rem var(--sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);

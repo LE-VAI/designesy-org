@@ -261,28 +261,46 @@ const BROWSER_HEADERS: Record<string, string> = {
   'Upgrade-Insecure-Requests': '1',
 };
 
-function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000): Promise<{ ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string }> {
+/** Redirects httpsFetch follows before it gives up (engine 1.3.1). */
+const MAX_REDIRECT_HOPS = 3;
+
+type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string };
+
+/**
+ * GET a URL, following each 3xx with a Location by hand. Every redirect target
+ * is re-validated with isValidUrl first (the SSRF guard), and at most
+ * MAX_REDIRECT_HOPS redirects are followed. Until engine 1.3.1 the comment said
+ * "Follow up to 3 redirects" but nothing counted them, so a redirect loop
+ * recursed until the process gave out. A redirect past the limit fails closed,
+ * the same way a refused target does. A response reached through at least one
+ * redirect reports redirected: true and the final hop's URL as finalUrl; before
+ * 1.3.1 redirected was true only when the LAST response was itself a 3xx, so a
+ * followed redirect read redirected: false. `hop` counts the redirects already
+ * followed; callers leave it at 0.
+ */
+function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
     let resolved = false;
-    const done = (r: { ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string }) => {
+    const done = (r: HttpsFetchOutcome) => {
       if (resolved) return;
       resolved = true;
       resolve(r);
     };
     try {
       const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
-        // Follow one redirect manually (3xx → Location)
+        // Follow a redirect manually (3xx → Location)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           try {
             const next = new URL(res.headers.location, url).href;
             res.resume();
-            // SSRF guard: re-validate every redirect target before following it
-            if (!isValidUrl(next)) {
+            // SSRF guard: re-validate every redirect target before following
+            // it. Hop limit: a chain longer than MAX_REDIRECT_HOPS (a loop
+            // among them) fails closed the same way.
+            if (!isValidUrl(next) || hop >= MAX_REDIRECT_HOPS) {
               done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
               return;
             }
-            // Follow up to 3 redirects
-            httpsFetch(next, headers, timeoutMs).then(done);
+            httpsFetch(next, headers, timeoutMs, hop + 1).then(done);
             return;
           } catch { /* fall through */ }
         }
@@ -290,7 +308,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
         res.setEncoding('utf-8');
         res.on('data', (chunk: string) => { body += chunk; });
         res.on('end', () => {
-          done({ ok: (res.statusCode || 0) < 400, status: res.statusCode || 0, text: body, redirected: res.statusCode !== undefined && res.statusCode >= 300 && res.statusCode < 400, finalUrl: url });
+          done({ ok: (res.statusCode || 0) < 400, status: res.statusCode || 0, text: body, redirected: hop > 0, finalUrl: url });
         });
         res.on('error', () => done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url }));
       });
@@ -369,7 +387,9 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 function extractRootTokens(css: string): Record<string, string> {
   const stripped = css.replace(/@media[^{]*\{[^@]*?\}\s*\}/gi, '');
   const tokens: Record<string, string> = {};
-  const rootRe = /:root\s*\{([^}]*)\}/g;
+  // `:root, :host { ... }` is the block Tailwind v4 writes its theme into;
+  // until engine 1.3.0 only `:root {` was read, so those tokens were missed.
+  const rootRe = /:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g;
   let m;
   while ((m = rootRe.exec(stripped)) !== null) {
     const block = m[1];
@@ -418,19 +438,6 @@ function inferTokensFromCss(css: string, tokens: Record<string, string>): Record
 
 // ── Color utilities ──────────────────────────────────────────────────────────
 
-function hexToRgb(color: string): [number, number, number] | null {
-  color = color.trim();
-  if (!color.startsWith('#')) return null;
-  let hex = color.slice(1);
-  if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
-  if (hex.length !== 6) return null;
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
-  return [r, g, b];
-}
-
 function srgbChannelToLinear(c: number): number {
   const s = c / 255;
   return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
@@ -446,19 +453,28 @@ function contrastRatio(a: [number, number, number], b: [number, number, number])
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-function resolveColor(value: string, tokens: Record<string, string>): [number, number, number] | null {
-  const v = value.trim();
-  if (!v) return null;
-  if (v.startsWith('#')) return hexToRgb(v);
-  const varMatch = v.match(/^var\(\s*(--[\w-]+)/);
-  if (varMatch) {
-    const ref = tokens[varMatch[1]];
-    if (ref) return resolveColor(ref, tokens);
-    return null;
-  }
-  const rgbMatch = v.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (rgbMatch) return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
-  return null;
+/**
+ * A token value as the opaque sRGB colour v06 and v22 measure.
+ *
+ * Read through the CSS Color 4 parser v44 uses (resolveThemeColor): var()
+ * chains with fallbacks, hex of 3, 4, 6 or 8 digits, rgb() and hsl() in comma
+ * or space syntax, oklch(), oklab(), color(srgb), color-mix(), light-dark()
+ * (its light side: these two checks read one theme) and bare HSL channels.
+ * Until engine 1.3.0 they read only 3- and 6-digit hex and comma rgb(), with
+ * alpha ignored, so a stylesheet written in oklch() (Tailwind v4, shadcn)
+ * SKIPped both checks and a page with illegible text scored 100.
+ *
+ * A translucent colour is composited over `under` as a browser paints it;
+ * with nothing under it, it is not measured.
+ */
+function resolveTokenColor(value: string, tokens: Record<string, string>, under: [number, number, number] | null): [number, number, number] | null {
+  if (!value.trim()) return null;
+  const c = resolveThemeColor(value, [tokens], false);
+  if (!c) return null;
+  if (c[3] >= 1) return [c[0], c[1], c[2]];
+  if (!under) return null;
+  const painted = v44Composite(c, [under[0], under[1], under[2], 1]);
+  return [painted[0], painted[1], painted[2]];
 }
 
 // APCA-W3 0.0.98G-4g
@@ -522,7 +538,7 @@ const REMEDIATION: Record<string, string> = {
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
   v44: 'Give each status hue a text token for words and keep the hue itself for marks. A color that marks a state (a dot, a bar, a tint) needs 3:1, while the word for that state needs 4.5:1 (3:1 at 24px, or 18.66px bold) in every theme the site declares. Mix the hue toward your ink for text, for example --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)), measure it on the page and on each surface it sits on in every theme, and paint status words with it.',
   v45: 'Let every entrance that starts invisible run to its end when motion is paused. Under the pause rule, give one-shot entrances whose first keyframe is opacity 0 a negative delay longer than the animation, for example html[data-motion="paused"] :is(.fade-up, .reveal) { animation-delay: -3600s !important; }, or remove them with animation: none. Loops can stay held. Test by pausing motion and reloading: every page should still show its content.',
-  v34: 'EU AI Act Article 50(1) requires AI chatbots/agents to disclose their AI nature at the first interaction, accessible to people with disabilities (effective 2026-08-02). Fix options (any one): (1) add visible "AI Assistant" or "Chatbot" text in the chatbot UI header, (2) add aria-label="AI assistant" to the chatbot container, (3) add <meta name="generator" content="AI-powered"> to the page head, (4) add C2PA Content Credentials to AI-generated images, (5) add a persistent AI-disclosure badge in footer/header. US parallels: California AB 2659, Colorado AI Act (Feb 2026).',
+  v34: 'If the page hosts an AI chatbot or agent, tell people they are talking to an AI no later than their first interaction, in a form assistive technology announces. EU AI Act Article 50(1), which applies from 2026-08-02, places this duty on the provider of the AI system (the organisation that develops it and places it on the market or puts it into service under its own name); it does not apply where the AI nature is obvious from the context, and Article 50(5) asks for the information to be clear and accessible. The check reads any one of: visible "AI assistant" or "Chatbot" text, aria-label="AI assistant" on the chat container, or a data-ai-disclosure attribute on the widget. A live chat answered by people needs no AI disclosure: if the check flagged one for review, confirm who answers. US laws differ in scope: California\'s bot-disclosure law (SB 1001, Bus. & Prof. Code §§17940-17943) covers bots that mislead people about being bots to drive a sale or influence a vote; Colorado SB 24-205 was repealed and re-enacted by SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs automated decision-making in consequential decisions. This is not legal advice.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
   v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 44-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
@@ -566,9 +582,11 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
   // (designers choose the higher-contrast pairing).
   const actionVal = tokens['--action'];
   const onActionVal = tokens['--on-action'];
+  // The page under a translucent fill is --paper; a translucent label sits on the fill.
+  const pageRgb = resolveTokenColor(tokens['--paper'] || '', tokens, null);
   if (actionVal && onActionVal) {
-    const fillRgb = resolveColor(actionVal, tokens);
-    const labelRgb = resolveColor(onActionVal, tokens);
+    const fillRgb = resolveTokenColor(actionVal, tokens, pageRgb);
+    const labelRgb = fillRgb ? resolveTokenColor(onActionVal, tokens, fillRgb) : null;
     if (!fillRgb || !labelRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--action ${actionVal} or --on-action ${onActionVal} unresolvable to RGB` };
     const pairRatio = contrastRatio(labelRgb, fillRgb);
     const pairStr = `${pairRatio.toFixed(2)}:1`;
@@ -578,12 +596,12 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
   }
   const signalVal = tokens['--signal'];
   if (!signalVal) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'WARN', detail: '--signal accent token not declared' };
-  const signalRgb = resolveColor(signalVal, tokens);
+  const signalRgb = resolveTokenColor(signalVal, tokens, pageRgb);
   if (!signalRgb) return { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', status: 'SKIP', detail: `--signal value ${signalVal} unresolvable to RGB` };
 
   const candidates: Array<{ name: string; rgb: [number, number, number] | null }> = [
-    { name: '--paper', rgb: resolveColor(tokens['--paper'] || '', tokens) },
-    { name: '--ink', rgb: resolveColor(tokens['--ink'] || '', tokens) },
+    { name: '--paper', rgb: resolveTokenColor(tokens['--paper'] || '', tokens, signalRgb) },
+    { name: '--ink', rgb: resolveTokenColor(tokens['--ink'] || '', tokens, signalRgb) },
   ];
   let bestRatio = 0;
   let bestName = '';
@@ -603,19 +621,25 @@ function checkContrastSignal(tokens: Record<string, string>): CheckResult {
 // Computes both WCAG 2.1 ratio (the scoring standard) AND APCA Lc (the
 // WCAG 3 candidate, polarity-aware). APCA is supplementary — it does not
 // change pass/fail, but surfaces dark-mode contrast issues WCAG 2.1 misses.
+//
+// Where a stylesheet declares --muted-foreground, that is the muted text
+// measured: in the shadcn convention --muted is a surface and
+// --muted-foreground the text on it. Engine 1.3.0 reads oklch() (see
+// resolveTokenColor), so without this every default shadcn theme would
+// measure its --muted surface as text, at about 1.1:1, and FAIL.
 function checkContrastReadable(tokens: Record<string, string>): CheckResult {
   const paperVal = tokens['--paper'];
   if (!paperVal) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: '--paper not declared: cannot test contrast' };
-  const paperRgb = resolveColor(paperVal, tokens);
+  const paperRgb = resolveTokenColor(paperVal, tokens, null);
   if (!paperRgb) return { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper', category: 'accessibility', status: 'SKIP', detail: `--paper value ${paperVal} unresolvable to RGB` };
 
-  const textTokens = ['--ink', '--muted', '--muted-dim'];
+  const textTokens = ['--ink', tokens['--muted-foreground'] ? '--muted-foreground' : '--muted', '--muted-dim'];
   const results: string[] = [];
   let worst = { name: '', ratio: Infinity, status: 'PASS' as 'PASS' | 'WARN' | 'FAIL' };
   for (const name of textTokens) {
     const val = tokens[name];
     if (!val) { results.push(`${name}: not declared`); continue; }
-    const rgb = resolveColor(val, tokens);
+    const rgb = resolveTokenColor(val, tokens, paperRgb);
     if (!rgb) { results.push(`${name}: unresolvable`); continue; }
     const ratio = contrastRatio(rgb, paperRgb);
     const r = ratio.toFixed(2);
@@ -1084,7 +1108,13 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
     // the adjusted @font-face. Those are not additional typeface choices — they
     // are the same family's fallback metrics — so they must not count as
     // palette drift.
-    if (/\sfallback$/.test(stack)) continue;
+    //
+    // Engine 1.3.1: the WORD fallback anywhere in the name, not only as its
+    // last word. A hand-tuned face can carry a suffix after it: designesy.org's
+    // "Fraunces Fallback Tuned" is Times New Roman under size-adjust, drawn only
+    // before Fraunces loads, and `\sfallback$` counted it as a fourth family
+    // (v26 WARN, "4 families: fraunces fallback tuned, fraunces, ...").
+    if (/\bfallback\b/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -1092,6 +1122,55 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
   if (count <= 3) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'PASS', detail: `${count} family/families: ${list}` };
   if (count <= 5) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'WARN', detail: `${count} families (recommended ≤3): ${list}` };
   return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families, palette drift (recommended ≤3): ${list}` };
+}
+
+/**
+ * v27 helper (engine 1.3.1): does this rule's selector style a form field
+ * itself? True when the subject (the last compound) of any selector in the
+ * list is an input, textarea or select element, or carries the exact class
+ * .input or .field, and is not a pseudo-element (::placeholder does not set
+ * the size iOS Safari reads). ".field-card-meta", ".input-hint", "::selection",
+ * ".field label" and "user-select" are not fields.
+ */
+function isFieldSelector(selector: string): boolean {
+  const clean = selector.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  return splitCssTopLevel(clean, ',').some((part) => {
+    const compounds = part.trim().split(/\s*[>+~]\s*|\s+/);
+    const subject = compounds[compounds.length - 1] || '';
+    if (subject.indexOf('::') >= 0) return false;
+    return /(?:^|[^\w.#:-])(?:input|textarea|select)(?![\w-])/i.test(subject)
+      || /\.(?:input|field)(?![\w-])/i.test(subject);
+  });
+}
+
+/**
+ * v27 helper (engine 1.3.1): in each rule whose selector styles a field
+ * (isFieldSelector), every `font-size: var(...)` declaration is rewritten to
+ * its value from the :root token table, through substituteCssVars (var()
+ * chains, and a var()'s own fallback where no token declares the name). A
+ * value that does not resolve is left exactly as written, and so is every rule
+ * that does not style a field: v27's literal scan matches its keywords
+ * anywhere before a brace, so resolving var() in every rule would have read
+ * designesy.org's `.field-card-meta { font-size: var(--text-label) }` (12.8px,
+ * a card caption) as an input below 16px. Only values that start with var(
+ * are touched; calc(), clamp() and min()/max() stay as written, as before.
+ *
+ * The scan is anchored on each `font-size: var(` and reads its rule's selector
+ * backwards from the opening brace, so its cost is linear in the sheet. A
+ * whole-sheet rule regex (`([^{}]*)\{([^{}]*)\}`) is quadratic on a long
+ * @media prelude: measured at +4.5 s on five 43 KB preludes.
+ */
+function resolveFontSizeVars(css: string, tokens: Record<string, string>): string {
+  if (css.indexOf('var(') < 0) return css;
+  return css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, (decl: string, lead: string, value: string, offset: number) => {
+    const open = css.lastIndexOf('{', offset);
+    // Not inside a rule body (a stray declaration, or a brace closed between).
+    if (open < 0 || css.lastIndexOf('}', offset) > open) return decl;
+    const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
+    if (!isFieldSelector(css.slice(start, open))) return decl;
+    const sub = substituteCssVars(value, [tokens]);
+    return sub === null ? decl : lead + sub.trim();
+  });
 }
 
 /**
@@ -1120,12 +1199,20 @@ function hasZoomableField(html: string): boolean {
 // unchanged: a sub-16px input rule still FAILs and a declared floor still PASSes,
 // because both describe the stylesheet that fields rendered later by script
 // would also inherit.
-function checkInputFontFloor(css: string, html: string): CheckResult {
+//
+// Since engine 1.3.1 a font-size written as var() is read through the :root
+// token table first (resolveFontSizeVars), so `input { font-size:
+// var(--text-body) }` with `--text-body: 1rem` is the 16px floor it renders as.
+// Both regexes below read literals only; before 1.3.1 that rule read WARN ("no
+// explicit input font-size ≥16px detected") on designesy.org. A var() the table
+// cannot resolve is left as written, so it reads as it did before.
+function checkInputFontFloor(css: string, html: string, tokens: Record<string, string> = {}): CheckResult {
+  const sheet = resolveFontSizeVars(css, tokens);
   // Find input/textarea/select rules with font-size < 16px or < 1rem.
   const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
   const below: string[] = [];
   let m;
-  while ((m = inputRe.exec(css)) !== null) {
+  while ((m = inputRe.exec(sheet)) !== null) {
     const val = parseFloat(m[1]);
     const unit = m[2].toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
@@ -1135,8 +1222,8 @@ function checkInputFontFloor(css: string, html: string): CheckResult {
     // Also check: is there a global input font-size ≥16px? (e.g. `input { font-size: 1rem }`)
     // The strict form `input\s*\{` matches standalone rules; the grouped form
     // `input,...,{` matches selectors merged by CSS minifiers (e.g. `input,textarea,select{font-size:1rem}`).
-    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css)
-      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
+    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet)
+      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet);
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
     if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
     return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
@@ -1302,42 +1389,91 @@ function classifyColorToken(name: string): 'role' | 'hue' | 'neutral' {
   return 'neutral';
 }
 
+/**
+ * The color tokens v42 and v43 read, and the palette layer among them
+ * (engine 1.3.0).
+ *
+ * A token is a color token when its value is written as a color, or when,
+ * with var() aliases followed through the token set, it is one. Until 1.3.0 only a literal counted, so a
+ * role token that aliases a primitive (--error: var(--red-700), the structure
+ * v42's own remediation recommends) was dropped before classification and the
+ * verdict inverted: a site that did what the check asks scored worse.
+ *
+ * The palette layer is every hue-named color token that a role-named token
+ * reaches through its aliases. That is the two-tier structure the token
+ * standards describe: DTCG 2025.10 §3.8 defines an alias as a token whose
+ * value references another (its example is $color-text-primary aliasing
+ * $color-palette-black); Spectrum's primitive tokens "are typically used
+ * indirectly through semantic tokens as an alias"; Primer's base tokens are
+ * "generally used as a reference for functional tokens"; Material's reference
+ * tokens hold the concrete values that system tokens give roles to. A palette
+ * used that way is not a hue vocabulary, so it leaves v42's denominator. A
+ * hue-named token that no role token reaches is consumed directly, or not at
+ * all, and still counts against the role share.
+ */
+function colorTokenTiers(tokens: Record<string, string>): { color: string[]; palette: Set<string> } {
+  const refs = (value: string): string[] => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
+  // A value written as a color counts as one, as before 1.3.0, even when its
+  // var() cannot be followed (hsl(var(--x)) whose --x refers back to itself);
+  // anything else counts when its aliases resolve to a color.
+  const color = Object.keys(tokens).filter((name) => {
+    if (isColorValue(tokens[name])) return true;
+    const resolved = substituteCssVars(tokens[name], [tokens]);
+    return resolved !== null && isColorValue(resolved);
+  });
+  const reached = new Set<string>();
+  const queue = color.filter((name) => classifyColorToken(name) === 'role').flatMap((name) => refs(tokens[name]));
+  while (queue.length > 0) {
+    const name = queue.pop() as string;
+    if (reached.has(name) || !Object.prototype.hasOwnProperty.call(tokens, name)) continue;
+    reached.add(name);
+    queue.push(...refs(tokens[name]));
+  }
+  return { color, palette: new Set(color.filter((name) => reached.has(name) && classifyColorToken(name) === 'hue')) };
+}
+
 function checkSemanticColorVocabulary(tokens: Record<string, string>): CheckResult {
   const item = 'Semantic color vocabulary: tokens named by role rather than hue';
-  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
-  if (colorTokens.length < 4) {
-    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${colorTokens.length})` };
+  const { color, palette } = colorTokenTiers(tokens);
+  if (color.length < 4) {
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `too few color tokens to assess (${color.length})` };
   }
   let role = 0;
   let hue = 0;
-  for (const [name] of colorTokens) {
+  for (const name of color) {
+    if (palette.has(name)) continue;
     const c = classifyColorToken(name);
     if (c === 'role') role++;
     else if (c === 'hue') hue++;
   }
   const named = role + hue;
   if (named === 0) {
-    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${colorTokens.length} color tokens, all neutrally named: vocabulary unclassifiable` };
+    return { id: 'v42', item, category: 'semantic', status: 'SKIP', detail: `${color.length} color tokens, all neutrally named: vocabulary unclassifiable` };
   }
   const share = Math.round((role / named) * 100);
+  const layer = palette.size > 0 ? `; ${palette.size} hue-named primitive(s) that role tokens alias are the palette layer, not counted` : '';
   if (role >= 3 && share >= 60) {
-    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): colors are named by role` };
+    return { id: 'v42', item, category: 'semantic', status: 'PASS', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): colors are named by role${layer}` };
   }
-  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): color vocabulary leans on hue names` };
+  return { id: 'v42', item, category: 'semantic', status: 'WARN', detail: `${role} role-named vs ${hue} hue-named color tokens (${share}% role share): color vocabulary leans on hue names${layer}` };
 }
 
+// v43 reads the same color tokens as v42, aliases followed, so --error:
+// var(--red-700) is an error family. The palette layer needs no exclusion
+// here: v43 counts families, and a hue-named primitive is never one.
 function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
   const item = 'Semantic status colors: ok/warn/error/info state roles present';
-  const colorTokens = Object.entries(tokens).filter(([, v]) => isColorValue(v));
-  if (colorTokens.length === 0) {
+  const { color } = colorTokenTiers(tokens);
+  if (color.length === 0) {
     return { id: 'v43', item, category: 'semantic', status: 'SKIP', detail: 'no color tokens in :root' };
   }
   const families: Record<string, boolean> = { ok: false, warn: false, error: false, info: false };
-  for (const [name] of colorTokens) {
+  for (const name of color) {
     const segments = name.toLowerCase().split(/[-_]/);
     if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
     if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;
-    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative'].includes(s))) families.error = true;
+    // 'destructive' is shadcn/ui's error role (--destructive); engine 1.3.1.
+    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative', 'destructive'].includes(s))) families.error = true;
     if (segments.some((s) => ['info', 'notice', 'informational'].includes(s))) families.info = true;
   }
   const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
@@ -1694,7 +1830,9 @@ function parseCssColor(input: string, dark: boolean, depth = 0): Rgba | null {
     const ch = [0, 2, 4, 6].map((k) => (k < full.length ? parseInt(full.slice(k, k + 2), 16) : 255));
     return [ch[0], ch[1], ch[2], ch[3] / 255];
   }
-  if (CSS_NAMED_COLORS[v]) return [...CSS_NAMED_COLORS[v]] as Rgba;
+  // Own keys only: 'constructor' or 'toString' as a value read Object.prototype
+  // and threw, which failed the whole score (engine 1.3.0 reads token values here).
+  if (Object.prototype.hasOwnProperty.call(CSS_NAMED_COLORS, v)) return [...CSS_NAMED_COLORS[v]] as Rgba;
   const fn = /^([a-z-]+)\(([\s\S]*)\)$/.exec(v);
   if (!fn) return null;
   const name = fn[1];
@@ -2817,17 +2955,25 @@ function checkPausedEntrances(css: string): CheckResult {
   };
 }
 
-// v34 — AI-Disclosure Readiness (EU AI Act Article 50, effective 2026-08-02).
-// Static-only v1: scans fetched HTML for AI-interactive surfaces (chatbots,
-// AI agents, AI-generated content) and disclosure signals (visible labels,
-// aria-label, C2PA meta, generator meta, JSON-LD, data-ai-disclosure).
-// Four conditions:
-//   A — no AI surface detected → PASS (disclosure not required)
-//   B — AI surface + disclosure signal → PASS
-//   C — AI surface + NO disclosure → FAIL (Art 50 violation)
-//   D — uncertain (possible AI surface) → WARN (manual review)
-// Green-field check: no competitor (Mozaika, Lighthouse, axe, WAVE, DESIGN.md)
-// has an AI-disclosure check. Designesy can be first.
+// v34 — AI-Disclosure Readiness (EU AI Act Article 50, which applies from
+// 2026-08-02). Static, from the fetched HTML: it looks for an AI chat surface
+// and for a disclosure signal (visible text, aria-label, data-ai-disclosure,
+// generator meta, C2PA, JSON-LD).
+//
+// Article 50(1) puts the duty on the PROVIDER of an AI system that talks with
+// people: they must be told it is an AI, unless that is obvious from the
+// context, at the latest at the first interaction (50(5)). A site that embeds
+// a vendor's assistant may not be that provider, so the check says "may
+// require", never "requires", and it is not a legal finding.
+//
+// Only a positively identified AI chat surface with no disclosure FAILs: a
+// container or input that names itself a chatbot or an AI assistant, or a
+// script from a chatbot, AI-widget or Dialogflow path. Anything weaker WARNs
+// "possible AI surface: review": live-chat vendors (Intercom, Drift, Zendesk,
+// LiveChat, Tawk, Crisp), which are often answered by people; a generic chat
+// container or an "assistant" script; page text about AI, which is not a chat
+// surface. Until engine 1.3.0 those FAILed, and so did Google Publisher Tag,
+// an ad tag, because its gpt.js matched the word "gpt".
 function checkAiDisclosure(html: string): CheckResult {
   const ITEM = 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)';
   const CATEGORY = 'identity';
@@ -2842,17 +2988,27 @@ function checkAiDisclosure(html: string): CheckResult {
   // content between tags, not class/id/aria attribute values.
   const textOnly = visibleHtml.replace(/<[^>]+>/g, ' ');
 
-  // ── AI-surface detection ────────────────────────────────────────────────
-  const chatbotContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat|assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
-  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|assistant|ai-widget|gpt|claude|gemini|dialogflow|rasa|intercom|drift|tawk|crisp|livechat|chatbot\.ai|conversational)\b/i;
-  const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
+  // ── AI chat surfaces, positively identified ─────────────────────────────
+  const aiContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat)\b/i;
+  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|ai-widget|dialogflow)\b/i;
   const aiInputRe = /<(?:input|textarea|form)\b[^>]*(?:placeholder|aria-label)\s*=\s*["'][^"']*\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/i;
 
+  // ── Possible AI surfaces: a review item, never a FAIL ───────────────────
+  const chatContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
+  const chatScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:assistant|claude|gemini|rasa|intercom|drift|tawk|crisp|livechat|conversational)\b/i;
+  const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
+  const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
+
   const surfaceSignals: string[] = [];
-  if (chatbotContainerRe.test(html)) surfaceSignals.push('chatbot container');
+  if (aiContainerRe.test(html)) surfaceSignals.push('chatbot container');
   if (aiScriptRe.test(html)) surfaceSignals.push('AI widget script');
-  if (aiTextRe.test(textOnly)) surfaceSignals.push('AI prompt text');
   if (aiInputRe.test(html)) surfaceSignals.push('AI input');
+
+  const possibleSignals: string[] = [];
+  if (chatContainerRe.test(html)) possibleSignals.push('chat widget container');
+  if (chatScriptRe.test(html)) possibleSignals.push('chat or assistant script');
+  if (aiTextRe.test(textOnly)) possibleSignals.push('AI prompt text');
+  if (ambiguousRe.test(html)) possibleSignals.push('ambiguous widget');
 
   // ── Disclosure detection ────────────────────────────────────────────────
   const disclosureTextRe = /\b(?:ai\s+assistant|ai\s+chatbot|ai-powered|powered\s+by\s+ai|automated\s+assistant|virtual\s+assistant|chatbot)\b/i;
@@ -2871,19 +3027,20 @@ function checkAiDisclosure(html: string): CheckResult {
   if (dataAiRe.test(html)) disclosureSignals.push('data-ai-disclosure');
 
   // ── Condition evaluation ────────────────────────────────────────────────
-  if (surfaceSignals.length === 0) {
-    const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
-    if (ambiguousRe.test(html)) {
-      return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: 'possible AI-interactive surface (ambiguous widget): manual review recommended for Art 50 compliance' };
-    }
+  if (surfaceSignals.length === 0 && possibleSignals.length === 0) {
     return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'no AI-interactive surface detected: disclosure not required' };
   }
 
   if (disclosureSignals.length > 0) {
-    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `AI surface detected (${surfaceSignals.join(', ')}); disclosure present (${disclosureSignals.join(', ')})` };
+    const found = surfaceSignals.length > 0 ? `AI surface detected (${surfaceSignals.join(', ')})` : `possible AI surface (${possibleSignals.join(', ')})`;
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'PASS', detail: `${found}; disclosure present (${disclosureSignals.join(', ')})` };
   }
 
-  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI-interactive surface detected (${surfaceSignals.join(', ')}) but no disclosure found: EU AI Act Art 50(1) requires disclosure at first interaction` };
+  if (surfaceSignals.length > 0) {
+    return { id: 'v34', item: ITEM, category: CATEGORY, status: 'FAIL', detail: `AI chat surface detected (${surfaceSignals.join(', ')}) and no AI disclosure found: EU AI Act Art. 50(1) may require telling people at their first interaction that they are talking to an AI (a duty on the AI system's provider, applying from 2026-08-02)` };
+  }
+
+  return { id: 'v34', item: ITEM, category: CATEGORY, status: 'WARN', detail: `possible AI surface (${possibleSignals.join(', ')}): review. If it is an AI system and no disclosure is shown, EU AI Act Art. 50(1) may require one (a duty on the AI system's provider); a chat answered by people needs none` };
 }
 
 // v35 — Forced-colors readiness (Windows High Contrast Mode / Chrome forced-colors).
@@ -3130,6 +3287,25 @@ const RECOGNIZED_BUTTON_COMMANDS = new Set([
   'find', 'replace', 'navigate', 'run', 'score', 'review', 'verify',
   'detect', 'assess', 'enforce', 'dismiss', 'analyze', 'inspect', 'check',
   'evaluate', 'validate', 'test', 'monitor', 'track', 'measure', 'scan',
+  // Engine 1.3.1. get, set and try: the comment in checkButtonTextVerb said
+  // "Get X", "Set X" and "Try X" were allowed, but none of the three was in
+  // this set, so "Get started" and "Try it free" read WARN on any site.
+  'get', 'set', 'try',
+  // Imperative CTA verbs that the suffix heuristic in isVerbLike misses (it
+  // already accepts explore, collapse, toggle, choose and compare by their -e
+  // ending). Each is read as a verb at the start of a button label, and none
+  // names a thing a button would be labelled with on its own:
+  //   flip    "Flip card", "Flip to the flame": a command, no noun label use
+  //   learn   "Learn more": verb only
+  //   sign    "Sign in", "Sign up", "Sign out": the noun reading does not
+  //           lead a button label
+  //   join    "Join the waitlist": verb only
+  //   expand  "Expand all", "Expand section": verb only
+  //   select  "Select all", "Select plan": an imperative in button use
+  //   read    "Read more", "Read the guide": an imperative in button use
+  // Left out on purpose: switch and watch, which are common nouns ("Switch",
+  // a toggle's name; "Watch", a product) as well as verbs.
+  'flip', 'learn', 'sign', 'join', 'expand', 'select', 'read',
 ]);
 
 function isVerbLike(word: string): boolean {
@@ -3231,12 +3407,42 @@ function checkButtonTextVerb(html: string): CheckResult {
   // label, not a shortcut, and must not be eaten.
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
+  // Engine 1.3.1: a "+key" hint written in lower case ("Save ctrl+s",
+  // "Find ctrl+k") is a hint too. The modifier is case-insensitive here but
+  // must stand as its own word (the start of the label or after a space), so
+  // "Halt+1" is untouched, and only the plus form is read: a modifier followed
+  // by a space and a letter ("Shift A") is a label, as it was in 1.3.0.
+  const PLUS_SHORTCUT_RE =
+    /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:\s*\+\s*[a-z0-9]+)+$/i;
+  const stripShortcut = (s: string): string =>
+    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(PLUS_SHORTCUT_RE, '').trim();
+  // Engine 1.3.1: keycaps are read from the markup, not guessed from text.
+  // A <kbd> element is keyboard input (HTML Living Standard, the kbd element),
+  // a hint beside the label rather than the label, so its text is dropped
+  // before the verb check, innermost first so nested keycaps
+  // (<kbd><kbd>Ctrl</kbd>+<kbd>K</kbd></kbd>) go too. designesy.org's flip
+  // button, <kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd>
+  // after a hidden lead, read as "Flip to the flame: ctrl  i" in 1.3.0. A "+"
+  // left between dropped keycaps is dropped with them. A button whose only
+  // text is keycaps is then empty and is judged as an icon-only button: by its
+  // aria-label when it has one, and not at all when it does not.
+  const labelText = (inner: string): string => {
+    const visible = stripAriaHidden(inner);
+    let out = visible;
+    for (let i = 0; i < 4; i++) {
+      const next = out.replace(/<kbd\b[^>]*>(?:(?!<kbd\b)[\s\S])*?<\/kbd>/gi, ' ');
+      if (next === out) break;
+      out = next;
+    }
+    const text = out.replace(/<[^>]*>/g, '').trim();
+    return out === visible ? text : text.replace(/(?:\s*\+)+$/, '').trim();
+  };
   while ((m = buttonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     // Icon-only button with an accessible name: use the aria-label verb.
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
@@ -3254,9 +3460,9 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     text = text.replace(ICON_PREFIX_RE, '').trim();
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
@@ -3311,7 +3517,9 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (RECOGNIZED_BUTTON_COMMANDS.has(firstWord)) continue;
     // Allow if first word is verb-like
     if (isVerbLike(firstWord)) continue;
-    // Allow "Get X", "Set X", "Try X" patterns (Get/Set/Try are in the set)
+    // "Get X", "Set X", "Try X" are allowed above: get, set and try are in
+    // RECOGNIZED_BUTTON_COMMANDS (since engine 1.3.1; this comment claimed it
+    // before they were).
     // If we get here, the first word is likely a noun → potential violation
     violations.push(`"${text}"`);
   }
@@ -3809,15 +4017,36 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
   // strengths. These are design-integrity failures — a site that FAILs on
   // contrast or horizontal overflow cannot be A-grade no matter how good its
   // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
+  //
+  // No A while any check FAILs (engine 1.3.0, owner decision 2026-10-11). A
+  // FAIL is the engine's own finding that the page breaks a rule, so any FAIL
+  // caps the score at 89.9, a B at most. Until 1.3.0 a page could score 100, an
+  // A, beside FAIL verdicts, including the engine's own WCAG contrast FAIL
+  // (v44). The specific ceilings below are lower and win where they apply.
+  // Every cap here runs after the originality lift, so the lift can carry a
+  // score up to a cap but never past one.
   const hardFailChecks = checks.filter((c) => c.status === 'FAIL');
   let hardFailCeilingApplied = false;
   let hardFailCeilingReason: string | null = null;
+  const ANY_FAIL_CAP = 89.9;
+  if (hardFailChecks.length > 0 && score > ANY_FAIL_CAP) {
+    const ids = hardFailChecks.map((c) => c.id);
+    const named = ids.length === 1 ? `${ids[0]} fails` : `${ids.slice(0, -1).join(', ')} and ${ids[ids.length - 1]} fail`;
+    score = ANY_FAIL_CAP;
+    hardFailCeilingApplied = true;
+    hardFailCeilingReason = `A FAIL caps the grade at B: ${named}, and the score cannot exceed 89.9 while any check fails.`;
+  }
   for (const c of hardFailChecks) {
     let cap: number | null = null;
     let reason: string | null = null;
 
     // v06 Contrast readable — fundamental legibility failure
     if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
+    // v44 Status text contrast — the words that report a state fail WCAG
+    // 1.4.3 (or 1.4.11 for a graphic) on a surface the stylesheet attests.
+    // Same cap as v06 (engine 1.3.0, owner decision 2026-10-11): both are
+    // measured WCAG contrast failures on text.
+    if (c.id === 'v44') { cap = 65; reason = 'Status text below WCAG contrast (4.5:1, or 3:1 for large text and graphics): the words that report errors, warnings and success are hard to read.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
     if (c.id === 'v22') { cap = 70; reason = 'Primary CTA contrast below WCAG AA: the most important interaction on the page is hard to read.'; }
     // v02 Horizontal overflow — broken layout on mobile
@@ -3984,7 +4213,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
     checkFontFamilyCount(css, tokens),
-    checkInputFontFloor(css, html),
+    checkInputFontFloor(css, html, rawTokens),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
     checkSemanticColorVocabulary(tokens),
@@ -4470,7 +4699,7 @@ export async function scoreFromParts(input: ScorePartsInput): Promise<ScoreResul
  * the site served v0.4.3; test/engine-1-2-0.test.mjs now reads the site's
  * contract source and fails when the two differ.
  */
-export const CONTRACT_VERSION = 'v0.4.4';
+export const CONTRACT_VERSION = 'v0.4.5';
 
 /**
  * The one verdict rule, shared by every emission format.

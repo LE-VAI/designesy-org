@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMeta({
   path: '/graph',
   ogTitle: 'Graph · Designesy',
   ogDescription:
-    'Provenance chain from source to shipped work. No competitor exposes this chain publicly.',
+    'Provenance chain from source to shipped work, with public examples at every stage.',
   twitterDescription: 'Provenance graph · designesy.org/graph',
 });
 
@@ -232,7 +232,7 @@ export default function GraphPage() {
               </Link>
             </div>
             <div role="listitem">
-              <Link
+              <a
                 href="/graph.json"
                 className="row"
                 data-cuelume-hover="bloom"
@@ -247,7 +247,7 @@ export default function GraphPage() {
                   <span className="row-side-line">/graph.json</span>
                   <span className="row-side-arrow" aria-hidden="true" />
                 </span>
-              </Link>
+              </a>
             </div>
             <div role="listitem">
               <Link

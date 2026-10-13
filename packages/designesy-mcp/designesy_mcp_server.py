@@ -463,8 +463,8 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.2.0"
-OFFLINE_CONTRACT_VERSION = "v0.4.4"
+OFFLINE_ENGINE_MIRRORS = "1.3.1"
+OFFLINE_CONTRACT_VERSION = "v0.4.5"
 
 # The live engine's checks that this engine does not run, in the live engine's
 # order. The parity test asserts that these and OFFLINE_CHECK_IDS together are
@@ -738,11 +738,12 @@ def _extract_root_tokens(css: str) -> dict[str, str]:
     """engine.ts extractRootTokens: custom properties declared in :root.
 
     Media-query :root blocks (one level deep) are stripped first, so an
-    accessibility override does not replace the base token.
+    accessibility override does not replace the base token. `:root, :host`
+    (the block Tailwind v4 writes its theme into) is read too, from 1.3.0.
     """
     stripped = _js_re(r"@media[^{]*\{[^@]*?\}\s*\}", "gi").sub("", css)
     tokens: dict[str, str] = {}
-    for block in _js_re(r":root\s*\{([^}]*)\}", "g").finditer(stripped):
+    for block in _js_re(r":root(?:\s*,\s*:host)?\s*\{([^}]*)\}", "g").finditer(stripped):
         for prop in _js_re(r"--([\w-]+)\s*:\s*([^;]+?)(?:;|$)", "g").finditer(block.group(1)):
             tokens[f"--{prop.group(1)}"] = _js_trim(prop.group(2))
     return tokens
@@ -790,25 +791,6 @@ def _infer_tokens(tokens: dict[str, str]) -> dict[str, str]:
 Rgb = tuple[float, float, float]
 
 
-def _hex_to_rgb(color: str) -> Rgb | None:
-    color = _js_trim(color)
-    if not color.startswith("#"):
-        return None
-    hex_part = color[1:]
-    # A character outside the BMP is two UTF-16 units in JS, and every way it
-    # can land in the three two-unit slices yields NaN there, so JS returns null.
-    if any(ord(ch) > 0xFFFF for ch in hex_part):
-        return None
-    if len(hex_part) == 3:
-        hex_part = "".join(c + c for c in hex_part)
-    if len(hex_part) != 6:
-        return None
-    rgb = (_js_int(hex_part[0:2], 16), _js_int(hex_part[2:4], 16), _js_int(hex_part[4:6], 16))
-    if any(math.isnan(v) for v in rgb):
-        return None
-    return rgb
-
-
 def _srgb_to_linear(c: float) -> float:
     s = c / 255
     return s / 12.92 if s <= 0.03928 else _js_pow((s + 0.055) / 1.055, 2.4)
@@ -824,22 +806,367 @@ def _contrast_ratio(a: Rgb, b: Rgb) -> float:
     return (_js_max(la, lb) + 0.05) / (_js_min(la, lb) + 0.05)
 
 
-def _resolve_color(value: str, tokens: dict[str, str]) -> Rgb | None:
-    v = _js_trim(value)
+def _split_css_top_level(s: str, sep: str) -> list[str]:
+    """engine.ts splitCssTopLevel: split outside parentheses, brackets and quotes."""
+    out: list[str] = []
+    depth = 0
+    quote = ""
+    start = 0
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if quote:
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                quote = ""
+            i += 1
+            continue
+        if ch in ('"', "'"):
+            quote = ch
+            i += 1
+            continue
+        if ch in ("(", "["):
+            depth += 1
+        elif ch in (")", "]") and depth > 0:
+            depth -= 1
+        elif depth == 0 and ((ch in (" ", "\n", "\t", "\r", "\f")) if sep == " " else ch == sep):
+            piece = _js_trim(s[start:i])
+            if piece:
+                out.append(piece)
+            start = i + 1
+        i += 1
+    piece = _js_trim(s[start:])
+    if piece:
+        out.append(piece)
+    return out
+
+
+def _substitute_css_vars(value: str, scope: list[dict[str, str]], depth: int = 0) -> str | None:
+    """engine.ts substituteCssVars: each var(--x[, fallback]) replaced from the first scope declaring it."""
+    if depth > 16:
+        return None
+    out = ""
+    i = 0
+    while True:
+        k = value.find("var(", i)
+        if k < 0:
+            return out + value[i:]
+        out += value[i:k]
+        d = 0
+        j = k + 3
+        while j < len(value):
+            if value[j] == "(":
+                d += 1
+            elif value[j] == ")":
+                d -= 1
+                if d == 0:
+                    break
+            j += 1
+        if j >= len(value):
+            return None
+        inner = value[k + 4 : j]
+        parts = _split_css_top_level(inner, ",")
+        name = _js_trim(parts[0] if parts else "")
+        comma = inner.find(",")
+        fallback = None if comma < 0 else _js_trim(inner[comma + 1 :])
+        rep: str | None = None
+        for s in scope:
+            if name in s:
+                rep = s[name]
+                break
+        if rep is None:
+            rep = fallback
+        if rep is None:
+            return None
+        sub = _substitute_css_vars(rep, scope, depth + 1)
+        if sub is None:
+            return None
+        out += sub
+        i = j + 1
+
+
+Rgba = tuple[float, float, float, float]
+
+_CSS_NAMED_COLORS: dict[str, Rgba] = {
+    "transparent": (0, 0, 0, 0), "white": (255, 255, 255, 1), "black": (0, 0, 0, 1),
+    "red": (255, 0, 0, 1), "green": (0, 128, 0, 1), "blue": (0, 0, 255, 1), "yellow": (255, 255, 0, 1),
+    "orange": (255, 165, 0, 1), "gray": (128, 128, 128, 1), "grey": (128, 128, 128, 1),
+    "silver": (192, 192, 192, 1), "maroon": (128, 0, 0, 1), "purple": (128, 0, 128, 1),
+    "navy": (0, 0, 128, 1), "teal": (0, 128, 128, 1), "olive": (128, 128, 0, 1), "lime": (0, 255, 0, 1),
+}
+
+
+def _cbrt(x: float) -> float:
+    """Math.cbrt (math.cbrt is Python 3.11+)."""
+    if hasattr(math, "cbrt"):
+        return math.cbrt(x)
+    return math.copysign(abs(x) ** (1 / 3), x)
+
+
+def _srgb_to_oklab(rgb: Rgb) -> Rgb:
+    lin = []
+    for c in rgb:
+        s = c / 255
+        lin.append(s / 12.92 if s <= 0.04045 else _js_pow((s + 0.055) / 1.055, 2.4))
+    l = _cbrt(0.4122214708 * lin[0] + 0.5363325363 * lin[1] + 0.0514459929 * lin[2])
+    m = _cbrt(0.2119034982 * lin[0] + 0.6806995451 * lin[1] + 0.1073969566 * lin[2])
+    s = _cbrt(0.0883024619 * lin[0] + 0.2817188376 * lin[1] + 0.6299787005 * lin[2])
+    return (
+        0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+        1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+        0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+    )
+
+
+def _oklab_to_srgb(lab: Rgb) -> Rgb:
+    """Oklab to 0-255 sRGB, clipped per channel to the sRGB gamut."""
+    L, a, b = lab
+    l = _js_pow(L + 0.3963377774 * a + 0.2158037573 * b, 3)
+    m = _js_pow(L - 0.1055613458 * a - 0.0638541728 * b, 3)
+    s = _js_pow(L - 0.0894841775 * a - 1.291485548 * b, 3)
+    lin = (
+        4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+        -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    )
+    out = []
+    for c in lin:
+        x = _js_min(1, _js_max(0, c))
+        g = 12.92 * x if x <= 0.0031308 else 1.055 * _js_pow(x, 1 / 2.4) - 0.055
+        out.append(_js_min(1, _js_max(0, g)) * 255)
+    return (out[0], out[1], out[2])
+
+
+def _css_number(token: str, percent_scale: float) -> float | None:
+    t = _js_trim(token).lower()
+    if t == "none":
+        return 0
+    m = _js_re(r"^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$").search(t)
+    if not m:
+        return None
+    x = _js_float(m.group(1))
+    unit = m.group(2)
+    if unit == "%":
+        return (x / 100) * percent_scale
+    if unit == "turn":
+        return x * 360
+    if unit == "rad":
+        return (x * 180) / math.pi
+    if unit == "grad":
+        return x * 0.9
+    return x
+
+
+def _css_alpha(token: str | None) -> float | None:
+    if token is None:
+        return 1
+    a = _css_number(token, 1)
+    return None if a is None else _js_min(1, _js_max(0, a))
+
+
+def _css_color_args(args: str) -> list[str] | None:
+    """Function arguments as [c1, c2, c3, alpha?], comma or space syntax."""
+    slash = _split_css_top_level(args, "/")
+    head = slash[0] if slash else ""
+    channels = _split_css_top_level(head, ",") if "," in head else _split_css_top_level(head, " ")
+    if len(slash) == 2:
+        channels.append(slash[1])
+    if len(slash) > 2 or len(channels) < 3 or len(channels) > 4:
+        return None
+    return channels
+
+
+def _hsl_to_rgb(h: float, s: float, l: float) -> Rgb:
+    hh = math.fmod(math.fmod(h, 360) + 360, 360) / 360
+
+    def f(n: float) -> float:
+        k = math.fmod(n + hh * 12, 12)
+        return l - s * _js_min(l, 1 - l) * _js_max(-1, _js_min(_js_min(k - 3, 9 - k), 1))
+
+    return (f(0) * 255, f(8) * 255, f(4) * 255)
+
+
+def _parse_css_color(value: str, dark: bool, depth: int = 0) -> Rgba | None:
+    """engine.ts parseCssColor: a CSS colour value, vars already substituted, to (r, g, b, alpha)."""
+    if depth > 8:
+        return None
+    v = _js_trim(value).lower()
     if not v:
         return None
-    if v.startswith("#"):
-        return _hex_to_rgb(v)
-    var_match = _js_re(r"^var\(\s*(--[\w-]+)").search(v)
-    if var_match:
-        ref = tokens.get(var_match.group(1))
-        if ref:
-            return _resolve_color(ref, tokens)
+    if v[0] == "#":
+        hx = v[1:]
+        if not _js_re(r"^[0-9a-f]+$").search(hx) or len(hx) not in (3, 4, 6, 8):
+            return None
+        full = "".join(c + c for c in hx) if len(hx) <= 4 else hx
+        ch = [int(full[k : k + 2], 16) if k < len(full) else 255 for k in (0, 2, 4, 6)]
+        return (ch[0], ch[1], ch[2], ch[3] / 255)
+    if v in _CSS_NAMED_COLORS:
+        return _CSS_NAMED_COLORS[v]
+    fn = _js_re(r"^([a-z-]+)\(([\s\S]*)\)$").search(v)
+    if not fn:
         return None
-    rgb_match = _js_re(r"rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)", "i").search(v)
-    if rgb_match:
-        return (_js_int(rgb_match.group(1)), _js_int(rgb_match.group(2)), _js_int(rgb_match.group(3)))
+    name = fn.group(1)
+    args = _js_trim(fn.group(2))
+    if name == "light-dark":
+        pair = _split_css_top_level(args, ",")
+        return _parse_css_color(pair[1 if dark else 0], dark, depth + 1) if len(pair) == 2 else None
+    if name == "color-mix":
+        parts = _split_css_top_level(args, ",")
+        if len(parts) != 3:
+            return None
+        sm = _js_re(r"^in\s+([a-z-]+)").search(parts[0])
+        space = sm.group(1) if sm else ""
+        if space not in ("srgb", "oklab", "oklch"):
+            return None
+
+        def side(p: str) -> tuple[str, float | None]:
+            after = _js_re(r"^([\s\S]*?)\s+(\d*\.?\d+)%$").search(p)
+            before = _js_re(r"^(\d*\.?\d+)%\s+([\s\S]*)$").search(p)
+            if after:
+                return after.group(1), _js_float(after.group(2)) / 100
+            if before:
+                return before.group(2), _js_float(before.group(1)) / 100
+            return p, None
+
+        a_color, p1 = side(parts[1])
+        b_color, p2 = side(parts[2])
+        ca = _parse_css_color(a_color, dark, depth + 1)
+        cb = _parse_css_color(b_color, dark, depth + 1)
+        if not ca or not cb:
+            return None
+        if p1 is None and p2 is None:
+            p1, p2 = 0.5, 0.5
+        elif p1 is None:
+            p1 = 1 - p2
+        elif p2 is None:
+            p2 = 1 - p1
+        total = p1 + p2
+        if total <= 0:
+            return None
+        w1 = p1 / total
+        w2 = p2 / total
+        alpha = ca[3] * w1 + cb[3] * w2
+        if alpha <= 0:
+            return (0, 0, 0, 0)
+        if space == "srgb":
+            rgb = tuple((ca[k] * ca[3] * w1 + cb[k] * cb[3] * w2) / alpha for k in range(3))
+        else:
+            la = _srgb_to_oklab((ca[0], ca[1], ca[2]))
+            lb = _srgb_to_oklab((cb[0], cb[1], cb[2]))
+            if space == "oklab":
+                lab = tuple((la[k] * ca[3] * w1 + lb[k] * cb[3] * w2) / alpha for k in range(3))
+            else:
+                def lch(x: Rgb) -> Rgb:
+                    return (x[0], math.hypot(x[1], x[2]), (math.atan2(x[2], x[1]) * 180) / math.pi)
+
+                A = lch(la)
+                B = lch(lb)
+                h1, h2 = A[2], B[2]
+                if A[1] < 1e-4:
+                    h1 = h2
+                if B[1] < 1e-4:
+                    h2 = h1
+                if h2 - h1 > 180:
+                    h1 += 360
+                elif h1 - h2 > 180:
+                    h2 += 360
+                Lm = (A[0] * ca[3] * w1 + B[0] * cb[3] * w2) / alpha
+                Cm = (A[1] * ca[3] * w1 + B[1] * cb[3] * w2) / alpha
+                H = ((h1 * w1 + h2 * w2) * math.pi) / 180
+                lab = (Lm, Cm * math.cos(H), Cm * math.sin(H))
+            rgb = _oklab_to_srgb(lab)
+        mult = _js_min(1, total)
+        return (_js_round(rgb[0]), _js_round(rgb[1]), _js_round(rgb[2]), _js_round(alpha * mult * 255) / 255)
+    rel = _js_re(r"^from\s+([\s\S]+?)\s+(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$").search(args)
+    if rel:
+        base = _parse_css_color(rel.group(1), dark, depth + 1)
+        if not base:
+            return None
+        a = base[3] if rel.group(3) is None else _css_alpha(rel.group(3))
+        return None if a is None else (base[0], base[1], base[2], a)
+    if name == "color":
+        m = _js_re(r"^srgb\s+([\s\S]+)$").search(args)
+        ch = _css_color_args(m.group(1)) if m else None
+        if not ch:
+            return None
+        c = [_css_number(t, 1) for t in ch[:3]]
+        a = _css_alpha(ch[3] if len(ch) > 3 else None)
+        if any(x is None for x in c) or a is None:
+            return None
+        return (c[0] * 255, c[1] * 255, c[2] * 255, a)
+    ch = _css_color_args(args)
+    if not ch:
+        return None
+    alpha = _css_alpha(ch[3] if len(ch) > 3 else None)
+    if alpha is None:
+        return None
+    if name in ("rgb", "rgba"):
+        c = [_css_number(t, 255) for t in ch[:3]]
+        if any(x is None for x in c):
+            return None
+        return (*(_js_min(255, _js_max(0, x)) for x in c), alpha)
+    if name in ("hsl", "hsla"):
+        h = _css_number(ch[0], 1)
+        s = _css_number(ch[1] if ch[1].endswith("%") else f"{ch[1]}%", 1)
+        l = _css_number(ch[2] if ch[2].endswith("%") else f"{ch[2]}%", 1)
+        if h is None or s is None or l is None:
+            return None
+        return (*_hsl_to_rgb(h, _js_min(1, _js_max(0, s)), _js_min(1, _js_max(0, l))), alpha)
+    if name in ("oklch", "oklab"):
+        L = _css_number(ch[0], 1)
+        x = _css_number(ch[1], 0.4)
+        y = _css_number(ch[2], 1 if name == "oklch" else 0.4)
+        if L is None or x is None or y is None:
+            return None
+        lab = (L, x * math.cos((y * math.pi) / 180), x * math.sin((y * math.pi) / 180)) if name == "oklch" else (L, x, y)
+        return (*_oklab_to_srgb(lab), alpha)
     return None
+
+
+def _resolve_theme_color(value: str, scope: list[dict[str, str]], dark: bool) -> Rgba | None:
+    """engine.ts resolveThemeColor: vars substituted, then parsed; bare HSL channels read as hsl()."""
+    sub = _substitute_css_vars(value, scope)
+    if sub is None:
+        return None
+    direct = _parse_css_color(sub, dark)
+    if direct:
+        return direct
+    if _js_re(r"^\s*-?[\d.]+(?:deg)?\s+[\d.]+%\s+[\d.]+%\s*$").search(sub):
+        return _parse_css_color(f"hsl({sub})", dark)
+    return None
+
+
+def _composite(fg: Rgba, bg: Rgba) -> Rgba:
+    """engine.ts v44Composite: fg over an opaque bg, rounded to 8 bits as a browser paints it."""
+    a = _js_round(fg[3] * 255) / 255
+    return (
+        _js_round(fg[0] * a + bg[0] * (1 - a)),
+        _js_round(fg[1] * a + bg[1] * (1 - a)),
+        _js_round(fg[2] * a + bg[2] * (1 - a)),
+        1,
+    )
+
+
+def _resolve_token_color(value: str, tokens: dict[str, str], under: Rgb | None) -> Rgb | None:
+    """engine.ts resolveTokenColor: a token value as the opaque sRGB colour v06 and v22 measure.
+
+    Read through the CSS Color 4 reader (oklch, space-syntax rgb/hsl, 8-digit
+    hex, color-mix, light-dark read light). A translucent colour is
+    composited over `under`; with nothing under it, it is not measured.
+    """
+    if not _js_trim(value):
+        return None
+    c = _resolve_theme_color(value, [tokens], False)
+    if not c:
+        return None
+    if c[3] >= 1:
+        return (c[0], c[1], c[2])
+    if under is None:
+        return None
+    painted = _composite(c, (under[0], under[1], under[2], 1))
+    return (painted[0], painted[1], painted[2])
 
 
 def _srgb_to_y_apca(rgb: Rgb) -> float:
@@ -894,9 +1221,11 @@ def _check_contrast_signal(tokens: dict[str, str]) -> dict[str, str]:  # checkCo
     # or --ink on --signal, as before.
     action_val = tokens.get("--action")
     on_action_val = tokens.get("--on-action")
+    # The page under a translucent fill is --paper; a translucent label sits on the fill.
+    page_rgb = _resolve_token_color(tokens.get("--paper") or "", tokens, None)
     if action_val and on_action_val:
-        fill_rgb = _resolve_color(action_val, tokens)
-        label_rgb = _resolve_color(on_action_val, tokens)
+        fill_rgb = _resolve_token_color(action_val, tokens, page_rgb)
+        label_rgb = _resolve_token_color(on_action_val, tokens, fill_rgb) if fill_rgb else None
         if not fill_rgb or not label_rgb:
             return _chk("v22", item, "accessibility", "SKIP", f"--action {action_val} or --on-action {on_action_val} unresolvable to RGB")
         pair = _contrast_ratio(label_rgb, fill_rgb)
@@ -909,13 +1238,13 @@ def _check_contrast_signal(tokens: dict[str, str]) -> dict[str, str]:  # checkCo
     signal_val = tokens.get("--signal")
     if not signal_val:
         return _chk("v22", item, "accessibility", "WARN", "--signal accent token not declared")
-    signal_rgb = _resolve_color(signal_val, tokens)
+    signal_rgb = _resolve_token_color(signal_val, tokens, page_rgb)
     if not signal_rgb:
         return _chk("v22", item, "accessibility", "SKIP", f"--signal value {signal_val} unresolvable to RGB")
     best_ratio: float = 0
     best_name = ""
     for name in ("--paper", "--ink"):
-        rgb = _resolve_color(tokens.get(name) or "", tokens)
+        rgb = _resolve_token_color(tokens.get(name) or "", tokens, signal_rgb)
         if not rgb:
             continue
         r = _contrast_ratio(rgb, signal_rgb)
@@ -937,17 +1266,20 @@ def _check_contrast_readable(tokens: dict[str, str]) -> dict[str, str]:  # check
     paper_val = tokens.get("--paper")
     if not paper_val:
         return _chk("v06", item, "accessibility", "SKIP", "--paper not declared: cannot test contrast")
-    paper_rgb = _resolve_color(paper_val, tokens)
+    paper_rgb = _resolve_token_color(paper_val, tokens, None)
     if not paper_rgb:
         return _chk("v06", item, "accessibility", "SKIP", f"--paper value {paper_val} unresolvable to RGB")
     results: list[str] = []
     worst_name, worst_ratio, worst_status = "", math.inf, "PASS"
-    for name in ("--ink", "--muted", "--muted-dim"):
+    # --muted-foreground, where declared, is the muted text: in the shadcn
+    # convention --muted is a surface (engine.ts checkContrastReadable, 1.3.0).
+    muted = "--muted-foreground" if tokens.get("--muted-foreground") else "--muted"
+    for name in ("--ink", muted, "--muted-dim"):
         val = tokens.get(name)
         if not val:
             results.append(f"{name}: not declared")
             continue
-        rgb = _resolve_color(val, tokens)
+        rgb = _resolve_token_color(val, tokens, paper_rgb)
         if not rgb:
             results.append(f"{name}: unresolvable")
             continue
@@ -1264,13 +1596,55 @@ def _has_zoomable_field(html: str) -> bool:  # hasZoomableField
     return False
 
 
-def _check_input_font_floor(css: str, html: str) -> dict[str, str]:  # checkInputFontFloor
+def _is_field_selector(selector: str) -> bool:  # isFieldSelector
+    """v27 helper (engine 1.3.1): the subject of some selector in the list is an
+    input, textarea or select element, or carries the exact class .input or
+    .field, and is not a pseudo-element."""
+    clean = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub(" ", selector)
+    for part in _split_css_top_level(clean, ","):
+        compounds = _js_re(r"\s*[>+~]\s*|\s+").split(_js_trim(part))
+        subject = compounds[-1] if compounds and compounds[-1] else ""
+        if "::" in subject:
+            continue
+        if _js_re(r"(?:^|[^\w.#:-])(?:input|textarea|select)(?![\w-])", "i").search(subject) or _js_re(
+            r"\.(?:input|field)(?![\w-])", "i"
+        ).search(subject):
+            return True
+    return False
+
+
+def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolveFontSizeVars
+    """v27 helper (engine 1.3.1): in each rule that styles a field, every
+    `font-size: var(...)` is rewritten to its :root token value; a value that
+    does not resolve, and every other rule, is left as written."""
+    if "var(" not in css:
+        return css
+
+    def decl(m: "re.Match[str]") -> str:
+        offset = m.start()
+        # JS lastIndexOf(c, i) searches positions <= i; rfind(c, 0, i + 1) is the same.
+        open_ = css.rfind("{", 0, offset + 1)
+        if open_ < 0 or css.rfind("}", 0, offset + 1) > open_:
+            return m.group(0)
+        start = max(css.rfind("}", 0, max(open_, 0)), css.rfind("{", 0, max(open_, 0)), css.rfind(";", 0, max(open_, 0))) + 1
+        if not _is_field_selector(css[start:open_]):
+            return m.group(0)
+        sub = _substitute_css_vars(m.group(2), [tokens])
+        return m.group(0) if sub is None else m.group(1) + _js_trim(sub)
+
+    return _js_re(r"(font-size\s*:\s*)(var\([^;{}]*\))", "gi").sub(decl, css)
+
+
+def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None = None) -> dict[str, str]:  # checkInputFontFloor
     """v27 (engine 1.1.0). A sub-16px input rule FAILs and a declared 16px
     floor PASSes, from the CSS alone. With neither, the page's own markup
     decides: no field iOS Safari can zoom into reads SKIP (it used to WARN),
-    and a text field with no floor still WARNs.
+    and a text field with no floor still WARNs. From engine 1.3.1 a
+    `font-size: var(...)` in a rule that styles a field is read through the
+    :root token table first (_resolve_font_size_vars).
     """
     item = "Input font-size ≥16px (prevents iOS Safari auto-zoom)"
+    css = _resolve_font_size_vars(css, tokens or {})
     input_re = _js_re(r"(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "gi")
     below: list[str] = []
     for m in input_re.finditer(css):
@@ -1693,7 +2067,7 @@ def _offline_checks(
         _check_font_synthesis(css),
         _check_underline_position(css),
         _check_skip_ink(css),
-        _check_input_font_floor(css, html),
+        _check_input_font_floor(css, html, raw_tokens),
     ]
     return effective, raw_tokens, _scrub_check_details(_apply_scope_filter(checks, effective))
 
@@ -1712,6 +2086,14 @@ def _offline_result(
     # PASS=1, WARN=0.5, FAIL=0; SKIP and MANUAL reach no verdict and are excluded.
     scored = total - counts["SKIP"] - counts["MANUAL"]
     score = (counts["PASS"] + 0.5 * counts["WARN"]) / scored if scored > 0 else 0.0
+    # No A while any check FAILs, as the live engine rules from 1.3.0
+    # (scoreArithmetic): any FAIL caps the score at 89.9%, a B at most.
+    ceiling = ""
+    if counts["FAIL"] > 0 and score > _ANY_FAIL_CAP:
+        score = _ANY_FAIL_CAP
+        failed = [c["id"] for c in checks if c["status"] == "FAIL"]
+        named = f"{failed[0]} fails" if len(failed) == 1 else f"{', '.join(failed[:-1])} and {failed[-1]} fail"
+        ceiling = f" A FAIL caps the grade at B: {named}, and the score cannot exceed 89.9% while any check fails."
     grade = _score_grade(score)
     not_run = list(_OFFLINE_NOT_IMPLEMENTED)
     in_engine = total + len(not_run)
@@ -1750,7 +2132,7 @@ def _offline_result(
             f"engine's weighted score. {counts['PASS']} passed, {counts['FAIL']} "
             f"failed, {counts['WARN']} warned, {counts['SKIP']} skipped, "
             f"{counts['MANUAL']} manual (need a browser). Score "
-            f"{round(score * 100, 1)}% ({grade})."
+            f"{round(score * 100, 1)}% ({grade}).{ceiling}"
         ),
     }
 
@@ -1948,15 +2330,27 @@ def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
     return _offline_result(url, html, css, scope, browser_probes=True)
 
 
+# The live engine's cap on a page with any FAIL (scoreArithmetic, engine
+# 1.3.0), as a 0-1 score: 89.9%, the top of the B band.
+_ANY_FAIL_CAP = 0.899
+
+
 def _score_grade(score: float) -> str:
-    """Convert score to letter grade."""
-    if score >= 0.95:
+    """Letter grade for a 0-1 score, on the live engine's bands (computeGrade).
+
+    A 90 and up, B 80, C 70, D 60, F under 60, read on the percentage at one
+    decimal, the number score_percent reports, so the letter always matches the
+    number shown. Until 1.3.0 this used A 95, B 85, C 75, so 92% read B here and
+    A everywhere else; test/test_grade_parity.py reads the bands from engine.ts.
+    """
+    pct = round(score * 100, 1)
+    if pct >= 90:
         return "A"
-    if score >= 0.85:
+    if pct >= 80:
         return "B"
-    if score >= 0.75:
+    if pct >= 70:
         return "C"
-    if score >= 0.60:
+    if pct >= 60:
         return "D"
     return "F"
 
@@ -3231,10 +3625,26 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     }
 
 
+# The axe-core tags each WCAG level includes (axe-core API documentation,
+# "Axe-core Tags"); the hosted route carries the same table.
+_AXE_LEVEL_TAGS: dict[str, list[str]] = {
+    "wcag2a": ["wcag2a"],
+    "wcag2aa": ["wcag2a", "wcag2aa"],
+    "wcag21a": ["wcag2a", "wcag21a"],
+    "wcag21aa": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"],
+    "wcag22aa": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"],
+}
+
+
 def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = None) -> dict[str, Any]:
     """Return the accessibility contract + Playwright script template for axe-core."""
     contract = _fetch("https://www.designesy.org/contracts/a11y.json", as_json=True)
     tag = ruleset or "wcag22aa"
+    # axe-core tags are not cumulative: wcag22aa alone ran one rule
+    # (target-size, axe-core 4.13.0). A WCAG level expands to every tag it
+    # includes; anything else runs as given. As the hosted route does.
+    tags = _AXE_LEVEL_TAGS.get(tag, [tag])
+    tags_js = json.dumps(tags, separators=(",", ":"), ensure_ascii=False)
 
     brand_config: dict[str, Any] | None = None
     if config:
@@ -3243,26 +3653,52 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
         except json.JSONDecodeError:
             return {"success": False, "error": "Invalid JSON in config parameter"}
 
+    # With a config, the script used to call axe.configure() in the test body,
+    # where nothing defines axe, so it threw on every run. axe.configure() has
+    # to run inside the page, and @axe-core/playwright 4.13.0 has no
+    # configure(): it injects the string it is given as axeSource. So the
+    # script imports axe-core and appends the configure() call to its source.
+    # As the hosted route does.
+    # The url argument is written into the script as a JavaScript string
+    # literal (json.dumps), never spliced between quotes: a quote, a backtick
+    # or ${ in it used to break out of the literal, and the caller runs this
+    # script. As the hosted route does.
+    url_js = json.dumps(url, ensure_ascii=False)
+    title_js = json.dumps(f"{url} — WCAG 2.2 AA scan", ensure_ascii=False)
+    config_import = ""
     config_line = ""
+    builder_args = "{ page }"
     if brand_config:
-        config_line = f"  const brandConfig = {json.dumps(brand_config, indent=2)};\n  await axe.configure(brandConfig);"
+        config_import = "import axe from 'axe-core';\n"
+        config_line = (
+            "  // axe.configure() runs in the page, so it travels with the axe-core source.\n"
+            f"  const brandConfig = {json.dumps(brand_config, indent=2)};\n"
+            "  const axeSource = axe.source + ';axe.configure(' + JSON.stringify(brandConfig) + ');';"
+        )
+        builder_args = "{ page, axeSource }"
 
     playwright_script = (
         f"// axe-core 4.13.0 + Playwright — generated by designesy_a11y_score\n"
         f"// Install: npm i -D @axe-core/playwright\n"
         f"import {{ test, expect }} from '@playwright/test';\n"
-        f"import AxeBuilder from '@axe-core/playwright';\n\n"
-        f"test('{url} — WCAG 2.2 AA scan', async ({{ page }}) => {{\n"
-        f"  await page.goto('{url}');\n"
+        f"import AxeBuilder from '@axe-core/playwright';\n"
+        f"{config_import}\n"
+        f"test({title_js}, async ({{ page }}) => {{\n"
+        f"  await page.goto({url_js});\n"
         f"{config_line}\n"
-        f"  const results = await new AxeBuilder({{ page }})\n"
-        f"    .withTags(['{tag}'])\n"
+        f"  const results = await new AxeBuilder({builder_args})\n"
+        f"    .withTags({tags_js})\n"
         f"    .analyze();\n\n"
         f"  const violations = results.violations;\n"
         f"  const passCount = results.passes.length;\n"
         f"  const failCount = violations.length;\n"
-        f"  const score = Math.round((passCount / (passCount + failCount)) * 100);\n"
-        f"  console.log(JSON.stringify({{ url: '{url}', ruleset: '{tag}', score, passCount, failCount, violations }}, null, 2));\n"
+        f"  // passes + violations counts the rules that applied. With none, nothing\n"
+        f"  // was measured: no score and no grade, never an F.\n"
+        f"  const applicable = passCount + failCount;\n"
+        f"  const score = applicable === 0 ? null : Math.round((passCount / applicable) * 100);\n"
+        f"  const grade = score === null ? null : score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';\n"
+        f"  const note = score === null ? 'not scored: no axe rule in these tags applied to this page' : null;\n"
+        f"  console.log(JSON.stringify({{ url: {url_js}, ruleset: {json.dumps(tag, ensure_ascii=False)}, tags: {tags_js}, score, grade, scored: score !== null, note, passCount, failCount, violations }}, null, 2));\n"
         f"}});\n"
     )
 
@@ -3273,11 +3709,12 @@ def _a11y_score_impl(url: str, ruleset: str | None = None, config: str | None = 
         "contract_status": contract.get("status"),
         "url": url,
         "ruleset": tag,
+        "tags": tags,
         "brand_config": brand_config,
         "summary": "axe-core requires a real DOM. This tool returns the contract checks + a Playwright script. Execute the script locally with @axe-core/playwright 4.13.0.",
         "checks": [{"id": c.get("id"), "name": c.get("item"), "status": "PENDING_EXECUTION"} for c in checks],
         "playwright_script": playwright_script,
-        "install_command": "npm i -D @axe-core/playwright@4.13.0",
+        "install_command": "npm i -D @axe-core/playwright@4.13.0 axe-core@4.13.0" if brand_config else "npm i -D @axe-core/playwright@4.13.0",
         "run_command": "npx playwright test a11y-scan.spec.ts --reporter=line",
         "provenance": "axe-core 4.13.0 + W3C WCAG 2.2 + ACT Rules + designesy-core.v0.3.0 section 6",
         "priority": "HIGH",

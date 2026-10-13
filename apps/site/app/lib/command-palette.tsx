@@ -12,6 +12,7 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { useTheme } from './use-theme';
 import { useMotionPreference } from './use-motion-pref';
 import { tidyExcerpt } from './excerpt';
+import { isNonPageHref } from './route-link';
 
 /**
  * Command palette (Cmd+K / Ctrl+K, or "/").
@@ -155,7 +156,7 @@ const INDEX: SearchItem[] = [
   { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost price how much plans continuity free subscribe upgrade tiers', meta: '' },
   { title: 'Designesy Review', href: '/pricing/review', group: 'Company', keywords: 'full review human audit accessibility wcag store ecommerce shop fix list one-time cost price how much buy order', meta: 'one-time' },
   { title: 'Continuity', href: '/continuity', group: 'Company', keywords: 'history drift waitlist judgment current monitoring alerts scheduled scans recurring paid subscription cost price how much', meta: 'waitlist' },
-  { title: 'Badge', href: '/badge', group: 'Company', keywords: 'verified badge embed svg', meta: '' },
+  { title: 'Badge', href: '/badge', group: 'Company', keywords: 'scored by designesy live badge embed svg grade', meta: '' },
   { title: 'Privacy', href: '/privacy', group: 'Company', keywords: 'data policy', meta: '' },
 ];
 
@@ -687,7 +688,10 @@ export function CommandPalette() {
   const go = useCallback(
     (href: string) => {
       close();
-      router.push(href);
+      // An endpoint or a file (MCP server, open.json, llms.txt) is loaded as
+      // itself: the router would fetch it as a page first (a 405 on /api/mcp).
+      if (isNonPageHref(href)) window.location.assign(href);
+      else router.push(href);
     },
     [close, router]
   );

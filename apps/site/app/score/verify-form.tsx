@@ -32,7 +32,17 @@ import { toOutcomes, type Phase, type RegistryView } from '../lib/engine/types';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { ReviewPrompt } from '../lib/review-prompt';
-import { readEvidence, categoryLabel, fmtScore, statusCount, STATUS_LABEL, STATUS_GROUP } from './verdict';
+import { bringIntoView } from '../lib/engine/bring-into-view';
+import {
+  readEvidence,
+  categoryLabel,
+  fmtScore,
+  statusCount,
+  STATUS_LABEL,
+  STATUS_GROUP,
+  RUN_UNREACHABLE,
+  runStopped,
+} from './verdict';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -310,7 +320,6 @@ function EngineTile({
       data-grade={ok ? grade.toLowerCase() : undefined}
       aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${fmtScore(score)} out of 100, ${statusCount('PASS', pass)}, ${statusCount('WARN', warn)}, ${statusCount('FAIL', fail)}` : 'not yet run'}`}
     >
-      <span className="score-engine-tile-top" />
       <span className="score-engine-tile-head">
         <span className="score-engine-tile-label">{label}</span>
         <span className="score-engine-tile-count">{checkCount}</span>
@@ -370,6 +379,9 @@ export function VerifyForm({
   const bundleTabsRef = useRef<HTMLDivElement>(null);
   // The URL of the last run, for "Try again" on a failure.
   const lastTarget = useRef('');
+  // The failure notice under the URL bar, and its reason, which takes focus.
+  const noticeRef = useRef<HTMLDivElement>(null);
+  const noticeMsgRef = useRef<HTMLParagraphElement>(null);
 
   // Load history on mount (client-only, SSR-safe).
   useEffect(() => {
@@ -399,6 +411,43 @@ export function VerifyForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A failed run is said where the visitor is looking. The notice sits under
+  // the URL bar; under the instrument it was 1,100px below the fold on a
+  // phone (live audit 2026-10-11, V04; R19 of 2026-10-10). It comes into view
+  // (smoothly unless reduced motion is asked for) and its reason takes focus,
+  // so a keyboard or screen-reader visitor lands on it; the instrument's
+  // polite line still announces the stop with the same reason.
+  // Focus moves only while it is still in the form or on the page body: a
+  // visitor who went elsewhere (the palette, the menu) is left there.
+  useEffect(() => {
+    if (status !== 'error') return;
+    const active = document.activeElement;
+    const stillHere = !active || active === document.body || !!active.closest('.score-form');
+    if (!stillHere) return;
+    // Moves the page only when the notice is not wholly on screen under the
+    // sticky bar: on a wide screen, or a phone opened on a shared link, it
+    // already is, and the page stays where it was.
+    const land = () => {
+      const el = noticeRef.current;
+      if (!el) return;
+      const clear = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const r = el.getBoundingClientRect();
+      if (r.top >= clear - 1 && r.bottom <= window.innerHeight) return;
+      bringIntoView(el);
+    };
+    const frame = requestAnimationFrame(() => {
+      land();
+      noticeMsgRef.current?.focus({ preventScroll: true });
+    });
+    // A run's start brings the instrument into view on a phone; a scroll still
+    // moving can carry the notice past the top, so look once more after it.
+    const settle = window.setTimeout(land, 700);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(settle);
+    };
+  }, [status]);
 
   async function runVerify(targetUrl: string) {
     if (status === 'loading') return;
@@ -432,24 +481,27 @@ export function VerifyForm({
     let report: ReportResponse | null = null;
     let guardrails: GuardrailsResponse | null = null;
 
+    // A request that never connected, or an answer that is not the engine's
+    // JSON (a server error page), is said in plain words (verdict.ts); an
+    // engine's own reason, when it gives one, is kept as it is.
     if (reportResp.status === 'fulfilled') {
       try {
         report = (await reportResp.value.json()) as ReportResponse;
       } catch {
-        report = { ok: false, error: 'Report engine returned invalid JSON' };
+        report = { ok: false, error: runStopped(reportResp.value.status) };
       }
     } else {
-      report = { ok: false, error: 'Report engine network error' };
+      report = { ok: false, error: RUN_UNREACHABLE };
     }
 
     if (guardrailsResp.status === 'fulfilled') {
       try {
         guardrails = (await guardrailsResp.value.json()) as GuardrailsResponse;
       } catch {
-        guardrails = { ok: false, error: 'Guardrails engine returned invalid JSON' };
+        guardrails = { ok: false, error: runStopped(guardrailsResp.value.status) };
       }
     } else {
-      guardrails = { ok: false, error: 'Guardrails engine network error' };
+      guardrails = { ok: false, error: RUN_UNREACHABLE };
     }
 
     // Both failed, or the page itself could not be read → error state. An
@@ -736,11 +788,42 @@ export function VerifyForm({
         note="No login. The four engines fire in parallel and each fetches the page itself."
       />
 
+      {/* Error state, directly under the URL bar at every width. Not a live
+          region: the instrument's live line, mounted since the page loaded,
+          announces the stop with this reason, so a role here would read the
+          failure twice (WCAG 4.1.3). Its reason takes focus (the effect
+          above), which reads it to a screen reader where focus lands. */}
+      {status === 'error' && (
+        <div className="score-error-card" ref={noticeRef}>
+          <span className="score-error-icon" aria-hidden="true">
+            {/* v2.1 error: its point a neutral hub dot, the colour from .score-error-icon. */}
+            <BrandIcon name="error" size={20} />
+          </span>
+          <div className="score-error-body">
+            <div>
+              <p className="score-error-title">No result</p>
+              <p className="score-error-msg" tabIndex={-1} ref={noticeMsgRef}>
+                {failure}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="score-action-btn score-error-retry"
+              onClick={() => void runVerify(lastTarget.current || normalizeInput(url))}
+              data-cuelume-press="tick"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
       <Instrument
         name="Four engines"
         registry={view}
         face="engines"
         engines={liveBlocks}
+        ignite
         phase={phase}
         target={(status === 'loading' ? normalizeInput(url) : scoredUrl).replace(/^https?:\/\//i, '').replace(/\/$/, '')}
         outcomes={outcomes}
@@ -791,32 +874,6 @@ export function VerifyForm({
         }
         onOpen={openCheck}
       />
-
-      {/* Error state. Not a live region: the instrument's live line, mounted
-          since the page loaded, announces the stop with this reason, so a
-          role here would read the failure twice (WCAG 4.1.3). */}
-      {status === 'error' && (
-        <div className="score-error-card">
-          <span className="score-error-icon" aria-hidden="true">
-            {/* v2.1 error: its point a neutral hub dot, the colour from .score-error-icon. */}
-            <BrandIcon name="error" size={20} />
-          </span>
-          <div className="score-error-body">
-            <div>
-              <p className="score-error-title">Verification notice</p>
-              <p className="score-error-msg">{failure}</p>
-            </div>
-            <button
-              type="button"
-              className="score-action-btn score-error-retry"
-              onClick={() => void runVerify(lastTarget.current || normalizeInput(url))}
-              data-cuelume-press="tick"
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* OK state — the unified dashboard */}
       {status === 'ok' && (reportResult?.ok || guardrailsResult?.ok) && (

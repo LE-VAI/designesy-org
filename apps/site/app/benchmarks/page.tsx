@@ -17,7 +17,7 @@ import { AgentActions } from '../lib/agent-actions';
 import { CATEGORY_WEIGHTS, CHECKS as REGISTRY, ENGINE_MANUAL_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import { display } from '../lib/engine/types';
-import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt, toneOf } from '../lib/data/cohort';
+import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt } from '../lib/data/cohort';
 import { DataTable } from '../lib/data/figure';
 import { unbroken } from '../lib/data/unbroken';
 
@@ -75,12 +75,12 @@ const DESIGNESY_ONLY = [
   { id: 'v18', what: 'text-wrap: balance and pretty both present' },
   { id: 'v19', what: 'tabular-nums in 8 places or more' },
   { id: 'v20', what: '::selection styled in the brand accent' },
-  { id: 'v21', what: 'Core Web Vitals (LCP under 2.5s, INP under 200ms, CLS under 0.1)' },
+  { id: 'v21', what: 'Core Web Vitals (LCP 2.5s or less, INP 200ms or less, CLS 0.1 or less), measured by the full audit in a browser; the static score marks it manual' },
   { id: 'v23', what: 'Duration tokens, --duration-quick to --duration-slow' },
   { id: 'x01, x02, x03', what: 'font-synthesis, text-underline-position and skip-ink' },
   { id: 'v27', what: 'Input font size of 16px or more (no iOS zoom)' },
   { id: 'v29', what: 'Token layers, primitive to semantic to component (DSAF A1.1)' },
-  { id: 'v34', what: 'AI-disclosure readiness (EU AI Act, Article 50, in force from 2026-08-02)' },
+  { id: 'v34', what: 'AI-disclosure readiness (EU AI Act Article 50, which applies from 2 August 2026)' },
   { id: 'v35', what: 'Forced-colors readiness' },
   { id: 'v36', what: 'Unicode security: UTS #39 confusables in token names and CSS' },
   { id: 'v37', what: 'DESIGN.md spec layer (Google @google/design.md lint)' },
@@ -253,7 +253,7 @@ export default function BenchmarksPage() {
                   'designesy',
                   SELF ? (
                     <span key="s" className="dx-rank-sg">
-                      <span className="dx-grade" data-tone={toneOf(SELF.grade)}>
+                      <span className="dx-grade" data-grade={SELF.grade.toLowerCase()}>
                         {SELF.grade}
                       </span>
                       <span className="dx-num">{fmt(SELF.score)}</span>

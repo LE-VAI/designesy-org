@@ -2,7 +2,7 @@
 // v2026-07-25-history — free-tier local score history (5 most-recent per browser)
 'use client';
 
-import { useState, useRef, useMemo, useEffect } from 'react';
+import { useState, useRef, useMemo, useEffect, type ReactNode } from 'react';
 import {
   readScoreHistory,
   saveScore,
@@ -38,6 +38,8 @@ import { ResultReadout, ResultScale, CategoryList } from './result-parts';
 import { ScoreEmptyRun } from './score-empty-run';
 import { ReviewPrompt } from '../lib/review-prompt';
 import { BrandIcon } from '../lib/brand-icons';
+import { useIgnition } from '../lib/engine/ignition';
+import type { Phase } from '../lib/engine/types';
 
 /**
  * Sound gate — mirrors the preference logic in use-sound.tsx.
@@ -182,9 +184,26 @@ const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
   { value: 'contract', label: 'Strict', hint: `All ${ENGINE_CHECK_COUNT} checks count an absence against the site: the strictest reading.` },
 ];
 
-export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
+/**
+ * initialUrl is a deep link (/score?url=stripe.com): the form scores it once on
+ * mount. prefillUrl only fills the field, and nothing runs until the visitor
+ * presses Score. The platform landings (/score/bolt, /score/lovable, /score/v0)
+ * use prefillUrl: they used to pass their example as initialUrl, so every visit
+ * spent an engine run on a site the visitor had not asked about, under copy
+ * that called the example "prefilled".
+ *
+ * noteAfter is a clause the page adds to the bar's resting note, after "No
+ * login. N checks, a grade in seconds.": the home page puts its contract line
+ * there (brand D60), so the version line sits under the form as plain text
+ * instead of in a pill above the headline.
+ */
+export function ScoreForm({
+  initialUrl = '',
+  prefillUrl = '',
+  noteAfter,
+}: { initialUrl?: string; prefillUrl?: string; noteAfter?: ReactNode } = {}) {
   const [status, setStatus] = useState<Status>('idle');
-  const [url, setUrl] = useState(initialUrl);
+  const [url, setUrl] = useState(initialUrl || prefillUrl);
   const [scopeMode, setScopeMode] = useState<ScopeMode>('auto');
   const [result, setResult] = useState<ScoreResponse | null>(null);
   const [scoredUrl, setScoredUrl] = useState('');
@@ -210,6 +229,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const verdictRef = useRef<HTMLParagraphElement | null>(null);
   const landRun = useRef<{ y: number } | null>(null);
+  // The loading ignition (brand D51): the run line's lone dot breathes while
+  // the run is out and lights when a scored result lands (lib/engine/ignition).
+  const lampDot = useRef<HTMLElement | null>(null);
+  const lampHalo = useRef<HTMLElement | null>(null);
+  const runLineRef = useRef<HTMLParagraphElement | null>(null);
   // The URL of the last run, for "Try again" on a failure.
   const lastTarget = useRef('');
   const [rubricOpen, setRubricOpen] = useState(false);
@@ -351,7 +375,9 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     const active = document.activeElement;
     const stillHere = !active || active === document.body || !!active.closest('.score-form');
     requestAnimationFrame(() => {
-      bringIntoView(resultsRef.current);
+      // The run line stands over the result and carries the lit dot, so it
+      // lands in view with it (under the sticky bar, not behind it).
+      bringIntoView(runLineRef.current ?? resultsRef.current);
       if (stillHere) verdictRef.current?.focus({ preventScroll: true });
     });
   }, [status]);
@@ -558,12 +584,13 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
 
   // Copy the embeddable badge snippet — an <a><img></a> block ready to paste
   // into a README, docs page, or site footer. Each embed is a backlink to
-  // designesy.org and carries the live grade.
+  // designesy.org and draws the live badge (/api/badge, "Scored by Designesy"):
+  // the site's cached grade, score and the date of its run.
   const badgeSrc = typeof window !== 'undefined' && scoredUrl
-    ? `${window.location.origin}/score/badge?url=${encodeURIComponent(scoredUrl)}`
+    ? `${window.location.origin}/api/badge?url=${encodeURIComponent(scoredUrl)}`
     : '';
   const badgeEmbed = badgeSrc
-    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Designesy contract score" /></a>`
+    ? `<a href="${shareUrl}" target="_blank" rel="noopener noreferrer"><img src="${badgeSrc}" alt="Scored by Designesy: live score for ${scoredUrl.replace(/^https?:\/\//i, '').replace(/\/$/, '')}" height="44" /></a>`
     : '';
 
   function copyBadgeEmbed() {
@@ -627,6 +654,11 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
     }
   }
 
+  const landed = status === 'ok' && !!result?.ok && !isEmptyRun(result);
+  const runPhase: Phase = status === 'loading' ? 'running' : status === 'ok' ? 'done' : status === 'error' ? 'error' : 'idle';
+  useIgnition(lampDot, lampHalo, runPhase, landed, true);
+  const runHost = (status === 'loading' ? normalizeInput(url) : scoredUrl).replace(/^https?:\/\//i, '').replace(/\/$/, '');
+
   return (
     <div className="score-form">
       <EngineBar
@@ -644,7 +676,17 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
             disabled={status === 'loading'}
           />
         }
-        note={`No login. ${ENGINE_CHECK_COUNT} checks, a grade in seconds.`}
+        note={
+          <>
+            No login. {ENGINE_CHECK_COUNT} checks, a grade in seconds.
+            {noteAfter && (
+              <>
+                {' '}
+                <span aria-hidden="true">·</span> {noteAfter}
+              </>
+            )}
+          </>
+        }
       />
 
       {/* A failed run is the answer to the visitor's request, and nothing else
@@ -676,9 +718,24 @@ export function ScoreForm({ initialUrl = '' }: { initialUrl?: string } = {}) {
         </div>
       )}
 
+      {/* One element from the run's start to its result, so the dot that
+          breathed is the dot that lights. Drawn only: the loading card keeps
+          the same words for screen readers, and the result is announced by
+          focus on the verdict line. A failed or empty run drops it with the
+          loader, as before. */}
+      {(status === 'loading' || landed) && (
+        <p className="score-run-line" aria-hidden="true" ref={runLineRef}>
+          <span className="score-lamp" data-ignite="" data-phase={runPhase}>
+            <i className="ig-halo" ref={lampHalo} />
+            <i className="ig-dot" ref={lampDot} />
+          </span>
+          {status === 'loading' ? 'Scoring' : 'Scored'} {runHost}
+        </p>
+      )}
+
       {status === 'loading' && (
         <div className="score-verify-log" role="status" aria-live="polite" aria-label="Verification in progress">
-          <p className="score-verify-log-title">Scoring {normalizeInput(url).replace(/^https?:\/\//i, '').replace(/\/$/, '')}</p>
+          <p className="score-verify-log-title sr-only">Scoring {normalizeInput(url).replace(/^https?:\/\//i, '').replace(/\/$/, '')}</p>
           <ol className="score-verify-log-list">
             {['Fetching live CSS + tokens', 'Evaluating contract checks', 'Weighting 14 categories', 'Composing verdict'].map((step, i) => (
               <li key={step} className="score-verify-log-step" style={{ animationDelay: `${i * 900}ms` }}>
