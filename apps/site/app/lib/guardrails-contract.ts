@@ -13,7 +13,7 @@
 
 export const guardrailsContract = {
   id: 'designesy.guardrails',
-  version: '0.1.1',
+  version: '0.1.2',
   status: 'provisional',
   name: 'Designesy Guardrails Contract',
   kind: 'contract' as const,
@@ -38,7 +38,7 @@ export const guardrailsContract = {
       { component: 'designMd', description: 'DESIGN.md-format file (the open DESIGN.md format, google-labs-code/design.md, Apache-2.0, for describing a visual identity to coding agents): YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order' },
     ],
     emission_method:
-      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (the open DESIGN.md format).',
+      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate a file in the open DESIGN.md format.',
   },
   verification: {
     checks: [

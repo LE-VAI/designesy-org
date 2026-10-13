@@ -13,7 +13,7 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails contract',
   description:
-    `Designesy Guardrails Contract v${guardrailsContract.version} ingests a design system and emits a frozen build contract for AI coding agents: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (the open DESIGN.md format). The product layer.`,
+    `Designesy Guardrails Contract v${guardrailsContract.version} ingests a design system and emits a frozen build contract for AI coding agents: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and a file in the open DESIGN.md format. The product layer.`,
   path: '/contracts/guardrails',
   ogTitle: 'Guardrails contract · Designesy',
   ogDescription:
