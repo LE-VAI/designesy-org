@@ -433,6 +433,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'Each defect was a warning on a page that was right, this site among them: four families counted where three render, a 16px input read as unset, and a keycap button read as the words ctrl and i. A warning on correct work teaches readers to ignore warnings. v42 is unchanged: Tailwind v4 writes only the theme variables a project uses, so a sheet full of hue-named tokens is using them.',
     source: 'engine 1.3.1 entry in CHANGELOG.md; Tailwind CSS v4 theme documentation (only used CSS variables are generated); shadcn/ui theming (--destructive)',
   },
+
+  // ── v0.4.5: this site's own accessibility gate ──
+  {
+    version: 'v0.4.5',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: "This site's accessibility gate now runs its axe rules",
+    description:
+      'The accessibility sweep that runs on each change to designesy.org filtered axe-core by the tag wcag2a2a, which axe does not have. Given an unknown tag, axe runs no rules and reports no violations, so from its first run on 2026-10-04 to 2026-10-13 the axe half of the gate could not fail; its heading and landmark checks still ran. The sweep now runs the five tags the accessibility contract names (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa) and fails any page where axe runs no rules. Re-run on 2026-10-13 on all 70 routes, light theme at 1440px: no violations at any impact level.',
+    rationale:
+      'A sweep that runs no rules reports the same result as one that passes, so a run with no rules is now a failure. Scores of other sites are untouched: the engine does not use this sweep. The 0 violations figure on /docs/mcp comes from a separate sweep on 2026-10-11 with the five tags, 140 page scans in the light and dark themes, so it stands.',
+    source: 'designesy-org pull request 316; axe-core 4.12.1 (runOnly with an unknown tag evaluates no rules)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
