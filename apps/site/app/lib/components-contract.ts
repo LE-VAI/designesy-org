@@ -82,13 +82,13 @@ const GLOBAL_A11Y: readonly string[] = designSystemContract.accessibility;
 
 export const componentsContract = {
   id: 'designesy.components',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'public' as const,
   name: 'Designesy Components Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/components',
   machine_url: 'https://www.designesy.org/contracts/components.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   source_authority: {
     derived_from: 'designesy.design-system',
     contract_version: designSystemContract.version,

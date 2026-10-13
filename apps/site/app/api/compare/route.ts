@@ -5,7 +5,7 @@
 // value-changed, scale-stop-changed, contrast-drift, structure-delta,
 // and score-delta (runs /score on both).
 //
-// Contract: /contracts/compare.json (designesy.compare v0.1.0)
+// Contract: /contracts/compare.json (designesy.compare; the version is lib/compare-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';

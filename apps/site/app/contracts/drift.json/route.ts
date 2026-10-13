@@ -11,7 +11,7 @@ export function GET(request: Request) {
     jsonHeaders: {
       'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       'Access-Control-Allow-Origin': '*',
-      'Content-Disposition': 'inline; filename="designesy-drift-v0.1.0.json"',
+      'Content-Disposition': `inline; filename="designesy-drift-v${driftContract.version}.json"`,
     },
   });
 }

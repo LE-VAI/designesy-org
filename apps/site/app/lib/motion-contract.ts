@@ -1,5 +1,5 @@
 /**
- * Designesy Motion Contract v0.1.0 — machine-readable form.
+ * Designesy Motion Contract v0.1.1 — machine-readable form.
  * Sibling contract governing Lottie spec v1.0.1 + Designesy §16 motion conformance.
  * Source: internal contract markdown (not for public distribution).
  *
@@ -9,13 +9,13 @@
 
 export const motionContract = {
   id: 'designesy.motion',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Motion Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/motion',
   machine_url: 'https://www.designesy.org/contracts/motion.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Motion is structural communication. If motion files are malformed or violate the non-negotiable standards, they degrade trust, clarity, and usability.',
   source_authority: {

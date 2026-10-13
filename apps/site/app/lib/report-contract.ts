@@ -1,7 +1,7 @@
 import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 /**
- * Designesy Report Contract v0.1.0 — machine-readable form.
+ * Designesy Report Contract v0.1.1 — machine-readable form.
  * The synthesis capstone — one URL in, three engines fired in parallel,
  * one unified design-intelligence report with a composite grade.
  *
@@ -17,13 +17,13 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 export const reportContract = {
   id: 'designesy.report',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Report Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/report',
   machine_url: 'https://www.designesy.org/contracts/report.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Report is the synthesis capstone: fetch one URL, run score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade: the most shareable surface in the dynasty. Where /score answers "how good is this design", /drift answers "is AI breaking it", and /readiness answers "can agents use it", /report answers all three at once.',
   source_authority: {
