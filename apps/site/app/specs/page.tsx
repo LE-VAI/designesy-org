@@ -42,7 +42,7 @@ const FORMATS = [
   { format: 'designesy', type: 'application/json', desc: 'The native shape: score, grade, checks and categoryScores. The default.' },
   { format: 'canonical', type: 'application/json', desc: 'This schema in full, every field. The source of truth the others project from.' },
   { format: 'review', type: 'text/markdown', desc: 'A report in the better-interface style: scope, a findings table, the verdict.' },
-  { format: 'google', type: 'application/json', desc: 'The @google/design.md shape: findings, summary and designSystem.' },
+  { format: 'google', type: 'application/json', desc: 'The DESIGN.md format\'s lint shape: findings, summary and designSystem.' },
 ];
 
 const SEVERITY = [

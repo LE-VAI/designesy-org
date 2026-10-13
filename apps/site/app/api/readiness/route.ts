@@ -6,7 +6,7 @@
 //
 // All 10 checks are HTTP probes — no browser needed.
 //
-// Contract: /contracts/readiness.json (designesy.readiness v0.1.0)
+// Contract: /contracts/readiness.json (designesy.readiness; the version is lib/readiness-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
@@ -244,9 +244,9 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
 async function checkR05DesignMd(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/DESIGN.md', '/design.md']);
   if (!result.found) {
-    return { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md: missing the machine-readable design brief' };
+    return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md: missing the machine-readable design brief' };
   }
-  return { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', category: 'discovery', status: 'PASS', detail: `/DESIGN.md found (${result.body?.length || 0} bytes)` };
+  return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'PASS', detail: `/DESIGN.md found (${result.body?.length || 0} bytes)` };
 }
 
 async function checkR06TokenDescription(origin: string): Promise<CheckResult> {

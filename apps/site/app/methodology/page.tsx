@@ -337,7 +337,7 @@ const CHECKS: CheckDef[] = [
     id: 'v37',
     item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
     category: 'spec',
-    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
+    how: 'Fetches /DESIGN.md from the target origin and runs the DESIGN.md format\'s linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
     skipReason: 'N/A if /DESIGN.md is not served at the target origin; no public convention requires it yet.',
   },
 
@@ -414,7 +414,7 @@ const CATEGORY_NOTES: Record<string, string> = {
   identity: 'Document identity: semantic landmarks (h1, title, meta description, main, header, nav) and AI-disclosure readiness (EU AI Act, Article 50).',
   interaction: 'Focus visibility: :focus-visible rings declared.',
   performance: 'Core Web Vitals (LCP, INP, CLS). They need a CDP or Playwright trace, so the static engine marks them manual; the weight is held in reserve.',
-  spec: 'The DESIGN.md spec layer: Google’s @google/design.md linter, run when a site serves /DESIGN.md and not applicable otherwise.',
+  spec: 'The DESIGN.md spec layer: the DESIGN.md format’s linter, run when a site serves /DESIGN.md and not applicable otherwise.',
   responsive: 'Horizontal overflow at 375, 720, 860 and 1080 px and up. It needs a browser viewport, so the static engine marks it manual; the weight is held in reserve.',
 };
 

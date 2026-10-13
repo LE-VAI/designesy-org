@@ -268,7 +268,7 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'added',
     title: 'Spec-layer integration (DESIGN.md)',
     description:
-      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own contract verification.',
+      'New check: validates the DESIGN.md spec file with the DESIGN.md format\'s linter. Integrates the spec layer beneath designesy\'s own contract verification.',
     checks: ['v37'],
     rationale:
       'DESIGN.md is the AI-agent-facing spec file. With it, AI coding tools build from your system instead of around it. The check validates its presence and structure.',
@@ -446,6 +446,34 @@ const CHANGELOG: ChangelogEntry[] = [
     rationale:
       'A sweep that runs no rules reports the same result as one that passes, so a run with no rules is now a failure. Scores of other sites are untouched: the engine does not use this sweep. The 0 violations figure on /docs/mcp comes from a separate sweep on 2026-10-11 with the five tags, 140 page scans in the light and dark themes, so it stands.',
     source: 'designesy-org pull request 316; axe-core 4.12.1 (runOnly with an unknown tag evaluates no rules)',
+  },
+
+  // ── Guardrails contract v0.1.1: two unversioned edits, versioned ──
+  {
+    version: 'guardrails v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.1: the adoption figures and the DESIGN.md wording',
+    description:
+      'Two edits shipped under 0.1.0 without a version. On 2026-10-12 the adoption signal moved to the 2026 zeroheight report for the hand-synced figure (60%, where it had said 40%: 40% is the share of teams with a token pipeline), and the designMd bundle line named the open DESIGN.md format without the vendor. On 2026-10-13 token adoption moved to the 2026 report\'s 86% (84% is the 2025 report\'s figure, and the 2025 report does not date the 56% it rose from).',
+    rationale:
+      'Every contract change is versioned and dated in this changelog. These two were not, so 0.1.1 records them. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.1; zeroheight Design Systems Report 2026 (report.zeroheight.com)',
+  },
+
+  // ── AI Readiness contract v0.1.1: the DESIGN.md format, named as a format ──
+  {
+    version: 'readiness v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Readiness contract 0.1.1: the DESIGN.md format named without the vendor',
+    description:
+      'r05 and the readiness signal list now say "the DESIGN.md format" where they said "the @google/design.md standard" and "Google design.md standard". The readiness check reports r05 under the same new name. The package name stays where it is an install command, a code sample or a source citation.',
+    rationale:
+      'Wording only: the DESIGN.md format is the thing a site serves, and the package is one tool that lints it. No rule, threshold or weight changed.',
+    source: 'Designesy AI readiness contract v0.1.1',
   },
 ];
 

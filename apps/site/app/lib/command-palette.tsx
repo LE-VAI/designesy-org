@@ -9,6 +9,8 @@ import { BrandIcon } from './brand-icons';
 import { pushLayer, yieldToModal } from './overlay-stack';
 import { useRouter } from 'next/navigation';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
+import { readinessContract } from './readiness-contract';
+import { guardrailsContract } from './guardrails-contract';
 import { useTheme } from './use-theme';
 import { useMotionPreference } from './use-motion-pref';
 import { tidyExcerpt } from './excerpt';
@@ -96,8 +98,8 @@ const INDEX: SearchItem[] = [
   { title: 'Motion', href: '/contracts/motion', group: 'Contract', keywords: 'animation duration easing spring reduced', meta: '' },
   { title: 'Accessibility', href: '/contracts/a11y', group: 'Contract', keywords: 'wcag axe contrast screen reader', meta: 'WCAG 2.2 AA' },
   { title: 'Drift', href: '/contracts/drift', group: 'Contract', keywords: 'ai drift token fabrication variance off contract', meta: 'v0.1.0' },
-  { title: 'AI Readiness', href: '/contracts/readiness', group: 'Contract', keywords: 'ai readiness machine readable llms.txt agent.json mcp maturity', meta: 'v0.1.0' },
-  { title: 'Guardrails', href: '/contracts/guardrails', group: 'Contract', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint', meta: 'v0.1.0' },
+  { title: 'AI Readiness', href: '/contracts/readiness', group: 'Contract', keywords: 'ai readiness machine readable llms.txt agent.json mcp maturity', meta: `v${readinessContract.version}` },
+  { title: 'Guardrails', href: '/contracts/guardrails', group: 'Contract', keywords: 'guardrails build contract emit dtcg stylelint agents.md lint', meta: `v${guardrailsContract.version}` },
   { title: 'Monitor', href: '/contracts/monitor', group: 'Contract', keywords: 'monitor drift continuous governance watch cadence snapshot delta trend alert', meta: 'v0.1.0' },
   { title: 'Compare', href: '/contracts/compare', group: 'Contract', keywords: 'compare diff design systems tokens added removed renamed contrast drift score delta', meta: 'v0.1.0' },
   { title: 'Report', href: '/contracts/report', group: 'Contract', keywords: 'report synthesis composite score drift readiness unified grade holistic', meta: 'v0.1.0' },

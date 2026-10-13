@@ -83,7 +83,7 @@ const DESIGNESY_ONLY = [
   { id: 'v34', what: 'AI-disclosure readiness (EU AI Act Article 50, which applies from 2 August 2026)' },
   { id: 'v35', what: 'Forced-colors readiness' },
   { id: 'v36', what: 'Unicode security: UTS #39 confusables in token names and CSS' },
-  { id: 'v37', what: 'DESIGN.md spec layer (Google @google/design.md lint)' },
+  { id: 'v37', what: 'DESIGN.md spec layer (DESIGN.md format lint)' },
 ];
 
 // The longest id run, in characters: the id column's width (data.css).
