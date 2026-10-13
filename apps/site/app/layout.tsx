@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Schibsted_Grotesk, Atkinson_Hyperlegible_Mono } from 'next/font/google';
-import './globals.css';
 import { SiteAnalytics } from './lib/site-analytics';
+import { CriticalCss } from './lib/critical-css';
 import { CuelumeBinder } from './lib/cuelume-binder';
 import { BackButton } from './lib/back-button';
 import { DirectorDock } from './lib/director-dock';
@@ -132,6 +132,42 @@ import {
   websiteJsonLd,
 } from './lib/json-ld';
 
+/* globals.css, without blocking first paint (production).
+
+   As a plain import here, globals.css became a render-blocking <link> on every
+   route, and it was the last blocking response to land: about 255 KB, 47 KB on
+   the wire. In production it is now built by scripts/build-critical-css.mjs
+   (before `next build`, the same pipeline Next uses) into
+   public/_css/globals.<hash>.css. <CriticalCss/> inlines the rules the pages
+   use, and globalsLoader below fetches the whole sheet without blocking paint:
+   a script-inserted stylesheet is not render-blocking, and media="print" keeps
+   it from applying (and from blocking, in every engine) until it has loaded,
+   when it switches to "all". A print sheet is fetched at the lowest priority,
+   behind every script; fetchPriority "high" brings it in sooner without
+   delaying the fonts, which shortens the time an element the subset misses
+   (one that appears only on interaction) could show unstyled. It is inserted right after the inline subset, so
+   it sits where globals.css always sat in the cascade: before next/font's sheet
+   and every route sheet. Without JavaScript the <noscript> link loads it; that
+   link, and the subset, then sit after the route sheets (nothing can move them),
+   so for a visitor without JavaScript a global rule can win a tie of equal
+   specificity that a route rule used to win.
+
+   Development keeps the import, for Fast Refresh: `process.env.NODE_ENV` is a
+   build-time constant, so a production build never sees this require. */
+if (process.env.NODE_ENV !== 'production') require('./globals.css');
+const globalsHref: string | null =
+  process.env.NODE_ENV === 'production' ? require('./lib/critical-css.generated.json').href : null;
+// The loader also MOVES the inline subset. React writes a precedence's
+// stylesheets before its inline styles, so the server puts <CriticalCss/> after
+// next/font's sheet and every route sheet; there, a global rule would beat a
+// route rule of equal specificity, which it never did. This inline script runs
+// after those sheets load (a parser-inserted script waits for the stylesheets
+// before it) and before the first paint (which waits for the same sheets), and
+// puts the subset back where globals.css sat: before the first of them.
+const globalsLoader = globalsHref
+  ? `(function(){var d=document,h=d.head,s=d.querySelector('style[data-href~="globals-critical"]'),f=h.querySelector('link[rel="stylesheet"][data-precedence],style[data-precedence]');if(s&&f&&f!==s)h.insertBefore(s,f);if(d.querySelector('link[data-globals-css]'))return;var l=d.createElement('link');l.rel='stylesheet';l.href=${JSON.stringify(globalsHref)};l.media='print';l.fetchPriority='high';l.setAttribute('data-globals-css','');l.onload=function(){l.media='all'};if(s&&s.parentNode){s.parentNode.insertBefore(l,s.nextSibling)}else{h.insertBefore(l,f||h.firstChild)}})();`
+  : null;
+
 /* Theme detection — inline blocking script that runs before first paint.
    Reads cookie → localStorage → matchMedia. Only runs when no data-theme
    has been stamped server-side (first visit / cleared cookies). After the
@@ -220,6 +256,15 @@ export default function RootLayout({
       className={`${fraunces.variable} ${schibsted.variable} ${atkinsonMono.variable}`}
     >
       <head>
+        <CriticalCss />
+        {globalsLoader && globalsHref && (
+          <>
+            <script dangerouslySetInnerHTML={{ __html: globalsLoader }} />
+            <noscript
+              dangerouslySetInnerHTML={{ __html: `<link rel="stylesheet" href="${globalsHref}">` }}
+            />
+          </>
+        )}
         {/* Set js-ready before CSS paints so [data-reveal] hidden state
             only applies when JS is active — prevents invisible content
             during hydration gap. */}

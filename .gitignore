@@ -32,3 +32,9 @@ packages/*/build/
 apps/site/public/*.md
 apps/site/public/**/*.md
 apps/site/public/.md-manifest.json
+
+# Build-generated critical CSS (apps/site/scripts/build-critical-css.mjs): the
+# whole globals.css under a content hash, and the inlined subset. Rebuilt before
+# every `next build` from app/globals.css and app/critical-css.manifest.json.
+apps/site/public/_css/
+apps/site/app/lib/critical-css.generated.json
