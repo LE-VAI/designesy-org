@@ -151,7 +151,9 @@
   background: var(--cs-hue);
 }
 
-.cs-state[data-state="pass"] { --cs-hue: var(--ok); --cs-ink: var(--ok-ink); }
+/* A check's PASS is Azure, as the engine's lamp and status word are (brand
+   ledger D67); green belongs to score bands (80 and up), not check states. */
+.cs-state[data-state="pass"] { --cs-hue: var(--signal); --cs-ink: var(--signal-access); }
 .cs-state[data-state="fail"] { --cs-hue: var(--error); --cs-ink: var(--error-ink); }
 .cs-state[data-state="warn"] { --cs-hue: var(--warn); --cs-ink: var(--warn-ink); }
 .cs-state[data-state="skip"] { --cs-hue: var(--muted); --cs-ink: var(--muted); }
