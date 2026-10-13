@@ -29,7 +29,7 @@ export const reportContract = {
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-02',
     composition: `Weighted synthesis of three independent Designesy engines: /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), /readiness (10-check AI readiness). Each engine is independently validated; report composes their results.`,
-    weighting: 'Composite score = score × 0.5 + drift × 0.3 + readiness × 0.2. Score is weighted highest because it is the broadest quality measure; drift is second because AI-generated UI drift is the 2026 crisis; readiness is third because machine-readiness is emergent and still maturing.',
+    weighting: 'Composite score = score × 0.5 + drift × 0.3 + readiness × 0.2. Score is weighted highest because it is the broadest quality measure; drift is second because it measures how far AI-generated UI departs from its declared system; readiness is third because machine-readiness is emergent and still maturing.',
     shareability: 'Report is designed as the share hook: "here is your design-intelligence report" is more compelling than "run these six tools". One grade, one URL, one page.',
     url_gap: 'No competitor synthesizes audit + drift + readiness into a single composite report from a live URL: the designesy pattern.',
   },
