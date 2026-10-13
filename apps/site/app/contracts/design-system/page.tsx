@@ -16,11 +16,11 @@ import { AgentActions } from '../../lib/agent-actions';
 export const metadata: Metadata = pageMeta({
   title: 'Design system contract: reference format',
   description:
-    `Designesy design system contract v${designSystemContract.version}: a reference format for AI-readable design contracts. Richer than design.md: ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
+    `Designesy design system contract v${designSystemContract.version}: a reference format for AI-readable design contracts. Richer than DESIGN.md: ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, anti-generic tells, and provenance. Lab One · Poise, Lab Two · Takt, Lab Three · Cadence, Lab Four · Acoustics.`,
   path: '/contracts/design-system',
   ogTitle: `Design system contract · v${designSystemContract.version}: reference format`,
   ogDescription:
-    `A reference format for AI-readable design contracts. Input plus verification: tokens and prose, and ${ENGINE_CHECK_COUNT} checks (${ENGINE_SCORED_CHECK_COUNT} automated) that test whether the output passes. Richer than design.md.`,
+    `A reference format for AI-readable design contracts. Input plus verification: tokens and prose, and ${ENGINE_CHECK_COUNT} checks (${ENGINE_SCORED_CHECK_COUNT} automated) that test whether the output passes. Richer than DESIGN.md.`,
   twitterDescription:
     'A reference format for AI-readable design contracts: input + verification. designesy.org/contracts/design-system',
 });
@@ -152,7 +152,7 @@ export default function DesignSystemContractPage() {
         data={creativeWorkJsonLd({
           name: `${c.name} contract`,
           description:
-            `A reference format for AI-readable design contracts — tokens, motion, components, ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, and adopted Poise + Takt + Cadence + Acoustics rules. Richer than design.md.`,
+            `A reference format for AI-readable design contracts — tokens, motion, components, ${ENGINE_CHECK_COUNT} verification checks, acoustic cues, takt, copywriting, and adopted Poise + Takt + Cadence + Acoustics rules. Richer than DESIGN.md.`,
           url: c.public_url,
           version: c.version,
           related: [c.machine_url, 'https://www.designesy.org/open', 'https://www.designesy.org/score'],
@@ -174,12 +174,12 @@ export default function DesignSystemContractPage() {
             A reference format for AI-readable design contracts, version {c.version}.
           </p>
           <p className="surface-note">
-            design.md (Google Labs, 26k+ stars) is the input layer: tokens and
+            The DESIGN.md format is the input layer: tokens and
             prose an agent reads to generate UI. This contract is input{' '}
             <em>plus</em> verification: {ENGINE_CHECK_COUNT} checks ({ENGINE_SCORED_CHECK_COUNT} automated) that
             test whether the generated output passes. Acoustic cues, takt interface-feel,
             copywriting principles, anti-generic tells, and provenance tracking
-            have no design.md equivalent.
+            have no DESIGN.md equivalent.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">v{c.version}</span>
@@ -219,31 +219,31 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Beyond design.md: the verification layer
+            Beyond DESIGN.md: the verification layer
           </h2>
           <p className="surface-note" style={{ marginBottom: '1.25rem' }}>
-            Google Labs&rsquo; design.md (alpha, Apache-2.0, 26k+ stars) is a strong
+            The DESIGN.md format (alpha, Apache-2.0) is a strong
             input format: YAML tokens + markdown prose that an agent reads to
-            generate UI. Designesy extends that model with layers design.md does
-            not carry. They are complementary: design.md is the brief; this
+            generate UI. Designesy extends that model with layers DESIGN.md does
+            not carry. They are complementary: DESIGN.md is the brief; this
             contract is the brief and the proof.
           </p>
-          <div className="token-table ds-labelled" role="table" aria-label="Designesy contract vs design.md">
+          <div className="token-table ds-labelled" role="table" aria-label="Designesy contract vs DESIGN.md">
             <div className="token-table-head" role="row">
               <span role="columnheader">Layer</span>
-              <span role="columnheader">design.md</span>
+              <span role="columnheader">DESIGN.md</span>
               <span role="columnheader">This contract</span>
             </div>
             {COMPARISON.map((row) => (
               <div className="token-table-row" role="row" key={row.layer}>
                 <code role="cell">{row.layer}</code>
                 {row.designMd === ABSENT ? (
-                  <span role="cell" data-label="design.md" className="ds-absent">
+                  <span role="cell" data-label="DESIGN.md" className="ds-absent">
                     <span className="ds-dash" aria-hidden="true" />
                     {ABSENT}
                   </span>
                 ) : (
-                  <span role="cell" data-label="design.md">
+                  <span role="cell" data-label="DESIGN.md">
                     {row.designMd}
                   </span>
                 )}
@@ -254,7 +254,7 @@ export default function DesignSystemContractPage() {
             ))}
           </div>
           <p className="surface-note" style={{ marginTop: '1.25rem' }}>
-            The gap design.md leaves open is the same gap every AI coding agent
+            The gap DESIGN.md leaves open is the same gap every AI coding agent
             leaves open: <strong>generation is not verification</strong>. An
             agent can read a token file and still ship hardcoded hex, broken
             contrast, or the AI-default look. The {ENGINE_CHECK_COUNT}-check engine closes that

@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-  "$description": "Design tokens extracted from https://fixture.test/ by Designesy Guardrails v0.1.1: W3C DTCG 2025.10 format. Values the format cannot type are kept verbatim in $extensions.designesy.css.",
+  "$description": "Design tokens extracted from https://fixture.test/ by Designesy Guardrails v0.1.2: W3C DTCG 2025.10 format. Values the format cannot type are kept verbatim in $extensions.designesy.css.",
   "ink": {
     "$type": "color",
     "$value": {
@@ -242,7 +242,7 @@
     "designesy": {
       "source": "https://fixture.test/",
       "extracted": "2026-10-10T00:00:00.000Z",
-      "generator": "Designesy Guardrails v0.1.1",
+      "generator": "Designesy Guardrails v0.1.2",
       "css": {
         "--gutter": "clamp(16px, 4vw, 48px)",
         "--glow": "color-mix(in srgb, var(--signal) 40%, transparent)"

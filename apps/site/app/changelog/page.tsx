@@ -475,6 +475,34 @@ const CHANGELOG: ChangelogEntry[] = [
       'Wording only: the DESIGN.md format is the thing a site serves, and the package is one tool that lints it. No rule, threshold or weight changed.',
     source: 'Designesy AI readiness contract v0.1.1',
   },
+
+  // ── Guardrails contract v0.1.2: the DESIGN.md format, named once ──
+  {
+    version: 'guardrails v0.1.2',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.2: the DESIGN.md format, named once',
+    description:
+      'The method line now says the bundle generates "a file in the open DESIGN.md format", where 0.1.1 read "the DESIGN.md file (the open DESIGN.md format)".',
+    rationale:
+      'Wording only: the name appeared twice in one phrase. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.2',
+  },
+
+  // ── Review-findings schema: description wording ──
+  {
+    version: 'review-findings schema 1.0',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Review-findings schema: description wording',
+    description:
+      'The schema description and the token-path field description name the DESIGN.md format where they said "Google design.md".',
+    rationale:
+      'review-findings schema: description wording; schemaVersion 1.0 unchanged, no field or constraint changed.',
+    source: 'Designesy review-findings schema (/specs/review-findings.json)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────

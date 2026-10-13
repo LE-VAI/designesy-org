@@ -10,7 +10,7 @@ export const REVIEW_FINDINGS_SCHEMA = {
   $id: 'https://www.designesy.org/specs/review-findings.json',
   title: 'Design Review Findings',
   description:
-    'Canonical format for design verification findings. A superset schema that accommodates designesy, Google design.md, Lighthouse, and jakubkrehel/skills outputs. Agents consuming findings from multiple verifiers need a common schema.',
+    'Canonical format for design verification findings. A superset schema that accommodates designesy, the DESIGN.md format, Lighthouse, and jakubkrehel/skills outputs. Agents consuming findings from multiple verifiers need a common schema.',
   type: 'object',
   required: ['schemaVersion', 'tool', 'subject', 'findings', 'summary', 'verdict'],
 
@@ -297,7 +297,7 @@ export const REVIEW_FINDINGS_SCHEMA = {
         },
         path: {
           type: 'string',
-          description: 'Dotted token path (Google design.md: "components.button-primary").',
+          description: 'Dotted token path (the DESIGN.md format: "components.button-primary").',
         },
         location: {
           type: 'string',
