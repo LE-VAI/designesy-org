@@ -1,0 +1,26 @@
+{
+  "color": {
+    "$type": "color",
+    "a": {
+      "$value": "#111111"
+    },
+    "b": {
+      "$value": "#ffffff"
+    },
+    "c": {
+      "$value": "#0055ff"
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

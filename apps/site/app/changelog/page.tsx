@@ -719,6 +719,20 @@ const CHANGELOG: ChangelogEntry[] = [
       'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard shows the new scores from its next weekly re-score. This site stays 100 A, and a real field under 16px still fails.',
     source: 'engine 1.4.1 entry in CHANGELOG.md; brand ledger D75 (the DESIGN.md format named in prose)',
   },
+
+  // ── v0.4.6 (engine 1.5.0): score a page against your own contract ──
+  {
+    version: 'v0.4.6 · engine 1.5.0',
+    date: '2026-10-14',
+    dimension: 'verification',
+    change: 'added',
+    title: 'Engine 1.5.0: score a page against your own contract',
+    description:
+      'POST /api/score takes an optional contract: your DESIGN.md or DTCG token file, pasted or linked. The answer is two numbers that are never blended. Contract fidelity reads your contract: palette, type scale, line heights, radius, spacing, contrast pairs, aliases and token use (f01 to f14). The baseline reads no contract: focus rings, reduced motion, headings, inputs, button and link copy, identity. A contract the engine cannot read answers with each problem, its path and line. The formula is published at /api/score/checks/own-contract.',
+    rationale:
+      "A team's own design system is the contract its pages are meant to follow, and the Designesy score measures Designesy's. Fidelity answers how closely a page follows the team's own; the baseline keeps the universal checks every site is held to, without Designesy's own taste checks, slop or originality. Requests without a contract are unchanged: no legacy verdict, detail or score moves, measured on the calibration corpus and on every legacy request the gate replays.",
+    source: 'engine 1.5.0 entry in CHANGELOG.md; W3C Design Tokens Format Module 2025.10; the DESIGN.md format (alpha); WCAG 2.2 SC 1.4.3 and 2.5.8',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -753,6 +767,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
   { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.5.0', date: '2026-10-14', checks: 45, title: 'Your own contract', summary: 'POST /api/score takes your own DESIGN.md or DTCG file and answers with contract fidelity and a baseline, never blended. Requests without a contract are unchanged. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

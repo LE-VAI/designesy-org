@@ -10,8 +10,11 @@
 //     A sketch answers "about how many distinct callers" and cannot list them,
 //     and the salt changes daily, so one caller cannot be linked across days.
 // Never stored: the URL scored, any contract, the IP, or the user-agent string.
-// Keys come from closed lists (MCP_TOOL_NAMES, SCORE_CLIENTS), so a caller
-// cannot mint new keys, and every key expires after USAGE_TTL_DAYS.
+// Keys come from closed lists (MCP_TOOL_NAMES, SCORE_CLIENTS, USAGE_KEY_PREFIXES),
+// so a caller cannot mint new keys, and every key expires after USAGE_TTL_DAYS.
+// Own-contract runs count under "score-contract:<client>", once per run that
+// returns 200: no key is derived from the contract (not its digest, not an
+// HMAC of it), so nothing recoverable about a contract enters the counters.
 //
 // Recording never blocks or fails a request: callers schedule it with
 // next/server `after`, and it swallows its own errors. Without the Upstash env
@@ -45,6 +48,14 @@ function defaultStore(): Redis | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   cached = url && token ? new Redis({ url, token }) : null;
   return cached;
+}
+
+/** The key families recordUsage takes: an MCP tool, a /api/score client, an own-contract run's client. */
+export const USAGE_KEY_PREFIXES = ['mcp', 'score', 'score-contract'] as const;
+
+/** The usage key for one own-contract run (POST /api/score with a contract). */
+export function scoreContractKey(client: ScoreClient): string {
+  return `score-contract:${client}`;
 }
 
 /** Which surface called /api/score, from its user agent. */
@@ -89,7 +100,8 @@ function callerHash(request: Request, day: string): string {
 }
 
 /**
- * Count one call under `key` ("mcp:<tool>" or "score:<client>") for today.
+ * Count one call under `key` ("mcp:<tool>", "score:<client>" or
+ * "score-contract:<client>") for today.
  * Callers pass only keys built from the closed lists above.
  */
 export async function recordUsage(

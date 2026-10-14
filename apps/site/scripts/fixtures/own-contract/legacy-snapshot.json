@@ -1,0 +1,436 @@
+{
+  "$comment": "Legacy /api/score responses (no contract) recorded from engine 1.4.1 (the checkout given to --record-legacy), timestamps and engine version taken out. scripts/check-own-contract.mjs section 19 asserts every later engine answers the same.",
+  "recordedFrom": "engine 1.4.1: apps/site of designesy-org main at 207843d (git archive), run through scripts/lib/route-harness.js",
+  "runs": {
+    "corpus/good-baseline|designesy|universal": {
+      "status": 200,
+      "sha256": "0efd9681d98e79ad98c4b009b2db9d15b86f5690680035c5e7f78a343db18b3b",
+      "score": 96.8
+    },
+    "corpus/good-baseline|designesy|contract": {
+      "status": 200,
+      "sha256": "9e79bdf73f1c2506b14aaabaeb4b40750766dbebac7d00bc0bf0dd2e2bc7c6d6",
+      "score": 88.2
+    },
+    "corpus/good-baseline|canonical|universal": {
+      "status": 200,
+      "sha256": "1e5520eb50d32b854b923c880d9f4cb992b2ebdcf74eb800ce8a4b3b7a2f1b72",
+      "score": 96.8
+    },
+    "corpus/good-baseline|google|universal": {
+      "status": 200,
+      "sha256": "b72356e2e988bad3bffbb6eb2308e87d790681087ff705a64ca42dc750a1ebd5",
+      "score": 96.8
+    },
+    "corpus/good-baseline|review|universal": {
+      "status": 200,
+      "sha256": "e4f4d081a0ff3c5c2c80689c099c945b3ce210182a4cffe08b21b03af4e9e72c",
+      "score": null
+    },
+    "corpus/broken-no-tokens|designesy|universal": {
+      "status": 200,
+      "sha256": "17dce2eb457e7c8e6e93e98d7850c127571124bd87005888526ec9f8e786230b",
+      "score": 62.9
+    },
+    "corpus/broken-no-tokens|designesy|contract": {
+      "status": 200,
+      "sha256": "5de3685dad9ed4fd22f8aa261f98efa612ab41c23da10f8ae81b353f3eedf931",
+      "score": 53.8
+    },
+    "corpus/broken-transition-all|designesy|universal": {
+      "status": 200,
+      "sha256": "47980b22aa050347132301006866318cdb734cc7dfb0c05c46a128152c638fff",
+      "score": 89.9
+    },
+    "corpus/broken-transition-all|designesy|contract": {
+      "status": 200,
+      "sha256": "3d4b4f41ea09a74a1d085ef1c4d4e138afe51d5acda174f7bb6dbc6132b3607b",
+      "score": 85.8
+    },
+    "corpus/broken-reduced-motion-inverted|designesy|universal": {
+      "status": 200,
+      "sha256": "ac6d76f48bba7d64b2a3f76cc661b414d9b0dd920234d8a1f64e8cc8b4f561a9",
+      "score": 95.6
+    },
+    "corpus/broken-reduced-motion-inverted|designesy|contract": {
+      "status": 200,
+      "sha256": "6f7f600914aa234c24879395428f1107e1d7fe9024f204bf25f7bcea15b67877",
+      "score": 87
+    },
+    "corpus/good-reduced-motion-opt-in|designesy|universal": {
+      "status": 200,
+      "sha256": "1c2220b49bfdc8a1f799e29b1cb22f37094ea5cd98c9fb61a968ff03612bdd0c",
+      "score": 85.4
+    },
+    "corpus/good-reduced-motion-opt-in|designesy|contract": {
+      "status": 200,
+      "sha256": "070681ad063295900ae55c3bb7c924204cf6bd2c1397cd5454a23f7400a289e5",
+      "score": 73.6
+    },
+    "corpus/broken-reduced-motion-empty-opt-in|designesy|universal": {
+      "status": 200,
+      "sha256": "f251c3c54701f8f0ea7e984ee6e4804a5de50f4cff8102420d049964d8fcfe36",
+      "score": 83.6
+    },
+    "corpus/broken-reduced-motion-empty-opt-in|designesy|contract": {
+      "status": 200,
+      "sha256": "ebf6ee8b0c877c5ef40c4fa553cd34f719b4a9dad6e9f7101d928ae218cd1778",
+      "score": 72.4
+    },
+    "corpus/edge-no-form-fields|designesy|universal": {
+      "status": 200,
+      "sha256": "48bda25db769ec8e13c9d218b2e3141c9a17a731f9f3ca30a862bee8bb178833",
+      "score": 96.6
+    },
+    "corpus/edge-no-form-fields|designesy|contract": {
+      "status": 200,
+      "sha256": "5edeead10e22786e28dde0d203ecc4cd9103b9cc372215e5419cd1efcf8e239c",
+      "score": 87.9
+    },
+    "corpus/edge-hidden-field-only|designesy|universal": {
+      "status": 200,
+      "sha256": "f1724e2524597209ee1cc781e52f30f05dae19eed3fd4bd37b7c98cff588e27a",
+      "score": 96.6
+    },
+    "corpus/edge-hidden-field-only|designesy|contract": {
+      "status": 200,
+      "sha256": "ca6c13535c821830e7e3fe04dc63b3680234c4cb5a403910f41061c2e48199db",
+      "score": 87.9
+    },
+    "corpus/broken-field-without-floor|designesy|universal": {
+      "status": 200,
+      "sha256": "9125f684a49f36d023e665a051cfb882717f23fe0b578bc32dcbd14795fc10b9",
+      "score": 95.6
+    },
+    "corpus/broken-field-without-floor|designesy|contract": {
+      "status": 200,
+      "sha256": "9bf1ec74ef3ab9bd5fc94a912d3de585ff8b4e6b49e3c529645992cc86738d54",
+      "score": 87
+    },
+    "corpus/universal-cadence-taste-absent|designesy|universal": {
+      "status": 200,
+      "sha256": "9209c32270d7707ea07b609e69041ace93274c650a8bb978ba03506673644b78",
+      "score": 96.8
+    },
+    "corpus/universal-cadence-taste-absent|designesy|contract": {
+      "status": 200,
+      "sha256": "f9d4eea19ae7ab9845d9fa99da23a537c27b4b7f8d48cc41987da901a1df6c78",
+      "score": 88.2
+    },
+    "corpus/contract-cadence-taste-absent|designesy|universal": {
+      "status": 200,
+      "sha256": "d7f14b8c4480449e166200ce5d751a8cd169334a1c79b18cab4ee126aed6fda1",
+      "score": 96.8
+    },
+    "corpus/contract-cadence-taste-absent|designesy|contract": {
+      "status": 200,
+      "sha256": "18fb4d46eb3827e45544bf8e30182e715bb68d6b08244ae84614cefcf61e26a3",
+      "score": 88.2
+    },
+    "corpus/broken-reduced-motion-commented-out|designesy|universal": {
+      "status": 200,
+      "sha256": "ef46987d60a8127fc0323a845b06f12ae0f44f8b64b20a20758e07f99ad08529",
+      "score": 91.7
+    },
+    "corpus/broken-reduced-motion-commented-out|designesy|contract": {
+      "status": 200,
+      "sha256": "0baf748b802e3b38a14219a5e639b316282fb8aa255887b7f8a5b684c08a4ddb",
+      "score": 82.9
+    },
+    "corpus/broken-multiple-h1|designesy|universal": {
+      "status": 200,
+      "sha256": "5855a18b82340ee9b1dd695ca39ff4010187a98922434120ac493b5191541098",
+      "score": 94.2
+    },
+    "corpus/broken-multiple-h1|designesy|contract": {
+      "status": 200,
+      "sha256": "2f610140a029e1d215e5c44215aa64d1a3ba3f68dde048270f626a843d9ca67f",
+      "score": 85.5
+    },
+    "corpus/broken-no-heading-outline|designesy|universal": {
+      "status": 200,
+      "sha256": "48cb851b4d7c8b6d64a95a7497b89f8d4d2e57255bc02f2aa5687a9edc09e65a",
+      "score": 89.4
+    },
+    "corpus/broken-no-heading-outline|designesy|contract": {
+      "status": 200,
+      "sha256": "75a6fe3371c0632eaf52a689759ab3c34b8ad62e39d5ae0ac0bc0c4128629ee1",
+      "score": 82.4
+    },
+    "corpus/broken-input-zoom|designesy|universal": {
+      "status": 200,
+      "sha256": "cb4ba4174895c935149fbdd69b559c0e1003e7696967c8acb076bd41ecd6a003",
+      "score": 89.9
+    },
+    "corpus/broken-input-zoom|designesy|contract": {
+      "status": 200,
+      "sha256": "52cc25ac7a70c73af7806268bc536300824797654e09451dbdfb40596abab0da",
+      "score": 85.8
+    },
+    "corpus/broken-will-change-everything|designesy|universal": {
+      "status": 200,
+      "sha256": "14ea012b5f5264153deaec864c1eb842bb1772b2981c404faa306d43aa400c92",
+      "score": 95.6
+    },
+    "corpus/broken-will-change-everything|designesy|contract": {
+      "status": 200,
+      "sha256": "f91c6366b0369516b62579ea68fcd419c33570dde6162bcaccf70198ab3247e8",
+      "score": 87
+    },
+    "corpus/broken-trailing-period|designesy|universal": {
+      "status": 200,
+      "sha256": "ca6ed89885018ef1294324c6d538f1476ded938a0c3ef33d9fdddc4d08bcfc9e",
+      "score": 95.9
+    },
+    "corpus/broken-trailing-period|designesy|contract": {
+      "status": 200,
+      "sha256": "05cf59d4a2963e1bf334eb0a9af8fa28a61a4edc0a77fffa381fd3bf84234e12",
+      "score": 87.2
+    },
+    "corpus/broken-bare-noun-buttons|designesy|universal": {
+      "status": 200,
+      "sha256": "ab12f200e7fdf49bb3509af00e240bc4e537356783589e18760304cbbbf4630d",
+      "score": 95.9
+    },
+    "corpus/broken-bare-noun-buttons|designesy|contract": {
+      "status": 200,
+      "sha256": "be0f5c5e68c30682bc397915e7c5b490a3f774cbc416cbd75400217943329a77",
+      "score": 87.2
+    },
+    "corpus/edge-empty-page|designesy|universal": {
+      "status": 200,
+      "sha256": "97599ecc472b4fe8e040b6d6dd5c6648027b81ba9083ed0fbec4cdb94a176266",
+      "score": 63.1
+    },
+    "corpus/edge-empty-page|designesy|contract": {
+      "status": 200,
+      "sha256": "9044b83c2e70afd73f86f0a0704071eff62934d9a73be8dbd14bd96914c7e94c",
+      "score": 51.1
+    },
+    "corpus/broken-measure-on-non-prose|designesy|universal": {
+      "status": 200,
+      "sha256": "3c5306d6ea8e9f60ac5563c26a67969780b4d2eeb9de00526f03c9de35e12a2f",
+      "score": 96
+    },
+    "corpus/broken-measure-on-non-prose|designesy|contract": {
+      "status": 200,
+      "sha256": "22a095a50f02cb5df0df5837ada6b2b7f4b55448bfa1c299d454689b1df0eb02",
+      "score": 88.2
+    },
+    "corpus/good-measure-on-prose|designesy|universal": {
+      "status": 200,
+      "sha256": "fea838de36a2d058c26cd2f368d46eee171bd79a5153398def3d66ee78e0a6bd",
+      "score": 97.2
+    },
+    "corpus/good-measure-on-prose|designesy|contract": {
+      "status": 200,
+      "sha256": "48c006c5594639b18cdf2d66c5d0ba65a4a1bd4d3ac53811256c14710db5bac4",
+      "score": 88.9
+    },
+    "corpus/broken-measure-too-wide|designesy|universal": {
+      "status": 200,
+      "sha256": "ae575a996d7de5993c433538260e87d609fd545569bd93a78980815ce4716710",
+      "score": 96
+    },
+    "corpus/broken-measure-too-wide|designesy|contract": {
+      "status": 200,
+      "sha256": "ad4677c6f675f85a675e66412864a2730092a40327e802d88f104ffe79465b3f",
+      "score": 88.2
+    },
+    "corpus/font-aliases-resolve-to-faces|designesy|universal": {
+      "status": 200,
+      "sha256": "8c6264ef5394f66c085389d4757bb368ae3f7c2da7dc26165f9ca680c1449f27",
+      "score": 95.4
+    },
+    "corpus/font-aliases-resolve-to-faces|designesy|contract": {
+      "status": 200,
+      "sha256": "5a0deb57199d5358e41f3bbf8e307d787cda85a53f69a3da737daab3ae42795f",
+      "score": 87.5
+    },
+    "corpus/font-alias-control-five-declared-directly|designesy|universal": {
+      "status": 200,
+      "sha256": "032b72842f54c7b0026cd9ec96cafbe12243f5978ea79397ed060cb3c27f0a30",
+      "score": 95.4
+    },
+    "corpus/font-alias-control-five-declared-directly|designesy|contract": {
+      "status": 200,
+      "sha256": "c399003fd7a16d260b47d3b4ab907928bab76315eeb04f8823f68bf6647b3d09",
+      "score": 87.5
+    },
+    "corpus/font-alias-two-hop-chain|designesy|universal": {
+      "status": 200,
+      "sha256": "6af32c9bdd83a326ff70fe5948123c47369cd3c9ac75025ddb9dd9d11c76256f",
+      "score": 96.8
+    },
+    "corpus/font-alias-two-hop-chain|designesy|contract": {
+      "status": 200,
+      "sha256": "9a03cf9f19e2288f3ed2032bb6e9dfb28766cd83e66d6c03e30dade77a12d191",
+      "score": 88.2
+    },
+    "corpus/broken-type-off-scale|designesy|universal": {
+      "status": 200,
+      "sha256": "5cf4a6bf9cf7ae05a883cdf4a944e6668067196753a83d0081fef297b3c92146",
+      "score": 71.6
+    },
+    "corpus/broken-type-off-scale|designesy|contract": {
+      "status": 200,
+      "sha256": "b9b70e8ed8eb7e91652f69557ec939fb049371585de5ff8207a89733a6d19c36",
+      "score": 59.1
+    },
+    "corpus/good-type-on-scale-fluid|designesy|universal": {
+      "status": 200,
+      "sha256": "b830efe98ece932ba3a7ac86a26914dfd118fcddaf5236fdd67b0fdb2e162e58",
+      "score": 75.6
+    },
+    "corpus/good-type-on-scale-fluid|designesy|contract": {
+      "status": 200,
+      "sha256": "87de28f174ea73a510ca9d71030b6f29762968131d9ea0e4691eb6c0d080b96b",
+      "score": 60.9
+    },
+    "corpus/broken-status-hue-as-text|designesy|universal": {
+      "status": 200,
+      "sha256": "78b39060cbcfd6f6ecbf39cee1168b4161e545ec9d935ffc23cfa63f02c6bbf5",
+      "score": 65
+    },
+    "corpus/broken-status-hue-as-text|designesy|contract": {
+      "status": 200,
+      "sha256": "62ded2ed7e94205a7ac5d6a5e72a2bbdc1ba4e67cb8d98785c092649daa0af9e",
+      "score": 61.4
+    },
+    "corpus/good-status-ink-mix|designesy|universal": {
+      "status": 200,
+      "sha256": "87abd3588da229a043197b33080dfde470329e437a079df0d65c3056cb6a4c5a",
+      "score": 72
+    },
+    "corpus/good-status-ink-mix|designesy|contract": {
+      "status": 200,
+      "sha256": "599a99eb0a7b6a61603881504f83581cbdbc30e14424457e41da52ef2b58aa1e",
+      "score": 63.4
+    },
+    "corpus/broken-status-hue-dark-scheme|designesy|universal": {
+      "status": 200,
+      "sha256": "613812aa7a658ad38f8e7b4e5c1f7d85b0f23fb4a8ada55d6dffc0bb0f32bf87",
+      "score": 65
+    },
+    "corpus/broken-status-hue-dark-scheme|designesy|contract": {
+      "status": 200,
+      "sha256": "c2adb59d2967afca5d36158c0a4828005c657059e4fa813efbb279b4008c2968",
+      "score": 65
+    },
+    "corpus/good-status-hue-large-text|designesy|universal": {
+      "status": 200,
+      "sha256": "7c28b92deb3709d8d6cb11369008d17f92e126027662976838eda7583a987530",
+      "score": 75.1
+    },
+    "corpus/good-status-hue-large-text|designesy|contract": {
+      "status": 200,
+      "sha256": "cafbe373c318c77c427d94627f8fec3287e051bebdbd6db07d72d72a872252ab",
+      "score": 64.1
+    },
+    "corpus/broken-paused-entrance|designesy|universal": {
+      "status": 200,
+      "sha256": "711eb0a69900efeaa90765361ce62c7f6196e7737715f762f8773c3a0a63276f",
+      "score": 66.8
+    },
+    "corpus/broken-paused-entrance|designesy|contract": {
+      "status": 200,
+      "sha256": "8ae2209285d0d6f92805f0034dc5651d65d8102ca31b9dfabcc78e68e7ed1ef8",
+      "score": 54.6
+    },
+    "corpus/good-paused-entrance-ended|designesy|universal": {
+      "status": 200,
+      "sha256": "05c99a0eb2d9c553fe1798e095839680c6d8d3bae2f81ed5bdafc5aa5934bc47",
+      "score": 70.2
+    },
+    "corpus/good-paused-entrance-ended|designesy|contract": {
+      "status": 200,
+      "sha256": "4eaf4fb1156124f719722ffcea9844ab278f5b6d6c5e86028eb920cc04d0563e",
+      "score": 56.8
+    },
+    "corpus/edge-no-pause-scope|designesy|universal": {
+      "status": 200,
+      "sha256": "9a14a059b5ad121f04d08a9b7e2417ed850c5c8028882372e7ab711653624250",
+      "score": 72.8
+    },
+    "corpus/edge-no-pause-scope|designesy|contract": {
+      "status": 200,
+      "sha256": "5d180646f0017015d8d83edc6239f3c5b85dc29ba895b1bd9b87525cfd34fe50",
+      "score": 58.3
+    },
+    "parity-page|designesy|universal": {
+      "status": 200,
+      "sha256": "a7d2da803044ac7c193f1bfebcc8886afb4bf4dfff1e50476b18da4a5b3fe140",
+      "score": 65
+    },
+    "parity-page|designesy|contract": {
+      "status": 200,
+      "sha256": "dc17269f69cb27ebd9d260c85c1e1e20b6789e2bedfdf62ad10d93911b41140a",
+      "score": 65
+    },
+    "parity-page|canonical|universal": {
+      "status": 200,
+      "sha256": "25756497f4756a39c43dee06fb3e6ea9a3a2e78a18cdca8a26e505f311f6b54f",
+      "score": 65
+    },
+    "parity-page|google|universal": {
+      "status": 200,
+      "sha256": "b00ab1f17c52897def96ab537ed1e9c251c2f1be072e8b150fc86355438f15a1",
+      "score": 65
+    },
+    "parity-page|review|universal": {
+      "status": 200,
+      "sha256": "193aa83835e2e36312450afe57cd4233ff6695fb2d64ad139e39055424b0fa31",
+      "score": null
+    },
+    "site/S-1|designesy|universal": {
+      "status": 200,
+      "sha256": "659873a0a3784b78edcf6de8d058c4c796337cef97822e56934a3af2c34dab66",
+      "score": 91.8
+    },
+    "site/S-1|designesy|contract": {
+      "status": 200,
+      "sha256": "3f9aeb02f8ff60dcf065731d040237d12bff6f51a83bb2f9d057862b931c2d3b",
+      "score": 83.3
+    },
+    "site/S-2|designesy|universal": {
+      "status": 200,
+      "sha256": "9a779b8189f52db45286986c9730ba2e9da9f1b9c357fffcdeeaef06854ab1cb",
+      "score": 91
+    },
+    "site/S-2|designesy|contract": {
+      "status": 200,
+      "sha256": "d1cd19a06cdfea3cf27eaed6fafe5df4354274f88f8be54e9a1fa56f5d5c8e80",
+      "score": 82.5
+    },
+    "site/S-3|designesy|universal": {
+      "status": 200,
+      "sha256": "e5b73421e565283061b5e35260c4c27f3ecce55e303d7232a6928723051b9b70",
+      "score": 78.8
+    },
+    "site/S-3|designesy|contract": {
+      "status": 200,
+      "sha256": "e8339e694f2122ee11e59e331f807fe0ac0d8aba9c17a14663184b3a1e9b0a87",
+      "score": 60.2
+    },
+    "site/S-4|designesy|universal": {
+      "status": 200,
+      "sha256": "189b09068bee8fa42d96a9796c96bec114861c7d60c0315e0783521111b47b6f",
+      "score": 87.1
+    },
+    "site/S-4|designesy|contract": {
+      "status": 200,
+      "sha256": "8eb0b3d0c9e48fcda19fd831797200e70f94bd6112f0cda7bd902319cf88e9df",
+      "score": 79.2
+    },
+    "site/S-5|designesy|universal": {
+      "status": 200,
+      "sha256": "5517f11dd003b5e1926f63f5bf36a050911fca4f5533116952d9bb5e6ae70442",
+      "score": 70.4
+    },
+    "site/S-5|designesy|contract": {
+      "status": 200,
+      "sha256": "e26df37629861ef4793f43bbe8a0c86c86a2cd282cce7014a41b799f9871c530",
+      "score": 56.4
+    }
+  }
+}

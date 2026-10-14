@@ -1,0 +1,52 @@
+{
+  "color": {
+    "$type": "color",
+    "base": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0,
+          0.3333,
+          1.0
+        ],
+        "hex": "#0055ff"
+      }
+    },
+    "ink": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0667,
+          0.0667,
+          0.0667
+        ],
+        "hex": "#111111"
+      }
+    },
+    "ref": {
+      "$value": {
+        "$ref": "#/color/base/$value"
+      }
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        }
+      }
+    },
+    "small": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "$ref": "#/typography/body/$value/fontSize"
+        }
+      }
+    }
+  }
+}

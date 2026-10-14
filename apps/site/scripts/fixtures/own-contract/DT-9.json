@@ -1,0 +1,6 @@
+{
+  "__proto__": {"$type": "color", "polluted": {"$value": {"colorSpace": "srgb", "components": [0.0667, 0.0667, 0.0667], "hex": "#111111"}}},
+  "constructor": {"$type": "color", "prototype": {"$value": {"colorSpace": "srgb", "components": [1.0, 1.0, 1.0], "hex": "#ffffff"}}},
+  "color": {"$type": "color", "c": {"$value": {"colorSpace": "srgb", "components": [0.0, 0.3333, 1.0], "hex": "#0055ff"}}},
+  "typography": {"$type": "typography", "body": {"$value": {"fontFamily": "Inter", "fontSize": {"value": 16, "unit": "px"}}}}
+}
