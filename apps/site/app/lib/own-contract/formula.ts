@@ -11,6 +11,9 @@
 
 import { ENGINE_VERSION } from '../check-definitions';
 import { BASELINE_ANY_FAIL_CAP, BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_IDS, BASELINE_STATIC_MAX, baselineCeilings, baselineTitle } from './baseline';
+import { MAX_ALIAS_HOPS, MAX_BODY_BYTES, MAX_CONTRACT_BYTES, MAX_DEPTH, MAX_RESOLUTION_STEPS, MAX_TOKEN_MAP_ENTRIES, MAX_TOKENS, MAX_VALUE_CHARS, MIN_COLORS, MIN_TYPE_STYLES } from './limits';
+import { ERROR_CODES, WARNING_CODES } from './problems';
+import { DROP_REASONS } from './types';
 
 export const FORMULA_VERSION = '1.0.0';
 export const FORMULA_DATE = '2026-10-14';
@@ -169,5 +172,18 @@ export function ownContractFormula() {
       note: 'The baseline reads no contract. It differs from the leaderboard number, which runs every check plus the slop deduction and the originality lift.',
     },
     nullRules: NULL_RULES,
+    intake: {
+      minimum: { colors: MIN_COLORS, typeStyles: MIN_TYPE_STYLES },
+      limits: { bodyBytes: MAX_BODY_BYTES, contractBytes: MAX_CONTRACT_BYTES, tokens: MAX_TOKENS, depth: MAX_DEPTH, aliasHops: MAX_ALIAS_HOPS, resolutionSteps: MAX_RESOLUTION_STEPS, tokenMapEntries: MAX_TOKEN_MAP_ENTRIES },
+      rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large') },
+      warnings: WARNING_CODES,
+      problem: {
+        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule'],
+        valueMaxChars: MAX_VALUE_CHARS,
+        chain: 'ALIAS_CYCLE: the loop as an ordered list of token paths, the first path repeated last.',
+        reason: { code: 'TOKEN_DROPPED', values: DROP_REASONS },
+        logged: false,
+      },
+    },
   };
 }

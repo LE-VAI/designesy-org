@@ -225,6 +225,10 @@ export function messageFor(code: string, p: Extra | Problem): string {
     }
     case 'contract_too_large':
       return `This contract is ${sizeWords(p.count ?? MAX_CONTRACT_BYTES + 1)}. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.`;
+    case 'body_too_large':
+      return 'This request is larger than 300 KB. Send the contract by link instead of pasting it.';
+    case 'scope_conflict':
+      return 'Send either scope: "contract" or a contract in the request, not both. scope: "contract" scores against the Designesy contract.';
     case 'NO_TYPE':
       // Owner-approved template (2026-10-14).
       return `${path} has no $type, so it was skipped: the DTCG format doesn't let scoring guess a type. Add "$type": "color" (or "dimension", "duration", and so on) to the token or its group.`;

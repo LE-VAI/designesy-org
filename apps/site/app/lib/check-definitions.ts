@@ -222,5 +222,13 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      longer carries into the next rule); v37 is named
  *                      "DESIGN.md format lint". No check added, no weight or
  *                      ceiling moved. The CHANGELOG entry lists what moves.
+ *   1.5.0  2026-10-14  own-contract mode: POST /api/score with a `contract`
+ *                      field scores a page against the caller's own
+ *                      DESIGN.md or DTCG file, as two numbers never blended
+ *                      (fidelity f01 to f14, and an 18-check baseline that
+ *                      reads no contract). Published formula at
+ *                      /api/score/checks/own-contract. Requests without
+ *                      `contract` are unchanged: no legacy verdict, detail
+ *                      or score moves.
  */
-export const ENGINE_VERSION = '1.4.1';
+export const ENGINE_VERSION = '1.5.0';

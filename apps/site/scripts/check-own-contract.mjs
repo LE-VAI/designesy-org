@@ -1402,8 +1402,308 @@ await check('a 2 MB stylesheet of nested blocks reads in linear time (1 MB under
   assert.ok(performance.now() - t0 < 600);
 });
 
+// ═════════════════════════════════════════════════════════════════════════════
+// The route: POST /api/score with a contract (engine spec 10 to 13), the
+// published formula, and requests without a contract unchanged.
+// ═════════════════════════════════════════════════════════════════════════════
+
+const routeFile = path.join(APP, 'app', 'api', 'score', 'route.ts');
+const ROUTE_WIRED = fs.readFileSync(routeFile, 'utf8').includes('handleOwnContract');
+const siteText = (n, ext) => lf(fs.readFileSync(path.join(FIX, 'sites', `${n}.${ext}`), 'utf8'));
+const PAGES = {
+  'https://shop.example.com/': siteText('S-1', 'html'),
+  'https://shop.example.com/site.css': siteText('S-1', 'css'),
+  'https://drift.example.com/': siteText('S-2', 'html'),
+  'https://drift.example.com/site.css': siteText('S-2', 'css'),
+  'https://shell.example.com/': siteText('S-4', 'html'),
+  'https://shell.example.com/assets/index.css': siteText('S-4', 'css'),
+  'https://bare.example.com/': siteText('S-5', 'html'),
+  'https://contracts.example.com/DESIGN.md': fixture('DM-1.md'),
+};
+let scoreUrlCalls = 0;
+let stalled = 0;
+const apiHarness = (extra = {}) => createHarness({
+  app: APP,
+  pages: PAGES,
+  api: (url) => (url === 'https://slow.example.com/DESIGN.md' ? (stalled++, new Promise(() => {})) : undefined),
+  stubs: {
+    '@google/design.md/linter': { lint },
+    'next/cache': { unstable_cache: (fn) => (...a) => { scoreUrlCalls++; return fn(...a); } },
+  },
+  ...extra,
+});
+const api = apiHarness();
+/** POST to the score route; returns status, headers and the parsed body. */
+async function postScore(body, harness = api) {
+  const route = harness.load('app/api/score/route.ts');
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('not found', { status: 404 });
+  try {
+    const res = await route.POST(new Request('https://harness.test/api/score', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '203.0.113.7' }, body: typeof body === 'string' ? body : JSON.stringify(body) }));
+    const text = await res.text();
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = text; }
+    return { status: res.status, headers: res.headers, body: parsed };
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+const needWired = () => assert.ok(ROUTE_WIRED, 'app/api/score/route.ts does not hand a contract to handleOwnContract');
+let SAMPLE = null;
+
+section('18. POST /api/score with a contract (engine spec 10.1 to 10.3, 11.3)');
+
+await check('a contract run answers 200 with the documented shape, no-store, versions equal to the constants', async () => {
+  needWired();
+  const r = await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-1.md') } });
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.headers.get('cache-control'), 'no-store');
+  const b = r.body;
+  SAMPLE = b;
+  for (const k of ['ok', 'mode', 'scope', 'contractVersion', 'engineVersion', 'score', 'grade', 'fidelity', 'baseline', 'coverage', 'ownContract', 'site', 'checks', 'pass', 'warn', 'fail', 'skip', 'manual', 'total', 'scored', 'tokensExtracted', 'receipt']) assert.ok(k in b, `missing ${k}`);
+  for (const k of ['slop', 'originality', 'categoryScores', 'a11yFloorApplied', 'hardFailCeilingApplied', 'hardFailCeilingReason']) assert.ok(!(k in b), `${k} must not appear in this mode`);
+  assert.equal(b.mode, 'own-contract');
+  assert.equal(b.scope, 'own-contract');
+  const dsc = h.load('app/lib/design-system-contract.ts');
+  assert.equal(b.contractVersion, dsc.CONTRACT_VERSION);
+  assert.equal(b.engineVersion, defs.ENGINE_VERSION);
+  assert.equal(b.engineVersion, '1.5.0');
+  assert.equal(b.score, b.fidelity.score);
+  assert.equal(b.grade, b.fidelity.grade);
+  for (const k of ['score', 'grade', 'scored', 'total', 'pass', 'warn', 'fail', 'skip', 'manual', 'categoryScores', 'ceilingApplied', 'ceilingReason', 'uncappedScore', 'nullReason']) {
+    assert.ok(k in b.fidelity, `fidelity.${k}`);
+    assert.ok(k in b.baseline, `baseline.${k}`);
+  }
+  assert.ok('a11yFloorApplied' in b.baseline);
+  assert.equal(b.fidelity.grade, 'A');
+  assert.deepEqual(Object.keys(b.ownContract).sort(), ['bytes', 'digest', 'format', 'formatVersion', 'linter', 'name', 'omitted', 'problems', 'source', 'tokens']);
+  assert.deepEqual(Object.keys(b.ownContract.tokens).sort(), ['aliases', 'colors', 'durations', 'easings', 'pairs', 'radii', 'sizes', 'spacing', 'typography']);
+  assert.equal(b.ownContract.source, 'inline');
+  assert.deepEqual(Object.keys(b.site).sort(), ['cssBytes', 'htmlBytes', 'requestedUrl', 'stylesheetsFetched', 'stylesheetsTotal', 'stylesheetsTruncated']);
+  assert.equal(b.checks.length, 14 + 18);
+  assert.ok(b.checks.slice(0, 14).every((c) => c.layer === 'fidelity'));
+  assert.ok(b.checks.slice(14).every((c) => c.layer === 'baseline'));
+  assert.equal(b.checks.find((c) => c.id === 'v09').item, 'Keyboard affordances are present');
+  const rc = h.load('app/lib/receipt.ts');
+  assert.equal(b.receipt.digest, rc.verdictDigest(b.checks));
+  assert.equal(b.receipt.scope, 'own-contract');
+  assert.equal(b.receipt.engine_version, '1.5.0');
+  assert.deepEqual(b.receipt.own_contract, { digest: b.ownContract.digest, format: 'design.md', source: 'inline', linter: '@google/design.md@0.4.0' });
+  assert.match(b.receipt.verify.instructions, /Compare own_contract\.digest first/);
+});
+await check('a contract that cannot be scored answers 422 contract_not_scoreable with its problems', async () => {
+  needWired();
+  const r = await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-3e.md') } });
+  assert.equal(r.status, 422);
+  assert.equal(r.headers.get('cache-control'), 'no-store');
+  assert.equal(r.body.ok, false);
+  assert.equal(r.body.code, 'contract_not_scoreable');
+  assert.equal(r.body.error, 'Your contract cannot be scored yet.');
+  assert.equal(r.body.problems[0].code, 'TOKENS_IN_PROSE');
+  assert.deepEqual(r.body.problems[0].colorLines, [11, 24]);
+  assert.deepEqual(r.body.warnings, []);
+  const cyc = await postScore({ url: 'shop.example.com', contract: { content: fixture('DT-7a.json') } });
+  assert.deepEqual(cyc.body.problems.find((p) => p.code === 'ALIAS_CYCLE').chain, ['color.a', 'color.b', 'color.c', 'color.a']);
+  const drop = await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-3c.md') } });
+  const p = drop.body.problems.find((x) => x.code === 'TOKEN_DROPPED');
+  assert.equal(p.reason, 'alias_unresolved');
+  assert.equal(p.ref, '{colors.missing}');
+});
+await check('request errors: 400 scope_conflict, 400 contract_shape, 400 format_unsupported, 413 body_too_large, 413 contract_too_large', async () => {
+  needWired();
+  const sc = await postScore({ url: 'shop.example.com', scope: 'contract', contract: { content: fixture('DM-2.md') } });
+  assert.deepEqual([sc.status, sc.body.code], [400, 'scope_conflict']);
+  const universal = await postScore({ url: 'shop.example.com', scope: 'universal', contract: { content: fixture('DM-2.md') } });
+  assert.equal(universal.status, 200, 'scope universal is accepted and ignored');
+  for (const bad of [{}, { content: 'a', url: 'https://x.example.com' }, { content: 5 }, { content: 'a', format: 'yaml' }, { content: 'a', tokenMap: [] }, 'text']) {
+    const r = await postScore({ url: 'shop.example.com', contract: bad });
+    assert.deepEqual([r.status, r.body.code], [400, 'contract_shape'], JSON.stringify(bad));
+  }
+  const fmt = await postScore({ url: 'shop.example.com', format: 'review', contract: { content: fixture('DM-2.md') } });
+  assert.deepEqual([fmt.status, fmt.body.code], [400, 'format_unsupported']);
+  const body = await postScore({ url: 'shop.example.com', contract: { content: `${fixture('DM-2.md')}\n${'x'.repeat(301 * 1024)}` } });
+  assert.deepEqual([body.status, body.body.code], [413, 'body_too_large']);
+  const big = await postScore({ url: 'shop.example.com', contract: { content: `${fixture('DM-2.md')}\n${'x'.repeat(260 * 1024)}` } });
+  assert.deepEqual([big.status, big.body.code], [413, 'contract_too_large']);
+  const badUrl = await postScore({ url: 'not a url', contract: { content: fixture('DM-2.md') } });
+  assert.equal(badUrl.status, 400, 'the existing URL validation runs first');
+});
+await check('the mode limiter answers 429 with Retry-After; a limiter that throws fails open', async () => {
+  needWired();
+  const deny = apiHarness({ overrides: { 'app/lib/rate-limit.ts': (real) => ({ ...real, fixedWindow: () => ({}), getLimiter: () => ({ limit: async () => ({ success: false, reset: Date.now() + 30_000 }) }) }) } });
+  const r = await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-2.md') } }, deny);
+  assert.equal(r.status, 429);
+  assert.ok(Number(r.headers.get('retry-after')) >= 29 && Number(r.headers.get('retry-after')) <= 30);
+  const broken = apiHarness({ overrides: { 'app/lib/rate-limit.ts': (real) => ({ ...real, fixedWindow: () => ({}), getLimiter: () => ({ limit: async () => { throw new Error('upstash down'); } }) }) } });
+  assert.equal((await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-2.md') } }, broken)).status, 200);
+  const limits = h.load('app/lib/own-contract/api.ts').CONTRACT_LIMITS;
+  assert.deepEqual([limits.minute.tokens, limits.minute.window, limits.day.tokens, limits.day.window], [20, '60 s', 300, '1 d']);
+});
+await check('a linked contract is fetched through the URL guard and named in the receipt', async () => {
+  needWired();
+  const before = api.calls.length;
+  const r = await postScore({ url: 'shop.example.com', contract: { url: 'https://contracts.example.com/DESIGN.md' } });
+  assert.equal(r.status, 200);
+  assert.ok(api.calls.slice(before).some((c) => c.url === 'https://contracts.example.com/DESIGN.md'), 'the contract URL went through safeFetch');
+  assert.equal(r.body.ownContract.source, 'url');
+  assert.equal(r.body.receipt.own_contract.url, 'https://contracts.example.com/DESIGN.md');
+  const missing = await postScore({ url: 'shop.example.com', contract: { url: 'https://contracts.example.com/none.md' } });
+  assert.equal(missing.status, 422);
+  assert.equal(missing.body.problems[0].code, 'CONTRACT_URL_UNREACHABLE');
+  assert.equal(missing.body.problems[0].why, 'http_error');
+});
+await check('an unreachable site: 200, both layers no score (site_unreachable), the contract still reported', async () => {
+  needWired();
+  const r = await postScore({ url: 'down.example.com', contract: { content: fixture('DM-1.md') } });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.fidelity.score, null);
+  assert.equal(r.body.baseline.score, null);
+  assert.equal(r.body.fidelity.nullReason.code, 'site_unreachable');
+  assert.equal(r.body.unreachable, true);
+  assert.equal(r.body.ownContract.name, 'Fixture Full');
+  assert.equal(r.body.receipt.digest, null);
+  assert.equal(r.body.receipt.own_contract.digest, r.body.ownContract.digest);
+});
+await check('an empty shell and a page with no CSS: both layers no score with their codes', async () => {
+  needWired();
+  const shell = await postScore({ url: 'shell.example.com', contract: { content: fixture('DM-1.md') } });
+  assert.equal(shell.body.fidelity.nullReason.code, 'empty_shell');
+  assert.equal(shell.body.baseline.nullReason.code, 'empty_shell');
+  const bare = await postScore({ url: 'bare.example.com', contract: { content: fixture('DM-1.md') } });
+  assert.equal(bare.body.fidelity.nullReason.code, 'no_css');
+});
+await check('10 runs give the same verdict digest and contract digest (determinism)', async () => {
+  needWired();
+  const seen = new Set();
+  for (let i = 0; i < 10; i++) {
+    const r = await postScore({ url: 'drift.example.com', contract: { content: fixture('DM-1.md') } });
+    seen.add(`${r.body.receipt.digest}|${r.body.receipt.own_contract.digest}`);
+  }
+  assert.equal(seen.size, 1);
+});
+await check('a contract run never calls the cached scoreUrl; a legacy run does', async () => {
+  needWired();
+  const before = scoreUrlCalls;
+  await postScore({ url: 'shop.example.com', contract: { content: fixture('DM-1.md') } });
+  assert.equal(scoreUrlCalls, before);
+  await postScore({ url: 'shop.example.com' });
+  assert.equal(scoreUrlCalls, before + 1, 'the probe sees the legacy path');
+});
+await check('usage: a run counts under score-contract:<client> only, from the closed list', async () => {
+  needWired();
+  const usage = h.load('app/lib/usage.ts');
+  assert.equal(usage.scoreContractKey('browser'), 'score-contract:browser');
+  assert.deepEqual([...usage.USAGE_KEY_PREFIXES], ['mcp', 'score', 'score-contract']);
+  const src = fs.readFileSync(routeFile, 'utf8');
+  assert.match(src, /if \(r\.status === 200\) after\(\(\) => recordUsage\(scoreContractKey\(scoreClientOf\(/);
+});
+await check('a stalled contract URL aborts at 8 s with CONTRACT_URL_UNREACHABLE timeout', async () => {
+  needWired();
+  const t0 = Date.now();
+  const r = await postScore({ url: 'shop.example.com', contract: { url: 'https://slow.example.com/DESIGN.md' } });
+  const s = (Date.now() - t0) / 1000;
+  assert.equal(stalled, 1, 'the stub saw the request');
+  assert.ok(s >= 7.9 && s < 10, `${s.toFixed(1)} s`);
+  assert.equal(r.body.problems[0].why, 'timeout');
+});
+await check('the real URL guard refuses contract URLs on loopback and the metadata address', async () => {
+  const appRequire = createRequire(path.join(APP, 'package.json'));
+  const ts = appRequire('typescript');
+  const src = fs.readFileSync(path.join(APP, 'app', 'lib', 'url-guard.ts'), 'utf8');
+  const out = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
+  const mod = { exports: {} };
+  new Function('exports', 'require', 'module', out)(mod.exports, appRequire, mod);
+  for (const u of ['http://127.0.0.1/DESIGN.md', 'http://169.254.169.254/latest/meta-data', 'http://localhost/DESIGN.md', 'http://[::1]/x', 'http://2130706433/x']) {
+    const r = await fetchMod.fetchContract(u, mod.exports.safeFetch);
+    assert.equal(r.ok, false, u);
+    assert.equal(r.problem.why, 'blocked', `${u}: ${r.problem.why}`);
+  }
+});
+await check('the published formula route is static and serves the formula with its version', async () => {
+  const r = await api.get('app/api/score/checks/own-contract/route.ts', 'https://harness.test/api/score/checks/own-contract');
+  assert.equal(r.status, 200);
+  const f = JSON.parse(r.text);
+  assert.equal(f.fidelity.checks.length, 14);
+  assert.equal(f.contractVersion, h.load('app/lib/design-system-contract.ts').CONTRACT_VERSION);
+  assert.equal(f.engineVersion, defs.ENGINE_VERSION);
+  assert.equal(api.load('app/api/score/checks/own-contract/route.ts').dynamic, 'force-static');
+  assert.deepEqual(f.intake.problem.reason.values, ['alias_unresolved', 'alias_cycle', 'alias_wrong_type', 'value_not_scalar', 'value_invalid', 'unit_unsupported', 'unknown']);
+  assert.ok(f.intake.problem.fields.includes('chain') && f.intake.problem.fields.includes('reason'));
+  assert.equal(f.intake.problem.valueMaxChars, 80);
+  assert.equal(f.intake.rejected.code, 'contract_not_scoreable');
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
-section('17. Privacy');
+section('19. Requests without a contract are unchanged (engine spec 15.4; A-EN-1)');
+
+const SNAPSHOT = path.join(FIX, 'legacy-snapshot.json');
+const STRIP_TIME = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;
+/** A response with the timestamps and the engine version taken out (both move by design). */
+function canonicalLegacy(body) {
+  if (typeof body === 'string') return body.replace(STRIP_TIME, '<time>').replace(/\b1\.[45]\.\d\b/g, '<engine>');
+  const walk = (v, key) => {
+    if (key === 'engine_version' || key === 'engineVersion') return '<engine>';
+    if (typeof v === 'string') return v.replace(STRIP_TIME, '<time>');
+    if (Array.isArray(v)) return v.map((x) => walk(x));
+    if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).map((k) => [k, walk(v[k], k)]));
+    return v;
+  };
+  return walk(body);
+}
+/** Every legacy input: the calibration corpus, the recorded real page, and the site fixtures. */
+async function legacyInputs() {
+  const corpus = await import(new URL('../../../packages/score/test/fixtures/corpus.mjs', import.meta.url).href);
+  const parity = JSON.parse(fs.readFileSync(path.join(APP, '..', '..', 'packages', 'score', 'test', 'fixtures', 'parity-page.json'), 'utf8'));
+  const list = corpus.FIXTURES.filter((f) => typeof f.html === 'string').map((f) => ({ name: `corpus/${f.name}`, html: f.html, css: f.css || '' }));
+  list.push({ name: 'parity-page', html: parity.html, css: parity.css });
+  for (const s of ['S-1', 'S-2', 'S-3', 'S-4']) list.push({ name: `site/${s}`, html: siteText(s, 'html'), css: siteText(s, 'css') });
+  list.push({ name: 'site/S-5', html: siteText('S-5', 'html'), css: '' });
+  return list;
+}
+async function legacyResponses(app) {
+  const inputs = await legacyInputs();
+  const pages = {};
+  inputs.forEach((f, i) => {
+    const host = `https://legacy-${i}.example.com/`;
+    pages[host] = f.html.includes('</head>') ? f.html.replace('</head>', '<link rel="stylesheet" href="/fixture.css"></head>') : `<link rel="stylesheet" href="/fixture.css">${f.html}`;
+    if (f.css) pages[`${host}fixture.css`] = f.css;
+  });
+  const harness = createHarness({ app, pages, stubs: { '@google/design.md/linter': { lint } } });
+  const out = {};
+  const runs = [];
+  inputs.forEach((f, i) => {
+    for (const scope of ['universal', 'contract']) runs.push({ key: `${f.name}|designesy|${scope}`, body: { url: `legacy-${i}.example.com`, scope } });
+    if (f.name === 'parity-page' || f.name === 'corpus/good-baseline') for (const format of ['canonical', 'google', 'review']) runs.push({ key: `${f.name}|${format}|universal`, body: { url: `legacy-${i}.example.com`, scope: 'universal', format } });
+  });
+  for (const run of runs) {
+    const r = await postScore(run.body, harness);
+    const canon = JSON.stringify(canonicalLegacy(r.body));
+    out[run.key] = { status: r.status, sha256: (await import('node:crypto')).createHash('sha256').update(canon).digest('hex'), score: r.body && typeof r.body === 'object' ? r.body.score ?? r.body.summary?.score ?? null : null };
+  }
+  return out;
+}
+
+const RECORD = process.argv.indexOf('--record-legacy');
+if (RECORD > 0) {
+  const app = path.resolve(process.argv[RECORD + 1]);
+  const snap = await legacyResponses(app);
+  fs.writeFileSync(SNAPSHOT, `${JSON.stringify({ $comment: 'Legacy /api/score responses (no contract) recorded from engine 1.4.1 (the checkout given to --record-legacy), timestamps and engine version taken out. scripts/check-own-contract.mjs section 19 asserts every later engine answers the same.', recordedFrom: path.basename(path.dirname(app)), runs: snap }, null, 2)}\n`);
+  console.log(`recorded ${Object.keys(snap).length} legacy runs to ${path.relative(APP, SNAPSHOT)}`);
+  process.exit(0);
+}
+
+await check('every legacy run (40 pages, both scopes, every format) answers exactly as engine 1.4.1 did', async () => {
+  assert.ok(fs.existsSync(SNAPSHOT), 'legacy-snapshot.json is missing (record it with --record-legacy <a 1.4.1 apps/site>)');
+  const want = JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')).runs;
+  const got = await legacyResponses(APP);
+  assert.deepEqual(Object.keys(got).sort(), Object.keys(want).sort());
+  const moved = Object.keys(want).filter((k) => want[k].sha256 !== got[k].sha256 || want[k].status !== got[k].status);
+  assert.deepEqual(moved, [], `${moved.length} legacy responses moved: ${moved.slice(0, 5).join(', ')}`);
+  assert.ok(Object.keys(want).length >= 80);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('20. Privacy');
 
 await check('no console output during any intake above (engine spec 13)', () => {
   assert.deepEqual(logged, [], `console output: ${logged.slice(0, 3).join(' | ')}`);

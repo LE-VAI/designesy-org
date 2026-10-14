@@ -1,10 +1,11 @@
 import { NextResponse, after } from 'next/server';
-import { recordUsage, scoreClientOf } from '../../lib/usage';
+import { recordUsage, scoreClientOf, scoreContractKey } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { handleOwnContract } from '../../lib/own-contract/api';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -5550,9 +5551,14 @@ export async function POST(request: Request) {
   // F7 usage counters (lib/usage.ts): which surface called, never what it scored.
   after(() => recordUsage(`score:${scoreClientOf(request.headers.get('user-agent'))}`, request));
 
-  let body: { url?: unknown; format?: unknown; scope?: unknown };
+  let body: { url?: unknown; format?: unknown; scope?: unknown; contract?: unknown };
+  // Read as text, then parsed: the same result as request.json(), plus the
+  // body's size, which own-contract mode caps (413 body_too_large).
+  let bodyBytes = 0;
   try {
-    body = await request.json();
+    const text = await request.text();
+    bodyBytes = Buffer.byteLength(text, 'utf8');
+    body = JSON.parse(text);
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -5582,6 +5588,64 @@ export async function POST(request: Request) {
       { ok: false, error: `Unknown format "${format}". Supported: designesy (default), review, google, canonical.` },
       { status: 400 }
     );
+  }
+
+  // Own-contract mode: a `contract` field scores the page against the caller's
+  // own DESIGN.md or DTCG file (app/lib/own-contract/api.ts). It never goes
+  // through the cached scoreUrl and stores nothing; requests without the field
+  // take the path below, unchanged. The route hands over only what it holds:
+  // its page fetch, the baseline layer's checks (called exactly as
+  // scoreUrlUncached calls them), v36's confusable helper and the URL guard.
+  if (body.contract !== undefined) {
+    if (format !== 'designesy') {
+      return NextResponse.json(
+        { ok: false, error: 'Scoring against your own contract answers in format designesy only.', code: 'format_unsupported' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+    try {
+      const r = await handleOwnContract(
+        { body: body as Record<string, unknown>, bodyBytes, url, ip },
+        {
+          fetchPage: fetchPageResilient,
+          legacyChecks: ({ html, css }) => {
+            const rawTokens = extractRootTokens(css);
+            const tokens = inferTokensFromCss(css, rawTokens);
+            return sanitizeCheckDetails([
+              { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace: run the full audit to resolve' },
+              checkFocusVisible(css),
+              checkReducedMotion(css),
+              checkSemanticHtmlFoundation(html),
+              checkPoiseKeyboardPath(css, html),
+              checkTransitionAll(css),
+              checkWillChange(css),
+              { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'MANUAL', detail: 'requires CDP trace: run the full audit to resolve' },
+              checkHeadingHierarchy(html),
+              checkInputFontFloor(css, html, rawTokens),
+              checkAiDisclosure(html),
+              checkForcedColors(css),
+              checkSecurityConfusables(css, tokens),
+              checkButtonTextVerb(html),
+              checkNoTrailingPeriod(html),
+              checkLinkTextDescriptive(html),
+              checkStatusTextContrast(css),
+              checkPausedEntrances(css),
+            ]);
+          },
+          safeFetch,
+          findConfusables,
+        },
+      );
+      // F7: one count per scored run under the mode's own key (never the URL or the contract).
+      if (r.status === 200) after(() => recordUsage(scoreContractKey(scoreClientOf(request.headers.get('user-agent'))), request));
+      return NextResponse.json(r.body, { status: r.status, headers: r.headers });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      return NextResponse.json(
+        { ok: false, error: `Could not reach ${url}: ${sanitizeErrorText(msg)}` },
+        { status: 502, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
   }
 
   try {

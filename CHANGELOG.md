@@ -6,6 +6,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.0: score a page against your own contract** (the hosted API;
+npm and PyPI unchanged). `POST /api/score` takes an optional `contract`
+field: a DESIGN.md or DTCG 2025.10 token file, pasted (`contract.content`)
+or linked (`contract.url`), with an optional `tokenMap`. The answer is two
+numbers that are never blended: **contract fidelity**, how closely the page
+follows the caller's contract, and a **baseline** of universal web checks that
+read no contract. Requests without `contract` are unchanged: no legacy
+verdict, detail or score moves.
+
+### Added (engine 1.5.0)
+
+- **Contract intake.** One normalized model from either format. A contract
+  below the minimum (3 colors that resolve, 1 text style with a family and a
+  size) or one that does not parse answers 422 `contract_not_scoreable` with
+  a `problems` list: each problem has a `code`, the `path` and `line` where
+  they apply, and at most 80 characters of the offending value.
+  `ALIAS_CYCLE` carries the loop as an ordered `chain` of token paths;
+  `TOKEN_DROPPED` (a declared token the DESIGN.md format linter left out of
+  its model) carries a `reason` from a closed list: `alias_unresolved`,
+  `alias_cycle`, `alias_wrong_type`, `value_not_scalar`, `value_invalid`,
+  `unit_unsupported`, `unknown`. Problems are returned, never logged.
+- **Fidelity, f01 to f14.** Mapped tokens ship their declared values; shipped
+  colors, font sizes, families, line heights, radii and spacing sit in the
+  contract; declared font features ship; declared text and background pairs,
+  and the primary action pair, meet contrast on shipped values; durations and
+  easings (DTCG); interactive target sizes; aliases ship as `var()`
+  references; styles use the contract's tokens. Weights: contrast 20,
+  typography 18, color 16, tokens 14, spacing 12, shape 8, motion 6, targets
+  6. A failing declared pair caps fidelity at 65, a failing primary action
+  pair at 70; `uncappedScore` carries the score before the cap. Fewer than 3
+  scored checks is "no score" (`nullReason.code: too_few_checks`).
+- **Baseline.** The universal checks that read no contract: v02, v03, v05, v07,
+  v09, v11, v12, v21, v25, v27, v34, v35, v36, v38, v39, v40, v44 and v45,
+  under the accessibility, keyboard, motion, copywriting, identity and
+  security groups (static maximum 57), with the accessibility floor and the
+  v25 and v44 ceilings. Each carries a customer-facing `contractTitle` in the
+  check registry; legacy surfaces keep `item`.
+- **Coverage.** Every declared token located by the token map, by CSS variable
+  name, or by value, with counts per group and a hint when under 20% is found.
+- **Receipt.** `receipt.own_contract.digest` is a sha256 of the contract as
+  read (prose, names and key order do not move it); `receipt.digest` covers
+  the fidelity verdicts, then the baseline's.
+- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.0,
+  2026-10-14): every check, threshold, weight, ceiling, baseline group and
+  null rule.
+- **Limits.** 300 KB per request, 256 KB per contract, linked contracts only
+  through the SSRF guard with an 8 s abort, 20 runs a minute and 300 a day per
+  IP (failing open, as the edge limiter does). Nothing is cached or stored; a
+  contract run counts once under `score-contract:<client>`.
+
+### Not changed
+
+- The npm engine, the CLI and the MCP tools (the MCP keeps its schema; its
+  offline engine reports 1.5.0 because legacy verdicts are the same).
+- `format=review`, `google` and `canonical` answer 400 `format_unsupported`
+  when a `contract` is sent; this mode answers in `format=designesy`.
+
+### Measured (engine 1.5.0)
+
+The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+golden regenerate with only `engine_version` changed. 86 legacy requests (the
+34 corpus pages, one recorded real page and five site fixtures, both scopes,
+every format) answer identically under 1.4.1 and 1.5.0, apart from timestamps
+and the engine version.
+
 **Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
 check stops failing pages on a word it read in the wrong rule, and one check
 is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
