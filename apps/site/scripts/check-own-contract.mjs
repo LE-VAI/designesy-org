@@ -630,6 +630,107 @@ await check('detection, front matter, prose tables, headings and JSON positions'
   timed('jsonErrorPosition', () => dtcg.jsonErrorPosition('{'.repeat(MB), `Unexpected token at position ${MB - 1}`));
 });
 
+// ═════════════════════════════════════════════════════════════════════════════
+// Scoring: binding, coverage, f01 to f14, both layers, null scores, baseline
+// titles, the published formula and the site fixtures (engine spec 5 to 9).
+// Modules load lazily, so a checkout without them fails each check by name
+// instead of stopping at load.
+// ═════════════════════════════════════════════════════════════════════════════
+
+const lazy = (file) => {
+  let mod = null;
+  let err = null;
+  return new Proxy({}, {
+    get(_t, key) {
+      if (!mod && !err) {
+        try { mod = h.load(file); } catch (e) { err = e; }
+      }
+      if (err) throw new Error(`${file} does not load: ${err.message.split('\n')[0]}`);
+      return mod[key];
+    },
+  });
+};
+const run = lazy('app/lib/own-contract/run.ts');
+const score = lazy('app/lib/own-contract/score.ts');
+const baselineMod = lazy('app/lib/own-contract/baseline.ts');
+const nulls = lazy('app/lib/own-contract/nulls.ts');
+const formula = lazy('app/lib/own-contract/formula.ts');
+const pageCss = lazy('app/lib/own-contract/css.ts');
+const defs = h.load('app/lib/check-definitions.ts');
+
+/** A front-matter DESIGN.md from groups written as YAML lines. */
+const md = (body) => `---\nname: Test\n${body}\n---\n`;
+const C_BASE = md(`colors:
+  ink: "#111111"
+  paper: "#FFFFFF"
+  accent: "#0055FF"
+  muted: "#666666"
+  line: "#DDDDDD"
+  focus: "{colors.accent}"
+  link: "{colors.accent}"
+typography:
+  body:
+    fontFamily: Inter, Arial, sans-serif
+    fontSize: 16px
+    lineHeight: 1.5
+  h1:
+    fontFamily: Inter
+    fontSize: 32px
+    lineHeight: 1.2
+  small:
+    fontFamily: Inter
+    fontSize: 12px
+    lineHeight: 1.4
+  label:
+    fontFamily: Inter
+    fontSize: 14px
+    lineHeight: 20px
+  code:
+    fontFamily: IBM Plex Mono
+    fontSize: 15px
+    lineHeight: 1.5
+    fontFeature: "'tnum' 1, 'zero'"
+rounded:
+  sm: 4px
+  md: 8px
+  lg: 16px
+spacing:
+  xs: 4px
+  sm: 8px
+  md: 12px
+  base: 16px
+  lg: 24px
+  xl: 32px
+components:
+  button-primary:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.paper}"
+    height: 44px
+  card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+  checkbox:
+    size: 20px`);
+
+const contractOf = async (text, extra) => accepted(await read(text, extra));
+/** Run every fidelity check of `contract` against one page; returns { byId, ctx }. */
+const fidelityOf = async (contractText, css, html = '<html><body><h1>Page</h1></body></html>', extra) => {
+  const contract = await contractOf(contractText, extra);
+  const ctx = run.buildContext(contract, { html, css });
+  const checks = run.runFidelityChecks(ctx);
+  return { byId: Object.fromEntries(checks.map((c) => [c.id, c])), ctx, checks };
+};
+const st = async (id, contractText, css, html, extra) => {
+  const { byId } = await fidelityOf(contractText, css, html, extra);
+  return byId[id];
+};
+const expectStatus = (c, status, skipReason) => {
+  assert.ok(c, 'no check result');
+  assert.equal(c.status, status, `${c.id}: ${c.status} (${c.skipReason ?? ''}) "${c.detail}"`);
+  if (skipReason) assert.equal(c.skipReason, skipReason, `${c.id} skipReason`);
+};
+const rule = (sel, decls) => `${sel} { ${decls} }\n`;
+
 // ─────────────────────────────────────────────────────────────────────────────
 section('8b. Line endings: LF, CRLF and CR read the same');
 
@@ -664,7 +765,572 @@ await check('a CRLF contract reports the size the caller sent, and every format 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('9. Privacy');
+section('10. Page CSS reader and binding (engine spec 5.1 to 5.3)');
+
+await check('root custom properties come from :root, :root, :host and html, never from theme or media blocks', () => {
+  const p = pageCss.readPageCss(':root { --a: #111; } @media (min-width: 1px) { :root { --a: #222; } } [data-theme=dark] { --a: #333; } html { --b: 4px; } @layer theme { :root, :host { --c: red; } } .dark { --a: #444 }');
+  assert.equal(p.rootVars.get('--a'), '#111');
+  assert.equal(p.rootVars.get('--b'), '4px');
+  assert.equal(p.rootVars.get('--c'), 'red');
+});
+await check('usage declarations exclude custom properties, prefixed properties and theme blocks', () => {
+  const p = pageCss.readPageCss(':root { --x: 1px } a { color: red; -webkit-text-fill-color: blue } .dark a { color: green } @media (prefers-color-scheme: dark) { a { color: pink } } @font-face { font-family: X } @keyframes k { from { color: teal } }');
+  assert.deepEqual(p.usage.map((d) => `${d.prop}:${d.value}`), ['color:red']);
+});
+await check('braces and semicolons inside strings and url() do not break a rule', () => {
+  const p = pageCss.readPageCss('a::before { content: "{;}"; color: #123456 } b { background: url("x;{.png") #abcdef }');
+  assert.deepEqual(p.usage.map((d) => d.prop), ['content', 'color', 'background']);
+});
+await check('var() resolves through :root with fallbacks and stops on cycles', () => {
+  const p = pageCss.readPageCss(':root { --a: var(--b); --b: 8px; --c: var(--c); }');
+  assert.equal(pageCss.resolveVars('var(--a)', p.rootVars), '8px');
+  assert.equal(pageCss.resolveVars('var(--nope, 3px)', p.rootVars), '3px');
+  assert.equal(pageCss.resolveVars('var(--c)', p.rootVars), null);
+});
+await check('a token is located by map, by name (Tailwind v4 and path names), or by value; two names with different values are ambiguous', async () => {
+  const contract = await contractOf(C_BASE, { tokenMap: { 'colors.muted': '--grey' } });
+  const ctx = run.buildContext(contract, {
+    html: '',
+    css: ':root { --color-ink: #111111; --colors-paper: #fff; --grey: #666666; --color-accent: #0055ff; --accent: #0044ee; --text-body: 16px; --radius-sm: 4px; } a { color: #dddddd }',
+  });
+  const b = (p) => ctx.bindings.find((x) => x.path === p);
+  assert.equal(b('colors.ink').located, 'name');
+  assert.equal(b('colors.ink').cssVar, '--color-ink');
+  assert.equal(b('colors.paper').located, 'name');
+  assert.equal(b('colors.muted').located, 'map');
+  assert.equal(b('colors.line').located, 'value');
+  assert.equal(b('colors.accent').located, 'value', '--color-accent and --accent disagree, so not by name; its value is on the page');
+  assert.ok(ctx.notes.some((n) => n.startsWith('BINDING_AMBIGUOUS')));
+  assert.equal(b('typography.body.fontSize').located, 'name');
+  assert.equal(b('rounded.sm').located, 'name');
+});
+await check('a mapped variable missing from the page leaves the token unlocated', async () => {
+  const contract = await contractOf(C_BASE, { tokenMap: { 'colors.ink': '--missing' } });
+  const ctx = run.buildContext(contract, { html: '', css: ':root { --color-ink: #111111 } a { color: #111111 }' });
+  assert.equal(ctx.bindings.find((x) => x.path === 'colors.ink').located, null);
+});
+await check('coverage: declared, located by map, name and value, groups, and a hint under 20%', async () => {
+  const contract = await contractOf(C_BASE);
+  const ctx = run.buildContext(contract, { html: '', css: 'a { color: #111111 }' });
+  const cov = run.coverageOf(ctx);
+  assert.equal(cov.declared, contract.stats.declared);
+  assert.equal(cov.byValue, 1);
+  assert.equal(cov.located, cov.byMap + cov.byName + cov.byValue);
+  assert.equal(cov.ratio, Math.round((cov.located / cov.declared) * 1000) / 1000);
+  assert.ok(cov.hint && cov.hint.startsWith(`Only 1 of ${cov.declared} declared tokens were found on this page.`));
+  assert.deepEqual(Object.keys(cov.groups).sort(), ['colors', 'durations', 'easings', 'radii', 'sizes', 'spacing', 'typography']);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('11. Fidelity checks at their thresholds (engine spec 6.2, 6.3)');
+
+const ROOT_OK = ':root { --color-ink: #111111; --color-paper: #ffffff; --color-accent: #0055ff; --color-muted: #666666; --color-line: #dddddd; --color-focus: var(--color-accent); --color-link: var(--color-accent); }';
+// f01
+await check('f01 PASS: every token located by name ships its declared value (1 per channel tolerated)', async () => {
+  expectStatus(await st('f01', C_BASE, ':root { --color-ink: #121111; --color-paper: #fff; --color-accent: #0055ff }'), 'PASS');
+});
+await check('f01 WARN at exactly 90% matching; FAIL below', async () => {
+  const ten = ':root { --color-ink: #111111; --color-paper: #fff; --color-accent: #0055ff; --color-muted: #666666; --color-line: #dddddd; --text-body: 16px; --text-h1: 32px; --text-small: 12px; --text-label: 14px; --radius-sm: 5px }';
+  const c = await st('f01', C_BASE, ten);
+  expectStatus(c, 'WARN');
+  assert.equal(c.shipped.length, 1);
+  assert.deepEqual(c.shipped[0], { path: 'rounded.sm', value: '5px', where: ['--radius-sm'] });
+  expectStatus(await st('f01', C_BASE, ':root { --color-ink: #111111; --color-paper: #000; --color-accent: #0055ff }'), 'FAIL');
+});
+await check('f01 SKIP not_located with fewer than 3 tokens located by map or name', async () => {
+  expectStatus(await st('f01', C_BASE, ':root { --color-ink: #111111; --color-paper: #fff }'), 'SKIP', 'not_located');
+});
+// f02
+const PAL10 = md(`colors:
+${['101010', '202020', '303030', '404040', '505050', '606060', '707070', '808080', '909090', 'a0a0a0'].map((x, i) => `  c${i}: "#${x}"`).join('\n')}
+typography:
+  body:
+    fontFamily: Inter
+    fontSize: 16px`);
+const shipColors = (list) => list.map((c, i) => rule(`.c${i}`, `color: ${c}`)).join('');
+const inPal = ['#101010', '#202020', '#303030', '#404040', '#505050', '#606060', '#707070', '#808080', '#909090', '#a0a0a0'];
+await check('f02 PASS at exactly 90% of shipped colors in the palette, with the R3-07 line', async () => {
+  const c = await st('f02', PAL10, shipColors([...inPal.slice(0, 9), '#123456']));
+  expectStatus(c, 'PASS');
+  assert.equal(c.detail, '9 of 10 shipped colors are in your palette (90% needed to pass). Outside it: #123456');
+});
+await check('f02 WARN at exactly 70%; FAIL below; outside colors name their nearest declared color', async () => {
+  expectStatus(await st('f02', PAL10, shipColors([...inPal.slice(0, 7), '#ff0000', '#00ff00', '#0000ff'])), 'WARN');
+  const c = await st('f02', PAL10, shipColors([...inPal.slice(0, 6), '#ff0000', '#00ff00', '#0000ff', '#111112'.replace('111112', 'fe0000')]));
+  expectStatus(c, 'FAIL');
+  const ev = c.evidence.findings.find((f) => f.value === '#FF0000');
+  assert.ok(ev, 'off-palette #FF0000 listed');
+  assert.ok(typeof ev.nearest === 'string' && ev.nearest.startsWith('colors.c'));
+});
+await check('f02 ignores alpha for membership and skips gradients and shadows', async () => {
+  const c = await st('f02', PAL10, shipColors(['rgba(16,16,16,.5)', '#202020', '#303030']) + rule('.g', 'background: linear-gradient(#ff0000, #00ff00); box-shadow: 0 0 1px #0000ff'));
+  expectStatus(c, 'PASS');
+  assert.equal(c.detail, '3 of 3 shipped colors are in your palette (90% needed to pass).');
+});
+await check('f02 SKIP not_located below 3 distinct shipped colors', async () => {
+  expectStatus(await st('f02', PAL10, shipColors(['#101010', '#202020'])), 'SKIP', 'not_located');
+});
+await check('the f02 line names one or two outside colors from the counts (A-CP-4)', () => {
+  assert.equal(run.paletteLine(20, ['#7DA4FF']), '19 of 20 shipped colors are in your palette (90% needed to pass). Outside it: #7DA4FF');
+  assert.equal(run.paletteLine(20, ['#AAAAAA', '#BBBBBB']), '18 of 20 shipped colors are in your palette (90% needed to pass). Outside it: #AAAAAA, #BBBBBB');
+  assert.equal(run.paletteLine(1, []), '1 of 1 shipped colors is in your palette (90% needed to pass).');
+});
+// f03
+const SIZES10 = md(`colors:
+  a: "#111111"
+  b: "#222222"
+  c: "#333333"
+typography:
+${[12, 14, 16, 20, 24, 32, 40, 48, 56, 64].map((s) => `  s${s}:\n    fontFamily: Inter\n    fontSize: ${s}px`).join('\n')}`);
+const shipSizes = (list) => list.map((s, i) => rule(`.t${i}`, `font-size: ${s}`)).join('');
+await check('f03 PASS at 90% on the scale (rem read at 16px); WARN at 70%; FAIL below', async () => {
+  expectStatus(await st('f03', SIZES10, shipSizes(['0.75rem', '14px', '1rem', '20px', '24px', '2rem', '40px', '48px', '56px', '17px'])), 'PASS');
+  expectStatus(await st('f03', SIZES10, shipSizes(['12px', '14px', '16px', '20px', '24px', '32px', '40px', '13px', '15px', '17px'])), 'WARN');
+  expectStatus(await st('f03', SIZES10, shipSizes(['12px', '14px', '16px', '20px', '24px', '32px', '13px', '15px', '17px', '19px'])), 'FAIL');
+});
+await check('f03 reads clamp() bounds, ignores em and keywords, and SKIPs not_located under 3 sizes', async () => {
+  const c = await st('f03', SIZES10, shipSizes(['clamp(1rem, 2vw, 2rem)', '1.5em', 'larger', '12px']));
+  expectStatus(c, 'PASS');
+  assert.match(c.detail, /^3 of 3 shipped sizes are on your scale/);
+  expectStatus(await st('f03', SIZES10, shipSizes(['12px', '14px'])), 'SKIP', 'not_located');
+});
+// f04
+await check('f04 PASS: every shipped face is declared, or a declared fallback; next/font names fold', async () => {
+  const c = await st('f04', C_BASE, rule('body', 'font-family: Inter, sans-serif') + rule('pre', 'font-family: "IBM Plex Mono", monospace') + rule('.x', 'font-family: Arial') + rule('.n', "font-family: '__Inter_aaf875', '__Inter_Fallback_aaf875'"));
+  expectStatus(c, 'PASS');
+});
+await check('f04 WARN with one undeclared face (Roboto counts as a real face); FAIL with two', async () => {
+  expectStatus(await st('f04', C_BASE, rule('body', 'font-family: Inter') + rule('.r', 'font-family: Roboto, sans-serif')), 'WARN');
+  expectStatus(await st('f04', C_BASE, rule('body', 'font-family: Roboto') + rule('.g', 'font-family: Georgia, serif')), 'FAIL');
+});
+await check('f04 resolves var() families and SKIPs not_located with no shipped face', async () => {
+  expectStatus(await st('f04', C_BASE, ':root { --font-sans: "Inter", system-ui } body { font-family: var(--font-sans) }'), 'PASS');
+  expectStatus(await st('f04', C_BASE, rule('body', 'font-family: system-ui, sans-serif')), 'SKIP', 'not_located');
+});
+// f05
+const LH7 = md(`colors:
+  a: "#111111"
+  b: "#222222"
+  c: "#333333"
+typography:
+${[1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7].map((r, i) => `  r${i}:\n    fontFamily: Inter\n    fontSize: 16px\n    lineHeight: ${r}`).join('\n')}`);
+const shipLh = (list) => list.map((s, i) => rule(`.l${i}`, `line-height: ${s}`)).join('');
+await check('f05 PASS: ratios, lengths, and a length over its own rule font-size match declared ratios', async () => {
+  expectStatus(await st('f05', C_BASE, shipLh(['1.5', '1.2', '1.4']) + rule('.lab', 'line-height: 20px') + rule('.b', 'font-size: 16px; line-height: 24px')), 'PASS');
+});
+await check('f05 WARN at 70%; FAIL below; SKIP not_located under 3', async () => {
+  expectStatus(await st('f05', LH7, shipLh(['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.7', '1.8', '1.9', '2'])), 'WARN');
+  expectStatus(await st('f05', LH7, shipLh(['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.8', '1.9', '2', '2.1'])), 'FAIL');
+  expectStatus(await st('f05', LH7, shipLh(['1.1', 'normal'])), 'SKIP', 'not_located');
+});
+await check('f05 SKIP not_declared when no style declares a line height', async () => {
+  expectStatus(await st('f05', PAL10, shipLh(['1.1', '1.2', '1.3'])), 'SKIP', 'not_declared');
+});
+// f06
+await check('f06 PASS by font-variant keywords or font-feature-settings; WARN when one is missing; never FAIL', async () => {
+  expectStatus(await st('f06', C_BASE, rule('code', 'font-variant-numeric: tabular-nums slashed-zero')), 'PASS');
+  expectStatus(await st('f06', C_BASE, rule('code', 'font-feature-settings: "tnum" 1, "zero"')), 'PASS');
+  const w = await st('f06', C_BASE, rule('code', 'font-variant-numeric: tabular-nums'));
+  expectStatus(w, 'WARN');
+  assert.match(w.detail, /zero/);
+  expectStatus(await st('f06', C_BASE, ''), 'WARN');
+});
+await check('f06 SKIP not_declared when no style declares a feature', async () => {
+  expectStatus(await st('f06', PAL10, rule('code', 'font-variant-numeric: tabular-nums')), 'SKIP', 'not_declared');
+});
+// f07
+const R7 = md(`colors:
+  a: "#111111"
+  b: "#222222"
+  c: "#333333"
+typography:
+  body:
+    fontFamily: Inter
+    fontSize: 16px
+rounded:
+${[2, 4, 6, 8, 10, 12, 14].map((r) => `  r${r}: ${r}px`).join('\n')}`);
+const shipRadii = (list) => list.map((s, i) => rule(`.r${i}`, `border-radius: ${s}`)).join('');
+await check('f07 PASS on the scale; 0, percentages, hairlines and em are left out', async () => {
+  const c = await st('f07', C_BASE, shipRadii(['4px', '8px', '1rem', '50%', '0', '1px', '2em']) + rule('.c', 'border-top-left-radius: 4px 8px'));
+  expectStatus(c, 'PASS');
+  assert.match(c.detail, /^3 of 3 shipped radii are on your radius scale/);
+});
+await check('f07 WARN at 70%; FAIL below; SKIP not_located under 3', async () => {
+  expectStatus(await st('f07', R7, shipRadii(['2px', '4px', '6px', '8px', '10px', '12px', '14px', '3px', '5px', '7px'])), 'WARN');
+  expectStatus(await st('f07', R7, shipRadii(['2px', '4px', '6px', '8px', '10px', '12px', '3px', '5px', '7px', '9px'])), 'FAIL');
+  expectStatus(await st('f07', R7, shipRadii(['2px', '4px'])), 'SKIP', 'not_located');
+});
+await check('f07 counts a radius above the largest finite one as "full" only when the contract declares full', async () => {
+  const full = R7.replace('  r14: 14px', '  r14: 14px\n  full: 9999px');
+  expectStatus(await st('f07', full, shipRadii(['2px', '4px', '999px', '24px'])), 'PASS');
+  expectStatus(await st('f07', R7, shipRadii(['2px', '4px', '999px', '24px'])), 'FAIL');
+});
+await check('f07 and f08 SKIP not_declared for a group the contract omits or lacks', async () => {
+  const c = await st('f07', fixture('DM-4.md'), shipRadii(['2px', '4px', '6px']));
+  expectStatus(c, 'SKIP', 'not_declared');
+  assert.match(c.detail, /Corners are square by design\./);
+  expectStatus(await st('f08', fixture('DM-4.md'), rule('a', 'padding: 4px 8px 12px 16px; margin: 24px')), 'SKIP', 'not_declared');
+});
+// f08
+await check('f08 PASS: padding, margin and gap components, negative margins as their size, var() resolved', async () => {
+  expectStatus(await st('f08', C_BASE, ':root { --gap: 12px } ' + rule('a', 'padding: 4px 8px; margin: 16px -24px 32px; gap: var(--gap)') + rule('b', 'row-gap: 0; column-gap: auto; margin: 10%')), 'PASS');
+});
+await check('f08 FAIL below 70%; SKIP not_located under 5 distinct values', async () => {
+  expectStatus(await st('f08', C_BASE, rule('a', 'padding: 4px 8px 12px 10px; margin: 14px')), 'FAIL');
+  expectStatus(await st('f08', C_BASE, rule('a', 'padding: 4px 8px 12px 16px')), 'SKIP', 'not_located');
+});
+// f09
+await check('f09 PASS on declared values when the pair is located only by value, and says so', async () => {
+  const c = await st('f09', C_BASE, rule('.card', 'color: #111111; background: #ffffff'));
+  expectStatus(c, 'PASS');
+  assert.match(c.detail, /evaluated on declared values; not located by name/);
+});
+await check('f09 uses shipped values when both colors are located by name: 4.48 WARN, 2.32 FAIL', async () => {
+  const w = await st('f09', C_BASE, ':root { --color-ink: #777777; --color-paper: #ffffff }');
+  expectStatus(w, 'WARN');
+  assert.match(w.detail, /4\.5 to 1/);
+  expectStatus(await st('f09', C_BASE, ':root { --color-ink: #aaaaaa; --color-paper: #ffffff }'), 'FAIL');
+});
+await check('f09 on #111418 / #FFFFFF reads 18.47 to 1', async () => {
+  const c = await st('f09', md(`colors:\n  ink: "#111418"\n  paper: "#FFFFFF"\n  x: "#333333"\ntypography:\n  body:\n    fontFamily: Inter\n    fontSize: 16px\ncomponents:\n  input:\n    backgroundColor: "{colors.paper}"\n    textColor: "{colors.ink}"`), ':root { --color-ink: #111418; --color-paper: #ffffff }');
+  expectStatus(c, 'PASS');
+  assert.equal(c.evidence.findings[0].ratio, 18.47);
+});
+await check('f09 large text passes at 3 to 1; the worst pair decides', async () => {
+  const big = md(`colors:\n  ink: "#949494"\n  paper: "#FFFFFF"\n  dark: "#111111"\ntypography:\n  display:\n    fontFamily: Inter\n    fontSize: 48px\ncomponents:\n  hero:\n    backgroundColor: "{colors.paper}"\n    textColor: "{colors.ink}"\n    typography: "{typography.display}"\n  card:\n    backgroundColor: "{colors.paper}"\n    textColor: "{colors.dark}"`);
+  expectStatus(await st('f09', big, ':root { --color-ink: #949494; --color-paper: #fff; --color-dark: #111 }'), 'PASS');
+});
+await check('f09 SKIP not_located when a pair color is not on the page; not_declared with no pairs', async () => {
+  expectStatus(await st('f09', C_BASE, rule('a', 'color: #0055ff')), 'SKIP', 'not_located');
+  expectStatus(await st('f09', PAL10, rule('a', 'color: #101010')), 'SKIP', 'not_declared');
+});
+// f10
+await check('f10 primary action pair: 5.61 PASS, 3.76 WARN, 2.43 FAIL on shipped values', async () => {
+  expectStatus(await st('f10', C_BASE, ':root { --color-accent: #0055ff; --color-paper: #fff }'), 'PASS');
+  expectStatus(await st('f10', C_BASE, ':root { --color-accent: #4c7bff; --color-paper: #fff }'), 'WARN');
+  const f = await st('f10', C_BASE, ':root { --color-accent: #7da4ff; --color-paper: #fff }');
+  expectStatus(f, 'FAIL');
+  assert.equal(f.evidence.findings[0].ratio, 2.43);
+  assert.equal(f.declared.find((e) => e.path === 'colors.accent').value, '#0055FF');
+  assert.equal(f.shipped.find((e) => e.path === 'colors.accent').value, '#7DA4FF');
+});
+await check('f10 SKIP not_declared when the contract names no primary action pair', async () => {
+  expectStatus(await st('f10', PAL10, ':root { --color-c0: #101010 }'), 'SKIP', 'not_declared');
+});
+// f11
+const DT_MOTION = (durations, easings = { out: [0.2, 0, 0, 1] }) => JSON.stringify({
+  color: { $type: 'color', a: { $value: '#111111' }, b: { $value: '#222222' }, c: { $value: '#333333' } },
+  typography: { $type: 'typography', body: { $value: { fontFamily: 'Inter', fontSize: { value: 16, unit: 'px' } } } },
+  duration: { $type: 'duration', ...Object.fromEntries(durations.map((ms) => [`d${ms}`, { $value: { value: ms, unit: 'ms' } }])) },
+  ease: { $type: 'cubicBezier', ...Object.fromEntries(Object.entries(easings).map(([k, v]) => [k, { $value: v }])) },
+});
+const shipMotion = (list) => list.map((s, i) => rule(`.m${i}`, `transition: ${s}`)).join('');
+await check('f11 SKIP not_applicable for a DESIGN.md contract', async () => {
+  expectStatus(await st('f11', C_BASE, shipMotion(['opacity 200ms', 'color .3s'])), 'SKIP', 'not_applicable');
+});
+await check('f11 PASS when shipped durations and curves are declared (keywords mapped, 0s left out)', async () => {
+  expectStatus(await st('f11', DT_MOTION([100, 200], { out: [0.2, 0, 0, 1], std: [0.25, 0.1, 0.25, 1] }), shipMotion(['opacity 200ms cubic-bezier(0.2, 0, 0, 1)', 'transform 0.1s ease', 'color 0s'])), 'PASS');
+});
+await check('f11 WARN at 70% of durations; FAIL below; the worse share decides', async () => {
+  const seven = [100, 150, 200, 250, 300, 350, 400];
+  expectStatus(await st('f11', DT_MOTION(seven), rule('a', `transition-duration: ${[...seven, 500, 600, 700].map((x) => `${x}ms`).join(', ')}`)), 'WARN');
+  expectStatus(await st('f11', DT_MOTION(seven), rule('a', `transition-duration: ${[100, 150, 200, 250, 300, 350, 500, 600, 700, 800].map((x) => `${x}ms`).join(', ')}`)), 'FAIL');
+  expectStatus(await st('f11', DT_MOTION([100, 200]), shipMotion(['opacity 100ms cubic-bezier(0.9, 0, 0.1, 1)', 'color 200ms cubic-bezier(0.8, 0, 0.2, 1)'])), 'FAIL');
+});
+await check('f11 SKIP not_located under 2 shipped durations; not_declared with no motion tokens', async () => {
+  expectStatus(await st('f11', DT_MOTION([100]), shipMotion(['opacity 100ms'])), 'SKIP', 'not_located');
+  expectStatus(await st('f11', fixture('DT-2.json'), shipMotion(['opacity 100ms', 'color 200ms'])), 'SKIP', 'not_declared');
+});
+// f12
+await check('f12 PASS when explicit target sizes meet the floor (24px, or the declared minimum when larger)', async () => {
+  expectStatus(await st('f12', C_BASE, rule('button', 'min-height: 44px') + rule('.chip', 'min-width: 1.5rem')), 'PASS');
+});
+await check('f12 WARN under a declared floor above 24px; FAIL under 24px', async () => {
+  const raised = C_BASE.replace('  checkbox:\n    size: 20px', '  checkbox:\n    size: 32px');
+  const w = await st('f12', raised, rule('button', 'min-height: 28px'));
+  expectStatus(w, 'WARN');
+  expectStatus(await st('f12', C_BASE, rule('button', 'min-height: 20px')), 'FAIL');
+});
+await check('f12 SKIP not_located with no explicit size; not_declared with no interactive size', async () => {
+  expectStatus(await st('f12', C_BASE, rule('.card', 'min-height: 10px')), 'SKIP', 'not_located');
+  expectStatus(await st('f12', PAL10, rule('button', 'min-height: 44px')), 'SKIP', 'not_declared');
+});
+// f13
+await check('f13 PASS when aliases ship as var() references; WARN when one of two is flattened', async () => {
+  expectStatus(await st('f13', C_BASE, ROOT_OK), 'PASS');
+  const w = await st('f13', C_BASE, ROOT_OK.replace('--color-link: var(--color-accent)', '--color-link: #0055ff'));
+  expectStatus(w, 'WARN');
+  assert.match(w.detail, /^1 of 2 aliases ship as variable references/);
+});
+await check('f13 SKIP not_located under 2 evaluable aliases; not_declared with none', async () => {
+  expectStatus(await st('f13', C_BASE, ':root { --color-accent: #0055ff; --color-focus: var(--color-accent) }'), 'SKIP', 'not_located');
+  expectStatus(await st('f13', PAL10, ':root { --color-c0: #101010 }'), 'SKIP', 'not_declared');
+});
+// f14
+const decls = (n, withVar) => Array.from({ length: n }, (_, i) => rule(`.d${i}`, i < withVar ? 'color: var(--color-ink)' : 'color: #111111')).join('');
+await check('f14 PASS at 80% of measurable declarations through a located token; WARN from 50%; FAIL below', async () => {
+  expectStatus(await st('f14', C_BASE, ROOT_OK + decls(10, 8)), 'PASS');
+  expectStatus(await st('f14', C_BASE, ROOT_OK + decls(10, 5)), 'WARN');
+  expectStatus(await st('f14', C_BASE, ROOT_OK + decls(10, 4)), 'FAIL');
+});
+await check('f14 SKIP not_located under 10 declarations or under 3 tokens located by name', async () => {
+  expectStatus(await st('f14', C_BASE, ROOT_OK + decls(9, 9)), 'SKIP', 'not_located');
+  expectStatus(await st('f14', C_BASE, ':root { --color-ink: #111111; --color-paper: #fff }' + decls(12, 12)), 'SKIP', 'not_located');
+});
+await check('every fidelity result carries layer, reads, derivedFrom, title and category', async () => {
+  const { checks } = await fidelityOf(C_BASE, ROOT_OK);
+  assert.deepEqual(checks.map((c) => c.id), ['f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07', 'f08', 'f09', 'f10', 'f11', 'f12', 'f13', 'f14']);
+  for (const c of checks) {
+    assert.equal(c.layer, 'fidelity', c.id);
+    assert.ok(Array.isArray(c.reads) && c.reads.length, `${c.id} reads`);
+    assert.ok(Array.isArray(c.derivedFrom) && c.derivedFrom.length, `${c.id} derivedFrom`);
+    assert.ok(c.item && c.category, c.id);
+    if (c.status === 'SKIP') assert.ok(['not_declared', 'not_located', 'not_applicable'].includes(c.skipReason), c.id);
+  }
+});
+await check('evidence lists stop at 20 entries with a truncated count', async () => {
+  const many = Array.from({ length: 30 }, (_, i) => `#${(0x100000 + i * 4099).toString(16).slice(0, 6)}`);
+  const c = await st('f02', PAL10, shipColors(many));
+  assert.ok(c.evidence.findings.length <= 20);
+  assert.ok(c.evidence.truncated >= 10);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('12. Scoring both layers (engine spec 8; owner decisions D1, D3, D6, D10)');
+
+const fid = (statuses) => Object.entries(statuses).map(([id, status]) => ({ id, status, category: formula.FIDELITY_CATEGORY[id], layer: 'fidelity' }));
+const STATE4_FID = { f01: 'PASS', f02: 'PASS', f03: 'PASS', f04: 'PASS', f05: 'WARN', f06: 'SKIP', f07: 'PASS', f08: 'PASS', f09: 'PASS', f10: 'FAIL', f11: 'SKIP', f12: 'SKIP', f13: 'PASS', f14: 'WARN' };
+const STATE4_BASE = { v02: 'MANUAL', v03: 'FAIL', v09: 'WARN', v05: 'PASS', v11: 'PASS', v12: 'SKIP', v21: 'MANUAL', v25: 'PASS', v27: 'SKIP', v35: 'WARN', v07: 'PASS', v34: 'PASS', v36: 'PASS', v38: 'WARN', v39: 'PASS', v40: 'PASS', v44: 'SKIP', v45: 'SKIP' };
+const base = (statuses) => Object.entries(statuses).map(([id, status]) => ({ id, status, category: defs.CHECKS.find((c) => c.id === id).category, layer: 'baseline' }));
+
+await check('the 8.2 worked example scores 58.0, grade F, no ceiling', () => {
+  const r = score.scoreFidelity(fid({ f02: 'FAIL', f03: 'PASS', f04: 'PASS', f07: 'PASS', f09: 'PASS', f05: 'WARN', f08: 'WARN', f10: 'WARN', f14: 'WARN', f01: 'SKIP', f06: 'SKIP', f11: 'SKIP', f12: 'SKIP', f13: 'SKIP' }));
+  assert.equal(r.score, 58.0);
+  assert.equal(r.grade, 'F');
+  assert.equal(r.ceilingApplied, false);
+  assert.equal(r.uncappedScore, null);
+  assert.equal(r.scored, 9);
+  assert.equal(r.total, 14);
+});
+await check('the prototype scenario: fidelity 82.6 capped to 70.0 C by f10 (uncapped B); baseline 74.0 C', () => {
+  const f = score.scoreFidelity(fid(STATE4_FID));
+  assert.equal(f.score, 70.0);
+  assert.equal(f.grade, 'C');
+  assert.equal(f.uncappedScore, 82.6);
+  assert.equal(score.gradeOf(f.uncappedScore), 'B');
+  assert.equal(f.ceilingApplied, true);
+  assert.match(f.ceilingReason, /primary action pair/);
+  const b = score.scoreBaseline(base(STATE4_BASE));
+  assert.equal(b.score, 74.0);
+  assert.equal(b.grade, 'C');
+  assert.equal(b.a11yFloorApplied, false);
+  assert.equal(b.scored, 12);
+  assert.equal(b.total, 18);
+});
+await check('the prototype no-score scenario: fidelity null (2 of 14 scored), baseline 71.3 C', () => {
+  const f = score.scoreFidelity(fid({ ...Object.fromEntries(Object.keys(STATE4_FID).map((k) => [k, 'SKIP'])), f04: 'PASS', f09: 'PASS' }));
+  assert.equal(f.score, null);
+  assert.equal(f.grade, null);
+  assert.deepEqual(f.nullReason, { code: 'too_few_checks', detail: '2 of 14 checks scored; at least 3 are needed.' });
+  const b = score.scoreBaseline(base({ ...STATE4_BASE, v07: 'WARN' }));
+  assert.equal(b.score, 71.3);
+});
+await check('ceilings: f09 FAIL caps at 65, f10 at 70, the lower wins; never raises a score', () => {
+  const all = (s) => Object.fromEntries(Object.keys(STATE4_FID).map((k) => [k, s]));
+  const both = score.scoreFidelity(fid({ ...all('PASS'), f09: 'FAIL', f10: 'FAIL' }));
+  assert.equal(both.score, 65.0);
+  assert.equal(both.uncappedScore, 80.0);
+  const low = score.scoreFidelity(fid({ ...all('FAIL'), f01: 'PASS', f10: 'FAIL' }));
+  assert.equal(low.ceilingApplied, false, 'a score already under the cap is not capped');
+  assert.equal(low.uncappedScore, null);
+});
+await check('baseline: the accessibility floor (under 60% caps at 70), v25 at 75, v44 at 65; MANUAL left out', () => {
+  const allPass = Object.fromEntries(Object.keys(STATE4_BASE).map((k) => [k, k === 'v02' || k === 'v21' ? 'MANUAL' : 'PASS']));
+  assert.equal(score.scoreBaseline(base(allPass)).score, 100.0);
+  const floor = score.scoreBaseline(base({ ...allPass, v25: 'FAIL', v27: 'FAIL', v35: 'WARN' }));
+  assert.equal(floor.a11yFloorApplied, true);
+  assert.equal(floor.score, 70.0);
+  assert.equal(score.scoreBaseline(base({ ...allPass, v25: 'FAIL' })).score, 75.0);
+  assert.equal(score.scoreBaseline(base({ ...allPass, v44: 'FAIL' })).score, 65.0);
+});
+await check('grades: A 90, B 80, C 70, D 60, else F; one decimal throughout', () => {
+  assert.deepEqual([90, 89.9, 80, 70, 60, 59.9].map(score.gradeOf), ['A', 'B', 'B', 'C', 'D', 'F']);
+});
+await check('category scores carry weight and counts per category', () => {
+  const r = score.scoreFidelity(fid(STATE4_FID));
+  assert.deepEqual(r.categoryScores.contrast, { score: 50.0, weight: 20, pass: 1, warn: 0, fail: 1, skip: 0, manual: 0 });
+  assert.equal(r.categoryScores.motion.score, null);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('13. Baseline set and titles (owner decisions D7, D10; O2)');
+
+await check('the baseline is the 18 checks of D10 in registry order; v46 stays out', () => {
+  assert.deepEqual([...baselineMod.BASELINE_IDS].sort(), ['v02', 'v03', 'v05', 'v07', 'v09', 'v11', 'v12', 'v21', 'v25', 'v27', 'v34', 'v35', 'v36', 'v38', 'v39', 'v40', 'v44', 'v45']);
+  const order = defs.CHECKS.map((c) => c.id).filter((id) => baselineMod.BASELINE_IDS.includes(id));
+  assert.deepEqual([...baselineMod.BASELINE_IDS], order);
+  assert.ok(!baselineMod.BASELINE_IDS.includes('v46'));
+});
+await check('group weights: accessibility 15, keyboard 13, motion 10, copywriting 8, identity 6, security 5; static maximum 57', () => {
+  const g = baselineMod.BASELINE_GROUPS;
+  assert.deepEqual(Object.fromEntries(Object.entries(g).map(([k, v]) => [k, [v.weight, [...v.checks].sort().join(',')]])), {
+    accessibility: [15, 'v25,v27,v35,v44'], keyboard: [13, 'v03,v09'], motion: [10, 'v05,v11,v12,v45'], copywriting: [8, 'v38,v39,v40'],
+    identity: [6, 'v07,v34'], security: [5, 'v36'], responsive: [3, 'v02'], performance: [6, 'v21'],
+  });
+  assert.equal(baselineMod.BASELINE_STATIC_MAX, 57);
+});
+await check('every baseline check carries a contractTitle with no Poise, Takt, wordmark or Designesy', () => {
+  for (const id of baselineMod.BASELINE_IDS) {
+    const d = defs.CHECKS.find((c) => c.id === id);
+    assert.ok(d.contractTitle && d.contractTitle.length > 8, `${id} has no contractTitle`);
+    assert.doesNotMatch(d.contractTitle, /poise|takt|wordmark|designesy/i, id);
+  }
+  assert.equal(defs.CHECKS.find((c) => c.id === 'v05').contractTitle, 'Reduced motion is honored');
+  assert.equal(defs.CHECKS.find((c) => c.id === 'v09').contractTitle, 'Keyboard affordances are present');
+});
+await check('legacy surfaces keep item; the registry count is unchanged', () => {
+  assert.equal(defs.ENGINE_CHECK_COUNT, 45);
+  assert.equal(defs.CHECKS.find((c) => c.id === 'v09').item, 'Poise keyboard-path verification remains published and current');
+  assert.ok(defs.CHECKS.filter((c) => !baselineMod.BASELINE_IDS.includes(c.id)).every((c) => c.contractTitle === undefined));
+});
+await check('baseline results take their contractTitle and layer, keep their registry category', () => {
+  const legacy = defs.CHECKS.map((c) => ({ id: c.id, item: c.item, category: c.category, status: 'PASS', detail: 'x' }));
+  const out = baselineMod.baselineChecks(legacy);
+  assert.equal(out.length, 18);
+  const v09 = out.find((c) => c.id === 'v09');
+  assert.equal(v09.item, 'Keyboard affordances are present');
+  assert.equal(v09.category, 'poise');
+  assert.equal(v09.layer, 'baseline');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('14. Null scores (engine spec 9; owner decision D2)');
+
+await check('empty shell: little text, an empty mount node and a module script', () => {
+  assert.equal(nulls.isEmptyShell('<html><body><div id="root"></div><script type="module" src="/a.js"></script></body></html>'), true);
+  assert.equal(nulls.isEmptyShell('<html><body><app-root> </app-root><script src="/main.js"></script></body></html>'), true);
+  assert.equal(nulls.isEmptyShell(`<html><body><div id="root"></div><p>${'Real text. '.repeat(40)}</p><script type="module"></script></body></html>`), false, 'enough text');
+  assert.equal(nulls.isEmptyShell('<html><body><div id="root"><h1>Hi</h1></div><script type="module"></script></body></html>'), false, 'mount not empty');
+  assert.equal(nulls.isEmptyShell('<html><body><div id="root"></div></body></html>'), false, 'no script');
+});
+await check('no CSS: under 500 bytes after trimming', () => {
+  assert.equal(nulls.hasNoCss(`  ${'a{}'.repeat(10)}  `), true);
+  assert.equal(nulls.hasNoCss('a { color: red }'.repeat(40)), false);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('15. The published formula (engine spec 10.5 rule 3; brand D76)');
+
+await check('lists f01 to f14 with weights summing to 100, ceilings, baseline groups, null rules, a version and a date', () => {
+  const f = formula.ownContractFormula();
+  assert.deepEqual(f.fidelity.checks.map((c) => c.id), ['f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07', 'f08', 'f09', 'f10', 'f11', 'f12', 'f13', 'f14']);
+  assert.equal(Object.values(f.fidelity.weights).reduce((a, b) => a + b, 0), 100);
+  assert.deepEqual(f.fidelity.weights, { contrast: 20, typography: 18, color: 16, tokens: 14, spacing: 12, shape: 8, motion: 6, targets: 6 });
+  assert.deepEqual(f.fidelity.ceilings, [{ check: 'f09', cap: 65 }, { check: 'f10', cap: 70 }]);
+  assert.equal(f.baseline.checks.length, 18);
+  assert.equal(f.baseline.staticMaximum, 57);
+  assert.deepEqual(f.nullRules.map((r) => r.code), ['site_unreachable', 'empty_shell', 'no_css', 'too_few_checks']);
+  assert.match(f.version, /^\d+\.\d+\.\d+$/);
+  assert.match(f.date, /^\d{4}-\d{2}-\d{2}$/);
+  for (const c of f.fidelity.checks) assert.ok(c.title && c.criterion && c.fix && c.category, c.id);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('16. Site fixtures S-1 to S-7 with DM-1 (engine spec 15.1)');
+
+const S = (name) => lf(fs.readFileSync(path.join(FIX, 'sites', name), 'utf8'));
+const BASELINE_PASS = defs.CHECKS.map((c) => ({ id: c.id, item: c.item, category: c.category, status: c.type === 'manual' ? 'MANUAL' : 'PASS', detail: 'fixture' }));
+const runSite = async (name, contractFile = 'DM-1.md', site = {}) => {
+  const contract = await contractOf(fixture(contractFile));
+  const html = S(`${name}.html`);
+  const cssFile = path.join(FIX, 'sites', `${name}.css`);
+  const css = fs.existsSync(cssFile) ? lf(fs.readFileSync(cssFile, 'utf8')) : '';
+  return run.scoreOwnContract({ contract, page: { html, css, site: { stylesheetsFetched: 1, stylesheetsTotal: 1, stylesheetsTruncated: false, ...site } }, baselineChecks: BASELINE_PASS });
+};
+const byIdOf = (r) => Object.fromEntries(r.checks.map((c) => [c.id, c]));
+await check('S-1 on-contract, Tailwind v4 names: fidelity A, every token located by name', async () => {
+  const r = await runSite('S-1');
+  assert.equal(r.fidelity.grade, 'A', `fidelity ${r.fidelity.score}: ${r.checks.filter((c) => c.layer === 'fidelity' && c.status !== 'PASS').map((c) => `${c.id} ${c.status} ${c.detail}`).join(' | ')}`);
+  assert.equal(r.coverage.byName, r.coverage.located);
+  assert.equal(r.coverage.located, r.coverage.declared);
+});
+await check('S-2 drifted: f02 FAIL, f08 FAIL, f13 WARN, f10 WARN', async () => {
+  const c = byIdOf(await runSite('S-2'));
+  expectStatus(c.f02, 'FAIL');
+  expectStatus(c.f08, 'FAIL');
+  expectStatus(c.f13, 'WARN');
+  expectStatus(c.f10, 'WARN');
+});
+await check('S-3 literal values only: scored by value; f01, f13, f14 not_located', async () => {
+  const r = await runSite('S-3');
+  const c = byIdOf(r);
+  for (const id of ['f01', 'f13', 'f14']) expectStatus(c[id], 'SKIP', 'not_located');
+  assert.ok(r.fidelity.score !== null);
+  assert.equal(r.coverage.byName, 0);
+  assert.ok(r.coverage.byValue > 0);
+});
+await check('S-4 empty React mount with a module script: both layers null, empty_shell', async () => {
+  const r = await runSite('S-4');
+  assert.equal(r.fidelity.nullReason.code, 'empty_shell');
+  assert.equal(r.baseline.nullReason.code, 'empty_shell');
+  assert.equal(r.fidelity.score, null);
+  assert.equal(r.baseline.score, null);
+});
+await check('S-5 HTML with no CSS: both layers null, no_css', async () => {
+  const r = await runSite('S-5');
+  assert.equal(r.fidelity.nullReason.code, 'no_css');
+  assert.equal(r.baseline.nullReason.code, 'no_css');
+});
+await check('S-6 61 stylesheets, one unanswered: the cap and the missing sheet are reported in site and coverage notes', async () => {
+  const r = await runSite('S-1', 'DM-1.md', { stylesheetsFetched: 59, stylesheetsTotal: 61, stylesheetsTruncated: true });
+  assert.deepEqual(r.site, { stylesheetsFetched: 59, stylesheetsTotal: 61, stylesheetsTruncated: true });
+  assert.ok(r.coverage.notes.some((n) => n.startsWith('STYLESHEET_CAP')), r.coverage.notes.join(' | '));
+  assert.ok(r.coverage.notes.some((n) => n.startsWith('STYLESHEETS_MISSING')), r.coverage.notes.join(' | '));
+});
+await check('S-7 hostile CSS (2 MB, long brace runs, 10,000-character selectors) completes in under 2 s', async () => {
+  const hostile = `${'{'.repeat(200000)}${`.${'a'.repeat(10000)} { color: #111 }\n`.repeat(50)}${'a{color:#123456;padding:4px}'.repeat(60000)}`;
+  assert.ok(hostile.length > 2 * 1024 * 1024);
+  const contract = await contractOf(fixture('DM-1.md'));
+  const t0 = performance.now();
+  const r = run.scoreOwnContract({ contract, page: { html: S('S-1.html'), css: hostile, site: {} }, baselineChecks: BASELINE_PASS });
+  const ms = performance.now() - t0;
+  assert.ok(ms < 2000, `${ms.toFixed(0)} ms`);
+  assert.equal(r.checks.length, 14 + 18);
+});
+await check('one run lists fidelity first, then the 18 baseline checks; counts are over every check', async () => {
+  const r = await runSite('S-1');
+  assert.deepEqual(r.checks.slice(0, 14).map((c) => c.id), ['f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07', 'f08', 'f09', 'f10', 'f11', 'f12', 'f13', 'f14']);
+  assert.deepEqual(r.checks.slice(14).map((c) => c.id), [...baselineMod.BASELINE_IDS]);
+  assert.equal(r.total, 32);
+  assert.equal(r.pass + r.warn + r.fail + r.skip + r.manual, 32);
+  assert.equal(r.scored, r.pass + r.warn + r.fail);
+});
+await check('PAR-1: one system as DESIGN.md and as DTCG gives the same f02, f03, f04, f05, f07, f08 and f09 on every site fixture', async () => {
+  for (const site of ['S-1', 'S-2', 'S-3']) {
+    const a = byIdOf(await runSite(site, 'acme-design.md'));
+    const b = byIdOf(await runSite(site, 'acme-tokens.json'));
+    for (const id of ['f02', 'f03', 'f04', 'f05', 'f07', 'f08', 'f09']) assert.equal(`${a[id].status}:${a[id].skipReason ?? ''}`, `${b[id].status}:${b[id].skipReason ?? ''}`, `${site} ${id}: ${a[id].detail} | ${b[id].detail}`);
+  }
+});
+await check('ratios read to one decimal, never rounded across a band', () => {
+  const pairs = h.load('app/lib/own-contract/checks/pairs.ts');
+  assert.deepEqual([2.434, 5.37, 18.468, 4.478, 2.96, 4.5, 3.0].map(pairs.fmtRatio), ['2.4', '5.4', '18.5', '4.47', '2.96', '4.5', '3.0']);
+});
+await check('10 runs of one contract against one page give identical checks (determinism)', async () => {
+  const seen = new Set();
+  for (let i = 0; i < 10; i++) seen.add(JSON.stringify((await runSite('S-2')).checks));
+  assert.equal(seen.size, 1);
+});
+await check('a 2 MB stylesheet of nested blocks reads in linear time (1 MB under 200 ms)', () => {
+  const t0 = performance.now();
+  pageCss.readPageCss(`@media x { ${'@supports y { '.repeat(20000)}a { color: red }${' }'.repeat(20000)} }`);
+  pageCss.readPageCss(`a { content: "${'"'.repeat(0)}${'\\"'.repeat(200000)}" }`);
+  pageCss.readPageCss('('.repeat(MB));
+  assert.ok(performance.now() - t0 < 600);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('17. Privacy');
 
 await check('no console output during any intake above (engine spec 13)', () => {
   assert.deepEqual(logged, [], `console output: ${logged.slice(0, 3).join(' | ')}`);
