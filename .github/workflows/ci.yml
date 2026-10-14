@@ -122,6 +122,17 @@ jobs:
         if: always()
         run: node scripts/check-contract-lock.js
 
+      # The ten sibling contracts (app/lib/*-contract.ts) hash to the value and
+      # source scripts/sibling-contracts.lock.json records for their versions.
+      # Served text that changes under an unchanged version fails, unless the
+      # change came only from an import (the design-system contract, the engine
+      # count) or only from a refactor. Every sibling version past 0.1.0 needs
+      # its '<slug> v<x.y.z>' line in /changelog. Reads no git history. After a
+      # bump: `npm run update-sibling-contract-locks` in apps/site.
+      - name: Sibling contract locks (served text moves with the version)
+        if: always()
+        run: node scripts/check-sibling-contract-locks.js
+
       - name: Pagefind index
         if: always()
         run: node scripts/postbuild-pagefind.js

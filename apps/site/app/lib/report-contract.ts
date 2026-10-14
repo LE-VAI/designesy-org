@@ -1,7 +1,7 @@
 import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 /**
- * Designesy Report Contract v0.1.0 — machine-readable form.
+ * Designesy Report Contract v0.1.1 — machine-readable form.
  * The synthesis capstone — one URL in, three engines fired in parallel,
  * one unified design-intelligence report with a composite grade.
  *
@@ -17,19 +17,19 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 
 export const reportContract = {
   id: 'designesy.report',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Report Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/report',
   machine_url: 'https://www.designesy.org/contracts/report.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Report is the synthesis capstone: fetch one URL, run score + drift + readiness in parallel, and produce a unified design-intelligence report with a single composite grade. One input, one output, one grade: the most shareable surface in the dynasty. Where /score answers "how good is this design", /drift answers "is AI breaking it", and /readiness answers "can agents use it", /report answers all three at once.',
   source_authority: {
     primary: 'Designesy design intelligence research 2026-08-02',
     composition: `Weighted synthesis of three independent Designesy engines: /score (${ENGINE_CHECK_COUNT}-check audit), /drift (12-check drift radar), /readiness (10-check AI readiness). Each engine is independently validated; report composes their results.`,
-    weighting: 'Composite score = score × 0.5 + drift × 0.3 + readiness × 0.2. Score is weighted highest because it is the broadest quality measure; drift is second because AI-generated UI drift is the 2026 crisis; readiness is third because machine-readiness is emergent and still maturing.',
+    weighting: 'Composite score = score × 0.5 + drift × 0.3 + readiness × 0.2. Score is weighted highest because it is the broadest quality measure; drift is second because it measures how far AI-generated UI departs from its declared system; readiness is third because machine-readiness is emergent and still maturing.',
     shareability: 'Report is designed as the share hook: "here is your design-intelligence report" is more compelling than "run these six tools". One grade, one URL, one page.',
     url_gap: 'No competitor synthesizes audit + drift + readiness into a single composite report from a live URL: the designesy pattern.',
   },

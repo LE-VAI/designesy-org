@@ -12,7 +12,7 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Compare contract',
   description:
-    'Designesy Compare Contract v0.1.0: cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.',
+    `Designesy Compare Contract v${compareContract.version}: cross-site design-token diff engine. Fetches two URLs, extracts their :root token systems, and produces a structured diff: tokens added, removed, renamed, value-changed, scale-stop-changed, contrast drift, structure delta, and score delta. 8 verification checks.`,
   path: '/contracts/compare',
   ogTitle: 'Compare contract · Designesy',
   ogDescription:

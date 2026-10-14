@@ -1,5 +1,5 @@
 /**
- * Designesy Compare Contract v0.1.0 — machine-readable form.
+ * Designesy Compare Contract v0.1.1 — machine-readable form.
  * Sibling contract governing cross-site / cross-version design-token comparison.
  * Source: Adobe token-diff-generator, Tokens Studio diff + codemod,
  *          mint-ds diff, designlang diff_designs,
@@ -19,13 +19,13 @@
 
 export const compareContract = {
   id: 'designesy.compare',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Compare Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/compare',
   machine_url: 'https://www.designesy.org/contracts/compare.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Compare is the diff engine: fetch two URLs, extract their :root token systems, and produce a structured diff. "What actually changed between our old token system and the new one?" is answered deterministically from live production URLs instead of file uploads. Also serves as the diff engine inside /monitor (m08 token-set mutation).',
   source_authority: {

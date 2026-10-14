@@ -504,6 +504,178 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy review-findings schema (/specs/review-findings.json)',
   },
 
+  // ── Sibling contract versions with no entry until 2026-10-13 ──
+  // Each entry is dated the day its version reached main. Where edits shipped
+  // under the previous version without a bump, the next version records them.
+
+  // ── Accessibility contract v0.1.1: the tiered reduced-motion rule ──
+  {
+    version: 'a11y v0.1.1',
+    date: '2026-10-03',
+    dimension: 'accessibility',
+    change: 'modified',
+    title: 'Accessibility contract 0.1.1: a10 tests what moves under reduced motion',
+    description:
+      'a10 changed. Under 0.1.0 it read "prefers-reduced-motion disables animations" and passed when a reduced-motion rule was present, failing when it was missing. Under 0.1.1 it passes only when nothing translates, rotates, scales or pans for longer than 200 ms or in a loop under reduce, and fails when movement continues. Opacity-only fades may continue, and demos whose motion is the content play on request. Edits that shipped under 0.1.0 without a version are recorded here too: on 2026-08-03 a11 named internal control-plane names where it said internal naming, and the full_contract_path field, which carried an internal file path, left the export; on 2026-08-30 the named axe-core version moved from 4.12.1 to 4.13.0; on 2026-09-28 an editorial pass replaced em dashes.',
+    rationale:
+      'This version changed a rule: a10 used to pass on the presence of a reduced-motion block and now passes on what moves under reduce, as the motion contract requires.',
+    source: 'Designesy a11y contract v0.1.1; designesy-org pull request 173 (66f51e5), with commits fb550a4, 7f6d098, d2cc52e and pull request 153 (3d62df0)',
+  },
+
+  // ── Monitor contract v0.1.1: m09 and m10 ──
+  {
+    version: 'monitor v0.1.1',
+    date: '2026-10-10',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.1: m09 reads the contract version a run is scored against',
+    description:
+      'm09 changed: it compares the design contract version the run is scored against (the version designesy_score reports), where 0.1.0 read the scanned site\'s own DTCG or agent.json version, which on designesy.org is the catalog version. Snapshots do not record that version yet, so a change between runs is stated rather than compared. An edit that shipped under 0.1.0 without a version is recorded here too: on 2026-08-02 m10 changed from a webhook, email or Slack alert to an email alert, and an alert_delivery section says when email is sent and that alerts show on the page when it is not. On 2026-09-28 an editorial pass replaced em dashes.',
+    rationale:
+      'Rules changed: what m09 compares, and the delivery channel m10 checks.',
+    source: 'Designesy monitor contract v0.1.1; designesy-org pull request 254 (f4f9a51), with commit b1e1e66 and pull request 153 (3d62df0)',
+  },
+
+  // ── Tokens contract v0.1.1: the checks match the engine ──
+  {
+    version: 'tokens v0.1.1',
+    date: '2026-10-10',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.1: the checks match the engine, and a SKIP is not scored',
+    description:
+      'Edits that shipped under 0.1.0 without a version come first. On 2026-08-30 the ten checks were replaced with the ten that designesy_tokens_score runs: t01 $schema declared, t02 token groups, t03 $type, t04 $value, t05 structured colour, t06 standard types, t07 namespaced custom types, t08 dimension units, t09 nested groups, t10 no deprecated patterns. $schema moved from SHOULD to MUST, scoring counted a WARN as 0 where it had counted 0.5, and the five rules the engine does not check moved to documented_not_engine_wired. Before that, on 2026-08-03 the full_contract_path field, which carried an internal file path, left the export, and on 2026-08-09 a live_export line was added. On 2026-09-28 an editorial pass replaced em dashes. The 0.1.1 edit itself: a SKIP is not scored (it had counted in the denominator, so a clean file with no custom types scored 90), and live_export reports the DTCG export at 100 with t07 SKIP.',
+    rationale:
+      'Rules changed: the check list, the $schema requirement and the scoring formula. Each edit is recorded here because none had a version or a changelog line when it shipped.',
+    source: 'Designesy tokens contract v0.1.1; designesy-org pull request 254 (f4f9a51), with commits 7f6d098, ed99914, 7f8e7d4 and pull request 153 (3d62df0)',
+  },
+
+  // ── Tokens contract v0.1.2: a WARN counts half ──
+  {
+    version: 'tokens v0.1.2',
+    date: '2026-10-11',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.2: a WARN counts half, and t08 reads aliases',
+    description:
+      'Scoring counts a WARN as 0.5 where 0.1.1 counted it 0: score = (PASS + 0.5 × WARN) / scored checks × 100, as in the motion contract, the score engine and the npm validator. t08 resolves a {group.token} alias to the dimension it points at, and a $root token is checked like any other. The open item on aliases now says t08 resolves them on dimension tokens and that checking every alias target type is not wired. live_export states 9 PASS, 0 WARN, 0 FAIL and t07 SKIP, and describes the export\'s DTCG values.',
+    rationale:
+      'Rules changed: the WARN weight in the scoring formula, and how t08 reads aliases.',
+    source: 'Designesy tokens contract v0.1.2; designesy-org pull request 258 (e10ed5f)',
+  },
+
+  // ── Accessibility contract v0.1.2: the five axe-core tags ──
+  {
+    version: 'a11y v0.1.2',
+    date: '2026-10-12',
+    dimension: 'accessibility',
+    change: 'modified',
+    title: 'Accessibility contract 0.1.2: the five axe-core tags a WCAG 2.2 AA run needs',
+    description:
+      'axe_tag and a01 now list wcag2a, wcag2aa, wcag21a, wcag21aa and wcag22aa, and the Playwright and CLI commands pass all five. 0.1.1 named wcag22aa as if it included the others, and its commands passed wcag2a, wcag21aa and wcag22aa. axe-core tags are not cumulative: wcag22aa alone marks only the WCAG 2.2 AA additions. rules_in_scope changed from "~75+ rules" to a count: 70 axe-core 4.13.0 rules carry one of the five tags (counted on 2026-10-11).',
+    rationale:
+      'This changed what a01 measures: a run with the 0.1.1 tags left out the rules tagged wcag2aa and wcag21a. The pass and fail conditions (0 violations, any violation) did not change.',
+    source: 'Designesy a11y contract v0.1.2; designesy-org pull request 281 (83d1bcf)',
+  },
+
+  // ── Monitor contract v0.1.2: m01 asks for history ──
+  {
+    version: 'monitor v0.1.2',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.2: m01 asks for history, and a first run is not scored on it',
+    description:
+      'm01 changed from "Schedule registered: URL + cadence recorded" to "History supplied": the request carries earlier runs to compare against, and nothing is scheduled or stored on the server. With no history m01 is N/A, because a first run sets the baseline. Scoring does not count that SKIP: the score is points over scored checks, where it divided by 10.',
+    rationale:
+      'Rules changed: m01 checks what the engine does, which is compare against history passed in, and the scoring denominator.',
+    source: 'Designesy monitor contract v0.1.2; designesy-org pull request 281 (83d1bcf)',
+  },
+
+  // ── Monitor contract v0.1.3: m02 and the cadence ──
+  {
+    version: 'monitor v0.1.3',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.3: m02 measures freshness against the cadence',
+    description:
+      'm02 changed. It passes when the newest supplied run is within one cadence window (daily, weekly or monthly; weekly by default), warns between one and two windows, fails past two, and is N/A with no history or no usable timestamp. In 0.1.2 it said only that the last run fell within the cadence window. A SKIP of m02 on a first run is not scored. Earlier the same day, pull request 283 corrected how the contract describes monitor: each call re-runs the drift checks and compares the result with the history the caller passes in, nothing is scheduled, and the server keeps no history. In the same edit two quoted sources were re-quoted and re-attributed, a third was removed, and the competitor line became a description of the method.',
+    rationale:
+      'Rules changed: the m02 thresholds, and the scoring of a first run. The description edit from pull request 283 changed no check.',
+    source: 'Designesy monitor contract v0.1.3; designesy-org pull requests 297 (7190efc) and 283 (6d75289)',
+  },
+
+  // ── Compare contract v0.1.1: the editorial pass, versioned ──
+  {
+    version: 'compare v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Compare contract 0.1.1: the 2026-09-28 editorial pass, versioned',
+    description:
+      'One edit shipped under 0.1.0 without a version. On 2026-09-28 em dashes became colons or parentheses in source_authority, the diff dimensions, every check, the scoring note, the validation tools, relationship_to_core and open_questions. The purpose says "instead of file uploads", the scoring note says the score reflects diff completeness "rather than design quality, which is the /score surface", and token-value-changed is "the core drift indicator" where it said signal.',
+    rationale:
+      'Every contract change is versioned and dated in this changelog. This one was not, so 0.1.1 records it. No rule, threshold or weight changed.',
+    source: 'Designesy compare contract v0.1.1; designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Components contract v0.1.1: one obligation, punctuated ──
+  {
+    version: 'components v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Components contract 0.1.1: the card hover obligation, punctuated',
+    description:
+      'One edit shipped under 0.1.0 without a version. On 2026-09-28 the Card / pillar hover obligation became "fine pointer only: gated on (hover: hover) and (pointer: fine)", with a colon where it had an em dash. This export also reads the design-system contract: its contract_version, component list, press scales and accessibility list follow that contract, and this changelog records those changes under the design-system versions.',
+    rationale:
+      'Punctuation only. No rule, binding, threshold or weight changed.',
+    source: 'Designesy components contract v0.1.1; designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Drift contract v0.1.1: wording and two citations ──
+  {
+    version: 'drift v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Drift contract 0.1.1: the purpose, two citations and the editorial pass',
+    description:
+      'Two edits shipped under 0.1.0 without a version. On 2026-09-28 em dashes became colons or parentheses across the drift modes, the twelve checks, the validation tools and open_questions, and silent_breaking_changes says consumers inherit the change "without notice" where it said signal. On 2026-10-12 the purpose dropped the line calling drift "the named 2026 design-system crisis" and now says AI-generated UI can drift off the tokens a site declares, and source_authority dropped two entries: the attribution of the four-mode taxonomy, and a drift-rate figure (23% in 8 weeks without formal review, 4% with it). The DRIFT_CHECK_COUNT export added on 2026-09-24 changed no served text.',
+    rationale:
+      'Wording and citations only: the four drift modes, the twelve checks, their thresholds and the scoring are unchanged. No rule, threshold or weight changed.',
+    source: 'Designesy drift contract v0.1.1; designesy-org pull requests 153 (3d62df0) and 283 (6d75289)',
+  },
+
+  // ── Motion contract v0.1.1: wording and one field ──
+  {
+    version: 'motion v0.1.1',
+    date: '2026-10-13',
+    dimension: 'motion',
+    change: 'modified',
+    title: 'Motion contract 0.1.1: an internal name and path out, and the editorial pass',
+    description:
+      'Three edits shipped under 0.1.0 without a version. On 2026-08-03 an open question that named an internal rule ID now names the HyperFrames quality gate in plain words, and the full_contract_path field, which carried an internal file path, left the export. On 2026-09-28 the purpose dropped the words "not ornament", standard 1 says to use contract cubicBezier tokens "instead of bare CSS keywords", and em dashes became colons across the Lottie fields, the version notes, the reduced-motion notes and relationship_to_core.',
+    rationale:
+      'Wording, and one field removed from the export. The ten motion standards, the checks, their thresholds and the scoring are unchanged. No rule, threshold or weight changed.',
+    source: 'Designesy motion contract v0.1.1; commits fb550a4 and 7f6d098, designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Report contract v0.1.1: the engine count and the editorial pass ──
+  {
+    version: 'report v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Report contract 0.1.1: the score engine count, read from the engine',
+    description:
+      'Three edits shipped under 0.1.0 without a version. On 2026-08-30 the composition, the score dimension, rp02 and relationship_to_core moved from a 40-check to a 42-check score engine. On 2026-09-24 those four places began reading the engine\'s check count instead of a typed number, with the same served text, and the count has since followed engine releases. On 2026-09-28 em dashes became colons or parentheses throughout, the rp08 warn band reads "20 to 30 points" where it used a dash, and "clearer signal" became "clearer result". This version also drops the "2026 crisis" claim from the weighting rationale, as drift\'s purpose did in #283: drift is second because it measures how far AI-generated UI departs from its declared system.',
+    rationale:
+      'The weights (score 0.5, drift 0.3, readiness 0.2), the eight synthesis checks, the coherence thresholds (20 and 30 points) and the grade bands are unchanged. The check count states the size of the score engine, which the engine entries above record. No rule, threshold or weight changed.',
+    source: 'Designesy report contract v0.1.1; commit fe77f42, designesy-org pull requests 119 (d53eeae) and 153 (3d62df0)',
+  },
+
   // ── v0.4.6 (engine 1.4.0): type sizes come from the scale ──
   {
     version: 'v0.4.6 · engine 1.4.0',

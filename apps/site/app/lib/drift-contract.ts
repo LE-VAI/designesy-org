@@ -1,5 +1,5 @@
 /**
- * Designesy Drift Contract v0.1.0 — machine-readable form.
+ * Designesy Drift Contract v0.1.1 — machine-readable form.
  * Sibling contract governing AI-generated UI drift detection.
  * Source: Designesy research 2026-08-01.
  *
@@ -14,13 +14,13 @@
 
 export const driftContract = {
   id: 'designesy.drift',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy Drift Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/drift',
   machine_url: 'https://www.designesy.org/contracts/drift.json',
-  updated: '2026-10-11',
+  updated: '2026-10-13',
   purpose:
     'AI-generated UI can drift off the tokens a site declares. This contract names four drift modes and defines the checks that detect drift deterministically from compiled CSS rather than prose advice.',
   source_authority: {

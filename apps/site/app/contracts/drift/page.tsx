@@ -12,7 +12,7 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Drift contract',
   description:
-    'Designesy Drift Contract v0.1.0 names four AI-generated UI drift modes (token fabrication, within-session drift, between-session amnesia, silent breaking changes) and detects the first two with 12 verification checks; the other two need history and version tracking.',
+    `Designesy Drift Contract v${driftContract.version} names four AI-generated UI drift modes (token fabrication, within-session drift, between-session amnesia, silent breaking changes) and detects the first two with 12 verification checks; the other two need history and version tracking.`,
   path: '/contracts/drift',
   ogTitle: 'Drift contract · Designesy',
   ogDescription:

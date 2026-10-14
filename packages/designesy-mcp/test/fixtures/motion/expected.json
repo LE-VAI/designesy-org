@@ -1,7 +1,7 @@
 {
   "broken.json": {
     "contract_id": "designesy.motion",
-    "contract_version": "0.1.0",
+    "contract_version": "0.1.1",
     "contract_status": "provisional",
     "url": "(inline lottie_file)",
     "lottie_version": "4.8.0",
@@ -132,7 +132,7 @@
   },
   "conformant.json": {
     "contract_id": "designesy.motion",
-    "contract_version": "0.1.0",
+    "contract_version": "0.1.1",
     "contract_status": "provisional",
     "url": "(inline lottie_file)",
     "lottie_version": "5.12.0",
@@ -263,7 +263,7 @@
   },
   "dot-no-markers.json": {
     "contract_id": "designesy.motion",
-    "contract_version": "0.1.0",
+    "contract_version": "0.1.1",
     "contract_status": "provisional",
     "url": "(inline lottie_file)",
     "lottie_version": "5.7.4",
@@ -394,7 +394,7 @@
   },
   "rejected-curves.json": {
     "contract_id": "designesy.motion",
-    "contract_version": "0.1.0",
+    "contract_version": "0.1.1",
     "contract_status": "provisional",
     "url": "(inline lottie_file)",
     "lottie_version": "5.9.6",
@@ -525,7 +525,7 @@
   },
   "slot-hold-no-version.json": {
     "contract_id": "designesy.motion",
-    "contract_version": "0.1.0",
+    "contract_version": "0.1.1",
     "contract_status": "provisional",
     "url": "(inline lottie_file)",
     "lottie_version": null,
