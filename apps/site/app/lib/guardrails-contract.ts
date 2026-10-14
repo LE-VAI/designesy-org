@@ -13,7 +13,7 @@
 
 export const guardrailsContract = {
   id: 'designesy.guardrails',
-  version: '0.1.2',
+  version: '0.1.3',
   status: 'provisional',
   name: 'Designesy Guardrails Contract',
   kind: 'contract' as const,
@@ -47,7 +47,7 @@ export const guardrailsContract = {
       { id: 'g03', item: 'Agent rules emitted: AGENTS.md format with token allowlist', pass: 'AGENTS.md rules file generated with N token references', fail: 'Could not generate agent rules' },
       { id: 'g04', item: 'Component contract derived: allowed prop patterns', pass: 'Component contract with N patterns generated', fail: 'Could not derive component patterns (no tokens to derive from)' },
       { id: 'g05', item: 'Anti-patterns documented: what NOT to do', pass: 'Anti-pattern list generated from detected inline values', fail: 'No anti-patterns detected (possible if the site has no inline values)' },
-      { id: 'g06', item: 'DESIGN.md emitted: Google open spec (google-labs-code/design.md)', pass: 'DESIGN.md generated with YAML front matter + markdown body from N tokens', fail: 'Insufficient tokens to generate a DESIGN.md (need ≥5 :root custom properties)' },
+      { id: 'g06', item: 'DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)', pass: 'DESIGN.md generated with YAML front matter + markdown body from N tokens', fail: 'Insufficient tokens to generate a DESIGN.md (need ≥5 :root custom properties)' },
     ],
     scoring: '6 checks. PASS=1, FAIL=0. Score = (points/6) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the guardrail emitter is an output generator rather than a scoring engine; the score reflects emission completeness rather than design quality.',
     validation_tools: {

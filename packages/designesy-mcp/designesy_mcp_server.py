@@ -463,7 +463,7 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.4.0"
+OFFLINE_ENGINE_MIRRORS = "1.4.1"
 OFFLINE_CONTRACT_VERSION = "v0.4.6"
 
 # The live engine's checks that this engine does not run, in the live engine's
@@ -1619,6 +1619,33 @@ def _is_field_selector(selector: str) -> bool:  # isFieldSelector
     return False
 
 
+def _rule_selector_at(css: str, offset: int) -> str | None:  # ruleSelectorAt
+    """v27 helper (engine 1.4.1): the selector of the rule whose body holds the
+    declaration at `offset`, read back from that body's opening brace to the
+    previous closing brace, opening brace or semicolon. None when the offset is
+    not inside a rule body."""
+    # JS lastIndexOf(c, i) searches positions <= i; rfind(c, 0, i + 1) is the same.
+    open_ = css.rfind("{", 0, offset + 1)
+    if open_ < 0 or css.rfind("}", 0, offset + 1) > open_:
+        return None
+    start = max(css.rfind("}", 0, max(open_, 0)), css.rfind("{", 0, max(open_, 0)), css.rfind(";", 0, max(open_, 0))) + 1
+    return css[start:open_]
+
+
+def _in_field_rule(css: str, offset: int) -> bool:  # inFieldRule
+    """v27 helper (engine 1.4.1): the font-size declaration at `offset` sits in
+    a rule whose own selector names a field keyword (input, textarea, select,
+    .field). v27's literal regexes run `[^{]*` across a closing brace, so
+    "select" in `user-select: none` carried into the next rule; each candidate
+    is now judged by the selector of the rule it actually sits in. Class names
+    such as `.search-input` stay matched, as before."""
+    selector = _rule_selector_at(css, offset)
+    if selector is None:
+        return False
+    clean = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub(" ", selector)
+    return bool(_js_re(r"input|textarea|select|\.field", "i").search(clean))
+
+
 def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolveFontSizeVars
     """v27 helper (engine 1.3.1): in each rule that styles a field, every
     `font-size: var(...)` is rewritten to its :root token value; a value that
@@ -1627,13 +1654,8 @@ def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolve
         return css
 
     def decl(m: "re.Match[str]") -> str:
-        offset = m.start()
-        # JS lastIndexOf(c, i) searches positions <= i; rfind(c, 0, i + 1) is the same.
-        open_ = css.rfind("{", 0, offset + 1)
-        if open_ < 0 or css.rfind("}", 0, offset + 1) > open_:
-            return m.group(0)
-        start = max(css.rfind("}", 0, max(open_, 0)), css.rfind("{", 0, max(open_, 0)), css.rfind(";", 0, max(open_, 0))) + 1
-        if not _is_field_selector(css[start:open_]):
+        selector = _rule_selector_at(css, m.start())
+        if selector is None or not _is_field_selector(selector):
             return m.group(0)
         sub = _substitute_css_vars(m.group(2), [tokens])
         return m.group(0) if sub is None else m.group(1) + _js_trim(sub)
@@ -1654,6 +1676,9 @@ def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None =
     input_re = _js_re(r"(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "gi")
     below: list[str] = []
     for m in input_re.finditer(css):
+        # Engine 1.4.1: only a declaration whose own rule styles a field counts.
+        if not _in_field_rule(css, m.start() + m.group(0).rfind("font-size")):
+            continue
         val = _js_float(m.group(1))
         unit = m.group(2).lower()
         px = val * 16 if unit == "rem" else val
@@ -1661,9 +1686,10 @@ def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None =
             below.append(f"{_js_num(val)}{unit} ({_js_num(px)}px)")
     if not below:
         floor = r"font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)"
-        has_floor = bool(
-            _js_re(r"input\s*\{[^}]*" + floor, "i").search(css)
-            or _js_re(r"input\s*[,][^{]*\{[^}]*" + floor, "i").search(css)
+        # Engine 1.4.1: the floor rule must itself style a field, as above.
+        has_floor = any(
+            _in_field_rule(css, f.start() + f.group(0).rfind("font-size"))
+            for f in _js_re(r"input\s*(?:,[^{]*)?\{[^}]*" + floor, "gi").finditer(css)
         )
         if has_floor:
             return _chk("v27", item, "accessibility", "PASS", "input font-size floor detected")
