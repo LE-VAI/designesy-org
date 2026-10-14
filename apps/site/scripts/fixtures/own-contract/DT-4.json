@@ -1,0 +1,48 @@
+{
+  "color": {
+    "$type": "color",
+    "base": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0,
+          0.3333,
+          1.0
+        ],
+        "hex": "#0055ff"
+      }
+    },
+    "one": {
+      "$value": "{color.base}"
+    },
+    "two": {
+      "$value": "{color.one}"
+    },
+    "three": {
+      "$value": "{color.two}"
+    },
+    "ink": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0667,
+          0.0667,
+          0.0667
+        ],
+        "hex": "#111111"
+      }
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

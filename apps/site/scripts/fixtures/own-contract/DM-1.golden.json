@@ -1,0 +1,393 @@
+{
+  "format": "design.md",
+  "formatVersion": "alpha",
+  "name": "Fixture Full",
+  "digest": "40f7f9dbcff00e8e94b46cf9cb71bdb256bb512acbc734b083994cf5f48ae5ff",
+  "stats": {
+    "declared": 35,
+    "byGroup": {
+      "colors": 18,
+      "typography": 4,
+      "radii": 4,
+      "spacing": 5,
+      "sizes": 2,
+      "durations": 0,
+      "easings": 0
+    }
+  },
+  "colors": [
+    {
+      "path": "colors.primary",
+      "hex": "#1a5cffff"
+    },
+    {
+      "path": "colors.on-primary",
+      "hex": "#ffffffff"
+    },
+    {
+      "path": "colors.ink",
+      "hex": "#111418ff"
+    },
+    {
+      "path": "colors.ink-soft",
+      "hex": "#111418cc"
+    },
+    {
+      "path": "colors.veil",
+      "hex": "#00000088"
+    },
+    {
+      "path": "colors.surface",
+      "hex": "#ffffffff"
+    },
+    {
+      "path": "colors.surface-raised",
+      "hex": "#f4f6faff"
+    },
+    {
+      "path": "colors.line",
+      "hex": "#dce1eaff"
+    },
+    {
+      "path": "colors.success",
+      "hex": "#12784aff"
+    },
+    {
+      "path": "colors.warning",
+      "hex": "#995900ff"
+    },
+    {
+      "path": "colors.danger",
+      "hex": "#c2293bff"
+    },
+    {
+      "path": "colors.accent",
+      "hex": "#1795faff"
+    },
+    {
+      "path": "colors.accent-soft",
+      "hex": "#cfe0f3ff"
+    },
+    {
+      "path": "colors.info",
+      "hex": "#0080dcff"
+    },
+    {
+      "path": "colors.info-deep",
+      "hex": "#164596ff"
+    },
+    {
+      "path": "colors.mixed",
+      "hex": "#8daeffff"
+    },
+    {
+      "path": "colors.focus",
+      "hex": "#1a5cffff",
+      "aliasOf": "colors.primary"
+    },
+    {
+      "path": "colors.link",
+      "hex": "#1795faff",
+      "aliasOf": "colors.accent"
+    }
+  ],
+  "typography": [
+    {
+      "kind": "typography",
+      "path": "typography.display",
+      "role": "heading",
+      "families": [
+        "Manrope",
+        "sans-serif"
+      ],
+      "fontSize": {
+        "value": 48,
+        "unit": "px",
+        "px": 48
+      },
+      "fontWeight": 700,
+      "lineHeight": {
+        "kind": "ratio",
+        "value": 1.1
+      }
+    },
+    {
+      "kind": "typography",
+      "path": "typography.body-md",
+      "role": "body",
+      "families": [
+        "Manrope"
+      ],
+      "fontSize": {
+        "value": 1,
+        "unit": "rem",
+        "px": 16
+      },
+      "fontWeight": 400,
+      "lineHeight": {
+        "kind": "length",
+        "dim": {
+          "value": 24,
+          "unit": "px",
+          "px": 24
+        }
+      }
+    },
+    {
+      "kind": "typography",
+      "path": "typography.label",
+      "role": "label",
+      "families": [
+        "Manrope"
+      ],
+      "fontSize": {
+        "value": 14,
+        "unit": "px",
+        "px": 14
+      },
+      "fontWeight": 600,
+      "lineHeight": {
+        "kind": "ratio",
+        "value": 1.3
+      },
+      "letterSpacing": {
+        "value": 0.02,
+        "unit": "em",
+        "px": null
+      }
+    },
+    {
+      "kind": "typography",
+      "path": "typography.code",
+      "role": "code",
+      "families": [
+        "IBM Plex Mono",
+        "monospace"
+      ],
+      "fontSize": {
+        "value": 15,
+        "unit": "px",
+        "px": 15
+      },
+      "lineHeight": {
+        "kind": "ratio",
+        "value": 1.5
+      },
+      "features": [
+        "tnum",
+        "zero"
+      ]
+    }
+  ],
+  "families": [
+    {
+      "kind": "fontFamily",
+      "path": "typography.display.fontFamily",
+      "families": [
+        "Manrope",
+        "sans-serif"
+      ]
+    },
+    {
+      "kind": "fontFamily",
+      "path": "typography.body-md.fontFamily",
+      "families": [
+        "Manrope"
+      ]
+    },
+    {
+      "kind": "fontFamily",
+      "path": "typography.label.fontFamily",
+      "families": [
+        "Manrope"
+      ]
+    },
+    {
+      "kind": "fontFamily",
+      "path": "typography.code.fontFamily",
+      "families": [
+        "IBM Plex Mono",
+        "monospace"
+      ]
+    }
+  ],
+  "radii": [
+    {
+      "kind": "dimension",
+      "path": "rounded.sm",
+      "dim": {
+        "value": 4,
+        "unit": "px",
+        "px": 4
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "rounded.md",
+      "dim": {
+        "value": 8,
+        "unit": "px",
+        "px": 8
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "rounded.lg",
+      "dim": {
+        "value": 16,
+        "unit": "px",
+        "px": 16
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "rounded.full",
+      "dim": {
+        "value": 9999,
+        "unit": "px",
+        "px": 9999
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "components.card.rounded",
+      "dim": {
+        "value": 6,
+        "unit": "px",
+        "px": 6
+      },
+      "nested": true
+    }
+  ],
+  "spacing": [
+    {
+      "kind": "dimension",
+      "path": "spacing.xs",
+      "dim": {
+        "value": 4,
+        "unit": "px",
+        "px": 4
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "spacing.sm",
+      "dim": {
+        "value": 8,
+        "unit": "px",
+        "px": 8
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "spacing.md",
+      "dim": {
+        "value": 16,
+        "unit": "px",
+        "px": 16
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "spacing.lg",
+      "dim": {
+        "value": 24,
+        "unit": "px",
+        "px": 24
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "spacing.xl",
+      "dim": {
+        "value": 2,
+        "unit": "rem",
+        "px": 32
+      }
+    },
+    {
+      "kind": "dimension",
+      "path": "components.button-primary.padding",
+      "dim": {
+        "value": 12,
+        "unit": "px",
+        "px": 12
+      },
+      "nested": true
+    }
+  ],
+  "sizes": [
+    {
+      "kind": "dimension",
+      "path": "components.button-primary.height",
+      "dim": {
+        "value": 44,
+        "unit": "px",
+        "px": 44
+      },
+      "interactive": true
+    },
+    {
+      "kind": "dimension",
+      "path": "components.checkbox.size",
+      "dim": {
+        "value": 20,
+        "unit": "px",
+        "px": 20
+      },
+      "interactive": true
+    }
+  ],
+  "durations": [],
+  "easings": [],
+  "pairs": [
+    {
+      "text": "colors.on-primary",
+      "background": "colors.primary",
+      "role": "primary-action",
+      "largeText": false,
+      "source": "components.button-primary"
+    },
+    {
+      "text": "colors.ink",
+      "background": "colors.surface",
+      "role": "component",
+      "largeText": false,
+      "source": "components.card"
+    },
+    {
+      "text": "colors.surface",
+      "background": "colors.ink",
+      "role": "component",
+      "largeText": true,
+      "source": "components.hero"
+    }
+  ],
+  "aliases": [
+    {
+      "from": "colors.focus",
+      "to": "colors.primary"
+    },
+    {
+      "from": "colors.link",
+      "to": "colors.accent"
+    }
+  ],
+  "omitted": [],
+  "tokenMap": {},
+  "warnings": [
+    "LINT_WARNING:colors.ink-soft",
+    "LINT_WARNING:colors.veil",
+    "LINT_WARNING:colors.surface-raised",
+    "LINT_WARNING:colors.line",
+    "LINT_WARNING:colors.success",
+    "LINT_WARNING:colors.warning",
+    "LINT_WARNING:colors.danger",
+    "LINT_WARNING:colors.accent",
+    "LINT_WARNING:colors.accent-soft",
+    "LINT_WARNING:colors.info",
+    "LINT_WARNING:colors.info-deep",
+    "LINT_WARNING:colors.mixed",
+    "LINT_WARNING:colors.link"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "brand": {
+    "$type": "color",
+    "a": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0667,
+          0.0667,
+          0.0667
+        ],
+        "hex": "#111111"
+      }
+    },
+    "b": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "nested": {
+      "c": {
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.0,
+            0.3333,
+            1.0
+          ],
+          "hex": "#0055ff"
+        }
+      }
+    }
+  },
+  "text": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}
