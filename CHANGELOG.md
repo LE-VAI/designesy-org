@@ -72,10 +72,11 @@ Reproduce: score the URLs in `apps/site/app/leaderboard/seed.ts` with both
 builds of `packages/score` (`scoreUrl`, scope auto-detected), fetching each
 page once and passing the same bytes to both.
 
----
+## [1.13.9] — 2026-10-13
 
-**Engine 1.4.0, @designesy/score 0.9.0, designesy-mcp 1.13.9, contract v0.4.6**
-(not yet published). One check is added; no weight, ceiling or existing verdict
+**Engine 1.4.0, @designesy/score 0.9.0, @designesy/cli 0.3.1, designesy-mcp 1.13.9,
+contract v0.4.6** (npm `score-v0.9.0` and `cli-v0.3.1`; PyPI and the MCP registry
+`v1.13.9`). One check is added; no weight, ceiling or existing verdict
 moves. The hosted /score page and API change when the site deploys.
 
 ### Added (engine 1.4.0)
@@ -101,7 +102,7 @@ moves. The hosted /score page and API change when the site deploys.
 - designesy-mcp 1.13.9: the offline engine lists v46 as not ported, with its
   reason, and mirrors engine 1.4.0 and contract v0.4.6.
 
-**Engine 1.3.1 and @designesy/score 0.8.1** (npm, not yet published). Four
+**Engine 1.3.1 and @designesy/score 0.8.1** (npm, published 2026-10-12 as `score-v0.8.1`). Four
 checks stop warning on pages that are right, and the npm engine stops
 following a redirect loop. No check is added, no weight or ceiling moves, and
 contract v0.4.5 is unchanged. The hosted /score page and API change when the
@@ -196,7 +197,7 @@ github.com (11 to 9), with the verdict still WARN. The other 19 are unchanged.
 
 ---
 
-**Engine 1.3.0 and @designesy/score 0.8.0** (npm, not yet published). A page
+**Engine 1.3.0 and @designesy/score 0.8.0** (npm, published 2026-10-12 as `score-v0.8.0`). A page
 with a failing check can no longer score an A. The hosted MCP tools and
 /api/monitor change when the site deploys; the PyPI server's own code (the
 offline engine, the accessibility kit's Python twin) ships with the next
