@@ -490,6 +490,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy guardrails contract v0.1.2',
   },
 
+  // ── Guardrails contract v0.1.3: g06 names the DESIGN.md format ──
+  {
+    version: 'guardrails v0.1.3',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.3: g06 names the DESIGN.md format',
+    description:
+      'The g06 check now reads "DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)", where it read "DESIGN.md emitted: Google open spec (google-labs-code/design.md)". The guardrails report shows the new name.',
+    rationale:
+      'Wording only: the DESIGN.md format is the thing the bundle emits, and the repository stays as its source. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.3',
+  },
+
   // ── Review-findings schema: description wording ──
   {
     version: 'review-findings schema 1.0',
@@ -690,6 +704,21 @@ const CHANGELOG: ChangelogEntry[] = [
       "v16 asks for rem and cannot tell a rem on the scale from one between steps, so a page could pass it while its sizes drifted off the scale its own tokens declare. Measured on this site the day it shipped: v46 WARNs on 7 sizes under the 12.8px floor and 7 between steps, the display numerals and home rules this site's own type gate lists as deliberate exceptions. Fluid section titles pass as written.",
     source: 'Brand ledger D59 and D68 (the Major Third scale and its floor), CSS Values 4 (clamp, min, max, viewport and container units), engine 1.4.0 entry in CHANGELOG.md',
   },
+
+  // ── v0.4.6 (engine 1.4.1): v27 reads the rule it scores; v37 renamed ──
+  {
+    version: 'v0.4.6 · engine 1.4.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.4.1: v27 reads a field only in its own rule',
+    description:
+      'v27 found the word input, textarea or select and then the next rule, across a closing brace, so "select" in user-select: none made the following rule a field rule and a 12px caption failed the page. It now reads each font-size against the selector of the rule it sits in. A class that names a field still counts, and select { font-size: 14px } still fails. v37 is renamed "DESIGN.md spec-layer validation (DESIGN.md format lint)", and its fix text names the format\'s linter; the install and run commands are unchanged.',
+    checks: ['v27', 'v37'],
+    rationale:
+      'A FAIL on a page whose fields are right is the worst kind of wrong reading: it caps the grade. Measured on the leaderboard cohort on the same bytes, two scores move up: zeroheight.com from 70 C to 86.1 B, where the false FAIL had pulled its accessibility checks under 60% and so capped the score at 70, and notion.so from 65.5 to 68.3 D. This site stays 100 A, and Carbon keeps its FAIL for a 14px number field.',
+    source: 'engine 1.4.1 entry in CHANGELOG.md; brand ledger D75 (the DESIGN.md format named in prose)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -723,6 +752,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.4', date: '2026-10-11', checks: 44, title: 'Identity v1 colour system', summary: 'Azure replaces the old blue as --signal, with Deep Azure for light-theme text and new action tokens. Token values only: no check, weight or verdict changed.' },
   { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
   { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

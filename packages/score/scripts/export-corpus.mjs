@@ -65,6 +65,9 @@ const OUT = join(HERE, '..', 'corpus.json');
  * broken-type-off-scale WARN (an 11px badge under the 12.8px floor, a 15px
  * paragraph between steps) and good-type-on-scale-fluid PASS (token sizes, an
  * on-step literal and a deliberate fluid clamp() title).
+ *
+ * Engine 1.4.1 (2026-10-13) adds no fixture, so the corpus version stands
+ * (v27 scope fix and the v37 name; see the CHANGELOG entry).
  */
 const CORPUS_VERSION = '1.4.0';
 
@@ -74,7 +77,7 @@ const CORPUS_VERSION = '1.4.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.4.0';
+const ENGINE_VERSION = '1.4.1';
 
 async function build() {
   const rows = await runCorpus();
