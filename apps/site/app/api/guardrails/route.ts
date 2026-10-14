@@ -458,7 +458,7 @@ function detectAntiPatterns(css: string, html: string, tokens: Record<string, st
   };
 }
 
-// ── DESIGN.md generation (Google open spec — google-labs-code/design.md) ──────
+// ── DESIGN.md generation (the open DESIGN.md format — google-labs-code/design.md) ──
 // Spec: YAML front matter (machine-readable tokens) + markdown body (human-
 // readable rationale) in canonical section order: Overview, Colors, Typography,
 // Layout, Elevation & Depth, Shapes, Components, Do's and Don'ts.
@@ -814,7 +814,7 @@ function checkG06DesignMd(tokens: Record<string, string>): CheckResult {
   if (count >= 5) {
     return {
       id: 'g06',
-      item: 'DESIGN.md emitted: Google open spec (google-labs-code/design.md)',
+      item: 'DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)',
       category: 'designmd',
       status: 'PASS',
       detail: `DESIGN.md generated with YAML front matter + markdown body from ${count} tokens`,
@@ -822,7 +822,7 @@ function checkG06DesignMd(tokens: Record<string, string>): CheckResult {
   }
   return {
     id: 'g06',
-    item: 'DESIGN.md emitted: Google open spec (google-labs-code/design.md)',
+    item: 'DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)',
     category: 'designmd',
     status: 'FAIL',
     detail: 'Insufficient tokens to generate a DESIGN.md: need ≥5 :root custom properties',
