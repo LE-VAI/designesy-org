@@ -145,6 +145,14 @@ jobs:
         if: always()
         run: node scripts/check-score-verdict.mjs
 
+      # A team's own DESIGN.md or DTCG file is read, rejected or scored as the
+      # engine spec says: intake fixtures, digest stability and sensitivity,
+      # and 1 MB of pathological input per parser under 200 ms
+      # (app/lib/own-contract).
+      - name: Own-contract engine
+        if: always()
+        run: node scripts/check-own-contract.mjs
+
       # The browser audit cannot move a grade it did not change: the score
       # after an audit is the engine's own arithmetic (/api/score/rescore).
       - name: Audit rescore

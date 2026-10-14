@@ -1,5 +1,5 @@
 /**
- * Engine 1.4.2, pinned rule by rule.
+ * Engine 1.5.1, pinned rule by rule.
  *
  *   - v46 reads the size inside the `font` shorthand. 1.4.0 read only
  *     `font-size`, so designesy.org's own hero console, sized through
@@ -50,7 +50,7 @@ describe('v46: the font shorthand carries a size', () => {
   });
 });
 
-describe('v46 controls (pass on 1.4.1 and 1.4.2)', () => {
+describe('v46 controls (pass on 1.4.1 and 1.5.1)', () => {
   it('control: a shorthand sized by a type token passes', async () => {
     const c = await v46('.a { font: 500 var(--text-label)/1 var(--mono); } p { font-size: var(--text-body); } .l { font-size: 1.25rem; }');
     assert.equal(c.status, 'PASS');

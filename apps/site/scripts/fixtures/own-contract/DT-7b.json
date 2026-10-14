@@ -1,0 +1,44 @@
+{
+  "one": {
+    "$extends": "{two}",
+    "$type": "color",
+    "x": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0667,
+          0.0667,
+          0.0667
+        ],
+        "hex": "#111111"
+      }
+    }
+  },
+  "two": {
+    "$extends": "{one}",
+    "$type": "color",
+    "y": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.1333,
+          0.1333,
+          0.1333
+        ],
+        "hex": "#222222"
+      }
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "body": {
+      "$value": {
+        "fontFamily": "Inter",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        }
+      }
+    }
+  }
+}

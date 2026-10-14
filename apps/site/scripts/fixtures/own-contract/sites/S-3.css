@@ -1,0 +1,10 @@
+body { font-family: Manrope, sans-serif; font-size: 16px; line-height: 24px; color: #111418; background: #ffffff; }
+h1 { font-family: Manrope, sans-serif; font-size: 48px; line-height: 1.1; }
+.label { font-size: 14px; line-height: 1.3; color: #111418; }
+code { font-family: "IBM Plex Mono", monospace; font-size: 15px; line-height: 1.5; font-variant-numeric: tabular-nums slashed-zero; }
+button.btn-primary { background: #1a5cff; color: #ffffff; border-radius: 8px; padding: 8px 16px; min-height: 44px; }
+.card { background: #ffffff; color: #111418; border: 1px solid #dce1ea; border-radius: 16px; padding: 24px; margin: 32px 0; gap: 4px; }
+.hero { background: #111418; color: #ffffff; }
+.tag { border-radius: 4px; }
+.pill { border-radius: 9999px; }
+a { color: #1795fa; }

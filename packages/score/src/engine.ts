@@ -2841,7 +2841,7 @@ function v46FluidFloor(value: string): number | null {
   return statics.length ? Math.max(...statics) : null;
 }
 
-// Engine 1.4.2: the `font` shorthand sets a size too, and 1.4.0 read only
+// Engine 1.5.1: the `font` shorthand sets a size too, and 1.4.0 read only
 // `font-size`, so `font: 500 0.66rem/1 var(--mono)` sat outside the check. The
 // size is the first token that is a length, a size keyword or a size function,
 // ahead of the line-height slash and the family; a weight (500) has no unit and
@@ -2886,7 +2886,7 @@ function checkTypeScale(css: string, tokens: Record<string, string>): CheckResul
   };
   let judged = 0;
   let fluid = 0;
-  const re = /(font-size|(?<![\w-])font)\s*:\s*([^;}]+)/gi;     // engine 1.4.2: the shorthand too, never font-family or --x-font
+  const re = /(font-size|(?<![\w-])font)\s*:\s*([^;}]+)/gi;     // engine 1.5.1: the shorthand too, never font-family or --x-font
   let m;
   while ((m = re.exec(css)) !== null) {
     const declared = m[2].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
