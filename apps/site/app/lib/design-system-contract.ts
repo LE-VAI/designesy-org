@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.5: machine + human source.
+ * Designesy design system contract v0.4.6: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -30,6 +30,10 @@
  *   Geist Mono as the mono face (brand ledger D65), and the six type-scale
  *   tokens (--text-label to --text-h1, a Major Third on a 16px root, ledger
  *   D68) join :root and this contract. No check, weight or verdict changed.
+ * v0.4.6 adds verification check v46 (2026-10-13, engine 1.4.0): type sizes
+ *   come from the scale the :root type tokens declare. Fluid clamp() type is
+ *   accepted as written; static sizes between steps and sizes under the
+ *   smallest token WARN. No weight or existing verdict changed.
  */
 
 import {
@@ -43,7 +47,7 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.5',
+  version: '0.4.6',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
@@ -1483,6 +1487,16 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/brand',
+      ],
+    },
+    {
+      version: '0.4.6',
+      date: '2026-10-13',
+      summary:
+        "Verification check v46, type sizes come from the scale (engine 1.4.0). v16 asks for rem but cannot tell a rem on the type scale from one between steps; v46 reads the scale from the page's own :root type tokens (their values plus their median ratio) and judges every static rem or px font-size against it: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest type token. Deliberate fluid type, a clamp(), min() or max() that moves with a viewport or container unit, is accepted as written, and only its lower bound is held to the floor. WARN only. The registry grows from 44 to 45 checks, 42 of them scored. No weight or existing verdict changed.",
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/methodology',
       ],
     },
   ],

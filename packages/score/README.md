@@ -1,6 +1,6 @@
 # @designesy/score
 
-Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. This is the standalone engine: it fetches a URL, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with **no Designesy server required**; the browser checks return MANUAL. No required dependencies.
+Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. This is the standalone engine: it fetches a URL, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with **no Designesy server required**; the browser checks return MANUAL. No required dependencies.
 
 ## Install
 
@@ -54,7 +54,7 @@ console.log(result.fail);    // 3
 console.log(result.checks);  // [{ id: 'v01', status: 'PASS', detail: '...' }, ...]
 ```
 
-## The 44 checks
+## The 45 checks
 
 | Category | Checks | Weight |
 |---|---|---|
@@ -85,7 +85,7 @@ Plus 12 anti-slop deductions (S1 to S12) and 7 originality lifts (O1 to O7).
 
 ## Scope system
 
-- **contract** (default for designesy.org): All 44 checks active. Absence = WARN/FAIL.
+- **contract** (default for designesy.org): All 45 checks active. Absence = WARN/FAIL.
 - **universal** (default for external sites): Optional features SKIP on absence instead of penalizing.
 
 Auto-detect: `designesy.org` → contract, everything else → universal.

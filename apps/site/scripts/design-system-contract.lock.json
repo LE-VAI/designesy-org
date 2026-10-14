@@ -1,7 +1,7 @@
 {
   "$comment": "Written by `npm run update-contract-lock` in apps/site. Do not edit by hand: scripts/check-contract-lock.js says what the hash covers and excludes. A new hash goes with a new version.",
   "contract": "designesy.design-system",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "scheme": 1,
   "sha256": "4b8a4c00e709c5c1cd8cae81d4d8a5623ec371c5ee3e5fa0d581611cb35ed582",
   "excluded": [

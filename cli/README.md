@@ -5,7 +5,7 @@
   <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate: a URL flows in, the contract grid fires check by check, the score counts up to its grade, and the gate passes" width="960">
 </picture>
 
-Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
+Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
 
 ```bash
 npx designesy-score designesy.org
@@ -75,7 +75,7 @@ npx designesy-score verify linear.app --json
 | **FAIL** | `/DESIGN.md` served, lint errors | `1` |
 | **SKIP** | `/DESIGN.md` not served (no public convention requires it) | `0` |
 
-This checks the **spec layer** (file format). For the full 44-check
+This checks the **spec layer** (file format). For the full 45-check
 design-system contract score, use `designesy-score <url>`.
 
 ## Options
@@ -99,7 +99,7 @@ design-system contract score, use `designesy-score <url>`.
 
 ## What it scores
 
-The Designesy v0.4.5 design-system contract, with 44 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
+The Designesy v0.4.6 design-system contract, with 45 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 See the [full methodology](https://www.designesy.org/methodology).
 

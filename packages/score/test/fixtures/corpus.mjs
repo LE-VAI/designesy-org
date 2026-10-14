@@ -611,6 +611,44 @@ code, pre { font-family: var(--mono); }`,
     ],
   },
 
+  // ── Engine 1.4.0: v46, type sizes come from the scale ─────────────────────
+  //
+  // From the site's own pages, 2026-10-13: the section badge labels sat at 11px
+  // under the 12.8px floor its own --text-label declares, and .principle-body p
+  // at 15px between the 12.8 and 16 steps. The fluid section titles, deliberate
+  // clamp() type, are the control: they must pass as written.
+
+  {
+    name: 'broken-type-off-scale',
+    referent:
+      'Sizes typed by hand beside a declared Major Third scale: designesy.org .section-heading-badge-label at .6875rem (11px) under the 12.8px floor, and .principle-body p at .9375rem (15px), 2026-10-13.',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --text-label: 0.8rem; --text-body: 1rem; --text-lead: 1.25rem; --text-h3: 1.563rem; --text-h2: 1.953rem; --text-h1: 2.441rem; }
+p { font-size: var(--text-body); }
+.section-heading-badge-label { font-size: .6875rem; }
+.principle-body p { font-size: .9375rem; }`,
+    expect: [
+      { id: 'v46', status: 'WARN', why: '11px is under the smallest type token (12.8px) and 15px sits 6% from the nearest step (16px), past the 2.5% tolerance.' },
+    ],
+  },
+
+  {
+    name: 'good-type-on-scale-fluid',
+    referent:
+      'The same scale used as declared: token sizes, an on-step literal, and designesy.org\'s deliberate fluid section title clamp(2rem, 1.45rem + 2.9vw, 4.25rem).',
+    scope: 'universal',
+    html: GOOD_HTML,
+    css: `:root { --text-label: 0.8rem; --text-body: 1rem; --text-lead: 1.25rem; --text-h3: 1.563rem; --text-h2: 1.953rem; --text-h1: 2.441rem; }
+p { font-size: var(--text-body); }
+.badge { font-size: var(--text-label); }
+.lede { font-size: 1.25rem; }
+.section-title { font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem); }`,
+    expect: [
+      { id: 'v46', status: 'PASS', why: 'Every static size is a token or a step, and the fluid title moves with the viewport, so it is accepted as written with its 32px lower bound above the floor.' },
+    ],
+  },
+
   // ── Engine 1.2.0: v44 and v45, the two defects found on designesy.org ─────
   //
   // Both are the site's own history. On 2026-10-08 light --warn #b07d04

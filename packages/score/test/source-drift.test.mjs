@@ -1,5 +1,5 @@
 /**
- * Source drift — the two 44-check engines must not diverge silently.
+ * Source drift — the two 45-check engines must not diverge silently.
  *
  * route.ts (the site and the MCP endpoint) and engine.ts (the npm CLI) are two
  * hand-maintained copies of one engine. This suite fails when a change lands in

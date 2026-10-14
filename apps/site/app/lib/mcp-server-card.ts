@@ -43,7 +43,7 @@ export const MCP_REGISTRY_NAME = 'io.github.LE-VAI/designesy-org';
 export const MCP_SERVER_TITLE = 'Designesy';
 /** Owner decision 2026-10-11. At most 100 characters (registry and card schema). */
 export const MCP_SERVER_DESCRIPTION =
-  'Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade.';
+  'Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade.';
 export const MCP_ENDPOINT = `${SITE}/api/mcp`;
 export const MCP_SERVER_CARD_URL = `${MCP_ENDPOINT}/server-card`;
 export const MCP_REPOSITORY = 'https://github.com/LE-VAI/designesy-org';

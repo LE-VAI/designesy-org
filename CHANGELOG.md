@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.4.0, @designesy/score 0.9.0, designesy-mcp 1.13.9, contract v0.4.6**
+(not yet published). One check is added; no weight, ceiling or existing verdict
+moves. The hosted /score page and API change when the site deploys.
+
+### Added (engine 1.4.0)
+
+- **v46, type sizes come from the scale (cadence, WARN only).** v16 asks for
+  rem and cannot tell a rem on the scale from one between steps. v46 reads the
+  scale from the page's own `:root` type tokens (a name such as `--text-*`,
+  `--font-size-*`, `--fs-*` or `--type-*` whose value resolves to a static rem
+  or px length; a colour token such as `--text-muted` never counts), takes the
+  token values plus their median ratio, and judges every static rem or px
+  `font-size`: off the scale beyond 2.5% from every step, under the floor below
+  the smallest type token. A `clamp()`, `min()` or `max()` that moves with a
+  viewport or container unit is deliberate fluid type and is accepted as
+  written; only its lower bound is held to the floor. Relative sizes (em, %,
+  keywords) are not judged. Fewer than three type tokens: SKIP. Findings come
+  as structured evidence (selector, value, px, issue, nearest step), one per
+  rule.
+- **Measured on designesy.org:** WARN, 7 sizes under the 12.8px floor and 7
+  between steps, of 322 static and 26 fluid sizes; the fluid section titles
+  pass. Score unchanged at 100 A.
+- The registry grows from 44 to 45 checks, 42 scored. Every "44 checks" claim
+  in the READMEs, manifests, Action and MCP descriptions moves to 45.
+- designesy-mcp 1.13.9: the offline engine lists v46 as not ported, with its
+  reason, and mirrors engine 1.4.0 and contract v0.4.6.
+
 **Engine 1.3.1 and @designesy/score 0.8.1** (npm, not yet published). Four
 checks stop warning on pages that are right, and the npm engine stops
 following a redirect loop. No check is added, no weight or ceiling moves, and
