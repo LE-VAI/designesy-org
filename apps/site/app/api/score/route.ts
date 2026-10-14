@@ -639,7 +639,7 @@ const REMEDIATION: Record<string, string> = {
   v34: 'If the page hosts an AI chatbot or agent, tell people they are talking to an AI no later than their first interaction, in a form assistive technology announces. EU AI Act Article 50(1), which applies from 2026-08-02, places this duty on the provider of the AI system (the organisation that develops it and places it on the market or puts it into service under its own name); it does not apply where the AI nature is obvious from the context, and Article 50(5) asks for the information to be clear and accessible. The check reads any one of: visible "AI assistant" or "Chatbot" text, aria-label="AI assistant" on the chat container, or a data-ai-disclosure attribute on the widget. A live chat answered by people needs no AI disclosure: if the check flagged one for review, confirm who answers. US laws differ in scope: California\'s bot-disclosure law (SB 1001, Bus. & Prof. Code §§17940-17943) covers bots that mislead people about being bots to drive a sale or influence a vote; Colorado SB 24-205 was repealed and re-enacted by SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs automated decision-making in consequential decisions. This is not legal advice.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 45-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. The DESIGN.md format\'s linter (v0.4.0, Apache-2.0) validates the file: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 45-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
   v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
@@ -1228,6 +1228,40 @@ function isFieldSelector(selector: string): boolean {
 }
 
 /**
+ * v27 helper (engine 1.4.1): the selector of the rule whose body holds the
+ * declaration at `offset`, read backwards from that body's opening brace to
+ * the previous closing brace, opening brace or semicolon. Null when the offset
+ * is not inside a rule body (a stray declaration, or a brace closed in
+ * between). Linear: a few lastIndexOf scans per call, no whole-sheet regex.
+ */
+function ruleSelectorAt(css: string, offset: number): string | null {
+  const open = css.lastIndexOf('{', offset);
+  if (open < 0 || css.lastIndexOf('}', offset) > open) return null;
+  const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
+  return css.slice(start, open);
+}
+
+/**
+ * v27 helper (engine 1.4.1): does the font-size declaration at `offset` sit in
+ * a rule whose own selector names a field keyword (input, textarea, select,
+ * .input, .field), the same words the literal scan looks for? v27's literal
+ * regexes find a keyword and then the next rule body, and their `[^{]*` runs
+ * across a closing brace. So the word "select" in `.chip { user-select: none }`
+ * carried into `.chip-label { font-size: 12px }` and FAILed a page whose
+ * fields were all 16px. The regexes still find the candidates; this reads the
+ * selector of the rule each matched declaration actually sits in, and drops a
+ * candidate whose own selector carries no keyword. Class names stay matched
+ * as before (`.search-input`, `.form-select`): many sites style their fields
+ * through such classes, and measured on the leaderboard cohort the stricter
+ * isFieldSelector test dropped real fields (a 14px textarea, a 16px search
+ * input's floor).
+ */
+function inFieldRule(css: string, offset: number): boolean {
+  const selector = ruleSelectorAt(css, offset);
+  return selector !== null && /input|textarea|select|\.field/i.test(selector.replace(/\/\*[\s\S]*?\*\//g, ' '));
+}
+
+/**
  * v27 helper (engine 1.3.1): in each rule whose selector styles a field
  * (isFieldSelector), every `font-size: var(...)` declaration is rewritten to
  * its value from the :root token table, through substituteCssVars (var()
@@ -1247,11 +1281,9 @@ function isFieldSelector(selector: string): boolean {
 function resolveFontSizeVars(css: string, tokens: Record<string, string>): string {
   if (css.indexOf('var(') < 0) return css;
   return css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, (decl: string, lead: string, value: string, offset: number) => {
-    const open = css.lastIndexOf('{', offset);
     // Not inside a rule body (a stray declaration, or a brace closed between).
-    if (open < 0 || css.lastIndexOf('}', offset) > open) return decl;
-    const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
-    if (!isFieldSelector(css.slice(start, open))) return decl;
+    const selector = ruleSelectorAt(css, offset);
+    if (selector === null || !isFieldSelector(selector)) return decl;
     const sub = substituteCssVars(value, [tokens]);
     return sub === null ? decl : lead + sub.trim();
   });
@@ -1297,6 +1329,8 @@ function checkInputFontFloor(css: string, html: string, tokens: Record<string, s
   const below: string[] = [];
   let m;
   while ((m = inputRe.exec(sheet)) !== null) {
+    // Engine 1.4.1: only a declaration whose own rule styles a field counts.
+    if (!inFieldRule(sheet, m.index + m[0].lastIndexOf('font-size'))) continue;
     const val = parseFloat(m[1]);
     const unit = m[2].toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
@@ -1306,8 +1340,13 @@ function checkInputFontFloor(css: string, html: string, tokens: Record<string, s
     // Also check: is there a global input font-size ≥16px? (e.g. `input { font-size: 1rem }`)
     // The strict form `input\s*\{` matches standalone rules; the grouped form
     // `input,...,{` matches selectors merged by CSS minifiers (e.g. `input,textarea,select{font-size:1rem}`).
-    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet)
-      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(sheet);
+    // Engine 1.4.1: the floor rule must itself style a field, as above.
+    const floorRe = /input\s*(?:,[^{]*)?\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/gi;
+    let hasGlobalFloor = false;
+    let f;
+    while (!hasGlobalFloor && (f = floorRe.exec(sheet)) !== null) {
+      hasGlobalFloor = inFieldRule(sheet, f.index + f[0].lastIndexOf('font-size'));
+    }
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
     if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
     return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
@@ -4130,7 +4169,7 @@ function checkNoAllCaps(html: string): CheckResult {
 // This check bridges both: if the site publishes DESIGN.md, designesy lints
 // it with Google's engine AND scores the design system with its own.
 async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
-  const ITEM = 'DESIGN.md spec-layer validation (Google @google/design.md lint)';
+  const ITEM = 'DESIGN.md spec-layer validation (DESIGN.md format lint)';
   const CATEGORY = 'spec';
 
   // Attempt to fetch /DESIGN.md from the target origin. No public convention

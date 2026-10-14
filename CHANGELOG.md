@@ -6,6 +6,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
+check stops failing pages on a word it read in the wrong rule, and one check
+is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
+is unchanged. The hosted /score page and API change when the site deploys; the
+PyPI server's offline engine carries the v27 change with the next
+designesy-mcp release.
+
+**Which grades can move.** v27 can only lose a FAIL or a floor it read from
+another rule, so a page moves up where its only sub-16px "field" was in a rule
+that styles no field, and down only where its 16px floor was read the same
+way (none in the cohort, below).
+
+### Fixed (engine 1.4.1)
+
+- **v27 reads a field keyword only in the rule it is scoring.** The literal
+  scan found `input`, `textarea`, `select` or `.field` and then the next rule
+  body, and its `[^{]*` ran across a closing brace. So the word "select" in
+  `.chip { user-select: none }` carried into `.chip-label { font-size: 12px }`
+  and FAILed the page ("1 input(s) below 16px floor: 12px (12px)"), whose
+  only field was 16px; now PASS. A keyword in a declaration value carried the
+  same way (`--x: var(--selecta)` into `.kicker { font-size: 11px }`), and so
+  did the 16px floor test (`--fields: input, textarea` into `.b { font-size:
+  1rem }`). Each candidate is now judged by the selector of the rule its
+  `font-size` sits in, read back from that rule's opening brace. Class names
+  that name a field still count, as before (`.search-input`, `.form-select`,
+  `.editableTextarea`): many sites style their fields that way.
+  `select { font-size: 14px }` and a real `.number input[type=number]` field
+  at 0.875rem still FAIL.
+- **v37 is named "DESIGN.md spec-layer validation (DESIGN.md format lint)"**,
+  where it read "(Google @google/design.md lint)". Its remediation says "The
+  DESIGN.md format's linter (v0.4.0, Apache-2.0) validates the file". Every
+  `npm install -g @google/design.md` and `npx @google/design.md` command is
+  unchanged. The id stays v37; no stored leaderboard, history or snapshot
+  keys on the name.
+
+### Not changed
+
+- **v27's test for a field rule is not narrowed to `isFieldSelector`**, the
+  subject test 1.3.1 uses before resolving a `var()` size. Measured on the
+  same bytes, that test also dropped real fields that cohort sites style
+  through class names: one site's 16px floor on its search box and
+  another's 14px textarea, both named only by class.
+
+### Measured (engine 1.4.1)
+
+The calibration corpus (34 fixtures, 47 pinned verdicts) and every existing
+input of the offline golden give the same verdict, detail and score under
+1.4.0 and 1.4.1, apart from v37's name; the golden gains eight v27 inputs. The
+30 leaderboard URLs, each fetched once on 2026-10-13 and scored by both builds
+of the npm engine on the same bytes (scope auto-detected; 27 fetched,
+three did not answer). Scores move on two sites:
+
+| Cohort site | 1.4.0 | 1.4.1 | Why |
+|---|---|---|---|
+| cohort site 1 | C | B (+16.1) | v27 FAIL to SKIP: an 11px caption rule was reached from a keyword in the rule before; the page has no field, and the FAIL had pulled accessibility under 60%, which caps a score at 70 |
+| cohort site 2 | D | D (+2.8) | v27 FAIL to PASS: a 12px placeholder rule was reached from `user-select` in the rule before; its search field's floor now reads |
+
+designesy.org stays 100 A. A site with a real 14px number field keeps its v27
+FAIL, and a site whose v27 FAIL is real keeps it with one fewer size listed.
+The other 24 are unchanged. Third-party sites are not named here: the
+leaderboard publishes their scores, with dates, at its weekly re-score.
+
+Reproduce: score the URLs in `apps/site/app/leaderboard/seed.ts` with both
+builds of `packages/score` (`scoreUrl`, scope auto-detected), fetching each
+page once and passing the same bytes to both.
+
 ## [1.13.9] — 2026-10-13
 
 **Engine 1.4.0, @designesy/score 0.9.0, @designesy/cli 0.3.1, designesy-mcp 1.13.9,

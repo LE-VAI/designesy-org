@@ -120,7 +120,7 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v41', item: 'No ALL CAPS UI text except eyebrow labels', category: 'copywriting', type: 'auto', threshold: 'no ALL CAPS outside eyebrow labels', pass: 'no ALL CAPS outside eyebrows', fail: 'n/a (WARN only)', warn: 'ALL CAPS in UI text', ceiling: null },
 
   // ── Spec (weight 4) ──
-  { id: 'v37', item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)', category: 'spec', type: 'auto', threshold: 'DESIGN.md present and valid per @google/design.md linter', pass: 'DESIGN.md present and valid', fail: 'DESIGN.md missing or invalid', warn: 'DESIGN.md present but lint warnings', ceiling: null },
+  { id: 'v37', item: 'DESIGN.md spec-layer validation (DESIGN.md format lint)', category: 'spec', type: 'auto', threshold: 'DESIGN.md present and valid per @google/design.md linter', pass: 'DESIGN.md present and valid', fail: 'DESIGN.md missing or invalid', warn: 'DESIGN.md present but lint warnings', ceiling: null },
 ];
 
 // ── Compute per-check weights ───────────────────────────────────────────────
@@ -209,5 +209,11 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      v43 counts --destructive as the error role. The npm
  *                      engine stops after 3 redirects. The CHANGELOG entry
  *                      lists what moves.
+ *   1.4.0  2026-10-13  v46, type sizes come from the scale (WARN only).
+ *   1.4.1  2026-10-13  v27 counts a font size only in a rule whose own
+ *                      selector styles a field ("select" in user-select no
+ *                      longer carries into the next rule); v37 is named
+ *                      "DESIGN.md format lint". No check added, no weight or
+ *                      ceiling moved. The CHANGELOG entry lists what moves.
  */
-export const ENGINE_VERSION = '1.4.0';
+export const ENGINE_VERSION = '1.4.1';

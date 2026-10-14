@@ -341,7 +341,7 @@ const CHECKS: CheckDef[] = [
   // ── Spec (4%) — v0.4.0 ──
   {
     id: 'v37',
-    item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
+    item: 'DESIGN.md spec-layer validation (DESIGN.md format lint)',
     category: 'spec',
     how: 'Fetches /DESIGN.md from the target origin and runs the DESIGN.md format\'s linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
     skipReason: 'N/A if /DESIGN.md is not served at the target origin; no public convention requires it yet.',
