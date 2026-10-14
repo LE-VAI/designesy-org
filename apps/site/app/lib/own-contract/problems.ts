@@ -7,7 +7,7 @@
 // ref, chain, reason, ...); `message` is the API's plain sentence for callers
 // that read only that.
 
-import { MAX_VALUE_CHARS, MAX_CONTRACT_BYTES, MAX_TOKENS, MAX_DEPTH, MAX_ALIAS_HOPS, MIN_COLORS } from './limits';
+import { MAX_LINTER_MESSAGE_CHARS, MAX_VALUE_CHARS, MAX_CONTRACT_BYTES, MAX_TOKENS, MAX_DEPTH, MAX_ALIAS_HOPS, MIN_COLORS } from './limits';
 import type { DropReason, Problem } from './types';
 
 /** Codes that reject a contract (HTTP 422 unless listed in HTTP_STATUS). */
@@ -68,6 +68,15 @@ export function clipValue(v: unknown): string {
   }
   s = s.replace(/[\u0000-\u001f\u007f]/g, ' ');
   return s.length > MAX_VALUE_CHARS ? `${s.slice(0, MAX_VALUE_CHARS - 1)}…` : s;
+}
+
+/** A sentence cut, if at all, at the last word boundary that fits, with "…" (never mid-word). */
+export function clipWords(s: string, max = MAX_LINTER_MESSAGE_CHARS): string {
+  const t = s.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > 0 ? cut.slice(0, at) : cut).replace(/[\s,;:.(-]+$/, '')}…`;
 }
 
 function sizeWords(bytes: number): string {
@@ -158,7 +167,13 @@ function withClippedValue(extra: Extra): Omit<Problem, 'code' | 'severity' | 'me
   if (out.ref !== undefined) out.ref = clipValue(out.ref);
   if (out.key !== undefined) out.key = clipValue(out.key);
   if (out.chain) out.chain = out.chain.map((p) => clipValue(p));
+  if (out.linterMessage !== undefined) out.linterMessage = clipWords(String(out.linterMessage));
   return out;
+}
+
+/** The linter's sentence for a lint problem: whole, or cut at a word boundary. */
+function lintWords(p: Extra | Problem): string {
+  return p.linterMessage !== undefined ? clipWords(String(p.linterMessage)) : '';
 }
 
 export function messageFor(code: string, p: Extra | Problem): string {
@@ -181,9 +196,9 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'DUPLICATE_SECTION':
       return `The heading "${clipValue(p.heading ?? '')}" appears twice. The DESIGN.md format allows each section once, so merge the two and run it again.`;
     case 'LINT_ERROR':
-      return `${path}: ${noStop(value) || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
+      return `${path}: ${noStop(lintWords(p)) || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
     case 'LINT_WARNING':
-      return `${path}: ${noStop(value) || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
+      return `${path}: ${noStop(lintWords(p)) || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
     case 'TOKEN_DROPPED':
       return `${path} is declared, but its value didn't survive reading (${REASON_WORDS[p.reason ?? 'unknown']}), so it was left out. Give it a literal value or a reference that resolves, then run it again.`;
     case 'VALUE_INVALID':

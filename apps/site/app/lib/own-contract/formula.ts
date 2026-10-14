@@ -15,7 +15,10 @@ import { MAX_ALIAS_HOPS, MAX_BODY_BYTES, MAX_CONTRACT_BYTES, MAX_DEPTH, MAX_RESO
 import { ERROR_CODES, WARNING_CODES } from './problems';
 import { DROP_REASONS } from './types';
 
-export const FORMULA_VERSION = '1.0.0';
+// 1.0.1 (2026-10-14): problems carry the linter's sentence whole as
+// linterMessage, and `value` is the offending value (it held the linter's
+// sentence cut to 80 characters). No threshold, weight or verdict moved.
+export const FORMULA_VERSION = '1.0.1';
 export const FORMULA_DATE = '2026-10-14';
 
 /** Share thresholds (engine spec 6.2; calibration defaults, lesser decision L6). */
@@ -178,7 +181,7 @@ export function ownContractFormula() {
       rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large') },
       warnings: WARNING_CODES,
       problem: {
-        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
+        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'linterMessage', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
         confusable: 'CONFUSABLE_NAME: one warning per lookalike character, with char, script, codePoint (hex), position (1-based) and latin (absent when the confusable table names no Latin counterpart).',
         valueMaxChars: MAX_VALUE_CHARS,
         chain: 'ALIAS_CYCLE: the loop as an ordered list of token paths, the first path repeated last.',

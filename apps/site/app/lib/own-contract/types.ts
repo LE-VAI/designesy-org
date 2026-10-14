@@ -141,6 +141,10 @@ export interface Problem {
   status?: number;
   /** LINT_ERROR, LINT_WARNING: the linter's rule id. */
   rule?: string;
+  /** LINT_ERROR, LINT_WARNING: the linter's own sentence, whole (cut at a word
+      boundary only past MAX_LINTER_MESSAGE_CHARS). Never the offending value:
+      that is `value`, cut to 80 characters. */
+  linterMessage?: string;
 }
 
 export interface OwnContract {
