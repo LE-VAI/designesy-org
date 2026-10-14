@@ -70,9 +70,9 @@
 }
 
 .section-heading-badge-label {
-  font-size: 0.6rem;
+  font-size: var(--text-label);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--muted-dim);
 }
@@ -84,7 +84,7 @@
 }
 
 .section-heading-badge-unit {
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -331,11 +331,11 @@
   }
 
   .section-heading-badge-label {
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     letter-spacing: 0.11em;
   }
   .section-heading-badge-unit {
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
   }
 
   .score-hero-input {
