@@ -135,7 +135,8 @@ export function SensesMenu() {
   const theme = useTheme();
 
   // Whether closing hands focus back to the trigger: yes for Escape; no for a
-  // press elsewhere (the reader went there) or the trigger itself (it has it).
+  // press elsewhere or focus moving out (the reader went there) or the
+  // trigger itself (it has it).
   const restoreRef = useRef(false);
   const close = useCallback((returnFocus: boolean) => {
     restoreRef.current = returnFocus;
@@ -159,8 +160,25 @@ export function SensesMenu() {
       if (!layer.isTop()) return;
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) close(false);
     };
+    // Focus leaving for the page closes the panel, as a press away does. Left
+    // open, it floated over whatever took focus next: its shadow held a
+    // focused field's top edge at 2.01:1 and covered a path link (WCAG 2.4.11).
+    // Trigger to panel and row to row stay inside the root, so they never
+    // close it. A null relatedTarget (the window losing focus, a press on
+    // nothing focusable) is left to the pointer rule. Only from the top: a
+    // palette opening over this takes focus into itself, which is not focus
+    // leaving for the page. Focus is not pulled back: it went where the
+    // reader sent it.
+    const onFocusOut = (e: FocusEvent) => {
+      if (!layer.isTop()) return;
+      const to = e.relatedTarget as Node | null;
+      if (to && rootRef.current && !rootRef.current.contains(to)) close(false);
+    };
+    const root = rootRef.current;
+    root?.addEventListener('focusout', onFocusOut);
     document.addEventListener('pointerdown', onPointer);
     return () => {
+      root?.removeEventListener('focusout', onFocusOut);
       document.removeEventListener('pointerdown', onPointer);
       layer.release({ restoreFocus: restoreRef.current });
       restoreRef.current = false;
