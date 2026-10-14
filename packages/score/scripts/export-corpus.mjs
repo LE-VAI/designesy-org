@@ -60,8 +60,13 @@ const OUT = join(HERE, '..', 'corpus.json');
  *
  * Engine 1.3.1 (2026-10-12) adds no fixture either, and no fixture's verdict,
  * detail or score moves under it (v26, v27, v38 and v43 accuracy fixes).
+ *
+ * 1.4.0 (2026-10-13): engine 1.4.0 fixtures. v46 (type sizes from the scale):
+ * broken-type-off-scale WARN (an 11px badge under the 12.8px floor, a 15px
+ * paragraph between steps) and good-type-on-scale-fluid PASS (token sizes, an
+ * on-step literal and a deliberate fluid clamp() title).
  */
-const CORPUS_VERSION = '1.3.0';
+const CORPUS_VERSION = '1.4.0';
 
 /**
  * Engine version. Read from the server constant when reachable; the package
@@ -69,7 +74,7 @@ const CORPUS_VERSION = '1.3.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.3.1';
+const ENGINE_VERSION = '1.4.0';
 
 async function build() {
   const rows = await runCorpus();

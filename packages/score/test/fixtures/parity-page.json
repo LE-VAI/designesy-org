@@ -225,6 +225,11 @@
    "id": "v37",
    "status": "SKIP",
    "why": "Needs the network or a browser; recorded so the exclusion list cannot go stale, not asserted offline."
+  },
+  {
+   "id": "v46",
+   "status": "SKIP",
+   "why": "Added for engine 1.4.0 by scoring this fixture's stored html and css (not re-recorded live): the 2026-09-25 page declares no type-size tokens, so there is no scale to measure against."
   }
  ],
  "recordedScore": 93,

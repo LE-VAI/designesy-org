@@ -54,7 +54,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.8"
+SERVER_VERSION = "1.13.9"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -463,8 +463,8 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.3.1"
-OFFLINE_CONTRACT_VERSION = "v0.4.5"
+OFFLINE_ENGINE_MIRRORS = "1.4.0"
+OFFLINE_CONTRACT_VERSION = "v0.4.6"
 
 # The live engine's checks that this engine does not run, in the live engine's
 # order. The parity test asserts that these and OFFLINE_CHECK_IDS together are
@@ -480,6 +480,11 @@ _NOT_PORTED_V44_V45 = (
     "original checklist (v01-v23, x01-x03). It needs a CSS rule model and "
     "theme-aware colour resolution this port does not carry. The live engine "
     "runs it."
+)
+_NOT_PORTED_V46 = (
+    "not ported: added to the live engine for 1.4.0, after this fallback's "
+    "original checklist (v01-v23, x01-x03). It reads the type scale from the "
+    ":root tokens and judges every font-size against it; the live engine runs it."
 )
 _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v24": _NOT_PORTED,
@@ -498,6 +503,7 @@ _OFFLINE_NOT_IMPLEMENTED: dict[str, str] = {
     "v41": _NOT_PORTED,
     "v44": _NOT_PORTED_V44_V45,
     "v45": _NOT_PORTED_V44_V45,
+    "v46": _NOT_PORTED_V46,
     "v37": (
         "needs the network: it fetches /DESIGN.md from the target origin and "
         "lints it with an optional package. The live engine's own offline mode "
@@ -2175,10 +2181,10 @@ def _post_score_api(url: str, fmt: str, scope: str | None = None) -> str:
 
 
 def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
-    """POST to the canonical 44-check engine at /api/score.
+    """POST to the canonical 45-check engine at /api/score.
 
     The site API is the single source of truth for the contract it serves
-    (44 checks, 14 categories). The version is reported from that reply, not
+    (45 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
     Returns the normalized response, or None if the API is unreachable
     (caller falls back to the local engine).
@@ -2255,7 +2261,7 @@ def _score_impl(
 ) -> dict[str, Any] | str:
     """Score a live URL against the Designesy design contract.
 
-    Primary path: delegate to the canonical 44-check engine at
+    Primary path: delegate to the canonical 45-check engine at
     /api/score (same engine the npm CLI and site use).
 
     format designesy (the default) reshapes the engine's native JSON into
@@ -2689,7 +2695,7 @@ TOOLS = [
         "name": "designesy_score",
         "description": (
             "Score a live URL against the Designesy design contract with "
-            "the deterministic 44-check verification engine at "
+            "the deterministic 45-check verification engine at "
             "https://www.designesy.org/api/score. Returns a numeric score, "
             "a letter grade (A-F), and the check results. "
             "Use this to audit whether a website or AI-generated UI "
@@ -2699,7 +2705,7 @@ TOOLS = [
             "designesy_tokens_score; for a Lottie file, use "
             "designesy_motion_score; for a qualitative critique, use "
             "designesy_design_review. The engine fetches the URL "
-            "server-side, extracts its CSS, and runs 44 checks. Results "
+            "server-side, extracts its CSS, and runs 45 checks. Results "
             "are cached ~24h server-side per URL and scope. Checks that "
             "need a live browser (Core Web Vitals, sound toggle, overflow) "
             "return MANUAL; the full audit (/api/score/audit) resolves "
@@ -2719,7 +2725,7 @@ TOOLS = [
             "and the engine auto-detects: contract for designesy.org, "
             "universal for every other site. If the engine is "
             "unreachable, format designesy falls back to the offline "
-            "engine: 27 of the 44 checks run locally, each mirroring the "
+            "engine: 27 of the 45 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
             "checks it did not run) and scope, and its note says so. The "
@@ -2897,7 +2903,7 @@ TOOLS = [
             "alias chains that end in an undeclared property). Use this when "
             "you need to verify whether a site (especially an AI-generated one) "
             "is drifting off its own declared token system. When NOT to use: "
-            "for a full 44-check design-contract score, use designesy_score; "
+            "for a full 45-check design-contract score, use designesy_score; "
             "for token-file format validation, use designesy_tokens_score. "
             "Executable: fetches the URL server-side, extracts all CSS (inline "
             "+ linked stylesheets), parses custom property declarations "
@@ -3108,7 +3114,7 @@ TOOLS = [
         "name": "designesy_report",
         "description": (
             "Generate a unified design-intelligence report for a single URL, "
-            "the synthesis capstone. Fires /score (44-check audit), /drift "
+            "the synthesis capstone. Fires /score (45-check audit), /drift "
             "(12-check drift radar), and /readiness (10-check AI readiness) in "
             "parallel, then computes a weighted composite: score × 0.5 + drift "
             "× 0.3 + readiness × 0.2. One input, one output, one composite "

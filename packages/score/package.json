@@ -1,7 +1,7 @@
 {
   "name": "@designesy/score",
-  "version": "0.8.1",
-  "description": "Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. Runs locally; browser checks return MANUAL. No required dependencies.",
+  "version": "0.9.0",
+  "description": "Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. Runs locally; browser checks return MANUAL. No required dependencies.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
   "homepage": "https://www.designesy.org/score",

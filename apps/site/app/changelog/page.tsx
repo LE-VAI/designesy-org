@@ -675,6 +675,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'The weights (score 0.5, drift 0.3, readiness 0.2), the eight synthesis checks, the coherence thresholds (20 and 30 points) and the grade bands are unchanged. The check count states the size of the score engine, which the engine entries above record. No rule, threshold or weight changed.',
     source: 'Designesy report contract v0.1.1; commit fe77f42, designesy-org pull requests 119 (d53eeae) and 153 (3d62df0)',
   },
+
+  // ── v0.4.6 (engine 1.4.0): type sizes come from the scale ──
+  {
+    version: 'v0.4.6 · engine 1.4.0',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'added',
+    title: 'Engine 1.4.0: type sizes come from the scale (v46)',
+    description:
+      "A new check, v46, reads the type scale from a page's own :root type tokens (their values plus their median ratio) and judges every static rem or px font-size against it: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest type token. Deliberate fluid type, a clamp(), min() or max() that moves with a viewport or container unit, is accepted as written; only its lower bound is held to the floor. It WARNs, it never FAILs. The registry grows to 45 checks, 42 scored.",
+    checks: ['v16', 'v46'],
+    rationale:
+      "v16 asks for rem and cannot tell a rem on the scale from one between steps, so a page could pass it while its sizes drifted off the scale its own tokens declare. Measured on this site the day it shipped: v46 WARNs on 7 sizes under the 12.8px floor and 7 between steps, the display numerals and home rules this site's own type gate lists as deliberate exceptions. Fluid section titles pass as written.",
+    source: 'Brand ledger D59 and D68 (the Major Third scale and its floor), CSS Values 4 (clamp, min, max, viewport and container units), engine 1.4.0 entry in CHANGELOG.md',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────

@@ -300,6 +300,12 @@ const CHECKS: CheckDef[] = [
     how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4 or 5. FAIL if 6+. More than 3 families suggests inconsistency and hurts performance.',
   },
   {
+    id: 'v46',
+    item: 'Type sizes come from the scale',
+    category: 'cadence',
+    how: "Reads the type scale from the page's own :root type tokens (names such as --text-*, --font-size-*, --fs-* or --type-* whose value is a static rem or px length; a colour token such as --text-muted never counts), takes their values plus their median ratio as the steps, and the smallest token as the floor. Every static rem or px font-size is judged: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest token. A clamp(), min() or max() that moves with a viewport or container unit is deliberate fluid type and is accepted as written; only its lower bound is held to the floor. Relative sizes (em, %, keywords) follow their parent and are not judged. WARN only; SKIP with fewer than three type tokens. v16 asks for rem; this asks whether each rem sits on the scale.",
+  },
+  {
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',

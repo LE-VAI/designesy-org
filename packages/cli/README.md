@@ -1,6 +1,6 @@
 # @designesy/cli
 
-Unified CLI for the Designesy design-verification toolkit. Single entry point that dispatches to `tokens` (DTCG 2025.10 token validation) and `score` (44-check design-contract scoring) subcommands.
+Unified CLI for the Designesy design-verification toolkit. Single entry point that dispatches to `tokens` (DTCG 2025.10 token validation) and `score` (45-check design-contract scoring) subcommands.
 
 ## Install
 
@@ -17,7 +17,7 @@ npx @designesy/cli <command>
 designesy tokens https://www.designesy.org/export/dtcg
 designesy tokens ./tokens.json --json
 
-# Score a URL against the 44-check engine
+# Score a URL against the 45-check engine
 designesy score designesy.org
 designesy score linear.app --min-score 70 --min-grade B
 designesy score stripe.com --format review
@@ -38,7 +38,7 @@ See [@designesy/tokens](https://www.npmjs.com/package/@designesy/tokens) for ful
 
 ### `designesy score <url>`
 
-Scores a URL against the 44-check Designesy design-contract engine. Fetches the page, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with no Designesy server; the browser checks return MANUAL.
+Scores a URL against the 45-check Designesy design-contract engine. Fetches the page, extracts CSS + `:root` tokens, and runs every check that needs no browser locally, with no Designesy server; the browser checks return MANUAL.
 
 See [@designesy/score](https://www.npmjs.com/package/@designesy/score) for full documentation.
 

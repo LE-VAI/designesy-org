@@ -635,10 +635,11 @@ const REMEDIATION: Record<string, string> = {
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
   v44: 'Give each status hue a text token for words and keep the hue itself for marks. A color that marks a state (a dot, a bar, a tint) needs 3:1, while the word for that state needs 4.5:1 (3:1 at 24px, or 18.66px bold) in every theme the site declares. Mix the hue toward your ink for text, for example --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)), measure it on the page and on each surface it sits on in every theme, and paint status words with it.',
   v45: 'Let every entrance that starts invisible run to its end when motion is paused. Under the pause rule, give one-shot entrances whose first keyframe is opacity 0 a negative delay longer than the animation, for example html[data-motion="paused"] :is(.fade-up, .reveal) { animation-delay: -3600s !important; }, or remove them with animation: none. Loops can stay held. Test by pausing motion and reloading: every page should still show its content.',
+  v46: 'Size text from the type scale. Use a type token (font-size: var(--text-body)) or a size that sits on the scale your tokens declare; keep deliberate fluid type in clamp() with a viewport or container unit, and keep its lower bound at or above the smallest type token. A static size between two steps reads as a one-off and drifts the rhythm the scale exists to hold.',
   v34: 'If the page hosts an AI chatbot or agent, tell people they are talking to an AI no later than their first interaction, in a form assistive technology announces. EU AI Act Article 50(1), which applies from 2026-08-02, places this duty on the provider of the AI system (the organisation that develops it and places it on the market or puts it into service under its own name); it does not apply where the AI nature is obvious from the context, and Article 50(5) asks for the information to be clear and accessible. The check reads any one of: visible "AI assistant" or "Chatbot" text, aria-label="AI assistant" on the chat container, or a data-ai-disclosure attribute on the widget. A live chat answered by people needs no AI disclosure: if the check flagged one for review, confirm who answers. US laws differ in scope: California\'s bot-disclosure law (SB 1001, Bus. & Prof. Code §§17940-17943) covers bots that mislead people about being bots to drive a sale or influence a vote; Colorado SB 24-205 was repealed and re-enacted by SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs automated decision-making in consequential decisions. This is not legal advice.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 44-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 45-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
   v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
@@ -2832,6 +2833,135 @@ function isDocumentScope(compound: string): boolean {
     && simple.some((s) => V45_TOGGLE_ATTR.test(s) || V45_TOGGLE_CLASS.test(s));
 }
 
+// v46 — Type sizes come from the scale (engine 1.4.0).
+//
+// v16 asks that sizes be written in rem; it cannot tell a rem that sits on the
+// type scale from one that sits between steps, so a page can pass v16 while its
+// sizes drift off the scale its own tokens declare. v46 reads the scale from the
+// page itself: the :root type-size tokens (a name such as --text-*, --font-size-*,
+// --fs-* or --type-*, whose value resolves to a static rem or px length; colour
+// tokens named --text-muted never resolve to a length, so they never count). The
+// steps are every token value plus the token ratio (the median of consecutive
+// token ratios) extended four steps below and ten above the token nearest 16px.
+// The floor is the smallest type token.
+//
+// Fluid type is a deliberate design move, so a clamp(), min() or max() that
+// moves with a viewport or container unit is accepted as written; only its lower
+// bound is held to the floor. Relative sizes (em, %, inherit, keywords) follow
+// their parent, not the global scale, and are not judged. A static rem or px
+// size is judged: off the scale when it sits more than 2.5% from every step,
+// below the floor when it is smaller than the smallest type token.
+//
+// WARN only: an off-scale size is a hygiene finding, not a broken page.
+const V46_ITEM = 'Type sizes come from the scale';
+const V46_TOLERANCE = 0.025;
+const V46_FLUID = /(?:^|[^a-z-])(?:[sld]?v[wh]|v[ib]|vmin|vmax|cq[iwhb]|cqmin|cqmax)\b/i;
+
+function v46StaticPx(value: string): number | null {
+  const m = value.trim().match(/^(\d*\.?\d+)(rem|px)$/i);
+  if (!m) return null;
+  return parseFloat(m[1]) * (m[2].toLowerCase() === 'rem' ? 16 : 1);
+}
+
+function v46TypeScale(tokens: Record<string, string>): { steps: number[]; floor: number; ratio: number; count: number } | null {
+  const values: number[] = [];
+  for (const [name, raw] of Object.entries(tokens)) {
+    if (!/^--(?:text|font-size|fs|type)-[\w-]+$/i.test(name)) continue;
+    const px = v46StaticPx(resolveVar(raw, tokens));
+    if (px !== null && px > 0) values.push(px);
+  }
+  const unique = [...new Set(values.map((v) => Math.round(v * 1000) / 1000))].sort((a, b) => a - b);
+  if (unique.length < 3) return null;
+  const ratios: number[] = [];
+  for (let i = 1; i < unique.length; i++) {
+    const r = unique[i] / unique[i - 1];
+    if (r >= 1.05 && r <= 1.7) ratios.push(r);
+  }
+  ratios.sort((a, b) => a - b);
+  const ratio = ratios.length ? ratios[Math.floor(ratios.length / 2)] : 1.25;
+  const base = unique.reduce((best, v) => (Math.abs(v - 16) < Math.abs(best - 16) ? v : best), unique[0]);
+  const steps = new Set<number>(unique);
+  for (let n = -4; n <= 10; n++) steps.add(Math.round(base * Math.pow(ratio, n) * 1000) / 1000);
+  return { steps: [...steps].sort((a, b) => a - b), floor: unique[0], ratio, count: unique.length };
+}
+
+/** Lower bound in px of a fluid size: clamp()'s first argument, or the largest static argument of max(). */
+function v46FluidFloor(value: string): number | null {
+  const fn = value.trim().match(/^(clamp|max)\((.*)\)$/i);
+  if (!fn) return null;
+  const args = splitCssTopLevel(fn[2], ',').map((a) => v46StaticPx(a));
+  if (fn[1].toLowerCase() === 'clamp') return args.length === 3 ? args[0] : null;
+  const statics = args.filter((a): a is number => a !== null);
+  return statics.length ? Math.max(...statics) : null;
+}
+
+function v46Selector(css: string, at: number): string {
+  const open = css.lastIndexOf('{', at);
+  if (open < 0) return '';
+  const start = Math.max(css.lastIndexOf('}', open), css.lastIndexOf(';', open), css.lastIndexOf('{', open - 1)) + 1;   // stop at an enclosing @media brace too
+  return css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+}
+
+function checkTypeScale(css: string, tokens: Record<string, string>): CheckResult {
+  const scale = v46TypeScale(tokens);
+  if (!scale) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'SKIP', detail: 'fewer than 3 type-size tokens in :root: no scale to measure against' };
+  }
+  const { steps, floor, ratio } = scale;
+  const nearest = (px: number) => steps.reduce((best, s) => (Math.abs(s - px) < Math.abs(best - px) ? s : best), steps[0]);
+  const onScale = (px: number) => steps.some((s) => Math.abs(px - s) / s <= V46_TOLERANCE);
+  const below = (px: number) => px < floor * (1 - V46_TOLERANCE);
+  type Finding = { selector: string; value: string; px: number; issue: string; nearest: number };
+  const findings: Finding[] = [];
+  const seen = new Set<string>();                                  // one finding per rule: a bundle repeats rules across @media copies
+  const add = (f: Finding) => {
+    const key = `${f.selector}|${f.value}|${f.issue}`;
+    if (!seen.has(key)) { seen.add(key); findings.push(f); }
+  };
+  let judged = 0;
+  let fluid = 0;
+  const re = /font-size\s*:\s*([^;}]+)/gi;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    const written = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
+    const value = resolveVar(written, tokens);
+    if (/^var\(/i.test(value)) continue;                            // an alias the token table cannot resolve
+    if (/^(?:clamp|min|max)\(/i.test(value) && V46_FLUID.test(value)) {
+      fluid++;
+      const low = v46FluidFloor(value);
+      if (low !== null && below(low)) {
+        add({ selector: v46Selector(css, m.index), value: written, px: Math.round(low * 100) / 100, issue: 'fluid minimum below the floor', nearest: floor });
+      }
+      continue;
+    }
+    const px = v46StaticPx(value);
+    if (px === null) continue;                                      // em, %, keywords, calc(): relative or not static
+    judged++;
+    if (below(px)) {
+      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'below the floor', nearest: floor });
+    } else if (!onScale(px)) {
+      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'off the scale', nearest: nearest(px) });
+    }
+  }
+  const scaleText = `${steps.length}-step scale (ratio ${ratio.toFixed(3)}, ${scale.count} type tokens, floor ${floor}px)`;
+  if (judged + fluid === 0) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'SKIP', detail: `no static or fluid font sizes outside the tokens to measure against the ${scaleText}` };
+  }
+  const offScale = findings.filter((f) => f.issue === 'off the scale').length;
+  const underFloor = findings.length - offScale;
+  if (findings.length === 0) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'PASS', detail: `${judged} static and ${fluid} fluid sizes sit on the ${scaleText}` };
+  }
+  return {
+    id: 'v46', item: V46_ITEM, category: 'cadence', status: 'WARN',
+    detail: `${offScale} static size(s) off the ${scaleText} and ${underFloor} below its floor, of ${judged} static and ${fluid} fluid sizes measured`,
+    evidence: {
+      findings: findings.slice(0, 20).map((f) => ({ selector: f.selector, value: f.value, px: f.px, issue: f.issue, nearest: f.nearest })),
+      truncated: Math.max(0, findings.length - 20),
+    },
+  };
+}
+
 function checkPausedEntrances(css: string): CheckResult {
   const ID = 'v45';
   const ITEM = 'Pausing motion keeps content visible';
@@ -4450,6 +4580,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkNoAllCaps(html),
     checkStatusTextContrast(css),
     checkPausedEntrances(css),
+    checkTypeScale(css, rawTokens),
   ];
 
   // v37 is async (fetches /DESIGN.md from the target origin and runs Google's

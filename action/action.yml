@@ -1,7 +1,7 @@
 name: "Designesy Contract Check"
 description: >-
   Design quality gate for AI-generated UI:
-  score any URL on 44 deterministic checks, A–F grade.
+  score any URL on 45 deterministic checks, A–F grade.
   Fails CI on regression; SARIF and baseline ratchet supported.
 author: "designesy"
 branding:

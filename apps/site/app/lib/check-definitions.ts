@@ -80,6 +80,7 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', type: 'auto', threshold: '8+ font-variant-numeric: tabular-nums instances', pass: '8+ instances found', fail: 'n/a (WARN only)', warn: 'fewer than 8 instances', ceiling: null },
   { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', type: 'auto', threshold: '::selection with custom color or var(--signal)', pass: '::selection uses --signal or custom color', fail: 'n/a (WARN only)', warn: 'no ::selection or no color set', ceiling: null },
   { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', type: 'auto', threshold: '≤3 unique non-generic font families', pass: '≤3 font families', fail: '>3 font families', warn: 'n/a', ceiling: null },
+  { id: 'v46', item: 'Type sizes come from the scale', category: 'cadence', type: 'auto', threshold: 'every static rem/px font-size within 2.5% of a step of the scale read from the :root type tokens (token values plus their median ratio), and no size, including a fluid clamp() lower bound, under the smallest type token; fluid clamp()/min()/max() with a viewport or container unit accepted as written', pass: 'static sizes sit on the scale and nothing falls under its floor', fail: 'n/a (WARN only)', warn: 'a static size between steps, or a size under the smallest type token', ceiling: null },
   { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', type: 'auto', threshold: 'max-width 45-75ch on prose elements', pass: 'reading width within 45-75ch', fail: 'n/a (WARN only)', warn: 'reading width outside 45-75ch', ceiling: null },
   { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', type: 'auto', threshold: 'font-synthesis: none', pass: 'font-synthesis: none declared', fail: 'n/a (WARN only)', warn: 'font-synthesis missing or not none', ceiling: null },
   { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', type: 'auto', threshold: 'text-underline-position: from-font', pass: 'from-font set', fail: 'n/a (WARN only)', warn: 'not set', ceiling: null },
@@ -143,7 +144,7 @@ export const ENGINE_CHECK_COUNT = CHECKS.length;
 /**
  * Checks the engine actually scores — the `auto` ones, excluding `manual`.
  *
- * The distinction matters in copy. "44 checks" describes the registry; a score
+ * The distinction matters in copy. "45 checks" describes the registry; a score
  * of 93/A is computed from fewer, because MANUAL checks are excluded from both
  * numerator and denominator (Lighthouse precedent: manual/N/A audits are not
  * counted against a site). Copy that quotes the total while describing the
@@ -209,4 +210,4 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      engine stops after 3 redirects. The CHANGELOG entry
  *                      lists what moves.
  */
-export const ENGINE_VERSION = '1.3.1';
+export const ENGINE_VERSION = '1.4.0';

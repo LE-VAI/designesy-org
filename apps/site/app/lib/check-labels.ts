@@ -39,6 +39,7 @@ export const LOG_LABEL: Record<string, string> = {
   v19: 'Tabular numbers where digits align',
   v20: '::selection styled with the accent',
   v26: 'Three font families at most',
+  v46: 'Type sizes on the scale',
   v28: 'Reading width 45 to 75ch',
   x01: 'font-synthesis set to none',
   x02: 'Underline position from the font',
