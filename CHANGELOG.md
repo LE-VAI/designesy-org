@@ -32,7 +32,7 @@ way (none in the cohort, below).
   `font-size` sits in, read back from that rule's opening brace. Class names
   that name a field still count, as before (`.search-input`, `.form-select`,
   `.editableTextarea`): many sites style their fields that way.
-  `select { font-size: 14px }` and Carbon's `.cds--number input[type=number]`
+  `select { font-size: 14px }` and a real `.number input[type=number]` field
   at 0.875rem still FAIL.
 - **v37 is named "DESIGN.md spec-layer validation (DESIGN.md format lint)"**,
   where it read "(Google @google/design.md lint)". Its remediation says "The
@@ -45,9 +45,9 @@ way (none in the cohort, below).
 
 - **v27's test for a field rule is not narrowed to `isFieldSelector`**, the
   subject test 1.3.1 uses before resolving a `var()` size. Measured on the
-  same bytes, that test also dropped real fields: apple.com's 16px floor
-  (`#globalnav .globalnav-searchfield-input`, its search box) and linear.app's
-  14px `._8fVXdW_editableTextarea`, a textarea in its markup.
+  same bytes, that test also dropped real fields that cohort sites style
+  through class names: one site's 16px floor on its search box and
+  another's 14px textarea, both named only by class.
 
 ### Measured (engine 1.4.1)
 
@@ -56,18 +56,21 @@ input of the offline golden give the same verdict, detail and score under
 1.4.0 and 1.4.1, apart from v37's name; the golden gains eight v27 inputs. The
 30 leaderboard URLs, each fetched once on 2026-10-13 and scored by both builds
 of the npm engine on the same bytes (scope auto-detected; 27 fetched,
-nytimes.com, getdesy.com and cssdesignawards.com did not answer). Scores move
-on two sites:
+three did not answer). Scores move on two sites:
 
-| Site | 1.4.0 | 1.4.1 | Why |
+| Cohort site | 1.4.0 | 1.4.1 | Why |
 |---|---|---|---|
-| zeroheight.com | 70 C | 86.1 B | v27 FAIL to SKIP: the 11px came from `.soai-kicker`, reached from `selecta)` in the rule before; the page has no field, and the FAIL had pulled accessibility under 60%, which caps a score at 70 |
-| notion.so | 65.5 D | 68.3 D | v27 FAIL to PASS: the 12px came from a placeholder rule reached from `user-select` in the rule before; its search field's floor now reads |
+| cohort site 1 | C | B (+16.1) | v27 FAIL to SKIP: an 11px caption rule was reached from a keyword in the rule before; the page has no field, and the FAIL had pulled accessibility under 60%, which caps a score at 70 |
+| cohort site 2 | D | D (+2.8) | v27 FAIL to PASS: a 12px placeholder rule was reached from `user-select` in the rule before; its search field's floor now reads |
 
-www.designesy.org stays 100 A. carbondesignsystem.com keeps its v27 FAIL
-(80.9 B). linear.app keeps its v27 FAIL at 70 C, with 8 sizes listed where it
-listed 9: the 12px it drops is `.wOrUyW_groupHeading`, reached from
-`input-height` in the rule before. The other 24 are unchanged.
+designesy.org stays 100 A. A site with a real 14px number field keeps its v27
+FAIL, and a site whose v27 FAIL is real keeps it with one fewer size listed.
+The other 24 are unchanged. Third-party sites are not named here: the
+leaderboard publishes their scores, with dates, at its weekly re-score.
+
+Reproduce: score the URLs in `apps/site/app/leaderboard/seed.ts` with both
+builds of `packages/score` (`scoreUrl`, scope auto-detected), fetching each
+page once and passing the same bytes to both.
 
 ---
 
