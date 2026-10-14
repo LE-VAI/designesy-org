@@ -320,7 +320,7 @@
   height: 2.9rem;
   padding: 0 1rem;
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.78rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -355,7 +355,7 @@
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -364,7 +364,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
 }
 
 
@@ -383,7 +383,7 @@
 
 .vc-grid-head,
 .vc-label {
-  font: 500 0.66rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -411,7 +411,7 @@
 }
 
 .vc-row-label {
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -469,7 +469,7 @@
   justify-self: end;
   height: var(--vc-dlh);
   overflow: hidden;
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -612,7 +612,7 @@
   padding: 0.85rem 0;
   border-block: 1px solid var(--line-faint);
   list-style: none;
-  font: 400 0.78rem/1.25 var(--sans);
+  font: 400 var(--text-label)/1.25 var(--sans);
   color: var(--muted);
   animation-name: vc-gate;
 }
@@ -677,12 +677,12 @@
 
 .vc-log-line {
   display: grid;
-  /* 2.4rem and 0.6rem at the full 0.72rem size, as before. */
+  /* The id column and gap in em, so they track the label size (D68: 12.8px, the floor). */
   grid-template-columns: 3.3333em minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.8333em;
   height: var(--vc-lh);
-  font: 400 clamp(0.6rem, 100cqi / 34, 0.72rem)/1 var(--mono);
+  font: 400 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -698,7 +698,7 @@
 
 .vc-log-status {
   font-weight: 500;
-  font-size: 0.9167em; /* 0.66rem at full size; scales with its line */
+  font-size: 1em; /* the line's own size: the 12.8px floor (D68) */
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -841,27 +841,25 @@ html[data-motion="paused"] .vc-glow {
   .vc-log { grid-column: 2; grid-row: 1 / span 2; }
   /* The log's room shrinks to a half pane (287px at 641) and then a phone's
      full pane (329px at 390), so the id column closes to the ids' own three
-     characters and the gaps to half an em: 1.99 + 1 + 2.49 + 25.66 =
-     31.14em, /32. Full labels at 10.3px on a 390 phone. */
+     characters and the gaps to half an em. The size holds at the 12.8px floor
+     (D68) rather than shrinking to fit; the longest labels ellipsize instead. */
   .vc-log-line {
     grid-template-columns: 3ch minmax(0, 1fr) auto;
     gap: 0.5em;
-    font-size: clamp(0.6rem, 100cqi / 32, 0.72rem);
+    font-size: var(--text-label);
   }
 }
 
-/* Where even that would fall under the 0.6rem floor (a log under 19.2rem:
-   the half pane from 641 to about 680, phones under about 367), the id goes
-   and the label and its status keep the line: 0.5 + 2.49 + 25.66 = 28.65em,
-   /29.5. Below a 283px log (a 320 phone) the floor binds and the longest
-   labels ellipsize. */
-@container (width < 19.2rem) {
+/* In a log under 25rem (tablets, the half pane and phones) the id goes, so the
+   label and its status keep the line at the 12.8px floor (D68); only the
+   longest labels ellipsize, on the narrowest phones. */
+@container (width < 25rem) {
   .vc-log-id {
     display: none;
   }
   .vc-log-line {
     grid-template-columns: minmax(0, 1fr) auto;
-    font-size: clamp(0.6rem, 100cqi / 29.5, 0.72rem);
+    font-size: var(--text-label);
   }
 }
 
@@ -883,10 +881,10 @@ html[data-motion="paused"] .vc-glow {
   .vc-bar-url { justify-self: end; }
   .vc-grid { padding: 1rem var(--vc-face-x) 1.1rem; }
   .vc-row {
-    grid-template-columns: 5.6rem minmax(0, 1fr) 1rem;
+    grid-template-columns: 6.9rem minmax(0, 1fr) 1rem;   /* "accessibility" at the 12.8px floor */
     gap: 0.5rem;
   }
-  .vc-row-label { font-size: 0.66rem; }
+  .vc-row-label { font-size: var(--text-label); }
   .vc-side {
     grid-template-columns: minmax(0, 1fr);
     padding: 1rem var(--vc-face-x) 1.1rem;

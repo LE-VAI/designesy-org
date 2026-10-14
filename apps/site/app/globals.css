@@ -13646,17 +13646,15 @@ button.rs-row:focus-visible {
     line-height: 1.35;
   }
 
-  /* -- Caps micro-labels: lift from ~9.9px to 11px and relax tracking from
-     0.14em to <= 0.12em so the "words" read as words, not letter strings.
-     11px is a deliberate concession at this weight (600) + tracking below
-     the strict 12px caption floor, the minimum legible step for the
-     instrument register. -- */
+  /* -- Caps micro-labels at the label step, 12.8px: the floor for all text,
+     mono uppercase included (brand ledger D68). Tracking stays at <= 0.12em so
+     the "words" read as words, not letter strings. -- */
   .section-heading-badge-label {
-    font-size: 0.6875rem; /* 11px */
+    font-size: var(--text-label);
     letter-spacing: 0.11em;
   }
   .section-heading-badge-unit {
-    font-size: 0.6875rem; /* 11px */
+    font-size: var(--text-label);
   }
 }
 
