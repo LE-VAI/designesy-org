@@ -9,7 +9,7 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/verify-loop-poster.png">
-  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org: one cell per check, in one row per category, lights as each check runs while a log names it, and the verdict lands with the grade and the pass count. Recorded from an earlier contract version; the live console shows the current one.">
+  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org against contract v0.4.5. It opens on the verdict, grade A at 100% with 42 checks run, then runs again: one cell per check, in one row per category, lights as each of the 45 checks runs while a log names it, and the verdict lands again. Recorded from the homepage on 2026-10-13.">
 </picture>
 <p><sub>A 12-second loop, recorded from the homepage. It plays once and rests on the verdict, and shows a still frame if you prefer reduced motion. <a href="https://www.designesy.org/">Watch it run on designesy.org</a>.</sub></p>
 
