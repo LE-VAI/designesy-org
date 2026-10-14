@@ -7,7 +7,7 @@
 // APCA Lc is reported, never scored (the v06 precedent).
 
 import type { Binding } from '../bind';
-import { CONTRAST_FAIL_BELOW, CONTRAST_LARGE_PASS, CONTRAST_PASS } from '../formula';
+import { CONTRAST_FAIL_BELOW, CONTRAST_LARGE_PASS, CONTRAST_PASS, FIDELITY_DEFS } from '../formula';
 import { apcaLc, contrastRatio, hex6, parseColor } from '../normalize';
 import type { ContrastPair, Rgba8 } from '../types';
 import { result, skip, type Ctx, type CheckResultV2, type Evidence, type Status } from './common';
@@ -80,6 +80,8 @@ export function pairCheck(id: 'f09' | 'f10', ctx: Ctx, role: ContrastPair['role'
     { path: worst.pair.background, value: hex6(worst.background), ...(worst.bgVar && worst.mode === 'shipped' ? { where: [worst.bgVar] } : {}) },
   ];
   return result(id, ctx, worst.status, detail, {
+    // The fix names the ratio this pair needs: 4.5, or 3 for large text.
+    remediation: FIDELITY_DEFS.find((d) => d.id === id)!.fix.replace('{need}', worst.need === 3 ? '3' : '4.5'),
     declared,
     shipped,
     evidence: {

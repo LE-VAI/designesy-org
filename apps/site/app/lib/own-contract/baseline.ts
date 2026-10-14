@@ -34,6 +34,13 @@ export const BASELINE_STATIC_MAX = Object.values(BASELINE_GROUPS).filter((g) => 
 /** The accessibility floor, as the legacy engine applies it. */
 export const BASELINE_FLOOR = { group: 'accessibility', below: 0.6, cap: 70 };
 
+/**
+ * No A while any baseline check fails: the URL engine's rule since engine
+ * 1.3.0 (owner decision 2026-10-11), applied to this layer too (owner
+ * decision 2026-10-14). After the floor; the lower registry ceilings win.
+ */
+export const BASELINE_ANY_FAIL_CAP = 89.9;
+
 export const BASELINE_GROUP_OF: Record<string, string> = Object.fromEntries(
   Object.entries(BASELINE_GROUPS).flatMap(([g, v]) => v.checks.map((id) => [id, g])),
 );

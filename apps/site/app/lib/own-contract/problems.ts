@@ -94,6 +94,53 @@ const EXAMPLES: Record<string, string> = {
 /** Problem fields a builder takes; `value` may be any offending value (it is clipped to text). */
 type Extra = Omit<Problem, 'code' | 'severity' | 'message' | 'value'> & { value?: unknown };
 
+/** A linter sentence without its final full stop, so the template adds one. */
+const noStop = (s: string) => s.replace(/\.+$/, '');
+
+/** The word a VALUE_INVALID message uses for each value kind. */
+const KIND_WORDS: Record<string, string> = { color: 'color', dimension: 'dimension', duration: 'duration', cubicBezier: 'curve', fontFamily: 'font family', typography: 'text style' };
+
+/** Scripts named in CONFUSABLE_NAME, tested in order (fixed patterns, never built from input). */
+const SCRIPTS: Array<[string, RegExp]> = [
+  ['Cyrillic', /\p{Script=Cyrillic}/u],
+  ['Greek', /\p{Script=Greek}/u],
+  ['Armenian', /\p{Script=Armenian}/u],
+  ['Cherokee', /\p{Script=Cherokee}/u],
+  ['Hebrew', /\p{Script=Hebrew}/u],
+  ['Arabic', /\p{Script=Arabic}/u],
+  ['Han', /\p{Script=Han}/u],
+  ['Hiragana', /\p{Script=Hiragana}/u],
+  ['Katakana', /\p{Script=Katakana}/u],
+  ['Hangul', /\p{Script=Hangul}/u],
+  ['Latin', /\p{Script=Latin}/u],
+];
+
+/** The Unicode script of one character ("Fullwidth Latin" for the U+FF01 to U+FF5E block). */
+export function scriptOf(ch: string): string {
+  const cp = ch.codePointAt(0) ?? 0;
+  for (const [name, re] of SCRIPTS) {
+    if (re.test(ch)) return name === 'Latin' && cp >= 0xff01 && cp <= 0xff5e ? 'Fullwidth Latin' : name;
+  }
+  return 'Common';
+}
+
+/**
+ * One CONFUSABLE_NAME warning per lookalike character in `name`, from v36's
+ * per-string helper: the character, its script, its code point (hex), its
+ * 1-based position in the name (counted in characters), and its Latin
+ * counterpart when the confusable table names one.
+ */
+export function confusableWarnings(name: string, hits: Array<{ char: string; pos: number; ascii?: string }>): Problem[] {
+  return hits.map((h) => warning('CONFUSABLE_NAME', {
+    path: name,
+    char: h.char,
+    script: scriptOf(h.char),
+    codePoint: (h.char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0'),
+    position: [...name.slice(0, h.pos)].length + 1,
+    ...(h.ascii ? { latin: h.ascii } : {}),
+  }));
+}
+
 /** Build an error problem with the engine's sentence for its code. */
 export function problem(code: string, extra: Extra = {}): Problem {
   return { code, severity: 'error', message: messageFor(code, extra), ...withClippedValue(extra) };
@@ -126,25 +173,21 @@ export function messageFor(code: string, p: Extra | Problem): string {
       return `The file is not valid JSON: ${value || 'parser error'} (line ${p.line ?? '?'}, column ${p.column ?? '?'}).`;
     case 'NO_TOKENS_FOUND':
       return 'No tokens found. A DESIGN.md keeps its tokens in YAML front matter between --- lines.';
-    case 'TOKENS_IN_PROSE': {
-      const lead = 'Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.';
-      const parts: string[] = [];
-      if (p.colorRows) parts.push(`${p.colorRows} color ${p.colorRows === 1 ? 'row' : 'rows'} under Colors${p.colorLines ? ` (lines ${p.colorLines[0]} to ${p.colorLines[1]})` : ''}`);
-      if (p.typeRows) parts.push(`${p.typeRows} text ${p.typeRows === 1 ? 'style' : 'styles'} under Typography${p.typeLines ? ` (lines ${p.typeLines[0]} to ${p.typeLines[1]})` : ''}`);
-      const found = parts.length ? ` Found ${parts.join(' and ')}.` : '';
-      const keys = p.keys && p.keys.length ? ` The front matter holds only ${p.keys.map((k) => clipValue(k)).join(', ')}.` : '';
-      return lead + found + keys;
-    }
+    case 'TOKENS_IN_PROSE':
+      // The approved sentence (brand D75 wording). The counts, line ranges and
+      // front-matter keys ride as fields (colorRows, colorLines, typeRows,
+      // typeLines, keys) for the page's second paragraph.
+      return 'Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.';
     case 'DUPLICATE_SECTION':
       return `The heading "${clipValue(p.heading ?? '')}" appears twice. The DESIGN.md format allows each section once, so merge the two and run it again.`;
     case 'LINT_ERROR':
-      return `${path}: ${value || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
+      return `${path}: ${noStop(value) || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
     case 'LINT_WARNING':
-      return `${path}: ${value || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
+      return `${path}: ${noStop(value) || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
     case 'TOKEN_DROPPED':
       return `${path} is declared, but its value didn't survive reading (${REASON_WORDS[p.reason ?? 'unknown']}), so it was left out. Give it a literal value or a reference that resolves, then run it again.`;
     case 'VALUE_INVALID':
-      return `${path}: "${value}" is not a valid ${p.kind ?? 'value'}.${p.kind && EXAMPLES[p.kind] ? ` Use a form like ${EXAMPLES[p.kind]}.` : ''}`;
+      return `${path}: "${value}" is not a valid ${KIND_WORDS[p.kind ?? ''] ?? p.kind ?? 'value'}.${p.kind && EXAMPLES[p.kind] ? ` Use a form like ${EXAMPLES[p.kind]}.` : ''}`;
     case 'ALIAS_UNRESOLVED':
       return `${path}: the reference ${p.ref ?? ''} points to a token that doesn't exist. Check the name, or declare that token.`;
     case 'ALIAS_CYCLE':
@@ -168,16 +211,23 @@ export function messageFor(code: string, p: Extra | Problem): string {
       const why =
         p.why === 'http_error' ? `the server answered HTTP ${p.status ?? 'error'}`
           : p.why === 'timeout' ? 'the request timed out'
-            : p.why === 'content_type' ? `it served ${value || 'an unsupported type'}; use a text or JSON file`
-              : p.why === 'too_large' ? 'the file is larger than 256 KB'
+            : p.why === 'content_type' ? 'the file type is not one scoring reads'
+              : p.why === 'too_large' ? 'the read was cut off'
                 : p.why === 'blocked' ? 'the address is not a public web address'
                   : 'the request failed at the network level';
-      return `We could not fetch your contract from ${p.url ? clipValue(p.url) : 'that address'}: ${why}.`;
+      // The approved additions, by reason.
+      const add =
+        p.why === 'http_error' && (p.status === 401 || p.status === 403) ? ' Check the link opens without signing in.'
+          : p.why === 'too_large' ? ' The file is larger than 256 KB.'
+            : p.why === 'content_type' ? ` It served ${value || 'another type'}; use a text or JSON file.`
+              : '';
+      return `We could not fetch your contract from ${p.url ? clipValue(p.url) : 'that address'}: ${why}.${add}`;
     }
     case 'contract_too_large':
       return `This contract is ${sizeWords(p.count ?? MAX_CONTRACT_BYTES + 1)}. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.`;
     case 'NO_TYPE':
-      return `${path} has no $type and none to inherit, so it was left out. Add a "$type" to it or to its group.`;
+      // Owner-approved template (2026-10-14).
+      return `${path} has no $type, so it was skipped: the DTCG format doesn't let scoring guess a type. Add "$type": "color" (or "dimension", "duration", and so on) to the token or its group.`;
     case 'LEGACY_COLOR_STRING':
       return `${path} uses an older colour string. It was read as ${value}. The 2025.10 format prefers a colour object.`;
     case 'COLOR_SPACE_UNSUPPORTED':
@@ -185,7 +235,9 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'DIMENSION_ROLE_UNKNOWN':
       return `${path}: scoring couldn't tell what this size is for (spacing, radius or type), so it isn't used in role-specific checks.`;
     case 'CONFUSABLE_NAME':
-      return `${path} contains a character that looks like ASCII ${value ? `"${value}"` : ''} but is not. If it is meant to be a plain name, retype it.`;
+      // Owner-approved template (2026-10-14). The Latin clause is dropped when
+      // the confusable table names no Latin counterpart for the character.
+      return `${path} contains a lookalike character: "${p.char ?? ''}" (${p.script ?? 'Unknown'}, U+${p.codePoint ?? '????'}) at position ${p.position ?? '?'}${p.latin ? `, where a Latin "${p.latin}" is expected` : ''}. Retype the name so it uses only the characters you mean.`;
     default:
       return `${path}: ${value || code}`;
   }

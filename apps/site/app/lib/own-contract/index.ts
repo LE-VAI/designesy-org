@@ -10,7 +10,7 @@ import { detectFormat } from './detect';
 import { readDesignMd, type LintFn } from './design-md';
 import { readDtcg } from './dtcg';
 import { INTAKE_BUDGET_MS, MAX_CONTRACT_BYTES, MAX_TOKEN_MAP_ENTRIES, MIN_COLORS, MIN_TYPE_STYLES, TOKEN_MAP_NAME } from './limits';
-import { problem, warning } from './problems';
+import { confusableWarnings, problem } from './problems';
 import type { ContractFormat, GroupName, OwnContract, ParsedContract, Problem } from './types';
 
 export type { OwnContract, Problem } from './types';
@@ -136,7 +136,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
     const names = new Set<string>([...mappablePaths(p), ...tokenMap.values()]);
     for (const name of names) {
       const hits = opts.findConfusables(name);
-      if (hits.length) warnings.push(warning('CONFUSABLE_NAME', { path: name, value: hits.map((h) => h.ascii).join(', ') }));
+      warnings.push(...confusableWarnings(name, hits));
     }
   }
 

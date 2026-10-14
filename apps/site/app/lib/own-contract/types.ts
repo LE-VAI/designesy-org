@@ -128,8 +128,13 @@ export interface Problem {
   keys?: string[];
   /** COLOR_SPACE_UNSUPPORTED. */
   space?: string;
-  /** CONFUSABLE_NAME: the path it looks like. */
-  other?: string;
+  /** CONFUSABLE_NAME: the lookalike character, its script, its code point (hex, no prefix), its 1-based position in the name, and the Latin letter expected (absent when the table names none). */
+  char?: string;
+  script?: string;
+  /** Hex, upper case, at least four digits ("0430"); the message shows it as U+0430. */
+  codePoint?: string;
+  position?: number;
+  latin?: string;
   /** CONTRACT_URL_UNREACHABLE: the contract URL and the reason class. */
   url?: string;
   why?: 'network' | 'timeout' | 'http_error' | 'content_type' | 'too_large' | 'blocked';

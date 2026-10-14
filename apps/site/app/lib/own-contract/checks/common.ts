@@ -59,7 +59,9 @@ export function result(id: string, ctx: Ctx, status: Status, detail: string, ext
     derivedFrom: d.derivedFrom,
     ...extra,
   };
-  if (status !== 'PASS' && status !== 'SKIP') out.remediation = d.fix;
+  // A fix text with a placeholder (f09, f10: {need}) arrives filled in extra.remediation.
+  if (status !== 'PASS' && status !== 'SKIP') out.remediation = extra.remediation ?? d.fix;
+  else delete out.remediation;
   for (const k of ['declared', 'shipped'] as const) {
     const list = out[k];
     if (list && list.length > EVIDENCE_CAP) out[k] = list.slice(0, EVIDENCE_CAP);

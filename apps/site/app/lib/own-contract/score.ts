@@ -9,11 +9,12 @@
 // Fidelity: weights 20/18/16/14/12/8/6/6, then the ceilings (f09 FAIL caps at
 // 65, f10 FAIL at 70), no accessibility floor; fewer than 3 scored checks is
 // "no score" (too_few_checks). Baseline: groups of baseline.ts, the
-// accessibility floor (a group under 60% caps at 70), then the registry
+// accessibility floor (a group under 60% caps at 70), the any-FAIL cap
+// (89.9: no A while a baseline check fails), then the registry
 // ceilings of its checks (v25 at 75, v44 at 65). When a ceiling or the floor
 // lowers a score, uncappedScore carries the score before it (D6).
 
-import { BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_GROUP_OF, baselineCeilings } from './baseline';
+import { BASELINE_ANY_FAIL_CAP, BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_GROUP_OF, baselineCeilings } from './baseline';
 import { fmtRatio } from './checks/pairs';
 import { FIDELITY_CATEGORY, FIDELITY_CEILINGS, FIDELITY_WEIGHTS, MIN_SCORED_CHECKS } from './formula';
 
@@ -140,6 +141,14 @@ export function scoreBaseline(checks: ScorableCheck[]): LayerResult & { a11yFloo
   }
   let reason: string | null = a11yFloorApplied ? 'Accessibility checks average under 60%, which caps the baseline at 70.' : null;
   let ceilingApplied = false;
+  // No A while any baseline check fails (89.9), as the URL engine caps.
+  const failing = checks.filter((c) => c.status === 'FAIL').map((c) => c.id);
+  if (failing.length && score > BASELINE_ANY_FAIL_CAP) {
+    score = BASELINE_ANY_FAIL_CAP;
+    ceilingApplied = true;
+    const named = failing.length === 1 ? `${failing[0]} fails` : `${failing.slice(0, -1).join(', ')} and ${failing[failing.length - 1]} fail`;
+    reason = `A FAIL caps the grade at B: ${named}, and the baseline cannot exceed 89.9 while any check fails.`;
+  }
   for (const { check, cap } of baselineCeilings()) {
     const c = checks.find((x) => x.id === check);
     if (c?.status === 'FAIL' && score > cap) {

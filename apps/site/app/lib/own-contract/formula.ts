@@ -10,7 +10,7 @@
 // moves ENGINE_VERSION when a verdict can move.
 
 import { ENGINE_VERSION } from '../check-definitions';
-import { BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_IDS, BASELINE_STATIC_MAX, baselineCeilings, baselineTitle } from './baseline';
+import { BASELINE_ANY_FAIL_CAP, BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_IDS, BASELINE_STATIC_MAX, baselineCeilings, baselineTitle } from './baseline';
 
 export const FORMULA_VERSION = '1.0.0';
 export const FORMULA_DATE = '2026-10-14';
@@ -99,12 +99,12 @@ export const FIDELITY_DEFS: FidelityDef[] = [
     reads: { 'design.md': ['components.*.textColor', 'components.*.backgroundColor'], dtcg: ['$extensions org.designesy pairs'] },
     minimum: 'both colors of a pair located',
     criterion: 'Derived from v06 · passes at 4.5 to 1, or 3 to 1 for large text; other text from 3 to 1 up to 4.5 to 1 is a warning, not a pass · fails below 3 to 1 and caps fidelity at 65',
-    fix: 'Darken or lighten one color of the pair in your contract and in the shipped CSS.' },
+    fix: 'Darken or lighten one color of the pair in your contract and in the shipped CSS until the pair reaches {need} to 1.' },
   { id: 'f10', title: 'Your primary action pair meets contrast on shipped values', category: 'contrast', derivedFrom: ['v22'],
     reads: { 'design.md': ['components.button-primary'], dtcg: ['$extensions org.designesy pairs (role primary-action)'] },
     minimum: 'both colors of the pair located',
     criterion: 'Derived from v22 · passes at 4.5 to 1, or 3 to 1 for large text; other text from 3 to 1 up to 4.5 to 1 is a warning, not a pass · fails below 3 to 1 and caps fidelity at 70',
-    fix: 'Darken or lighten one color of the pair in your contract and in the shipped CSS.' },
+    fix: 'Darken or lighten one color of the pair in your contract and in the shipped CSS until the pair reaches {need} to 1.' },
   { id: 'f11', title: 'Shipped durations and easings are in your contract', category: 'motion', derivedFrom: ['v23'],
     reads: { 'design.md': ['not in the DESIGN.md format'], dtcg: ['duration tokens', 'cubicBezier tokens', 'transition tokens'] },
     minimum: '2 distinct shipped durations',
@@ -164,6 +164,7 @@ export function ownContractFormula() {
       groups: BASELINE_GROUPS,
       staticMaximum: BASELINE_STATIC_MAX,
       floor: BASELINE_FLOOR,
+      anyFailCap: BASELINE_ANY_FAIL_CAP,
       ceilings: baselineCeilings(),
       note: 'The baseline reads no contract. It differs from the leaderboard number, which runs every check plus the slop deduction and the originality lift.',
     },

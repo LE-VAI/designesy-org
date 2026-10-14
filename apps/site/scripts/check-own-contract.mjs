@@ -290,8 +290,8 @@ await check('DM-3e tokens only in tables (probe P9): TOKENS_IN_PROSE with rows, 
   assert.equal(p.typeRows, 6);
   assert.deepEqual(p.typeLines, [30, 35]);
   assert.ok(p.keys.includes('name'));
-  assert.ok(p.message.startsWith('Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them.'));
-  assert.ok(p.message.includes('Found 14 color rows under Colors (lines 11 to 24) and 6 text styles under Typography (lines 30 to 35).'));
+  // The approved sentence, word for word; the counts ride as fields.
+  assert.equal(p.message, 'Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.');
 });
 await check('DM-4 omitted sections: recorded by group with their reason', async () => {
   const c = accepted(await readFix('DM-4.md'));
@@ -308,6 +308,27 @@ await check('DM-6 confusable token name: accepted with CONFUSABLE_NAME', async (
   assert.equal(w.length, 1);
   assert.equal(w[0].path, 'colors.pаper');
   assert.equal(w[0].severity, 'warning');
+  // The owner-approved payload: character, script, code point, 1-based position, Latin counterpart.
+  assert.equal(w[0].char, 'а');
+  assert.equal(w[0].script, 'Cyrillic');
+  assert.equal(w[0].codePoint, '0430');
+  assert.equal(w[0].position, 9);
+  assert.equal(w[0].latin, 'a');
+  assert.equal(w[0].message, 'colors.pаper contains a lookalike character: "а" (Cyrillic, U+0430) at position 9, where a Latin "a" is expected. Retype the name so it uses only the characters you mean.');
+});
+await check('CONFUSABLE_NAME with no Latin counterpart in the table drops the Latin clause', async () => {
+  // A helper whose table has no Latin letter for the character (v36's table
+  // names one for every entry today; the message must still read right).
+  const noLatin = (s) => [...s].flatMap((ch, pos) => (ch === 'ж' ? [{ char: ch, pos, ascii: '' }] : []));
+  const doc = fixture('DM-2.md').replace('  accent:', '  жaccent:');
+  const c = accepted(await oc.readContract({ content: doc }, { lint, findConfusables: noLatin }));
+  const [w] = c.problems.filter((p) => p.code === 'CONFUSABLE_NAME');
+  assert.deepEqual([w.char, w.script, w.codePoint, w.position, 'latin' in w], ['ж', 'Cyrillic', '0436', 8, false]);
+  assert.equal(w.message, 'colors.жaccent contains a lookalike character: "ж" (Cyrillic, U+0436) at position 8. Retype the name so it uses only the characters you mean.');
+  const full = problems.confusableWarnings('aｂc', [{ char: 'ｂ', pos: 1, ascii: 'b' }])[0];
+  assert.deepEqual([full.script, full.codePoint, full.position, full.latin], ['Fullwidth Latin', 'FF42', 2, 'b']);
+  const greek = problems.confusableWarnings('xο', [{ char: 'ο', pos: 1, ascii: 'o' }])[0];
+  assert.equal(greek.script, 'Greek');
 });
 await check('DM-7 reference loop: ALIAS_CYCLE with the chain; a token reaching it is TOKEN_DROPPED alias_cycle', async () => {
   const r = await readFix('DM-7.md');
@@ -331,6 +352,17 @@ await check('DM-10 invalid color and unit (probe P6): LINT_ERROR per path, not d
   const r = await readFix('DM-10.md');
   assert.deepEqual(only(r, 'LINT_ERROR').map((p) => p.path).sort(), ['colors.accent', 'rounded.big']);
   assert.equal(r.problems.filter((p) => p.code === 'TOKEN_DROPPED').length, 0);
+  for (const p of r.problems) assert.ok(!p.message.includes('..'), p.message);
+  assert.match(only(r, 'LINT_ERROR')[0].message, /\. The DESIGN\.md format's linter rejects this, so scoring can't read the file as written\.$/);
+});
+await check('O6 copy: the size, URL, value and section messages read as approved', () => {
+  const m = problems.messageFor;
+  assert.equal(m('contract_too_large', { count: 300 * 1024 }), 'This contract is 300 KB. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.');
+  assert.equal(m('CONTRACT_URL_UNREACHABLE', { url: 'https://x.example.com/D.md', why: 'http_error', status: 403 }), 'We could not fetch your contract from https://x.example.com/D.md: the server answered HTTP 403. Check the link opens without signing in.');
+  assert.equal(m('CONTRACT_URL_UNREACHABLE', { url: 'https://x.example.com/D.md', why: 'content_type', value: 'image/png' }), 'We could not fetch your contract from https://x.example.com/D.md: the file type is not one scoring reads. It served image/png; use a text or JSON file.');
+  assert.equal(m('VALUE_INVALID', { path: 'ease.out', value: 'bouncy', kind: 'cubicBezier' }), 'ease.out: "bouncy" is not a valid curve. Use a form like "cubic-bezier(0.2, 0, 0, 1)".');
+  assert.equal(m('DUPLICATE_SECTION', { heading: 'Colors' }), 'The heading "Colors" appears twice. The DESIGN.md format allows each section once, so merge the two and run it again.');
+  assert.equal(m('TOO_MANY_TOKENS', { count: 2001 }), 'Your contract declares 2001 tokens. Scoring reads up to 2,000 at once. Score the part your pages use, or split the file.');
 });
 await check('DM-11 tokens in a fenced yaml block: accepted', async () => {
   const c = accepted(await readFix('DM-11.md'));
@@ -418,6 +450,7 @@ await check('DT-7b $extends cycle: ALIAS_CYCLE over the groups', async () => {
 await check('DT-8 a token with no type to inherit: skipped with NO_TYPE, never guessed', async () => {
   const c = accepted(await readFix('DT-8.json'));
   assert.ok(c.problems.some((p) => p.code === 'NO_TYPE' && p.path === 'loose.thing'));
+  assert.equal(c.problems.find((p) => p.code === 'NO_TYPE').message, 'loose.thing has no $type, so it was skipped: the DTCG format doesn\'t let scoring guess a type. Add "$type": "color" (or "dimension", "duration", and so on) to the token or its group.');
   assert.ok(![...c.radii, ...c.spacing, ...c.sizes].some((t) => t.path === 'loose.thing'));
 });
 await check('DT-9 groups named __proto__ and constructor: plain names, no prototype change', async () => {
@@ -757,6 +790,14 @@ for (const name of EOL_FIXTURES) {
     }
   });
 }
+await check('a CRLF and an LF copy of the same contract hash identically (contract digest)', async () => {
+  for (const name of ['DM-1.md', 'DM-4.md', 'acme-design.md', 'DT-1.json', 'acme-tokens.json']) {
+    const lfDigest = accepted(await read(fixture(name))).digest;
+    const crlfDigest = accepted(await read(asCrlf(fixture(name)))).digest;
+    assert.match(lfDigest, /^[0-9a-f]{64}$/);
+    assert.equal(crlfDigest, lfDigest, `${name}: the CRLF copy hashes differently`);
+  }
+});
 await check('a CRLF contract reports the size the caller sent, and every format is detected the same way', async () => {
   const text = fixture('DM-2.md');
   const crlf = accepted(await read(asCrlf(text)));
@@ -1013,6 +1054,17 @@ await check('f10 primary action pair: 5.61 PASS, 3.76 WARN, 2.43 FAIL on shipped
   assert.equal(f.evidence.findings[0].ratio, 2.43);
   assert.equal(f.declared.find((e) => e.path === 'colors.accent').value, '#0055FF');
   assert.equal(f.shipped.find((e) => e.path === 'colors.accent').value, '#7DA4FF');
+  // The brand's fix text, filled with the ratio this pair needs.
+  assert.equal(f.remediation, 'Darken or lighten one color of the pair in your contract and in the shipped CSS until the pair reaches 4.5 to 1.');
+});
+await check('f09 and f10 fix text names the ratio the pair needs: 3 to 1 for large text; none on a pass', async () => {
+  const big = md(`colors:\n  ink: "#cccccc"\n  paper: "#FFFFFF"\n  dark: "#111111"\ntypography:\n  display:\n    fontFamily: Inter\n    fontSize: 48px\ncomponents:\n  hero:\n    backgroundColor: "{colors.paper}"\n    textColor: "{colors.ink}"\n    typography: "{typography.display}"`);
+  const c = await st('f09', big, ':root { --color-ink: #cccccc; --color-paper: #fff; --color-dark: #111 }');
+  expectStatus(c, 'FAIL');
+  assert.equal(c.remediation, 'Darken or lighten one color of the pair in your contract and in the shipped CSS until the pair reaches 3 to 1.');
+  const pass = await st('f10', C_BASE, ':root { --color-accent: #0055ff; --color-paper: #fff }');
+  assert.equal(pass.remediation, undefined);
+  assert.ok(formula.FIDELITY_DEFS.find((d) => d.id === 'f09').fix.endsWith('until the pair reaches {need} to 1.'));
 });
 await check('f10 SKIP not_declared when the contract names no primary action pair', async () => {
   expectStatus(await st('f10', PAL10, ':root { --color-c0: #101010 }'), 'SKIP', 'not_declared');
@@ -1143,6 +1195,27 @@ await check('ceilings: f09 FAIL caps at 65, f10 at 70, the lower wins; never rai
   const low = score.scoreFidelity(fid({ ...all('FAIL'), f01: 'PASS', f10: 'FAIL' }));
   assert.equal(low.ceilingApplied, false, 'a score already under the cap is not capped');
   assert.equal(low.uncappedScore, null);
+});
+await check('baseline: no A while any check fails; a baseline that would be 95 with one FAIL scores 89.9', () => {
+  const allPass = Object.fromEntries(Object.keys(STATE4_BASE).map((k) => [k, k === 'v02' || k === 'v21' ? 'MANUAL' : 'PASS']));
+  // One copywriting FAIL: 8/3 of 57 points lost, 95.3 before the cap.
+  const one = score.scoreBaseline(base({ ...allPass, v38: 'FAIL' }));
+  assert.equal(one.uncappedScore, 95.3);
+  assert.equal(one.score, 89.9);
+  assert.equal(one.grade, 'B');
+  assert.equal(one.ceilingApplied, true);
+  assert.equal(one.ceilingReason, 'A FAIL caps the grade at B: v38 fails, and the baseline cannot exceed 89.9 while any check fails.');
+  const two = score.scoreBaseline(base({ ...allPass, v38: 'FAIL', v11: 'FAIL' }));
+  assert.equal(two.score, 89.9);
+  assert.match(two.ceilingReason, /v11 and v38 fail|v38 and v11 fail/);
+  // WARNs alone never cap; a FAIL under 89.9 is not raised or capped; the lower ceilings still win.
+  const warns = score.scoreBaseline(base({ ...allPass, v38: 'WARN' }));
+  assert.equal(warns.score, 97.7);
+  assert.equal(warns.ceilingApplied, false);
+  assert.equal(score.scoreBaseline(base(STATE4_BASE)).score, 74.0);
+  assert.equal(score.scoreBaseline(base({ ...allPass, v44: 'FAIL' })).score, 65.0);
+  assert.equal(score.scoreBaseline(base({ ...allPass, v25: 'FAIL' })).score, 75.0);
+  assert.equal(formula.ownContractFormula().baseline.anyFailCap, 89.9);
 });
 await check('baseline: the accessibility floor (under 60% caps at 70), v25 at 75, v44 at 65; MANUAL left out', () => {
   const allPass = Object.fromEntries(Object.keys(STATE4_BASE).map((k) => [k, k === 'v02' || k === 'v21' ? 'MANUAL' : 'PASS']));
