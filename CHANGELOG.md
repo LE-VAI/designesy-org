@@ -6,6 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.4.2 and @designesy/score 0.9.2** (npm, not yet published). v46
+reads the size inside the `font` shorthand. No check is added, no weight or
+ceiling moves, and contract v0.4.6 is unchanged. The hosted /score page and
+API change when the site deploys. The PyPI server's offline engine does not
+run v46 (listed as not ported), so it mirrors 1.4.2 unchanged.
+
+### Fixed (engine 1.4.2)
+
+- **v46 reads the `font` shorthand.** 1.4.0 read only `font-size`, so a size
+  written as `font: 500 0.66rem/1 var(--mono)` was never judged. designesy.org's
+  own hero console sat at 8.8 to 12.5px under its 12.8px floor that way, found
+  by measuring the rendered page, not by v46. The size is the first token that
+  is a length, a size keyword or a size function, ahead of the line-height
+  slash and the family; a weight (`500`) has no unit and a family is no
+  length, so neither is taken. System font keywords (`caption`, `menu`…) and
+  CSS-wide keywords (`inherit`) carry no measurable size and are skipped, as is
+  a whole-shorthand `var()` the `:root` tokens cannot resolve. A `font:` inside
+  an `@supports` condition is not a declaration and swallows no rule after it.
+  `font-size` is read exactly as in 1.4.0, custom properties such as
+  `--chip-font-size` included; `font-family`, `font-weight` and `--icon-font`
+  are not the shorthand.
+
+### Measured (engine 1.4.2)
+
+The calibration corpus and the offline golden give the same verdicts under
+1.4.1 and 1.4.2 (no fixture uses the shorthand under a type scale). The 30
+leaderboard URLs and www.designesy.org, each fetched once on 2026-10-14 and
+scored by both builds of the npm engine on the same bytes (offline: v37
+pinned SKIP on both; 28 fetched, three did not answer): **no score or grade
+moves**. v46 stays WARN wherever it WARNed. It measures more sizes on three
+sites and fewer on none, and two of them gain findings:
+
+| Site | Sizes measured | Under the floor | Off the scale |
+|---|---|---|---|
+| www.designesy.org | 324 → 381 | 0 → 2 | 7 → 10 |
+| cohort site A | 1208 → 1220 | 3 → 4 | 75 → 75 |
+| cohort site B | 233 → 234 | 1 → 1 | 36 → 36 |
+
+designesy.org's five new findings are real and outside this change: two
+console numerals off the scale (1.2rem, 1.5rem), a 3.25rem readout, and an
+11.52px inspector label and a 10px log pin under the floor.
+
 **Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
 check stops failing pages on a word it read in the wrong rule, and one check
 is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6

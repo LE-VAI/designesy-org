@@ -2934,6 +2934,26 @@ function v46FluidFloor(value: string): number | null {
   return statics.length ? Math.max(...statics) : null;
 }
 
+// Engine 1.4.2: the `font` shorthand sets a size too, and 1.4.0 read only
+// `font-size`, so `font: 500 0.66rem/1 var(--mono)` sat outside the check. The
+// size is the first token that is a length, a size keyword or a size function,
+// ahead of the line-height slash and the family; a weight (500) has no unit and
+// a family name is no length, so neither is taken. A system font keyword
+// (caption, menu…) or a CSS-wide keyword sets no measurable size.
+const V46_FONT_SYSTEM = /^(?:caption|icon|menu|message-box|small-caption|status-bar|inherit|initial|unset|revert|revert-layer)$/i;
+const V46_SIZE_TOKEN = /^(?:\d*\.?\d+(?:[a-z]+|%)|(?:xx?-|xxx-)?(?:small|large)|medium|smaller|larger|(?:clamp|min|max|calc)\(.*\))$/i;
+
+/** The size written inside a `font` shorthand value, or null when it carries none. */
+function v46ShorthandSize(value: string, tokens: Record<string, string>): string | null {
+  const whole = resolveVar(value, tokens);                         // a whole-shorthand token alias
+  if (V46_FONT_SYSTEM.test(whole)) return null;
+  for (const part of splitCssTopLevel(whole.replace(/\//g, ' / ').replace(/\s+/g, ' '), ' ')) {
+    if (part === '/') return null;                                 // a slash before any size: not a shorthand v46 can read
+    if (V46_SIZE_TOKEN.test(resolveVar(part, tokens))) return part;
+  }
+  return null;
+}
+
 function v46Selector(css: string, at: number): string {
   const open = css.lastIndexOf('{', at);
   if (open < 0) return '';
@@ -2959,10 +2979,17 @@ function checkTypeScale(css: string, tokens: Record<string, string>): CheckResul
   };
   let judged = 0;
   let fluid = 0;
-  const re = /font-size\s*:\s*([^;}]+)/gi;
+  const re = /(font-size|(?<![\w-])font)\s*:\s*([^;}]+)/gi;     // engine 1.4.2: the shorthand too, never font-family or --x-font
   let m;
   while ((m = re.exec(css)) !== null) {
-    const written = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
+    const declared = m[2].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
+    const shorthand = m[1].toLowerCase() === 'font';
+    if (shorthand) {
+      re.lastIndex = m.index + m[1].length;                        // rescan its value: a shorthand match must not swallow a font-size after it
+      if (/[{}]/.test(declared)) continue;                         // `@supports (font: -apple-system-body) and …{` is a condition, not a declaration
+    }
+    const written = shorthand ? v46ShorthandSize(declared, tokens) : declared;
+    if (written === null) continue;
     const value = resolveVar(written, tokens);
     if (/^var\(/i.test(value)) continue;                            // an alias the token table cannot resolve
     if (/^(?:clamp|min|max)\(/i.test(value) && V46_FLUID.test(value)) {

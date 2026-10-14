@@ -215,5 +215,8 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      longer carries into the next rule); v37 is named
  *                      "DESIGN.md format lint". No check added, no weight or
  *                      ceiling moved. The CHANGELOG entry lists what moves.
+ *   1.4.2  2026-10-14  v46 reads the size inside the font shorthand
+ *                      (font: 500 0.66rem/1 var(--mono)), not only font-size.
+ *                      No check added, no weight or ceiling moved.
  */
-export const ENGINE_VERSION = '1.4.1';
+export const ENGINE_VERSION = '1.4.2';

@@ -719,6 +719,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard shows the new scores from its next weekly re-score. This site stays 100 A, and a real field under 16px still fails.',
     source: 'engine 1.4.1 entry in CHANGELOG.md; brand ledger D75 (the DESIGN.md format named in prose)',
   },
+
+  // ── v0.4.6 (engine 1.4.2): v46 reads the font shorthand ──
+  {
+    version: 'v0.4.6 · engine 1.4.2',
+    date: '2026-10-14',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.4.2: v46 reads the font shorthand',
+    description:
+      'v46 read only font-size, so a size set through the font shorthand, such as font: 500 0.66rem/1 var(--mono), sat outside the check. It now takes the size from the shorthand: the first length, size keyword or size function ahead of the line-height slash and the family. A weight has no unit and a family is no length, so neither is read as a size. System font keywords (caption, menu) and inherit set no measurable size and are skipped. font-size is read exactly as before.',
+    checks: ['v46'],
+    rationale:
+      "This site's own hero console was sized through the shorthand, down to 8.8px under a 12.8px floor, and v46 never saw it: the gap was found by measuring the rendered page. Measured on the leaderboard cohort on the same bytes, no score or grade moves (v46 WARNs, it never FAILs); v46 measures more sizes on three sites, this one included, fewer on none, and finds new sub-floor or off-scale sizes on two.",
+    source: 'engine 1.4.2 entry in CHANGELOG.md; brand ledger D68 (the 12.8px floor)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -753,6 +768,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
   { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.4.2', date: '2026-10-14', checks: 45, title: 'v46 reads the font shorthand', summary: 'v46 takes the size from font: as well as font-size, so a sub-floor size set through the shorthand is listed. No score moves. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {
