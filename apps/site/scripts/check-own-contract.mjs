@@ -1260,6 +1260,8 @@ await check('every baseline check carries a contractTitle with no Poise, Takt, w
   }
   assert.equal(defs.CHECKS.find((c) => c.id === 'v05').contractTitle, 'Reduced motion is honored');
   assert.equal(defs.CHECKS.find((c) => c.id === 'v09').contractTitle, 'Keyboard affordances are present');
+  // Since engine 1.4.1 v27 reads select and textarea too (brand copy, 2026-10-14).
+  assert.equal(defs.CHECKS.find((c) => c.id === 'v27').contractTitle, 'Form fields are at least 16px');
 });
 await check('legacy surfaces keep item; the registry count is unchanged', () => {
   assert.equal(defs.ENGINE_CHECK_COUNT, 45);
@@ -1513,6 +1515,7 @@ await check('request errors: 400 scope_conflict, 400 contract_shape, 400 format_
   needWired();
   const sc = await postScore({ url: 'shop.example.com', scope: 'contract', contract: { content: fixture('DM-2.md') } });
   assert.deepEqual([sc.status, sc.body.code], [400, 'scope_conflict']);
+  assert.equal(sc.body.error, 'Send either `scope: "contract"` or a contract in the request, not both.');
   const universal = await postScore({ url: 'shop.example.com', scope: 'universal', contract: { content: fixture('DM-2.md') } });
   assert.equal(universal.status, 200, 'scope universal is accepted and ignored');
   for (const bad of [{}, { content: 'a', url: 'https://x.example.com' }, { content: 5 }, { content: 'a', format: 'yaml' }, { content: 'a', tokenMap: [] }, 'text']) {
@@ -1629,6 +1632,8 @@ await check('the published formula route is static and serves the formula with i
   assert.equal(api.load('app/api/score/checks/own-contract/route.ts').dynamic, 'force-static');
   assert.deepEqual(f.intake.problem.reason.values, ['alias_unresolved', 'alias_cycle', 'alias_wrong_type', 'value_not_scalar', 'value_invalid', 'unit_unsupported', 'unknown']);
   assert.ok(f.intake.problem.fields.includes('chain') && f.intake.problem.fields.includes('reason'));
+  for (const k of ['char', 'script', 'codePoint', 'position', 'latin']) assert.ok(f.intake.problem.fields.includes(k), k);
+  assert.equal(f.baseline.anyFailCap, 89.9);
   assert.equal(f.intake.problem.valueMaxChars, 80);
   assert.equal(f.intake.rejected.code, 'contract_not_scoreable');
 });

@@ -178,7 +178,8 @@ export function ownContractFormula() {
       rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large') },
       warnings: WARNING_CODES,
       problem: {
-        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule'],
+        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
+        confusable: 'CONFUSABLE_NAME: one warning per lookalike character, with char, script, codePoint (hex), position (1-based) and latin (absent when the confusable table names no Latin counterpart).',
         valueMaxChars: MAX_VALUE_CHARS,
         chain: 'ALIAS_CYCLE: the loop as an ordered list of token paths, the first path repeated last.',
         reason: { code: 'TOKEN_DROPPED', values: DROP_REASONS },

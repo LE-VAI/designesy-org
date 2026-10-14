@@ -26,7 +26,10 @@ verdict, detail or score moves.
   `TOKEN_DROPPED` (a declared token the DESIGN.md format linter left out of
   its model) carries a `reason` from a closed list: `alias_unresolved`,
   `alias_cycle`, `alias_wrong_type`, `value_not_scalar`, `value_invalid`,
-  `unit_unsupported`, `unknown`. Problems are returned, never logged.
+  `unit_unsupported`, `unknown`. `CONFUSABLE_NAME` warnings carry the
+  character, its script, its code point, its 1-based position and the Latin
+  letter expected. A contract with CRLF or CR line endings reads exactly as
+  the same file with LF. Problems are returned, never logged.
 - **Fidelity, f01 to f14.** Mapped tokens ship their declared values; shipped
   colors, font sizes, families, line heights, radii and spacing sit in the
   contract; declared font features ship; declared text and background pairs,
@@ -40,8 +43,9 @@ verdict, detail or score moves.
 - **Baseline.** The universal checks that read no contract: v02, v03, v05, v07,
   v09, v11, v12, v21, v25, v27, v34, v35, v36, v38, v39, v40, v44 and v45,
   under the accessibility, keyboard, motion, copywriting, identity and
-  security groups (static maximum 57), with the accessibility floor and the
-  v25 and v44 ceilings. Each carries a customer-facing `contractTitle` in the
+  security groups (static maximum 57), with the accessibility floor, no A
+  while any baseline check fails (89.9, as the URL score caps), and the v25
+  and v44 ceilings. Each carries a customer-facing `contractTitle` in the
   check registry; legacy surfaces keep `item`.
 - **Coverage.** Every declared token located by the token map, by CSS variable
   name, or by value, with counts per group and a hint when under 20% is found.
