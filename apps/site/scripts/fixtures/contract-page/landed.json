@@ -1,0 +1,2395 @@
+{
+ "status": 200,
+ "retryAfter": null,
+ "body": {
+  "ok": true,
+  "mode": "own-contract",
+  "scope": "own-contract",
+  "contractVersion": "v0.4.6",
+  "engineVersion": "1.5.0",
+  "score": 0,
+  "grade": "F",
+  "fidelity": {
+   "scored": 8,
+   "total": 14,
+   "pass": 0,
+   "warn": 0,
+   "fail": 8,
+   "skip": 6,
+   "manual": 0,
+   "categoryScores": {
+    "tokens": {
+     "score": 0,
+     "weight": 14,
+     "pass": 0,
+     "warn": 0,
+     "fail": 2,
+     "skip": 1,
+     "manual": 0
+    },
+    "color": {
+     "score": 0,
+     "weight": 16,
+     "pass": 0,
+     "warn": 0,
+     "fail": 1,
+     "skip": 0,
+     "manual": 0
+    },
+    "typography": {
+     "score": 0,
+     "weight": 18,
+     "pass": 0,
+     "warn": 0,
+     "fail": 3,
+     "skip": 1,
+     "manual": 0
+    },
+    "shape": {
+     "score": 0,
+     "weight": 8,
+     "pass": 0,
+     "warn": 0,
+     "fail": 1,
+     "skip": 0,
+     "manual": 0
+    },
+    "spacing": {
+     "score": 0,
+     "weight": 12,
+     "pass": 0,
+     "warn": 0,
+     "fail": 1,
+     "skip": 0,
+     "manual": 0
+    },
+    "contrast": {
+     "score": null,
+     "weight": 20,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 2,
+     "manual": 0
+    },
+    "motion": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "targets": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    }
+   },
+   "score": 0,
+   "grade": "F",
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": null
+  },
+  "baseline": {
+   "scored": 16,
+   "total": 18,
+   "pass": 16,
+   "warn": 0,
+   "fail": 0,
+   "skip": 0,
+   "manual": 2,
+   "categoryScores": {
+    "responsive": {
+     "score": null,
+     "weight": 3,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "keyboard": {
+     "score": 100,
+     "weight": 13,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "motion": {
+     "score": 100,
+     "weight": 10,
+     "pass": 4,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "performance": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "accessibility": {
+     "score": 100,
+     "weight": 15,
+     "pass": 4,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "identity": {
+     "score": 100,
+     "weight": 6,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "security": {
+     "score": 100,
+     "weight": 5,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "copywriting": {
+     "score": 100,
+     "weight": 8,
+     "pass": 3,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    }
+   },
+   "score": 100,
+   "grade": "A",
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": null,
+   "a11yFloorApplied": false
+  },
+  "coverage": {
+   "declared": 11,
+   "located": 9,
+   "byMap": 0,
+   "byName": 6,
+   "byValue": 3,
+   "ratio": 0.818,
+   "groups": {
+    "colors": {
+     "declared": 4,
+     "located": 3,
+     "shippedCompared": 34
+    },
+    "typography": {
+     "declared": 2,
+     "located": 1,
+     "shippedCompared": 37
+    },
+    "radii": {
+     "declared": 2,
+     "located": 2,
+     "shippedCompared": 9
+    },
+    "spacing": {
+     "declared": 3,
+     "located": 3,
+     "shippedCompared": 52
+    },
+    "sizes": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "durations": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "easings": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    }
+   },
+   "notes": [],
+   "hint": null
+  },
+  "ownContract": {
+   "name": "Acme",
+   "format": "design.md",
+   "formatVersion": null,
+   "source": "inline",
+   "bytes": 263,
+   "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
+   "tokens": {
+    "colors": 4,
+    "typography": 1,
+    "radii": 2,
+    "spacing": 3,
+    "sizes": 0,
+    "durations": 0,
+    "easings": 0,
+    "pairs": 0,
+    "aliases": 0
+   },
+   "omitted": [],
+   "linter": {
+    "package": "@google/design.md",
+    "version": "0.4.0",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 1
+   },
+   "problems": []
+  },
+  "site": {
+   "requestedUrl": "https://www.designesy.org/",
+   "htmlBytes": 403858,
+   "cssBytes": 497640,
+   "stylesheetsFetched": 7,
+   "stylesheetsTotal": 7,
+   "stylesheetsTruncated": false
+  },
+  "checks": [
+   {
+    "id": "f01",
+    "item": "Mapped tokens ship their declared values",
+    "category": "tokens",
+    "status": "FAIL",
+    "detail": "3 of 6 tokens found by name ship their declared values; 3 differ: colors.ink declares #111418, --ink ships #f5f5f7; colors.surface declares #FFFFFF, --surface ships #0a0a0c; colors.muted declares #5B6170, --muted ships #a0a0a0",
+    "layer": "fidelity",
+    "reads": [
+     "tokens located by map or name"
+    ],
+    "derivedFrom": [
+     "v01"
+    ],
+    "declared": [
+     {
+      "path": "colors.ink",
+      "value": "#111418"
+     },
+     {
+      "path": "colors.surface",
+      "value": "#FFFFFF"
+     },
+     {
+      "path": "colors.muted",
+      "value": "#5B6170"
+     }
+    ],
+    "shipped": [
+     {
+      "path": "colors.ink",
+      "value": "#f5f5f7",
+      "where": [
+       "--ink"
+      ]
+     },
+     {
+      "path": "colors.surface",
+      "value": "#0a0a0c",
+      "where": [
+       "--surface"
+      ]
+     },
+     {
+      "path": "colors.muted",
+      "value": "#a0a0a0",
+      "where": [
+       "--muted"
+      ]
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "path": "colors.ink",
+       "declared": "#111418",
+       "shipped": "#f5f5f7",
+       "cssVar": "--ink"
+      },
+      {
+       "path": "colors.surface",
+       "declared": "#FFFFFF",
+       "shipped": "#0a0a0c",
+       "cssVar": "--surface"
+      },
+      {
+       "path": "colors.muted",
+       "declared": "#5B6170",
+       "shipped": "#a0a0a0",
+       "cssVar": "--muted"
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Set each CSS variable to the value your contract declares, or update the contract."
+   },
+   {
+    "id": "f02",
+    "item": "Shipped colors are in your palette",
+    "category": "color",
+    "status": "FAIL",
+    "detail": "14 of 34 shipped colors are in your palette (90% needed to pass). Outside it: #010102, #F5F5F7, #0A94FF, #A0A0A0, #36A7FF, #7D7D7D, #0A0A0C, #121216, #7AE4A1, #75E69E, #F8D859, #FBD84C, #F78989, #FA9292, #18181C, #16161B, #F87171, #4ADE80, #F56B00, #29A2FF and 13 more",
+    "layer": "fidelity",
+    "reads": [
+     "colors.*"
+    ],
+    "derivedFrom": [
+     "d03",
+     "d05"
+    ],
+    "shipped": [
+     {
+      "value": "#010102",
+      "where": [
+       "body",
+       ".button.primary",
+       ".row-check"
+      ],
+      "uses": 44
+     },
+     {
+      "value": "#F5F5F7",
+      "where": [
+       "body",
+       ".wordmark",
+       ".nav-links a:hover"
+      ],
+      "uses": 227
+     },
+     {
+      "value": "#0A94FF",
+      "where": [
+       ".wordmark-hero .dot",
+       ".scroll-progress-fill",
+       ".nav-links a:focus-visible"
+      ],
+      "uses": 216
+     },
+     {
+      "value": "#A0A0A0",
+      "where": [
+       ".nav-links a",
+       ".motion-toggle-row",
+       ".cmdk-trigger"
+      ],
+      "uses": 203
+     },
+     {
+      "value": "#36A7FF",
+      "where": [
+       ".motion-toggle-row[aria-pressed=true]",
+       ".button.primary:hover",
+       ".button.primary:after"
+      ],
+      "uses": 32
+     },
+     {
+      "value": "#7D7D7D",
+      "where": [
+       ".cmdk-trigger-kbd",
+       ".footer-meta",
+       ".footer-dock-label"
+      ],
+      "uses": 98
+     },
+     {
+      "value": "#0A0A0C",
+      "where": [
+       ".surface-card",
+       ".footer-dock",
+       ".principle"
+      ],
+      "uses": 49
+     },
+     {
+      "value": "#121216",
+      "where": [
+       ".flip-keys kbd",
+       ".footer-dock-pill",
+       ".surface-page .doctrine-section:is([id=verdict],[id=summary])>.definition.definition-split"
+      ],
+      "uses": 54
+     },
+     {
+      "value": "#7AE4A1",
+      "where": [
+       ".definition-side .row-side-chip[data-state=pass]",
+       ".row-side-chip[data-state=pass]",
+       ".check-cell-status.is-hold"
+      ],
+      "uses": 6
+     },
+     {
+      "value": "#75E69E",
+      "where": [
+       ".definition-side .row-side-chip[data-state=pass]",
+       ".row-side-chip[data-state=pass]",
+       ".check-cell-status.is-hold"
+      ],
+      "uses": 6
+     },
+     {
+      "value": "#F8D859",
+      "where": [
+       ".definition-side .row-side-chip[data-state=warn]",
+       ".row-side-chip[data-state=warn]",
+       ".check-cell-status.is-warn"
+      ],
+      "uses": 8
+     },
+     {
+      "value": "#FBD84C",
+      "where": [
+       ".definition-side .row-side-chip[data-state=warn]",
+       ".row-side-chip[data-state=warn]",
+       ".check-cell-status.is-warn"
+      ],
+      "uses": 8
+     },
+     {
+      "value": "#F78989",
+      "where": [
+       ".definition-side .row-side-chip[data-state=fail]",
+       ".row-side-chip[data-state=fail]",
+       ".check-cell-status.is-fail"
+      ],
+      "uses": 6
+     },
+     {
+      "value": "#FA9292",
+      "where": [
+       ".definition-side .row-side-chip[data-state=fail]",
+       ".row-side-chip[data-state=fail]",
+       ".check-cell-status.is-fail"
+      ],
+      "uses": 6
+     },
+     {
+      "value": "#18181C",
+      "where": [
+       ".check-cell.is-avoid:hover"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "#16161B",
+      "where": [
+       ".score-action-btn:hover",
+       ".topbar .topbar-inner:before",
+       ".senses-panel"
+      ],
+      "uses": 12
+     },
+     {
+      "value": "#F87171",
+      "where": [
+       ".report-error p",
+       ".vc-log-line.is-fail .vc-log-status",
+       ".score-url-dot.is-off"
+      ],
+      "uses": 24
+     },
+     {
+      "value": "#4ADE80",
+      "where": [
+       ".agent-action[data-copied=true]",
+       ".score-url-dot",
+       ".score-metric-tile.is-pass .score-metric-lbl,.score-metric-tile.is-pass .score-metric-val"
+      ],
+      "uses": 13
+     },
+     {
+      "value": "#F56B00",
+      "where": [
+       ".brand-icon .live",
+       ".row--listen.is-playing .listen-btn"
+      ],
+      "uses": 4
+     },
+     {
+      "value": "#29A2FF",
+      "where": [
+       ".home .field-card.is-featured"
+      ],
+      "uses": 1
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "value": "#010102",
+       "nearest": "colors.ink",
+       "nearestValue": "#111418",
+       "distance": 0.121,
+       "uses": 44,
+       "where": "body, .button.primary, .row-check"
+      },
+      {
+       "value": "#F5F5F7",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.029,
+       "uses": 227,
+       "where": "body, .wordmark, .nav-links a:hover"
+      },
+      {
+       "value": "#0A94FF",
+       "nearest": "colors.primary",
+       "nearestValue": "#1A5CFF",
+       "distance": 0.135,
+       "uses": 216,
+       "where": ".wordmark-hero .dot, .scroll-progress-fill, .nav-links a:focus-visible"
+      },
+      {
+       "value": "#A0A0A0",
+       "nearest": "colors.muted",
+       "nearestValue": "#5B6170",
+       "distance": 0.214,
+       "uses": 203,
+       "where": ".nav-links a, .motion-toggle-row, .cmdk-trigger"
+      },
+      {
+       "value": "#36A7FF",
+       "nearest": "colors.primary",
+       "nearestValue": "#1A5CFF",
+       "distance": 0.19,
+       "uses": 32,
+       "where": ".motion-toggle-row[aria-pressed=true], .button.primary:hover, .button.primary:after"
+      },
+      {
+       "value": "#7D7D7D",
+       "nearest": "colors.muted",
+       "nearestValue": "#5B6170",
+       "distance": 0.1,
+       "uses": 98,
+       "where": ".cmdk-trigger-kbd, .footer-meta, .footer-dock-label"
+      },
+      {
+       "value": "#0A0A0C",
+       "nearest": "colors.ink",
+       "nearestValue": "#111418",
+       "distance": 0.045,
+       "uses": 49,
+       "where": ".surface-card, .footer-dock, .principle"
+      },
+      {
+       "value": "#121216",
+       "nearest": "colors.ink",
+       "nearestValue": "#111418",
+       "distance": 0.007,
+       "uses": 54,
+       "where": ".flip-keys kbd, .footer-dock-pill, .surface-page .doctrine-section:is([id=verdict],[id=summary])>.definition.definition-split"
+      },
+      {
+       "value": "#7AE4A1",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.213,
+       "uses": 6,
+       "where": ".definition-side .row-side-chip[data-state=pass], .row-side-chip[data-state=pass], .check-cell-status.is-hold"
+      },
+      {
+       "value": "#75E69E",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.217,
+       "uses": 6,
+       "where": ".definition-side .row-side-chip[data-state=pass], .row-side-chip[data-state=pass], .check-cell-status.is-hold"
+      },
+      {
+       "value": "#F8D859",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.186,
+       "uses": 8,
+       "where": ".definition-side .row-side-chip[data-state=warn], .row-side-chip[data-state=warn], .check-cell-status.is-warn"
+      },
+      {
+       "value": "#FBD84C",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.193,
+       "uses": 8,
+       "where": ".definition-side .row-side-chip[data-state=warn], .row-side-chip[data-state=warn], .check-cell-status.is-warn"
+      },
+      {
+       "value": "#F78989",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.284,
+       "uses": 6,
+       "where": ".definition-side .row-side-chip[data-state=fail], .row-side-chip[data-state=fail], .check-cell-status.is-fail"
+      },
+      {
+       "value": "#FA9292",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.263,
+       "uses": 6,
+       "where": ".definition-side .row-side-chip[data-state=fail], .row-side-chip[data-state=fail], .check-cell-status.is-fail"
+      },
+      {
+       "value": "#18181C",
+       "nearest": "colors.ink",
+       "nearestValue": "#111418",
+       "distance": 0.021,
+       "uses": 2,
+       "where": ".check-cell.is-avoid:hover"
+      },
+      {
+       "value": "#16161B",
+       "nearest": "colors.ink",
+       "nearestValue": "#111418",
+       "distance": 0.014,
+       "uses": 12,
+       "where": ".score-action-btn:hover, .topbar .topbar-inner:before, .senses-panel"
+      },
+      {
+       "value": "#F87171",
+       "nearest": "colors.muted",
+       "nearestValue": "#5B6170",
+       "distance": 0.281,
+       "uses": 24,
+       "where": ".report-error p, .vc-log-line.is-fail .vc-log-status, .score-url-dot.is-off"
+      },
+      {
+       "value": "#4ADE80",
+       "nearest": "colors.surface",
+       "nearestValue": "#FFFFFF",
+       "distance": 0.27,
+       "uses": 13,
+       "where": ".agent-action[data-copied=true], .score-url-dot, .score-metric-tile.is-pass .score-metric-lbl,.score-metric-tile.is-pass .score-metric-val"
+      },
+      {
+       "value": "#F56B00",
+       "nearest": "colors.muted",
+       "nearestValue": "#5B6170",
+       "distance": 0.287,
+       "uses": 4,
+       "where": ".brand-icon .live, .row--listen.is-playing .listen-btn"
+      },
+      {
+       "value": "#29A2FF",
+       "nearest": "colors.primary",
+       "nearestValue": "#1A5CFF",
+       "distance": 0.175,
+       "uses": 1,
+       "where": ".home .field-card.is-featured"
+      }
+     ],
+     "truncated": 13
+    },
+    "remediation": "Replace each shipped value with the declared token."
+   },
+   {
+    "id": "f03",
+    "item": "Shipped font sizes are on your type scale",
+    "category": "typography",
+    "status": "FAIL",
+    "detail": "1 of 34 shipped sizes is on your scale. Off it: 12.8px in .motion-toggle-row-icon, 20px in .principle-body h3, 32px in .surface-title, 68px in .surface-title, 16.8px in .surface-lede",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontSize"
+    ],
+    "derivedFrom": [
+     "v16"
+    ],
+    "declared": [
+     {
+      "value": "16px"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "12.8px",
+      "where": [
+       ".motion-toggle-row-icon",
+       ".cmdk-kbd-mod,.cmdk-trigger-kbd",
+       ".status-badge"
+      ],
+      "uses": 189
+     },
+     {
+      "value": "20px",
+      "where": [
+       ".principle-body h3",
+       ".doctrine-heading",
+       ".lab-card-lede"
+      ],
+      "uses": 14
+     },
+     {
+      "value": "32px",
+      "where": [
+       ".surface-title",
+       ".home .home-title--section",
+       ".report-hero-value"
+      ],
+      "uses": 4
+     },
+     {
+      "value": "68px",
+      "where": [
+       ".surface-title"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "16.8px",
+      "where": [
+       ".surface-lede",
+       ".home .hero-sub"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "19.2px",
+      "where": [
+       ".surface-lede",
+       ".home .hero-sub"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "20.8px",
+      "where": [
+       ".lab-card-title"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "24.8px",
+      "where": [
+       ".lab-card-title"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "28.8px",
+      "where": [
+       ".demo-cell .poise-wordmark"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "44.8px",
+      "where": [
+       ".demo-cell .poise-wordmark",
+       ".vc-grade"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "17.6px",
+      "where": [
+       ".hero-sub"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "30px",
+      "where": [
+       ".section-title"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "44px",
+      "where": [
+       ".section-title",
+       ".report-hero-value"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "25.01px",
+      "where": [
+       ".field-card-title",
+       ".home-index-anchor .home-index-name",
+       ".inspect-step-title"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "37.6px",
+      "where": [
+       ".hero-display"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "78.4px",
+      "where": [
+       ".hero-display",
+       ".home .hero-display"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "28px",
+      "where": [
+       ".hero-display"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "51.2px",
+      "where": [
+       ".hero-display"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "15px",
+      "where": [
+       ".principle-body p"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "18.75px",
+      "where": [
+       ".principle-body h3"
+      ],
+      "uses": 1
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "value": "12.8px",
+       "uses": 189,
+       "where": ".motion-toggle-row-icon, .cmdk-kbd-mod,.cmdk-trigger-kbd, .status-badge"
+      },
+      {
+       "value": "20px",
+       "uses": 14,
+       "where": ".principle-body h3, .doctrine-heading, .lab-card-lede"
+      },
+      {
+       "value": "32px",
+       "uses": 4,
+       "where": ".surface-title, .home .home-title--section, .report-hero-value"
+      },
+      {
+       "value": "68px",
+       "uses": 2,
+       "where": ".surface-title"
+      },
+      {
+       "value": "16.8px",
+       "uses": 3,
+       "where": ".surface-lede, .home .hero-sub"
+      },
+      {
+       "value": "19.2px",
+       "uses": 3,
+       "where": ".surface-lede, .home .hero-sub"
+      },
+      {
+       "value": "20.8px",
+       "uses": 2,
+       "where": ".lab-card-title"
+      },
+      {
+       "value": "24.8px",
+       "uses": 2,
+       "where": ".lab-card-title"
+      },
+      {
+       "value": "28.8px",
+       "uses": 2,
+       "where": ".demo-cell .poise-wordmark"
+      },
+      {
+       "value": "44.8px",
+       "uses": 3,
+       "where": ".demo-cell .poise-wordmark, .vc-grade"
+      },
+      {
+       "value": "17.6px",
+       "uses": 1,
+       "where": ".hero-sub"
+      },
+      {
+       "value": "30px",
+       "uses": 1,
+       "where": ".section-title"
+      },
+      {
+       "value": "44px",
+       "uses": 2,
+       "where": ".section-title, .report-hero-value"
+      },
+      {
+       "value": "25.01px",
+       "uses": 3,
+       "where": ".field-card-title, .home-index-anchor .home-index-name, .inspect-step-title"
+      },
+      {
+       "value": "37.6px",
+       "uses": 1,
+       "where": ".hero-display"
+      },
+      {
+       "value": "78.4px",
+       "uses": 2,
+       "where": ".hero-display, .home .hero-display"
+      },
+      {
+       "value": "28px",
+       "uses": 1,
+       "where": ".hero-display"
+      },
+      {
+       "value": "51.2px",
+       "uses": 1,
+       "where": ".hero-display"
+      },
+      {
+       "value": "15px",
+       "uses": 1,
+       "where": ".principle-body p"
+      },
+      {
+       "value": "18.75px",
+       "uses": 1,
+       "where": ".principle-body h3"
+      }
+     ],
+     "truncated": 13
+    },
+    "remediation": "Use a declared size, or add the size to your type scale."
+   },
+   {
+    "id": "f04",
+    "item": "Shipped font families are in your contract",
+    "category": "typography",
+    "status": "FAIL",
+    "detail": "3 shipped families are not in your contract: Fraunces in .__className_5fcedc, Schibsted Grotesk in .__className_caefae, Atkinson Hyperlegible Mono in .__className_869df3",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontFamily"
+    ],
+    "derivedFrom": [
+     "v26"
+    ],
+    "declared": [
+     {
+      "value": "inter"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "Fraunces",
+      "where": [
+       ".__className_5fcedc"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "Schibsted Grotesk",
+      "where": [
+       ".__className_caefae"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "Atkinson Hyperlegible Mono",
+      "where": [
+       ".__className_869df3"
+      ],
+      "uses": 1
+     }
+    ],
+    "remediation": "Remove the extra family, or declare it in your contract."
+   },
+   {
+    "id": "f05",
+    "item": "Shipped line heights are in your contract",
+    "category": "typography",
+    "status": "FAIL",
+    "detail": "19 of 20 shipped line heights are not declared: 1.55 in body, 1.08 in h1,h2,h3,h4, 1 in .cmdk-trigger-label, 1.4 in .cmdk-trigger-kbd, 1.35 in .principle-body h3",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.lineHeight"
+    ],
+    "derivedFrom": [
+     "v17"
+    ],
+    "declared": [
+     {
+      "value": "1.5"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "1.55",
+      "where": [
+       "body",
+       ".status-note",
+       ".lab-card-desc"
+      ],
+      "uses": 23
+     },
+     {
+      "value": "1.08",
+      "where": [
+       "h1,h2,h3,h4",
+       ".section-title",
+       ".home .home-title"
+      ],
+      "uses": 9
+     },
+     {
+      "value": "1",
+      "where": [
+       ".cmdk-trigger-label",
+       ".nav-drawer-close-icon",
+       ".copy-prompt-btn"
+      ],
+      "uses": 17
+     },
+     {
+      "value": "1.4",
+      "where": [
+       ".cmdk-trigger-kbd",
+       ".surface-lede",
+       ".lab-card-lede"
+      ],
+      "uses": 14
+     },
+     {
+      "value": "1.35",
+      "where": [
+       ".principle-body h3",
+       ".demo-cell-label",
+       ".report-start h2"
+      ],
+      "uses": 11
+     },
+     {
+      "value": "1.6",
+      "where": [
+       ".principle-body p",
+       ".surface-note",
+       ".home .home-point"
+      ],
+      "uses": 7
+     },
+     {
+      "value": "1.02",
+      "where": [
+       ".surface-title",
+       ".hero-display"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "1.3",
+      "where": [
+       ".doctrine-heading",
+       ".copy-prompt-title",
+       ".principle-body h3"
+      ],
+      "uses": 7
+     },
+     {
+      "value": "16px",
+      "where": [
+       ".definition .definition-label,.definition-label",
+       ".definition-side dt",
+       ".row-copy-badge"
+      ],
+      "uses": 9
+     },
+     {
+      "value": "1.45",
+      "where": [
+       ".layer-desc,.row-meta",
+       ".score-output-side dd",
+       ".hero-sub"
+      ],
+      "uses": 9
+     },
+     {
+      "value": "1.38",
+      "where": [
+       ".check-cell-title"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "1.42",
+      "where": [
+       ".check-cell-meta",
+       ".score-verdict-line"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "1.2",
+      "where": [
+       ".nav-drawer .nav-drawer-group-list a",
+       ".ix-verdict-tally",
+       ".score-hero-actions .score-action-btn"
+      ],
+      "uses": 4
+     },
+     {
+      "value": "1.06",
+      "where": [
+       ".hero-display"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "1.1",
+      "where": [
+       ".home-index-anchor .home-index-name",
+       ".score-engine-tile-grade"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "0.9",
+      "where": [
+       ".vc-grade",
+       ".ix-verdict-grade"
+      ],
+      "uses": 2
+     },
+     {
+      "value": "1.12",
+      "where": [
+       ".inspect-step-title"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "1.15",
+      "where": [
+       ".eg-seg-opt"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "1.25",
+      "where": [
+       ".score-empty-run-title"
+      ],
+      "uses": 1
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "value": "1.55",
+       "uses": 23,
+       "where": "body, .status-note, .lab-card-desc"
+      },
+      {
+       "value": "1.08",
+       "uses": 9,
+       "where": "h1,h2,h3,h4, .section-title, .home .home-title"
+      },
+      {
+       "value": "1",
+       "uses": 17,
+       "where": ".cmdk-trigger-label, .nav-drawer-close-icon, .copy-prompt-btn"
+      },
+      {
+       "value": "1.4",
+       "uses": 14,
+       "where": ".cmdk-trigger-kbd, .surface-lede, .lab-card-lede"
+      },
+      {
+       "value": "1.35",
+       "uses": 11,
+       "where": ".principle-body h3, .demo-cell-label, .report-start h2"
+      },
+      {
+       "value": "1.6",
+       "uses": 7,
+       "where": ".principle-body p, .surface-note, .home .home-point"
+      },
+      {
+       "value": "1.02",
+       "uses": 3,
+       "where": ".surface-title, .hero-display"
+      },
+      {
+       "value": "1.3",
+       "uses": 7,
+       "where": ".doctrine-heading, .copy-prompt-title, .principle-body h3"
+      },
+      {
+       "value": "16px",
+       "uses": 9,
+       "where": ".definition .definition-label,.definition-label, .definition-side dt, .row-copy-badge"
+      },
+      {
+       "value": "1.45",
+       "uses": 9,
+       "where": ".layer-desc,.row-meta, .score-output-side dd, .hero-sub"
+      },
+      {
+       "value": "1.38",
+       "uses": 2,
+       "where": ".check-cell-title"
+      },
+      {
+       "value": "1.42",
+       "uses": 3,
+       "where": ".check-cell-meta, .score-verdict-line"
+      },
+      {
+       "value": "1.2",
+       "uses": 4,
+       "where": ".nav-drawer .nav-drawer-group-list a, .ix-verdict-tally, .score-hero-actions .score-action-btn"
+      },
+      {
+       "value": "1.06",
+       "uses": 1,
+       "where": ".hero-display"
+      },
+      {
+       "value": "1.1",
+       "uses": 2,
+       "where": ".home-index-anchor .home-index-name, .score-engine-tile-grade"
+      },
+      {
+       "value": "0.9",
+       "uses": 2,
+       "where": ".vc-grade, .ix-verdict-grade"
+      },
+      {
+       "value": "1.12",
+       "uses": 1,
+       "where": ".inspect-step-title"
+      },
+      {
+       "value": "1.15",
+       "uses": 1,
+       "where": ".eg-seg-opt"
+      },
+      {
+       "value": "1.25",
+       "uses": 1,
+       "where": ".score-empty-run-title"
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Use a declared line height for each text style."
+   },
+   {
+    "id": "f06",
+    "item": "Declared font features ship",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not declared: your contract has no font features, so f06 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontFeature"
+    ],
+    "derivedFrom": [
+     "v19"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f07",
+    "item": "Shipped corner radii are on your radius scale",
+    "category": "shape",
+    "status": "FAIL",
+    "detail": "2 of 9 shipped radii are on your radius scale. Off it: 6px in .motion-toggle-row, 3px in .status-badge, 999px in .definition-side .row-side-chip, 16px in .topbar .topbar-inner:before,.topbar .topbar-right:after,.topbar .topbar-right:before, 12px in .senses-panel",
+    "layer": "fidelity",
+    "reads": [
+     "rounded.*"
+    ],
+    "derivedFrom": [
+     "d07"
+    ],
+    "declared": [
+     {
+      "value": "4px"
+     },
+     {
+      "value": "8px"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "6px",
+      "where": [
+       ".motion-toggle-row",
+       ".button",
+       ".surface-card"
+      ],
+      "uses": 67
+     },
+     {
+      "value": "3px",
+      "where": [
+       ".status-badge",
+       ".footer-dock-clip::-webkit-scrollbar-thumb",
+       ".cmdk-list::-webkit-scrollbar-thumb"
+      ],
+      "uses": 7
+     },
+     {
+      "value": "999px",
+      "where": [
+       ".definition-side .row-side-chip",
+       ".row-side-chip",
+       ".check-cell-status"
+      ],
+      "uses": 21
+     },
+     {
+      "value": "16px",
+      "where": [
+       ".topbar .topbar-inner:before,.topbar .topbar-right:after,.topbar .topbar-right:before",
+       ".topbar .topbar-inner:after",
+       ".topbar .scroll-progress"
+      ],
+      "uses": 8
+     },
+     {
+      "value": "12px",
+      "where": [
+       ".senses-panel",
+       ".home .home-health",
+       ".vc-window"
+      ],
+      "uses": 21
+     },
+     {
+      "value": "2px",
+      "where": [
+       ".ix-reticle i",
+       ".rs-track>span",
+       ".rs-legend i"
+      ],
+      "uses": 3
+     },
+     {
+      "value": "99px",
+      "where": [
+       ".report-count"
+      ],
+      "uses": 1
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "value": "6px",
+       "uses": 67,
+       "where": ".motion-toggle-row, .button, .surface-card"
+      },
+      {
+       "value": "3px",
+       "uses": 7,
+       "where": ".status-badge, .footer-dock-clip::-webkit-scrollbar-thumb, .cmdk-list::-webkit-scrollbar-thumb"
+      },
+      {
+       "value": "999px",
+       "uses": 21,
+       "where": ".definition-side .row-side-chip, .row-side-chip, .check-cell-status"
+      },
+      {
+       "value": "16px",
+       "uses": 8,
+       "where": ".topbar .topbar-inner:before,.topbar .topbar-right:after,.topbar .topbar-right:before, .topbar .topbar-inner:after, .topbar .scroll-progress"
+      },
+      {
+       "value": "12px",
+       "uses": 21,
+       "where": ".senses-panel, .home .home-health, .vc-window"
+      },
+      {
+       "value": "2px",
+       "uses": 3,
+       "where": ".ix-reticle i, .rs-track>span, .rs-legend i"
+      },
+      {
+       "value": "99px",
+       "uses": 1,
+       "where": ".report-count"
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Use a declared radius token."
+   },
+   {
+    "id": "f08",
+    "item": "Shipped spacing is on your spacing scale",
+    "category": "spacing",
+    "status": "FAIL",
+    "detail": "49 of 52 shipped spacing values are off the scale: 12px, 2.4px, 6px, 10.4px, 8.8px, 9.6px",
+    "layer": "fidelity",
+    "reads": [
+     "spacing.*"
+    ],
+    "derivedFrom": [
+     "d04"
+    ],
+    "declared": [
+     {
+      "value": "8px"
+     },
+     {
+      "value": "16px"
+     },
+     {
+      "value": "24px"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "12px",
+      "where": [
+       ".topbar-right",
+       ".motion-toggle-row",
+       ".hero-actions"
+      ],
+      "uses": 196
+     },
+     {
+      "value": "2.4px",
+      "where": [
+       ".nav-links",
+       ".footer-dock-clip",
+       ".text-link"
+      ],
+      "uses": 14
+     },
+     {
+      "value": "6px",
+      "where": [
+       ".nav-links",
+       ".nav-drawer .nav-drawer-group-list a",
+       ".row-meta.open-package-paths"
+      ],
+      "uses": 36
+     },
+     {
+      "value": "10.4px",
+      "where": [
+       ".nav-links a",
+       ".button",
+       ".checkmark-list"
+      ],
+      "uses": 20
+     },
+     {
+      "value": "8.8px",
+      "where": [
+       ".cmdk-trigger",
+       "button.row",
+       ".layer-item,.row"
+      ],
+      "uses": 17
+     },
+     {
+      "value": "9.6px",
+      "where": [
+       ".cmdk-trigger",
+       ".status-badge",
+       ".footer-docks"
+      ],
+      "uses": 29
+     },
+     {
+      "value": "1px",
+      "where": [
+       ".cmdk-trigger-kbd",
+       ".sr-only",
+       ".surface-card:before"
+      ],
+      "uses": 49
+     },
+     {
+      "value": "4px",
+      "where": [
+       ".cmdk-trigger-kbd",
+       ".status-badge",
+       ".row>.row-side"
+      ],
+      "uses": 49
+     },
+     {
+      "value": "20px",
+      "where": [
+       ".button",
+       ".surface-card",
+       ".definition"
+      ],
+      "uses": 52
+     },
+     {
+      "value": "7.2px",
+      "where": [
+       ".surface-card",
+       ".principle-body h3",
+       ".field-card"
+      ],
+      "uses": 15
+     },
+     {
+      "value": "40px",
+      "where": [
+       ".footer",
+       ".status-note",
+       ".hero"
+      ],
+      "uses": 18
+     },
+     {
+      "value": "32px",
+      "where": [
+       ".footer",
+       ".definition",
+       ".doctrine-cols:has(>.definition)"
+      ],
+      "uses": 32
+     },
+     {
+      "value": "5.6px",
+      "where": [
+       ".footer-meta",
+       ".flip-keys",
+       ".footer-dock-pill"
+      ],
+      "uses": 25
+     },
+     {
+      "value": "1.92px",
+      "where": [
+       ".flip-keys kbd",
+       ".definition-side .row-side-chip",
+       ".row-side-chip"
+      ],
+      "uses": 12
+     },
+     {
+      "value": "6.4px",
+      "where": [
+       ".footer-dock-label",
+       ".footer-dock-track>*",
+       ".topbar-right"
+      ],
+      "uses": 22
+     },
+     {
+      "value": "4.8px",
+      "where": [
+       ".footer-dock-label",
+       ".footer-dock-pill",
+       ".docs-toc-list a"
+      ],
+      "uses": 17
+     },
+     {
+      "value": "1.6px",
+      "where": [
+       ".text-link",
+       ".score-action-btn",
+       ".score-signal-body"
+      ],
+      "uses": 7
+     },
+     {
+      "value": "6.72px",
+      "where": [
+       ".definition-side .row-side-chip",
+       ".row-side-chip",
+       ".check-cell-status"
+      ],
+      "uses": 6
+     },
+     {
+      "value": "28px",
+      "where": [
+       ".checkmark-list li",
+       ".lab-meta",
+       ".report-loading"
+      ],
+      "uses": 10
+     },
+     {
+      "value": "10px",
+      "where": [
+       ".surface-page .row-stack .row",
+       ".nav-drawer .nav-drawer-studio",
+       ".lab-card-side>div"
+      ],
+      "uses": 13
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "value": "12px",
+       "uses": 196,
+       "where": ".topbar-right, .motion-toggle-row, .hero-actions"
+      },
+      {
+       "value": "2.4px",
+       "uses": 14,
+       "where": ".nav-links, .footer-dock-clip, .text-link"
+      },
+      {
+       "value": "6px",
+       "uses": 36,
+       "where": ".nav-links, .nav-drawer .nav-drawer-group-list a, .row-meta.open-package-paths"
+      },
+      {
+       "value": "10.4px",
+       "uses": 20,
+       "where": ".nav-links a, .button, .checkmark-list"
+      },
+      {
+       "value": "8.8px",
+       "uses": 17,
+       "where": ".cmdk-trigger, button.row, .layer-item,.row"
+      },
+      {
+       "value": "9.6px",
+       "uses": 29,
+       "where": ".cmdk-trigger, .status-badge, .footer-docks"
+      },
+      {
+       "value": "1px",
+       "uses": 49,
+       "where": ".cmdk-trigger-kbd, .sr-only, .surface-card:before"
+      },
+      {
+       "value": "4px",
+       "uses": 49,
+       "where": ".cmdk-trigger-kbd, .status-badge, .row>.row-side"
+      },
+      {
+       "value": "20px",
+       "uses": 52,
+       "where": ".button, .surface-card, .definition"
+      },
+      {
+       "value": "7.2px",
+       "uses": 15,
+       "where": ".surface-card, .principle-body h3, .field-card"
+      },
+      {
+       "value": "40px",
+       "uses": 18,
+       "where": ".footer, .status-note, .hero"
+      },
+      {
+       "value": "32px",
+       "uses": 32,
+       "where": ".footer, .definition, .doctrine-cols:has(>.definition)"
+      },
+      {
+       "value": "5.6px",
+       "uses": 25,
+       "where": ".footer-meta, .flip-keys, .footer-dock-pill"
+      },
+      {
+       "value": "1.92px",
+       "uses": 12,
+       "where": ".flip-keys kbd, .definition-side .row-side-chip, .row-side-chip"
+      },
+      {
+       "value": "6.4px",
+       "uses": 22,
+       "where": ".footer-dock-label, .footer-dock-track>*, .topbar-right"
+      },
+      {
+       "value": "4.8px",
+       "uses": 17,
+       "where": ".footer-dock-label, .footer-dock-pill, .docs-toc-list a"
+      },
+      {
+       "value": "1.6px",
+       "uses": 7,
+       "where": ".text-link, .score-action-btn, .score-signal-body"
+      },
+      {
+       "value": "6.72px",
+       "uses": 6,
+       "where": ".definition-side .row-side-chip, .row-side-chip, .check-cell-status"
+      },
+      {
+       "value": "28px",
+       "uses": 10,
+       "where": ".checkmark-list li, .lab-meta, .report-loading"
+      },
+      {
+       "value": "10px",
+       "uses": 13,
+       "where": ".surface-page .row-stack .row, .nav-drawer .nav-drawer-studio, .lab-card-side>div"
+      }
+     ],
+     "truncated": 29
+    },
+    "remediation": "Use a declared spacing token for padding, margin and gap."
+   },
+   {
+    "id": "f09",
+    "item": "Declared text and background pairs meet contrast on shipped values",
+    "category": "contrast",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no text and background pairs, so f09 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "components.*.textColor",
+     "components.*.backgroundColor"
+    ],
+    "derivedFrom": [
+     "v06"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f10",
+    "item": "Your primary action pair meets contrast on shipped values",
+    "category": "contrast",
+    "status": "SKIP",
+    "detail": "Not declared: your contract names no primary action pair (a button-primary, button, primary-button or cta component with a text and a background color), so f10 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "components.button-primary"
+    ],
+    "derivedFrom": [
+     "v22"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f11",
+    "item": "Shipped durations and easings are in your contract",
+    "category": "motion",
+    "status": "SKIP",
+    "detail": "Does not apply: the DESIGN.md format has no motion group, so f11 did not run. Use DTCG tokens to declare durations.",
+    "layer": "fidelity",
+    "reads": [
+     "not in the DESIGN.md format"
+    ],
+    "derivedFrom": [
+     "v23"
+    ],
+    "skipReason": "not_applicable"
+   },
+   {
+    "id": "f12",
+    "item": "Interactive targets meet your declared minimum size",
+    "category": "targets",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no interactive size, so f12 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "components.*.height",
+     "components.*.size"
+    ],
+    "derivedFrom": [
+     "v24"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f13",
+    "item": "Declared aliases ship as variable references",
+    "category": "tokens",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no aliases, so f13 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "aliases in your contract"
+    ],
+    "derivedFrom": [
+     "v29"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f14",
+    "item": "Styles use your contract's tokens",
+    "category": "tokens",
+    "status": "FAIL",
+    "detail": "39% of color, spacing, radius and type declarations use a token (1373 of 3492)",
+    "layer": "fidelity",
+    "reads": [
+     "all located tokens"
+    ],
+    "derivedFrom": [
+     "token-vs-raw ratio"
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "declarations": 3492,
+       "usingTokens": 1373,
+       "share": 0.393
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Replace raw values with var() references to your tokens."
+   },
+   {
+    "id": "v02",
+    "item": "Pages render without horizontal overflow",
+    "category": "responsive",
+    "status": "MANUAL",
+    "detail": "requires browser viewport trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v03",
+    "item": "Interactive elements show focus-visible rings",
+    "category": "interaction",
+    "status": "PASS",
+    "detail": ":focus-visible declared",
+    "layer": "baseline"
+   },
+   {
+    "id": "v09",
+    "item": "Keyboard affordances are present",
+    "category": "poise",
+    "status": "PASS",
+    "detail": "static half verified: 5 keyboard-affordance signals (tab-order traversal requires browser)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v05",
+    "item": "Reduced motion is honored",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "prefers-reduced-motion: reduce block declares rules",
+    "layer": "baseline"
+   },
+   {
+    "id": "v11",
+    "item": "No transition: all in the stylesheet",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "no transition:all found",
+    "layer": "baseline"
+   },
+   {
+    "id": "v12",
+    "item": "will-change stays on transform and opacity",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "will-change restricted cleanly",
+    "layer": "baseline"
+   },
+   {
+    "id": "v45",
+    "item": "Pausing motion keeps content visible",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "18 entrance(s) that start at opacity 0 end or are removed under the pause (html[data-motion=paused] *)",
+    "evidence": {
+     "findings": [
+      {
+       "keyframes": "fadeUp",
+       "selector": ".fade-up",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "senses-in",
+       "selector": ".senses-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .senses-panel",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "dock-in",
+       "selector": ".back-button",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.back-button,.director-dock)",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "dock-in",
+       "selector": ".director-dock",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.back-button,.director-dock)",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "cmdk-in",
+       "selector": ".cmdk-overlay[data-state=open]",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .cmdk-overlay[data-state]",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "cmdk-panel-in",
+       "selector": ".cmdk-overlay[data-state=open] .cmdk-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .cmdk-overlay[data-state] .cmdk-panel",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-block",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-dot",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-orbit",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-square",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-triangle",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "check-pop",
+       "selector": ".row-check svg",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .row-check svg",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "check-pop",
+       "selector": ".check-cell-check",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "auditPanelIn",
+       "selector": ".audit-progress-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "auditStepIn",
+       "selector": ".audit-progress-step",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "scoreCardReveal",
+       "selector": ".score-card-item",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "scoreDrawerOpen",
+       "selector": ".score-card-drawer",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "verifyStepIn",
+       "selector": ".score-verify-log-step",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      }
+     ],
+     "truncated": 0
+    },
+    "layer": "baseline"
+   },
+   {
+    "id": "v21",
+    "item": "Core Web Vitals are in range",
+    "category": "performance",
+    "status": "MANUAL",
+    "detail": "requires CDP trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v25",
+    "item": "One h1 and no skipped heading levels",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "single h1, 15 headings, no skipped levels",
+    "layer": "baseline"
+   },
+   {
+    "id": "v27",
+    "item": "Form fields are at least 16px",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "input font-size floor detected",
+    "layer": "baseline"
+   },
+   {
+    "id": "v35",
+    "item": "Forced-colors mode is handled",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "forced-colors media query + forced-color-adjust both present",
+    "layer": "baseline"
+   },
+   {
+    "id": "v44",
+    "item": "Status colors used as text meet contrast",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "211 status-color text use(s) clear contrast in 2 theme(s); the closest: .copy-prompt-btn.is-copied uses --signal-text #016abb on #e2edf8 in [data-theme=light] at 4.68:1 (needs 4.5:1)",
+    "evidence": {
+     "findings": [
+      {
+       "selector": ".copy-prompt-btn.is-copied",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#e2edf8",
+       "ratio": 4.68,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row--listen:not(.is-playing):focus-within .listen-btn:hover,.row--listen:not(.is-playing):hover .listen-btn:hover",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#eeeeef",
+       "ratio": 4.79,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row--listen.is-playing .listen-btn",
+       "token": "--activation-ink -> --activation",
+       "theme": "[data-theme=light]",
+       "value": "#b04d00",
+       "background": "#f3f3f4",
+       "ratio": 4.85,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-check-group.is-warn .score-check-group-count",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f0e8d7",
+       "ratio": 4.89,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-card-status-pill.is-warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f0e8d7",
+       "ratio": 4.89,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".status-badge--contract,.status-badge--open",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#e8f3fc",
+       "ratio": 4.94,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".eg-bar-field:focus-within",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f2f3f5",
+       "ratio": 5,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row:hover .row-index",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f3f3f4",
+       "ratio": 5.01,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".report-count--warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f2ecde",
+       "ratio": 5.06,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".effect-flip-back .effect-desc",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f5f5f7",
+       "ratio": 5.1,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".report-check-status--warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f3eee3",
+       "ratio": 5.15,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-f",
+       "token": "--grade-f-ink",
+       "theme": "[data-theme=light]",
+       "value": "#cd2323",
+       "background": "#fbfbfc",
+       "ratio": 5.26,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-f",
+       "token": "--grade-f-ink",
+       "theme": "[data-theme=light]",
+       "value": "#cd2323",
+       "background": "#fbfbfc",
+       "ratio": 5.26,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-b",
+       "token": "--grade-b-ink",
+       "theme": "[data-theme=light]",
+       "value": "#497509",
+       "background": "#fbfbfc",
+       "ratio": 5.3,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-b",
+       "token": "--grade-b-ink",
+       "theme": "[data-theme=light]",
+       "value": "#497509",
+       "background": "#fbfbfc",
+       "ratio": 5.3,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-c",
+       "token": "--grade-c-ink",
+       "theme": "[data-theme=light]",
+       "value": "#896203",
+       "background": "#fbfbfc",
+       "ratio": 5.33,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-c",
+       "token": "--grade-c-ink",
+       "theme": "[data-theme=light]",
+       "value": "#896203",
+       "background": "#fbfbfc",
+       "ratio": 5.33,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".wordmark-hero .dot",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".status-badge",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".principle-num",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      }
+     ],
+     "truncated": 191
+    },
+    "layer": "baseline"
+   },
+   {
+    "id": "v07",
+    "item": "Semantic HTML: h1, title, description, landmark",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "single h1, title, meta description, landmark",
+    "layer": "baseline"
+   },
+   {
+    "id": "v34",
+    "item": "AI surfaces carry a disclosure",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "possible AI surface (AI prompt text); disclosure present (aria-label)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v36",
+    "item": "No confusable Unicode in CSS identifiers",
+    "category": "security",
+    "status": "PASS",
+    "detail": "scanned 227 token names, 882 classes, 38 ids, 8 url refs: no UTS #39 confusables detected (Unicode 16.0.0)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v38",
+    "item": "Button text is a verb phrase",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "14 button(s) checked: all start with a verb or recognized command",
+    "layer": "baseline"
+   },
+   {
+    "id": "v39",
+    "item": "No trailing period on buttons and labels",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "14 element(s) checked: no trailing periods on buttons, labels, or tabs",
+    "layer": "baseline"
+   },
+   {
+    "id": "v40",
+    "item": "Link text says where it goes",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "138 link(s) checked: all have descriptive text",
+    "layer": "baseline"
+   }
+  ],
+  "pass": 16,
+  "warn": 0,
+  "fail": 8,
+  "skip": 6,
+  "manual": 2,
+  "total": 32,
+  "scored": 24,
+  "tokensExtracted": 227,
+  "receipt": {
+   "subject": "https://www.designesy.org/",
+   "retrieved_at": "2026-10-14T23:14:37.360Z",
+   "contract_version": "v0.4.6",
+   "engine_version": "1.5.0",
+   "scope": "own-contract",
+   "digest": "8cdd84d7bedf2cdce29e764fdba1bfcd84323aced18cf175c283fd6c38ee07b9",
+   "verify": {
+    "method": "re-run",
+    "endpoint": "/api/score",
+    "instructions": "POST the same URL with the same contract to /api/score. Compare own_contract.digest first: if it differs, the contract changed. Then compare digest: if it differs while engine_version matches, the page changed."
+   },
+   "own_contract": {
+    "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
+    "format": "design.md",
+    "source": "inline",
+    "linter": "@google/design.md@0.4.0"
+   }
+  }
+ }
+}

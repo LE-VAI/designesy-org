@@ -1,0 +1,43 @@
+{
+ "status": 422,
+ "retryAfter": null,
+ "body": {
+  "ok": false,
+  "error": "Your contract cannot be scored yet.",
+  "code": "contract_not_scoreable",
+  "problems": [
+   {
+    "code": "DUPLICATE_SECTION",
+    "severity": "error",
+    "message": "The heading \"Colors\" appears twice. The DESIGN.md format allows each section once, so merge the two and run it again.",
+    "heading": "Colors",
+    "line": 15
+   },
+   {
+    "code": "LINT_ERROR",
+    "severity": "error",
+    "message": "colors.surface: 'notacolor' is not a valid color. Expected a CSS color value (e.g., #ffffff, rg…. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.",
+    "path": "colors.surface",
+    "value": "'notacolor' is not a valid color. Expected a CSS color value (e.g., #ffffff, rg…"
+   },
+   {
+    "code": "TOKEN_DROPPED",
+    "severity": "error",
+    "message": "colors.primary is declared, but its value didn't survive reading (its reference points to a token that does not exist), so it was left out. Give it a literal value or a reference that resolves, then run it again.",
+    "path": "colors.primary",
+    "reason": "alias_unresolved",
+    "ref": "{colors.brand}"
+   }
+  ],
+  "warnings": [
+   {
+    "code": "LINT_WARNING",
+    "severity": "warning",
+    "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing y… (a warning from the DESIGN.md format's linter; scoring went ahead).",
+    "path": "colors",
+    "value": "No 'primary' color defined. The agent will auto-generate key colors, reducing y…",
+    "rule": "missing-primary"
+   }
+  ]
+ }
+}

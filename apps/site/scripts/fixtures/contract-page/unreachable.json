@@ -1,0 +1,121 @@
+{
+ "status": 200,
+ "retryAfter": null,
+ "body": {
+  "ok": true,
+  "mode": "own-contract",
+  "scope": "own-contract",
+  "contractVersion": "v0.4.6",
+  "engineVersion": "1.5.0",
+  "score": null,
+  "grade": null,
+  "fidelity": {
+   "score": null,
+   "grade": null,
+   "scored": 0,
+   "total": 0,
+   "pass": 0,
+   "warn": 0,
+   "fail": 0,
+   "skip": 0,
+   "manual": 0,
+   "categoryScores": {},
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": {
+    "code": "site_unreachable",
+    "detail": "Could not read https://unreachable.invalid/: the request failed at the network level. No score is reported, because a site that cannot be fetched cannot be graded."
+   }
+  },
+  "baseline": {
+   "score": null,
+   "grade": null,
+   "scored": 0,
+   "total": 0,
+   "pass": 0,
+   "warn": 0,
+   "fail": 0,
+   "skip": 0,
+   "manual": 0,
+   "categoryScores": {},
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": {
+    "code": "site_unreachable",
+    "detail": "Could not read https://unreachable.invalid/: the request failed at the network level. No score is reported, because a site that cannot be fetched cannot be graded."
+   },
+   "a11yFloorApplied": false
+  },
+  "coverage": null,
+  "ownContract": {
+   "name": "Acme",
+   "format": "design.md",
+   "formatVersion": null,
+   "source": "inline",
+   "bytes": 263,
+   "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
+   "tokens": {
+    "colors": 4,
+    "typography": 1,
+    "radii": 2,
+    "spacing": 3,
+    "sizes": 0,
+    "durations": 0,
+    "easings": 0,
+    "pairs": 0,
+    "aliases": 0
+   },
+   "omitted": [],
+   "linter": {
+    "package": "@google/design.md",
+    "version": "0.4.0",
+    "errors": 0,
+    "warnings": 0,
+    "infos": 1
+   },
+   "problems": []
+  },
+  "site": {
+   "requestedUrl": "https://unreachable.invalid/",
+   "htmlBytes": 0,
+   "cssBytes": 0,
+   "stylesheetsFetched": 0,
+   "stylesheetsTotal": 0,
+   "stylesheetsTruncated": false
+  },
+  "unreachable": true,
+  "unreachableReason": "network",
+  "unreachableDetail": "Could not read https://unreachable.invalid/: the request failed at the network level. No score is reported, because a site that cannot be fetched cannot be graded.",
+  "checks": [],
+  "pass": 0,
+  "warn": 0,
+  "fail": 0,
+  "skip": 0,
+  "manual": 0,
+  "total": 0,
+  "scored": 0,
+  "tokensExtracted": 0,
+  "receipt": {
+   "subject": "https://unreachable.invalid/",
+   "retrieved_at": "2026-10-14T23:14:37.816Z",
+   "contract_version": "v0.4.6",
+   "engine_version": "1.5.0",
+   "scope": "own-contract",
+   "digest": null,
+   "digest_absent_reason": "the target could not be read, so no checks ran and there is no verdict set to attest to",
+   "verify": {
+    "method": "re-run",
+    "endpoint": "/api/score",
+    "instructions": "This receipt carries no digest because no measurement was taken. A stable hash over an empty check set would verify successfully while proving nothing. Re-run once the target is reachable."
+   },
+   "own_contract": {
+    "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
+    "format": "design.md",
+    "source": "inline",
+    "linter": "@google/design.md@0.4.0"
+   }
+  }
+ }
+}

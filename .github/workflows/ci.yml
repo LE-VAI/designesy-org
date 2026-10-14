@@ -153,6 +153,13 @@ jobs:
         if: always()
         run: node scripts/check-own-contract.mjs
 
+      # /score/contract's sentences are built from the result, never typed:
+      # problems in field order, the verdict leads, the request-error card,
+      # the steps (app/score/contract/copy.ts).
+      - name: Contract page copy
+        if: always()
+        run: node scripts/check-contract-copy.mjs
+
       # The browser audit cannot move a grade it did not change: the score
       # after an audit is the engine's own arithmetic (/api/score/rescore).
       - name: Audit rescore
@@ -900,6 +907,14 @@ jobs:
       # another rule overrides, a colour too faint, or a ring a parent clips.
       - name: Focus visibility
         run: node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel chrome
+
+      # /score/contract's states, driven from recorded engine responses
+      # (scripts/fixtures/contract-page): entry, field error, running,
+      # rejected, request errors and the landing, each with axe 0, the one
+      # live region present from first paint, focus where the handoff puts
+      # it, and no text under 12.8px.
+      - name: Contract page states
+        run: node scripts/check-contract-page.js --base http://127.0.0.1:3422 --channel chrome
 
       # Text contrast under the preferences that repaint the palette: dark and
       # light, each with prefers-contrast: more, with

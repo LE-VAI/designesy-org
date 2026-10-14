@@ -31,7 +31,7 @@
  *
  * --update ADDS what the pages use. It drops a listed rule only on a full read
  * (--base and --hydrated), because a narrower read cannot see the dynamic routes
- * (/score, /score/report) or the hydrated DOM, and would drop rules they use.
+ * (/score, /score/contract, /score/report) or the hydrated DOM, and would drop rules they use.
  *
  * --hydrated covers elements that exist only after hydration (the Back pill,
  * the definition copy badges, the report's error state ...). They are never in
@@ -54,7 +54,7 @@ const HYDRATED = args.includes('--hydrated');
 const chIdx = args.indexOf('--channel');
 const CHANNEL = chIdx >= 0 ? args[chIdx + 1] : 'chrome';
 if (HYDRATED && !BASE) { console.error('[critical-css] --hydrated needs --base <url of a running next start>'); process.exit(2); }
-const DYNAMIC_ROUTES = ['/score', '/score/report', '/score/report?url=example.com'];
+const DYNAMIC_ROUTES = ['/score', '/score/contract', '/score/report', '/score/report?url=example.com'];
 
 const failures = [];
 const full = await buildGlobalsCss(SITE);

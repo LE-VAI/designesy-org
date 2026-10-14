@@ -93,7 +93,7 @@ function routesFromConfig() {
     .map((x) => x[1])
     .map((r) => (r === 'index' ? '/' : '/' + r));
 }
-const DYNAMIC_ROUTES = ['/score', '/compare', '/drift', '/readiness', '/guardrails', '/monitor', '/report'];
+const DYNAMIC_ROUTES = ['/score', '/score/contract', '/compare', '/drift', '/readiness', '/guardrails', '/monitor', '/report'];
 
 function resolveRoutes() {
   const given = (opt('--routes', null) || process.env.A11Y_ROUTES || '')
