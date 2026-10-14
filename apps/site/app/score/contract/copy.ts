@@ -308,8 +308,13 @@ export function proseRewrite(text: string, p: ContractProblem): string | null {
   return out.join('\n');
 }
 
-/** The lint line, when the DESIGN.md format's linter ran (it reported something). */
+/** The lint line, when the DESIGN.md format's linter ran (it reported
+    something) and its counts are whole. The engine drops a linter error where
+    a structured code names the same path (VALUE_INVALID, TOKEN_DROPPED), so
+    beside one of those the rows no longer count the linter's errors, and the
+    line is left out rather than print a count that is short. */
 export function lintLine(problems: { code: string }[], warnings: { code: string }[], version: string): { version: string; errors: number; warnings: number } | null {
+  if (problems.some((p) => p.code === 'VALUE_INVALID' || p.code === 'TOKEN_DROPPED')) return null;
   const e = problems.filter((p) => p.code === 'LINT_ERROR').length;
   const w = warnings.filter((p) => p.code === 'LINT_WARNING').length;
   return e || w ? { version, errors: e, warnings: w } : null;

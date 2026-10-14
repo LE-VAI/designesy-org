@@ -27,15 +27,18 @@
  *      request errors), the panel heading (rejected), the verdict line
  *      (landed, unreachable); never <body>.
  *   4. A request error shows one role="alert" card with its title; a
- *      rejected run lists every problem the engine returned.
+ *      rejected run lists every problem the engine returned, each sentence
+ *      whole (no ellipsis), and its heading, which takes focus for screen
+ *      readers, paints no focus ring (it is not a control).
  *   5. No text on the page under 12.8px (brand D68), sr-only text and
  *      role="img" drawings aside.
  *   6. No horizontal overflow of the document.
  *
  * PROVING IT CAN FAIL
  *   --break live    removes the live region before the checks (2 fails)
- *   --break focus   sends focus to <body> after each state (3 fails)
- *   --break         both. Each must exit 1.
+ *   --break focus   sends focus to <body> after each state
+ *   --break ring    gives the focused result heading the control ring back
+ *   --break         live and focus. Each must exit 1.
  *
  * Usage:
  *   node scripts/check-contract-page.js --base http://127.0.0.1:3422 [--channel chrome]
@@ -165,6 +168,7 @@ async function main() {
       await page.waitForTimeout(700);
       if (BREAK.includes('live')) await page.evaluate(() => document.querySelector('.cf-bench > p[role="status"]')?.remove());
       if (BREAK.includes('focus')) await page.evaluate(() => document.activeElement?.blur?.());
+      if (BREAK.includes('ring')) await page.addStyleTag({ content: '.cf-problems-head .eg-h2[tabindex="-1"]:focus { outline: 2px solid var(--signal-access); }' });
 
       const probe = await page.evaluate(() => {
         const live = document.querySelector('.cf-bench > p[role="status"][aria-live="polite"]');
@@ -186,6 +190,15 @@ async function main() {
           activeDesc: a ? `${a.tagName.toLowerCase()}${a.id ? '#' + a.id : ''}.${String(a.className).split(' ')[0]}` : 'none',
           alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim()),
           problems: document.querySelectorAll('.cf-problem-list > li').length,
+          // Engine sentences are shown whole: no row ends a word on an ellipsis.
+          clipped: [...document.querySelectorAll('.cf-problem-list p, .cf-warnings li')].map((e) => e.textContent).filter((t) => t.includes('…')),
+          // The result heading takes focus for screen readers but is no control: it paints no ring.
+          headingRing: (() => {
+            const hd = document.getElementById('cf-problems-h');
+            if (!hd || document.activeElement !== hd) return null;
+            const cs = getComputedStyle(hd);
+            return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 ? `${cs.outlineStyle} ${cs.outlineWidth}` : cs.boxShadow !== 'none' ? cs.boxShadow : '';
+          })(),
           small: small.slice(0, 5),
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         };
@@ -205,6 +218,8 @@ async function main() {
       if (st.alert && (probe.alerts.length !== 1 || !probe.alerts[0].startsWith(st.alert))) fail(`alerts ${JSON.stringify(probe.alerts)}, wanted one starting "${st.alert}"`);
       if (!st.alert && probe.alerts.length) fail(`unexpected alert ${JSON.stringify(probe.alerts)}`);
       if (st.problems !== undefined && probe.problems !== st.problems) fail(`${probe.problems} problems listed, wanted ${st.problems}`);
+      if (probe.clipped.length) fail(`a problem or warning is cut short: ${probe.clipped[0].slice(0, 90)}`);
+      if (probe.headingRing) fail(`the focused result heading paints a ring (${probe.headingRing}); it is not a control`);
       if (probe.small.length) fail(`text under 12.8px: ${probe.small.join('; ')}`);
       if (probe.overflow > 0) fail(`document overflows sideways by ${probe.overflow}px`);
       if (viol.length) fail(`axe: ${viol.join(' | ')}`);

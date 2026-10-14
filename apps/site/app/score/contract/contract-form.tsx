@@ -472,7 +472,7 @@ export function ContractForm({
       ) : (
         <span>
           {rejectedCount === 1
-            ? 'Your contract needs one change before scoring. See the problem below.'
+            ? 'Your contract needs 1 change before scoring. See the problem below.'
             : `Your contract needs ${rejectedCount} changes before scoring. See the problems below.`}
         </span>
       )

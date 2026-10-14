@@ -500,8 +500,13 @@
   margin: 0;
 }
 
-.cf-problems-head .eg-h2:focus-visible {
-  outline-offset: 6px;
+/* The heading takes focus when the panel arrives (tabindex="-1"), so a
+   screen reader starts at it. It is not a control: no Tab stop reaches it and
+   nothing on it can be pressed, so it draws no focus ring. The live region
+   still announces the stop, and focus still moves here. */
+.cf-problems-head .eg-h2[tabindex="-1"]:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 .cf-problem-list {

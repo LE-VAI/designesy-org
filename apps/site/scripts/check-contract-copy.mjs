@@ -119,6 +119,8 @@ check('caret line', () => {
 check('lint line only when the linter spoke', () => {
   assert.equal(C.lintLine([{ code: 'TOO_FEW_COLORS' }], [], '0.4.0'), null);
   assert.deepEqual(C.lintLine([{ code: 'LINT_ERROR' }], [{ code: 'LINT_WARNING' }, { code: 'NO_TYPE' }], '0.4.0'), { version: '0.4.0', errors: 1, warnings: 1 });
+  // Beside a structured code the engine has dropped the linter's row for that path: no short count.
+  assert.equal(C.lintLine([{ code: 'VALUE_INVALID' }, { code: 'LINT_ERROR' }], [{ code: 'LINT_WARNING' }], '0.4.0'), null);
 });
 
 // ── 2. Verdict ──

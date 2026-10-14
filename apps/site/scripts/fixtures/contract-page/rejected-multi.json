@@ -14,28 +14,29 @@
     "line": 15
    },
    {
-    "code": "LINT_ERROR",
-    "severity": "error",
-    "message": "colors.surface: 'notacolor' is not a valid color. Expected a CSS color value (e.g., #ffffff, rg…. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.",
-    "path": "colors.surface",
-    "value": "'notacolor' is not a valid color. Expected a CSS color value (e.g., #ffffff, rg…"
-   },
-   {
     "code": "TOKEN_DROPPED",
     "severity": "error",
     "message": "colors.primary is declared, but its value didn't survive reading (its reference points to a token that does not exist), so it was left out. Give it a literal value or a reference that resolves, then run it again.",
     "path": "colors.primary",
     "reason": "alias_unresolved",
     "ref": "{colors.brand}"
+   },
+   {
+    "code": "VALUE_INVALID",
+    "severity": "error",
+    "message": "colors.surface: \"notacolor\" is not a valid color. Use a form like \"#0A94FF\" or \"oklch(0.66 0.18 250)\".",
+    "path": "colors.surface",
+    "value": "notacolor",
+    "kind": "color"
    }
   ],
   "warnings": [
    {
     "code": "LINT_WARNING",
     "severity": "warning",
-    "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing y… (a warning from the DESIGN.md format's linter; scoring went ahead).",
+    "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette (a warning from the DESIGN.md format's linter; scoring went ahead).",
     "path": "colors",
-    "value": "No 'primary' color defined. The agent will auto-generate key colors, reducing y…",
+    "linterMessage": "No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette.",
     "rule": "missing-primary"
    }
   ]
