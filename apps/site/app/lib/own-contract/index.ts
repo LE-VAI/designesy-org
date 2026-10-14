@@ -78,11 +78,22 @@ export function declaredStats(p: ParsedContract): OwnContract['stats'] {
   return { declared, byGroup };
 }
 
+/**
+ * Line endings normalised once, at the boundary: CRLF and a lone CR become LF.
+ * A file saved on Windows or classic Mac OS then reads to the same model,
+ * problems and digest as the same file with LF, and line numbers still match
+ * what the author's editor shows (every line break stays one line break).
+ */
+export function normalizeLineEndings(text: string): string {
+  return text.includes('\r') ? text.replace(/\r\n?/g, '\n') : text;
+}
+
 export async function readContract(input: ContractInput, opts: IntakeOptions = {}): Promise<IntakeResult> {
   const now = opts.now ?? (() => Date.now());
   const started = now();
-  const text = input.content;
-  const bytes = byteLength(text);
+  // The size limit and the reported size are the bytes the caller sent.
+  const bytes = byteLength(input.content);
+  const text = normalizeLineEndings(input.content);
   if (bytes > MAX_CONTRACT_BYTES) {
     return { ok: false, status: 413, problems: [problem('contract_too_large', { count: bytes, limit: MAX_CONTRACT_BYTES })], warnings: [] };
   }

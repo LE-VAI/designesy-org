@@ -98,7 +98,11 @@ function section(title) {
   console.log(`\n${title}`);
 }
 
-const fixture = (name) => fs.readFileSync(path.join(FIX, name), 'utf8');
+// Fixtures are read with LF line endings whatever the checkout wrote (the
+// fixtures directory is also eol=lf in .gitattributes); section 8b feeds the
+// same contracts with CRLF and CR on purpose.
+const lf = (t) => t.replace(/\r\n?/g, '\n');
+const fixture = (name) => lf(fs.readFileSync(path.join(FIX, name), 'utf8'));
 // A detector standing in for v36's findConfusables (the route passes the real one).
 const confusables = (s) => [...s].flatMap((ch, pos) => (ch === 'а' ? [{ char: ch, pos, ascii: 'a' }] : ch === 'о' ? [{ char: ch, pos, ascii: 'o' }] : []));
 const read = (content, extra = {}) => oc.readContract({ content, ...extra }, { lint, findConfusables: confusables });
@@ -624,6 +628,39 @@ await check('detection, front matter, prose tables, headings and JSON positions'
   timed('proseTables', () => dmd.proseTables(`${'| #fff | a |\n'.repeat(MB / 13)}`, 1));
   timed('proseTables pipes', () => dmd.proseTables(`|${'|'.repeat(MB)}`, 1));
   timed('jsonErrorPosition', () => dtcg.jsonErrorPosition('{'.repeat(MB), `Unexpected token at position ${MB - 1}`));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+section('8b. Line endings: LF, CRLF and CR read the same');
+
+const EOL_FIXTURES = ['DM-1.md', 'DM-2.md', 'DM-3c.md', 'DM-3e.md', 'DM-4.md', 'DM-5.md', 'DM-7.md', 'DM-9.md', 'DM-10.md', 'DM-11.md', 'DT-1.json', 'DT-2.json', 'DT-11.json', 'acme-design.md', 'acme-tokens.json'];
+const asCrlf = (t) => t.replace(/\n/g, '\r\n');
+const asCr = (t) => t.replace(/\n/g, '\r');
+/** What a reader of one contract sees: the model and its digest, or the problems; warnings either way. */
+const outcome = (r) => (r.ok
+  ? { ok: true, model: JSON.parse(JSON.stringify(modelSnapshot(r.contract))), warnings: r.contract.problems }
+  : { ok: false, status: r.status, problems: r.problems, warnings: r.warnings });
+await check('normalizeLineEndings turns CRLF and a lone CR into LF, and leaves LF alone', () => {
+  assert.equal(oc.normalizeLineEndings('a\r\nb\rc\nd'), 'a\nb\nc\nd');
+  assert.equal(oc.normalizeLineEndings('a\r\r\nb'), 'a\n\nb');
+  const t = 'x\ny';
+  assert.equal(oc.normalizeLineEndings(t), t);
+});
+for (const name of EOL_FIXTURES) {
+  await check(`${name}: LF, CRLF and CR give one model, digest, problems (line numbers included) and warnings`, async () => {
+    const text = fixture(name);
+    const base = outcome(await read(text));
+    for (const [label, variant] of [['CRLF', asCrlf(text)], ['CR', asCr(text)]]) {
+      assert.notEqual(variant, text);
+      assert.deepEqual(outcome(await read(variant)), base, `${label} differs from LF`);
+    }
+  });
+}
+await check('a CRLF contract reports the size the caller sent, and every format is detected the same way', async () => {
+  const text = fixture('DM-2.md');
+  const crlf = accepted(await read(asCrlf(text)));
+  assert.equal(crlf.source.bytes, new TextEncoder().encode(asCrlf(text)).length);
+  for (const n of EOL_FIXTURES) assert.deepEqual(detect.detectFormat(asCr(fixture(n))), detect.detectFormat(fixture(n)), n);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -28,7 +28,8 @@ export function stripBom(text: string): string {
  * 4. Else unknown: FORMAT_UNKNOWN, and the page asks the user to choose.
  */
 export function detectFormat(input: string): Detection {
-  const text = stripBom(input);
+  // Line endings as readContract normalises them (CRLF and lone CR to LF).
+  const text = stripBom(input.includes('\r') ? input.replace(/\r\n?/g, '\n') : input);
   const lead = text.trimStart();
   if (lead.startsWith('{')) {
     let formatVersion: string | null = null;
