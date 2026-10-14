@@ -817,6 +817,18 @@
   resize: vertical;
 }
 
+/* The well's 1px focus ring is an inset shadow, so it paints under the
+   textarea that fills the well. The textarea does not wrap and scrolls, so on
+   a narrow well the glyphs of a clipped line (and a classic scrollbar, where
+   there is one) sat on the ring's bottom or top edge, and only the 22% halo
+   read there. The textarea's own painting stops 2px inside the well, so the
+   ring and the well's edge are never covered. Its box, its padding and its
+   text position do not change. (A ring drawn above the text on ::after was
+   tried: on dark it measured 2.88:1 over the glyphs.) */
+.eg-bar-field.is-area > .m3-textarea {
+  clip-path: inset(2px round max(0px, calc(var(--ctl-r-in) - 2px)));
+}
+
 .m3-go {
   display: flex;
   flex-wrap: wrap;
