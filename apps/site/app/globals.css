@@ -10563,6 +10563,16 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   box-shadow: none;
 }
 
+/* The tabs sit edge to edge, and the selected segment is a pill drawn under
+   them (the strip's ::before). A focused tab beside the selected one drew its
+   ring's near side, 3px out, over that pill: Azure on the pill, 1.4 to 1.7:1.
+   A tab that is not selected draws its ring inside its own box, clear of the
+   pill, as the house draws edge-to-edge cells (.check-cell); the selected tab
+   keeps the house ring outside its own pill. Nothing moves. */
+.score-filter-tab:not(.is-active):focus-visible {
+  outline-offset: -2px;
+}
+
 /* Sliding indicators snap under reduce. This block must come AFTER both base
    rules: it used to sit ~500 lines above them, where the later same-specificity
    `transition` won and both pills kept sliding 600ms under reduce (contract a10,
