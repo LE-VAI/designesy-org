@@ -91,6 +91,14 @@ exclude = [
   # npmjs.com package pages — return 403 to lychee's bot user-agent.
   # Verified manually; these are our own published packages.
   '^https://www\.npmjs\.com/package/',
+  # Test data in the MCP server's tests: made-up hosts, a path-scrubbing
+  # sample, and the cloud metadata address the URL guard must refuse.
+  # None of them is a link this repo publishes.
+  '^https://fixture\.local',
+  '^http://169\.254\.169\.254',
+  '^https://wrong-schema\.com',
+  '^https://x\.org/Users/',
+  '^file://',
 ]
 
 # ── Accept these status codes as OK ─────────────────────────────────────────
