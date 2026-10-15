@@ -45,16 +45,20 @@ jobs:
 
     steps:
       - name: Validate secrets
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+          if [ -z "$VERCEL_TOKEN" ]; then
             echo "::error::VERCEL_TOKEN secret is not set"
             exit 1
           fi
-          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+          if [ -z "$VERCEL_ORG_ID" ]; then
             echo "::error::VERCEL_ORG_ID secret is not set"
             exit 1
           fi
-          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+          if [ -z "$VERCEL_PROJECT_ID" ]; then
             echo "::error::VERCEL_PROJECT_ID secret is not set"
             exit 1
           fi
@@ -145,10 +149,12 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          REASON: ${{ inputs.reason }}
         run: |
           echo "## Production Rollback" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Reason:** ${{ inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason:** $REASON" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY

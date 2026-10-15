@@ -69,10 +69,12 @@ jobs:
     steps:
       - name: Determine target URL
         id: url
+        env:
+          DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
         run: |
           if [ "${{ github.event_name }}" = "deployment_status" ]; then
             # Vercel provides the live deployment URL in target_url
-            TARGET="${{ github.event.deployment_status.target_url }}"
+            TARGET="$DEPLOY_URL"
           else
             # Manual trigger — test production directly
             TARGET="https://www.designesy.org"
@@ -325,6 +327,15 @@ jobs:
           echo "Preview: $PREVIEW" >> $GITHUB_STEP_SUMMARY
           echo "Expected commit: $EXPECTED_SHA" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          # The bypass header goes only to this project's Vercel previews. A
+          # dispatch can name any URL, so the host is checked before the secret
+          # is sent anywhere.
+          if ! printf '%s' "$PREVIEW" | grep -Eq '^https://designesy-[a-z0-9]+-le-vai\.vercel\.app/?$'; then
+            echo "✗ Preview URL is not one of this project's preview deployments; the bypass header is not sent" >> $GITHUB_STEP_SUMMARY
+            echo "✗ Preview gate: refusing to send the bypass header to $PREVIEW"
+            exit 1
+          fi
 
           if [ -z "$BYPASS" ]; then
             echo "✗ VERCEL_AUTOMATION_BYPASS_SECRET is not set — the token cannot be checked" >> $GITHUB_STEP_SUMMARY

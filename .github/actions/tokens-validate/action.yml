@@ -26,23 +26,30 @@ runs:
   steps:
     - name: Validate tokens
       shell: bash
+      # Inputs reach the shell as environment variables, never as inline
+      # expressions, so a value can't be read as script.
+      env:
+        INPUT_FILE: ${{ inputs.file }}
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_JSON: ${{ inputs.json }}
+        INPUT_MIN_SCORE: ${{ inputs.min-score }}
       run: |
-        ARGS=""
-        if [ -n "${{ inputs.file }}" ]; then
-          ARGS="${{ inputs.file }}"
-        elif [ -n "${{ inputs.url }}" ]; then
-          ARGS="${{ inputs.url }}"
+        ARGS=()
+        if [ -n "$INPUT_FILE" ]; then
+          ARGS+=("$INPUT_FILE")
+        elif [ -n "$INPUT_URL" ]; then
+          ARGS+=("$INPUT_URL")
         else
           echo "::error::Either 'file' or 'url' input is required"
           exit 2
         fi
 
-        if [ "${{ inputs.json }}" = "true" ]; then
-          ARGS="$ARGS --json"
+        if [ "$INPUT_JSON" = "true" ]; then
+          ARGS+=(--json)
         fi
 
-        if [ "${{ inputs.min-score }}" != "0" ]; then
-          ARGS="$ARGS --min-score ${{ inputs.min-score }}"
+        if [ "$INPUT_MIN_SCORE" != "0" ]; then
+          ARGS+=(--min-score "$INPUT_MIN_SCORE")
         fi
 
-        npx --yes @designesy/tokens@0.3.0 $ARGS
+        npx --yes @designesy/tokens@0.3.0 "${ARGS[@]}"
