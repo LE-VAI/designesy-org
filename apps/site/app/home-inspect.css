@@ -1973,7 +1973,8 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .inspect-step {
     /* Spaced by the readable region under the pinned stage (inspect-
        sequence.tsx sets --ix-step-h = 0.6R), text at the top of its block:
-       the lit step's heading stays clear of the stage for its whole turn. */
+       the lit step, numeral to last line, stays clear of the stage and its
+       fade for its whole turn. */
     min-height: var(--ix-step-h, 46vh);
     align-content: start;
     transition: opacity 300ms var(--ease-out);
@@ -1996,15 +1997,19 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .inspect-step:last-child {
     min-height: 0;
   }
-  /* The pin ends when the LAST heading reaches the stage's bottom edge S,
-     not when the list ends. The last step has no successor to take over, so
-     its heading used to slide on under the pinned stage and the grade was
-     never on screen with it (judged at 390x844, 2026-10-03). A sticky box
-     stops at its containing block's content edge, so the section's content
-     box ends --ix-pin-end early (the list's bottom less the last heading's
-     top, written by the component) while the list runs on into the padding:
-     same height, and at release the heading sits on S, under the graded
-     stage, and they leave together. The section's padding is set outside
+  /* The pin ends when the LAST step reaches the readable edge under the
+     stage (its fade's foot, plus the settle gap), not when the list ends.
+     The last step has no successor to take over, so its heading used to
+     slide on under the pinned stage and the grade was never on screen with
+     it (judged at 390x844, 2026-10-03). A sticky box stops at its
+     containing block's content edge, so the section's content box ends
+     --ix-pin-end early (the list's bottom less the last step's top, plus
+     the fade and the gap, written by the component) while the list runs on
+     into the padding: same height, and at release step four sits whole
+     under the graded stage, and they leave together. (Released with its
+     heading on the stage's edge, its numeral was under the stage and its
+     heading in the fade as they scrolled away: a paragraph caught halfway
+     under the demo, 2026-10-15.) The section's padding is set outside
      this query (below the block): .inspect is the g12 container itself, and
      a container query never styles its own container, so here only the
      list's margin applied and the next section rode over step four. */
