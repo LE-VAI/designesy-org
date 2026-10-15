@@ -1,11 +1,11 @@
-// POST /api/score with a `contract` field: own-contract mode (engine spec
-// sections 10 to 13). The hosted route calls handleOwnContract() from its POST
+// POST /api/score with a `contract` field: own-contract mode (contract-mode spec
+// §10 to §13). The hosted route calls handleOwnContract() from its POST
 // handler and passes in the pieces only it holds (the page fetch, the legacy
 // check functions, v36's confusable helper, the detail sanitizer), so every
 // own-contract unit lives here and route.ts gains no new top-level function
 // (packages/score/scripts/source-drift.mjs compares the two engine copies).
 //
-// Order (engine spec 10.1): body size (413) -> scope conflict (400) ->
+// Order (contract-mode spec §10.1): body size (413) -> scope conflict (400) ->
 // contract shape (400) -> the mode's rate limit (429) -> intake (413, 422) ->
 // page fetch -> scoring. Never through the cached scoreUrl: nothing about a
 // contract run is stored. Responses carry
@@ -25,7 +25,7 @@ import { scoreOwnContract, type OwnContractRun } from './run';
 import type { BaselineInput } from './baseline';
 import type { OwnContract, Problem } from './types';
 
-/** The mode's own limits per IP (engine spec 12): 20 per minute and 300 per day. */
+/** The mode's own limits per IP (contract-mode spec §12): 20 per minute and 300 per day. */
 export const CONTRACT_LIMITS = {
   minute: { prefix: 'score-contract-min', tokens: 20, window: '60 s' as const },
   day: { prefix: 'score-contract-day', tokens: 300, window: '1 d' as const },
@@ -117,7 +117,7 @@ type OwnContractReceipt = Receipt & {
   own_contract: { digest: string; format: OwnContract['format']; source: 'inline' | 'url'; url?: string; linter?: string };
 };
 
-/** The receipt (engine spec 11.3): the verdict digest over fidelity then baseline, and the contract's own digest. */
+/** The receipt (contract-mode spec §11.3): the verdict digest over fidelity then baseline, and the contract's own digest. */
 export function ownContractReceipt(url: string, contract: OwnContract, checks: Array<{ id: string; status: string }>, at: Date): OwnContractReceipt {
   const base = buildReceipt({ requestedUrl: url, contractVersion: CONTRACT_VERSION, scope: 'own-contract', checks }, at);
   return {
@@ -139,7 +139,7 @@ export function ownContractReceipt(url: string, contract: OwnContract, checks: A
   };
 }
 
-/** The 200 body, `format=designesy` (engine spec 10.3). */
+/** The 200 body, `format=designesy` (contract-mode spec §10.3). */
 export function ownContractBody(url: string, contract: OwnContract, run: OwnContractRun | null, page: { htmlBytes: number; cssBytes: number }, at: Date, unreachable?: { reason: string; detail: string }) {
   const checks = run ? run.checks : [];
   const tokens = {

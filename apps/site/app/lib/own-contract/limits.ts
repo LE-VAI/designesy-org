@@ -1,4 +1,4 @@
-// Own-contract intake limits (engine spec section 4.2), checked before and
+// Own-contract intake limits (contract-mode spec §4.2), checked before and
 // during parsing. One place, so the published formula, the API and the tests
 // read the same numbers.
 

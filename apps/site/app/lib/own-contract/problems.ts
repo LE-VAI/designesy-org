@@ -1,5 +1,5 @@
-// Own-contract problem codes and the engine's sentence for each (engine spec
-// section 4.7). Messages go to the caller only and are never logged (section
+// Own-contract problem codes and the engine's sentence for each (contract-mode spec
+// §4.7). Messages go to the caller only and are never logged (section
 // 13): every builder here takes a value through clipValue(), so at most 80
 // characters of anything the caller sent come back.
 //

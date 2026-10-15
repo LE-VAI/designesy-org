@@ -1,4 +1,4 @@
-// One own-contract run over a fetched page (engine spec sections 5 to 9):
+// One own-contract run over a fetched page (contract-mode spec §5 to §9):
 // read the page, bind the contract, run f01 to f14, take the baseline layer
 // from the legacy checks the route computed, score both layers, apply the
 // page-level null rules and report coverage. Pure: no fetch, no clock, no

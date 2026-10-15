@@ -1,4 +1,4 @@
-// Scoring both layers (engine spec 8).
+// Scoring both layers (contract-mode spec §8).
 //
 // One rule for both, the engine's existing one: each category's weight is
 // shared by its scored checks; PASS earns the share, WARN half, FAIL nothing;

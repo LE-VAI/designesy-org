@@ -1,4 +1,4 @@
-// DESIGN.md reader (engine spec section 4.3).
+// DESIGN.md reader (contract-mode spec §4.3).
 //
 // Two reads of the same text, because the format's linter (@google/design.md
 // 0.4.0) drops some values from its resolved model without an error:

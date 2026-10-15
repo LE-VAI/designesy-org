@@ -183,6 +183,8 @@ DESIGN.md                              operating principles and agent rules (v0.
 AGENTS.md                              agent operating rules
 ```
 
+Contract mode, which scores a page against your own DESIGN.md or DTCG token file, is specified in [docs/contract-mode-spec.md](docs/contract-mode-spec.md).
+
 The design contract in DESIGN.md format is generated from the contract source and served at [designesy.org/DESIGN.md](https://www.designesy.org/DESIGN.md). The root `DESIGN.md` file is the older v0.1 charter.
 
 ## What Designesy is not

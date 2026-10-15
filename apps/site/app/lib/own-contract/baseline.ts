@@ -1,4 +1,4 @@
-// The baseline layer (engine spec section 7 and 8.3): the universal checks
+// The baseline layer (contract-mode spec §7 and §8.3): the universal checks
 // that read no contract, grouped and weighted for this mode. Eighteen checks:
 // the sixteen of section 7 plus v44 (accessibility) and v45 (motion), which
 // every legacy score gained in engine 1.2.0. v46 (type sizes from the page's own scale) stays out: f03 measures
