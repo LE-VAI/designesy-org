@@ -128,8 +128,8 @@ const fmt = (n) => (Math.round(n * 10) / 10).toFixed(1);
 const clause = (s) => (/^[A-Z][A-Z]/.test(s) ? s : s.charAt(0).toLowerCase() + s.slice(1));
 const WORD = { PASS: 'Pass', WARN: 'Needs work', FAIL: 'Fail', SKIP: 'Does not apply', MANUAL: 'Needs a browser run' };
 
-/** The approved verdict (owner decisions O5, 2026-10-09 and 2026-10-14), from a
-    recorded answer's own checks: re-derived here, never read from the page's code. */
+/** The verdict sentence the page must print, built from a recorded answer's
+    own checks: re-derived here, never read from the page's code. */
 function expectVerdict(b) {
   if (b.unreachable) return 'Could not read this site, so neither number has a score. Your contract was read and is valid.';
   const f = b.fidelity;

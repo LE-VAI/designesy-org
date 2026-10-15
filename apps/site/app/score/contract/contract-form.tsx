@@ -121,9 +121,11 @@ export type ResultsSetup = {
 type FieldKey = 'url' | 'contract' | 'map';
 type FieldError = { field: FieldKey; message: string };
 
-/** What the last run ended in, as the page draws it. */
+/** What the last run ended in, as the page draws it. "running": a run is
+    out, and its result draws in the same render it lands. */
 type Ending =
   | { kind: 'none' }
+  | { kind: 'running' }
   | { kind: 'landed'; took: string }
   | { kind: 'rejected'; problems: ContractProblem[]; warnings: ContractProblem[]; linter: LinterTotals | null }
   | { kind: 'request'; title: string; message: string };
@@ -414,7 +416,7 @@ export function ContractForm({
         : { content: contractText, format: 'auto' as const, ...(map ? { tokenMap: map } : {}) };
     ran.current = { site: siteKey(site), url: site, how, source, text: contractText, link: link.trim() };
     started.current = performance.now();
-    setEnding({ kind: 'none' });
+    setEnding({ kind: 'running' });
     setFolded(false);
     announce(ANNOUNCE.running(siteKey(site)));
     void run(site, { url: site, contract });
@@ -921,7 +923,9 @@ export function ContractForm({
   };
 
   // ── The live instrument ──
-  const landed = ending.kind === 'landed' && result ? result : null;
+  // A result draws in the render where the run lands, so the instrument goes
+  // from running to done in one step and its mark lights (lib/engine/ignition.ts).
+  const landed = (ending.kind === 'landed' || ending.kind === 'running') && result ? result : null;
   const live = landed && ran.current ? resultParts(landed, ran.current, '', false) : null;
   const previous = prev ? resultParts(prev.result, prev.ran, 'prev-', true) : null;
   const runSite = ran.current?.site ?? '';
@@ -1268,15 +1272,11 @@ export function ContractForm({
         </div>
       )}
 
-      {live ? (
-        <>
-          {live.verdict}
-          {live.instrument}
-          {live.after}
-        </>
-      ) : (
-        showRest && restInstrument(restPhase)
-      )}
+      {/* One slot for the instrument from rest through the result, so it stays
+          the same element and its mark sees the run land. */}
+      {live?.verdict}
+      {live ? live.instrument : showRest && restInstrument(restPhase)}
+      {live?.after}
 
       {busy && !prev && (
         <ul className="cf-skeleton" aria-hidden="true">

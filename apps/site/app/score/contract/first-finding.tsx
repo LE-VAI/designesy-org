@@ -1,9 +1,9 @@
-// The first finding (WIREFRAMES 1.3, W4): the first failing fidelity check, or
+// The first finding: the first failing fidelity check, or
 // the first that needs work, with what the contract declared beside what the
 // page shipped. A contrast pair (f09, f10) draws both pairs as specimens in
 // the customer's own colours; every other check (f02, f03, f08 and the rest)
 // shows the row's one-line result and the declared and shipped evidence as a
-// list (owner decision O5). "Go to this check" opens the row in its list.
+// list. "Go to this check" opens the row in its list.
 
 import type { CSSProperties } from 'react';
 import { Lamp } from '../../lib/engine/instrument';

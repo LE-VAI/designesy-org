@@ -1,11 +1,11 @@
 'use client';
 
-// The two numbers, never blended (brand D79, owner decisions D1 and D3): the
+// The two numbers, each scored on its own and never blended into one: the
 // pair of readouts in the instrument's side. Each readout is five rows on the
 // pair's own grid (label, figure, line, count, scale), so a line that wraps
 // longer on one side never pushes that side's count off the other's.
 //
-// The numeral is the hero at its full house size at every width (D79). Where
+// The numeral is the hero at its full house size at every width. Where
 // the pair is 26rem and wider "/100" and the grade chip sit beside it; below
 // that they form one nowrap row under it (contract.css, the cf-pair container).
 // A layer with no score shows "No score": never a 0, a letter or a scale.
@@ -113,7 +113,7 @@ export function ContractReadout({
 }
 
 /**
- * The pair, always side by side (owner decision D8, brand D81). The numeral's
+ * The pair, always side by side, so both numbers read in one glance. The numeral's
  * size already fits "100.0" in its column at every width (contract.css), so
  * the readouts never stack. From a 26rem pair "/100" and the grade chip sit
  * beside the numeral; where numeral, gap and chip do not fit there, the pair

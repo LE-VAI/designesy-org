@@ -355,9 +355,8 @@
 
 /* -- The two numbers (contract fidelity and baseline), side by side -------- */
 
-/* Side by side at every width (owner decisions D1 and D3: two numbers, never
-   blended). A phone gets two narrow columns, so both numbers stay in one
-   glance. */
+/* Side by side at every width: two numbers, never blended. A phone gets two
+   narrow columns, so both numbers stay in one glance. */
 .cf-pair {
   container: cf-pair / inline-size;
   display: grid;
@@ -1344,9 +1343,9 @@
 
 /* -- A kept previous run (Edit inputs) -------------------------------------- */
 
-/* The last result stays under the reopened form until the next run lands
-   (owner decision 2026-10-08). Its ink steps down to the house muted tier, so
-   it never reads as current; one plain label names it. */
+/* The last result stays under the reopened form until the next run lands.
+   Its ink steps down to the house muted tier, so it never reads as current;
+   one plain label names it. */
 .cf-prev {
   --ink: var(--muted);
   display: grid;
