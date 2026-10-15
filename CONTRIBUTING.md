@@ -102,6 +102,8 @@ node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel ch
 
 A change to scoring logic goes into both files in the same pull request. `packages/score/test/source-drift.test.mjs` (part of `npm test` in `packages/score`) fails when one copy changes alone. Known, intended differences are pinned in `packages/score/test/fixtures/source-drift-baseline.json`, each with a reason. The Python offline engine in `packages/designesy-mcp` mirrors part of the engine; `node scripts/export-offline-golden.mjs --check` and its parity test keep it in step.
 
+Contract mode (`apps/site/app/lib/own-contract/`) lives only in the site. [docs/contract-mode-spec.md](docs/contract-mode-spec.md) describes it, and its source comments cite that document as "contract-mode spec §x.y". After a change there, run `node scripts/check-own-contract.mjs` from `apps/site`, and update the spec in the same pull request.
+
 **The design contract.** The design-system contract lives in `apps/site/app/lib/design-system-contract.ts`, and main publishes it on merge. A change to its content needs a version bump. Raise `version`, add an `adoption_history` entry, then run `npm run update-contract-lock` in `apps/site`. `scripts/check-contract-lock.js` fails when content changes under an unchanged version. The sibling contracts (`apps/site/app/lib/*-contract.ts`) work the same way: bump the version, add its dated line to the changelog page, and run `npm run update-sibling-contract-locks`.
 
 ## Commits and pull requests

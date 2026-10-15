@@ -1,4 +1,4 @@
-// f14 Styles use your contract's tokens (engine spec 6.3; from the research
+// f14 Styles use your contract's tokens (contract-mode spec §6.3; from the research
 // packet's token-versus-raw ratio). Declarations of the f02, f03, f04, f05,
 // f07 and f08 properties with a measurable value. A declaration uses your
 // token when it holds var(--x) and --x is located by map or name, or --x

@@ -1,5 +1,5 @@
 // f09 Declared text and background pairs meet contrast on shipped values
-// (engine spec 6.3; derived from v06). The `component` pairs; the worst pair
+// (contract-mode spec §6.3; derived from v06). The `component` pairs; the worst pair
 // decides. A FAIL caps fidelity at 65 (score.ts).
 
 import type { Ctx, CheckResultV2 } from './common';

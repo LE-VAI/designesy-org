@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Own-contract engine gate: a team's own DESIGN.md or DTCG file is read,
- * rejected or scored exactly as the engine spec says.
+ * rejected or scored exactly as the contract-mode spec says.
  *
  * WHY THIS EXISTS
  * Contract mode scores a page against a contract the team wrote, not against
@@ -14,7 +14,7 @@
  *
  * WHAT IT ASSERTS (offline; no network)
  *   1. Intake: fixtures DM-1 to DM-11 and DT-1 to DT-11 give the outcomes of
- *      engine spec 15.1 (accepted with a model that matches its golden, or the
+ *      contract-mode spec §15.1 (accepted with a model that matches its golden, or the
  *      problem code, with the fields the page builds its copy from: line,
  *      path, ref, chain, reason, counts); generated DT-10 limits (2,001
  *      tokens, 17 levels, 300 KiB); the token map; FORMAT_UNKNOWN; the 1 s
@@ -65,7 +65,7 @@ const fetchMod = h.load('app/lib/own-contract/fetch-contract.ts');
 const limits = h.load('app/lib/own-contract/limits.ts');
 const { lint } = await import('@google/design.md/linter');
 
-// Nothing in contract mode may print contract-derived data (engine spec 13):
+// Nothing in contract mode may print contract-derived data (contract-mode spec §13):
 // every console call during the run is captured and must stay empty.
 const logged = [];
 const realConsole = {};
@@ -148,7 +148,7 @@ function golden(name, c) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('1. Format detection (engine spec 4.1)');
+section('1. Format detection (contract-mode spec §4.1)');
 
 await check('a brace-first file is DTCG, with its $schema version', () => {
   assert.deepEqual(detect.detectFormat(fixture('DT-1.json')), { format: 'dtcg', formatVersion: '2025.10' });
@@ -175,7 +175,7 @@ await check('an explicit format wins over detection', async () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('2. Normalization (engine spec 3.2)');
+section('2. Normalization (contract-mode spec §3.2)');
 
 await check('every DESIGN.md color form converts (linter probe P1 values reproduced)', () => {
   const H = (s) => norm.hexOf(norm.parseColor(s));
@@ -607,7 +607,7 @@ await check('every error code has an HTTP status and a message builder', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('6. Parity (PAR-1) and the contract digest (engine spec 11.2)');
+section('6. Parity (PAR-1) and the contract digest (contract-mode spec §11.2)');
 
 await check('PAR-1: one system as DESIGN.md and as DTCG reads to the same counts', async () => {
   const a = accepted(await readFix('acme-design.md'));
@@ -655,7 +655,7 @@ await check('10 cold reads of one contract give one digest (determinism)', async
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('7. Linked contracts (engine spec 4.2)');
+section('7. Linked contracts (contract-mode spec §4.2)');
 
 const respond = (body, init = {}) => async () => new Response(body, init);
 await check('a 404 contract URL: CONTRACT_URL_UNREACHABLE http_error with status', async () => {
@@ -723,7 +723,7 @@ await check('detection, front matter, prose tables, headings and JSON positions'
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Scoring: binding, coverage, f01 to f14, both layers, null scores, baseline
-// titles, the published formula and the site fixtures (engine spec 5 to 9).
+// titles, the published formula and the site fixtures (contract-mode spec §5 to §9).
 // Modules load lazily, so a checkout without them fails each check by name
 // instead of stopping at load.
 // ═════════════════════════════════════════════════════════════════════════════
@@ -864,7 +864,7 @@ await check('a CRLF contract reports the size the caller sent, and every format 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('10. Page CSS reader and binding (engine spec 5.1 to 5.3)');
+section('10. Page CSS reader and binding (contract-mode spec §5.1 to §5.3)');
 
 await check('root custom properties come from :root, :root, :host and html, never from theme or media blocks', () => {
   const p = pageCss.readPageCss(':root { --a: #111; } @media (min-width: 1px) { :root { --a: #222; } } [data-theme=dark] { --a: #333; } html { --b: 4px; } @layer theme { :root, :host { --c: red; } } .dark { --a: #444 }');
@@ -921,7 +921,7 @@ await check('coverage: declared, located by map, name and value, groups, and a h
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('11. Fidelity checks at their thresholds (engine spec 6.2, 6.3)');
+section('11. Fidelity checks at their thresholds (contract-mode spec §6.2, §6.3)');
 
 const ROOT_OK = ':root { --color-ink: #111111; --color-paper: #ffffff; --color-accent: #0055ff; --color-muted: #666666; --color-line: #dddddd; --color-focus: var(--color-accent); --color-link: var(--color-accent); }';
 // f01
@@ -1206,7 +1206,7 @@ await check('evidence lists stop at 20 entries with a truncated count', async ()
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('12. Scoring both layers (engine spec 8)');
+section('12. Scoring both layers (contract-mode spec §8)');
 
 const fid = (statuses) => Object.entries(statuses).map(([id, status]) => ({ id, status, category: formula.FIDELITY_CATEGORY[id], layer: 'fidelity' }));
 const STATE4_FID = { f01: 'PASS', f02: 'PASS', f03: 'PASS', f04: 'PASS', f05: 'WARN', f06: 'SKIP', f07: 'PASS', f08: 'PASS', f09: 'PASS', f10: 'FAIL', f11: 'SKIP', f12: 'SKIP', f13: 'PASS', f14: 'WARN' };
@@ -1337,7 +1337,7 @@ await check('baseline results take their contractTitle and layer, keep their reg
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('14. Null scores (engine spec 9)');
+section('14. Null scores (contract-mode spec §9)');
 
 await check('empty shell: little text, an empty mount node and a module script', () => {
   assert.equal(nulls.isEmptyShell('<html><body><div id="root"></div><script type="module" src="/a.js"></script></body></html>'), true);
@@ -1352,7 +1352,7 @@ await check('no CSS: under 500 bytes after trimming', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('15. The published formula (engine spec 10.5 rule 3)');
+section('15. The published formula (contract-mode spec §10.5 rule 3)');
 
 await check('lists f01 to f14 with weights summing to 100, ceilings, baseline groups, null rules, a version and a date', () => {
   const f = formula.ownContractFormula();
@@ -1369,7 +1369,7 @@ await check('lists f01 to f14 with weights summing to 100, ceilings, baseline gr
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('16. Site fixtures S-1 to S-7 with DM-1 (engine spec 15.1)');
+section('16. Site fixtures S-1 to S-7 with DM-1 (contract-mode spec §15.1)');
 
 const S = (name) => lf(fs.readFileSync(path.join(FIX, 'sites', name), 'utf8'));
 const BASELINE_PASS = defs.CHECKS.map((c) => ({ id: c.id, item: c.item, category: c.category, status: c.type === 'manual' ? 'MANUAL' : 'PASS', detail: 'fixture' }));
@@ -1463,7 +1463,7 @@ await check('a 2 MB stylesheet of nested blocks reads in linear time (1 MB under
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// The route: POST /api/score with a contract (engine spec 10 to 13), the
+// The route: POST /api/score with a contract (contract-mode spec §10 to §13), the
 // published formula, and requests without a contract unchanged.
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -1511,7 +1511,7 @@ async function postScore(body, harness = api) {
 const needWired = () => assert.ok(ROUTE_WIRED, 'app/api/score/route.ts does not hand a contract to handleOwnContract');
 let SAMPLE = null;
 
-section('18. POST /api/score with a contract (engine spec 10.1 to 10.3, 11.3)');
+section('18. POST /api/score with a contract (contract-mode spec §10.1 to §10.3, §11.3)');
 
 await check('a contract run answers 200 with the documented shape, no-store, versions equal to the constants', async () => {
   needWired();
@@ -1697,7 +1697,7 @@ await check('the published formula route is static and serves the formula with i
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('19. Requests without a contract are unchanged (engine spec 15.4; A-EN-1)');
+section('19. Requests without a contract are unchanged (contract-mode spec §15.4; A-EN-1)');
 
 const SNAPSHOT = path.join(FIX, 'legacy-snapshot.json');
 const STRIP_TIME = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;
@@ -1768,7 +1768,7 @@ await check('every legacy run (40 pages, both scopes, every format) answers exac
 // ─────────────────────────────────────────────────────────────────────────────
 section('20. Privacy');
 
-await check('no console output during any intake above (engine spec 13)', () => {
+await check('no console output during any intake above (contract-mode spec §13)', () => {
   assert.deepEqual(logged, [], `console output: ${logged.slice(0, 3).join(' | ')}`);
 });
 

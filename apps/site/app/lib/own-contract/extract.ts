@@ -1,4 +1,4 @@
-// Shipped values, one extractor per kind (engine spec 5.1): what the page's
+// Shipped values, one extractor per kind (contract-mode spec §5.1): what the page's
 // usage CSS sets for color, font size, family, line height, radius, spacing,
 // target size and motion. Every value goes through var() resolution first;
 // a declaration whose var() cannot be resolved is left out.

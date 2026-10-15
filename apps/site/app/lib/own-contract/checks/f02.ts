@@ -1,4 +1,4 @@
-// f02 Shipped colors are in your palette (engine spec 6.3; derived from d03, d05).
+// f02 Shipped colors are in your palette (contract-mode spec §6.3; derived from d03, d05).
 // Distinct base colors the usage CSS paints (color, backgrounds, borders,
 // outline, fill, stroke, caret, accent, text decoration); a color is in the
 // palette when its RGB is within 1 per channel of a declared color (alpha is

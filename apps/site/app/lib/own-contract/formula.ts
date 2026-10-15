@@ -1,4 +1,4 @@
-// The published own-contract formula (engine spec 10.5 rule 3): the fourteen
+// The published own-contract formula (contract-mode spec §10.5 rule 3): the fourteen
 // fidelity checks with their categories, thresholds and evidence minimums,
 // the weights and ceilings, the baseline groups, and the null rules. GET /api/score/checks/own-contract serves
 // ownContractFormula(); the checks and the scorer read the same constants, so
@@ -22,10 +22,10 @@ import { DROP_REASONS } from './types';
 export const FORMULA_VERSION = '1.0.1';
 export const FORMULA_DATE = '2026-10-14';
 
-/** Share thresholds (engine spec 6.2; calibration defaults, lesser decision L6). */
+/** Share thresholds (contract-mode spec §6.2; calibration defaults, lesser decision L6). */
 export const SHARE_PASS_AT = 0.9;
 export const SHARE_WARN_AT = 0.7;
-/** f13 and f14 use their own bars (engine spec 6.3). */
+/** f13 and f14 use their own bars (contract-mode spec §6.3). */
 export const ALIAS_PASS_AT = 0.8;
 export const TOKEN_USE_PASS_AT = 0.8;
 export const TOKEN_USE_WARN_AT = 0.5;

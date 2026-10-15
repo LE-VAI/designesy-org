@@ -1,4 +1,4 @@
-// f06 Declared font features ship (engine spec 6.3; derived from v19).
+// f06 Declared font features ship (contract-mode spec §6.3; derived from v19).
 // Each declared OpenType tag must appear in font-feature-settings, or as its
 // font-variant keyword (tnum tabular-nums, lnum lining-nums, onum
 // oldstyle-nums, pnum proportional-nums, zero slashed-zero, smcp small-caps).

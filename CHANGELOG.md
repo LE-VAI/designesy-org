@@ -52,9 +52,13 @@ verdict, detail or score moves.
 - **Receipt.** `receipt.own_contract.digest` is a sha256 of the contract as
   read (prose, names and key order do not move it); `receipt.digest` covers
   the fidelity verdicts, then the baseline's.
-- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.0,
+- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.1,
   2026-10-14): every check, threshold, weight, ceiling, baseline group and
-  null rule.
+  null rule. In 1.0.1 a linter problem carries the DESIGN.md linter's sentence
+  whole in `linterMessage` (`value` is the offending value), a rejected
+  DESIGN.md carries the linter's totals (`linter`), and a problem that
+  absorbed a linter finding says so (`linterFinding`). No threshold, weight or
+  verdict moved.
 - **Limits.** 300 KB per request, 256 KB per contract, linked contracts only
   through the SSRF guard with an 8 s abort, 20 runs a minute and 300 a day per
   IP (failing open, as the edge limiter does). Nothing is cached or stored; a

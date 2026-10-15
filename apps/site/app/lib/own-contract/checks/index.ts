@@ -1,4 +1,4 @@
-// The fourteen fidelity checks, in order (engine spec 6.1).
+// The fourteen fidelity checks, in order (contract-mode spec §6.1).
 
 import type { Ctx, CheckResultV2 } from './common';
 import { f01 } from './f01';
