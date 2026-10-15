@@ -320,7 +320,6 @@ function EngineTile({
       data-grade={ok ? grade.toLowerCase() : undefined}
       aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${fmtScore(score)} out of 100, ${statusCount('PASS', pass)}, ${statusCount('WARN', warn)}, ${statusCount('FAIL', fail)}` : 'not yet run'}`}
     >
-      <span className="score-engine-tile-top" />
       <span className="score-engine-tile-head">
         <span className="score-engine-tile-label">{label}</span>
         <span className="score-engine-tile-count">{checkCount}</span>

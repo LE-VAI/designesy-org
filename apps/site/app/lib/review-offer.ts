@@ -11,6 +11,8 @@
  * the approved offer spec's. Change the spec first, then this file.
  */
 
+import { SITE_CONTACT_EMAIL, contactMailto } from './site-meta';
+
 /** The price, as shown. One-time and in US dollars; never a subscription. */
 export const REVIEW_PRICE = '$899';
 
@@ -44,11 +46,10 @@ export const REVIEW_CTA_LABEL = `Get the full Review · ${REVIEW_PRICE}`;
 export const REVIEW_REFUND_POLICY =
   'Full refund any time before work starts. After delivery, the 30-day re-score is guaranteed.';
 
-export const REVIEW_CONTACT_EMAIL = 'hello@designesy.org';
+export const REVIEW_CONTACT_EMAIL = SITE_CONTACT_EMAIL;
 
 /** A question before buying goes to a person, with the subject filled in. */
-export const REVIEW_QUESTION_URL =
-  'mailto:hello@designesy.org?subject=Designesy%20Review%20question';
+export const REVIEW_QUESTION_URL = contactMailto('Designesy Review question');
 
 /**
  * The claims disclosure, verbatim from the offer spec. Every surface that

@@ -1,0 +1,3 @@
+# Contract fixtures are read byte for byte: line numbers, sizes and digests
+# in the tests assume LF, whatever the checkout platform.
+* text eol=lf

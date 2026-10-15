@@ -36,7 +36,7 @@
 }
 
 .demo-swatch-name {
-  font-size: 0.6875rem; /* 11px: captions below AA threshold at 0.58rem */
+  font-size: var(--text-label); /* 11px: captions below AA threshold at 0.58rem */
   color: var(--muted-dim);
   letter-spacing: 0.04em;
   text-align: center;
@@ -72,7 +72,7 @@
 .demo-radius-box.r-none { border-radius: 0; }
 
 .demo-radius-tag {
-  font-size: 0.6rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -92,7 +92,7 @@
 }
 
 .demo-easing-row > span:first-child {
-  font-size: 0.58rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   font-family: var(--mono);
   min-width: 5.5rem;
@@ -138,7 +138,7 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   cursor: pointer;
 }
 
@@ -181,7 +181,7 @@
 }
 
 .demo-state-tag {
-  font-size: 0.58rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -190,7 +190,7 @@
 
 .demo-state-btn {
   font: inherit;
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   font-weight: 600;
   padding: var(--space-fine-45) var(--space-fine-110);
   border-radius: var(--radius-sm);
@@ -312,7 +312,7 @@
 
 .kv-cell > dt {
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -323,7 +323,7 @@
 
 .kv-cell > dd {
   min-width: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--ink);
   overflow-wrap: break-word;
@@ -353,7 +353,7 @@
 .kv-mono,
 .kv-cell > dd.kv-mono {
   font-family: var(--mono);
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -364,7 +364,7 @@
 }
 
 .kv-cell > dd.kv-source {
-  font: 500 0.75rem/1.4 var(--mono);
+  font: 500 var(--text-label)/1.4 var(--mono);
   color: var(--muted);
 }
 
@@ -374,7 +374,7 @@
 }
 
 .kv-cell > dd.kv-note {
-  font-size: 0.875rem;
+  font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted);
 }
@@ -406,7 +406,7 @@
 
 .kv-figure-cap {
   max-width: 14rem;
-  font-size: 0.8125rem;
+  font-size: var(--text-label);
   line-height: 1.35;
   color: var(--muted);
 }
@@ -421,7 +421,7 @@
 }
 
 .kv-cell.is-foot > dd {
-  font: 500 0.8125rem/1.45 var(--mono);
+  font: 500 var(--text-label)/1.45 var(--mono);
   color: var(--muted);
 }
 
@@ -523,7 +523,7 @@
    as it is written in the machine export. */
 .row-title.contract-ident {
   font-family: var(--mono);
-  font-size: 0.875rem;
+  font-size: var(--text-body);
   font-weight: 600;
   letter-spacing: 0;
 }
@@ -535,7 +535,7 @@
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  font: 650 0.6875rem/1.2 var(--sans);
+  font: 650 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -577,7 +577,7 @@
 .row-side.report-weight > .report-weight-num {
   grid-column: 2;
   font-family: var(--sans);
-  font-size: 2rem;
+  font-size: var(--text-h2);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -589,7 +589,7 @@
    column; it drops to 1.5rem there so it does not outweigh the title. */
 @container rows (width < 64rem) {
   .row-side.report-weight > .report-weight-num {
-    font-size: 1.5rem;
+    font-size: var(--text-h3);
   }
 }
 
@@ -620,7 +620,7 @@
 }
 
 .open-questions > li {
-  font-size: 1rem;
+  font-size: var(--text-body);
   line-height: 1.5;
   color: var(--muted);
   text-wrap: pretty;
@@ -633,7 +633,7 @@
 .contract-eyebrow,
 .doctrine-section .contract-eyebrow {
   font-family: var(--sans);
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   font-weight: 600;
   line-height: 1rem;
   letter-spacing: 0.08em;
@@ -663,7 +663,7 @@
 .contents-back {
   flex-shrink: 0;
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--text-label);
   letter-spacing: 0.04em;
   color: var(--muted-dim);
   text-decoration: none;

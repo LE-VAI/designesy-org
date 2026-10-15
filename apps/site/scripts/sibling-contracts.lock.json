@@ -1,0 +1,70 @@
+{
+  "$comment": "Written by `npm run update-sibling-contract-locks` in apps/site. Do not edit by hand: scripts/check-sibling-contract-locks.js says what each hash covers. A value and source change goes with a new version.",
+  "scheme": 1,
+  "excluded": [
+    "updated",
+    "version"
+  ],
+  "contracts": [
+    {
+      "id": "designesy.a11y",
+      "version": "0.1.2",
+      "value": "f25c8deebdc87b049d9dedd2061d4247fbe2817f70dbf43729f272f3305bb3cd",
+      "source": "d33ab7162d68ddb15b91c495595d918ac686b35ad17272924d3509d95ca80440"
+    },
+    {
+      "id": "designesy.compare",
+      "version": "0.1.1",
+      "value": "2aee1ce54a54b17cbdb7a206c6e47453430c549a7090c09781939586a7b9ef70",
+      "source": "50ea12175d0c4c4d4b1f14a1f1f1f43b567287768a85b59db8789b87f533dd01"
+    },
+    {
+      "id": "designesy.components",
+      "version": "0.1.1",
+      "value": "b2ab7dc5bf5ba4fe7fcaf9c1fc041c7d01fab76595c8e29587968499c2744878",
+      "source": "f0fa57e107452aba87c51788c659563351c125266ce938407fd521cc8ce130a5"
+    },
+    {
+      "id": "designesy.drift",
+      "version": "0.1.1",
+      "value": "02cf98dbe00bd5b7e21a63ac529735d35a29f00fdd78f8f40a32ea8c6815df8a",
+      "source": "b096933ff9fd95ff27205e67262c422415d6db68ccad8a0333533e36d8de9a61"
+    },
+    {
+      "id": "designesy.guardrails",
+      "version": "0.1.3",
+      "value": "baaecc9221a26ce4218445c78b88b48966eaaa4546d8d529e5143523ae080af5",
+      "source": "50b67dc36eef54a65ceef3bb1dd4b45ac218f226a3e16c59098c065665e6a627"
+    },
+    {
+      "id": "designesy.monitor",
+      "version": "0.1.3",
+      "value": "e336d7a5b044b3d7d759766c564b120f6d71c28c90af48ee74535f3d507def16",
+      "source": "1a533f103b1ba35249ec5f32b9c09782f66515931bea3d814cebd0c47f14d505"
+    },
+    {
+      "id": "designesy.motion",
+      "version": "0.1.1",
+      "value": "554ce1443d3f53028462346bcd903b344eb03b9dcf70063f764a065b5003748c",
+      "source": "5d26338b7feaa9586c6f3d5d044c6d09aabaaf6986600fa6b313459b541acce5"
+    },
+    {
+      "id": "designesy.readiness",
+      "version": "0.1.1",
+      "value": "6e256173f020cdf7fd88fc99944150724dc812fb6592b18cfc983758ac314126",
+      "source": "b296bf153dcd86c149893aee03ee766829681ecfb6f52ea96a096a09d70b2751"
+    },
+    {
+      "id": "designesy.report",
+      "version": "0.1.1",
+      "value": "65193e7f9b9594df759e299234ad44904072194027dead5509717735b59ca249",
+      "source": "a4ec4911dd984a3bbb2d7f9d74140cd6d196f691ed8a97c5d94a43ce070c28ae"
+    },
+    {
+      "id": "designesy.tokens",
+      "version": "0.1.2",
+      "value": "07bcada2135a79e224044abc874e5b6bebc3b5d4227fee0875c064cb95353780",
+      "source": "5dbf12f3cbc2a0e8e69cb28e78e0e3da9609cbd869465dcea8262f095e4b051b"
+    }
+  ]
+}

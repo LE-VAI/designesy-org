@@ -26,6 +26,9 @@
  *   D. The drawer closes on Escape and returns focus to its trigger.
  *   E. Tab stays inside the palette while it is open (focus containment).
  *   F. No scroll-lock leaks: after open/close cycles the page can scroll again.
+ *   G. The Senses popover closes when focus leaves it for the page (Tab,
+ *      Shift+Tab) or a press lands outside it, and Escape returns focus to
+ *      its trigger. Desktop and phone.
  *
  * USAGE
  *   node scripts/qa-keyboard.js [--base http://127.0.0.1:3422] [--json] [--cdp URL]
@@ -478,6 +481,118 @@ CHECKS.push({
   },
 });
 
+/**
+ * G: the Senses popover closes when focus leaves it, and Escape returns focus.
+ *
+ * It used to stay open after Tab carried focus out to the page, and its
+ * shadow then sat over the next focused control: a textarea's top edge read
+ * 2.01:1 under it, and it covered a path link (WCAG 2.4.11 / 2.4.12). Asserts,
+ * at both sizes:
+ *   1. Enter on the trigger opens it; Tab from the trigger into it keeps it open.
+ *   2. Tab on past the last row closes it, with focus out on the page.
+ *   3. Shift+Tab off the trigger, with it open, closes it.
+ *   4. Escape from inside closes it and puts focus on the trigger.
+ *   5. A press on the page outside it closes it.
+ */
+CHECKS.push({
+  id: 'senses-focus-out',
+  sizes: 'both',
+  async run(page, route, findings) {
+    const add = (detail) => findings.push({ route, kind: 'senses-focus-out', detail });
+    const read = () =>
+      page.evaluate(`(() => {
+        const root = document.querySelector('.senses');
+        const panel = root && root.querySelector('.senses-panel');
+        const trigger = root && root.querySelector('.senses-trigger');
+        const a = document.activeElement;
+        return {
+          exists: !!panel && !!trigger,
+          open: !!panel && !panel.hidden && getComputedStyle(panel).display !== 'none',
+          expanded: !!trigger && trigger.getAttribute('aria-expanded') === 'true',
+          onTrigger: !!trigger && a === trigger,
+          inPanel: !!panel && panel.contains(a),
+          inRoot: !!root && root.contains(a),
+          onBody: !a || a === document.body,
+        };
+      })()`);
+    // From a known closed state: on a build where an earlier step left it
+    // open, Enter on the trigger would toggle it shut and skip the step.
+    const openFromTrigger = async () => {
+      await page.focus('.senses-trigger');
+      if ((await read()).open) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        await page.focus('.senses-trigger');
+      }
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(400);
+      return read();
+    };
+
+    await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.waitForTimeout(1200);
+    const first = await read();
+    if (!first.exists) {
+      add('no .senses-trigger / .senses-panel in the DOM');
+      return;
+    }
+
+    // 1 + 2: open, Tab in (stays open), Tab on until focus leaves the root.
+    let s = await openFromTrigger();
+    if (!s.open || !s.expanded) {
+      add('Enter on the trigger did not open the panel');
+      return;
+    }
+    await page.keyboard.press('Tab');
+    await page.waitForTimeout(250);
+    s = await read();
+    if (!s.inPanel) add('Tab from the open trigger did not move focus into the panel');
+    if (!s.open) add('moving focus from the trigger into the panel closed it');
+    for (let i = 0; i < 8 && s.inRoot; i++) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(250);
+      s = await read();
+    }
+    if (s.inRoot) {
+      add('Tab never left the panel in 8 presses');
+    } else {
+      if (s.open || s.expanded) add('Tab moved focus out to the page and the panel stayed open');
+      if (s.onBody) add('focus fell to the body after Tab left the panel');
+    }
+
+    // 3: Shift+Tab off the trigger, backwards, out of the open panel.
+    s = await openFromTrigger();
+    if (s.open) {
+      await page.keyboard.press('Shift+Tab');
+      await page.waitForTimeout(300);
+      s = await read();
+      if (!s.inRoot && (s.open || s.expanded)) add('Shift+Tab off the trigger left the panel open');
+    }
+
+    // 4: Escape from inside closes and returns focus to the trigger.
+    s = await openFromTrigger();
+    if (s.open) {
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(250);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(400);
+      s = await read();
+      if (s.open || s.expanded) add('Escape did not close the panel');
+      if (!s.onTrigger) add('Escape closed the panel but focus did not return to the trigger');
+    }
+
+    // 5: a press on the page outside it closes it.
+    s = await openFromTrigger();
+    if (s.open) {
+      const vp = page.viewportSize() || (await page.evaluate('({ width: innerWidth, height: innerHeight })'));
+      await page.mouse.click(Math.round(vp.width * 0.2), Math.round(vp.height * 0.75));
+      await page.waitForTimeout(400);
+      s = await read();
+      if (s.open || s.expanded) add('a press on the page outside the panel left it open');
+    }
+  },
+});
+
 (async () => {
   const { browser, connected } = await launch();
   const findings = [];
@@ -487,7 +602,7 @@ CHECKS.push({
     for (const check of CHECKS) {
       // Desktop for the keyboard flows; the drawer check is phone-only (the
       // trigger is display:none above 720px, so desktop has no layers to test).
-      const sizes = check.phoneOnly ? [PHONE] : [DESKTOP];
+      const sizes = check.phoneOnly ? [PHONE] : check.sizes === 'both' ? [DESKTOP, PHONE] : [DESKTOP];
       for (const size of sizes) {
         const { page, close } = await newPage(browser, size, connected);
         const route = BASE + '/';

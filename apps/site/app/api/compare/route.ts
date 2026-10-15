@@ -5,11 +5,12 @@
 // value-changed, scale-stop-changed, contrast-drift, structure-delta,
 // and score-delta (runs /score on both).
 //
-// Contract: /contracts/compare.json (designesy.compare v0.1.0)
+// Contract: /contracts/compare.json (designesy.compare; the version is lib/compare-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { clientKey } from '../../lib/rate-limit';
 
 // ── URL utilities (inlined — do not import from a route file) ─────────────────
 
@@ -619,8 +620,8 @@ const scoreCompare = unstable_cache(scoreCompareUncached, ['designesy-compare'],
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 30 compare scans per hour.' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },

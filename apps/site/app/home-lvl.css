@@ -106,33 +106,6 @@
   }
 }
 
-.home .home-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  margin: 0 0 1.35rem;
-  padding: 0.42rem 0.8rem 0.42rem 0.62rem;
-  border-radius: 999px;
-  background: var(--lv-well);
-  box-shadow: inset 0 0 0 1px var(--lv-well-line);
-  font: 500 0.78rem/1 var(--sans);
-  color: var(--muted);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.home .home-kicker b {
-  color: var(--ink);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* A version is a name, not a column of figures: tabular slots set each
-   period a digit wide, and "v0.4.3" read as "v0 . 4 . 3". */
-.home .home-kicker .home-kicker-version {
-  font-variant-numeric: normal;
-  font-feature-settings: normal;
-}
 
 /* The premise and the claim. Both lines keep the ink; the weight carries
    the hierarchy, so "AI makes execution free." reads as the setup and
@@ -142,14 +115,6 @@
   font-weight: 450;
 }
 
-.home-kicker-live {
-  position: relative;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 20%, transparent);
-}
 
 /* The claim is a couplet: one sentence per line at every width from 721px.
    The old 12.61em measure was sized for the rotating word, and once the
@@ -203,7 +168,7 @@
 .home .home-hero .hero-sub {
   max-width: 46rem;
   margin: 0 0 1.75rem;
-  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  font-size: var(--text-lead);
   line-height: 1.55;
   color: var(--muted);
 }
@@ -355,7 +320,7 @@
   height: 2.9rem;
   padding: 0 1rem;
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.78rem/1 var(--sans);
+  font: 500 var(--text-label)/1 var(--sans);
   color: var(--muted);
 }
 
@@ -390,7 +355,7 @@
   border-radius: var(--radius-md);
   background: var(--lv-well);
   box-shadow: inset 0 0 0 1px var(--line-faint);
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -399,16 +364,9 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
 }
 
-.vc-live {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--live);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--live) 18%, transparent);
-}
 
 /* --- Body --- */
 
@@ -425,7 +383,7 @@
 
 .vc-grid-head,
 .vc-label {
-  font: 500 0.66rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -453,7 +411,7 @@
 }
 
 .vc-row-label {
-  font: 500 0.74rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -511,7 +469,7 @@
   justify-self: end;
   height: var(--vc-dlh);
   overflow: hidden;
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted-dim);
   font-variant-numeric: tabular-nums;
 }
@@ -654,7 +612,7 @@
   padding: 0.85rem 0;
   border-block: 1px solid var(--line-faint);
   list-style: none;
-  font: 400 0.78rem/1.25 var(--sans);
+  font: 400 var(--text-label)/1.25 var(--sans);
   color: var(--muted);
   animation-name: vc-gate;
 }
@@ -719,12 +677,12 @@
 
 .vc-log-line {
   display: grid;
-  /* 2.4rem and 0.6rem at the full 0.72rem size, as before. */
+  /* The id column and gap in em, so they track the label size (12.8px, the floor). */
   grid-template-columns: 3.3333em minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.8333em;
   height: var(--vc-lh);
-  font: 400 clamp(0.6rem, 100cqi / 34, 0.72rem)/1 var(--mono);
+  font: 400 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -740,7 +698,7 @@
 
 .vc-log-status {
   font-weight: 500;
-  font-size: 0.9167em; /* 0.66rem at full size; scales with its line */
+  font-size: 1em; /* the line's own size: the 12.8px floor */
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -771,13 +729,13 @@
   gap: 0.4rem 1.5rem;
   margin-top: var(--space-24);
   padding-inline: 0;
-  font: 400 0.8rem/1.45 var(--sans);
+  font: 400 var(--text-body)/1.45 var(--sans);
   color: var(--muted);
 }
 
 .vc-caption-meta {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -883,27 +841,25 @@ html[data-motion="paused"] .vc-glow {
   .vc-log { grid-column: 2; grid-row: 1 / span 2; }
   /* The log's room shrinks to a half pane (287px at 641) and then a phone's
      full pane (329px at 390), so the id column closes to the ids' own three
-     characters and the gaps to half an em: 1.99 + 1 + 2.49 + 25.66 =
-     31.14em, /32. Full labels at 10.3px on a 390 phone. */
+     characters and the gaps to half an em. The size holds at the 12.8px floor
+     rather than shrinking to fit; the longest labels ellipsize instead. */
   .vc-log-line {
     grid-template-columns: 3ch minmax(0, 1fr) auto;
     gap: 0.5em;
-    font-size: clamp(0.6rem, 100cqi / 32, 0.72rem);
+    font-size: var(--text-label);
   }
 }
 
-/* Where even that would fall under the 0.6rem floor (a log under 19.2rem:
-   the half pane from 641 to about 680, phones under about 367), the id goes
-   and the label and its status keep the line: 0.5 + 2.49 + 25.66 = 28.65em,
-   /29.5. Below a 283px log (a 320 phone) the floor binds and the longest
-   labels ellipsize. */
-@container (width < 19.2rem) {
+/* In a log under 25rem (tablets, the half pane and phones) the id goes, so the
+   label and its status keep the line at the 12.8px floor; only the
+   longest labels ellipsize, on the narrowest phones. */
+@container (width < 25rem) {
   .vc-log-id {
     display: none;
   }
   .vc-log-line {
     grid-template-columns: minmax(0, 1fr) auto;
-    font-size: clamp(0.6rem, 100cqi / 29.5, 0.72rem);
+    font-size: var(--text-label);
   }
 }
 
@@ -925,10 +881,10 @@ html[data-motion="paused"] .vc-glow {
   .vc-bar-url { justify-self: end; }
   .vc-grid { padding: 1rem var(--vc-face-x) 1.1rem; }
   .vc-row {
-    grid-template-columns: 5.6rem minmax(0, 1fr) 1rem;
+    grid-template-columns: 6.9rem minmax(0, 1fr) 1rem;   /* "accessibility" at the 12.8px floor */
     gap: 0.5rem;
   }
-  .vc-row-label { font-size: 0.66rem; }
+  .vc-row-label { font-size: var(--text-label); }
   .vc-side {
     grid-template-columns: minmax(0, 1fr);
     padding: 1rem var(--vc-face-x) 1.1rem;
@@ -959,7 +915,7 @@ html[data-motion="paused"] .vc-glow {
   border-radius: var(--radius-md);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  font: 400 0.8rem/1.3 var(--sans);
+  font: 400 var(--text-label)/1.3 var(--sans);
   color: var(--muted);
 }
 
@@ -1026,7 +982,7 @@ html[data-motion="paused"] .vc-glow {
 .hero-cohort-score,
 .hero-cohort-low span[data-tabular] {
   font-family: var(--mono);
-  font-size: 0.76rem;
+  font-size: var(--text-label);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -1044,7 +1000,7 @@ html[data-motion="paused"] .vc-glow {
   height: 1.3rem;
   padding-inline: 0.3rem;
   border-radius: var(--radius-sm);
-  font: 600 0.7rem/1 var(--mono);
+  font: 600 var(--text-label)/1 var(--mono);
   color: var(--ink);
   box-shadow: inset 0 0 0 1px currentColor;
 }
@@ -1060,7 +1016,7 @@ html[data-motion="paused"] .vc-glow {
   align-items: center;
   min-block-size: 1.5rem; /* WCAG 2.5.8: a standalone link, not one inside a sentence */
   margin-left: auto;
-  font-size: 0.8rem;
+  font-size: var(--text-body);
 }
 
 /* A phone's hero: the cohort is a list on one set of columns, name | score
@@ -1133,7 +1089,7 @@ html[data-motion="paused"] .vc-glow {
 }
 
 .hm-label {
-  font: 500 0.78rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
   transition: color var(--duration-fast) var(--ease-out);
 }
@@ -1197,7 +1153,7 @@ html[data-motion="paused"] .vc-glow {
 
 .hm-value {
   justify-self: end;
-  font: 500 0.82rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -1240,7 +1196,7 @@ html[data-motion="paused"] .vc-glow {
    meters, in the panel's unit colour. */
 .home-health-note {
   margin: var(--space-16) 0 0;
-  font-size: 0.72rem;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -1307,16 +1263,7 @@ html[data-motion="paused"] .vc-glow {
   .home .hero-display-line {
     text-wrap: balance;
   }
-  .home .home-kicker {
-    font-size: 0.72rem;
-  }
+
 }
 
-/* Narrow phones: the kicker keeps to one line (at line-height 1 in a round
-   capsule, two lines looked pinched). The clause that goes, "rescored
-   weekly", is also the console's caption just below. */
-@media (max-width: 480px) {
-  .home-kicker-more {
-    display: none;
-  }
-}
+

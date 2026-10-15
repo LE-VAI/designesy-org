@@ -14,7 +14,7 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Guardrails',
   description:
-    'Generate a frozen build contract for AI coding agents from any design system: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and DESIGN.md (Google open spec). The product layer.',
+    'Generate a frozen build contract for AI coding agents from any design system: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, and a file in the open DESIGN.md format. The product layer.',
   path: '/guardrails',
 
   machineSibling: '/contracts/guardrails.json',

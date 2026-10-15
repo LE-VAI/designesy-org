@@ -300,6 +300,12 @@ const CHECKS: CheckDef[] = [
     how: 'Parses all font-family declarations and counts distinct families. PASS if ≤ 3. WARN if 4 or 5. FAIL if 6+. More than 3 families suggests inconsistency and hurts performance.',
   },
   {
+    id: 'v46',
+    item: 'Type sizes come from the scale',
+    category: 'cadence',
+    how: "Reads the type scale from the page's own :root type tokens (names such as --text-*, --font-size-*, --fs-* or --type-* whose value is a static rem or px length; a colour token such as --text-muted never counts), takes their values plus their median ratio as the steps, and the smallest token as the floor. Every static rem or px font-size is judged: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest token. A clamp(), min() or max() that moves with a viewport or container unit is deliberate fluid type and is accepted as written; only its lower bound is held to the floor. Relative sizes (em, %, keywords) follow their parent and are not judged. WARN only; SKIP with fewer than three type tokens. v16 asks for rem; this asks whether each rem sits on the scale.",
+  },
+  {
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
@@ -335,9 +341,9 @@ const CHECKS: CheckDef[] = [
   // ── Spec (4%) — v0.4.0 ──
   {
     id: 'v37',
-    item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)',
+    item: 'DESIGN.md spec-layer validation (DESIGN.md format lint)',
     category: 'spec',
-    how: 'Fetches /DESIGN.md from the target origin and runs Google\'s @google/design.md CLI linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
+    how: 'Fetches /DESIGN.md from the target origin and runs the DESIGN.md format\'s linter (11 lint rules: broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order). PASS on clean lint. WARN on lint warnings. FAIL on lint errors. N/A if /DESIGN.md is not served; this is expected, as no public convention requires it yet.',
     skipReason: 'N/A if /DESIGN.md is not served at the target origin; no public convention requires it yet.',
   },
 
@@ -414,7 +420,7 @@ const CATEGORY_NOTES: Record<string, string> = {
   identity: 'Document identity: semantic landmarks (h1, title, meta description, main, header, nav) and AI-disclosure readiness (EU AI Act, Article 50).',
   interaction: 'Focus visibility: :focus-visible rings declared.',
   performance: 'Core Web Vitals (LCP, INP, CLS). They need a CDP or Playwright trace, so the static engine marks them manual; the weight is held in reserve.',
-  spec: 'The DESIGN.md spec layer: Google’s @google/design.md linter, run when a site serves /DESIGN.md and not applicable otherwise.',
+  spec: 'The DESIGN.md spec layer: the DESIGN.md format’s linter, run when a site serves /DESIGN.md and not applicable otherwise.',
   responsive: 'Horizontal overflow at 375, 720, 860 and 1080 px and up. It needs a browser viewport, so the static engine marks it manual; the weight is held in reserve.',
 };
 
@@ -482,6 +488,22 @@ const UNIFORM = KNOBS.filter((k) => /^w[+-]/.test(k.key));
 const OAT = KNOBS.filter((k) => k.key.startsWith('oat-'));
 const OAT_MAX_FLIPS = Math.max(...OAT.map((k) => k.gradeChanges));
 const OAT_MAX_DELTA = Math.max(...OAT.map((k) => k.maxScoreDelta));
+// The method's judgment calls, ranked by the most grades any of their knobs
+// moves in this report. Read from the data, because the order changes between
+// runs: on 2026-09-28 slop came second; on 2026-10-12 originality and the bands
+// both moved more grades than slop did.
+const JUDGMENT_CALLS = ([
+  ['the WARN credit', ['warn-0.25', 'warn-0.75']],
+  ['the originality lift', ['orig+5']],
+  ['the slop deduction', ['slop+5']],
+  ['the grade bands', ['bands-tight', 'bands-loose']],
+  ['the accessibility floor', ['a11y-50', 'a11y-70']],
+  ['the ceilings', ['nocaps', 'no-anyfail']],
+] as const)
+  .map(([name, keys]) => ({ name, flips: Math.max(0, ...keys.map((k) => knob(k)?.gradeChanges ?? 0)) }))
+  .filter((c) => c.flips > 0)
+  .sort((a, b) => b.flips - a.flips);
+const [TOP_CALL, ...NEXT_CALLS] = JUDGMENT_CALLS;
 
 type RankRow = { url: string; baselineRank: number; bestRank: number; worstRank: number; bandWidth: number };
 const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineRank - b.baselineRank);
@@ -751,7 +773,7 @@ export default function MethodologyPage() {
                   {[...GRADES].map((g) => (
                     <div key={g}>
                       <dt>
-                        <span className="dx-grade" data-tone={g === 'A' || g === 'B' ? 'pass' : g === 'F' ? 'fail' : 'warn'}>
+                        <span className="dx-grade" data-grade={g.toLowerCase()}>
                           {g}
                         </span>
                         <span className="dx-band-range">{BAND_RANGE[g]}</span>
@@ -782,12 +804,12 @@ export default function MethodologyPage() {
                       caption={`Composite score of every leaderboard site, weekly run of ${SCORES_DATE}.`}
                       head={['Site', 'Rank', 'Grade', 'Score']}
                       numeric={[1, 3]}
-                      rows={COHORT.map((s) => [s.name, s.rank, s.grade, fmt(s.score)])}
+                      rows={COHORT.map((s) => [s.name, s.rank ?? 'not ranked', s.grade, fmt(s.score)])}
                     />
                   }
                 >
                   <CohortStrip
-                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable }))}
+                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable, heldLabel: s.staleLabel }))}
                     median={COHORT_STATS.median}
                     label={`Composite scores of ${COHORT_STATS.count} sites from 40 to 100: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}; median ${fmt(COHORT_STATS.median)}.`}
                     idle={<span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>}
@@ -971,7 +993,7 @@ export default function MethodologyPage() {
                   <summary>
                     <span className="dx-study-title">Sensitivity</span>
                     <span className="dx-study-line">
-                      {KNOBS.length} perturbations; the WARN credit moves the most grades ({knob('warn-0.75')?.gradeChanges} of{' '}
+                      {KNOBS.length} perturbations; {TOP_CALL?.name} moves the most grades ({TOP_CALL?.flips} of{' '}
                       {SENSITIVITY.sites})
                     </span>
                   </summary>
@@ -985,8 +1007,8 @@ export default function MethodologyPage() {
                       <p>
                         <strong>Uniform weight changes do nothing.</strong> Scaling every weight by 10 or 20 per cent in either
                         direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} and no rank:
-                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> the WARN credit,
-                        then slop and originality. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
+                        the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> {TOP_CALL?.name}{' '}
+                        ({TOP_CALL?.flips} grades), then {NEXT_CALLS.slice(0, 2).map((c) => `${c.name} (${c.flips})`).join(' and ')}. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
                         and {fmt(OAT_MAX_DELTA)} points.
                       </p>
                     </div>
@@ -1209,13 +1231,17 @@ export default function MethodologyPage() {
                     <dt>
                       <a href="/api/leaderboard">/api/leaderboard</a>
                     </dt>
-                    <dd>JSON with each site&apos;s category scores. CORS-enabled.</dd>
+                    <dd>
+                      JSON with each site&apos;s category scores, its status (current and ranked, or stale: last scored on an
+                      earlier run because the latest could not re-score it), its relationship to Designesy (operator or
+                      competitor) with a disclosure, and the address for disputes. CORS-enabled.
+                    </dd>
                   </div>
                   <div>
                     <dt>
                       <a href="/api/leaderboard.csv">/api/leaderboard.csv</a>
                     </dt>
-                    <dd>RFC 4180 CSV with a header row, for spreadsheets.</dd>
+                    <dd>RFC 4180 CSV with a header row, for spreadsheets. The same status, relationship and disclosure columns.</dd>
                   </div>
                 </dl>
                 <p className="dx-src">

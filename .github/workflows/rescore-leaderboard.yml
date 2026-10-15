@@ -27,10 +27,10 @@ name: Rescore Leaderboard
 # while this workflow was still waiting, and the wait then merged on UNSTABLE,
 # before the three non-required "Visual gates" jobs had finished; a merge made
 # with GITHUB_TOKEN also starts no push CI on main. So this workflow no longer
-# starts CI or merges. It re-scores, opens the PR and stops. A person (the
-# owner's Monday landing task) starts the held CI runs, checks the data, and
+# starts CI or merges. It re-scores, opens the PR and stops. A maintainer
+# starts the held CI runs, checks the data, and
 # merges only when every check, the visual gates included, has passed and
-# GitHub reports CLEAN. Owner decision, 2026-10-11. leaderboard-freshness.yml
+# GitHub reports CLEAN. leaderboard-freshness.yml
 # independently alarms if the public data is more than 8 days old.
 #
 # The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
@@ -71,7 +71,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Re-score all leaderboard sites
         env:
@@ -100,6 +100,14 @@ jobs:
         run: |
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
+          # A second run on the same UTC day (a manual dispatch, then the
+          # Monday cron) found the first run's merged branch still on the
+          # remote: the push was rejected as non-fast-forward after the
+          # scoring had finished, and that week's data was lost (2026-10-12).
+          # Keep the plain name when it is free; otherwise add the run id.
+          if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null; then
+            BRANCH="${BRANCH}-${GITHUB_RUN_ID}"
+          fi
           git config user.name 'LE-VAI'
           git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git checkout -b "${BRANCH}"

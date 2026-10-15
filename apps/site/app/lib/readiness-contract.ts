@@ -1,5 +1,5 @@
 /**
- * Designesy AI Readiness Contract v0.1.0 — machine-readable form.
+ * Designesy AI Readiness Contract — machine-readable form (the version is `version` below).
  * Sibling contract governing design-system AI-readiness scoring.
  * Source: zeroheight 2026 Design System Maturity Model (AI Readiness axis),
  *          DLS Lead "how to make a design system AI-ready",
@@ -13,13 +13,13 @@
 
 export const readinessContract = {
   id: 'designesy.readiness',
-  version: '0.1.0',
+  version: '0.1.1',
   status: 'provisional',
   name: 'Designesy AI Readiness Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/readiness',
   machine_url: 'https://www.designesy.org/contracts/readiness.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'AI readiness is the 6th maturity axis (zeroheight 2026). A design system is AI-ready when it exposes machine-readable context that AI coding agents can consume: tokens, rules, discovery endpoints, and verification. This contract defines the checks that score it.',
   source_authority: {
@@ -42,7 +42,7 @@ export const readinessContract = {
       'llms.txt brief present at /.well-known or /llms.txt',
       'agent.json discovery document at /.well-known/agent.json',
       'MCP endpoint exposing tools/list for AI agents',
-      'DESIGN.md present (the @google/design.md standard)',
+      'DESIGN.md present (the DESIGN.md format)',
       'Token documentation: tokens carry $description for agent context',
       'Component contract: machine-readable component schema',
       'Sitemap.xml present for crawlability',
@@ -58,7 +58,7 @@ export const readinessContract = {
       { id: 'r02', item: 'llms.txt present', pass: '/llms.txt returns agent-facing brief', fail: 'No /llms.txt found (agents have no orientation brief)' },
       { id: 'r03', item: 'agent.json present', pass: '/.well-known/agent.json returns discovery document', fail: 'No /.well-known/agent.json (agents have no discovery endpoint)' },
       { id: 'r04', item: 'MCP endpoint responds to tools/list', pass: 'MCP endpoint found and responds with tool list', fail: 'No MCP endpoint detected (agents cannot call tools)', warn: 'Endpoint exists but did not respond to tools/list' },
-      { id: 'r05', item: 'DESIGN.md present (Google design.md standard)', pass: '/DESIGN.md found; follows the @google/design.md standard', fail: 'No /DESIGN.md (missing the machine-readable design brief)' },
+      { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', pass: '/DESIGN.md found; follows the DESIGN.md format', fail: 'No /DESIGN.md (missing the machine-readable design brief)' },
       { id: 'r06', item: 'Token documentation: tokens carry $description', pass: 'Tokens found with $description metadata', fail: 'Tokens found but no $description (agents lack context)', warn: 'Some tokens have $description, others do not' },
       { id: 'r07', item: 'Component contract (machine-readable schema)', pass: 'Machine-readable component schema detected', fail: 'No machine-readable component contract', warn: 'Component documentation found but not machine-readable' },
       { id: 'r08', item: 'Sitemap.xml present', pass: '/sitemap.xml found (site is crawlable)', fail: 'No /sitemap.xml (agents cannot discover pages)' },

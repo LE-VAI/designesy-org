@@ -5,8 +5,8 @@ export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
 
 /**
- * Home-screen mark: the Designesy mark, display variant (identity v1, D3,
- * D10 and D23), on --paper #010102. White body, Azure dot with the teal hint
+ * Home-screen mark: the Designesy mark, display variant (identity v1), on
+ * --paper #010102. White body, Azure dot with the teal hint
  * in its lower edge (display sizes only, 96px and up). Corners r 7 (m/16),
  * gutters 28, outer arcs r 112.
  * Paths are the master designesy-mark.v1.display.on-dark.svg, unchanged: the

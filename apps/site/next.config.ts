@@ -154,10 +154,11 @@ const markdownFilePath = (route: string) => (route === 'index' ? '/index.md' : '
 //   - `translate` / `rotate` / `scale` are dropped, or merged into `transform` in
 //     the wrong order, when `transform` is declared in the same rule (.ix-pin
 //     loses its offset). parcel-bundler/lightningcss#426.
-// With --webpack the compiled CSS keeps every declaration that main's did and
-// differs only by vendor prefixes the Next 16 browser floor no longer needs.
+// With --webpack the compiled CSS keeps every declaration the Next 15 build kept
+// and differs only by vendor prefixes the Next 16 browser floor no longer needs.
 // Move to Turbopack when both are fixed upstream and the CSS diff is clean.
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
   // under bin/. Next's server bundler (esbuild/webpack) relocates node_modules
   // and drops these assets, producing "input directory .../bin does not exist"
@@ -259,6 +260,13 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      // The whole globals.css, built by scripts/build-critical-css.mjs under a
+      // content hash: the name changes whenever the bytes do, so it can be
+      // cached for a year like Next's own /_next/static files.
+      {
+        source: '/_css/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
       {
         source: '/',

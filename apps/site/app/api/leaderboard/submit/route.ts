@@ -1,20 +1,33 @@
-// /api/leaderboard/submit — open submission endpoint for the leaderboard.
-// Accepts a site URL, validates it, scores it on-the-fly via the internal
-// /api/score engine, and returns the result. Submissions are NOT auto-added
-// to the seed list — they are reviewed and curated into the next seed batch.
+// /api/leaderboard/submit: score a site with the leaderboard's engine.
+// Accepts a site URL, validates it, scores it on the fly via the internal
+// /api/score engine, and returns the result.
+//
+// NOTHING IS STORED. The only state is an in-memory IP and timestamp list for
+// rate limiting, and it is lost on a cold start, so there is no queue of
+// submissions to curate from. The response says so, and points anyone who
+// wants a site considered for the leaderboard to the site's contact address.
+// (It used to promise that curated sites join the seed "on the next weekly
+// batch"; nothing could have carried a submission there.)
 //
 // This route is dynamic (runtime = nodejs) because it performs a live fetch
-// + score. It is rate-limited to 5 submissions per hour per IP.
+// + score. It is rate-limited per IP (SUBMIT_RATE_LIMIT an hour).
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const SUBMIT_RATE_LIMIT = 20; // per hour per IP (Pro Plan)
-const submitLog: { ip: string; ts: number }[] = [];
+import { SITE_CONTACT_EMAIL } from '../../../lib/site-meta';
+import { clientKey } from '../../../lib/rate-limit';
 
-function isRateLimited(ip: string): boolean {
+/** The truth about a submission, in one place for the reply and the docs. */
+const NOT_STORED =
+  `The submission is not stored, so the site does not join the leaderboard by being scored. To propose it for the leaderboard, email ${SITE_CONTACT_EMAIL}.`;
+
+const SUBMIT_RATE_LIMIT = 20; // per hour per IP (Pro Plan)
+const submitLog: { caller: string; ts: number }[] = [];
+
+function isRateLimited(caller: string): boolean {
   const now = Date.now();
-  const recent = submitLog.filter((e) => e.ip === ip && now - e.ts < 3600_000);
+  const recent = submitLog.filter((e) => e.caller === caller && now - e.ts < 3600_000);
   submitLog.length = 0;
   submitLog.push(...recent);
   return recent.length >= SUBMIT_RATE_LIMIT;
@@ -49,8 +62,8 @@ export async function POST(request: Request) {
   }
 
   // Rate limit
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (isRateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (isRateLimited(caller)) {
     return Response.json(
       { ok: false, error: `Rate limit exceeded. Maximum ${SUBMIT_RATE_LIMIT} submissions per hour.` },
       { status: 429 }
@@ -92,12 +105,15 @@ export async function POST(request: Request) {
     const scoreData = await scoreResponse.json();
     const summary = scoreData.summary || scoreData;
 
-    // Log the submission (in-memory, lost on cold start — fine for preview)
-    submitLog.push({ ip, ts: Date.now() });
+    // Rate limiting only: the caller key (a keyed hash of the IP) and time,
+    // in memory, lost on a cold start.
+    submitLog.push({ caller, ts: Date.now() });
 
     return Response.json({
       ok: true,
-      message: 'Submission scored successfully. Curated sites are added to the seed list on the next weekly batch.',
+      message: `Scored. ${NOT_STORED}`,
+      stored: false,
+      proposeTo: SITE_CONTACT_EMAIL,
       submitted: {
         url,
         name: name || new URL(url).hostname,
@@ -126,7 +142,9 @@ export function GET() {
     ok: true,
     endpoint: '/api/leaderboard/submit',
     method: 'POST',
-    description: 'Submit a site for leaderboard scoring. Returns the score immediately. Curated into the seed list on the next weekly batch.',
+    description: `Score a site with the leaderboard's engine. Returns the score immediately. ${NOT_STORED}`,
+    stored: false,
+    proposeTo: SITE_CONTACT_EMAIL,
     rateLimit: `${SUBMIT_RATE_LIMIT} submissions per hour per IP`,
     body: {
       url: 'string (required, valid http(s) URL)',

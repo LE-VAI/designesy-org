@@ -222,8 +222,12 @@ export function MonitorForm({
         goBusy="Checking"
         note="History stays in this browser. The email is used for drift alerts and nothing else."
       />
+      {/* One pattern for every instrument run: Azure while
+          the watch runs, the flame (the loading ignition) when its result
+          lands. */}
       <Instrument
         name="Drift monitor"
+        ignite
         registry={registry}
         face="tiles"
         phase={phase}

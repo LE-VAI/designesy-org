@@ -14,7 +14,7 @@ import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
 import { PageShareButton } from '../../lib/page-share';
 import { CATEGORY_WEIGHTS } from '../../lib/check-definitions';
-import { SEED, type Grade } from '../../leaderboard/seed';
+import { SEED, disputeMailto, type Grade } from '../../leaderboard/seed';
 import { EngineHead, EngineNext } from '../../lib/engine/engine-page';
 import { display } from '../../lib/engine/types';
 import {
@@ -32,6 +32,9 @@ import {
   fmt,
   round1,
   scoreTone,
+  rankText,
+  RANKED,
+  RELATIONSHIP_LABEL,
 } from '../../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../../lib/data/figure';
 import { CohortStrip } from '../../lib/data/strip';
@@ -117,10 +120,19 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
         <EngineHead
           route={`/frameworks/${slug}`}
           name={site.name}
-          thesis={`${site.name} scores ${fmt(site.score)}, grade ${site.grade}: rank ${site.rank} of ${n} on the leaderboard, ${fmt(
-            Math.abs(vsMedian),
-          )} points ${vsMedian >= 0 ? 'above' : 'below'} the cohort median of ${fmt(COHORT_STATS.median)}.`}
-          facts={[site.host, site.category, `scored ${site.scoredAt ?? SCORES_DATE}`]}
+          thesis={
+            site.rank !== null
+              ? `${site.name} scores ${fmt(site.score)}, grade ${site.grade}: rank ${site.rank} of ${RANKED.length} on the leaderboard, ${fmt(
+                  Math.abs(vsMedian),
+                )} points ${vsMedian >= 0 ? 'above' : 'below'} the cohort median of ${fmt(COHORT_STATS.median)}.`
+              : `${site.name}'s last score is ${fmt(site.score)}, grade ${site.grade}, measured ${site.scoredAt ?? 'on an earlier run'}. The latest weekly run could not re-score it, so it is shown outside the ranking.`
+          }
+          facts={[
+            site.host,
+            site.category,
+            ...(site.relationship ? [RELATIONSHIP_LABEL[site.relationship]] : []),
+            site.staleLabel ?? `scored ${site.scoredAt ?? SCORES_DATE}`,
+          ]}
           contract={{ href: '/leaderboard', label: 'the leaderboard' }}
         >
           <div className="dx-actions">
@@ -131,10 +143,14 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
               Visit {site.host}
             </a>
             <PageShareButton
-              text={`${site.name} scores ${fmt(site.score)} (${site.grade}) on the Designesy leaderboard, rank ${site.rank} of ${n}.`}
+              text={`${site.name} scores ${fmt(site.score)} (${site.grade}) on the Designesy leaderboard, ${rankText(site)}.`}
               label="Share this evaluation"
             />
+            <a className="button ghost" href={disputeMailto(site.name)}>
+              Dispute this score
+            </a>
           </div>
+          {site.coi && <p className="dx-lead">{site.coi}.</p>}
         </EngineHead>
 
         <section className="eg-section" aria-labelledby="fw-scale-h">
@@ -157,7 +173,7 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
                 caption={`Contract score of every site, weekly run of ${SCORES_DATE}.`}
                 head={['Site', 'Rank', 'Grade', 'Score']}
                 numeric={[1, 3]}
-                rows={COHORT.map((s) => [s.slug === slug ? `${s.name} (this page)` : s.name, s.rank, s.grade, fmt(s.score)])}
+                rows={COHORT.map((s) => [s.slug === slug ? `${s.name} (this page)` : s.name, s.rank ?? 'not ranked', s.grade, fmt(s.score)])}
               />
             }
           >
@@ -170,10 +186,11 @@ export default async function FrameworkEvaluationPage({ params }: { params: Prom
                 rank: s.rank,
                 self: s.self,
                 held: s.unreachable,
+                heldLabel: s.staleLabel,
               }))}
               median={COHORT_STATS.median}
               focus={slug}
-              label={`${site.name} at ${fmt(site.score)}, grade ${site.grade}, rank ${site.rank} among ${n} sites whose scores run from ${fmt(
+              label={`${site.name} at ${fmt(site.score)}, grade ${site.grade}, ${rankText(site)}, among ${n} sites whose scores run from ${fmt(
                 COHORT_STATS.min,
               )} to ${fmt(COHORT_STATS.max)}, median ${fmt(COHORT_STATS.median)}.`}
             />

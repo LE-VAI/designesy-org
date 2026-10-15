@@ -1,0 +1,268 @@
+{
+  "format": "dtcg",
+  "formatVersion": "2025.10",
+  "name": "Fixture DTCG Full",
+  "digest": "2d849b62a9c49438593623f9edec69890c9339aa0890df3a140e7865d38f3128",
+  "stats": {
+    "declared": 23,
+    "byGroup": {
+      "colors": 8,
+      "typography": 2,
+      "radii": 3,
+      "spacing": 2,
+      "sizes": 1,
+      "durations": 3,
+      "easings": 2
+    }
+  },
+  "colors": [
+    {
+      "path": "color.primary",
+      "hex": "#1a5cffff",
+      "cssVar": "--brand"
+    },
+    {
+      "path": "color.on-primary",
+      "hex": "#ffffffff"
+    },
+    {
+      "path": "color.ink",
+      "hex": "#111418ff"
+    },
+    {
+      "path": "color.accent",
+      "hex": "#1795faff"
+    },
+    {
+      "path": "color.deep",
+      "hex": "#164596ff"
+    },
+    {
+      "path": "color.deep-nohex",
+      "hex": "#164596ff"
+    },
+    {
+      "path": "color.wide",
+      "hex": "#a0522dff"
+    },
+    {
+      "path": "color.focus",
+      "hex": "#1a5cffff",
+      "aliasOf": "color.primary"
+    },
+    {
+      "path": "border.focus.color",
+      "hex": "#1a5cffff",
+      "nested": true
+    },
+    {
+      "path": "shadow.card.color",
+      "hex": "#00000033",
+      "nested": true
+    }
+  ],
+  "typography": [
+    {
+      "kind": "typography",
+      "role": "body",
+      "path": "typography.body",
+      "families": [
+        "Manrope",
+        "sans-serif"
+      ],
+      "fontSize": {
+        "value": 16,
+        "unit": "px",
+        "px": 16
+      },
+      "fontWeight": 400,
+      "lineHeight": {
+        "kind": "ratio",
+        "value": 1.5
+      }
+    },
+    {
+      "kind": "typography",
+      "role": "code",
+      "path": "typography.code",
+      "families": [
+        "IBM Plex Mono"
+      ],
+      "fontSize": {
+        "value": 15,
+        "unit": "px",
+        "px": 15
+      },
+      "lineHeight": {
+        "kind": "ratio",
+        "value": 1.4
+      },
+      "features": [
+        "tnum"
+      ]
+    }
+  ],
+  "families": [
+    {
+      "kind": "fontFamily",
+      "families": [
+        "Manrope",
+        "sans-serif"
+      ],
+      "path": "font.sans"
+    },
+    {
+      "kind": "fontFamily",
+      "families": [
+        "IBM Plex Mono"
+      ],
+      "path": "font.mono"
+    },
+    {
+      "kind": "fontFamily",
+      "path": "typography.body.fontFamily",
+      "families": [
+        "Manrope",
+        "sans-serif"
+      ]
+    },
+    {
+      "kind": "fontFamily",
+      "path": "typography.code.fontFamily",
+      "families": [
+        "IBM Plex Mono"
+      ]
+    }
+  ],
+  "radii": [
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 4,
+        "unit": "px",
+        "px": 4
+      },
+      "path": "radius.sm"
+    },
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 8,
+        "unit": "px",
+        "px": 8
+      },
+      "path": "radius.md"
+    },
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 9999,
+        "unit": "px",
+        "px": 9999
+      },
+      "path": "corner.pill",
+      "cssVar": "--pill"
+    }
+  ],
+  "spacing": [
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 8,
+        "unit": "px",
+        "px": 8
+      },
+      "path": "space.sm"
+    },
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 1,
+        "unit": "rem",
+        "px": 16
+      },
+      "path": "space.md"
+    }
+  ],
+  "sizes": [
+    {
+      "kind": "dimension",
+      "dim": {
+        "value": 44,
+        "unit": "px",
+        "px": 44
+      },
+      "interactive": true,
+      "path": "control.min"
+    }
+  ],
+  "durations": [
+    {
+      "kind": "duration",
+      "ms": 120,
+      "path": "duration.quick"
+    },
+    {
+      "kind": "duration",
+      "ms": 400,
+      "path": "duration.slow"
+    },
+    {
+      "kind": "duration",
+      "path": "motion.fade.duration",
+      "ms": 120
+    }
+  ],
+  "easings": [
+    {
+      "kind": "cubicBezier",
+      "points": [
+        0.2,
+        0,
+        0,
+        1
+      ],
+      "path": "ease.out"
+    },
+    {
+      "kind": "cubicBezier",
+      "path": "motion.fade.timingFunction",
+      "points": [
+        0.2,
+        0,
+        0,
+        1
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "text": "color.on-primary",
+      "background": "color.primary",
+      "role": "primary-action",
+      "largeText": false,
+      "source": "org.designesy.pairs.0"
+    },
+    {
+      "text": "color.ink",
+      "background": "color.on-primary",
+      "role": "component",
+      "largeText": false,
+      "source": "org.designesy.pairs.1"
+    }
+  ],
+  "aliases": [
+    {
+      "from": "color.focus",
+      "to": "color.primary"
+    }
+  ],
+  "omitted": [],
+  "tokenMap": {
+    "color.primary": "--brand"
+  },
+  "warnings": [
+    "COLOR_SPACE_UNSUPPORTED:color.far",
+    "DIMENSION_ROLE_UNKNOWN:misc.odd"
+  ]
+}

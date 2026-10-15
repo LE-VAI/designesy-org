@@ -19,6 +19,19 @@
  *   var(--x, ...). A property scoped to one component is only safe inside
  *   that component, and focus rules are where that assumption failed.
  *
+ *   Edge-to-edge controls draw their ring inside their own box. Controls that
+ *   sit edge to edge, each painted as its own layer, lost a ring side to the
+ *   neighbour painted after them, or drew it over a neighbour's fill: the
+ *   /score register cells (the next cell overdrew the right edge; the outset
+ *   ring lay on the lit pill beside it, 1.3 to 2.1:1) and the result filter
+ *   tabs (the ring's near side over the selected segment's pill, 1.4 to
+ *   1.7:1), measured by the per-side ring probe. Each listed control keeps a
+ *   :focus-visible rule with a negative outline-offset, and the register cell
+ *   rises above its neighbours (z-index). The textarea well clips the
+ *   textarea 2px inside the well, so a clipped line's glyphs never paint over
+ *   the well's inset ring (the ring's right edge measured 1.37:1 at 390).
+ *   Run against a sheet without these rules, the gate fails.
+ *
  * Usage: node scripts/check-focus-rings.js        (exit 1 on any failure)
  */
 
@@ -71,11 +84,33 @@ for (const file of files) {
   }
 }
 
-console.log(`  ${focusRules} focus rules read; ${rootTokens.size} root custom properties`);
+// Edge-to-edge controls: the ring goes inside the box (see the header).
+const allRules = [];
+for (const file of files) {
+  const css = strip(fs.readFileSync(file, 'utf8'));
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) allRules.push({ file, selector: m[1].replace(/\s+/g, ' ').trim(), body: m[2] });
+}
+const ruleFor = (sel) => allRules.filter((r) => r.selector.split(',').map((s) => s.trim()).includes(sel));
+const INSET = [
+  { selector: '.eg-minicell:focus-visible', label: 'the register cells', zIndex: true },
+  { selector: '.score-filter-tab:not(.is-active):focus-visible', label: 'the result filter tabs' },
+  { selector: '.check-cell:focus-visible', label: 'the check cells' },
+];
+for (const c of INSET) {
+  const rules = ruleFor(c.selector);
+  const offset = rules.map((r) => /outline-offset\s*:\s*(-[\d.]+px)/.exec(r.body)).find(Boolean);
+  if (!offset) failures.push(`${c.label}: no "${c.selector}" rule draws the ring inside the box (a negative outline-offset)`);
+  if (c.zIndex && !rules.some((r) => /z-index\s*:\s*[1-9]/.test(r.body))) failures.push(`${c.label}: "${c.selector}" does not raise the focused cell above its neighbours (z-index)`);
+}
+if (!ruleFor('.eg-bar-field.is-area > .m3-textarea').some((r) => /clip-path\s*:\s*inset\(\s*2px/.test(r.body))) {
+  failures.push('the textarea well: no ".eg-bar-field.is-area > .m3-textarea" rule clips the textarea 2px inside the well (clip-path: inset(2px ...))');
+}
+
+console.log(`  ${focusRules} focus rules read; ${rootTokens.size} root custom properties; ${INSET.length} edge-to-edge controls and the textarea well held`);
 if (failures.length) {
   console.error(`\nFocus ring gate FAILED (${failures.length}):`);
   for (const f of [...new Set(failures)]) console.error(`  - ${f}`);
-  console.error('Fix: give the var() a fallback, e.g. var(--ctl-focus, var(--signal-access)), or declare the property at the root.');
+  console.error('Fix: give the var() a fallback, e.g. var(--ctl-focus, var(--signal-access)), or declare the property at the root; for an edge-to-edge control, restore its inset ring rule (see the header).');
   process.exit(1);
 }
-console.log('Focus ring gate passed: every focus style resolves outside its component scope.');
+console.log('Focus ring gate passed: every focus style resolves outside its component scope, and edge-to-edge controls ring inside their box.');

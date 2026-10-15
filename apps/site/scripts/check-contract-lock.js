@@ -151,13 +151,18 @@ function typescript() {
   return ts;
 }
 
+/** Reads module files from the working tree. evaluateModule takes another reader (git, an overlay). */
+const DISK = { read: (p) => fs.readFileSync(p, 'utf8'), exists: (p) => fs.existsSync(p) };
+
 /**
- * Evaluate the contract module from SOURCE TEXT and return designSystemContract.
- * Local imports (./x, ../x) are transpiled and evaluated the same way; a package
- * import fails loudly, because a contract that reads values from elsewhere needs
- * a decision here about whether those values are normative.
+ * Evaluate a contract module from SOURCE TEXT and return its export `name`.
+ * Local imports (./x, ../x) are transpiled and evaluated the same way, read
+ * through `io`; a package import fails loudly, because a contract that reads
+ * values from elsewhere needs a decision here about whether those values are
+ * normative. scripts/check-sibling-contract-locks.js evaluates the sibling
+ * contracts with this loader.
  */
-function evaluate(src) {
+function evaluateModule(src, file, name, io = DISK) {
   const t = typescript();
   const cache = new Map();
   function load(file, code) {
@@ -179,15 +184,20 @@ function evaluate(src) {
         );
       }
       const base = path.resolve(path.dirname(file), spec);
-      const target = [base + '.ts', base + '.tsx', path.join(base, 'index.ts')].find((p) => fs.existsSync(p));
+      const target = [base + '.ts', base + '.tsx', path.join(base, 'index.ts')].find((p) => io.exists(p));
       if (!target) throw new Error(path.relative(SITE, file) + ' imports ' + spec + ', which does not resolve');
-      if (!cache.has(target)) cache.set(target, load(target, fs.readFileSync(target, 'utf8')));
+      if (!cache.has(target)) cache.set(target, load(target, io.read(target)));
       return cache.get(target);
     };
     new Function('exports', 'require', 'module', out.outputText)(mod.exports, req, mod);
     return mod.exports;
   }
-  const contract = load(CONTRACT_PATH, src).designSystemContract;
+  return load(file, src)[name];
+}
+
+/** Evaluate the design-system contract module from SOURCE TEXT and return designSystemContract. */
+function evaluate(src) {
+  const contract = evaluateModule(src, CONTRACT_PATH, 'designSystemContract');
   if (!contract || typeof contract !== 'object') {
     throw new Error('app/lib/design-system-contract.ts does not export designSystemContract');
   }
@@ -444,4 +454,8 @@ function main() {
   );
 }
 
-main();
+// Run as a script, this is the gate. Required, it lends its hashing and loader
+// to scripts/check-sibling-contract-locks.js, so both locks hash the same way.
+if (require.main === module) main();
+
+module.exports = { SITE, sha256, canonical, typescript, evaluateModule, semver, compareVersions };

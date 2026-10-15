@@ -6,7 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/test'],
       },
     ],
     sitemap: 'https://www.designesy.org/sitemap.xml',

@@ -9,7 +9,7 @@ export function GET() {
 Preferred-Languages: en
 Canonical: https://www.designesy.org/.well-known/security.txt
 Expires: 2027-07-12T00:00:00.000Z
-Policy: https://www.designesy.org/privacy
+Policy: https://github.com/LE-VAI/designesy-org/security/policy
 `;
 
   return new Response(body, {

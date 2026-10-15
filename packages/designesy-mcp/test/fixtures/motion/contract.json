@@ -1,12 +1,12 @@
 {
   "id": "designesy.motion",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "status": "provisional",
   "name": "Designesy Motion Contract",
   "kind": "contract",
   "public_url": "https://www.designesy.org/contracts/motion",
   "machine_url": "https://www.designesy.org/contracts/motion.json",
-  "updated": "2026-09-28",
+  "updated": "2026-10-13",
   "purpose": "Motion is structural communication. If motion files are malformed or violate the non-negotiable standards, they degrade trust, clarity, and usability.",
   "source_authority": {
     "primary": "Lottie Animation Community Specification v1.0.1 (2025-06-26)",

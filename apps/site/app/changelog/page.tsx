@@ -268,7 +268,7 @@ const CHANGELOG: ChangelogEntry[] = [
     change: 'added',
     title: 'Spec-layer integration (DESIGN.md)',
     description:
-      'New check: validates DESIGN.md spec file using Google\'s @google/design.md CLI linter. Integrates the spec layer beneath designesy\'s own contract verification.',
+      'New check: validates the DESIGN.md spec file with the DESIGN.md format\'s linter. Integrates the spec layer beneath designesy\'s own contract verification.',
     checks: ['v37'],
     rationale:
       'DESIGN.md is the AI-agent-facing spec file. With it, AI coding tools build from your system instead of around it. The check validates its presence and structure.',
@@ -387,8 +387,8 @@ const CHANGELOG: ChangelogEntry[] = [
       'A page with a failing check can no longer score an A: any FAIL caps the score at 89.9, a B, and every cap applies after the originality lift, which can carry a score up to a cap but never past it. v44, status colors used as text, caps at 65 as v06 does. v34 fails only a chat surface that names itself a chatbot or an AI assistant; a live-chat widget, an ad tag or page text about AI is at most a review item, and its text cites California SB 1001 and Colorado SB 26-189 and names Article 50(1) as a duty on the provider of the AI system. v06 and v22 read oklch(), space-syntax rgb() and hsl(), 8-digit hex, and tokens declared as :root, :host. v42 and v43 follow var() aliases, and hue-named primitives that role tokens alias form the palette layer, which sits outside the role share.',
     checks: ['v06', 'v22', 'v34', 'v42', 'v43', 'v44'],
     rationale:
-      'The engine could report its own failing WCAG contrast check and an A for the same page, and its review printed Block and Grade A together. A grade beside its own failing verdict says two things at once, so the owner chose the stricter reading.',
-    source: 'Owner decision (2026-10-11), WCAG 2.2 SC 1.4.3 and 1.4.11, EU AI Act Article 50, California Bus. & Prof. Code §17940-17943, Colorado SB 26-189, CSS Color 4, engine 1.3.0 entry in CHANGELOG.md',
+      'The engine could report its own failing WCAG contrast check and an A for the same page, and its review printed Block and Grade A together. A grade beside its own failing verdict says two things at once, so the engine takes the stricter reading.',
+    source: 'WCAG 2.2 SC 1.4.3 and 1.4.11, EU AI Act Article 50, California Bus. & Prof. Code §17940-17943, Colorado SB 26-189, CSS Color 4, engine 1.3.0 entry in CHANGELOG.md',
   },
 
   // ── v0.4.4: identity v1 colour system ──
@@ -403,6 +403,335 @@ const CHANGELOG: ChangelogEntry[] = [
     rationale:
       'The contract states the identity v1 colour system that designesy.org serves. It changes token values only: no check, weight or verdict changed.',
     source: 'Designesy design system contract v0.4.4, adoption history',
+  },
+
+  // ── v0.4.5: the mono face and the type scale ──
+  {
+    version: 'v0.4.5',
+    date: '2026-10-12',
+    dimension: 'cadence',
+    change: 'modified',
+    title: 'Atkinson Hyperlegible Mono and the type scale',
+    description:
+      'Atkinson Hyperlegible Mono replaces Geist Mono for labels, URLs, timestamps, score units and code. The type scale becomes six tokens on a Major Third over a 16px root: --text-label 0.8rem, the floor for all text, --text-body 1rem, --text-lead 1.25rem, --text-h3 1.563rem, --text-h2 1.953rem and --text-h1 2.441rem, no two adjacent steps closer than 25%.',
+    rationale:
+      "The mono text on this site is the text a reader cannot guess from context: hosts, check IDs, scores and dates. Atkinson Hyperlegible Mono is the Braille Institute's face for low-vision readers, and it draws every confusable pair (0 and O, 1, l and I, 5 and S, 8 and B) distinct. Named sizes replace one-off values, so a page cannot drift off the scale. No check, weight or verdict changed.",
+    source: 'Designesy design system contract v0.4.5, adoption history; Atkinson Hyperlegible Mono 2.001 (SIL Open Font License 1.1)',
+  },
+
+  // ── v0.4.5 (engine 1.3.1): accuracy fixes ──
+  {
+    version: 'v0.4.5 · engine 1.3.1',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.3.1: four checks read what the page renders',
+    description:
+      'v26 no longer counts a face named with the word fallback, such as a metric-matched stand-in drawn only until the real face loads, as a typeface choice. v27 reads font-size: var(--token) in a field rule through the :root tokens, so a field set to a 1rem token is the 16px floor it renders as, and one set to a 0.875rem token fails. v38 drops the keycaps a button marks up as kbd, and plain ctrl+s style hints in any case, from button labels, and accepts Get, Set, Try and a short list of call-to-action verbs (Flip, Learn, Sign, Join, Expand, Select, Read). v43 counts --destructive, the error role in shadcn/ui, as an error colour. The npm engine stops after three redirects instead of following a loop.',
+    checks: ['v26', 'v27', 'v38', 'v43'],
+    rationale:
+      'Each defect was a warning on a page that was right, this site among them: four families counted where three render, a 16px input read as unset, and a keycap button read as the words ctrl and i. A warning on correct work teaches readers to ignore warnings. v42 is unchanged: Tailwind v4 writes only the theme variables a project uses, so a sheet full of hue-named tokens is using them.',
+    source: 'engine 1.3.1 entry in CHANGELOG.md; Tailwind CSS v4 theme documentation (only used CSS variables are generated); shadcn/ui theming (--destructive)',
+  },
+
+  // ── v0.4.5: this site's own accessibility gate ──
+  {
+    version: 'v0.4.5',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: "This site's accessibility gate now runs its axe rules",
+    description:
+      'The accessibility sweep that runs on each change to designesy.org filtered axe-core by the tag wcag2a2a, which axe does not have. Given an unknown tag, axe runs no rules and reports no violations, so from its first run on 2026-10-04 to 2026-10-13 the axe half of the gate could not fail; its heading and landmark checks still ran. The sweep now runs the five tags the accessibility contract names (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa) and fails any page where axe runs no rules. Re-run on 2026-10-13 on all 70 routes, light theme at 1440px: no violations at any impact level.',
+    rationale:
+      'A sweep that runs no rules reports the same result as one that passes, so a run with no rules is now a failure. Scores of other sites are untouched: the engine does not use this sweep. The 0 violations figure on /docs/mcp comes from a separate sweep on 2026-10-11 with the five tags, 140 page scans in the light and dark themes, so it stands.',
+    source: 'designesy-org pull request 316; axe-core 4.12.1 (runOnly with an unknown tag evaluates no rules)',
+  },
+
+  // ── Guardrails contract v0.1.1: two unversioned edits, versioned ──
+  {
+    version: 'guardrails v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.1: the adoption figures and the DESIGN.md wording',
+    description:
+      'Two edits shipped under 0.1.0 without a version. On 2026-10-12 the adoption signal moved to the 2026 zeroheight report for the hand-synced figure (60%, where it had said 40%: 40% is the share of teams with a token pipeline), and the designMd bundle line named the open DESIGN.md format without the vendor. On 2026-10-13 token adoption moved to the 2026 report\'s 86% (84% is the 2025 report\'s figure, and the 2025 report does not date the 56% it rose from).',
+    rationale:
+      'Every contract change is versioned and dated in this changelog. These two were not, so 0.1.1 records them. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.1; zeroheight Design Systems Report 2026 (report.zeroheight.com)',
+  },
+
+  // ── AI Readiness contract v0.1.1: the DESIGN.md format, named as a format ──
+  {
+    version: 'readiness v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Readiness contract 0.1.1: the DESIGN.md format named without the vendor',
+    description:
+      'r05 and the readiness signal list now say "the DESIGN.md format" where they said "the @google/design.md standard" and "Google design.md standard". The readiness check reports r05 under the same new name. The package name stays where it is an install command, a code sample or a source citation.',
+    rationale:
+      'Wording only: the DESIGN.md format is the thing a site serves, and the package is one tool that lints it. No rule, threshold or weight changed.',
+    source: 'Designesy AI readiness contract v0.1.1',
+  },
+
+  // ── Guardrails contract v0.1.2: the DESIGN.md format, named once ──
+  {
+    version: 'guardrails v0.1.2',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.2: the DESIGN.md format, named once',
+    description:
+      'The method line now says the bundle generates "a file in the open DESIGN.md format", where 0.1.1 read "the DESIGN.md file (the open DESIGN.md format)".',
+    rationale:
+      'Wording only: the name appeared twice in one phrase. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.2',
+  },
+
+  // ── Guardrails contract v0.1.3: g06 names the DESIGN.md format ──
+  {
+    version: 'guardrails v0.1.3',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Guardrails contract 0.1.3: g06 names the DESIGN.md format',
+    description:
+      'The g06 check now reads "DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)", where it read "DESIGN.md emitted: Google open spec (google-labs-code/design.md)". The guardrails report shows the new name.',
+    rationale:
+      'Wording only: the DESIGN.md format is the thing the bundle emits, and the repository stays as its source. No rule, threshold or weight changed.',
+    source: 'Designesy guardrails contract v0.1.3',
+  },
+
+  // ── Review-findings schema: description wording ──
+  {
+    version: 'review-findings schema 1.0',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Review-findings schema: description wording',
+    description:
+      'The schema description and the token-path field description name the DESIGN.md format where they said "Google design.md".',
+    rationale:
+      'review-findings schema: description wording; schemaVersion 1.0 unchanged, no field or constraint changed.',
+    source: 'Designesy review-findings schema (/specs/review-findings.json)',
+  },
+
+  // ── Sibling contract versions with no entry until 2026-10-13 ──
+  // Each entry is dated the day its version reached main. Where edits shipped
+  // under the previous version without a bump, the next version records them.
+
+  // ── Accessibility contract v0.1.1: the tiered reduced-motion rule ──
+  {
+    version: 'a11y v0.1.1',
+    date: '2026-10-03',
+    dimension: 'accessibility',
+    change: 'modified',
+    title: 'Accessibility contract 0.1.1: a10 tests what moves under reduced motion',
+    description:
+      'a10 changed. Under 0.1.0 it read "prefers-reduced-motion disables animations" and passed when a reduced-motion rule was present, failing when it was missing. Under 0.1.1 it passes only when nothing translates, rotates, scales or pans for longer than 200 ms or in a loop under reduce, and fails when movement continues. Opacity-only fades may continue, and demos whose motion is the content play on request. Edits that shipped under 0.1.0 without a version are recorded here too: on 2026-08-03 a11 named internal control-plane names where it said internal naming, and the full_contract_path field, which carried an internal file path, left the export; on 2026-08-30 the named axe-core version moved from 4.12.1 to 4.13.0; on 2026-09-28 an editorial pass replaced em dashes.',
+    rationale:
+      'This version changed a rule: a10 used to pass on the presence of a reduced-motion block and now passes on what moves under reduce, as the motion contract requires.',
+    source: 'Designesy a11y contract v0.1.1; designesy-org pull request 173 (66f51e5), with commits fb550a4, 7f6d098, d2cc52e and pull request 153 (3d62df0)',
+  },
+
+  // ── Monitor contract v0.1.1: m09 and m10 ──
+  {
+    version: 'monitor v0.1.1',
+    date: '2026-10-10',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.1: m09 reads the contract version a run is scored against',
+    description:
+      'm09 changed: it compares the design contract version the run is scored against (the version designesy_score reports), where 0.1.0 read the scanned site\'s own DTCG or agent.json version, which on designesy.org is the catalog version. Snapshots do not record that version yet, so a change between runs is stated rather than compared. An edit that shipped under 0.1.0 without a version is recorded here too: on 2026-08-02 m10 changed from a webhook, email or Slack alert to an email alert, and an alert_delivery section says when email is sent and that alerts show on the page when it is not. On 2026-09-28 an editorial pass replaced em dashes.',
+    rationale:
+      'Rules changed: what m09 compares, and the delivery channel m10 checks.',
+    source: 'Designesy monitor contract v0.1.1; designesy-org pull request 254 (f4f9a51), with commit b1e1e66 and pull request 153 (3d62df0)',
+  },
+
+  // ── Tokens contract v0.1.1: the checks match the engine ──
+  {
+    version: 'tokens v0.1.1',
+    date: '2026-10-10',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.1: the checks match the engine, and a SKIP is not scored',
+    description:
+      'Edits that shipped under 0.1.0 without a version come first. On 2026-08-30 the ten checks were replaced with the ten that designesy_tokens_score runs: t01 $schema declared, t02 token groups, t03 $type, t04 $value, t05 structured colour, t06 standard types, t07 namespaced custom types, t08 dimension units, t09 nested groups, t10 no deprecated patterns. $schema moved from SHOULD to MUST, scoring counted a WARN as 0 where it had counted 0.5, and the five rules the engine does not check moved to documented_not_engine_wired. Before that, on 2026-08-03 the full_contract_path field, which carried an internal file path, left the export, and on 2026-08-09 a live_export line was added. On 2026-09-28 an editorial pass replaced em dashes. The 0.1.1 edit itself: a SKIP is not scored (it had counted in the denominator, so a clean file with no custom types scored 90), and live_export reports the DTCG export at 100 with t07 SKIP.',
+    rationale:
+      'Rules changed: the check list, the $schema requirement and the scoring formula. Each edit is recorded here because none had a version or a changelog line when it shipped.',
+    source: 'Designesy tokens contract v0.1.1; designesy-org pull request 254 (f4f9a51), with commits 7f6d098, ed99914, 7f8e7d4 and pull request 153 (3d62df0)',
+  },
+
+  // ── Tokens contract v0.1.2: a WARN counts half ──
+  {
+    version: 'tokens v0.1.2',
+    date: '2026-10-11',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.2: a WARN counts half, and t08 reads aliases',
+    description:
+      'Scoring counts a WARN as 0.5 where 0.1.1 counted it 0: score = (PASS + 0.5 × WARN) / scored checks × 100, as in the motion contract, the score engine and the npm validator. t08 resolves a {group.token} alias to the dimension it points at, and a $root token is checked like any other. The open item on aliases now says t08 resolves them on dimension tokens and that checking every alias target type is not wired. live_export states 9 PASS, 0 WARN, 0 FAIL and t07 SKIP, and describes the export\'s DTCG values.',
+    rationale:
+      'Rules changed: the WARN weight in the scoring formula, and how t08 reads aliases.',
+    source: 'Designesy tokens contract v0.1.2; designesy-org pull request 258 (e10ed5f)',
+  },
+
+  // ── Accessibility contract v0.1.2: the five axe-core tags ──
+  {
+    version: 'a11y v0.1.2',
+    date: '2026-10-12',
+    dimension: 'accessibility',
+    change: 'modified',
+    title: 'Accessibility contract 0.1.2: the five axe-core tags a WCAG 2.2 AA run needs',
+    description:
+      'axe_tag and a01 now list wcag2a, wcag2aa, wcag21a, wcag21aa and wcag22aa, and the Playwright and CLI commands pass all five. 0.1.1 named wcag22aa as if it included the others, and its commands passed wcag2a, wcag21aa and wcag22aa. axe-core tags are not cumulative: wcag22aa alone marks only the WCAG 2.2 AA additions. rules_in_scope changed from "~75+ rules" to a count: 70 axe-core 4.13.0 rules carry one of the five tags (counted on 2026-10-11).',
+    rationale:
+      'This changed what a01 measures: a run with the 0.1.1 tags left out the rules tagged wcag2aa and wcag21a. The pass and fail conditions (0 violations, any violation) did not change.',
+    source: 'Designesy a11y contract v0.1.2; designesy-org pull request 281 (83d1bcf)',
+  },
+
+  // ── Monitor contract v0.1.2: m01 asks for history ──
+  {
+    version: 'monitor v0.1.2',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.2: m01 asks for history, and a first run is not scored on it',
+    description:
+      'm01 changed from "Schedule registered: URL + cadence recorded" to "History supplied": the request carries earlier runs to compare against, and nothing is scheduled or stored on the server. With no history m01 is N/A, because a first run sets the baseline. Scoring does not count that SKIP: the score is points over scored checks, where it divided by 10.',
+    rationale:
+      'Rules changed: m01 checks what the engine does, which is compare against history passed in, and the scoring denominator.',
+    source: 'Designesy monitor contract v0.1.2; designesy-org pull request 281 (83d1bcf)',
+  },
+
+  // ── Monitor contract v0.1.3: m02 and the cadence ──
+  {
+    version: 'monitor v0.1.3',
+    date: '2026-10-12',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.3: m02 measures freshness against the cadence',
+    description:
+      'm02 changed. It passes when the newest supplied run is within one cadence window (daily, weekly or monthly; weekly by default), warns between one and two windows, fails past two, and is N/A with no history or no usable timestamp. In 0.1.2 it said only that the last run fell within the cadence window. A SKIP of m02 on a first run is not scored. Earlier the same day, pull request 283 corrected how the contract describes monitor: each call re-runs the drift checks and compares the result with the history the caller passes in, nothing is scheduled, and the server keeps no history. In the same edit two quoted sources were re-quoted and re-attributed, a third was removed, and the competitor line became a description of the method.',
+    rationale:
+      'Rules changed: the m02 thresholds, and the scoring of a first run. The description edit from pull request 283 changed no check.',
+    source: 'Designesy monitor contract v0.1.3; designesy-org pull requests 297 (7190efc) and 283 (6d75289)',
+  },
+
+  // ── Compare contract v0.1.1: the editorial pass, versioned ──
+  {
+    version: 'compare v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Compare contract 0.1.1: the 2026-09-28 editorial pass, versioned',
+    description:
+      'One edit shipped under 0.1.0 without a version. On 2026-09-28 em dashes became colons or parentheses in source_authority, the diff dimensions, every check, the scoring note, the validation tools, relationship_to_core and open_questions. The purpose says "instead of file uploads", the scoring note says the score reflects diff completeness "rather than design quality, which is the /score surface", and token-value-changed is "the core drift indicator" where it said signal.',
+    rationale:
+      'Every contract change is versioned and dated in this changelog. This one was not, so 0.1.1 records it. No rule, threshold or weight changed.',
+    source: 'Designesy compare contract v0.1.1; designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Components contract v0.1.1: one obligation, punctuated ──
+  {
+    version: 'components v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Components contract 0.1.1: the card hover obligation, punctuated',
+    description:
+      'One edit shipped under 0.1.0 without a version. On 2026-09-28 the Card / pillar hover obligation became "fine pointer only: gated on (hover: hover) and (pointer: fine)", with a colon where it had an em dash. This export also reads the design-system contract: its contract_version, component list, press scales and accessibility list follow that contract, and this changelog records those changes under the design-system versions.',
+    rationale:
+      'Punctuation only. No rule, binding, threshold or weight changed.',
+    source: 'Designesy components contract v0.1.1; designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Drift contract v0.1.1: wording and two citations ──
+  {
+    version: 'drift v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Drift contract 0.1.1: the purpose, two citations and the editorial pass',
+    description:
+      'Two edits shipped under 0.1.0 without a version. On 2026-09-28 em dashes became colons or parentheses across the drift modes, the twelve checks, the validation tools and open_questions, and silent_breaking_changes says consumers inherit the change "without notice" where it said signal. On 2026-10-12 the purpose dropped the line calling drift "the named 2026 design-system crisis" and now says AI-generated UI can drift off the tokens a site declares, and source_authority dropped two entries: the attribution of the four-mode taxonomy, and a drift-rate figure (23% in 8 weeks without formal review, 4% with it). The DRIFT_CHECK_COUNT export added on 2026-09-24 changed no served text.',
+    rationale:
+      'Wording and citations only: the four drift modes, the twelve checks, their thresholds and the scoring are unchanged. No rule, threshold or weight changed.',
+    source: 'Designesy drift contract v0.1.1; designesy-org pull requests 153 (3d62df0) and 283 (6d75289)',
+  },
+
+  // ── Motion contract v0.1.1: wording and one field ──
+  {
+    version: 'motion v0.1.1',
+    date: '2026-10-13',
+    dimension: 'motion',
+    change: 'modified',
+    title: 'Motion contract 0.1.1: an internal name and path out, and the editorial pass',
+    description:
+      'Three edits shipped under 0.1.0 without a version. On 2026-08-03 an open question that named an internal rule ID now names the HyperFrames quality gate in plain words, and the full_contract_path field, which carried an internal file path, left the export. On 2026-09-28 the purpose dropped the words "not ornament", standard 1 says to use contract cubicBezier tokens "instead of bare CSS keywords", and em dashes became colons across the Lottie fields, the version notes, the reduced-motion notes and relationship_to_core.',
+    rationale:
+      'Wording, and one field removed from the export. The ten motion standards, the checks, their thresholds and the scoring are unchanged. No rule, threshold or weight changed.',
+    source: 'Designesy motion contract v0.1.1; commits fb550a4 and 7f6d098, designesy-org pull request 153 (3d62df0)',
+  },
+
+  // ── Report contract v0.1.1: the engine count and the editorial pass ──
+  {
+    version: 'report v0.1.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Report contract 0.1.1: the score engine count, read from the engine',
+    description:
+      'Three edits shipped under 0.1.0 without a version. On 2026-08-30 the composition, the score dimension, rp02 and relationship_to_core moved from a 40-check to a 42-check score engine. On 2026-09-24 those four places began reading the engine\'s check count instead of a typed number, with the same served text, and the count has since followed engine releases. On 2026-09-28 em dashes became colons or parentheses throughout, the rp08 warn band reads "20 to 30 points" where it used a dash, and "clearer signal" became "clearer result". This version also drops the "2026 crisis" claim from the weighting rationale, as drift\'s purpose did in #283: drift is second because it measures how far AI-generated UI departs from its declared system.',
+    rationale:
+      'The weights (score 0.5, drift 0.3, readiness 0.2), the eight synthesis checks, the coherence thresholds (20 and 30 points) and the grade bands are unchanged. The check count states the size of the score engine, which the engine entries above record. No rule, threshold or weight changed.',
+    source: 'Designesy report contract v0.1.1; commit fe77f42, designesy-org pull requests 119 (d53eeae) and 153 (3d62df0)',
+  },
+
+  // ── v0.4.6 (engine 1.4.0): type sizes come from the scale ──
+  {
+    version: 'v0.4.6 · engine 1.4.0',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'added',
+    title: 'Engine 1.4.0: type sizes come from the scale (v46)',
+    description:
+      "A new check, v46, reads the type scale from a page's own :root type tokens (their values plus their median ratio) and judges every static rem or px font-size against it: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest type token. Deliberate fluid type, a clamp(), min() or max() that moves with a viewport or container unit, is accepted as written; only its lower bound is held to the floor. It WARNs, it never FAILs. The registry grows to 45 checks, 42 scored.",
+    checks: ['v16', 'v46'],
+    rationale:
+      "v16 asks for rem and cannot tell a rem on the scale from one between steps, so a page could pass it while its sizes drifted off the scale its own tokens declare. Measured on this site the day it shipped: v46 WARNs on 7 sizes under the 12.8px floor and 7 between steps, the display numerals and home rules this site's own type gate lists as deliberate exceptions. Fluid section titles pass as written.",
+    source: 'The design-system contract type scale (a Major Third on a 16px root, 12.8px floor), CSS Values 4 (clamp, min, max, viewport and container units), engine 1.4.0 entry in CHANGELOG.md',
+  },
+
+  // ── v0.4.6 (engine 1.4.1): v27 reads the rule it scores; v37 renamed ──
+  {
+    version: 'v0.4.6 · engine 1.4.1',
+    date: '2026-10-13',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.4.1: v27 reads a field only in its own rule',
+    description:
+      'v27 found the word input, textarea or select and then the next rule, across a closing brace, so "select" in user-select: none made the following rule a field rule and a 12px caption failed the page. It now reads each font-size against the selector of the rule it sits in. A class that names a field still counts, and select { font-size: 14px } still fails. v37 is renamed "DESIGN.md spec-layer validation (DESIGN.md format lint)", and its fix text names the format\'s linter; the install and run commands are unchanged.',
+    checks: ['v27', 'v37'],
+    rationale:
+      'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard shows the new scores from its next weekly re-score. This site stays 100 A, and a real field under 16px still fails.',
+    source: 'engine 1.4.1 entry in CHANGELOG.md',
+  },
+
+  // ── v0.4.6 (engine 1.5.0): score a page against your own contract ──
+  {
+    version: 'v0.4.6 · engine 1.5.0',
+    date: '2026-10-14',
+    dimension: 'verification',
+    change: 'added',
+    title: 'Engine 1.5.0: score a page against your own contract',
+    description:
+      'POST /api/score takes an optional contract: your DESIGN.md or DTCG token file, pasted or linked. The answer is two numbers that are never blended. Contract fidelity reads your contract: palette, type scale, line heights, radius, spacing, contrast pairs, aliases and token use (f01 to f14). The baseline reads no contract: focus rings, reduced motion, headings, inputs, button and link copy, identity. A contract the engine cannot read answers with each problem, its path and line. The formula is published at /api/score/checks/own-contract.',
+    rationale:
+      "A team's own design system is the contract its pages are meant to follow, and the Designesy score measures Designesy's. Fidelity answers how closely a page follows the team's own; the baseline keeps the universal checks every site is held to, without Designesy's own taste checks, slop or originality. Requests without a contract are unchanged: no legacy verdict, detail or score moves, measured on the calibration corpus and on every legacy request the gate replays.",
+    source: 'engine 1.5.0 entry in CHANGELOG.md; W3C Design Tokens Format Module 2025.10; the DESIGN.md format (alpha); WCAG 2.2 SC 1.4.3 and 2.5.8',
   },
 ];
 
@@ -435,6 +764,10 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.3 · engine 1.2.0', date: '2026-10-09', checks: 44, title: 'Status text and paused entrances', summary: 'v44 status colors used as text meet contrast in every theme; v45 pausing motion keeps content visible. S2 and S8 stop firing on components and prose. The contract is unchanged.' },
   { version: 'v0.4.4 · engine 1.3.0', date: '2026-10-11', checks: 44, title: 'No A beside a failing check', summary: 'Any FAIL caps the score at 89.9 and a v44 FAIL at 65; v34 fails only a named AI chat surface; v06 and v22 read CSS Color 4; v42 and v43 follow aliases. The contract is unchanged.' },
   { version: 'v0.4.4', date: '2026-10-11', checks: 44, title: 'Identity v1 colour system', summary: 'Azure replaces the old blue as --signal, with Deep Azure for light-theme text and new action tokens. Token values only: no check, weight or verdict changed.' },
+  { version: 'v0.4.5', date: '2026-10-12', checks: 44, title: 'Mono face and type scale', summary: 'Atkinson Hyperlegible Mono replaces Geist Mono, and the six --text-* steps of the Major Third join the contract. No check, weight or verdict changed.' },
+  { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.5.0', date: '2026-10-14', checks: 45, title: 'Your own contract', summary: 'POST /api/score takes your own DESIGN.md or DTCG file and answers with contract fidelity and a baseline, never blended. Requests without a contract are unchanged. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

@@ -8,7 +8,7 @@
 //   ?site=<host>               shields.io "endpoint" JSON for a leaderboard site
 //                              (below), for shields-style READMEs.
 //
-// The live badge is the lead embed on /badge (owner decision 2026-10-11): the
+// The live badge is the lead embed on /badge: the
 // static images read the same for every site, so a page could show one whatever
 // its score.
 //
@@ -22,10 +22,10 @@
 // data /api/leaderboard serves, cannot drift; it changes when the weekly
 // re-score lands.
 import { liveBadgeResponse } from '../../lib/badge/live-badge-route';
-import { SEED, LEADERBOARD_LAST_SCORED } from '../../leaderboard/seed';
+import { SEED, LEADERBOARD_LAST_SCORED, staleLabel } from '../../leaderboard/seed';
 
 // Grade → shields colour, as a bare hex. A grade takes only its grade token,
-// never a brand colour or a shields named colour (brand ledger D5, D37): the
+// never a brand colour or a shields named colour: the
 // named set painted D in the brand's flame orange. Each is the light-theme
 // grade token from globals.css, because the badge sits on other people's
 // pages and does not follow their theme.
@@ -72,15 +72,16 @@ export async function GET(request: Request) {
 
   const site = hostOf(params.get('site') ?? '');
   const row = SEED.find((s) => hostOf(s.url) === site);
-  // A held-over score (site unreachable on the last run) is labelled as such and
-  // greyed, with its own measurement date -- never presented as current.
+  // A score the latest run could not renew (site unreachable) is labelled in
+  // the leaderboard's own words, "last scored <date> · could not re-score", and
+  // greyed: never presented as current.
   const body =
     row && row.score !== null && row.grade
       ? {
           schemaVersion: 1,
           label: 'contract score',
           message: row.unreachable
-            ? `${row.score}/100 ${row.grade} (held over from ${row.scoredAt ?? 'an earlier run'})`
+            ? `${row.score}/100 ${row.grade} (${staleLabel(row.scoredAt)})`
             : `${row.score}/100 ${row.grade}`,
           color: row.unreachable ? NEUTRAL_COLOR : (GRADE_COLOR[row.grade] ?? NEUTRAL_COLOR),
           lastScored: row.scoredAt ?? LEADERBOARD_LAST_SCORED,

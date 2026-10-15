@@ -9,11 +9,11 @@
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="docs/media/verify-loop-poster.png">
-  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org: one cell per check, in one row per category, lights as each check runs while a log names it, and the verdict lands with the grade and the pass count. Recorded from an earlier contract version; the live console shows the current one.">
+  <img src="docs/media/verify-loop.webp" width="800" alt="The verify console scoring designesy.org against its own design contract. It opens on the verdict, grade A at 100% with 42 checks run, then runs again: one cell per check, in one row per category, lights as each of the 45 checks runs while a log names it, and the verdict lands again. Recorded from the homepage on 2026-10-13.">
 </picture>
 <p><sub>A 12-second loop, recorded from the homepage. It plays once and rests on the verdict, and shows a still frame if you prefer reduced motion. <a href="https://www.designesy.org/">Watch it run on designesy.org</a>.</sub></p>
 
-Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. Live at [designesy.org](https://www.designesy.org).
+Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. Live at [designesy.org](https://www.designesy.org).
 
 ## Quick Start
 
@@ -26,14 +26,14 @@ npx @designesy/score@latest https://your-site.com
 **Add to Claude Desktop, Cursor, or any MCP client:**
 
 ```bash
-# Remote (zero install, no auth):
-claude mcp add designesy --transport http https://www.designesy.org/api/mcp
+# Claude Code, remote (zero install, no auth):
+claude mcp add --transport http designesy https://www.designesy.org/api/mcp
 
 # Or local stdio via PyPI:
 pip install designesy-mcp && designesy-mcp
 ```
 
-**Clone this repo?** The `.mcp.json` at root auto-registers the server in Cursor and Claude Code — just open the project.
+**Clone this repo?** The `.mcp.json` at root adds the local server (`uvx designesy-mcp`) to Claude Code as a project server. Claude Code asks you to approve it the first time you open the project. It needs [uv](https://docs.astral.sh/uv/).
 
 **Gate your CI on design-contract compliance:**
 
@@ -42,17 +42,17 @@ pip install designesy-mcp && designesy-mcp
   with:
     url: https://your-app.vercel.app
     min-score: 70
-    min-grade: B
+    min-grade: C
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
 
-**Designesy Contract Check** is a GitHub Action that scores any URL against a **44-check design-system contract** (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting) and fails your CI workflow when the score or grade drops below your threshold. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
+**Designesy Contract Check** is a GitHub Action that scores any URL against a **45-check design-system contract** (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting) and fails your CI workflow when the score or grade drops below your threshold. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 ## Tools
 
-- `designesy_score` — Score a live URL against the 44-check design contract. Returns score, grade (A–F), and per-check breakdown.
+- `designesy_score` — Score a live URL against the 45-check design contract. Returns score, grade (A–F), and per-check breakdown.
 - `designesy_tokens_score` — Validate a DTCG design-token file. 10 conformance checks against W3C DTCG 2025.10.
 - `designesy_a11y_score` — Get the WCAG 2.2 AA accessibility framework and Playwright/axe-core script template.
 - `designesy_motion_score` — Validate a Lottie animation file. 10 checks against Lottie spec v1.0.1 and §16 motion standards.
@@ -74,7 +74,7 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 
 | Tool | Description |
 |---|---|
-| `designesy_score` | Score a live URL against the 44-check design contract — returns score, grade (A–F), per-check breakdown |
+| `designesy_score` | Score a live URL against the 45-check design contract — returns score, grade (A–F), per-check breakdown |
 | `designesy_tokens_score` | Validate a DTCG design-token file (10 conformance checks, W3C DTCG 2025.10) |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility framework + Playwright/axe-core script template |
 | `designesy_motion_score` | Validate a Lottie animation file (10 checks, Lottie spec v1.0.1 + §16 motion standards) |
@@ -98,7 +98,7 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 - **MCP endpoint:** [designesy.org/api/mcp](https://www.designesy.org/api/mcp) (Streamable HTTP, no auth)
 - **Score a site:** [designesy.org/score](https://www.designesy.org/score)
 - **Leaderboard:** [designesy.org/leaderboard](https://www.designesy.org/leaderboard) — 30 sites scored
-- **Methodology:** [designesy.org/methodology](https://www.designesy.org/methodology) — full 44-check scoring methodology
+- **Methodology:** [designesy.org/methodology](https://www.designesy.org/methodology) — full 45-check scoring methodology
 - **Contract:** [designesy.org/contracts/design-system](https://www.designesy.org/contracts/design-system)
 - **Machine export:** [designesy.org/contracts/design-system.json](https://www.designesy.org/contracts/design-system.json)
 
@@ -106,15 +106,15 @@ The same 44-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 
 [![Designesy contract score](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org)](https://www.designesy.org/leaderboard) [![Last scored](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fleaderboard&query=%24.lastScored&label=last%20scored&color=blue)](https://www.designesy.org/leaderboard)
 
-The live site is verified against the design system contract — 44 deterministic checks with provenance back to tokens. Both badges read the live leaderboard, which the weekly re-score refreshes, so the score here cannot drift from the engine; the per-check result is on the [score page](https://www.designesy.org/score). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
+The live site is verified against the design system contract — 45 deterministic checks with provenance back to tokens. Both badges read the live leaderboard, which the weekly re-score refreshes, so the score here cannot drift from the engine; the per-check result is on the [score page](https://www.designesy.org/score). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
 ## The contract
 
-- **44 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
+- **45 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
 - **Copywriting principles** (added in v0.4.0) — 16 UX copy principles + 4 verification checks (button verb phrases, no trailing periods, descriptive link text, no ALL CAPS)
 - **10 Non-Negotiable Motion Standards** — deliberate easing, explicit properties, opacity entrances, keyboard stillness, no layout animation, touch gating, bounded duration, reduced-motion paths, asymmetric press, no ease-in
-- **19 acoustic cues** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume 0.2 engine (MIT), interaction-only
-- **9 open tensions** — documented, not hidden
+- **10 acoustic cue tokens** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume 0.2 engine (MIT), interaction-only. The [acoustic token document](https://www.designesy.org/acoustic-tokens) adds 9 extended feedback cues, 19 in all
+- **10 open tensions** — documented, not hidden
 - **Spring physics** — default + momentum tokens via custom `$type: spring`
 - **Machine-readable** — W3C DTCG 2025.10 format + custom extensions
 
@@ -140,33 +140,52 @@ Scores a URL via the live `/api/score` engine and fails the workflow if the scor
 Score a URL from the command line — for local development, pre-commit hooks, or scripts:
 
 ```bash
-# Local (no install needed):
-node cli/designesy-score.mjs designesy.org
+# No install needed:
+npx @designesy/score designesy.org
 
 # With gating (exit 1 on failure):
-node cli/designesy-score.mjs linear.app --min-score 70 --min-grade B
+npx @designesy/score linear.app --min-score 70 --min-grade B
 
 # JSON output for piping:
-node cli/designesy-score.mjs vercel.com --format canonical --json
-
-# Via npm script:
-npm run score -- designesy.org
+npx @designesy/score vercel.com --format canonical --json
 ```
 
-Zero dependencies — Node built-ins only. The `--api` flag or `SCORE_API` env var overrides the scoring engine URL (defaults to `https://www.designesy.org`). See `--help` for all options.
+No required dependencies. The engine runs locally, with no Designesy server; the checks that need a browser return MANUAL. See `--help` for all options and [`packages/score/README.md`](packages/score/README.md) for the full reference.
+
+**From a clone of this repo:** the engine's `dist/` folder is not committed, so build it first.
+
+```bash
+npm --prefix packages/score ci
+npm run build:score
+node packages/score/dist/cli.js designesy.org
+```
+
+The older `cli/designesy-score.mjs` (`npm run score`) reads the same build. It is superseded by `@designesy/score`. Its `--api` flag (or the `SCORE_API` env var) is an opt-in remote fallback that sends the URL to a scoring server instead of scoring locally; it is off by default.
 
 ## Repository
 
-This is the controlled public root for Designesy — a Next.js 16 App Router site (React 19, webpack build, Vercel deploy).
+The site is a Next.js 16 App Router app (React 19, webpack build), deployed on Vercel. The npm packages and the MCP server live beside it.
 
 ```
-apps/site          Next.js application
-action/            designesy/contract-check GitHub Action
-cli/               designesy-score CLI
-docs/designesy     context, architecture, logs, registries
-DESIGN.md          the design contract (human-readable)
-AGENTS.md          agent operating rules
+apps/site                              the site, its API routes (/api/score, /api/mcp) and its build checks (scripts/)
+packages/score                         @designesy/score: the scoring engine and CLI (npm)
+packages/cli                           @designesy/cli: one CLI for tokens and score (npm)
+packages/tokens                        @designesy/tokens: DTCG token validator (npm)
+packages/stylelint-plugin-dtcg-tokens  @designesy/stylelint-plugin-dtcg-tokens (npm)
+packages/lab-builder                   @designesy/lab-builder (npm)
+packages/designesy-mcp                 designesy-mcp: the local stdio MCP server (PyPI)
+packages/vai-icons, vai-motion         @vai/icons and @vai/motion (not yet published)
+action.yml, action/dist                the Designesy Contract Check GitHub Action
+cli/                                   designesy-score, the older CLI (superseded by @designesy/score)
+scripts/                               repo-level scripts
+docs/designesy                         founding notes from May 2026: mission, architecture, contracts, labs
+DESIGN.md                              operating principles and agent rules (v0.1)
+AGENTS.md                              agent operating rules
 ```
+
+Contract mode, which scores a page against your own DESIGN.md or DTCG token file, is specified in [docs/contract-mode-spec.md](docs/contract-mode-spec.md).
+
+The design contract in DESIGN.md format is generated from the contract source and served at [designesy.org/DESIGN.md](https://www.designesy.org/DESIGN.md). The root `DESIGN.md` file is the older v0.1 charter.
 
 ## What Designesy is not
 
@@ -189,7 +208,7 @@ No. The MCP endpoint is stateless Streamable HTTP with no authentication. Sixtee
 Yes. There is no LLM in the scoring loop: every check is deterministic and reproducible. The same page, engine and contract always produce the same verdicts, and the receipt's digest lets anyone check that. A live URL can change between runs, and results are cached for 24 hours.
 
 **What does it score against?**
-The current Designesy design-system contract — 44 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
+The current Designesy design-system contract — 45 checks across 14 weighted categories (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting).
 
 **Can I use it in CI?**
 Yes. The [GitHub Action](#github-action) gates your workflow on contract compliance — fail the build if the score drops below your threshold.

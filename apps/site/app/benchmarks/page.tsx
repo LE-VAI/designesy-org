@@ -17,7 +17,7 @@ import { AgentActions } from '../lib/agent-actions';
 import { CATEGORY_WEIGHTS, CHECKS as REGISTRY, ENGINE_MANUAL_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead, EngineNext } from '../lib/engine/engine-page';
 import { display } from '../lib/engine/types';
-import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt, toneOf } from '../lib/data/cohort';
+import { byUrl, SELF_URL, SCORES_DATE, SCORES_ENGINE_VERSION, fmt } from '../lib/data/cohort';
 import { DataTable } from '../lib/data/figure';
 import { unbroken } from '../lib/data/unbroken';
 
@@ -83,7 +83,7 @@ const DESIGNESY_ONLY = [
   { id: 'v34', what: 'AI-disclosure readiness (EU AI Act Article 50, which applies from 2 August 2026)' },
   { id: 'v35', what: 'Forced-colors readiness' },
   { id: 'v36', what: 'Unicode security: UTS #39 confusables in token names and CSS' },
-  { id: 'v37', what: 'DESIGN.md spec layer (Google @google/design.md lint)' },
+  { id: 'v37', what: 'DESIGN.md spec layer (DESIGN.md format lint)' },
 ];
 
 // The longest id run, in characters: the id column's width (data.css).
@@ -253,7 +253,7 @@ export default function BenchmarksPage() {
                   'designesy',
                   SELF ? (
                     <span key="s" className="dx-rank-sg">
-                      <span className="dx-grade" data-tone={toneOf(SELF.grade)}>
+                      <span className="dx-grade" data-grade={SELF.grade.toLowerCase()}>
                         {SELF.grade}
                       </span>
                       <span className="dx-num">{fmt(SELF.score)}</span>

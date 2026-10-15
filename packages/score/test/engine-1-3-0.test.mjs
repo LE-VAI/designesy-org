@@ -1,7 +1,7 @@
 /**
  * Engine 1.3.0, pinned rule by rule.
  *
- *   - No A while any check FAILs (owner decision 2026-10-11): any FAIL caps the
+ *   - No A while any check FAILs (see CHANGELOG): any FAIL caps the
  *     score at 89.9, and v44 joins the contrast ceilings at 65. Every cap runs
  *     after the originality lift.
  *
@@ -102,14 +102,17 @@ describe('no A while any check FAILs', () => {
   });
 
   it('names every failing check in the reason', async () => {
-    const r = await run({ css: `${STRONG_CSS}\n.x{transition:all 1s}\n.a{user-select:none}.caption{font-size:12px}` });
+    // A field below 16px is a true v27 FAIL. (Until engine 1.4.1 this test
+    // used `.a{user-select:none}.caption{font-size:12px}`, a v27 false
+    // positive that 1.4.1 removes.)
+    const r = await run({ css: `${STRONG_CSS}\n.x{transition:all 1s}\n.search input{font-size:12px}` });
     assert.deepEqual(r.checks.filter((c) => c.status === 'FAIL').map((c) => c.id).sort(), ['v11', 'v27']);
     assert.equal(r.score, 89.9);
     assert.match(r.hardFailCeilingReason, /v11 and v27 fail/);
   });
 
   it('review and canonical output no longer print Block beside Grade A (audit H2)', async () => {
-    const r = await run({ css: `${STRONG_CSS}\n.a{user-select:none}.caption{font-size:12px}`, scope: 'universal' });
+    const r = await run({ css: `${STRONG_CSS}\n.search input{font-size:12px}`, scope: 'universal' });
     assert.ok(r.fail > 0);
     assert.equal(deriveVerdict(r), 'fail');
     const review = emitReview('https://example.test/', r);
@@ -259,9 +262,22 @@ describe('v34: only a positively identified AI chat surface can FAIL', () => {
     assert.match(rem, /not legal advice/);
   });
 
-  it('the audit H2 page (gpt.js plus a user-select false positive) scores 89.9 / B, not 100 / A', async () => {
+  it('the audit H2 page (gpt.js plus a user-select false positive): no FAIL since engine 1.4.1', async () => {
+    // Under 1.3.0 to 1.4.0 this page FAILed v27 on `.caption{font-size:12px}`,
+    // read as a field rule because "select" in user-select ran across the
+    // brace, and scored 89.9 / B. Engine 1.4.1 reads the caption's own
+    // selector, so v27 holds its floor and gpt.js is still not an AI surface.
     const html = withHead('<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>');
     const r = await run({ html, css: `${STRONG_CSS}.a{user-select:none}.caption{font-size:12px}`, scope: 'universal' });
+    assert.equal(r.checks.find((c) => c.id === 'v34').status, 'PASS');
+    assert.equal(r.checks.find((c) => c.id === 'v27').status, 'PASS');
+    assert.deepEqual(r.checks.filter((c) => c.status === 'FAIL').map((c) => c.id), []);
+    assert.equal(r.hardFailCeilingApplied, false);
+  });
+
+  it('the audit H2 page with a true v27 FAIL still caps at 89.9 / B', async () => {
+    const html = withHead('<script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>');
+    const r = await run({ html, css: `${STRONG_CSS}.search input{font-size:12px}`, scope: 'universal' });
     assert.equal(r.checks.find((c) => c.id === 'v34').status, 'PASS');
     assert.deepEqual(r.checks.filter((c) => c.status === 'FAIL').map((c) => c.id), ['v27']);
     assert.equal(r.score, 89.9);

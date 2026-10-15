@@ -11,7 +11,8 @@ import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT, ENGINE_SCORED_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineHead } from '../lib/engine/engine-page';
 import { SubmitForm } from './submit-form/submit-form';
-import { LEADERBOARD_VERSION } from './seed';
+import { LEADERBOARD_VERSION, LEADERBOARD_DISPUTE_EMAIL } from './seed';
+import { contactMailto } from '../lib/site-meta';
 import {
   COHORT,
   COHORT_STATS,
@@ -23,12 +24,13 @@ import {
   SCORES_ENGINE_VERSION,
   CATEGORY_LABELS,
   fmt,
-  toneOf,
+  RANKED,
+  STALE,
   type CohortSite,
 } from '../lib/data/cohort';
 import { DataFigure, DataTable, NotMeasured } from '../lib/data/figure';
 import { CohortStrip } from '../lib/data/strip';
-import { CategoryProfile, HeldTag } from '../lib/data/cells';
+import { CategoryProfile, SiteTags } from '../lib/data/cells';
 
 // The share text counts the A grades from the cohort data at build. It used to
 // say "Designesy is the only A-grade site in the cohort" while three sites held
@@ -65,8 +67,11 @@ const CATEGORY_LIST = BATCH_CATEGORIES.map((k) => CATEGORY_LABELS[k].toLowerCase
 // The check counts, one column each, so every count sits under its own label.
 const COUNTS = ['Pass', 'Warn', 'Fail', 'Skip'] as const;
 
+// One mail for any dispute; the evaluation pages prefill the site's name.
+const DISPUTE_HREF = contactMailto('Dispute: leaderboard score');
+
 function Delta({ s }: { s: CohortSite }) {
-  if (s.unreachable || s.prevScore === null) return null;
+  if (s.stale || s.prevScore === null) return null;
   const d = Math.round((s.score - s.prevScore) * 10) / 10;
   if (d === 0) return null;
   return (
@@ -82,7 +87,7 @@ function Row({ s }: { s: CohortSite }) {
   return (
     <tr data-self={s.self || undefined}>
       <td data-num className="dx-rank-n">
-        {s.rank}
+        {s.rank ?? <span className="sr-only">not ranked</span>}
       </td>
       <th scope="row" className="dx-rank-site">
         <Link href={`/frameworks/${s.slug}`}>{s.name}</Link>
@@ -90,15 +95,12 @@ function Row({ s }: { s: CohortSite }) {
           <span>
             {s.host} · {s.category}
           </span>
-          {s.self && <span className="dx-tag">self-scored</span>}
-          {s.unreachable && (
-            <HeldTag date={s.scoredAt} />
-          )}
+          <SiteTags s={s} />
         </span>
       </th>
       <td data-num className="dx-rank-score">
         <span className="dx-rank-sg">
-          <span className="dx-grade" data-tone={toneOf(s.grade)}>
+          <span className="dx-grade" data-grade={s.grade.toLowerCase()}>
             {s.grade}
           </span>
           <span className="dx-rank-v">{fmt(s.score)}</span>
@@ -179,8 +181,11 @@ export default function LeaderboardPage() {
               </dd>
             </div>
             <div>
-              <dt>Held over</dt>
-              <dd>{COHORT_STATS.heldOver}</dd>
+              <dt>Not re-scored</dt>
+              <dd>
+                {STALE.length}
+                <small>outside the ranking</small>
+              </dd>
             </div>
           </dl>
 
@@ -191,7 +196,7 @@ export default function LeaderboardPage() {
               <>
                 Each dot is one site at its contract score, on the bands the engine grades by: F under 60, then a grade every ten
                 points. Sites a point or two apart stack. The ringed dot is designesy.org, scored by its own engine; an outlined dot
-                is a score held over from an earlier run.
+                is a last score the latest run could not renew, shown but not ranked.
               </>
             }
             source={`Weekly run of ${SCORES_DATE}. Engine ${SCORES_ENGINE_VERSION}, contract v${LEADERBOARD_VERSION}.`}
@@ -206,6 +211,7 @@ export default function LeaderboardPage() {
                 rank: s.rank,
                 self: s.self,
                 held: s.unreachable,
+                heldLabel: s.staleLabel,
               }))}
               median={COHORT_STATS.median}
               label={`Contract scores of ${COHORT_STATS.count} sites on a scale from 40 to 100. ${GRADE_LINE}. Median ${fmt(
@@ -236,8 +242,8 @@ export default function LeaderboardPage() {
           <div className="dx-table-box">
             <table className="dx-table dx-rank">
               <caption className="sr-only">
-                {COHORT_STATS.count} sites ranked by contract score, with grade, change since the previous weekly run, score by
-                category, and check counts.
+                {RANKED.length} sites measured on the latest weekly run, ranked by contract score, with grade, change since the
+                previous run, score by category, and check counts.
               </caption>
               <thead>
                 <tr>
@@ -261,24 +267,73 @@ export default function LeaderboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {COHORT.map((s) => (
+                {RANKED.map((s) => (
                   <Row key={s.url} s={s} />
                 ))}
               </tbody>
             </table>
           </div>
 
+          {STALE.length > 0 && (
+            <>
+              <h3 className="dx-h3" id="lb-stale-h">
+                Could not re-score
+              </h3>
+              <p className="dx-lead">
+                The latest weekly run could not read {STALE.length === 1 ? 'this site' : `these ${STALE.length} sites`}. Each keeps
+                its last score, with the date it was measured, and stays out of the ranking until the engine can measure it again.
+              </p>
+              <div className="dx-table-box">
+                <table className="dx-table dx-rank" aria-labelledby="lb-stale-h">
+                  <thead>
+                    <tr>
+                      <th scope="col" data-num className="dx-col-n">
+                        <span className="sr-only">Rank</span>
+                      </th>
+                      <th scope="col" className="dx-col-site">
+                        Site
+                      </th>
+                      <th scope="col" data-num className="dx-col-score">
+                        Last score
+                      </th>
+                      <th scope="col" data-opt className="dx-col-cat">
+                        By category
+                      </th>
+                      {COUNTS.map((c) => (
+                        <th key={c} scope="col" data-num data-opt="wide" className="dx-col-count">
+                          {c}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {STALE.map((s) => (
+                      <Row key={s.url} s={s} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          <p className="dx-lead">
+            Think a score is wrong? <a href={DISPUTE_HREF}>Dispute this score</a> by email to {LEADERBOARD_DISPUTE_EMAIL}: name
+            the site and the check, and say what the engine got wrong. Every evaluation page has the same link, with the
+            site&apos;s name filled in.
+          </p>
+
           <p className="dx-src">
             By category: one column per category, heaviest first ({CATEGORY_LIST}), filled to its score and tinted by grade
             band; dashed where the engine scored nothing. Category scores come from the batch run of {BATCH_RUN_DATE}; contract
-            scores and ranks from {SCORES_DATE}. A signed figure beside a score is its change since the previous run.
+            scores and ranks from {SCORES_DATE}. A signed figure beside a score is its change since the previous run. Labels
+            mark the self-score, the other site Designesy operates, and the products that compete with it.
           </p>
 
           <details className="dx-data">
             <summary>Category scores, every site</summary>
             <div className="dx-table-box">
               <DataTable
-                caption={`Score by category for each site, batch run of ${BATCH_RUN_DATE}.`}
+                caption={`Score by category for each site, batch run of ${BATCH_RUN_DATE}. Sites the latest run could not re-score are included with their last scores.`}
                 head={['Site', ...BATCH_CATEGORIES.map((k) => CATEGORY_LABELS[k])]}
                 numeric={BATCH_CATEGORIES.map((_, i) => i + 1)}
                 rows={COHORT.map((s) => [
@@ -298,8 +353,9 @@ export default function LeaderboardPage() {
             Submit a site
           </h2>
           <p className="dx-lead">
-            Any public URL is scored on the spot by the same {ENGINE_CHECK_COUNT}-check engine. Submissions are reviewed for the
-            seed at the next weekly run. No paywall, and no pay-to-remove.
+            Any public URL is scored on the spot by the same {ENGINE_CHECK_COUNT}-check engine. The submission is not stored, so a
+            site does not join the leaderboard by being scored here. To propose one, email {LEADERBOARD_DISPUTE_EMAIL}. No
+            paywall, and no pay-to-remove.
           </p>
           <SubmitForm />
         </section>
@@ -325,10 +381,25 @@ export default function LeaderboardPage() {
               </dd>
             </div>
             <div>
-              <dt>Held over</dt>
+              <dt>Could not re-score</dt>
               <dd>
-                When the engine cannot read a site on the weekly run, the site keeps its previous score, marked with the date it
-                was measured. It is never re-graded from a failed fetch.
+                When the engine cannot read a site on the weekly run, the site keeps its last score, marked &ldquo;last scored
+                &lt;date&gt; · could not re-score&rdquo;, and moves out of the ranking until it is measured again. It is never
+                re-graded from a failed fetch.
+              </dd>
+            </div>
+            <div>
+              <dt>Labels</dt>
+              <dd>
+                &ldquo;Operated by Designesy&rdquo; marks a site Designesy runs, and &ldquo;competing product&rdquo; marks one that
+                competes with Designesy&apos;s own. The same engine scores them all; the labels say who has a stake in the result.
+              </dd>
+            </div>
+            <div>
+              <dt>Disputes</dt>
+              <dd>
+                Email {LEADERBOARD_DISPUTE_EMAIL} with the site and the check you dispute. A person reads it, and a score changes
+                only when the engine, run again, measures something different.
               </dd>
             </div>
             <div>
@@ -341,7 +412,8 @@ export default function LeaderboardPage() {
           </dl>
           <p className="dx-src">
             Leaderboard v{LEADERBOARD_VERSION} · re-scored Mondays 10:00 UTC · JSON at{' '}
-            <a href="/api/leaderboard">/api/leaderboard</a> · submissions by POST to /api/leaderboard/submit
+            <a href="/api/leaderboard">/api/leaderboard</a> · CSV at <a href="/api/leaderboard.csv">/api/leaderboard.csv</a> ·
+            scoring by POST to /api/leaderboard/submit (discarded after scoring) · disputes to {LEADERBOARD_DISPUTE_EMAIL}
           </p>
         </section>
       </main>

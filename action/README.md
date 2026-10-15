@@ -1,6 +1,6 @@
 # Designesy Contract Check (GitHub Action)
 
-Score a URL against the **Designesy design-system contract** — 44 deterministic checks covering tokens, motion, accessibility, cadence, takt, typography, and copywriting — and fail your workflow when the score or grade drops below your threshold. A design-contract quality gate for CI, exactly like a test threshold but for design compliance.
+Score a URL against the **Designesy design-system contract** — 45 deterministic checks covering tokens, motion, accessibility, cadence, takt, typography, and copywriting — and fail your workflow when the score or grade drops below your threshold. A design-contract quality gate for CI, exactly like a test threshold but for design compliance.
 
 Supports **4 emission formats** so the result integrates with any downstream tool: `designesy` (default native shape), `canonical` (the [review-findings.json schema](https://www.designesy.org/specs/review-findings.json) — the standard for design verification findings), `review` (jakubkrehel better-interface markdown), and `google` (`@google/design.md`-compatible `{findings, summary, designSystem}`).
 
@@ -33,7 +33,7 @@ jobs:
   score:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: LE-VAI/designesy-org@v1
         with:
           url: https://preview-${{ github.event.number }}.your-app.vercel.app
@@ -66,22 +66,36 @@ The baseline file format:
 }
 ```
 
-When the score improves (e.g. 72.5 → 78.0), the action overwrites the file with the new floor. Commit the updated baseline to lock in the improvement:
+When the score improves (e.g. 72.5 → 78.0), the action overwrites the file with the new floor. On the first run it creates the file. Commit the file when it changed to lock in the improvement. The action has no output for this, so the step asks git. Run it on pushes to your default branch, because a `pull_request` checkout is a detached merge commit that cannot be pushed:
 
 ```yaml
-- uses: LE-VAI/designesy-org@v1
-  id: designesy
-  with:
-    url: https://your-app.vercel.app
-    baseline: .designesy-baseline.json
-- name: Commit improved baseline
-  if: steps.designesy.outputs.score > steps.designesy.conclusion
-  run: |
-    git config user.name "designesy-bot"
-    git config user.email "bot@designesy.org"
-    git add .designesy-baseline.json
-    git commit -m "chore: ratchet design baseline to ${{ steps.designesy.outputs.score }}"
-    git push
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write   # push the updated baseline
+jobs:
+  ratchet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: LE-VAI/designesy-org@v1
+        id: designesy
+        with:
+          url: https://your-app.vercel.app
+          baseline: .designesy-baseline.json
+      - name: Commit improved baseline
+        if: success()
+        env:
+          SCORE: ${{ steps.designesy.outputs.score }}
+        run: |
+          if [ -n "$(git status --porcelain -- .designesy-baseline.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .designesy-baseline.json
+            git commit -m "chore: ratchet design baseline to $SCORE"
+            git push
+          fi
 ```
 
 ### Full workflow — gate a deploy preview
@@ -97,7 +111,7 @@ jobs:
   score:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: LE-VAI/designesy-org@v1
         id: designesy
         with:
@@ -149,13 +163,13 @@ The step writes a markdown summary (score, grade, pass/warn/fail/skip, gate verd
 
 ## How it works
 
-The Action calls the public Designesy scoring engine at `/api/score` — the same deterministic 44-check engine that powers [designesy.org](https://www.designesy.org). No LLM, no heuristics — each check is grounded in the published design-system contract and returns PASS/FAIL/WARN/SKIP with remediation guidance. An accessibility floor applies: accessibility below 60% caps the grade at C.
+The Action calls the public Designesy scoring engine at `/api/score` — the same deterministic 45-check engine that powers [designesy.org](https://www.designesy.org). No LLM, no heuristics — each check is grounded in the published design-system contract and returns PASS/FAIL/WARN/SKIP with remediation guidance. An accessibility floor applies: accessibility below 60% caps the grade at C.
 
 When triggered on a `pull_request` event with `post-comment: true` (default), the action posts a summary comment on the PR with the score, grade, and gate verdict. This requires `pull-requests: write` permission in the workflow.
 
 ### SARIF integration
 
-When `sarif-output` is set, the action converts the 44-check results into a SARIF v2.1.0 file:
+When `sarif-output` is set, the action converts the 45-check results into a SARIF v2.1.0 file:
 
 - Each check becomes a **rule** (with id, name, shortDescription, defaultConfiguration.level, tags, precision, help/remediation)
 - Each FAIL check becomes an **error-level result**; each WARN becomes a **warning-level result**

@@ -3,6 +3,13 @@
    this to the / route only. Class names are un-hashed.
    The JSX keeps using className="hero" etc. unchanged. */
 
+/* --- Type scale --------------------------------------------------------------
+   The --text-* steps live on :root (globals.css) and in the contract
+   (v0.4.5); this sheet reads them. Every size this page sets below the lead
+   step reads one of them. The two role="img" instrument drawings (the verify
+   console's face and the inspection window) are exempt from the floor as
+   images, like the live badge: their aria-labels carry what they show. */
+
 .hero {
   position: relative;
   /* Optical (not mathematical) vertical centering: more bottom padding than
@@ -21,15 +28,6 @@
   overflow: hidden;
 }
 
-.hero-eyebrow {
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-fine-160);
-}
-
 .hero-title {
   margin-bottom: var(--space-fine-135);
   /* LCP element: ensure it paints immediately, not gated by entrance animation */
@@ -46,14 +44,6 @@
   max-width: min(100%, 640px);
 }
 
-.section-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-12);
-}
 
 .section-title {
   font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
@@ -66,161 +56,10 @@
   font-variation-settings: 'opsz' 30;
 }
 
-.pillar-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  align-items: stretch;
-}
-
-.pillar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  padding: var(--space-24);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
-}
-
-/* Push the last paragraph to fill the remaining vertical space so cards
-   with shorter copy don't leave a dead zone at the bottom — keeps the
-   bottom edges visually aligned across the row of 4 cards even when
-   content lengths differ. */
-.pillar p:last-of-type {
-  flex: 1 1 auto;
-}
-
-@media (hover: hover) {
-  .pillar:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-raised);
-  }
-}
-
-.pillar:active {
-  transform: scale(0.985);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .pillar:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.pillar-number {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  letter-spacing: 0.05em;
-}
-
-.pillar h3 {
-  font-size: 1.0625rem;
-  color: var(--ink);
-}
-
-.pillar p {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin-top: auto;
-}
-
-.surface-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  align-items: start;
-}
-
-.surface-card-meta {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-fine-45);
-  font-variant-numeric: tabular-nums;
-}
-
-.surface-card-label {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--space-fine-35);
-  text-wrap: balance;
-}
-
-.surface-card-desc {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.surface-card-arrow {
-  margin-top: auto;
-  padding-top: var(--space-12);
-  font-size: 0.75rem;
-  color: var(--muted-dim);
-  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
-}
-
-.surface-card-label,
-.surface-card-desc,
-.surface-card-arrow {
-  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
-}
-
-button.pillar {
-  position: relative;
-  overflow: hidden;
-}
-
-button.pillar::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 200ms var(--ease-out);
-  z-index: 0;
-}
-
-@media (hover: hover) {
-  button.pillar:hover::before {
-    transform: scaleY(1);
-  }
-}
 
 .field-card-title,
 .field-card-lede {
   transition: transform 200ms var(--ease-out);
-}
-
-.principle-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(0.9rem, 1.6vw, 1.25rem);
-  align-items: start;
-}
-
-@media (min-width: 880px) {
-  .principle-layout {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.principle-cell {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.85rem, 1.4vw, 1.1rem);
 }
 
 .health-panel {
@@ -230,55 +69,10 @@ button.pillar::before {
   padding: clamp(var(--space-fine-105), 2vw, var(--space-24));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@media (max-width: 640px) {
-  .principle-cell {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-
-.section-heading-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: clamp(1rem, 2.6vw, 2rem);
-  flex-wrap: wrap;
-}
-
-.section-heading-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-fine-20);
-  padding: var(--space-fine-45) var(--space-fine-70);
-  border: 1px solid var(--line);
-  border-radius: calc(var(--radius) * 0.6);
-  background: var(--surface);
-}
-
 .section-heading-badge-label {
-  font-size: 0.6rem;
+  font-size: var(--text-label);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--muted-dim);
 }
@@ -289,17 +83,8 @@ button.pillar::before {
   gap: var(--space-fine-40);
 }
 
-.section-heading-badge-numeral {
-  font-size: 1.15rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
 .section-heading-badge-unit {
-  font-size: 0.68rem;
+  font-size: var(--text-label);
   color: var(--muted-dim);
 }
 
@@ -307,16 +92,6 @@ button.pillar::before {
   margin-top: var(--space-32);
 }
 
-
-
-.section-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-12);
-}
 
 .section-title {
   font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
@@ -329,161 +104,10 @@ button.pillar::before {
   font-variation-settings: 'opsz' 30;
 }
 
-.pillar-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  align-items: stretch;
-}
-
-.pillar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  padding: var(--space-24);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: transform 160ms var(--ease-out), border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
-}
-
-/* Push the last paragraph to fill the remaining vertical space so cards
-   with shorter copy don't leave a dead zone at the bottom — keeps the
-   bottom edges visually aligned across the row of 4 cards even when
-   content lengths differ. */
-.pillar p:last-of-type {
-  flex: 1 1 auto;
-}
-
-@media (hover: hover) {
-  .pillar:hover {
-    border-color: var(--line-strong);
-    background: var(--surface-raised);
-  }
-}
-
-.pillar:active {
-  transform: scale(0.985);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .pillar:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.pillar-number {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--muted-dim);
-  letter-spacing: 0.05em;
-}
-
-.pillar h3 {
-  font-size: 1.0625rem;
-  color: var(--ink);
-}
-
-.pillar p {
-  font-size: 0.85rem;
-  color: var(--muted);
-  line-height: 1.5;
-  margin-top: auto;
-}
-
-.surface-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-16);
-  align-items: start;
-}
-
-.surface-card-meta {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted-dim);
-  margin-bottom: var(--space-fine-45);
-  font-variant-numeric: tabular-nums;
-}
-
-.surface-card-label {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: var(--space-fine-35);
-  text-wrap: balance;
-}
-
-.surface-card-desc {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.surface-card-arrow {
-  margin-top: auto;
-  padding-top: var(--space-12);
-  font-size: 0.75rem;
-  color: var(--muted-dim);
-  transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
-}
-
-.surface-card-label,
-.surface-card-desc,
-.surface-card-arrow {
-  transition: transform 250ms var(--ease-out), color 160ms var(--ease-out);
-}
-
-button.pillar {
-  position: relative;
-  overflow: hidden;
-}
-
-button.pillar::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: var(--signal);
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 200ms var(--ease-out);
-  z-index: 0;
-}
-
-@media (hover: hover) {
-  button.pillar:hover::before {
-    transform: scaleY(1);
-  }
-}
 
 .field-card-title,
 .field-card-lede {
   transition: transform 200ms var(--ease-out);
-}
-
-.principle-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: clamp(0.9rem, 1.6vw, 1.25rem);
-  align-items: start;
-}
-
-@media (min-width: 880px) {
-  .principle-layout {
-    grid-template-columns: 2fr 1fr;
-  }
-}
-
-.principle-cell {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: clamp(0.85rem, 1.4vw, 1.1rem);
 }
 
 .health-panel {
@@ -494,83 +118,8 @@ button.pillar::before {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@media (max-width: 640px) {
-  .principle-cell {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-
 .section-more {
   margin-top: var(--space-32);
-}
-
-.state-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
-
-/*
-  Desktop enhancement — System state + System status side by side, a split
-  window. Migrated from globals.css: home.css loads AFTER globals.css, so the
-  desktop-default `flex-direction: column` above would override this
-  min-width block if it stayed in globals.css (cascade-order bug).
-
-  The register (12 rows) defines the panel's height; the status pane is
-  shorter, so it travels: it is sticky one gutter under the header capsule
-  (4.25rem, the capsule's bottom edge) and stops on the panel's content
-  bottom. Stretched to the row instead, it left about 530px of empty pane
-  beside the register's lower half at 1440. Because the pane no longer spans
-  the row, the panel draws the divider (::after on .home-state-panel, below),
-  top to bottom like the console's. Columns: the console's own narrow split
-  (1.5fr | 1fr) until the panel's g12 query switches it to the 7-line.
-*/
-@media (min-width: 860px) {
-  .state-layout {
-    --state-split: 60%;
-    display: grid;
-    grid-template-columns: var(--state-split) minmax(0, 1fr);
-    gap: 0;
-    align-items: start;
-  }
-
-  .row-stack {
-    width: auto;
-    max-width: none;
-  }
-
-  .state-marquee {
-    display: block;
-    min-height: 0;
-  }
-}
-
-button.pillar {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-
-.fade-up-delay-5 {
-  animation-delay: 0.40s;
 }
 
 .fade-in {
@@ -592,7 +141,7 @@ button.pillar {
 }
 
 .field-card-title {
-  font-size: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);
+  font-size: var(--text-h3);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -600,14 +149,14 @@ button.pillar {
 }
 
 .field-card-lede {
-  font-size: clamp(0.9rem, 0.85rem + 0.2vw, 1rem);
+  font-size: var(--text-body);
   font-weight: 500;
   color: var(--ink);
   line-height: 1.4;
 }
 
 .field-card-desc {
-  font-size: 0.86rem;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.55;
   max-width: 28rem;
@@ -615,39 +164,12 @@ button.pillar {
 
 .field-card-arrow {
   margin-top: var(--space-fine-65);
-  font-size: 0.8rem;
+  font-size: var(--text-body);
   font-weight: 600;
   color: var(--muted-dim);
   transition: color 160ms var(--ease-out), transform 160ms var(--ease-out);
 }
 
-.mark-glyph-core,
-.mark-glyph-ring {
-  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease),
-    background 180ms var(--ease), opacity 180ms var(--ease);
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.mark-glyph-core {
-  position: absolute;
-  inset: 9px;
-  background: var(--signal);
-  transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1);
-}
-
-.mark-glyph-ring {
-  position: absolute;
-  inset: 2px;
-  border: 1px solid var(--signal-dim);
-  opacity: 0.9;
-  transform: translateZ(0);
-}
-
-@media (max-width: 859px) {
-  /* On narrow viewports the construction field would crowd the input — step back. */
-  
-}
 
 .hero-display {
   font-size: clamp(2.35rem, 2.35rem + 3.2vw, 4.9rem);
@@ -755,55 +277,6 @@ button.pillar {
 
 .hero-display-line.is-accent { color: var(--ink); }
 
-.hero-word-free {
-  /* No padding-left — the U+00A0 alone gives the natural word space. The old
-     0.14em "optical kern" double-spaced the gap (nbsp ≈ 0.25em + 0.14em pad
-     ≈ 0.39em vs the ~0.25em a real Inter word space holds), and the hard
-     background-clip boundary on the left edge of the f read as a second
-     barrier on top of the space. At rest the gradient band is parked fully
-     off-word (background-size: 250%), so there is no clip artifact to defend
-     against — the padding was dead weight that only widened the gap. */
-  padding-left: 0;
-  /* Flat base face (var(--ink)-adjacent light gray) with a NARROW pure-white
-     band at 47–53%. With background-size 250% the band lives at container
-     coords 117.5–132.5% — fully off the right edge of the word at rest, so
-     the resting face reads as flat typography, not a gradient. The band is
-     tighter (6% of image) and brighter (pure var(--paper-white)) than the old 12% mix. */
-  background-image: linear-gradient(
-    104deg,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%),
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 47%,
-    var(--paper-white) 50%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%) 53%,
-    color-mix(in srgb, var(--ink) 70%, var(--paper-white) 30%)
-  );
-  background-size: 250% 100%;
-  background-position: 0% 0; /* band parked fully off the right edge */
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent; /* fallback guard — overridden below where clip is unsupported */
-  /* No glow — the shimmer band alone carries the emphasis. A text-shadow
-     here reads as a static halo that fights the sweep. */
-  /* Sweep left → right on an infinite loop with a built-in dwell. Because
-     the default background-repeat tiles the gradient seamlessly (edge stops
-     match), and both park positions leave the band fully off-word, the loop
-     wrap is invisible and the band is never parked ON the word — the "stuck
-     gradient" failure the old 118%/-118% keyframes produced. */
-  animation: hero-free-shimmer 3.6s cubic-bezier(0.42, 0, 0.2, 1) 1s infinite;
-}
-
-[data-theme="light"] .hero-word-free {
-  background-image: linear-gradient(
-    104deg,
-    var(--ink),
-    var(--ink) 47%,
-    color-mix(in srgb, var(--signal-light) 82%, var(--ink) 18%) 50%,
-    var(--ink) 53%,
-    var(--ink)
-  );
-}
-
 @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
   .hero-word-free {
     color: var(--ink);
@@ -813,17 +286,6 @@ button.pillar {
     text-shadow: none;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-word-free {
-    animation: none;
-    background-image: none;
-    color: var(--ink);
-    -webkit-text-fill-color: currentColor;
-    text-shadow: none;
-  }
-}
-
 
 
 /*
@@ -840,18 +302,6 @@ button.pillar {
     padding: var(--space-48) 0 var(--space-40);
     min-height: auto;
   }
-
-  .pillar-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .surface-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 720px) {
@@ -862,8 +312,7 @@ button.pillar {
   }
 
   .principle-cell,
-  .field-grid,
-  .pillar-grid {
+.field-grid {
     gap: var(--space-12);
   }
 
@@ -882,19 +331,11 @@ button.pillar {
   }
 
   .section-heading-badge-label {
-    font-size: 0.6875rem;
+    font-size: var(--text-label);
     letter-spacing: 0.11em;
   }
   .section-heading-badge-unit {
-    font-size: 0.6875rem;
-  }
-
-  .section-heading-row {
-    align-items: flex-start;
-    gap: var(--space-12);
-  }
-  .section-heading-badge {
-    align-items: flex-start;
+    font-size: var(--text-label);
   }
 
   .score-hero-input {
@@ -903,10 +344,7 @@ button.pillar {
 }
 
 @media (max-width: 560px) {
-  .pillar-grid,
-  .surface-list {
-    grid-template-columns: 1fr;
-  }
+
 
   .hero-actions {
     flex-direction: column;
@@ -971,15 +409,6 @@ button.pillar {
   padding: clamp(var(--space-56), 7vw, var(--space-88)) 0 clamp(var(--space-64), 8vw, var(--space-104));
 }
 
-.home-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-10);
-  margin: 0 0 var(--space-20);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--muted);
-}
 
 .home .hero-display {
   text-align: left;
@@ -1013,10 +442,9 @@ button.pillar {
    bottom padding, and the hero's bottom padding (home-lvl.css), so the hero's
    handoff is the same as every other. The chapter rule (.site-shell
    .section::before, globals.css) sits three quarters of a unit above the next
-   eyebrow: content, two units, the rule, 0.75 units, the eyebrow (128 / 48 at
-   1440, 80 / 32 at 390), 177px from one chapter's last surface to the next
-   chapter's eyebrow at 1440. Every head carries an eyebrow, so that distance
-   is measured to the same element everywhere. The statement carries its
+   heading: content, two units, the rule, 0.75 units, the heading (128 / 48 at
+   1440, 80 / 32 at 390). No head carries an eyebrow, so that distance
+   is measured to the same element everywhere: the chapter's title. The statement carries its
    weight in its type scale, not in extra air.
    On this page the rule runs crisp from content edge to content edge: the
    shared edges of every surface below it, not a hairline fading into the
@@ -1070,55 +498,37 @@ button.pillar {
 /* Statement: the page's largest claim after the hero. */
 .home .home-statement-lede {
   max-width: 44rem;
-  font-size: clamp(1.1rem, 1rem + 0.45vw, 1.35rem);
+  font-size: var(--text-lead);
   line-height: 1.55;
   color: var(--muted);
   margin-bottom: var(--space-48);
 }
 
-.home .home-pillars .pillar-number {
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 2rem;
-  line-height: 1.08;
-  font-variation-settings: 'opsz' 72, 'SOFT' 40;
-  color: var(--muted-dim);
-  transition: color var(--duration-fast) var(--ease);
-}
 
-.home .home-pillars .pillar.is-checked .pillar-number {
-  color: var(--signal-access);
-}
-
-/* The pillars' source line, set as the console's caption is: the grid's own
-   left edge, caption type, one gutter under the cards. Pillar 02 carried its
-   citation inline and ran eight lines against the others' four and five. */
+/* The points' source line, set as the console's caption is: the list's own
+   left edge, caption type, one gutter under the last hairline. Point two
+   carried its citation inline and ran eight lines against the others' four. */
 .home .home-pillar-note {
   margin: var(--grid-gutter) 0 0;
-  font: 400 0.8rem/1.45 var(--sans);
+  font: 400 var(--text-body)/1.5 var(--sans);
   color: var(--muted);
 }
 
-.home .home-pillars sup,
+.home .home-points sup,
 .home .home-pillar-note sup {
-  font-size: 0.7em;
+  font-size: var(--text-label);
   line-height: 0;
   color: var(--ink);
 }
 
-@media (hover: hover) {
-  .home .home-pillars .pillar:hover .pillar-number {
-    color: var(--signal-access);
-  }
-}
 
-/* The contract: principles as cells beside the health instrument, paired on
+/* The contract: the principles list beside the health instrument, paired on
    the 7-line. The grid is a .g12 region with four explicit rows. From 64rem
    of its own width the principles column takes full-start / split across all
-   four and hands them to its children through subgrid (h2, lede, cells,
+   four and hands them to its children through subgrid (h2, lede, list,
    more-link), and the health panel takes split / full-end on row 3 alone,
-   the cells' row, and stretches. The panel's top and bottom are therefore the
-   cells' top and bottom by construction (the old align-items: start lined it
+   the list's row, and stretches. The panel's top and bottom are therefore the
+   list's top and bottom by construction (the old align-items: start lined it
    up with the h2's line box instead: dTop -143, dBottom -105 at 1440), and
    its left edge is the 7-line plus one gutter (818.67 at 1440). Row-gap is 0,
    so the empty rows 3 and 4 cost nothing while the two stack; spacing comes
@@ -1128,24 +538,6 @@ button.pillar {
   row-gap: 0;
 }
 
-.home .home-principle-cells {
-  margin-top: var(--space-8);
-}
-
-/* Radius tiers on this page: reading 8 (pillars, launcher cards, the cohort
-   strip), instrument 12 (Contract Health), window 16 (the console, the
-   inspection window, the state panel). Two surfaces paired on a shared edge
-   take the higher tier, so the principle cells, read beside the health panel,
-   are 12 like it: at 6 they read as a second component that happened to sit
-   next to it. The Four ways cards stay as they are (spec 3.2). */
-.home .home-principle-cells {
-  border-radius: var(--radius-lg);
-}
-
-.home .home-pillars > .pillar,
-.home .home-launcher > .surface-card {
-  border-radius: var(--radius-md);
-}
 
 @container g12 (width < 64rem) {
   .home .home-health {
@@ -1160,14 +552,12 @@ button.pillar {
     display: grid;
     grid-template-rows: subgrid;
   }
-  /* The 24px between lede and cells moves onto the lede, so the cells' box
+  /* The 24px between lede and list moves onto the lede, so the list's box
      starts exactly on row 3's top edge, as the panel's does. */
   .home .home-principles-main > .surface-lede {
     margin-bottom: var(--space-24);
   }
-  .home .home-principles-main > .home-principle-cells {
-    margin-top: 0;
-  }
+
   .home .home-health {
     grid-column: split / full-end;
     grid-row: 3;
@@ -1195,13 +585,13 @@ button.pillar {
    so the panel's small caps label and its unit step up to --muted (6.89:1). */
 .home .home-health .section-heading-badge-label,
 .home .home-health .section-heading-badge-unit {
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
 /* The 1px top-lit edge on a masked layer (it replaces the flat border; the
    state panel below needs a borderless box for --track-split). */
-.home .home-health::before,
-.home .home-state-panel::before {
+.home .home-health::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1216,8 +606,7 @@ button.pillar {
 }
 
 @media (prefers-contrast: more) {
-  .home .home-health::before,
-  .home .home-state-panel::before {
+  .home .home-health::before {
     background: var(--line-strong);
   }
 }
@@ -1249,7 +638,7 @@ button.pillar {
   background: color-mix(in srgb, var(--signal) 8%, var(--surface));
 }
 
-/* Secondary text on a signal tint reaches 4.6:1 (D33): the featured card's
+/* Secondary text on a signal tint reaches 4.6:1: the featured card's
    status line and arrow take --muted in both themes. --muted-dim measured
    4.48:1 on the dark Azure tint (#0a151f) and 4.26:1 on the old light one. */
 .home .field-card.is-featured {
@@ -1265,161 +654,6 @@ button.pillar {
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
 }
 
-/* Index: every surface, dense and launcher-like, on the shared module. The
-   launcher is a .g12 region (the old auto-fill 14rem gave 5 x 229.6 at 1180,
-   on no line the page uses). Cards span 3 tracks from 64rem of its own width
-   (four up, 283px at 1440: the pillars' width), 4 from 48rem (three up, on
-   the 4|8 module), 6 from 36rem (two up), full below. Twelve cards fill every
-   tier's rows exactly. Rows stretch, so cards side by side share top and
-   bottom. The track list is restated here because .surface-list (home.css,
-   globals.css) sets its own columns at the same specificity as .g12. */
-.home .home-launcher {
-  grid-template-columns: var(--grid-12);
-  column-gap: var(--grid-gutter);
-  row-gap: var(--space-16);
-  align-items: stretch;
-}
-
-@container g12 (width >= 36rem) {
-  .home .home-launcher > .surface-card {
-    grid-column: span 6;
-  }
-}
-
-@container g12 (width >= 48rem) {
-  .home .home-launcher > .surface-card {
-    grid-column: span 4;
-  }
-}
-
-@container g12 (width >= 64rem) {
-  .home .home-launcher > .surface-card {
-    grid-column: span 3;
-  }
-}
-
-/* System state: the site's own status panel, a tier-1 reading surface (read,
-   not commanded): mat-reading, the top-lit rim above instead of a flat
-   border, elev-1. It is a split window with a title-barred pane, so it takes
-   the window radius, as the console does. The section is the panel's g12
-   container: the panel is its only surface, so it needs the query, not the
-   tracks. */
-.home .home-state {
-  container: g12 / inline-size;
-}
-
-.home .home-state-panel {
-  --state-pad: clamp(var(--space-16), 2.5vw, var(--space-28));
-  position: relative;
-  isolation: isolate;
-  border: 0;
-  border-radius: var(--radius-xl);
-  background: var(--mat-reading);
-  box-shadow: var(--elev-1);
-  padding: var(--state-pad);
-}
-
-/* The window radius steps down on phones with the console's (home-lvl.css). */
-@media (max-width: 640px) {
-  .home .home-state-panel {
-    border-radius: var(--radius-lg);
-  }
-}
-
-/* Split window, from 860px (where the status pane exists). One inset,
-   --state-pad (28px at 1440), everywhere: the panel's top and bottom, the
-   register's left, and the pane's left and right, so the register's content
-   starts 28px in and the pane's ends 28px in (150.5 and 1274.5 at 1440). The
-   panel carries no inline padding and no border, so --state-split resolves
-   against the full panel box; the panes take the inset instead. The divider
-   is the panel's own ::after on the split line, full height. */
-@media (min-width: 860px) {
-  .home .home-state-panel {
-    padding-inline: 0;
-  }
-  /* A border, not a background, so forced colours redraw it in system ink. */
-  .home .home-state-panel::after {
-    content: "";
-    position: absolute;
-    inset-block: 0;
-    left: var(--state-split);
-    border-left: 1px solid var(--line-faint);
-    pointer-events: none;
-  }
-  .home .home-state-panel > .row-stack {
-    max-width: none;
-    padding: 0 var(--state-pad);
-  }
-  /* The status pane starts on the register's first row, holds one gutter
-     under the header capsule (68px) while the register scrolls past, and
-     lands on the panel's content bottom as the panel leaves: at rest, in
-     print and on a screen tall enough to show the whole panel, it stays top
-     aligned, title bar beside row 01. (Docked to the bottom instead, it sat
-     at the panel's foot with the void above it whenever the whole panel was
-     in view, as at 2560.) Its header is a title bar, the console's .vc-bar
-     register: UI type at 600, a hairline under it, no caps. The pane holds
-     still, so nothing in it is masked. */
-  .home .home-state-panel > .state-marquee {
-    position: sticky;
-    top: calc(4.25rem + var(--grid-gutter));
-    align-self: start;
-    overflow: visible;
-    margin: 0;
-    padding-inline: var(--state-pad);
-    border: 0;
-    border-radius: 0;
-    background: none;
-    -webkit-mask-image: none;
-    mask-image: none;
-  }
-  .home .home-state-panel .state-marquee-header {
-    position: static;
-    display: flex;
-    align-items: center;
-    min-height: 2.9rem;
-    margin: 0 0 var(--space-16);
-    padding: 0;
-    border-bottom: 1px solid var(--line-faint);
-    background: none;
-    font: 600 0.8125rem/1 var(--sans);
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--ink);
-  }
-  /* One still set of statuses. Every status here is resolved, and motion on
-     this site means unresolved, so the list does not scroll (the marquee's own
-     brief, globals.css); it is held still here as well because the sticky pane
-     is only right with one set: the loop's aria-hidden second copy doubled the
-     pane to 1330px and pushed the panel 225px past the register. With nothing
-     moving, the loop's pause control and grab cursor have nothing to act on. */
-  .home .home-state-panel .state-marquee-track {
-    margin-top: 0;
-    padding-inline: 0;
-    animation: none;
-  }
-  .home .home-state-panel .state-marquee-group[aria-hidden="true"],
-  .home .home-state-panel .state-marquee-toggle {
-    display: none;
-  }
-  /* No loop, so no seam gap after the last pill: it ends on the pane's foot,
-     which lands on the register's last row. */
-  .home .home-state-panel .state-marquee-group {
-    padding-bottom: 0;
-  }
-  .home .home-state-panel > .state-marquee {
-    cursor: auto;
-    touch-action: auto;
-  }
-}
-
-/* From 64rem of the section's width the split is the 7-line: --track-split,
-   seven columns and six gutters of the panel's own box (681.67, so x 804.17
-   at 1440), the console's divider above it. */
-@container g12 (width >= 64rem) {
-  .home .home-state-panel {
-    --state-split: var(--track-split);
-  }
-}
 
 /* Visible at rest: nothing on the homepage waits for scroll to exist.
    Entrance motion (the global section drift) is transform-only. */
@@ -1438,10 +672,8 @@ button.pillar {
   
   
   
-  .home .home-health,
-  .home .home-state-panel { border: 1px solid CanvasText; }
-  .home .home-health::before,
-  .home .home-state-panel::before { display: none; }
+  .home .home-health { border: 1px solid CanvasText; }
+  .home .home-health::before { display: none; }
 }
 
 /* --- Revision pass 1 ------------------------------------------------------ */
@@ -1450,12 +682,6 @@ button.pillar {
   margin-inline: 0;
 }
 
-/* Nine principles as a clean 3 x 3 (never a lone ninth cell). */
-@media (min-width: 600px) {
-  .home .home-principle-cells {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
 
 /* The featured card fills its height: facts, then the link at the foot. */
 .home .field-card.is-featured {
@@ -1482,7 +708,7 @@ button.pillar {
 }
 
 .home-contract-facts dt {
-  font-size: 0.75rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -1490,7 +716,7 @@ button.pillar {
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  font-size: var(--text-h2);
   line-height: 1.08;
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
   color: var(--ink);
@@ -1527,5 +753,341 @@ button.pillar {
       clamp(2.6rem, 1rem + 4.5vw, clamp(4.6rem, 4.6rem + (100vw - 1440px) * 0.034, 6.15rem)),
       7cqi
     );
+  }
+}
+
+/* ==========================================================================
+   The home page without the template
+   Each section keeps its heading and loses its uppercase eyebrow; lists
+   without an order lose their numerals; the cards that were a wall become
+   type; facts already true read as words, not empty boxes.
+   ========================================================================== */
+
+/* --- Hero: the version line ---------------------------------------------
+   The badge above the H1 is gone; its facts ride the command bar's resting
+   note, one plain line under the form. The note's 66ch cap is lifted here so
+   the line stays one line wherever the bar is wide enough (1440: 86
+   characters in the bar's 640px foot); the link never breaks inside, so on a
+   phone the line breaks before it. */
+.home .score-hero-input .eg-bar-status > .eg-bar-note {
+  max-inline-size: none;
+}
+
+.home-hero-held {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.22em;
+  white-space: nowrap;
+  transition: text-decoration-color var(--duration-quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .home-hero-held:hover {
+    text-decoration-color: var(--signal-access);
+  }
+}
+
+/* --- Why it matters: four points, a two-column read ----------------------
+   A bold lead-in and its sentences, divided by hairlines: no boxes and no
+   numerals (the points have no order). Two columns from 720px; the measure
+   is the column's, about 70 characters at 1440. */
+.home .home-points {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--space-40);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.home .home-point {
+  padding-block: var(--space-16) var(--space-20);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-body);
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.home .home-point-lead {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (min-width: 720px) {
+  .home .home-points {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- Nine principles: a two-column serif list -----------------------------
+   The principles are a set, not a sequence: no numerals, no cells. They
+   flow down the first column and then the second (five and four), with a
+   hairline over each, so the rows line up across the columns. The columns
+   take their content's width while there is room, so the longest principle
+   ("Durability includes time and change", 336px at the lead size) holds one
+   line at 1440 instead of breaking in an equal half (329px). */
+.home .home-principle-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* The list shares its grid row with the category panel, which can be the
+     taller of the two: the rows keep their own height and sit at the top
+     instead of spreading to the panel's. */
+  align-content: start;
+  column-gap: var(--space-32);
+  margin: var(--space-8) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home .home-principle-list > li {
+  padding-block: var(--space-12);
+  border-top: 1px solid var(--line);
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: var(--text-lead);
+  line-height: 1.3;
+  font-variation-settings: 'opsz' 24, 'SOFT' 40;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+@media (min-width: 600px) {
+  .home .home-principle-list {
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    grid-template-rows: repeat(5, auto);
+    grid-auto-flow: column;
+  }
+}
+
+@container g12 (width >= 64rem) {
+  .home .home-principles-main > .home-principle-list {
+    margin-top: 0;
+  }
+}
+
+/* --- Four ways: one meta line per card -----------------------------------
+   The chips and the LIVE dots are gone. A card says what it is and whether
+   it is there, in sentence case, in the label size and the muted ink. */
+.home .field-card-meta {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* --- The index: an anchor row and a two-column list -----------------------
+   Score and the contracts lead under a heavy ink rule (a rule, not a card
+   edge: it is the ink colour, the full width of its entry). The rest are a
+   name and one line each, divided by hairlines, in two columns from 720px.
+   No boxes, no micro-labels; each entry is one link. */
+.home .home-index-anchors,
+.home .home-index-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--space-40);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home .home-index-anchors {
+  margin-bottom: var(--space-24);
+}
+
+.home-index-anchor,
+.home-index-row {
+  display: grid;
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-index-anchor {
+  gap: var(--space-6);
+  padding-block: var(--space-16) var(--space-20);
+  border-top: 2px solid var(--ink);
+}
+
+.home-index-anchor .home-index-name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: var(--text-h3);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40;
+  color: var(--ink);
+}
+
+.home-index-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding-block: var(--space-12);
+  border-top: 1px solid var(--line);
+}
+
+.home .home-index-list {
+  border-bottom: 1px solid var(--line);
+}
+
+.home-index-row .home-index-name {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.home-index-anchor .home-index-desc,
+.home-index-row .home-index-desc {
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.home-index-name {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--duration-quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .home-index-anchor:hover .home-index-name,
+  .home-index-row:hover .home-index-name {
+    text-decoration-color: var(--signal-access);
+  }
+}
+
+@media (min-width: 480px) {
+  .home-index-row {
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    column-gap: var(--space-16);
+    align-items: baseline;
+  }
+}
+
+@media (min-width: 720px) {
+  .home .home-index-anchors,
+  .home .home-index-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- System state: one ledger ------------------------------------------
+   Fact, evidence, state. Every fact is already true, so the state is a word
+   beside a drawn check, in the text colour: no numerals, no empty boxes, no
+   flame. The rows share their columns through subgrid, so every state word
+   starts on one line. On a phone the evidence drops under the fact. */
+.home .home-ledger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.home .home-ledger-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  grid-template-areas:
+    "fact state"
+    "evidence evidence";
+  row-gap: var(--space-2);
+  align-items: baseline;
+  padding-block: var(--space-12);
+  border-top: 1px solid var(--line);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
+.home .home-ledger-fact {
+  grid-area: fact;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* The site's quiet link: no underline at rest, one on hover or focus.
+   A row whose proof is several pages links them in its evidence, set the
+   same way. */
+.home .home-ledger-fact a,
+.home .home-ledger-evidence a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--duration-quick) var(--ease);
+}
+
+/* Keyboard focus on the home's in-text links (the hero line, the ledger's
+   facts and evidence) takes the house in-text treatment (globals.css,
+   a.text-link:focus-visible): a signal fill with the text in paper, not the
+   ring. The ring is drawn 5px out, and here a glyph sits closer than that:
+   the "·" before the hero line (2.95px away, measured by
+   check-focus-visibility), the next row's text under a ledger fact, the
+   commas between the evidence links. */
+.home-hero-held:focus-visible,
+.home .home-ledger-fact a:focus-visible,
+.home .home-ledger-evidence a:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  background-color: var(--signal-access);
+  color: var(--paper);
+  text-decoration-color: currentColor;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .home .home-ledger-fact a:hover,
+  .home .home-ledger-evidence a:hover {
+    text-decoration-color: var(--signal-access);
+  }
+}
+
+.home .home-ledger-evidence {
+  grid-area: evidence;
+  color: var(--muted);
+}
+
+.home .home-ledger-state {
+  grid-area: state;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* Inline, so the word keeps the row's baseline; the check sits on the
+   x-height's middle. */
+.home-ledger-check {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: var(--space-6);
+  vertical-align: -0.14em;
+  fill: none;
+  stroke: var(--signal-access);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (min-width: 720px) {
+  .home .home-ledger {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr) auto;
+    column-gap: var(--space-24);
+  }
+  .home .home-ledger-row {
+    grid-template-areas: "fact evidence state";
+  }
+}
+
+@media (forced-colors: active) {
+  .home-ledger-check {
+    stroke: CanvasText;
   }
 }

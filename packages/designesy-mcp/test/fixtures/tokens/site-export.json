@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-  "$description": "Designesy design system contract v0.4.4: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.",
+  "$description": "Designesy design system contract v0.4.6: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.",
   "color": {
     "text": {
       "primary": {
@@ -561,7 +561,7 @@
     },
     "mono": {
       "$value": [
-        "Geist Mono",
+        "Atkinson Hyperlegible Mono",
         "ui-monospace",
         "SF Mono",
         "Cascadia Code",
@@ -571,12 +571,62 @@
         "monospace"
       ],
       "$type": "fontFamily",
-      "$description": "Mono stack for check IDs, score readouts, token names: Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face."
+      "$description": "Mono stack for labels, URLs, timestamps, score units, check IDs and token names: Atkinson Hyperlegible Mono, self-hosted at build time via next/font (--font-mono). The Braille Institute's low-vision face (SIL OFL 1.1): every confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct, which is what a host, a check ID or a score needs, since none can be guessed from context. Replaced Geist Mono in v0.4.5 (2026-10-12). Its advance is 0.632em (Geist Mono 0.6em), so tight mono surfaces were re-fitted for the 5.3% wider run."
+    }
+  },
+  "fontSize": {
+    "label": {
+      "$value": {
+        "value": 0.8,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "Labels, meta, captions and mono uppercase (12.8px, tracked 0.06 to 0.08em). The floor: no text is smaller."
+    },
+    "body": {
+      "$value": {
+        "value": 1,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "Reading and interface text (16px), and the floor for reading text."
+    },
+    "lead": {
+      "$value": {
+        "value": 1.25,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "Lead paragraphs, card titles and secondary readouts (20px)."
+    },
+    "h3": {
+      "$value": {
+        "value": 1.563,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "Third-level headings (25px)."
+    },
+    "h2": {
+      "$value": {
+        "value": 1.953,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "Second-level headings (31.25px)."
+    },
+    "h1": {
+      "$value": {
+        "value": 2.441,
+        "unit": "rem"
+      },
+      "$type": "dimension",
+      "$description": "The in-content h1 floor (39px). Page titles use the display clamp, Fraunces 700."
     }
   },
   "$extensions": {
     "designesy": {
-      "version": "0.4.4",
+      "version": "0.4.6",
       "typography": {
         "source_lab": "Cadence",
         "adopted_in": "0.1.3",
@@ -591,7 +641,7 @@
           "Selection: ::selection styled with a token color (never default browser blue)",
           "user-select: none on UI chrome (buttons, labels, meta); body text stays selectable",
           "16px input floor on mobile: inputs never below 16px to avoid iOS auto-zoom",
-          "Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data (amended from the v0.1.3 system-stack rule)"
+          "Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data (amended from the v0.1.3 system-stack rule; the mono face changed in v0.4.5)"
         ],
         "verified_against": "Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed",
         "verification": [
@@ -1419,7 +1469,7 @@
         }
       },
       "verification": {
-        "checks": 44,
+        "checks": 45,
         "categories": 14,
         "a11y_floor": "60% (a11y < 60% caps score at C/70)",
         "standards": "WCAG 2.1 AA + APCA + DTCG 2025.10 + EU AI Act Art 50"

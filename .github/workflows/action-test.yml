@@ -46,9 +46,11 @@ jobs:
     steps:
       - name: Determine target URL
         id: url
+        env:
+          DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
         run: |
           if [ "${{ github.event_name }}" = "deployment_status" ]; then
-            TARGET="${{ github.event.deployment_status.target_url }}"
+            TARGET="$DEPLOY_URL"
           else
             TARGET="https://www.designesy.org"
           fi

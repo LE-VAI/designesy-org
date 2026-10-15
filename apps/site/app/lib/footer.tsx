@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { RouteLink } from './route-link';
 import { initScrollPause } from './scroll-pause';
 import { Wordmark } from './brand-logotype';
+import { FlameFlipKeys } from './flame-flip';
 
 const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
@@ -107,12 +108,16 @@ export function Footer() {
     <footer className="footer" data-pagefind-ignore>
       <div className="site-shell footer-inner">
         <div className="footer-meta">
-          <span className="wordmark" data-cuelume-hover="sparkle">
-            {/* The outlined wordmark (identity v1); the hidden text is its
-                name, so the footer still reads "designesy". */}
-            <Wordmark className="wordmark-word" />
-            <span className="sr-only">designesy</span>
-          </span>
+          <div className="footer-mark">
+            <span className="wordmark" data-cuelume-hover="sparkle">
+              {/* The outlined wordmark (identity v1); the hidden text is its
+                  name, so the footer still reads "designesy". */}
+              <Wordmark className="wordmark-word" />
+              <span className="sr-only">designesy</span>
+            </span>
+            {/* The flame flip's keycaps. */}
+            <FlameFlipKeys />
+          </div>
           <span>
             <strong>Designesy LLC</strong> · Design intelligence infrastructure
           </span>

@@ -9,21 +9,20 @@
  * string, so it cannot read a CSS custom property: its colours are literals in
  * app/lib/badge/live-badge.ts. When identity v1 moved the tokens, the badge of
  * the time kept filling grades A and B with the retired brand blue #3358e8
- * and C, D and F with hues that were never grade tokens (brand ledger D37). A
+ * and C, D and F with hues that were never grade tokens. A
  * token swap cannot see a literal, so this gate ties the literals back to the
  * tokens.
  *
- * The same ruling covers two more surfaces that #260 left behind. The
+ * The same rule covers two more surfaces that #260 left behind. The
  * shields endpoint at /api/badge passed shields' named colours (D was
- * 'orange', the brand's flame, D5), and shields paints white text on every
+ * 'orange', the brand's flame), and shields paints white text on every
  * one of them at 1.95 to 4.38:1. The report page coloured grade B with
  * --signal-light, a brand blue.
  *
  * WHAT IT ASSERTS
  * The live badge (app/lib/badge/live-badge.ts). It carries its own ground, a
  * dark one and a light one, and each colour on a ground is that theme's token
- * (brand verdict D61, Q3: the letter sits on the badge's ground, so it takes
- * that ground's -ink):
+ * (the letter sits on the badge's ground, so it takes that ground's -ink):
  *   1. GRADE_INK has exactly the grades A, B, C, D, F for each ground.
  *   2. Each dark letter is the :root --grade-<g>-ink and each light letter the
  *      [data-theme="light"] --grade-<g>-ink in app/globals.css (resolved
@@ -282,7 +281,7 @@ function checkReadoutRules(css, findings) {
     if (!body.includes(`--tone-ink:var(--grade-${l}-ink)`)) findings.push(`report: grade ${g} letter is not --grade-${l}-ink`);
     if (!body.includes(`--tone:var(--grade-${l})`)) findings.push(`report: grade ${g} marks are not --grade-${l}`);
     const brand = [...body.matchAll(/var\((--[\w-]+)/g)].map((x) => x[1]).filter((t) => BRAND_TOKEN.test(t));
-    if (brand.length) findings.push(`report: grade ${g} reads brand token ${brand.join(', ')} (D5)`);
+    if (brand.length) findings.push(`report: grade ${g} reads brand token ${brand.join(', ')} (a grade never takes a brand colour)`);
   }
   return rows;
 }
@@ -303,7 +302,7 @@ function checkReport(src, findings, css) {
     }
     const tokens = [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map((m) => m[1]);
     const brand = tokens.filter((t) => BRAND_TOKEN.test(t));
-    if (brand.length) findings.push(`report: grade ${g} reads brand token ${brand.join(', ')} (a grade never takes a brand colour, D5)`);
+    if (brand.length) findings.push(`report: grade ${g} reads brand token ${brand.join(', ')} (a grade never takes a brand colour)`);
     for (const t of tokens.filter((x) => x.startsWith('--grade-'))) {
       const own = `--grade-${g.toLowerCase()}-ink`;
       if (t !== own) findings.push(`report: grade ${g} reads ${t}; the grade letter is text, so a grade token here is ${own}`);

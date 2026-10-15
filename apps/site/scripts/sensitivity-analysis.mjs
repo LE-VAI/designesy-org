@@ -41,7 +41,11 @@ const SLOP_CAP = 20;
 const ORIGINALITY_CAP = 8;
 const A11Y_FLOOR_PCT = 60;
 const A11Y_FLOOR_CAP = 70;
-const HARD_FAIL_CAPS = { v06: 65, v22: 70, v02: 70, v24: 75, v25: 75, v16: 70 };
+// Mirrors scoreArithmetic in app/api/score/route.ts (engine 1.3.x). Until this
+// script was brought up to date it lacked both 1.3.0 rules: any FAIL caps the
+// score at 89.9 (no A while a check fails), and v44 caps at 65 as v06 does.
+const HARD_FAIL_CAPS = { v06: 65, v44: 65, v22: 70, v02: 70, v24: 75, v25: 75, v16: 70 };
+const ANY_FAIL_CAP = 89.9;
 
 function computeGrade(score) {
   if (score >= GRADE_BANDS[0]) return 'A';
@@ -54,7 +58,7 @@ function computeGrade(score) {
 /**
  * Recompute the composite score from raw check statuses.
  * @param {Array<{id:string, category:string, status:string}>} checks
- * @param {object} opts perturbations: { weights, warnCredit, slop, originality, gradeBands, a11yFloorPct, a11yFloorCap, hardFailCaps }
+ * @param {object} opts perturbations: { weights, warnCredit, slop, originality, gradeBands, a11yFloorPct, a11yFloorCap, hardFailCaps, anyFailCap (null = off) }
  */
 function recompute(checks, opts = {}) {
   const weights = opts.weights ?? CATEGORY_WEIGHTS;
@@ -65,6 +69,7 @@ function recompute(checks, opts = {}) {
   const a11yFloorPct = opts.a11yFloorPct ?? A11Y_FLOOR_PCT;
   const a11yFloorCap = opts.a11yFloorCap ?? A11Y_FLOOR_CAP;
   const hardFailCaps = opts.hardFailCaps ?? HARD_FAIL_CAPS;
+  const anyFailCap = opts.anyFailCap === undefined ? ANY_FAIL_CAP : opts.anyFailCap;
 
   // Per-check weight = category weight / scored checks in category
   const catCounts = {};
@@ -103,8 +108,13 @@ function recompute(checks, opts = {}) {
     }
   }
 
-  // Hard-fail ceilings
+  // Hard-fail ceilings: any FAIL first (89.9), then the specific ones, which
+  // are lower and win where they apply. All run after the originality lift.
   let hardFailCeilingApplied = false;
+  if (anyFailCap != null && score > anyFailCap && checks.some((c) => c.status === 'FAIL')) {
+    score = anyFailCap;
+    hardFailCeilingApplied = true;
+  }
   for (const c of checks) {
     if (c.status !== 'FAIL') continue;
     const cap = hardFailCaps[c.id];
@@ -139,7 +149,8 @@ const KNOBS = [
   { id: 'bands-loose', label: 'grade bands loosened 2pts (88/78/68/58)', opts: { gradeBands: [88, 78, 68, 58] } },
   { id: 'a11y-50', label: 'a11y floor 60% → 50%', opts: { a11yFloorPct: 50 } },
   { id: 'a11y-70', label: 'a11y floor 60% → 70%', opts: { a11yFloorPct: 70 } },
-  { id: 'nocaps', label: 'hard-fail ceilings removed', opts: { hardFailCaps: {} } },
+  { id: 'nocaps', label: 'hard-fail ceilings removed', opts: { hardFailCaps: {}, anyFailCap: null } },
+  { id: 'no-anyfail', label: 'any-FAIL cap removed (the rule before engine 1.3.0)', opts: { anyFailCap: null } },
   // ── Two-factor interactions (Saltelli et al. 2017: OAT alone "leaves the
   //    space of variation mostly unscathed" — interactions must be tested) ──
   { id: 'warn0.75×slop+5', label: 'INTERACTION: WARN 0.75 × slop +5', opts: { warnCredit: 0.75, slop: 5 } },
@@ -148,8 +159,8 @@ const KNOBS = [
   { id: 'warn0.25×a11y70', label: 'INTERACTION: WARN 0.25 × a11y floor 70%', opts: { warnCredit: 0.25, a11yFloorPct: 70 } },
   { id: 'slop+5×orig+5', label: 'INTERACTION: slop +5 × originality +5', opts: { slop: 5, originality: 5 } },
   { id: 'warn0.75×orig+5', label: 'INTERACTION: WARN 0.75 × originality +5', opts: { warnCredit: 0.75, originality: 5 } },
-  { id: 'warn0.75×nocaps', label: 'INTERACTION: WARN 0.75 × ceilings removed', opts: { warnCredit: 0.75, hardFailCaps: {} } },
-  { id: 'slop+5×nocaps', label: 'INTERACTION: slop +5 × ceilings removed', opts: { slop: 5, hardFailCaps: {} } },
+  { id: 'warn0.75×nocaps', label: 'INTERACTION: WARN 0.75 × ceilings removed', opts: { warnCredit: 0.75, hardFailCaps: {}, anyFailCap: null } },
+  { id: 'slop+5×nocaps', label: 'INTERACTION: slop +5 × ceilings removed', opts: { slop: 5, hardFailCaps: {}, anyFailCap: null } },
 ];
 
 // Per-category one-at-a-time (OAT): which single category weight matters most?

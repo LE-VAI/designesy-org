@@ -65,6 +65,11 @@ const CASES = [
     'https://www.designesy.org/score',
   ],
   ['https://www.designesy.org/drift?url=staging.example.com&scope=contract', 'https://www.designesy.org/drift'],
+  // /score/contract deep links carry the visitor's site and their contract's address.
+  [
+    'https://www.designesy.org/score/contract?url=staging.example.com&contract=https://example.com/DESIGN.md#x',
+    'https://www.designesy.org/score/contract',
+  ],
   ['https://www.designesy.org/docs#install', 'https://www.designesy.org/docs'],
   ['https://www.designesy.org/pricing/review', 'https://www.designesy.org/pricing/review'],
   ['https://www.designesy.org/', 'https://www.designesy.org/'],

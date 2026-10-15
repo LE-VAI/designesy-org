@@ -1,5 +1,5 @@
 /**
- * Designesy Guardrails Contract v0.1.0 — machine-readable form.
+ * Designesy Guardrails Contract — machine-readable form (the version is `version` below).
  * Sibling contract governing AI-build guardrail emission.
  * Source: DLS Lead "tokens are a contract, not a library",
  *          davekurian "tokens are types" (dev.to),
@@ -13,20 +13,20 @@
 
 export const guardrailsContract = {
   id: 'designesy.guardrails',
-  version: '0.1.0',
+  version: '0.1.3',
   status: 'provisional',
   name: 'Designesy Guardrails Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/guardrails',
   machine_url: 'https://www.designesy.org/contracts/guardrails.json',
-  updated: '2026-09-28',
+  updated: '2026-10-13',
   purpose:
     'Guardrails are the product layer: ingest a design system, emit a frozen build contract for AI coding agents (the file the agent reads, plus the lint config that enforces it). "Tokens are a contract, not a library."',
   source_authority: {
     primary: 'Designesy research 2026-08-01',
     contract_shift: 'DLS Lead: "treat the design system as an API, not a library... CI fails if either side breaks the agreement"',
     types_not_suggestions: 'davekurian (dev.to): "tokens are types... you\'re removing the off-brand options from the API it consumes"',
-    adoption_signal: 'zeroheight Design Systems Reports 2025 and 2026: token adoption 84% (up from 56% in 2024, 2025 report), but 60% still sync tokens by hand (2026 report: only 40% of teams have a token pipeline)',
+    adoption_signal: 'zeroheight Design Systems Reports 2025 and 2026: token adoption 86% (2026 report; the 2025 report measured a rise from 56% to 84%), but 60% have no token automation and sync tokens by hand (2026 report: only 40% of teams have a token pipeline)',
   },
   conformance: {
     output_bundle: [
@@ -38,7 +38,7 @@ export const guardrailsContract = {
       { component: 'designMd', description: 'DESIGN.md-format file (the open DESIGN.md format, google-labs-code/design.md, Apache-2.0, for describing a visual identity to coding agents): YAML front matter (colors, typography, rounded, spacing, components) + markdown body in canonical section order' },
     ],
     emission_method:
-      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate the DESIGN.md file (Google open spec).',
+      'Fetch the URL, extract all CSS + :root custom properties, parse token values into DTCG format, generate lint rules from the allowed values, emit the AGENTS.md rules file, derive component contract patterns, generate a file in the open DESIGN.md format.',
   },
   verification: {
     checks: [
@@ -47,7 +47,7 @@ export const guardrailsContract = {
       { id: 'g03', item: 'Agent rules emitted: AGENTS.md format with token allowlist', pass: 'AGENTS.md rules file generated with N token references', fail: 'Could not generate agent rules' },
       { id: 'g04', item: 'Component contract derived: allowed prop patterns', pass: 'Component contract with N patterns generated', fail: 'Could not derive component patterns (no tokens to derive from)' },
       { id: 'g05', item: 'Anti-patterns documented: what NOT to do', pass: 'Anti-pattern list generated from detected inline values', fail: 'No anti-patterns detected (possible if the site has no inline values)' },
-      { id: 'g06', item: 'DESIGN.md emitted: Google open spec (google-labs-code/design.md)', pass: 'DESIGN.md generated with YAML front matter + markdown body from N tokens', fail: 'Insufficient tokens to generate a DESIGN.md (need ≥5 :root custom properties)' },
+      { id: 'g06', item: 'DESIGN.md emitted: the open DESIGN.md format (google-labs-code/design.md)', pass: 'DESIGN.md generated with YAML front matter + markdown body from N tokens', fail: 'Insufficient tokens to generate a DESIGN.md (need ≥5 :root custom properties)' },
     ],
     scoring: '6 checks. PASS=1, FAIL=0. Score = (points/6) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the guardrail emitter is an output generator rather than a scoring engine; the score reflects emission completeness rather than design quality.',
     validation_tools: {

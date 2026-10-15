@@ -26,9 +26,16 @@ permissions:
   id-token: write           # REQUIRED for OIDC trusted publishing
   contents: read
 
+concurrency:
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
+    # Publishes only from a version tag; a manual run must pick the tag as its ref.
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     environment: pypi        # PyPI trusted publishing environment
     steps:
       - name: Checkout code

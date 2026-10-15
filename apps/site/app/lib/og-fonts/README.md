@@ -11,14 +11,18 @@ the site.
 | `Fraunces-700.ttf` | Fraunces | 700 | Score card grade and score (the 144pt optical size) |
 | `SchibstedGrotesk-500.ttf` | Schibsted Grotesk | 500 | Lede, endorsement |
 | `SchibstedGrotesk-700.ttf` | Schibsted Grotesk | 700 | Summary emphasis |
-| `GeistMono-400.ttf` | Geist Mono | 400 | Labels: eyebrow, path, badge |
+| `AtkinsonHyperlegibleMono-400.ttf` | Atkinson Hyperlegible Mono | 400 | Labels: eyebrow, path, badge; the live badge's host, date and /100 |
 
 Every file here is licensed under the SIL Open Font License 1.1.
+`AtkinsonHyperlegibleMono-OFL.txt` is that face's licence, copied unchanged
+from the face's upstream release (version 2.001); the OFL requires it to
+travel with the font.
 
-`Fraunces-700.ttf` and `GeistMono-400.ttf` are static instances cut from the
-families' variable fonts (Fraunces wght 700, opsz 144, SOFT 0, WONK 0; Geist
-Mono wght 400) with fontTools `varLib.instancer`, because Satori reads static
-fonts only.
+`Fraunces-700.ttf` and `AtkinsonHyperlegibleMono-400.ttf` are static instances
+cut from the families' variable fonts (Fraunces wght 700, opsz 144, SOFT 0,
+WONK 0; Atkinson Hyperlegible Mono wght 400, names updated) with fontTools
+`varLib.instancer`, because Satori reads static fonts only. The mono face
+replaced Geist Mono on 2026-10-12.
 
 The logotype on the cards is outlined artwork (`lib/brand-logotype.tsx`), so
 no font is loaded for it.

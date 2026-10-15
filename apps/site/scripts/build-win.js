@@ -17,12 +17,15 @@ const shim = path.join(siteRoot, 'node24-win-readlink-shim.cjs');
 const nextBin = path.join(siteRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
 
 const steps = [
+  ['build-critical-css', [path.join(siteRoot, 'scripts', 'build-critical-css.mjs')]],
   ['next build', [nextBin, 'build', '--webpack']],
   ['check-contract-drift', [path.join(siteRoot, 'scripts', 'check-contract-drift.js')]],
   ['check-catalog-version-binding', [path.join(siteRoot, 'scripts', 'check-catalog-version-binding.js')]],
   ['check-contract-lock', [path.join(siteRoot, 'scripts', 'check-contract-lock.js')]],
+  ['check-sibling-contract-locks', [path.join(siteRoot, 'scripts', 'check-sibling-contract-locks.js')]],
   ['postbuild-pagefind', [path.join(siteRoot, 'scripts', 'postbuild-pagefind.js')]],
   ['check-search-coverage', [path.join(siteRoot, 'scripts', 'check-search-coverage.js')]],
+  ['check-critical-css', [path.join(siteRoot, 'scripts', 'check-critical-css.mjs')]],
 ];
 
 for (const [label, args] of steps) {

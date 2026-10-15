@@ -57,8 +57,23 @@ const OUT = join(HERE, '..', 'corpus.json');
  * ceiling (broken-transition-all and broken-input-zoom 94.4 A to 89.9 B,
  * broken-status-hue-as-text 69.4 to 65, broken-status-hue-dark-scheme 70 C
  * to 65 D). No pinned verdict changes.
+ *
+ * Engine 1.3.1 (2026-10-12) adds no fixture either, and no fixture's verdict,
+ * detail or score moves under it (v26, v27, v38 and v43 accuracy fixes).
+ *
+ * 1.4.0 (2026-10-13): engine 1.4.0 fixtures. v46 (type sizes from the scale):
+ * broken-type-off-scale WARN (an 11px badge under the 12.8px floor, a 15px
+ * paragraph between steps) and good-type-on-scale-fluid PASS (token sizes, an
+ * on-step literal and a deliberate fluid clamp() title).
+ *
+ * Engine 1.4.1 (2026-10-13) adds no fixture, so the corpus version stands
+ * (v27 scope fix and the v37 name; see the CHANGELOG entry).
+ *
+ * Engine 1.5.0 (2026-10-14) adds own-contract mode, which these fixtures do
+ * not exercise (they send no contract); no fixture's verdict, detail or score
+ * moves, so the corpus version stands.
  */
-const CORPUS_VERSION = '1.3.0';
+const CORPUS_VERSION = '1.4.0';
 
 /**
  * Engine version. Read from the server constant when reachable; the package
@@ -66,7 +81,7 @@ const CORPUS_VERSION = '1.3.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.3.0';
+const ENGINE_VERSION = '1.5.0';
 
 async function build() {
   const rows = await runCorpus();

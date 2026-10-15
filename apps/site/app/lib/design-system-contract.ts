@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.4: machine + human source.
+ * Designesy design system contract v0.4.6: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -25,6 +25,15 @@
  *   surface in both themes, and the light --muted-dim tier darkens to clear
  *   the raised and lifted planes. Hues stay for marks and tints; no check,
  *   weight or verdict changed.
+ * v0.4.4 is the identity v1 colour system (2026-10-11).
+ * v0.4.5 is the type pass (2026-10-12): Atkinson Hyperlegible Mono replaces
+ *   Geist Mono as the mono face, and the six type-scale
+ *   tokens (--text-label to --text-h1, a Major Third on a 16px root) join
+ *   :root and this contract. No check, weight or verdict changed.
+ * v0.4.6 adds verification check v46 (2026-10-13, engine 1.4.0): type sizes
+ *   come from the scale the :root type tokens declare. Fluid clamp() type is
+ *   accepted as written; static sizes between steps and sizes under the
+ *   smallest token WARN. No weight or existing verdict changed.
  */
 
 import {
@@ -38,13 +47,13 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.4',
+  version: '0.4.6',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
   full_contract_url: 'https://www.designesy.org/contracts#design-system-contract',
   machine_url: 'https://www.designesy.org/contracts/design-system.json',
-  updated: '2026-10-11',
+  updated: '2026-10-12',
   schema_hints: {
     colors: 'primitive + semantic color roles',
     typography: 'type rules and stacks',
@@ -1018,7 +1027,7 @@ export const designSystemContract = {
       'Selection: ::selection styled with a token color (never default browser blue)',
       'user-select: none on UI chrome (buttons, labels, meta); body text stays selectable',
       '16px input floor on mobile: inputs never below 16px to avoid iOS auto-zoom',
-      'Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data (amended from the v0.1.3 system-stack rule)',
+      'Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data (amended from the v0.1.3 system-stack rule; the mono face changed in v0.4.5)',
     ],
     verified_against: 'Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed',
     verification: [
@@ -1054,17 +1063,50 @@ export const designSystemContract = {
         token: '--mono',
         value:
           "var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace",
-        role: 'Mono stack for check IDs, score readouts, token names: Geist Mono, self-hosted via next/font (--font-mono). Unchanged by the 2026-09-16 body-face swap: S1 names the sans only, and a monospace is the correct choice for numeric readouts regardless of the body face.',
+        role: "Mono stack for labels, URLs, timestamps, score units, check IDs and token names: Atkinson Hyperlegible Mono, self-hosted at build time via next/font (--font-mono). The Braille Institute's low-vision face (SIL OFL 1.1): every confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct, which is what a host, a check ID or a score needs, since none can be guessed from context. Replaced Geist Mono in v0.4.5 (2026-10-12). Its advance is 0.632em (Geist Mono 0.6em), so tight mono surfaces were re-fitted for the 5.3% wider run.",
       },
     },
     body: '16px / 1.55, Schibsted Grotesk (system sans fallback for other scripts)',
     headings: 'Fraunces Variable, weight 700, line-height 1.08, letter-spacing -0.02em',
     hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
     eyebrows:
-      '0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
+      '--text-label (0.8rem), weight 600, uppercase, letter-spacing 0.18em, muted-dim',
     lede: '1.1 to 1.5rem, weight 500, ink: one clear claim',
-    supporting_note: '0.85 to 0.95rem, muted, max-width ~520 to 580px',
-    rule: 'Hybrid system: Fraunces serif for headlines (authority), Schibsted Grotesk for interface and reading (precision), Geist Mono for data (systems). Three faces and no more; no single-sans: the 2026 anti-pattern.',
+    supporting_note: '--text-body (1rem), muted, max-width ~520 to 580px',
+    rule: 'Hybrid system: Fraunces serif for headlines (authority), Schibsted Grotesk for interface and reading (precision), Atkinson Hyperlegible Mono for data (systems). Three faces and no more; no single-sans: the 2026 anti-pattern.',
+    scale: {
+      rule: 'Major Third (x1.25) on a 16px root, no two adjacent steps closer than 25%: each step is 1.25 times the one below, 1.25^n rem rounded to three decimals. Text sizes come from these six tokens; below --text-lead, hierarchy comes from weight and colour, not more sizes. --text-label is the floor for all text, mono uppercase included. Display titles keep their fluid clamp() sizes. A fixed-size graphic whose words also reach assistive technology (the live badge, the role="img" instrument drawings) is exempt from the floor.',
+      label: {
+        token: '--text-label',
+        value: '0.8rem',
+        role: 'Labels, meta, captions and mono uppercase (12.8px, tracked 0.06 to 0.08em). The floor: no text is smaller.',
+      },
+      body: {
+        token: '--text-body',
+        value: '1rem',
+        role: 'Reading and interface text (16px), and the floor for reading text.',
+      },
+      lead: {
+        token: '--text-lead',
+        value: '1.25rem',
+        role: 'Lead paragraphs, card titles and secondary readouts (20px).',
+      },
+      h3: {
+        token: '--text-h3',
+        value: '1.563rem',
+        role: 'Third-level headings (25px).',
+      },
+      h2: {
+        token: '--text-h2',
+        value: '1.953rem',
+        role: 'Second-level headings (31.25px).',
+      },
+      h1: {
+        token: '--text-h1',
+        value: '2.441rem',
+        role: 'The in-content h1 floor (39px). Page titles use the display clamp, Fraunces 700.',
+      },
+    },
     cadence_adopted: 'v0.1.3: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
     font_synthesis: 'none set on :root: prevents fake browser weights (fixed 2026-07-15)',
     text_underline_position: 'from-font set on :root: aligns underlines to font metrics (fixed 2026-07-15)',
@@ -1435,6 +1477,26 @@ export const designSystemContract = {
         'Identity v1 colour system. Azure #0A94FF replaces #0133cb as --signal; light text, links, focus and selected states take Deep Azure #016ABB (--signal-access, --signal-deep); text on an Azure fill is ink #010102 (--paper-on-signal, 6.65:1); --paper-white #FFFFFF is the constant white for the increase-contrast ink, text on red fills and highlights. Activated Orange #F56B00 replaces #fecc34 (light text #B04D00). New tokens: --signal-deep, --signal-teal, --action, --on-action, --action-pressed, --paper-white. Grade D moves to rose (#FB7185 dark, #C9216C light; light text #BE1F67); the light grade text tokens are measured values, each at least 4.6:1 on paper, surface, raised and lifted. The instrument pass gradient and inspection head move to the Azure family. Shimmer stops, glows and light navy shadows move to Azure\'s 251 degree hue. No check, weight or verdict changed.',
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
+      ],
+    },
+    {
+      version: '0.4.5',
+      date: '2026-10-12',
+      summary:
+        "Type pass. Atkinson Hyperlegible Mono, the Braille Institute's low-vision face (SIL OFL 1.1), replaces Geist Mono as the mono face (--font-mono) for labels, URLs, timestamps, score units and code: every confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct. Its advance is 0.632em against 0.6em, so tight mono surfaces were re-fitted. The type scale enters :root and the contract as six tokens on a Major Third (x1.25) over a 16px root, no two adjacent steps closer than 25%: --text-label 0.8rem (the floor for all text, mono uppercase included), --text-body 1rem, --text-lead 1.25rem, --text-h3 1.563rem, --text-h2 1.953rem, --text-h1 2.441rem. The eyebrow and supporting-note entries now name the label and body steps the site already sets. No check, weight or verdict changed.",
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/brand',
+      ],
+    },
+    {
+      version: '0.4.6',
+      date: '2026-10-13',
+      summary:
+        "Verification check v46, type sizes come from the scale (engine 1.4.0). v16 asks for rem but cannot tell a rem on the type scale from one between steps; v46 reads the scale from the page's own :root type tokens (their values plus their median ratio) and judges every static rem or px font-size against it: off the scale when it sits more than 2.5% from every step, under the floor when it is smaller than the smallest type token. Deliberate fluid type, a clamp(), min() or max() that moves with a viewport or container unit, is accepted as written, and only its lower bound is held to the floor. WARN only. The registry grows from 44 to 45 checks, 42 of them scored. No weight or existing verdict changed.",
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/methodology',
       ],
     },
   ],

@@ -14,7 +14,7 @@
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](cursor://anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
 
-Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade. This package is the **stdio MCP server** that exposes [designesy.org](https://www.designesy.org)'s tools to agents. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
+Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. This package is the **stdio MCP server** that exposes [designesy.org](https://www.designesy.org)'s tools to agents. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
 
 Zero external dependencies. Pure Python stdlib. Implements the [Model Context Protocol](https://modelcontextprotocol.io) JSON-RPC 2.0 over stdio.
 
@@ -94,7 +94,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 ### Executable verification
 | Tool | What it does |
 |---|---|
-| `designesy_score` | Run the 44-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 44 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
+| `designesy_score` | Run the 45-check contract verification against a live URL through the engine at `https://www.designesy.org/api/score`. Returns an overall score, a letter grade, and the check results (PASS/FAIL/WARN/SKIP/MANUAL). `format` selects the output: `designesy` (default) returns this tool's JSON (`url`, `contract_version`, `summary`, `tokens_extracted`, `checks`, `note`); `canonical` (review-findings.json schema) and `google` (@google/design.md JSON) return the engine's JSON unchanged; `review` returns the engine's markdown report unchanged (coverage by category, a findings table of the FAIL and WARN checks, and a verdict). `scope` (`contract` or `universal`) sets the scoring scope; omit it and the engine picks `contract` for designesy.org and `universal` for every other site. If the engine is unreachable, `designesy` falls back to the offline engine: 27 of the 45 checks run locally, each mirroring the live engine's verdict on the same page and scope, and the result adds `engine` (kind `offline`, the engine version it mirrors, the checks it did not run) and `scope`. The other three formats return an error. |
 | `designesy_tokens_score` | Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 format. 10 checks (t01–t10). |
 | `designesy_a11y_score` | Get the WCAG 2.2 AA accessibility verification framework (11 checks, a01–a11) + a Playwright/axe-core script template for local execution. |
 | `designesy_motion_score` | Validate a Lottie animation file against the motion contract's 10 checks (m01–m10), drawn from Lottie spec v1.0.1 and the Designesy 10 Non-Negotiable Motion Standards, each verdict under its own check's name. Checks a file cannot settle (full schema validation, layout-property and keyboard-initiated motion) return SKIP with the reason. |
@@ -123,9 +123,9 @@ The server also exposes 7 MCP resources (read-only URIs):
 | `designesy://llms` | Short agent brief (text) |
 | `designesy://llms-full` | Full agent brief (text) |
 
-## The 44-check verification engine
+## The 45-check verification engine
 
-`designesy_score` runs 44 deterministic checks across 14 weighted categories:
+`designesy_score` runs 45 deterministic checks across 14 weighted categories:
 
 | Category | Weight | What it measures |
 |---|---|---|
@@ -162,7 +162,7 @@ The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — the
 
 ### Contract vs. opinion
 
-Lighthouse weights audits into category scores. axe-core reports rule violations. securityheaders.com grades one dimension. Designesy scores a page 0-100 against a published contract: 44 checks across 14 weighted categories, each rule and weight public.
+Lighthouse weights audits into category scores. axe-core reports rule violations. securityheaders.com grades one dimension. Designesy scores a page 0-100 against a published contract: 45 checks across 14 weighted categories, each rule and weight public.
 
 ## Caching
 
@@ -199,5 +199,5 @@ MIT
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
 - [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score
 - [Score badge](https://www.designesy.org/badge) — live SVG badge with a site's cached grade, score and scoring date
-- [Live score API](https://www.designesy.org/api/score?url=designesy.org) — JSON, no key, no login
+- [Score API](https://www.designesy.org/specs) — `POST /api/score` with a JSON body, no key, no login (request example on the specs page)
 - [Methodology](https://www.designesy.org/methodology)

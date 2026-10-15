@@ -52,7 +52,7 @@ export const dynamic = 'force-static';
 const NEXT_FONT_FAMILIES: Readonly<Record<string, string>> = {
   '--font-sans': 'Schibsted Grotesk',
   '--font-display': 'Fraunces',
-  '--font-mono': 'Geist Mono',
+  '--font-mono': 'Atkinson Hyperlegible Mono',
 };
 
 /** A value that is exactly one var() with no fallback. */
@@ -323,6 +323,20 @@ export function GET() {
       fontGroup[key] = { $value: families, $type: 'fontFamily', $description: spec.role };
     }
     if (Object.keys(fontGroup).length > 0) dtcg.fontFamily = fontGroup;
+  }
+
+  // Type scale (dimension type): the six --text-* steps of the Major Third
+  // (contract typography.scale). The scale's rule is prose and stays
+  // in the contract; each step is a token here.
+  const scale = (typography as { scale?: Record<string, unknown> })?.scale;
+  if (scale) {
+    const sizeGroup: Record<string, { $value: unknown; $type: string; $description: string }> = {};
+    for (const [key, spec] of Object.entries(scale)) {
+      if (!spec || typeof spec !== 'object') continue;
+      const step = spec as { token: string; value: string; role: string };
+      sizeGroup[key] = { $value: dimension(`fontSize.${key}`, step.value), $type: 'dimension', $description: step.role };
+    }
+    if (Object.keys(sizeGroup).length > 0) dtcg.fontSize = sizeGroup;
   }
 
   // Sound cues: DTCG 2025.10 has no sound type, so the cue-to-role map sits in

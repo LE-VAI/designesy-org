@@ -1,0 +1,463 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "Acme Design System",
+  "color": {
+    "$type": "color",
+    "primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.102,
+          0.3608,
+          1.0
+        ],
+        "hex": "#1a5cff"
+      }
+    },
+    "on-primary": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "ink": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0667,
+          0.0784,
+          0.0941
+        ],
+        "hex": "#111418"
+      }
+    },
+    "ink-muted": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.2902,
+          0.3176,
+          0.3765
+        ],
+        "hex": "#4a5160"
+      }
+    },
+    "surface": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "hex": "#ffffff"
+      }
+    },
+    "surface-raised": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.9569,
+          0.9647,
+          0.9804
+        ],
+        "hex": "#f4f6fa"
+      }
+    },
+    "line": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.8627,
+          0.8824,
+          0.9176
+        ],
+        "hex": "#dce1ea"
+      }
+    },
+    "success": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.0706,
+          0.4784,
+          0.2941
+        ],
+        "hex": "#127a4b"
+      }
+    },
+    "warning": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.6039,
+          0.3569,
+          0.0
+        ],
+        "hex": "#9a5b00"
+      }
+    },
+    "danger": {
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.7608,
+          0.1569,
+          0.2275
+        ],
+        "hex": "#c2283a"
+      }
+    },
+    "focus": {
+      "$value": "{color.primary}"
+    },
+    "link": {
+      "$value": "{color.primary}"
+    },
+    "border-strong": {
+      "$value": "{color.ink-muted}"
+    },
+    "surface-inverse": {
+      "$value": "{color.ink}"
+    },
+    "on-surface": {
+      "$value": "{color.ink}"
+    },
+    "on-danger": {
+      "$value": "{color.on-primary}"
+    }
+  },
+  "typography": {
+    "$type": "typography",
+    "display-lg": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 56,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": 1.05
+      }
+    },
+    "display-md": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 44,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": 1.1
+      }
+    },
+    "headline": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 32,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": 1.15
+      }
+    },
+    "title": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 24,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 1.25
+      }
+    },
+    "body-lg": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 18,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 1.6
+      }
+    },
+    "body-md": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 1.6
+      }
+    },
+    "body-sm": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 1.5
+      }
+    },
+    "label": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 13,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": 1.3,
+        "letterSpacing": {
+          "value": 0.02,
+          "unit": "em"
+        }
+      }
+    },
+    "caption": {
+      "$value": {
+        "fontFamily": "Manrope",
+        "fontSize": {
+          "value": 12,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": 1.4
+      }
+    },
+    "code": {
+      "$value": {
+        "fontFamily": "IBM Plex Mono",
+        "fontSize": {
+          "value": 15,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": 1.5
+      }
+    }
+  },
+  "radius": {
+    "$type": "dimension",
+    "xs": {
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      }
+    },
+    "sm": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "full": {
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      }
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "2xs": {
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      }
+    },
+    "xs": {
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      }
+    },
+    "sm": {
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      }
+    },
+    "md": {
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      }
+    },
+    "base": {
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "xl": {
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "2xl": {
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      }
+    },
+    "3xl": {
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      }
+    },
+    "4xl": {
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      }
+    },
+    "5xl": {
+      "$value": {
+        "value": 64,
+        "unit": "px"
+      }
+    },
+    "6xl": {
+      "$value": {
+        "value": 96,
+        "unit": "px"
+      }
+    }
+  },
+  "size": {
+    "$type": "dimension",
+    "$extensions": {
+      "org.designesy": {
+        "role": "size"
+      }
+    },
+    "button-primary": {
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    },
+    "button-secondary": {
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    },
+    "input": {
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    },
+    "chip": {
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    },
+    "tab": {
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    },
+    "checkbox": {
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "org.designesy": {
+          "interactive": true
+        }
+      }
+    }
+  },
+  "$extensions": {
+    "org.designesy": {
+      "pairs": [
+        {
+          "text": "{color.on-primary}",
+          "background": "{color.primary}",
+          "role": "primary-action"
+        },
+        {
+          "text": "{color.ink}",
+          "background": "{color.surface-raised}"
+        },
+        {
+          "text": "{color.ink}",
+          "background": "{color.surface}"
+        },
+        {
+          "text": "{color.on-primary}",
+          "background": "{color.success}"
+        }
+      ]
+    }
+  }
+}

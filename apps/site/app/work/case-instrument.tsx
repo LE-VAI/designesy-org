@@ -84,7 +84,7 @@ const STATE_OF: Record<string, State> = { PASS: 'pass', FAIL: 'fail', WARN: 'war
 
 /**
  * A check status as a chip in its state token: fail, warn and skip in their
- * own hue, pass in the pass token (never the brand accent). `before` is the
+ * own hue, pass in Azure, the engine's pass colour. `before` is the
  * superseded state, drawn at reduced emphasis: a hollow lamp and a quieter
  * ring, the same hue.
  */
@@ -184,7 +184,11 @@ export function SourceList({ items }: { items: Source[] }) {
    The panel
    ------------------------------------------------------------------------ */
 
-type Lamp = 'pass' | 'live' | 'warn' | 'pending';
+// 'done' is a confirmed fact (shipped, verified with a public proof link):
+// the check glyph, not a lit dot. 'none' is a state stated in words alone (a
+// pending build, a measurement window): no glyph and no dot (the
+// flame is only for something happening now).
+type Lamp = 'pass' | 'done' | 'warn' | 'pending' | 'none';
 
 function Panel({
   label,

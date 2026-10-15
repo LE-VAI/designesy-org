@@ -136,7 +136,9 @@ const EXTRA_PASSES = [
 // swept, however deep in the tab order they sit.
 const NAMED = [
   { route: '/docs', selector: '#start-here .docs-card-grid a.row', label: 'the first "Start here" card' },
-  { route: '/', selector: '.state-marquee-pill', label: 'a state marquee pill' },
+  // The homepage's system state ledger: its fact links replaced the
+  // status marquee's pills, and unlike the pills they render at 390 too.
+  { route: '/', selector: '.home-ledger-fact a', label: 'a system state ledger link' },
   { route: '/open', selector: '.listen-btn', label: 'a listen button' },
   { route: '/badge', selector: '.badge-snippet-copy', label: 'the badge snippet copy button' },
   { route: '/changelog', selector: '.changelog-tab', label: 'a changelog tab' },
@@ -758,8 +760,8 @@ async function namedCase(page, lab, vp, probe, shots, slug) {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.scrollTo(0, 0);
   });
-  // A control the layout does not render at this width (the marquee leaves
-  // the homepage on a phone) is listed as skipped, not failed.
+  // A control the layout does not render at this width is listed as skipped,
+  // not failed.
   const rendered = await page.evaluate((sel) => [...document.querySelectorAll(sel)].some((e) => {
     const r = e.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden';

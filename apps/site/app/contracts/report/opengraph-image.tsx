@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { reportContract } from '../../lib/report-contract';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -11,6 +12,6 @@ export default function OpenGraphImage() {
     lede: 'The synthesis capstone: one URL, three engines, one composite grade. Score + drift + readiness.',
     path: 'designesy.org/contracts/report',
     kind: 'contract',
-    badge: 'v0.1.0',
+    badge: `v${reportContract.version}`,
   });
 }

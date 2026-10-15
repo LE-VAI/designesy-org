@@ -294,10 +294,11 @@ const TYPOGRAPHY_RULES = [
   'Body: Schibsted Grotesk (--sans), 16 to 17px fluid, line-height 1.55; the system sans covers other scripts',
   'Headings h1 to h4: Fraunces (--display), weight 700, line-height 1.08, letter-spacing -0.02em; section headings and subheads set in --sans at weight 600',
   'Hero wordmark: clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
-  'Eyebrows: 0.72 to 0.75rem, weight 600, uppercase, letter-spacing 0.18em, muted-dim',
+  'Eyebrows: --text-label (0.8rem), weight 600, uppercase, letter-spacing 0.18em, muted-dim',
   'Lede: 1.1 to 1.5rem, weight 500, ink (one clear claim in a single paragraph)',
-  'Supporting note: 0.85 to 0.95rem, muted, max-width ~520 to 580px',
-  'Three faces and no more: Fraunces for headlines, Schibsted Grotesk for interface and reading, Geist Mono for data and token names',
+  'Supporting note: --text-body (1rem), muted, max-width ~520 to 580px',
+  'Three faces and no more: Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data and token names',
+  'Type scale: a Major Third (x1.25) on a 16px root, no two adjacent steps closer than 25%: --text-label 0.8rem (the floor for all text, mono uppercase included), --text-body 1rem, --text-lead 1.25rem, --text-h3 1.563rem, --text-h2 1.953rem, --text-h1 2.441rem; display titles keep their clamp() sizes',
 ];
 
 // Section 06, as the stylesheet ships it: the material system (design spec

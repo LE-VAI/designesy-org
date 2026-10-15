@@ -6,7 +6,271 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**Engine 1.3.0 and @designesy/score 0.8.0** (npm, not yet published). A page
+**Engine 1.5.0: score a page against your own contract** (the hosted API;
+npm and PyPI unchanged). `POST /api/score` takes an optional `contract`
+field: a DESIGN.md or DTCG 2025.10 token file, pasted (`contract.content`)
+or linked (`contract.url`), with an optional `tokenMap`. The answer is two
+numbers that are never blended: **contract fidelity**, how closely the page
+follows the caller's contract, and a **baseline** of universal web checks that
+read no contract. Requests without `contract` are unchanged: no legacy
+verdict, detail or score moves.
+
+### Added (engine 1.5.0)
+
+- **Contract intake.** One normalized model from either format. A contract
+  below the minimum (3 colors that resolve, 1 text style with a family and a
+  size) or one that does not parse answers 422 `contract_not_scoreable` with
+  a `problems` list: each problem has a `code`, the `path` and `line` where
+  they apply, and at most 80 characters of the offending value.
+  `ALIAS_CYCLE` carries the loop as an ordered `chain` of token paths;
+  `TOKEN_DROPPED` (a declared token the DESIGN.md format linter left out of
+  its model) carries a `reason` from a closed list: `alias_unresolved`,
+  `alias_cycle`, `alias_wrong_type`, `value_not_scalar`, `value_invalid`,
+  `unit_unsupported`, `unknown`. `CONFUSABLE_NAME` warnings carry the
+  character, its script, its code point, its 1-based position and the Latin
+  letter expected. A contract with CRLF or CR line endings reads exactly as
+  the same file with LF. Problems are returned, never logged.
+- **Fidelity, f01 to f14.** Mapped tokens ship their declared values; shipped
+  colors, font sizes, families, line heights, radii and spacing sit in the
+  contract; declared font features ship; declared text and background pairs,
+  and the primary action pair, meet contrast on shipped values; durations and
+  easings (DTCG); interactive target sizes; aliases ship as `var()`
+  references; styles use the contract's tokens. Weights: contrast 20,
+  typography 18, color 16, tokens 14, spacing 12, shape 8, motion 6, targets
+  6. A failing declared pair caps fidelity at 65, a failing primary action
+  pair at 70; `uncappedScore` carries the score before the cap. Fewer than 3
+  scored checks is "no score" (`nullReason.code: too_few_checks`).
+- **Baseline.** The universal checks that read no contract: v02, v03, v05, v07,
+  v09, v11, v12, v21, v25, v27, v34, v35, v36, v38, v39, v40, v44 and v45,
+  under the accessibility, keyboard, motion, copywriting, identity and
+  security groups (static maximum 57), with the accessibility floor, no A
+  while any baseline check fails (89.9, as the URL score caps), and the v25
+  and v44 ceilings. Each carries a customer-facing `contractTitle` in the
+  check registry; legacy surfaces keep `item`.
+- **Coverage.** Every declared token located by the token map, by CSS variable
+  name, or by value, with counts per group and a hint when under 20% is found.
+- **Receipt.** `receipt.own_contract.digest` is a sha256 of the contract as
+  read (prose, names and key order do not move it); `receipt.digest` covers
+  the fidelity verdicts, then the baseline's.
+- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.1,
+  2026-10-14): every check, threshold, weight, ceiling, baseline group and
+  null rule. In 1.0.1 a linter problem carries the DESIGN.md linter's sentence
+  whole in `linterMessage` (`value` is the offending value), a rejected
+  DESIGN.md carries the linter's totals (`linter`), and a problem that
+  absorbed a linter finding says so (`linterFinding`). No threshold, weight or
+  verdict moved.
+- **Limits.** 300 KB per request, 256 KB per contract, linked contracts only
+  through the SSRF guard with an 8 s abort, 20 runs a minute and 300 a day per
+  IP (failing open, as the edge limiter does). Nothing is cached or stored; a
+  contract run counts once under `score-contract:<client>`.
+
+### Not changed
+
+- The npm engine, the CLI and the MCP tools (the MCP keeps its schema; its
+  offline engine reports 1.5.0 because legacy verdicts are the same).
+- `format=review`, `google` and `canonical` answer 400 `format_unsupported`
+  when a `contract` is sent; this mode answers in `format=designesy`.
+
+### Measured (engine 1.5.0)
+
+The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+golden regenerate with only `engine_version` changed. 86 legacy requests (the
+34 corpus pages, one recorded real page and five site fixtures, both scopes,
+every format) answer identically under 1.4.1 and 1.5.0, apart from timestamps
+and the engine version.
+
+**Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
+check stops failing pages on a word it read in the wrong rule, and one check
+is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
+is unchanged. The hosted /score page and API change when the site deploys; the
+PyPI server's offline engine carries the v27 change with the next
+designesy-mcp release.
+
+**Which grades can move.** v27 can only lose a FAIL or a floor it read from
+another rule, so a page moves up where its only sub-16px "field" was in a rule
+that styles no field, and down only where its 16px floor was read the same
+way (none in the cohort, below).
+
+### Fixed (engine 1.4.1)
+
+- **v27 reads a field keyword only in the rule it is scoring.** The literal
+  scan found `input`, `textarea`, `select` or `.field` and then the next rule
+  body, and its `[^{]*` ran across a closing brace. So the word "select" in
+  `.chip { user-select: none }` carried into `.chip-label { font-size: 12px }`
+  and FAILed the page ("1 input(s) below 16px floor: 12px (12px)"), whose
+  only field was 16px; now PASS. A keyword in a declaration value carried the
+  same way (`--x: var(--selecta)` into `.kicker { font-size: 11px }`), and so
+  did the 16px floor test (`--fields: input, textarea` into `.b { font-size:
+  1rem }`). Each candidate is now judged by the selector of the rule its
+  `font-size` sits in, read back from that rule's opening brace. Class names
+  that name a field still count, as before (`.search-input`, `.form-select`,
+  `.editableTextarea`): many sites style their fields that way.
+  `select { font-size: 14px }` and a real `.number input[type=number]` field
+  at 0.875rem still FAIL.
+- **v37 is named "DESIGN.md spec-layer validation (DESIGN.md format lint)"**,
+  where it read "(Google @google/design.md lint)". Its remediation says "The
+  DESIGN.md format's linter (v0.4.0, Apache-2.0) validates the file". Every
+  `npm install -g @google/design.md` and `npx @google/design.md` command is
+  unchanged. The id stays v37; no stored leaderboard, history or snapshot
+  keys on the name.
+
+### Not changed
+
+- **v27's test for a field rule is not narrowed to `isFieldSelector`**, the
+  subject test 1.3.1 uses before resolving a `var()` size. Measured on the
+  same bytes, that test also dropped real fields that cohort sites style
+  through class names: one site's 16px floor on its search box and
+  another's 14px textarea, both named only by class.
+
+### Measured (engine 1.4.1)
+
+The calibration corpus (34 fixtures, 47 pinned verdicts) and every existing
+input of the offline golden give the same verdict, detail and score under
+1.4.0 and 1.4.1, apart from v37's name; the golden gains eight v27 inputs. The
+30 leaderboard URLs, each fetched once on 2026-10-13 and scored by both builds
+of the npm engine on the same bytes (scope auto-detected; 27 fetched,
+three did not answer). Scores move on two sites:
+
+| Cohort site | 1.4.0 | 1.4.1 | Why |
+|---|---|---|---|
+| cohort site 1 | C | B (+16.1) | v27 FAIL to SKIP: an 11px caption rule was reached from a keyword in the rule before; the page has no field, and the FAIL had pulled accessibility under 60%, which caps a score at 70 |
+| cohort site 2 | D | D (+2.8) | v27 FAIL to PASS: a 12px placeholder rule was reached from `user-select` in the rule before; its search field's floor now reads |
+
+designesy.org stays 100 A. A site with a real 14px number field keeps its v27
+FAIL, and a site whose v27 FAIL is real keeps it with one fewer size listed.
+The other 24 are unchanged. Third-party sites are not named here: the
+leaderboard publishes their scores, with dates, at its weekly re-score.
+
+Reproduce: score the URLs in `apps/site/app/leaderboard/seed.ts` with both
+builds of `packages/score` (`scoreUrl`, scope auto-detected), fetching each
+page once and passing the same bytes to both.
+
+## [1.13.9] — 2026-10-13
+
+**Engine 1.4.0, @designesy/score 0.9.0, @designesy/cli 0.3.1, designesy-mcp 1.13.9,
+contract v0.4.6** (npm `score-v0.9.0` and `cli-v0.3.1`; PyPI and the MCP registry
+`v1.13.9`). One check is added; no weight, ceiling or existing verdict
+moves. The hosted /score page and API change when the site deploys.
+
+### Added (engine 1.4.0)
+
+- **v46, type sizes come from the scale (cadence, WARN only).** v16 asks for
+  rem and cannot tell a rem on the scale from one between steps. v46 reads the
+  scale from the page's own `:root` type tokens (a name such as `--text-*`,
+  `--font-size-*`, `--fs-*` or `--type-*` whose value resolves to a static rem
+  or px length; a colour token such as `--text-muted` never counts), takes the
+  token values plus their median ratio, and judges every static rem or px
+  `font-size`: off the scale beyond 2.5% from every step, under the floor below
+  the smallest type token. A `clamp()`, `min()` or `max()` that moves with a
+  viewport or container unit is deliberate fluid type and is accepted as
+  written; only its lower bound is held to the floor. Relative sizes (em, %,
+  keywords) are not judged. Fewer than three type tokens: SKIP. Findings come
+  as structured evidence (selector, value, px, issue, nearest step), one per
+  rule.
+- **Measured on designesy.org:** WARN, 7 sizes under the 12.8px floor and 7
+  between steps, of 322 static and 26 fluid sizes; the fluid section titles
+  pass. Score unchanged at 100 A.
+- The registry grows from 44 to 45 checks, 42 scored. Every "44 checks" claim
+  in the READMEs, manifests, Action and MCP descriptions moves to 45.
+- designesy-mcp 1.13.9: the offline engine lists v46 as not ported, with its
+  reason, and mirrors engine 1.4.0 and contract v0.4.6.
+
+**Engine 1.3.1 and @designesy/score 0.8.1** (npm, published 2026-10-12 as `score-v0.8.1`). Four
+checks stop warning on pages that are right, and the npm engine stops
+following a redirect loop. No check is added, no weight or ceiling moves, and
+contract v0.4.5 is unchanged. The hosted /score page and API change when the
+site deploys; the PyPI server's offline engine carries the v27 change with the
+next designesy-mcp release.
+
+**Which grades can move.** v26, v27, v38 and v43 move WARN to PASS where the
+page was right, so scores move up or not at all, with one exception: v27 now
+reads a field whose font size comes from a token, so a field set to a token
+under 16px FAILs where it read WARN (carbondesignsystem.com, below). The
+redirect limit can only turn a site that redirects more than three times into
+"could not read".
+
+### Fixed (engine 1.3.1)
+
+- **v26 skips any face named with the word "fallback"**, not only a name that
+  ends in it. A metric-matched stand-in drawn until the real face loads is not
+  a typeface choice. designesy.org's "Fraunces Fallback Tuned" (Times New
+  Roman under `size-adjust`) was counted: before, "4 families (recommended
+  ≤3): fraunces fallback tuned, fraunces, schibsted grotesk, atkinson
+  hyperlegible mono" (WARN); after, "3 family/families: fraunces, schibsted
+  grotesk, atkinson hyperlegible mono" (PASS). The match is on the whole word,
+  so a family called "Fallbackish" still counts.
+- **v27 reads `font-size: var(--token)` in a rule that styles a field** through
+  the `:root` tokens, before both the below-16px scan and the 16px floor test.
+  Before, `input, textarea, select { font-size: var(--text-body) }` with
+  `--text-body: 1rem` read WARN ("no explicit input font-size ≥16px
+  detected"), though it renders at 16px; after, PASS. A `0.875rem` token
+  FAILs ("0.875rem (14px)"). A `var()` that does not resolve reads as before.
+  Only rules whose selector styles the field itself are resolved (an `input`,
+  `textarea` or `select` element, or the exact class `.input` or `.field`, as
+  the subject; not a pseudo-element). Resolving every rule would have read
+  designesy.org's card caption `.field-card-meta { font-size:
+  var(--text-label) }` (12.8px) as an input below 16px, because v27's literal
+  scan matches `.field` anywhere in a selector; that literal scan is
+  unchanged.
+- **v38 reads keycaps from the markup.** The text of `<kbd>` elements
+  (keyboard input, by the HTML definition) is dropped before the verb check,
+  as `aria-hidden` content already was, with any "+" left between them.
+  designesy.org's flip button, `<kbd>ctrl</kbd> <span
+  aria-hidden="true">+</span> <kbd>i</kbd>` after a hidden "Flip to the
+  flame:", WARNed as "Flip to the flame: ctrl  i"; it now reads "Flip to the
+  flame:" and PASSes. A button whose only text is keycaps is judged as an
+  icon-only button is: by its aria-label, or not at all. In plain text, a
+  "+key" hint is now stripped in any case ("ctrl+k", "Save ctrl+s"), when the
+  modifier stands as its own word. Text is not otherwise read as keycaps:
+  "Shift A", "Alt text" and "Option 2" are labels, as in 1.3.0, and "Find⌘K",
+  "FindCtrlK" and "Save Ctrl+S" read as before.
+- **v38 knows get, set and try.** The check's own comment said "Get X", "Set
+  X" and "Try X" were allowed, but none of the three was in the verb list, so
+  "Get started" and "Try it free" WARNed on every site. Added with them, each
+  justified in the source as a verb when it leads a button label: flip, learn,
+  sign (in, up, out), join, expand, select, read. Left out because they are
+  common nouns too: switch, watch. explore, collapse, toggle, choose and
+  compare already passed by their ending. v38 stays a WARN-only heuristic.
+- **v43 counts `--destructive` as the error role**, the name shadcn/ui gives
+  it. Before, a shadcn theme with `--success`, `--warning`, `--destructive`
+  and `--info` found 3/4 families and reported error missing; after, 4/4.
+- **The npm engine follows at most three redirects.** `httpsFetch` re-checked
+  each redirect target against the SSRF guard but counted nothing, though its
+  comment said "Follow up to 3 redirects", so a redirect loop recursed without
+  end. A fourth redirect now fails closed, as a refused target does, and a
+  response reached through a redirect reports `redirected: true` with the last
+  hop's URL. The hosted route fetches through `safeFetch`, which already
+  stopped at five.
+
+### Not changed
+
+- **v42 is unchanged.** Tailwind CSS v4 writes only the theme variables a
+  project uses ("only used CSS variables will be generated in the final CSS
+  output", tailwindcss.com/docs/theme), so the 226 hue-named colour tokens
+  x.com ships are tokens its stylesheet uses, and v42's WARN on it is right.
+
+### Measured (engine 1.3.1)
+
+The calibration corpus (32 fixtures), the recorded parity page and every
+existing input of the offline golden give the same verdict, detail and score
+under 1.3.0 and 1.3.1; the golden gains eleven v27 inputs. The 30 leaderboard
+URLs, each fetched once on 2026-10-12 and scored by both builds on the same
+bytes (scope auto-detected; 26 fetched, nytimes.com, getdesy.com,
+awwwards.com and cssdesignawards.com did not answer). Scores move on two sites:
+
+| Site | 1.3.0 | 1.3.1 | Why |
+|---|---|---|---|
+| wikipedia.org | 83.8 B | 84.7 B | v38 WARN to PASS: "Read Wikipedia in your language" leads with a verb |
+| carbondesignsystem.com | 82.8 B | 81.8 B | v27 WARN to FAIL: `.cds--number input[type=text]` takes `var(--cds-body-compact-01-font-size)`, 0.875rem in its `:root`, and the page's search field is 14px too |
+
+www.designesy.org stays 100 A (it was already at the clamp); its v26, v27 and
+v38 move WARN to PASS. v38's detail lists fewer flagged labels on linear.app
+(38 to 37), zeroheight.com (7 to 4), radix-ui.com (2 to 1, "Sign in") and
+github.com (11 to 9), with the verdict still WARN. The other 19 are unchanged.
+
+---
+
+**Engine 1.3.0 and @designesy/score 0.8.0** (npm, published 2026-10-12 as `score-v0.8.0`). A page
 with a failing check can no longer score an A. The hosted MCP tools and
 /api/monitor change when the site deploys; the PyPI server's own code (the
 offline engine, the accessibility kit's Python twin) ships with the next
@@ -20,7 +284,7 @@ hosted /score page and API always run the current engine.
 
 ### Changed (engine 1.3.0)
 
-- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+- **No A while any check FAILs** (decided 2026-10-11). Any FAIL caps
   the score at 89.9, a B at most, and `hardFailCeilingReason` says which
   checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
   ceilings stay lower and win where they apply. Every cap runs after the
@@ -525,7 +789,7 @@ the site's. Contract mode moves to engine 1.3.0.
     -3600s). FAIL without one, WARN when the override's selector or scope does
     not clearly match, SKIP when no rule pauses every element.
 
-  **Owner decision D10: legacy scores gain both checks.** A request without a
+  **Legacy scores gain both checks.** A request without a
   contract returns what engine 1.1.0 returned except for v44 and v45. The
   registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
   Category weights are unchanged (accessibility 15, motion 10, of 117), so each

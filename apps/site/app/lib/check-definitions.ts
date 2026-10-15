@@ -22,6 +22,13 @@ export interface CheckDefinition {
   warn: string;
   ceiling: number | null;
   weight: number;
+  /**
+   * The title this check shows in own-contract mode: the
+   * baseline layer that reads no contract. Only the baseline checks carry one;
+   * legacy surfaces keep `item`, so their output does not change. No title
+   * names Designesy's own work (Poise, Takt, the wordmark) or Designesy.
+   */
+  contractTitle?: string;
 }
 
 // ── Category weights (mirrors api/score route.ts CATEGORY_WEIGHTS) ───────────
@@ -47,26 +54,26 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v43', item: 'Semantic status colors: ok/warn/error/info state roles present', category: 'semantic', type: 'auto', threshold: '3+ of 4 status color families (ok, warn, error, info); var() aliases followed', pass: 'status states expressed as semantic color roles', fail: 'n/a (WARN only)', warn: 'missing status color families', ceiling: null },
 
   // ── Responsive (weight 3) ──
-  { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', type: 'manual', threshold: 'no overflow-x at 375px, 720px, 860px, 1080px+', pass: 'no horizontal overflow at any breakpoint', fail: 'content overflows horizontally', warn: 'n/a', ceiling: 70 },
+  { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', type: 'manual', threshold: 'no overflow-x at 375px, 720px, 860px, 1080px+', pass: 'no horizontal overflow at any breakpoint', fail: 'content overflows horizontally', warn: 'n/a', ceiling: 70, contractTitle: 'Pages render without horizontal overflow' },
 
   // ── Interaction (weight 6) ──
-  { id: 'v03', item: 'Primary interactive elements show focus-visible rings', category: 'interaction', type: 'auto', threshold: ':focus-visible declared in CSS', pass: ':focus-visible rules present', fail: 'no :focus-visible rules', warn: 'n/a', ceiling: null },
+  { id: 'v03', item: 'Primary interactive elements show focus-visible rings', category: 'interaction', type: 'auto', threshold: ':focus-visible declared in CSS', pass: ':focus-visible rules present', fail: 'no :focus-visible rules', warn: 'n/a', ceiling: null, contractTitle: 'Interactive elements show focus-visible rings' },
 
   // ── Poise (weight 7) ──
   { id: 'v04', item: 'Sound toggle flips aria-pressed and applies the audio preference', category: 'poise', type: 'manual', threshold: 'aria-pressed toggles + data-audio attribute applied', pass: 'toggle flips aria-pressed and applies audio state', fail: 'no sound toggle or toggle not wired', warn: 'n/a', ceiling: null },
   { id: 'v08', item: 'Poise interaction rules match live /labs/poise and contract.interaction', category: 'poise', type: 'auto', threshold: 'poise interaction CSS rules present (no hover-only reveals, no disabled nav buttons)', pass: 'static poise rules verified (interaction-feel half requires browser)', fail: 'n/a (WARN only)', warn: 'missing poise interaction rules', ceiling: null },
-  { id: 'v09', item: 'Poise keyboard-path verification remains published and current', category: 'poise', type: 'auto', threshold: ':focus-visible with visible style, focus ring, tabindex, aria attributes', pass: 'keyboard affordances present in CSS+HTML', fail: 'focus stripped without replacement', warn: 'partial keyboard affordances', ceiling: null },
+  { id: 'v09', item: 'Poise keyboard-path verification remains published and current', category: 'poise', type: 'auto', threshold: ':focus-visible with visible style, focus ring, tabindex, aria attributes', pass: 'keyboard affordances present in CSS+HTML', fail: 'focus stripped without replacement', warn: 'partial keyboard affordances', ceiling: null, contractTitle: 'Keyboard affordances are present' },
   { id: 'v10', item: 'Takt interface-feel rules match live CSS and contract.takt', category: 'takt', type: 'auto', threshold: 'takt feel rules present in CSS', pass: 'takt rules verified in CSS', fail: 'n/a (WARN only)', warn: 'missing takt feel rules', ceiling: null },
 
   // ── Motion (weight 10) ──
-  { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', type: 'auto', threshold: '@media (prefers-reduced-motion) declared', pass: 'prefers-reduced-motion media query present', fail: 'n/a (WARN only)', warn: 'missing prefers-reduced-motion media query', ceiling: null },
-  { id: 'v11', item: 'No transition:all in the live stylesheet', category: 'motion', type: 'auto', threshold: 'no transition:all in CSS', pass: 'no transition:all found', fail: 'transition:all found', warn: 'n/a', ceiling: null },
-  { id: 'v12', item: 'will-change restricted to transform and opacity only', category: 'motion', type: 'auto', threshold: 'will-change only on transform/opacity', pass: 'will-change restricted cleanly', fail: 'n/a (WARN only)', warn: 'will-change on non-transform/opacity property', ceiling: null },
+  { id: 'v05', item: 'prefers-reduced-motion disables entrance and wordmark breath', category: 'motion', type: 'auto', threshold: '@media (prefers-reduced-motion) declared', pass: 'prefers-reduced-motion media query present', fail: 'n/a (WARN only)', warn: 'missing prefers-reduced-motion media query', ceiling: null, contractTitle: 'Reduced motion is honored' },
+  { id: 'v11', item: 'No transition:all in the live stylesheet', category: 'motion', type: 'auto', threshold: 'no transition:all in CSS', pass: 'no transition:all found', fail: 'transition:all found', warn: 'n/a', ceiling: null, contractTitle: 'No transition: all in the stylesheet' },
+  { id: 'v12', item: 'will-change restricted to transform and opacity only', category: 'motion', type: 'auto', threshold: 'will-change only on transform/opacity', pass: 'will-change restricted cleanly', fail: 'n/a (WARN only)', warn: 'will-change on non-transform/opacity property', ceiling: null, contractTitle: 'will-change stays on transform and opacity' },
   { id: 'v23', item: 'Duration tokens --duration-quick through --duration-slow present in :root', category: 'motion', type: 'auto', threshold: '5 duration tokens (--duration-quick through --duration-slow)', pass: 'all 5 duration tokens present', fail: 'fewer than 3/5 duration tokens', warn: '3-4/5 present', ceiling: null },
   // v45 (engine 1.2.0): found on this site, where a site-wide pause
   // held the .fade-up entrance on its opacity-0 first frame. SKIPs when no rule
   // pauses every element.
-  { id: 'v45', item: 'Pausing motion keeps content visible', category: 'motion', type: 'auto', threshold: 'under a pause that holds every element (animation-play-state: paused on *), each one-shot entrance whose first keyframe is opacity 0 ends or is removed', pass: 'every entrance that starts invisible ends or is removed under the pause', fail: 'an entrance that starts at opacity 0 is held invisible under the pause', warn: 'an override exists, but its selector or scope does not clearly match the entrance', ceiling: null },
+  { id: 'v45', item: 'Pausing motion keeps content visible', category: 'motion', type: 'auto', threshold: 'under a pause that holds every element (animation-play-state: paused on *), each one-shot entrance whose first keyframe is opacity 0 ends or is removed', pass: 'every entrance that starts invisible ends or is removed under the pause', fail: 'an entrance that starts at opacity 0 is held invisible under the pause', warn: 'an override exists, but its selector or scope does not clearly match the entrance', ceiling: null, contractTitle: 'Pausing motion keeps content visible' },
 
   // ── Takt (weight 8) ──
   { id: 'v13', item: 'Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)', category: 'takt', type: 'auto', threshold: 'scale() < 1 in :active context, value ≥ 0.95', pass: 'press-scale(s) found at 0.95+', fail: 'scale below 0.95 in :active context', warn: 'no press-scale found or only scale(0) initial states', ceiling: null },
@@ -80,46 +87,47 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', category: 'cadence', type: 'auto', threshold: '8+ font-variant-numeric: tabular-nums instances', pass: '8+ instances found', fail: 'n/a (WARN only)', warn: 'fewer than 8 instances', ceiling: null },
   { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', type: 'auto', threshold: '::selection with custom color or var(--signal)', pass: '::selection uses --signal or custom color', fail: 'n/a (WARN only)', warn: 'no ::selection or no color set', ceiling: null },
   { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', type: 'auto', threshold: '≤3 unique non-generic font families', pass: '≤3 font families', fail: '>3 font families', warn: 'n/a', ceiling: null },
+  { id: 'v46', item: 'Type sizes come from the scale', category: 'cadence', type: 'auto', threshold: 'every static rem/px font-size within 2.5% of a step of the scale read from the :root type tokens (token values plus their median ratio), and no size, including a fluid clamp() lower bound, under the smallest type token; fluid clamp()/min()/max() with a viewport or container unit accepted as written', pass: 'static sizes sit on the scale and nothing falls under its floor', fail: 'n/a (WARN only)', warn: 'a static size between steps, or a size under the smallest type token', ceiling: null },
   { id: 'v28', item: 'Reading width 45-75ch on prose containers', category: 'cadence', type: 'auto', threshold: 'max-width 45-75ch on prose elements', pass: 'reading width within 45-75ch', fail: 'n/a (WARN only)', warn: 'reading width outside 45-75ch', ceiling: null },
   { id: 'x01', item: 'font-synthesis: none set (Cadence resolved tension)', category: 'cadence', type: 'auto', threshold: 'font-synthesis: none', pass: 'font-synthesis: none declared', fail: 'n/a (WARN only)', warn: 'font-synthesis missing or not none', ceiling: null },
   { id: 'x02', item: 'text-underline-position: from-font set (Cadence resolved tension)', category: 'cadence', type: 'auto', threshold: 'text-underline-position: from-font', pass: 'from-font set', fail: 'n/a (WARN only)', warn: 'not set', ceiling: null },
   { id: 'x03', item: 'text-decoration-skip-ink: auto set', category: 'cadence', type: 'auto', threshold: 'text-decoration-skip-ink: auto', pass: 'auto set', fail: 'n/a (WARN only)', warn: 'not set', ceiling: null },
 
   // ── Performance (weight 6) ──
-  { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', type: 'manual', threshold: 'LCP < 2.5s, INP < 200ms, CLS < 0.1', pass: 'all three Core Web Vitals in range', fail: 'any CWV outside threshold', warn: 'n/a', ceiling: null },
+  { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', type: 'manual', threshold: 'LCP < 2.5s, INP < 200ms, CLS < 0.1', pass: 'all three Core Web Vitals in range', fail: 'any CWV outside threshold', warn: 'n/a', ceiling: null, contractTitle: 'Core Web Vitals are in range' },
 
   // ── Accessibility (weight 15) ──
   { id: 'v06', item: 'Contrast remains readable for ink, muted, and accent on paper (WCAG 2.1 + APCA)', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (body), 3:1 (large text); APCA Lc 75 body min, Lc 90 body preferred, Lc 60 non-body content', pass: 'all tokens ≥ 4.5:1 against --paper', fail: 'any token below 3:1', warn: 'token below 4.5:1 but above 3:1', ceiling: 65 },
   { id: 'v22', item: 'Primary button text passes WCAG AA contrast against --signal fill', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 for button text on --signal', pass: '≥ 4.5:1 against --signal', fail: 'below 3:1', warn: '3:1-4.5:1 (large-text pass, body fail)', ceiling: 70 },
   { id: 'v24', item: 'Touch targets ≥44px on interactive elements (WCAG 2.5.5 Enhanced)', category: 'accessibility', type: 'auto', threshold: '44px minimum on interactive elements (SC 2.5.5 Target Size Enhanced, AAA; 2.5.8 Minimum AA is 24px, and the engine enforces the stricter 44px bar)', pass: 'touch targets ≥ 44px', fail: 'touch targets below 44px', warn: 'n/a', ceiling: 75 },
-  { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', type: 'auto', threshold: '1 h1, no skipped heading levels', pass: 'single h1, no gaps', fail: 'multiple h1s or skipped levels', warn: 'n/a', ceiling: 75 },
-  { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', type: 'auto', threshold: 'input font-size ≥ 16px', pass: 'inputs ≥ 16px', fail: 'inputs < 16px', warn: 'n/a', ceiling: null },
-  { id: 'v35', item: 'Forced-colors readiness: @media (forced-colors: active) block present', category: 'accessibility', type: 'auto', threshold: '@media (forced-colors: active) + forced-color-adjust', pass: 'forced-colors media query present', fail: 'n/a (WARN only)', warn: 'no forced-colors media query', ceiling: null },
+  { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', type: 'auto', threshold: '1 h1, no skipped heading levels', pass: 'single h1, no gaps', fail: 'multiple h1s or skipped levels', warn: 'n/a', ceiling: 75, contractTitle: 'One h1 and no skipped heading levels' },
+  { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', type: 'auto', threshold: 'input font-size ≥ 16px', pass: 'inputs ≥ 16px', fail: 'inputs < 16px', warn: 'n/a', ceiling: null, contractTitle: 'Form fields are at least 16px' },
+  { id: 'v35', item: 'Forced-colors readiness: @media (forced-colors: active) block present', category: 'accessibility', type: 'auto', threshold: '@media (forced-colors: active) + forced-color-adjust', pass: 'forced-colors media query present', fail: 'n/a (WARN only)', warn: 'no forced-colors media query', ceiling: null, contractTitle: 'Forced-colors mode is handled' },
   // v44 (engine 1.2.0): found on this site, where light --warn as text
   // measured 3.51:1. SKIPs when no status color is used as text. Only a color
   // named as a status can FAIL; a hue that counts because the sheet also paints
   // it as a mark WARNs at most, and so do neutral text under a status name and
   // a pairing whose surface the sheet cannot attest (an ancestor in a hover or
   // open state with no declared fill).
-  // Engine 1.3.0: a v44 FAIL caps the score at 65, as a v06 FAIL does (owner
-  // decision 2026-10-11); before 1.3.0 v44 had no ceiling.
-  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, and 3:1 for a graphic (an svg, icon or glyph, a progress bar, a color named for an icon, a currentColor fill; WCAG 1.4.11), in every declared theme, on the surface the sheet attests; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) that has a hue (Oklch chroma 0.06 or more) is under its threshold in a theme, on an attested surface', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; neutral text (white or grey) under a status name is under its threshold; a surface the sheet cannot attest (an ancestor in a hover, active, focus, expanded or open state that paints no declared fill); a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: 65 },
+  // Engine 1.3.0: a v44 FAIL caps the score at 65, as a v06 FAIL does;
+  // before 1.3.0 v44 had no ceiling.
+  { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, and 3:1 for a graphic (an svg, icon or glyph, a progress bar, a color named for an icon, a currentColor fill; WCAG 1.4.11), in every declared theme, on the surface the sheet attests; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) that has a hue (Oklch chroma 0.06 or more) is under its threshold in a theme, on an attested surface', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; neutral text (white or grey) under a status name is under its threshold; a surface the sheet cannot attest (an ancestor in a hover, active, focus, expanded or open state that paints no declared fill); a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: 65, contractTitle: 'Status colors used as text meet contrast' },
 
   // ── Identity (weight 6) ──
-  { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', type: 'auto', threshold: 'h1, title, meta description, landmark element', pass: 'all semantic signals present', fail: '3+ missing signals', warn: '1-2 missing', ceiling: null },
-  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction where an AI chat surface is present (EU AI Act Art. 50(1) is a duty on the provider of the AI system)', pass: 'no AI surface, or a disclosure present', fail: 'a positively identified AI chat surface (a chatbot container, an AI input, a chatbot, AI-widget or Dialogflow script) with no disclosure', warn: 'a possible AI surface to review (a live-chat vendor, a generic chat container or assistant script, page text about AI) with no disclosure', ceiling: null },
+  { id: 'v07', item: 'Semantic HTML foundation: single h1, title, meta description, landmark', category: 'identity', type: 'auto', threshold: 'h1, title, meta description, landmark element', pass: 'all semantic signals present', fail: '3+ missing signals', warn: '1-2 missing', ceiling: null, contractTitle: 'Semantic HTML: h1, title, description, landmark' },
+  { id: 'v34', item: 'AI-Disclosure Readiness (EU AI Act Art 50, effective 2026-08-02)', category: 'identity', type: 'auto', threshold: 'disclosure at first AI interaction where an AI chat surface is present (EU AI Act Art. 50(1) is a duty on the provider of the AI system)', pass: 'no AI surface, or a disclosure present', fail: 'a positively identified AI chat surface (a chatbot container, an AI input, a chatbot, AI-widget or Dialogflow script) with no disclosure', warn: 'a possible AI surface to review (a live-chat vendor, a generic chat container or assistant script, page text about AI) with no disclosure', ceiling: null, contractTitle: 'AI surfaces carry a disclosure' },
 
   // ── Security (weight 5) ──
-  { id: 'v36', item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers', category: 'security', type: 'auto', threshold: 'no confusable Unicode in CSS identifiers', pass: 'no confusables detected', fail: 'confusable characters found', warn: 'n/a', ceiling: null },
+  { id: 'v36', item: 'Unicode Security: no UTS #39 confusable characters in token names or CSS identifiers', category: 'security', type: 'auto', threshold: 'no confusable Unicode in CSS identifiers', pass: 'no confusables detected', fail: 'confusable characters found', warn: 'n/a', ceiling: null, contractTitle: 'No confusable Unicode in CSS identifiers' },
 
   // ── Copywriting (weight 8) ──
-  { id: 'v38', item: 'Button text is a verb phrase or recognized command (not a bare noun)', category: 'copywriting', type: 'auto', threshold: 'buttons start with a verb or recognized command', pass: 'all buttons start with verb/command', fail: 'n/a (WARN only)', warn: 'bare noun button text', ceiling: null },
-  { id: 'v39', item: 'No trailing period on button text, labels, or tab text', category: 'copywriting', type: 'auto', threshold: 'no trailing "." on buttons, labels, tabs', pass: 'no trailing periods', fail: 'n/a (WARN only)', warn: 'trailing period found', ceiling: null },
-  { id: 'v40', item: 'Link text is descriptive (not bare "click here", "learn more", "here")', category: 'copywriting', type: 'auto', threshold: 'descriptive link text', pass: 'all links descriptive', fail: 'n/a (WARN only)', warn: 'generic link text found', ceiling: null },
+  { id: 'v38', item: 'Button text is a verb phrase or recognized command (not a bare noun)', category: 'copywriting', type: 'auto', threshold: 'buttons start with a verb or recognized command', pass: 'all buttons start with verb/command', fail: 'n/a (WARN only)', warn: 'bare noun button text', ceiling: null, contractTitle: 'Button text is a verb phrase' },
+  { id: 'v39', item: 'No trailing period on button text, labels, or tab text', category: 'copywriting', type: 'auto', threshold: 'no trailing "." on buttons, labels, tabs', pass: 'no trailing periods', fail: 'n/a (WARN only)', warn: 'trailing period found', ceiling: null, contractTitle: 'No trailing period on buttons and labels' },
+  { id: 'v40', item: 'Link text is descriptive (not bare "click here", "learn more", "here")', category: 'copywriting', type: 'auto', threshold: 'descriptive link text', pass: 'all links descriptive', fail: 'n/a (WARN only)', warn: 'generic link text found', ceiling: null, contractTitle: 'Link text says where it goes' },
   { id: 'v41', item: 'No ALL CAPS UI text except eyebrow labels', category: 'copywriting', type: 'auto', threshold: 'no ALL CAPS outside eyebrow labels', pass: 'no ALL CAPS outside eyebrows', fail: 'n/a (WARN only)', warn: 'ALL CAPS in UI text', ceiling: null },
 
   // ── Spec (weight 4) ──
-  { id: 'v37', item: 'DESIGN.md spec-layer validation (Google @google/design.md lint)', category: 'spec', type: 'auto', threshold: 'DESIGN.md present and valid per @google/design.md linter', pass: 'DESIGN.md present and valid', fail: 'DESIGN.md missing or invalid', warn: 'DESIGN.md present but lint warnings', ceiling: null },
+  { id: 'v37', item: 'DESIGN.md spec-layer validation (DESIGN.md format lint)', category: 'spec', type: 'auto', threshold: 'DESIGN.md present and valid per @google/design.md linter', pass: 'DESIGN.md present and valid', fail: 'DESIGN.md missing or invalid', warn: 'DESIGN.md present but lint warnings', ceiling: null },
 ];
 
 // ── Compute per-check weights ───────────────────────────────────────────────
@@ -143,7 +151,7 @@ export const ENGINE_CHECK_COUNT = CHECKS.length;
 /**
  * Checks the engine actually scores — the `auto` ones, excluding `manual`.
  *
- * The distinction matters in copy. "44 checks" describes the registry; a score
+ * The distinction matters in copy. "45 checks" describes the registry; a score
  * of 93/A is computed from fewer, because MANUAL checks are excluded from both
  * numerator and denominator (Lighthouse precedent: manual/N/A audits are not
  * counted against a site). Copy that quotes the total while describing the
@@ -187,11 +195,11 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *   1.2.0  2026-10-09  two checks found on this site: v44 (status colors used
  *                      as text meet contrast in every declared theme) and v45
  *                      (pausing motion keeps content visible); legacy scores
- *                      gain both (owner decision D10). The S2 and S8 anti-slop
+ *                      gain both. The S2 and S8 anti-slop
  *                      rules stop firing on components and prose, and the npm
  *                      engine's accessibility floor matches this one. The
  *                      CHANGELOG entry lists the leaderboard score movement.
- *   1.3.0  2026-10-11  no A while any check FAILs (owner decision): any FAIL
+ *   1.3.0  2026-10-11  no A while any check FAILs: any FAIL
  *                      caps the score at 89.9, after the originality lift,
  *                      and v44 caps at 65 as v06 does. v34 FAILs only a
  *                      positively identified AI chat surface and cites SB
@@ -200,5 +208,27 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      var() aliases, and a palette that role tokens alias
  *                      is not counted as hue names. The CHANGELOG entry
  *                      lists the leaderboard score movement.
+ *   1.3.1  2026-10-12  accuracy fixes, no new check. v26 skips any face named
+ *                      with the word "fallback" (a metric-matched stand-in);
+ *                      v27 reads font-size: var() in field rules through the
+ *                      :root tokens; v38 strips lower-case keycap hints and
+ *                      accepts get, set, try and a short list of CTA verbs;
+ *                      v43 counts --destructive as the error role. The npm
+ *                      engine stops after 3 redirects. The CHANGELOG entry
+ *                      lists what moves.
+ *   1.4.0  2026-10-13  v46, type sizes come from the scale (WARN only).
+ *   1.4.1  2026-10-13  v27 counts a font size only in a rule whose own
+ *                      selector styles a field ("select" in user-select no
+ *                      longer carries into the next rule); v37 is named
+ *                      "DESIGN.md format lint". No check added, no weight or
+ *                      ceiling moved. The CHANGELOG entry lists what moves.
+ *   1.5.0  2026-10-14  own-contract mode: POST /api/score with a `contract`
+ *                      field scores a page against the caller's own
+ *                      DESIGN.md or DTCG file, as two numbers never blended
+ *                      (fidelity f01 to f14, and an 18-check baseline that
+ *                      reads no contract). Published formula at
+ *                      /api/score/checks/own-contract. Requests without
+ *                      `contract` are unchanged: no legacy verdict, detail
+ *                      or score moves.
  */
-export const ENGINE_VERSION = '1.3.0';
+export const ENGINE_VERSION = '1.5.0';

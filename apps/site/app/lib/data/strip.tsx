@@ -14,26 +14,27 @@ export type StripSite = {
   name: string;
   score: number;
   grade: string;
-  rank: number;
+  /** null: not ranked, because the latest run could not re-score the site. */
+  rank: number | null;
   self?: boolean;
   /** Held over: the engine could not read the site on the last run. */
   held?: boolean;
+  /** For a held-over site: "last scored <date> · could not re-score". */
+  heldLabel?: string | null;
 };
 
+// Each band, its dots and the readout's chip are drawn in the grade palette
+// never in a pass/warn/fail band tone.
 const BANDS = [
-  { grade: 'F', from: 0, to: 60, tone: 'fail' },
-  { grade: 'D', from: 60, to: 70, tone: 'warn' },
-  { grade: 'C', from: 70, to: 80, tone: 'warn' },
-  { grade: 'B', from: 80, to: 90, tone: 'pass' },
-  { grade: 'A', from: 90, to: 100, tone: 'pass' },
+  { grade: 'F', from: 0, to: 60 },
+  { grade: 'D', from: 60, to: 70 },
+  { grade: 'C', from: 70, to: 80 },
+  { grade: 'B', from: 80, to: 90 },
+  { grade: 'A', from: 90, to: 100 },
 ] as const;
 
 /** Two dots closer than this (in score points) take separate rows. */
 const GAP = 1.7;
-
-function toneOf(grade: string) {
-  return grade === 'A' || grade === 'B' ? 'pass' : grade === 'C' || grade === 'D' ? 'warn' : 'fail';
-}
 
 export function CohortStrip({
   sites,
@@ -59,7 +60,7 @@ export function CohortStrip({
   const dots = useMemo(() => {
     const placed: { score: number; row: number }[] = [];
     return [...sites]
-      .sort((a, b) => a.score - b.score || a.rank - b.rank)
+      .sort((a, b) => a.score - b.score || (a.rank ?? Infinity) - (b.rank ?? Infinity))
       .map((s) => {
         let row = 0;
         while (placed.some((p) => p.row === row && Math.abs(p.score - s.score) < GAP)) row++;
@@ -107,13 +108,18 @@ export function CohortStrip({
           <>
             <b>{d.name}</b>
             <span className="dx-readout-num">{d.score.toFixed(1)}</span>
-            <span className="dx-readout-grade" data-tone={toneOf(d.grade)}>
+            <span className="dx-readout-grade" data-grade={d.grade.toLowerCase()}>
               {d.grade}
             </span>
             <span className="dx-readout-meta">
-              rank <span className="dx-num">{d.rank}</span>
+              {d.rank !== null ? (
+                <>
+                  rank <span className="dx-num">{d.rank}</span>
+                </>
+              ) : (
+                (d.heldLabel ?? 'not ranked')
+              )}
               {d.self ? ', self-scored' : ''}
-              {d.held ? ', held over' : ''}
             </span>
           </>
         ) : (
@@ -134,7 +140,7 @@ export function CohortStrip({
           <span
             key={b.grade}
             className="dx-zone"
-            data-tone={b.tone}
+            data-grade={b.grade.toLowerCase()}
             style={{ '--a': at(Math.max(lo, b.from)), '--b': at(b.to) } as CSSProperties}
           >
             <b>{b.grade}</b>
@@ -147,7 +153,7 @@ export function CohortStrip({
           <i
             key={dot.slug}
             className="dx-dot"
-            data-tone={toneOf(dot.grade)}
+            data-grade={dot.grade.toLowerCase()}
             data-self={dot.self || undefined}
             data-held={dot.held || undefined}
             data-on={shown === i || undefined}

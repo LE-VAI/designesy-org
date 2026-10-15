@@ -146,7 +146,7 @@ export default function WhatIsDesignVerificationPage() {
           <h2 className="doctrine-heading">What it is not</h2>
           <div className="doctrine-cols">
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 Not design linting
               </h3>
               <CheckGrid items={checkItemsFromStrings([
@@ -156,7 +156,7 @@ export default function WhatIsDesignVerificationPage() {
               ])} />
             </div>
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 Not visual regression
               </h3>
               <CheckGrid items={checkItemsFromStrings([
@@ -166,7 +166,7 @@ export default function WhatIsDesignVerificationPage() {
               ])} />
             </div>
             <div>
-              <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--ink)', marginBottom: '0.75rem' }}>
                 Not heuristic review
               </h3>
               <CheckGrid items={checkItemsFromStrings([

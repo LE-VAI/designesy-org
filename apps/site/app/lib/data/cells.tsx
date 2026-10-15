@@ -6,22 +6,40 @@
 
 import type { CSSProperties } from 'react';
 import type { CategoryBreakdown } from '../../leaderboard/seed';
-import { CATEGORY_LABELS, scoreTone } from './cohort';
+import { CATEGORY_LABELS, RELATIONSHIP_LABEL, scoreTone, type CohortSite } from './cohort';
 
-/** A site whose latest run could not reach it keeps its previous score: the
-    tag says from when. In a phone-width table it reads "held · 08-31"; the
-    full wording is the one assistive tech hears (data.css, .dx-tag). */
+/** A site the latest run could not re-score keeps its last score, outside the
+    ranking, and the tag says so in these words: "last scored <date> ·
+    could not re-score". In a phone-width table it reads "last scored 08-31";
+    the full wording is the one assistive tech hears (data.css, .dx-tag). */
 export function HeldTag({ date }: { date: string | null | undefined }) {
   const d = date ?? '';
   return (
     <span className="dx-tag" data-kind="held">
       <span className="dx-tag-full">
-        held over from <time dateTime={d || undefined}>{d}</time>
+        last scored <time dateTime={d || undefined}>{d || 'on an earlier run'}</time> · could not re-score
       </span>
       <span className="dx-tag-short" aria-hidden="true">
-        held · {d.slice(5)}
+        last scored {d.slice(5)}
       </span>
     </span>
+  );
+}
+
+/** Every label a listed site carries: the self-score, a site Designesy
+    operates, a competing product, and a score the latest run could not renew.
+    One component, so a table and the leaderboard can never label differently. */
+export function SiteTags({ s }: { s: CohortSite }) {
+  return (
+    <>
+      {s.self && <span className="dx-tag">self-scored</span>}
+      {!s.self && s.relationship && (
+        <span className="dx-tag" data-kind={s.relationship}>
+          {RELATIONSHIP_LABEL[s.relationship]}
+        </span>
+      )}
+      {s.stale && <HeldTag date={s.scoredAt} />}
+    </>
   );
 }
 

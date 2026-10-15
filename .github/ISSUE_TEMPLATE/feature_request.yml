@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest a new check, tool, option or improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. For open-ended questions, [Discussions](https://github.com/LE-VAI/designesy-org/discussions) is a better place.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part would this change?
+      options:
+        - Scoring engine and checks
+        - Design contract
+        - MCP server (remote or PyPI)
+        - npm packages
+        - GitHub Action
+        - www.designesy.org
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What should happen instead? For a new check, say what it measures and what a PASS and a FAIL look like.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Links, examples or screenshots.

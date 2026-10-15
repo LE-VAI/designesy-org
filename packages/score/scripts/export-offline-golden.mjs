@@ -125,6 +125,29 @@ const EDGE = [
   ['v27-rem-and-fractional-px', HTML_WITH_FIELD, 'input { font-size: 0.875rem; } textarea { font-size: 15.5px; }'],
   ['v27-grouped-floor', HTML_WITH_FIELD, 'input,textarea,select{font-size:16px}'],
 
+  // v27 (engine 1.3.1): font-size: var() in a field rule, read through :root.
+  ['v27-var-floor', HTML_WITH_FIELD, ':root { --text-body: 1rem; } input, textarea, select { font-size: var(--text-body); }'],
+  ['v27-var-below', HTML_WITH_FIELD, ':root { --text-sm: 0.875rem; } input { font-size: var(--text-sm); }'],
+  ['v27-var-unresolvable', HTML_WITH_FIELD, 'input { font-size: var(--missing); }'],
+  ['v27-var-own-fallback', HTML_WITH_FIELD, 'input { font-size: var(--missing, 14px); }'],
+  ['v27-var-chain-minified', HTML_WITH_FIELD, ':root{--base:16px;--field:var(--base)}input{font-size:var(--field)}'],
+  ['v27-var-non-field-rules', HTML_WITH_FIELD, ':root { --text-label: 0.8rem; } .field-card-meta { font-size: var(--text-label); } .input-hint { font-size: var(--text-label); } .field label { font-size: var(--text-label); }'],
+  ['v27-var-user-select-bleed', HTML_WITH_FIELD, ':root{--s:0.8rem}.a{user-select:none}.b{font-size:var(--s)}'],
+  ['v27-var-placeholder', HTML_WITH_FIELD, ':root { --s: 0.75rem; } input::placeholder { font-size: var(--s); }'],
+  ['v27-var-is-list', HTML_WITH_FIELD, ':root { --s: 0.75rem; } :is(input, textarea) { font-size: var(--s); }'],
+  ['v27-var-in-media', HTML_WITH_FIELD, ':root { --b: 1rem; } @media (max-width: 600px) { input { font-size: var(--b); } }'],
+  ['v27-var-comment-selector', HTML_WITH_FIELD, ':root { --s: 12px; } /* fields */ .search .input { font-size: var(--s); }'],
+
+  // v27 (engine 1.4.1): a literal candidate counts only in a rule that styles a field.
+  ['v27-user-select-bleed', HTML_WITH_FIELD, '.chip { user-select: none; } .chip-label { font-size: 12px; } input { font-size: 1rem; }'],
+  ['v27-user-select-bleed-minified', HTML_WITH_FIELD, '.a{-webkit-user-select:none;user-select:none}.b{font-size:.75rem;font-size:12px}'],
+  ['v27-select-element-below', HTML_WITH_FIELD, 'select { font-size: 14px; }'],
+  ['v27-carbon-number-input', HTML_WITH_FIELD, '.cds--number input[type=number] { font-size: 0.875rem; }'],
+  ['v27-class-suffix-input-floor', HTML_WITH_FIELD, '.my-input { font-size: 1rem; }'],
+  ['v27-value-bleed', HTML_WITH_FIELD, '.a{--x:var(--selecta)}.kicker{font-size:11px}'],
+  ['v27-floor-value-bleed', HTML_WITH_FIELD, '.a{--fields:input,textarea}.b{font-size:1rem}'],
+  ['v27-bleed-then-real-field', HTML_WITH_FIELD, '.a { user-select: none; } input { color: red; font-size: 13px; }'],
+
   // v14 and v18 (engine 1.1.0, Tier 2): absent, partial, present.
   ['v14-v18-absent', HTML_WITH_FIELD, 'body { font-size: 16px; }'],
   ['v18-partial-text-wrap', HTML_WITH_FIELD, 'h1 { text-wrap: balance; }'],

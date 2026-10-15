@@ -2,12 +2,12 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.LE-VAI/designesy-org",
   "title": "Designesy",
-  "description": "Design quality gate for AI-generated UI: score any URL on 44 deterministic checks, A–F grade.",
+  "description": "Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade.",
   "repository": {
     "url": "https://github.com/LE-VAI/designesy-org",
     "source": "github"
   },
-  "version": "1.13.8",
+  "version": "1.13.9",
   "license": "MIT",
   "websiteUrl": "https://www.designesy.org",
   "icons": [
@@ -37,7 +37,7 @@
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "designesy-mcp",
-      "version": "1.13.8",
+      "version": "1.13.9",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"

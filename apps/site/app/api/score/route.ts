@@ -1,10 +1,12 @@
 import { NextResponse, after } from 'next/server';
-import { recordUsage, scoreClientOf } from '../../lib/usage';
+import { recordUsage, scoreClientOf, scoreContractKey } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { handleOwnContract } from '../../lib/own-contract/api';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -635,10 +637,11 @@ const REMEDIATION: Record<string, string> = {
   v43: 'Express UI states as semantic color roles: --ok/--success (verification pass), --warn/--warning (caution), --error/--danger (failure), --info (notice). The contract ships --ok, --warn, and --error for exactly this. Status colors named by state let components consume meaning (a score badge, a form error, and a toast all read the same token) and stay legible when the palette evolves.',
   v44: 'Give each status hue a text token for words and keep the hue itself for marks. A color that marks a state (a dot, a bar, a tint) needs 3:1, while the word for that state needs 4.5:1 (3:1 at 24px, or 18.66px bold) in every theme the site declares. Mix the hue toward your ink for text, for example --warn-ink: color-mix(in oklab, var(--warn) 70%, var(--ink)), measure it on the page and on each surface it sits on in every theme, and paint status words with it.',
   v45: 'Let every entrance that starts invisible run to its end when motion is paused. Under the pause rule, give one-shot entrances whose first keyframe is opacity 0 a negative delay longer than the animation, for example html[data-motion="paused"] :is(.fade-up, .reveal) { animation-delay: -3600s !important; }, or remove them with animation: none. Loops can stay held. Test by pausing motion and reloading: every page should still show its content.',
+  v46: 'Size text from the type scale. Use a type token (font-size: var(--text-body)) or a size that sits on the scale your tokens declare; keep deliberate fluid type in clamp() with a viewport or container unit, and keep its lower bound at or above the smallest type token. A static size between two steps reads as a one-off and drifts the rhythm the scale exists to hold.',
   v34: 'If the page hosts an AI chatbot or agent, tell people they are talking to an AI no later than their first interaction, in a form assistive technology announces. EU AI Act Article 50(1), which applies from 2026-08-02, places this duty on the provider of the AI system (the organisation that develops it and places it on the market or puts it into service under its own name); it does not apply where the AI nature is obvious from the context, and Article 50(5) asks for the information to be clear and accessible. The check reads any one of: visible "AI assistant" or "Chatbot" text, aria-label="AI assistant" on the chat container, or a data-ai-disclosure attribute on the widget. A live chat answered by people needs no AI disclosure: if the check flagged one for review, confirm who answers. US laws differ in scope: California\'s bot-disclosure law (SB 1001, Bus. & Prof. Code §§17940-17943) covers bots that mislead people about being bots to drive a sale or influence a vote; Colorado SB 24-205 was repealed and re-enacted by SB 26-189 (signed 2026-05-14, obligations from 2027-01-01), which governs automated decision-making in consequential decisions. This is not legal advice.',
   v35: 'Add a forced-colors readiness block: @media (forced-colors: active) { ... } with forced-color-adjust: none on elements that must preserve brand identity (logos, charts, semantic-color indicators). Windows High Contrast Mode and Chrome forced-colors recolor the page: without this media query, critical UI becomes illegible. Also ensure borders/outlines use currentColor or system colors so they adapt. Test with Windows HCM (Settings > Accessibility > Contrast themes).',
   v36: 'Remove UTS #39 confusable characters from CSS identifiers and token names. Confusables are Unicode characters from different scripts (Cyrillic, Greek, fullwidth) that look identical to ASCII letters; Cyrillic а (U+0430), for example, looks like Latin a (U+0061). In token names they enable shadowing attacks (--соlor-bg with Cyrillic с vs --color-bg). Audit all custom property names, class names, and url() paths for non-ASCII characters using a Unicode confusable detector. Provenance: Unicode Technical Standard #39, Unicode 16.0.0. Designesy is the only design verification engine that checks this surface.',
-  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. Google\'s @google/design.md CLI (v0.4.0, Apache-2.0) validates the file format: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 44-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
+  v37: 'Publish a DESIGN.md file at /DESIGN.md in your repo root and serve it publicly. The DESIGN.md format\'s linter (v0.4.0, Apache-2.0) validates the file: 11 lint rules covering broken token refs, missing primary colors, WCAG contrast, orphaned tokens, section order, and more. Designesy integrates Google\'s linter as the spec layer and runs its own 45-check contract verification as the layer above. Install the CLI: npm install -g @google/design.md. Lint locally: npx @google/design.md lint DESIGN.md. Export to W3C DTCG: npx @google/design.md export --format dtcg DESIGN.md. Note: DESIGN.md uses sRGB hex only; for OKLCH/Display P3 color spaces, use the W3C DTCG JSON format directly.',
   v38: 'Rewrite button labels to start with a verb or recognized command. NN/g: "Lead with verbs or verb phrases that clearly outline what will happen after the command is selected." Use "Save changes" not "Changes", "Delete file" not "File". Recognized commands: Save, Cancel, Delete, Edit, Share, Close, Back, Next, etc. This is a WARN (heuristic): review flagged buttons manually.',
   v39: 'Remove trailing periods from button text, labels, and tab text. Microsoft Fluent: "Don\'t end text for buttons, radio buttons, labels, or checkboxes with a period." Periods are for full sentences in tooltips, error messages, and dialog bodies only.',
   v40: 'Replace non-descriptive link text with destination-revealing text. WCAG 2.4.4 Link Purpose: link text should describe the destination. Use "Read the typography guide" not "Click here". Use "View the leaderboard" not "Learn more". NN/g: non-descriptive links force users to read surrounding context to understand the destination.',
@@ -1191,7 +1194,13 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
     // the adjusted @font-face. Those are not additional typeface choices — they
     // are the same family's fallback metrics — so they must not count as
     // palette drift.
-    if (/\sfallback$/.test(stack)) continue;
+    //
+    // Engine 1.3.1: the WORD fallback anywhere in the name, not only as its
+    // last word. A hand-tuned face can carry a suffix after it: designesy.org's
+    // "Fraunces Fallback Tuned" is Times New Roman under size-adjust, drawn only
+    // before Fraunces loads, and `\sfallback$` counted it as a fourth family
+    // (v26 WARN, "4 families: fraunces fallback tuned, fraunces, ...").
+    if (/\bfallback\b/.test(stack)) continue;
     families.add(stack);
   }
   const count = families.size;
@@ -1199,6 +1208,87 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
   if (count <= 3) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'PASS', detail: `${count} family/families: ${list}` };
   if (count <= 5) return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'WARN', detail: `${count} families (recommended ≤3): ${list}` };
   return { id: 'v26', item: 'Font family count ≤3 (body + heading + mono)', category: 'cadence', status: 'FAIL', detail: `${count} families, palette drift (recommended ≤3): ${list}` };
+}
+
+/**
+ * v27 helper (engine 1.3.1): does this rule's selector style a form field
+ * itself? True when the subject (the last compound) of any selector in the
+ * list is an input, textarea or select element, or carries the exact class
+ * .input or .field, and is not a pseudo-element (::placeholder does not set
+ * the size iOS Safari reads). ".field-card-meta", ".input-hint", "::selection",
+ * ".field label" and "user-select" are not fields.
+ */
+function isFieldSelector(selector: string): boolean {
+  const clean = selector.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  return splitCssTopLevel(clean, ',').some((part) => {
+    const compounds = part.trim().split(/\s*[>+~]\s*|\s+/);
+    const subject = compounds[compounds.length - 1] || '';
+    if (subject.indexOf('::') >= 0) return false;
+    return /(?:^|[^\w.#:-])(?:input|textarea|select)(?![\w-])/i.test(subject)
+      || /\.(?:input|field)(?![\w-])/i.test(subject);
+  });
+}
+
+/**
+ * v27 helper (engine 1.4.1): the selector of the rule whose body holds the
+ * declaration at `offset`, read backwards from that body's opening brace to
+ * the previous closing brace, opening brace or semicolon. Null when the offset
+ * is not inside a rule body (a stray declaration, or a brace closed in
+ * between). Linear: a few lastIndexOf scans per call, no whole-sheet regex.
+ */
+function ruleSelectorAt(css: string, offset: number): string | null {
+  const open = css.lastIndexOf('{', offset);
+  if (open < 0 || css.lastIndexOf('}', offset) > open) return null;
+  const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
+  return css.slice(start, open);
+}
+
+/**
+ * v27 helper (engine 1.4.1): does the font-size declaration at `offset` sit in
+ * a rule whose own selector names a field keyword (input, textarea, select,
+ * .input, .field), the same words the literal scan looks for? v27's literal
+ * regexes find a keyword and then the next rule body, and their `[^{]*` runs
+ * across a closing brace. So the word "select" in `.chip { user-select: none }`
+ * carried into `.chip-label { font-size: 12px }` and FAILed a page whose
+ * fields were all 16px. The regexes still find the candidates; this reads the
+ * selector of the rule each matched declaration actually sits in, and drops a
+ * candidate whose own selector carries no keyword. Class names stay matched
+ * as before (`.search-input`, `.form-select`): many sites style their fields
+ * through such classes, and measured on the leaderboard cohort the stricter
+ * isFieldSelector test dropped real fields (a 14px textarea, a 16px search
+ * input's floor).
+ */
+function inFieldRule(css: string, offset: number): boolean {
+  const selector = ruleSelectorAt(css, offset);
+  return selector !== null && /input|textarea|select|\.field/i.test(selector.replace(/\/\*[\s\S]*?\*\//g, ' '));
+}
+
+/**
+ * v27 helper (engine 1.3.1): in each rule whose selector styles a field
+ * (isFieldSelector), every `font-size: var(...)` declaration is rewritten to
+ * its value from the :root token table, through substituteCssVars (var()
+ * chains, and a var()'s own fallback where no token declares the name). A
+ * value that does not resolve is left exactly as written, and so is every rule
+ * that does not style a field: v27's literal scan matches its keywords
+ * anywhere before a brace, so resolving var() in every rule would have read
+ * designesy.org's `.field-card-meta { font-size: var(--text-label) }` (12.8px,
+ * a card caption) as an input below 16px. Only values that start with var(
+ * are touched; calc(), clamp() and min()/max() stay as written, as before.
+ *
+ * The scan is anchored on each `font-size: var(` and reads its rule's selector
+ * backwards from the opening brace, so its cost is linear in the sheet. A
+ * whole-sheet rule regex (`([^{}]*)\{([^{}]*)\}`) is quadratic on a long
+ * @media prelude: measured at +4.5 s on five 43 KB preludes.
+ */
+function resolveFontSizeVars(css: string, tokens: Record<string, string>): string {
+  if (css.indexOf('var(') < 0) return css;
+  return css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, (decl: string, lead: string, value: string, offset: number) => {
+    // Not inside a rule body (a stray declaration, or a brace closed between).
+    const selector = ruleSelectorAt(css, offset);
+    if (selector === null || !isFieldSelector(selector)) return decl;
+    const sub = substituteCssVars(value, [tokens]);
+    return sub === null ? decl : lead + sub.trim();
+  });
 }
 
 /**
@@ -1227,12 +1317,22 @@ function hasZoomableField(html: string): boolean {
 // unchanged: a sub-16px input rule still FAILs and a declared floor still PASSes,
 // because both describe the stylesheet that fields rendered later by script
 // would also inherit.
-function checkInputFontFloor(css: string, html: string): CheckResult {
+//
+// Since engine 1.3.1 a font-size written as var() is read through the :root
+// token table first (resolveFontSizeVars), so `input { font-size:
+// var(--text-body) }` with `--text-body: 1rem` is the 16px floor it renders as.
+// Both regexes below read literals only; before 1.3.1 that rule read WARN ("no
+// explicit input font-size ≥16px detected") on designesy.org. A var() the table
+// cannot resolve is left as written, so it reads as it did before.
+function checkInputFontFloor(css: string, html: string, tokens: Record<string, string> = {}): CheckResult {
+  const sheet = resolveFontSizeVars(css, tokens);
   // Find input/textarea/select rules with font-size < 16px or < 1rem.
   const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
   const below: string[] = [];
   let m;
-  while ((m = inputRe.exec(css)) !== null) {
+  while ((m = inputRe.exec(sheet)) !== null) {
+    // Engine 1.4.1: only a declaration whose own rule styles a field counts.
+    if (!inFieldRule(sheet, m.index + m[0].lastIndexOf('font-size'))) continue;
     const val = parseFloat(m[1]);
     const unit = m[2].toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
@@ -1242,8 +1342,13 @@ function checkInputFontFloor(css: string, html: string): CheckResult {
     // Also check: is there a global input font-size ≥16px? (e.g. `input { font-size: 1rem }`)
     // The strict form `input\s*\{` matches standalone rules; the grouped form
     // `input,...,{` matches selectors merged by CSS minifiers (e.g. `input,textarea,select{font-size:1rem}`).
-    const hasGlobalFloor = /input\s*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css)
-      || /input\s*[,][^{]*\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/i.test(css);
+    // Engine 1.4.1: the floor rule must itself style a field, as above.
+    const floorRe = /input\s*(?:,[^{]*)?\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/gi;
+    let hasGlobalFloor = false;
+    let f;
+    while (!hasGlobalFloor && (f = floorRe.exec(sheet)) !== null) {
+      hasGlobalFloor = inFieldRule(sheet, f.index + f[0].lastIndexOf('font-size'));
+    }
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
     if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
     return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'WARN', detail: 'no explicit input font-size ≥16px detected: iOS Safari may auto-zoom on focus' };
@@ -1502,7 +1607,8 @@ function checkSemanticStatusRoles(tokens: Record<string, string>): CheckResult {
     const segments = name.toLowerCase().split(/[-_]/);
     if (segments.some((s) => ['ok', 'success', 'pass', 'positive'].includes(s))) families.ok = true;
     if (segments.some((s) => ['warn', 'warning', 'caution'].includes(s))) families.warn = true;
-    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative'].includes(s))) families.error = true;
+    // 'destructive' is shadcn/ui's error role (--destructive); engine 1.3.1.
+    if (segments.some((s) => ['error', 'danger', 'fail', 'critical', 'negative', 'destructive'].includes(s))) families.error = true;
     if (segments.some((s) => ['info', 'notice', 'informational'].includes(s))) families.info = true;
   }
   const found = Object.entries(families).filter(([, v]) => v).map(([k]) => k);
@@ -2768,6 +2874,135 @@ function isDocumentScope(compound: string): boolean {
     && simple.some((s) => V45_TOGGLE_ATTR.test(s) || V45_TOGGLE_CLASS.test(s));
 }
 
+// v46 — Type sizes come from the scale (engine 1.4.0).
+//
+// v16 asks that sizes be written in rem; it cannot tell a rem that sits on the
+// type scale from one that sits between steps, so a page can pass v16 while its
+// sizes drift off the scale its own tokens declare. v46 reads the scale from the
+// page itself: the :root type-size tokens (a name such as --text-*, --font-size-*,
+// --fs-* or --type-*, whose value resolves to a static rem or px length; colour
+// tokens named --text-muted never resolve to a length, so they never count). The
+// steps are every token value plus the token ratio (the median of consecutive
+// token ratios) extended four steps below and ten above the token nearest 16px.
+// The floor is the smallest type token.
+//
+// Fluid type is a deliberate design move, so a clamp(), min() or max() that
+// moves with a viewport or container unit is accepted as written; only its lower
+// bound is held to the floor. Relative sizes (em, %, inherit, keywords) follow
+// their parent, not the global scale, and are not judged. A static rem or px
+// size is judged: off the scale when it sits more than 2.5% from every step,
+// below the floor when it is smaller than the smallest type token.
+//
+// WARN only: an off-scale size is a hygiene finding, not a broken page.
+const V46_ITEM = 'Type sizes come from the scale';
+const V46_TOLERANCE = 0.025;
+const V46_FLUID = /(?:^|[^a-z-])(?:[sld]?v[wh]|v[ib]|vmin|vmax|cq[iwhb]|cqmin|cqmax)\b/i;
+
+function v46StaticPx(value: string): number | null {
+  const m = value.trim().match(/^(\d*\.?\d+)(rem|px)$/i);
+  if (!m) return null;
+  return parseFloat(m[1]) * (m[2].toLowerCase() === 'rem' ? 16 : 1);
+}
+
+function v46TypeScale(tokens: Record<string, string>): { steps: number[]; floor: number; ratio: number; count: number } | null {
+  const values: number[] = [];
+  for (const [name, raw] of Object.entries(tokens)) {
+    if (!/^--(?:text|font-size|fs|type)-[\w-]+$/i.test(name)) continue;
+    const px = v46StaticPx(resolveVar(raw, tokens));
+    if (px !== null && px > 0) values.push(px);
+  }
+  const unique = [...new Set(values.map((v) => Math.round(v * 1000) / 1000))].sort((a, b) => a - b);
+  if (unique.length < 3) return null;
+  const ratios: number[] = [];
+  for (let i = 1; i < unique.length; i++) {
+    const r = unique[i] / unique[i - 1];
+    if (r >= 1.05 && r <= 1.7) ratios.push(r);
+  }
+  ratios.sort((a, b) => a - b);
+  const ratio = ratios.length ? ratios[Math.floor(ratios.length / 2)] : 1.25;
+  const base = unique.reduce((best, v) => (Math.abs(v - 16) < Math.abs(best - 16) ? v : best), unique[0]);
+  const steps = new Set<number>(unique);
+  for (let n = -4; n <= 10; n++) steps.add(Math.round(base * Math.pow(ratio, n) * 1000) / 1000);
+  return { steps: [...steps].sort((a, b) => a - b), floor: unique[0], ratio, count: unique.length };
+}
+
+/** Lower bound in px of a fluid size: clamp()'s first argument, or the largest static argument of max(). */
+function v46FluidFloor(value: string): number | null {
+  const fn = value.trim().match(/^(clamp|max)\((.*)\)$/i);
+  if (!fn) return null;
+  const args = splitCssTopLevel(fn[2], ',').map((a) => v46StaticPx(a));
+  if (fn[1].toLowerCase() === 'clamp') return args.length === 3 ? args[0] : null;
+  const statics = args.filter((a): a is number => a !== null);
+  return statics.length ? Math.max(...statics) : null;
+}
+
+function v46Selector(css: string, at: number): string {
+  const open = css.lastIndexOf('{', at);
+  if (open < 0) return '';
+  const start = Math.max(css.lastIndexOf('}', open), css.lastIndexOf(';', open), css.lastIndexOf('{', open - 1)) + 1;   // stop at an enclosing @media brace too
+  return css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+}
+
+function checkTypeScale(css: string, tokens: Record<string, string>): CheckResult {
+  const scale = v46TypeScale(tokens);
+  if (!scale) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'SKIP', detail: 'fewer than 3 type-size tokens in :root: no scale to measure against' };
+  }
+  const { steps, floor, ratio } = scale;
+  const nearest = (px: number) => steps.reduce((best, s) => (Math.abs(s - px) < Math.abs(best - px) ? s : best), steps[0]);
+  const onScale = (px: number) => steps.some((s) => Math.abs(px - s) / s <= V46_TOLERANCE);
+  const below = (px: number) => px < floor * (1 - V46_TOLERANCE);
+  type Finding = { selector: string; value: string; px: number; issue: string; nearest: number };
+  const findings: Finding[] = [];
+  const seen = new Set<string>();                                  // one finding per rule: a bundle repeats rules across @media copies
+  const add = (f: Finding) => {
+    const key = `${f.selector}|${f.value}|${f.issue}`;
+    if (!seen.has(key)) { seen.add(key); findings.push(f); }
+  };
+  let judged = 0;
+  let fluid = 0;
+  const re = /font-size\s*:\s*([^;}]+)/gi;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    const written = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
+    const value = resolveVar(written, tokens);
+    if (/^var\(/i.test(value)) continue;                            // an alias the token table cannot resolve
+    if (/^(?:clamp|min|max)\(/i.test(value) && V46_FLUID.test(value)) {
+      fluid++;
+      const low = v46FluidFloor(value);
+      if (low !== null && below(low)) {
+        add({ selector: v46Selector(css, m.index), value: written, px: Math.round(low * 100) / 100, issue: 'fluid minimum below the floor', nearest: floor });
+      }
+      continue;
+    }
+    const px = v46StaticPx(value);
+    if (px === null) continue;                                      // em, %, keywords, calc(): relative or not static
+    judged++;
+    if (below(px)) {
+      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'below the floor', nearest: floor });
+    } else if (!onScale(px)) {
+      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'off the scale', nearest: nearest(px) });
+    }
+  }
+  const scaleText = `${steps.length}-step scale (ratio ${ratio.toFixed(3)}, ${scale.count} type tokens, floor ${floor}px)`;
+  if (judged + fluid === 0) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'SKIP', detail: `no static or fluid font sizes outside the tokens to measure against the ${scaleText}` };
+  }
+  const offScale = findings.filter((f) => f.issue === 'off the scale').length;
+  const underFloor = findings.length - offScale;
+  if (findings.length === 0) {
+    return { id: 'v46', item: V46_ITEM, category: 'cadence', status: 'PASS', detail: `${judged} static and ${fluid} fluid sizes sit on the ${scaleText}` };
+  }
+  return {
+    id: 'v46', item: V46_ITEM, category: 'cadence', status: 'WARN',
+    detail: `${offScale} static size(s) off the ${scaleText} and ${underFloor} below its floor, of ${judged} static and ${fluid} fluid sizes measured`,
+    evidence: {
+      findings: findings.slice(0, 20).map((f) => ({ selector: f.selector, value: f.value, px: f.px, issue: f.issue, nearest: f.nearest })),
+      truncated: Math.max(0, findings.length - 20),
+    },
+  };
+}
+
 function checkPausedEntrances(css: string): CheckResult {
   const ID = 'v45';
   const ITEM = 'Pausing motion keeps content visible';
@@ -3523,6 +3758,25 @@ const RECOGNIZED_BUTTON_COMMANDS = new Set([
   'find', 'replace', 'navigate', 'run', 'score', 'review', 'verify',
   'detect', 'assess', 'enforce', 'dismiss', 'analyze', 'inspect', 'check',
   'evaluate', 'validate', 'test', 'monitor', 'track', 'measure', 'scan',
+  // Engine 1.3.1. get, set and try: the comment in checkButtonTextVerb said
+  // "Get X", "Set X" and "Try X" were allowed, but none of the three was in
+  // this set, so "Get started" and "Try it free" read WARN on any site.
+  'get', 'set', 'try',
+  // Imperative CTA verbs that the suffix heuristic in isVerbLike misses (it
+  // already accepts explore, collapse, toggle, choose and compare by their -e
+  // ending). Each is read as a verb at the start of a button label, and none
+  // names a thing a button would be labelled with on its own:
+  //   flip    "Flip card", "Flip to the flame": a command, no noun label use
+  //   learn   "Learn more": verb only
+  //   sign    "Sign in", "Sign up", "Sign out": the noun reading does not
+  //           lead a button label
+  //   join    "Join the waitlist": verb only
+  //   expand  "Expand all", "Expand section": verb only
+  //   select  "Select all", "Select plan": an imperative in button use
+  //   read    "Read more", "Read the guide": an imperative in button use
+  // Left out on purpose: switch and watch, which are common nouns ("Switch",
+  // a toggle's name; "Watch", a product) as well as verbs.
+  'flip', 'learn', 'sign', 'join', 'expand', 'select', 'read',
 ]);
 
 function isVerbLike(word: string): boolean {
@@ -3623,12 +3877,42 @@ function checkButtonTextVerb(html: string): CheckResult {
   // label, not a shortcut, and must not be eaten.
   const TEXT_SHORTCUT_RE =
     /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
+  // Engine 1.3.1: a "+key" hint written in lower case ("Save ctrl+s",
+  // "Find ctrl+k") is a hint too. The modifier is case-insensitive here but
+  // must stand as its own word (the start of the label or after a space), so
+  // "Halt+1" is untouched, and only the plus form is read: a modifier followed
+  // by a space and a letter ("Shift A") is a label, as it was in 1.3.0.
+  const PLUS_SHORTCUT_RE =
+    /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:\s*\+\s*[a-z0-9]+)+$/i;
+  const stripShortcut = (s: string): string =>
+    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(PLUS_SHORTCUT_RE, '').trim();
+  // Engine 1.3.1: keycaps are read from the markup, not guessed from text.
+  // A <kbd> element is keyboard input (HTML Living Standard, the kbd element),
+  // a hint beside the label rather than the label, so its text is dropped
+  // before the verb check, innermost first so nested keycaps
+  // (<kbd><kbd>Ctrl</kbd>+<kbd>K</kbd></kbd>) go too. designesy.org's flip
+  // button, <kbd>ctrl</kbd> <span aria-hidden="true">+</span> <kbd>i</kbd>
+  // after a hidden lead, read as "Flip to the flame: ctrl  i" in 1.3.0. A "+"
+  // left between dropped keycaps is dropped with them. A button whose only
+  // text is keycaps is then empty and is judged as an icon-only button: by its
+  // aria-label when it has one, and not at all when it does not.
+  const labelText = (inner: string): string => {
+    const visible = stripAriaHidden(inner);
+    let out = visible;
+    for (let i = 0; i < 4; i++) {
+      const next = out.replace(/<kbd\b[^>]*>(?:(?!<kbd\b)[\s\S])*?<\/kbd>/gi, ' ');
+      if (next === out) break;
+      out = next;
+    }
+    const text = out.replace(/<[^>]*>/g, '').trim();
+    return out === visible ? text : text.replace(/(?:\s*\+)+$/, '').trim();
+  };
   while ((m = buttonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     // Icon-only button with an accessible name: use the aria-label verb.
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
@@ -3646,9 +3930,9 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (text) buttonTexts.push({ text, tag: m[0] });
   }
   while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = stripAriaHidden(m[1]).replace(/<[^>]*>/g, '').trim();
+    let text = labelText(m[1]);
     text = text.replace(ICON_PREFIX_RE, '').trim();
-    text = text.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').trim();
+    text = stripShortcut(text);
     if (!text) {
       const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
       if (aria) text = aria[1].trim();
@@ -3703,7 +3987,9 @@ function checkButtonTextVerb(html: string): CheckResult {
     if (RECOGNIZED_BUTTON_COMMANDS.has(firstWord)) continue;
     // Allow if first word is verb-like
     if (isVerbLike(firstWord)) continue;
-    // Allow "Get X", "Set X", "Try X" patterns (Get/Set/Try are in the set)
+    // "Get X", "Set X", "Try X" are allowed above: get, set and try are in
+    // RECOGNIZED_BUTTON_COMMANDS (since engine 1.3.1; this comment claimed it
+    // before they were).
     // If we get here, the first word is likely a noun → potential violation
     violations.push(`"${text}"`);
   }
@@ -3885,7 +4171,7 @@ function checkNoAllCaps(html: string): CheckResult {
 // This check bridges both: if the site publishes DESIGN.md, designesy lints
 // it with Google's engine AND scores the design system with its own.
 async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
-  const ITEM = 'DESIGN.md spec-layer validation (Google @google/design.md lint)';
+  const ITEM = 'DESIGN.md spec-layer validation (DESIGN.md format lint)';
   const CATEGORY = 'spec';
 
   // Attempt to fetch /DESIGN.md from the target origin. No public convention
@@ -4173,7 +4459,7 @@ export function scoreArithmetic(checks: CheckResult[], slopTotal: number, origin
   // contrast or horizontal overflow cannot be A-grade no matter how good its
   // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
   //
-  // No A while any check FAILs (engine 1.3.0, owner decision 2026-10-11). A
+  // No A while any check FAILs (engine 1.3.0, see CHANGELOG). A
   // FAIL is the engine's own finding that the page breaks a rule, so any FAIL
   // caps the score at 89.9, a B at most. Until 1.3.0 a page could score 100, an
   // A, beside FAIL verdicts, including the engine's own WCAG contrast FAIL
@@ -4199,7 +4485,7 @@ export function scoreArithmetic(checks: CheckResult[], slopTotal: number, origin
     if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
     // v44 Status text contrast — the words that report a state fail WCAG
     // 1.4.3 (or 1.4.11 for a graphic) on a surface the stylesheet attests.
-    // Same cap as v06 (engine 1.3.0, owner decision 2026-10-11): both are
+    // Same cap as v06 (engine 1.3.0): both are
     // measured WCAG contrast failures on text.
     if (c.id === 'v44') { cap = 65; reason = 'Status text below WCAG contrast (4.5:1, or 3:1 for large text and graphics): the words that report errors, warnings and success are hard to read.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
@@ -4321,7 +4607,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkTouchTargets(css),
     checkHeadingHierarchy(html),
     checkFontFamilyCount(css, tokens),
-    checkInputFontFloor(css, html),
+    checkInputFontFloor(css, html, rawTokens),
     checkReadingWidth(css),
     checkTokenLayerDepth(tokens),
     checkSemanticColorVocabulary(tokens),
@@ -4335,6 +4621,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     checkNoAllCaps(html),
     checkStatusTextContrast(css),
     checkPausedEntrances(css),
+    checkTypeScale(css, rawTokens),
   ];
 
   // v37 is async (fetches /DESIGN.md from the target origin and runs Google's
@@ -5228,9 +5515,12 @@ function emitReview(url: string, result: ScoreResult): string {
     if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
-    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
-    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
-    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    // A cell escapes its backslashes before its pipes: a detail carries text
+    // read from the scored page, where a backslash before a pipe would
+    // otherwise escape the escape and leave a live cell separator.
+    const before = c.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) {
@@ -5254,8 +5544,8 @@ function emitReview(url: string, result: ScoreResult): string {
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },
       { status: 429 }
@@ -5265,9 +5555,14 @@ export async function POST(request: Request) {
   // F7 usage counters (lib/usage.ts): which surface called, never what it scored.
   after(() => recordUsage(`score:${scoreClientOf(request.headers.get('user-agent'))}`, request));
 
-  let body: { url?: unknown; format?: unknown; scope?: unknown };
+  let body: { url?: unknown; format?: unknown; scope?: unknown; contract?: unknown };
+  // Read as text, then parsed: the same result as request.json(), plus the
+  // body's size, which own-contract mode caps (413 body_too_large).
+  let bodyBytes = 0;
   try {
-    body = await request.json();
+    const text = await request.text();
+    bodyBytes = Buffer.byteLength(text, 'utf8');
+    body = JSON.parse(text);
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -5297,6 +5592,64 @@ export async function POST(request: Request) {
       { ok: false, error: `Unknown format "${format}". Supported: designesy (default), review, google, canonical.` },
       { status: 400 }
     );
+  }
+
+  // Own-contract mode: a `contract` field scores the page against the caller's
+  // own DESIGN.md or DTCG file (app/lib/own-contract/api.ts). It never goes
+  // through the cached scoreUrl and stores nothing; requests without the field
+  // take the path below, unchanged. The route hands over only what it holds:
+  // its page fetch, the baseline layer's checks (called exactly as
+  // scoreUrlUncached calls them), v36's confusable helper and the URL guard.
+  if (body.contract !== undefined) {
+    if (format !== 'designesy') {
+      return NextResponse.json(
+        { ok: false, error: 'Scoring against your own contract answers in format designesy only.', code: 'format_unsupported' },
+        { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+    try {
+      const r = await handleOwnContract(
+        { body: body as Record<string, unknown>, bodyBytes, url, caller },
+        {
+          fetchPage: fetchPageResilient,
+          legacyChecks: ({ html, css }) => {
+            const rawTokens = extractRootTokens(css);
+            const tokens = inferTokensFromCss(css, rawTokens);
+            return sanitizeCheckDetails([
+              { id: 'v02', item: 'Routes render without horizontal overflow at 375px, 720px, 860px, 1080px+', category: 'responsive', status: 'MANUAL', detail: 'requires browser viewport trace: run the full audit to resolve' },
+              checkFocusVisible(css),
+              checkReducedMotion(css),
+              checkSemanticHtmlFoundation(html),
+              checkPoiseKeyboardPath(css, html),
+              checkTransitionAll(css),
+              checkWillChange(css),
+              { id: 'v21', item: 'Core Web Vitals plausible: LCP < 2.5s, INP < 200ms, CLS < 0.1', category: 'performance', status: 'MANUAL', detail: 'requires CDP trace: run the full audit to resolve' },
+              checkHeadingHierarchy(html),
+              checkInputFontFloor(css, html, rawTokens),
+              checkAiDisclosure(html),
+              checkForcedColors(css),
+              checkSecurityConfusables(css, tokens),
+              checkButtonTextVerb(html),
+              checkNoTrailingPeriod(html),
+              checkLinkTextDescriptive(html),
+              checkStatusTextContrast(css),
+              checkPausedEntrances(css),
+            ]);
+          },
+          safeFetch,
+          findConfusables,
+        },
+      );
+      // F7: one count per scored run under the mode's own key (never the URL or the contract).
+      if (r.status === 200) after(() => recordUsage(scoreContractKey(scoreClientOf(request.headers.get('user-agent'))), request));
+      return NextResponse.json(r.body, { status: r.status, headers: r.headers });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      return NextResponse.json(
+        { ok: false, error: `Could not reach ${url}: ${sanitizeErrorText(msg)}` },
+        { status: 502, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
   }
 
   try {
