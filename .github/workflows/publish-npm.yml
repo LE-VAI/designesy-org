@@ -3,10 +3,15 @@ name: Publish to npm
 # Auto-publishes @designesy/* packages to npmjs.org on version tags, with
 # cryptographically signed build provenance (npm --provenance).
 #
-# Provenance is signed with GitHub OIDC + Sigstore (keyless). Publishing
-# itself still authenticates with the NPM_TOKEN secret until npm trusted
-# publishing is configured for each package on npmjs.com; then the token is
-# removed and npm (11.5.1 or later, installed below) uses OIDC instead.
+# No stored token. Publishing authenticates through npm trusted publishing:
+# npm (11.5.1 or later, installed below) trades this run's GitHub OIDC token
+# for a short-lived publish token, and the same identity signs the provenance
+# through Sigstore. Each package must name this workflow as its trusted
+# publisher on npmjs.com (Settings > Trusted Publisher > GitHub Actions:
+# LE-VAI / designesy-org / publish-npm.yml, "npm publish" allowed). A new
+# trusted publisher expires unless it publishes within 2 days, so set it up
+# shortly before a package's first tokenless release. A package without one
+# fails at the publish step (ENEEDAUTH or 404) and nothing is published.
 # Consumers can verify the package was built from this exact source:
 #   gh attestation verify @designesy/tokens@0.2.1 -o LE-VAI
 #
@@ -19,10 +24,10 @@ name: Publish to npm
 #
 # Prerequisites:
 #   - npm provenance requires a PUBLIC repo (this one is public ✓)
-#   - Node >= 18, npm >= 9.5 (we use Node 22 ✓)
+#   - Node >= 22.14 and npm >= 11.5.1 for trusted publishing (Node 22, npm 11.20.0 ✓)
 #   - The package must be public in package.json (not private)
-#   - NPM_TOKEN secret (granular access token) until trusted publishing is set
-#   - id-token: write enables the --provenance flag (OIDC → Sigstore keyless)
+#   - package.json repository.url must name this repository exactly
+#   - id-token: write lets the run request its OIDC token (publish and provenance)
 
 on:
   push:
@@ -53,14 +58,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # No registry-url: with it, setup-node writes an .npmrc auth line that
+      # expands to an empty token, and npm then skips the OIDC exchange and
+      # fails (npm/documentation#1960). npm's default registry is the public one.
       - name: Setup Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
-      # npm 11.5.1+ can publish through trusted publishing (OIDC) once each
-      # package names this workflow on npmjs.com. Pinned, not "latest".
+      # npm 11.5.1+ publishes through trusted publishing (OIDC) for each
+      # package that names this workflow on npmjs.com. Pinned, not "latest".
       - name: Install npm 11
         run: npm install -g npm@11.20.0
 
@@ -130,12 +137,12 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd "$PKG_DIR"
+          # Authenticates through trusted publishing (OIDC); no token is set.
           # --provenance signs the package with GitHub OIDC + Sigstore.
           # --access public ensures scoped packages are publicly readable.
           npm publish --provenance --access public
         env:
           PKG_DIR: ${{ steps.pkg.outputs.dir }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Confirm publication
         if: startsWith(github.ref, 'refs/tags/')
