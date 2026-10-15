@@ -49,7 +49,7 @@ const DIMENSIONS = [
       'Self-contained single index.html, no framework, no CDN, no backend. Follows the Tile and Continuity deployment pattern exactly. Built and verified locally. Pending hosting on GitHub Pages.',
     judgment:
       'Context is ready. The deployment pattern is proven. The only blocker is hosting; no technical barrier remains.',
-    action: 'Host it as a static page with its OG image.',
+    action: 'Host it as a static page with its share image.',
   },
   {
     num: '04',
@@ -73,10 +73,10 @@ const DIMENSIONS = [
     num: '06',
     title: 'Durability',
     observation:
-      'A full brief documents intent, thesis, feel, what it does, the seven-domain engine, the Lab anatomy mapping, and the substitute test. A status log tracks every build item (all built) and what remains (OG image, hosting, lab registration). Nine verification tests passed.',
+      'A full brief documents intent, thesis, feel, what it does, the seven-domain engine, the Lab anatomy mapping, and the substitute test. A status log tracks every build item (all built) and what remains (share image, hosting, lab registration). Nine verification tests passed.',
     judgment:
       'Durable as a built artifact. The documentation is the most complete of any tool in the set: it self-documents to the Lab anatomy.',
-    action: 'Host it with its OG image. The tool is built; the packaging is what remains.',
+    action: 'Host it with its share image. The tool is built; the packaging is what remains.',
   },
   {
     num: '07',
@@ -109,12 +109,8 @@ const HOLDS = [
 
 const TENSIONS = [
   {
-    title: 'Not yet hosted',
-    meta: 'Built and verified locally; not yet public',
-  },
-  {
-    title: 'Lab registration follows hosting',
-    meta: 'The Designesy lab registry lists a lab once it is hosted',
+    title: 'Hosted, not yet a listed lab',
+    meta: 'Live at le-vai.github.io/compile with its share image; the Designesy lab registry does not list it yet',
   },
   {
     title: 'DESIGN.md derivation is v0.2.0',
@@ -125,7 +121,7 @@ const TENSIONS = [
 const CORRECTIONS = [
   {
     title: 'Host as a static page',
-    meta: 'Deploy the single index.html with its OG image',
+    meta: 'Deploy the single index.html with its share image',
   },
   {
     title: 'Update compilation engine to ' + CONTRACT_VERSION,
@@ -159,7 +155,7 @@ const INPUTS: Input[] = [
   {
     title: 'Audience and context',
     meta: 'Builders and agents who need verifiable design contracts from plain language',
-    side: ['Not yet public'],
+    side: ['Live at le-vai.github.io/compile'],
   },
   {
     title: 'Governing rules',
