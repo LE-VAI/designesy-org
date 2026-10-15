@@ -586,7 +586,8 @@
 .vc-grade {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 3.052rem; /* one step above --text-h1 on the 1.25 type scale */
+  /* Fluid: --text-h1 on phones, rising to 3.4rem from about 765px wide. */
+  font-size: clamp(2.441rem, 1.25rem + 4.5vw, 3.4rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
   color: var(--ink);
