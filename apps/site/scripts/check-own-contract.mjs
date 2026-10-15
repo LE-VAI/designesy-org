@@ -1198,6 +1198,16 @@ await check('every fidelity result carries layer, reads, derivedFrom, title and 
     if (c.status === 'SKIP') assert.ok(['not_declared', 'not_located', 'not_applicable'].includes(c.skipReason), c.id);
   }
 });
+await check('f02 counts the colours in the palette from every outside colour, not the 20 it lists', async () => {
+  // 1 colour in the palette and 33 outside: the line lists 20 and says 13 more.
+  const outside = Array.from({ length: 33 }, (_, i) => `#${(0x100000 + i * 4099).toString(16).slice(0, 6)}`);
+  const c = await st('f02', PAL10, shipColors([inPal[0], ...outside]));
+  assert.equal(c.status, 'FAIL');
+  assert.equal(c.evidence.truncated, 13);
+  assert.ok(c.detail.startsWith('1 of 34 shipped colors is in your palette (90% needed to pass). Outside it: '), c.detail);
+  assert.ok(c.detail.endsWith(' and 13 more'), c.detail);
+  assert.equal(run.paletteLine(34, outside.slice(0, 20), 0.9, 33).split('.')[0], '1 of 34 shipped colors is in your palette (90% needed to pass)');
+});
 await check('evidence lists stop at 20 entries with a truncated count', async () => {
   const many = Array.from({ length: 30 }, (_, i) => `#${(0x100000 + i * 4099).toString(16).slice(0, 6)}`);
   const c = await st('f02', PAL10, shipColors(many));
