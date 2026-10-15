@@ -64,6 +64,13 @@ exclude_path = [
   # emits for a made-up site. The first run failed on the made-up
   # https://wrong-schema.com/schema.json, which is the input under test.
   "test/fixtures/tokens/",
+  # The contract page fixtures (2026-10-14) are recorded POST /api/score
+  # answers for /score/contract and the local pages and contracts they were
+  # recorded from. Their sites and contract links are made up on purpose
+  # (studio.example.com and its subdomains, a contract link that must 404):
+  # the engine's answer to an unreachable or missing address is the input
+  # under test. They are test data, not links this repo publishes.
+  "apps/site/scripts/fixtures/contract-page/",
 ]
 
 # Private, loopback and link-local addresses are never public links.

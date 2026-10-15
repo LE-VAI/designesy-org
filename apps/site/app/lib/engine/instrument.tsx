@@ -112,11 +112,18 @@ type Props = {
   /** The side column per phase, in place of the house side for that phase
       (contract mode draws two numbers where an engine draws one). */
   phaseSides?: Partial<Record<Phase, ReactNode>>;
+  /** The side column (and the wide block) come before the face in the
+      source, so a screen reader, the Tab key and a phone meet the result
+      first (contract mode, WIREFRAMES 1.3); the page's sheet places them. */
+  sideFirst?: boolean;
+  /** The section's accessible name, in place of "{name}: {n} checks"
+      (contract mode names a kept previous run). */
+  ariaLabel?: string;
 };
 
 // The status words every result surface uses (score/verdict.ts STATUS_LABEL),
 // lower-cased for the cells' names and the probe line.
-const STATUS_WORD: Record<Status, string> = {
+export const STATUS_WORD: Record<Status, string> = {
   PASS: 'pass',
   WARN: 'needs work',
   FAIL: 'fail',
@@ -600,12 +607,41 @@ export function Instrument(props: Props) {
         ? `${name} stopped without a result.${props.errorText ? ` ${props.errorText}` : ''}`
         : '';
 
+  const facesNode = (
+    <div
+      className="eg-faces"
+      role="group"
+      aria-label={`${name} checks`}
+      onMouseLeave={exit}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) exit();
+      }}
+    >
+      {faceNode}
+      {props.faceBottom}
+    </div>
+  );
+  /* Both states share one grid cell, so the panel's height is the larger
+     of the two and never jumps. Swapping one for the other resized it on
+     every focus: stacked on a phone (/score at 390px) the resting side is
+     531px and a probe ~200px, so tabbing into the cells pulled the page up
+     ~300px and tabbing out pushed it back down 297px, carrying the focused
+     history button off the bottom of the screen (CLS 0.193, WCAG 2.4.11;
+     measured on production 2026-10-03). The resting side is hidden while a
+     probe shows, as it was absent before. */
+  const sideNode = (
+    <div className="eg-side" data-probing={probeNode ? '' : undefined}>
+      <div className="eg-side-rest">{side}</div>
+      {probeNode}
+    </div>
+  );
+
   return (
     <section
       ref={root}
       className="eg-inst"
       data-phase={phase}
-      aria-label={`${name}: ${registry.checks.length} checks`}
+      aria-label={props.ariaLabel ?? `${name}: ${registry.checks.length} checks`}
       style={{ '--n-all': registry.checks.length } as CSSProperties}
     >
       {/* State light: pre-rendered layers under the panel whose opacity
@@ -645,32 +681,20 @@ export function Instrument(props: Props) {
           </span>
         </span>
       </div>
-      <div className="eg-inst-body">
-        <div
-          className="eg-faces"
-          role="group"
-          aria-label={`${name} checks`}
-          onMouseLeave={exit}
-          onBlur={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node)) exit();
-          }}
-        >
-          {faceNode}
-          {props.faceBottom}
-        </div>
-        {/* Both states share one grid cell, so the panel's height is the larger
-            of the two and never jumps. Swapping one for the other resized it on
-            every focus: stacked on a phone (/score at 390px) the resting side is
-            531px and a probe ~200px, so tabbing into the cells pulled the page up
-            ~300px and tabbing out pushed it back down 297px, carrying the focused
-            history button off the bottom of the screen (CLS 0.193, WCAG 2.4.11;
-            measured on production 2026-10-03). The resting side is hidden while a
-            probe shows, as it was absent before. */}
-        <div className="eg-side" data-probing={probeNode ? '' : undefined}>
-          <div className="eg-side-rest">{side}</div>
-          {probeNode}
-        </div>
-        {props.wide}
+      <div className="eg-inst-body" data-side-first={props.sideFirst ? '' : undefined}>
+        {props.sideFirst ? (
+          <>
+            {sideNode}
+            {props.wide}
+            {facesNode}
+          </>
+        ) : (
+          <>
+            {facesNode}
+            {sideNode}
+            {props.wide}
+          </>
+        )}
       </div>
       <div className="eg-legend">
         <ul aria-label="Legend">

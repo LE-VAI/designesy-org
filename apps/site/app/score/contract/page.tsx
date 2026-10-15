@@ -8,11 +8,12 @@ import { pageMeta } from '../../lib/site-meta';
 import { CHECKS, ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../../lib/engine/engine-page';
-import { BASELINE_GROUPS, BASELINE_IDS, baselineTitle } from '../../lib/own-contract/baseline';
-import { FIDELITY_CEILINGS, FIDELITY_DEFS, FIDELITY_WEIGHTS, MIN_SCORED_CHECKS } from '../../lib/own-contract/formula';
+import { BASELINE_GROUPS, BASELINE_IDS, BASELINE_STATIC_MAX, baselineTitle } from '../../lib/own-contract/baseline';
+import { CONTRAST_FAIL_BELOW, CONTRAST_LARGE_PASS, CONTRAST_PASS, FIDELITY_CEILINGS, FIDELITY_DEFS, FIDELITY_WEIGHTS, MIN_SCORED_CHECKS, SHARE_PASS_AT } from '../../lib/own-contract/formula';
 import { MIN_COLORS } from '../../lib/own-contract/limits';
 import type { RegistryCheck } from '../../lib/engine/types';
-import { ContractForm } from './contract-form';
+import { ContractForm, type ResultsSetup } from './contract-form';
+import type { CheckDef } from './contract-findings';
 
 // Reads searchParams (the deep link ?url=&contract=), so it renders per request.
 export const dynamic = 'force-dynamic';
@@ -52,6 +53,30 @@ export default async function ContractPage({ searchParams }: { searchParams?: Pr
   const titles: Record<string, string> = Object.fromEntries([...fidelity, ...baseline].map((c) => [c.id, c.label]));
   const ceilings: Record<string, number> = Object.fromEntries(FIDELITY_CEILINGS.map((c) => [c.check, c.cap]));
 
+  // What the result view cites, from the same constants the engine scores with.
+  const label = (k: string) => (k === 'keyboard' ? 'Keyboard and focus' : k.charAt(0).toUpperCase() + k.slice(1));
+  const groupOf = (id: string) => Object.entries(BASELINE_GROUPS).find(([, g]) => g.checks.includes(id));
+  const defs: Record<string, CheckDef> = Object.fromEntries([
+    ...FIDELITY_DEFS.map((d) => [d.id, { title: d.title, criterion: d.criterion, category: label(d.category), weight: FIDELITY_WEIGHTS[d.category] }] as const),
+    ...BASELINE_IDS.map((id) => {
+      const g = groupOf(id);
+      return [id, { title: baselineTitle(id), criterion: CHECKS.find((c) => c.id === id)?.threshold ?? '', category: g ? label(g[0]) : '', weight: g ? g[1].weight : 0, manual: !!g?.[1].manual }] as const;
+    }),
+  ]);
+  const scoredGroups = Object.entries(BASELINE_GROUPS).filter(([, g]) => !g.manual).sort((a, b) => b[1].weight - a[1].weight);
+  const leftOutIds = CHECKS.map((c) => c.id).filter((id) => !BASELINE_IDS.includes(id));
+  const setup: ResultsSetup = {
+    defs,
+    thresholds: { sharePassAt: SHARE_PASS_AT, contrastPass: CONTRAST_PASS, contrastLargePass: CONTRAST_LARGE_PASS, contrastFailBelow: CONTRAST_FAIL_BELOW },
+    staticMax: BASELINE_STATIC_MAX,
+    calc: {
+      rule: 'Each check scores 1 for a pass, 0.5 for a warning and 0 for a failure. Checks that did not run are left out. Categories carry fixed weights, shared by their scored checks.',
+      fidelity: `${weights.map(([k, w]) => `${k} ${w}`).join(', ')}. A failing contrast pair caps it at ${cap('f09')}; a failing primary action pair caps it at ${cap('f10')}.`,
+      baseline: `${scoredGroups.map(([k, g]) => `${label(k).toLowerCase()} ${g.weight}`).join(', ')}. ${manual === 1 ? 'One check needs' : `${manual === 2 ? 'Two' : manual} checks need`} a browser and ${manual === 1 ? 'is' : 'are'} left out here.`,
+    },
+    leftOut: { count: leftOutIds.length, ids: leftOutIds.join(', ') },
+  };
+
   return (
     <>
       <Topbar scrolled />
@@ -73,6 +98,7 @@ export default async function ContractPage({ searchParams }: { searchParams?: Pr
           titles={titles}
           ceilings={ceilings}
           minScored={MIN_SCORED_CHECKS}
+          setup={setup}
         />
 
         <EngineMethod

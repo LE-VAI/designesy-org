@@ -1,0 +1,12 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "Two-color tokens",
+  "color": {
+    "$type": "color",
+    "ink": { "$value": { "colorSpace": "srgb", "components": [0.0667, 0.0784, 0.0941], "hex": "#111418" } },
+    "surface": { "$value": { "colorSpace": "srgb", "components": [1, 1, 1], "hex": "#ffffff" } }
+  },
+  "font": {
+    "body": { "$type": "typography", "$value": { "fontFamily": "Inter", "fontSize": { "value": 16, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.5, "letterSpacing": { "value": 0, "unit": "px" } } }
+  }
+}
