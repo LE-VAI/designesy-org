@@ -7,7 +7,7 @@
 
 import { detectFormat, readAsLabel } from '../../lib/own-contract/detect';
 import { MAX_CONTRACT_BYTES, MIN_COLORS, MIN_TYPE_STYLES } from '../../lib/own-contract/limits';
-import { fmtScore } from '../verdict';
+import { GRADE_BANDS, fmtScore } from '../verdict';
 
 // ── Static strings ─────────────────────────────────────────────────────────
 
@@ -423,3 +423,347 @@ export function verdictFidelityNull(baseline: LayerResult): string {
 }
 
 export const VERDICT_UNREACHABLE = 'Could not read this site, so neither number has a score. Your contract was read and is valid.';
+
+// ── The result: readouts, flags, first finding, lists, receipt ──────────────
+
+export type Evidence = { path?: string; value: string; where?: string[]; uses?: number };
+export type ResultCheck = {
+  id: string;
+  status: string;
+  detail?: string;
+  layer?: string;
+  category?: string;
+  reads?: string[];
+  declared?: Evidence[];
+  shipped?: Evidence[];
+  skipReason?: string;
+  remediation?: string;
+  evidence?: { findings?: Record<string, unknown>[]; truncated?: number } | null;
+};
+export type CoverageGroup = { declared: number; located: number; shippedCompared: number };
+export type Coverage = {
+  declared: number;
+  located: number;
+  byMap: number;
+  byName: number;
+  byValue: number;
+  groups: Record<string, CoverageGroup>;
+  notes?: string[];
+  hint?: string | null;
+};
+
+/** The thresholds the copy cites, from the published formula (the page passes them in). */
+export type Thresholds = { sharePassAt: number; contrastPass: number; contrastLargePass: number; contrastFailBelow: number };
+
+export const isFidelity = (c: { id: string; layer?: string }) => c.layer === 'fidelity' || /^f\d\d$/.test(c.id);
+
+/** The grade a score falls in, on the engine's bands. */
+export function gradeOf(score: number): string {
+  return [...GRADE_BANDS].reverse().find((b) => score >= b.from)?.grade ?? 'F';
+}
+
+/** A grade's lamp: A and B pass, C and D need work, F fails (the band a grade lights). */
+export function gradeLamp(grade: string): 'PASS' | 'WARN' | 'FAIL' {
+  return grade === 'A' || grade === 'B' ? 'PASS' : grade === 'C' || grade === 'D' ? 'WARN' : 'FAIL';
+}
+
+/** A readout's count line, split so the page sets the first number in ink:
+    "{k}" + " of {n} checks scored", and with no score "; at least {min} are needed". */
+export function countLine(l: { scored: number; total: number }, noScore = false, min = 3): { k: string; rest: string } {
+  return { k: String(l.scored), rest: ` of ${l.total} checks scored${noScore ? `; at least ${min} are needed` : ''}` };
+}
+
+const sentenceEnd = (s: string) => (/[.!?]$/.test(s.trim()) ? s.trim() : `${s.trim()}.`);
+
+/** The cap flag: "Capped at {ceiling}." then the engine's reason, then the score before it. */
+export function capFlag(f: LayerResult): { lead: string; text: string } | null {
+  if (!f.ceilingApplied || f.score === null || typeof f.uncappedScore !== 'number') return null;
+  return {
+    lead: `Capped at ${Math.round(f.score)}.`,
+    text: `${f.ceilingReason ? `${sentenceEnd(f.ceilingReason)} ` : ''}Without the cap: ${fmtScore(f.uncappedScore)}, grade ${gradeOf(f.uncappedScore)}.`,
+  };
+}
+
+/** What each fidelity check reads, as the gaps flag names a group the run skipped. */
+export const SKIPPED_GROUP: Record<string, string> = {
+  f01: 'mapped tokens',
+  f02: 'colors',
+  f03: 'type scale',
+  f04: 'font families',
+  f05: 'line heights',
+  f06: 'font features',
+  f07: 'radius',
+  f08: 'spacing',
+  f09: 'contrast pairs',
+  f10: 'primary action pair',
+  f11: 'motion',
+  f12: 'target size',
+  f13: 'aliases',
+  f14: 'token use',
+};
+
+/** The gaps flag (W6, brand D81): each group the run skipped, in the words of its
+    SKIP label ("motion not declared", "motion does not apply"), then what ran. A
+    clause whose count is 0 is left out. */
+export function gapsFlag(fidelity: ResultCheck[], scored: number): { lead: string; text: string } | null {
+  const notRun = fidelity.filter((c) => c.status === 'SKIP' && (c.skipReason === 'not_declared' || c.skipReason === 'not_applicable'));
+  const thin = fidelity.filter((c) => c.status === 'SKIP' && c.skipReason === 'not_located');
+  if (!notRun.length && !thin.length) return null;
+  let head: string;
+  if (notRun.length) {
+    const groups = listWords(notRun.map((c) => `${SKIPPED_GROUP[c.id] ?? c.id} ${c.skipReason === 'not_applicable' ? 'does not apply' : 'not declared'}`));
+    head = `${groups.charAt(0).toUpperCase()}${groups.slice(1)}, so ${countWords(notRun.length, 'check', 'checks')} did not run${thin.length ? `, and ${thin.length} found too little on this page` : ''}.`;
+  } else {
+    head = `${countWords(thin.length, 'check', 'checks')} found too little on this page.`;
+  }
+  return { lead: 'Measured with gaps.', text: `${head} Fidelity covers the ${scored} that ran.` };
+}
+
+/** The leaderboard note under the pair. */
+export function leaderboardFlag(baselineTotal: number): { lead: string; text: string } {
+  return {
+    lead: "Baseline differs from this page's leaderboard number:",
+    text: `it runs ${baselineTotal} universal checks and leaves out Designesy's own checks, slop and originality.`,
+  };
+}
+
+/** The check the result leads with: the first failing fidelity check, else the first that needs work. */
+export function firstFindingOf(fidelity: ResultCheck[]): ResultCheck | null {
+  return fidelity.find((c) => c.status === 'FAIL') ?? fidelity.find((c) => c.status === 'WARN') ?? null;
+}
+
+/** A contrast ratio as the engine writes it: one decimal, except where rounding
+    would carry it across a band it does not reach (4.48 reads "4.48"). */
+export function fmtRatio(r: number, t: Thresholds): string {
+  const one = Math.round(r * 10) / 10;
+  for (const b of [t.contrastFailBelow, t.contrastPass]) if (r < b && one >= b) return (Math.floor(r * 100) / 100).toFixed(2);
+  return one.toFixed(1);
+}
+
+export const needWords = (need: number) => (Number.isInteger(need) ? String(need) : need.toFixed(1));
+
+export type PairFinding = {
+  name: string;
+  detail: string;
+  /** The detail around the component's name, which the page sets as inline code. */
+  parts: [string, string, string];
+  declared: { where: string; text: string; background: string; ratio: string };
+  shipped: { where: string; text: string; background: string; ratio: string };
+};
+
+/** f09 and f10: the declared pair beside the shipped pair, from the check's own evidence. */
+export function pairFinding(c: ResultCheck, t: Thresholds): PairFinding | null {
+  const f = c.evidence?.findings?.[0] as { source?: string; ratio?: number; need?: number; declaredRatio?: number } | undefined;
+  const [dt, db] = c.declared ?? [];
+  const [st, sb] = c.shipped ?? [];
+  if (!f || !dt || !db || !st || !sb || typeof f.ratio !== 'number' || typeof f.need !== 'number') return null;
+  const source = f.source ?? '';
+  const name = source.split('.').pop() || source;
+  const textMoved = dt.value.toLowerCase() !== st.value.toLowerCase();
+  const fillMoved = db.value.toLowerCase() !== sb.value.toLowerCase();
+  const where = textMoved && !fillMoved ? 'label color' : fillMoved && !textMoved ? 'fill' : 'label and fill';
+  const r = fmtRatio(f.ratio, t);
+  const r0 = fmtRatio(typeof f.declaredRatio === 'number' ? f.declaredRatio : f.ratio, t);
+  const vars = [...(st.where ?? []), ...(sb.where ?? [])];
+  const parts: [string, string, string] = [
+    `The shipped ${where} on `,
+    name,
+    ` ${where === 'label and fill' ? 'take' : 'takes'} the pair to ${r} to 1. Your contract's own pair is ${r0} to 1. The check needs ${needWords(f.need)} to 1.`,
+  ];
+  return {
+    name,
+    detail: parts.join(''),
+    parts,
+    declared: { where: `${dt.path ?? ''} on ${db.path ?? ''}`, text: dt.value, background: db.value, ratio: r0 },
+    shipped: { where: vars.length === 2 ? `${vars[0]} on ${vars[1]}` : 'shipped values', text: st.value, background: sb.value, ratio: r },
+  };
+}
+
+/** f02's collapsed line (brand D75, R3-07), from the colors the page compared and those outside the palette. */
+export function paletteLine(shipped: number, outside: string[], passAt: number, truncated = 0): string {
+  const inside = shipped - outside.length - truncated;
+  const head = `${inside} of ${shipped} shipped colors ${inside === 1 ? 'is' : 'are'} in your palette (${Math.round(passAt * 100)}% needed to pass).`;
+  return (outside.length ? `${head} Outside it: ${outside.join(', ')}` : head) + (truncated ? ` and ${truncated} more` : '');
+}
+
+/** A row's one-line result: f02 built from its counts, every other check in the engine's own words. */
+export function rowDetail(c: ResultCheck, coverage: Coverage | null, t: Thresholds): string {
+  if (c.id === 'f02' && (c.status === 'PASS' || c.status === 'WARN' || c.status === 'FAIL') && coverage?.groups?.colors) {
+    return paletteLine(coverage.groups.colors.shippedCompared, (c.shipped ?? []).map((s) => s.value), t.sharePassAt, c.evidence?.truncated ?? 0);
+  }
+  return c.detail ?? '';
+}
+
+/** "Typography, 18 of 100 in the fidelity score, shared by the scored checks in its category". */
+export function fidelityWeight(category: string, w: number): string {
+  return `${category}, ${w} of 100 in the fidelity score, shared by the scored checks in its category`;
+}
+
+/** "Accessibility, 15 of 57 in the static score", or "left out of the static score" for a check that needs a browser. */
+export function baselineWeight(category: string, w: number, staticMax: number, manual: boolean): string {
+  return manual ? `${category}, left out of the static score` : `${category}, ${w} of ${staticMax} in the static score`;
+}
+
+export const fidelityCriterion = (criterion: string, engineVersion: string) => `${criterion} · engine ${engineVersion}`;
+export const baselineCriterion = (threshold: string, contractVersion: string) => `${threshold} · baseline rules ${contractVersion}`;
+
+/** The lists' sub-lines. */
+export function fidelitySub(total: number, scored: number, noScore: boolean, min = 3): string {
+  return `${total} checks · ${scored} scored · ${noScore ? `at least ${min} are needed for a score` : 'each reads a field of your contract'}`;
+}
+export function baselineSub(total: number, scored: number): string {
+  return `${total} universal checks · ${scored} scored · they read no contract`;
+}
+
+export type ListFilter = 'all' | 'needs' | 'notrun' | 'passed';
+
+/** The filter's announcement once a list is narrowed. */
+export function filterSaid(f: ListFilter, n: number): string {
+  if (f === 'all') return `Showing all ${n} checks.`;
+  const one = n === 1;
+  const what = f === 'needs' ? (one ? 'that needs work' : 'that need work') : f === 'notrun' ? (one ? 'that was not scored' : 'that were not scored') : 'that passed';
+  return `Showing ${n} ${one ? 'check' : 'checks'} ${what}.`;
+}
+
+export const showPassing = (n: number) => `Show ${n} passing ${n === 1 ? 'check' : 'checks'}`;
+export const showMore = (n: number) => `Show ${n} more ${n === 1 ? 'check' : 'checks'}`;
+
+/** "Located {k} of {n} declared tokens. This page shows {counts} the engine can compare." (W7) */
+export function whyLine(coverage: Coverage): string {
+  const unit: [string, string, string][] = [
+    ['colors', 'color', 'colors'],
+    ['radii', 'corner radius', 'corner radii'],
+    ['spacing', 'spacing value', 'spacing values'],
+    ['durations', 'duration', 'durations'],
+  ];
+  const counts = unit
+    .filter(([g]) => (coverage.groups?.[g]?.declared ?? 0) > 0)
+    .map(([g, one, many]) => {
+      const n = coverage.groups[g].shippedCompared;
+      return n === 0 ? `no ${many}` : countWords(n, one, many);
+    });
+  const head = `Located ${coverage.located} of ${coverage.declared} declared tokens.`;
+  return counts.length ? `${head} This page shows ${listWords(counts)} the engine can compare.` : head;
+}
+
+/** The contract's token count, as the run read it. */
+export function tokenTotal(tokens: Record<string, number> | undefined): number | null {
+  if (!tokens) return null;
+  return ['colors', 'typography', 'radii', 'spacing', 'sizes', 'durations', 'easings'].reduce((n, k) => n + (tokens[k] ?? 0), 0);
+}
+
+export function contractOk(name: string, tokens: number | null): string {
+  return `Your contract was read and is valid: ${name}${tokens !== null ? `, ${countWords(tokens, 'token', 'tokens')}` : ''}. It is still in the form above.`;
+}
+
+/** The empty-run card (W8, W9): no score for either number, said in words. */
+export function emptyRun(code: string, ctx: { detail?: string; stylesheetsTotal?: number; stylesheetsFetched?: number }): { eyebrow: string; title: string; reason: string; todo: string[]; action: string } {
+  if (code === 'empty_shell') {
+    return {
+      eyebrow: 'No score',
+      title: 'This page builds itself in the browser',
+      reason: 'The engine reads HTML and CSS without running JavaScript. This page arrived as an empty app shell, so there is nothing to compare with your contract, and the baseline would only measure the shell. No score is reported for either number.',
+      todo: ['Score a page your server renders, such as a marketing or docs page.', 'If this app can pre-render pages, score a pre-rendered URL.'],
+      action: 'Score another page',
+    };
+  }
+  if (code === 'no_css') {
+    const linked = ctx.stylesheetsTotal ?? 0;
+    const fetched = ctx.stylesheetsFetched ?? 0;
+    return {
+      eyebrow: 'No score',
+      title: 'This page has no styles the engine could read',
+      reason: `The engine found the page but no CSS it could read (${countWords(linked, 'stylesheet', 'stylesheets')} linked, ${fetched} fetched). No score is reported for either number.`,
+      todo: ['Score a page whose HTML carries its styles, in a linked stylesheet or a `<style>` block.', 'If your styles load with JavaScript, score a page your server renders with its CSS in place.'],
+      action: 'Score another page',
+    };
+  }
+  return { eyebrow: 'Site unreachable', title: 'Could not read this site', reason: ctx.detail ?? '', todo: [], action: 'Try again' };
+}
+
+// ── The receipt (W11) ──
+
+/** A digest in 8-character groups, so it is read in chunks. */
+export function groups8(hex: string): string {
+  return (hex.match(/.{1,8}/g) ?? []).join(' ');
+}
+
+const shortDigest = (hex: string) => `${hex.slice(0, 8)}...${hex.slice(-4)}`;
+const two = (n: number) => String(n).padStart(2, '0');
+
+/** "2026-10-15T00:16:50Z" and the reader's local "20:16:50 -04:00". */
+export function readAt(iso: string, d = new Date(iso)): { z: string; local: string } {
+  const m = -d.getTimezoneOffset();
+  const off = `${m >= 0 ? '+' : '-'}${two(Math.floor(Math.abs(m) / 60))}:${two(Math.abs(m) % 60)}`;
+  return { z: iso.replace(/\.\d{3}Z$/, 'Z'), local: `${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())} ${off}` };
+}
+
+/** designesy-{host}-{yyyymmdd-hhmm}.json, in the reader's local time. */
+export function downloadName(site: string, d: Date): string {
+  const host = siteKey(site).split('/')[0].replace(/^www\./, '').replace(/[^a-z0-9.-]/gi, '-');
+  return `designesy-${host}-${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}.json`;
+}
+
+export type ReceiptInput = {
+  site: string;
+  name: string;
+  format: string;
+  contractDigest: string;
+  verdictDigest: string | null;
+  fidelity: LayerResult;
+  baseline: LayerResult;
+  coverage: Coverage | null;
+  /** Failing checks in list order; value where the check has one ("1.2 to 1"). */
+  failing: { id: string; title: string; value?: string }[];
+  engineVersion: string;
+  contractVersion: string;
+  linter: LinterTotals | null;
+  retrievedAt: string;
+};
+
+/** The copied receipt, plain text for an issue or a chat (W11), in the one result language. */
+export function receiptText(r: ReceiptInput): string {
+  const layer = (name: string, l: LayerResult) =>
+    l.score === null || l.grade === null
+      ? `${name}: no score, ${l.scored} of ${l.total} checks scored`
+      : `${name}: ${fmtScore(l.score)} /100 (${l.grade}), ${l.scored} of ${l.total} checks scored`;
+  const lines = [
+    'Designesy contract check',
+    `Site: ${r.site}`,
+    `Your contract: ${r.name} (${r.format}), sha256 ${shortDigest(r.contractDigest)}`,
+    layer('Contract fidelity', r.fidelity),
+    layer('Baseline', r.baseline),
+  ];
+  if (r.coverage) lines.push(`Coverage: ${r.coverage.located} of ${r.coverage.declared} declared tokens located (${r.coverage.byValue} by value, ${r.coverage.byName + r.coverage.byMap} by name)`);
+  lines.push(failingLine(r.failing));
+  if (r.verdictDigest) lines.push(`Verdict digest: ${shortDigest(r.verdictDigest)}`);
+  lines.push(`Engine: ${r.engineVersion}, baseline rules ${r.contractVersion}${r.linter ? `, linter ${r.linter.package ?? '@google/design.md'} ${r.linter.version}` : ''}`);
+  lines.push(`Read at: ${r.retrievedAt.replace(/\.\d{3}Z$/, 'Z')}`);
+  return lines.join('\n');
+}
+
+/** "Failing: f10 {title}, 1.2 to 1; v03 {title}", or "Failing: none" (brand D81). */
+export function failingLine(failing: { id: string; title: string; value?: string }[]): string {
+  return `Failing: ${failing.length ? failing.map((c) => `${c.id} ${c.title}${c.value ? `, ${c.value}` : ''}`).join('; ') : 'none'}`;
+}
+
+/** The value a failing check carries into the receipt: a contrast pair's shipped ratio. */
+export function failingValue(c: ResultCheck, t: Thresholds): string | undefined {
+  const f = c.evidence?.findings?.[0] as { ratio?: number } | undefined;
+  return (c.id === 'f09' || c.id === 'f10') && f && typeof f.ratio === 'number' ? `${fmtRatio(f.ratio, t)} to 1` : undefined;
+}
+
+/** D82: one quiet line under a landed result that scored, to the human Review. */
+export const REVIEW_LINE = { lead: 'Want a person to walk your team through this?', link: 'The Review →', href: '/pricing/review' } as const;
+
+export const RECEIPT_NOTE = 'To verify, run the same page with the same contract and compare both digests. If the contract digest differs, the contract changed. If only the verdict digest differs, the page or the engine changed.';
+
+export function shareNote(how: 'pasted' | 'uploaded' | 'linked'): string {
+  return how === 'linked'
+    ? 'The link runs the score again when opened, so it shows the page and the contract as they are at that time. Anyone with the link sees both URLs.'
+    : `No share link for this result. You ${how} your contract and Designesy does not store it, so a link could not run the same score. Share the receipt or the JSON file instead.`;
+}
+
+/** The verdict line's announced prefix for a kept previous run. */
+export const PREVIOUS_SAID = 'Previous run. ';
+export const EDITING_WITH_PREVIOUS = 'Inputs open for editing. The previous run stays below until the next one lands.';

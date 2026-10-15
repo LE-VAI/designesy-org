@@ -27,6 +27,13 @@
  *      contract URL checks, the four running steps resolving together.
  *   5. No builder prints a version or a check count literal: the page's
  *      source holds no "v0.4." and no engine version string.
+ *   6. The result: f02's line from its counts (equal to the engine's own
+ *      builder, and counting colours cut from the list), the readout count
+ *      lines, grades and lamps, the cap, gaps and leaderboard flags, the first
+ *      finding and its declared and shipped pair (ratios never rounded across
+ *      a band), the weight and criterion lines, the list sub-lines, filters
+ *      and announcements, the W7 why line, the W8 and W9 cards, and the
+ *      receipt (digest groups, the copied text, the file name).
  *
  * PROVING IT CAN FAIL
  *   --break  expects the singular baseline tail to use "starting with"
@@ -198,6 +205,112 @@ check('steps run and resolve together', () => {
   assert.deepEqual(C.steps('a.com', 'running').map((s) => s.state), ['running', 'running', 'running', 'running']);
   assert.deepEqual(C.steps('a.com', 'done').map((s) => s.state), ['done', 'done', 'done', 'done']);
   assert.equal(C.steps('a.com', 'running')[1].text, 'a.com');
+});
+
+// ── 6. The result: readouts, flags, first finding, lists, receipt ──
+const T = { sharePassAt: 0.9, contrastPass: 4.5, contrastLargePass: 3, contrastFailBelow: 3 };
+const ENG = h.load('app/lib/own-contract/checks/f02.ts');
+check('f02 line built from the counts, as the engine writes it (R3-07): one and two colours outside', () => {
+  assert.equal(C.paletteLine(20, ['#7DA4FF'], 0.9), '19 of 20 shipped colors are in your palette (90% needed to pass). Outside it: #7DA4FF');
+  assert.equal(C.paletteLine(20, ['#7DA4FF'], 0.9), ENG.paletteLine(20, ['#7DA4FF'], 0.9));
+  assert.equal(C.paletteLine(6, ['#a', '#b'], 0.9), '4 of 6 shipped colors are in your palette (90% needed to pass). Outside it: #a, #b');
+  assert.equal(C.paletteLine(6, ['#a', '#b'], 0.9), ENG.paletteLine(6, ['#a', '#b'], 0.9));
+  assert.equal(C.paletteLine(3, [], 0.9), '3 of 3 shipped colors are in your palette (90% needed to pass).');
+});
+check('f02 line past the 20-colour list counts the colours cut from it', () => {
+  const twenty = Array.from({ length: 20 }, (_, i) => `#${String(i).padStart(6, '0')}`);
+  assert.ok(C.paletteLine(34, twenty, 0.9, 13).startsWith('1 of 34 shipped colors is in your palette'));
+  assert.ok(C.paletteLine(34, twenty, 0.9, 13).endsWith(' and 13 more'));
+});
+check('readout count lines, scored and with no score', () => {
+  assert.deepEqual(C.countLine({ scored: 9, total: 14 }), { k: '9', rest: ' of 14 checks scored' });
+  assert.deepEqual(C.countLine({ scored: 1, total: 14 }, true, 3), { k: '1', rest: ' of 14 checks scored; at least 3 are needed' });
+});
+check('grades on the engine bands', () => {
+  assert.deepEqual([89.9, 90, 84.7, 70, 69.9, 59.9].map(C.gradeOf), ['B', 'A', 'B', 'C', 'D', 'F']);
+  assert.deepEqual(['A', 'B', 'C', 'D', 'F'].map(C.gradeLamp), ['PASS', 'PASS', 'WARN', 'WARN', 'FAIL']);
+});
+check('cap flag from the run: ceiling, the engine reason, the uncapped score and its grade', () => {
+  const f = { score: 70, grade: 'C', scored: 9, total: 14, ceilingApplied: true, ceilingReason: 'Your primary action pair is 1.2 to 1 on shipped values, under 3 to 1.', uncappedScore: 84.7 };
+  assert.deepEqual(C.capFlag(f), { lead: 'Capped at 70.', text: 'Your primary action pair is 1.2 to 1 on shipped values, under 3 to 1. Without the cap: 84.7, grade B.' });
+  assert.equal(C.capFlag({ ...f, ceilingApplied: false }), null);
+});
+check('gaps flag: both clauses, and a zero clause left out', () => {
+  const sk = (id, r) => ({ id, status: 'SKIP', skipReason: r });
+  assert.equal(C.gapsFlag([sk('f06', 'not_declared'), sk('f11', 'not_applicable'), sk('f07', 'not_located'), { id: 'f02', status: 'PASS' }], 11).text,
+    'Font features not declared and motion does not apply, so 2 checks did not run, and 1 found too little on this page. Fidelity covers the 11 that ran.');
+  assert.equal(C.gapsFlag([sk('f13', 'not_declared')], 13).text, 'Aliases not declared, so 1 check did not run. Fidelity covers the 13 that ran.');
+  assert.equal(C.gapsFlag([sk('f07', 'not_declared'), sk('f08', 'not_declared'), sk('f11', 'not_declared')], 9).text, 'Radius not declared, spacing not declared and motion not declared, so 3 checks did not run. Fidelity covers the 9 that ran.');
+  assert.equal(C.gapsFlag([sk('f07', 'not_located'), sk('f08', 'not_located')], 12).text, '2 checks found too little on this page. Fidelity covers the 12 that ran.');
+  assert.equal(C.gapsFlag([{ id: 'f02', status: 'PASS' }], 14), null);
+});
+check('leaderboard note carries the baseline count', () => {
+  assert.equal(`${C.leaderboardFlag(18).lead} ${C.leaderboardFlag(18).text}`, "Baseline differs from this page's leaderboard number: it runs 18 universal checks and leaves out Designesy's own checks, slop and originality.");
+});
+check('first finding: the first failure, else the first that needs work, else none', () => {
+  const s = (id, status) => ({ id, status });
+  assert.equal(C.firstFindingOf([s('f01', 'WARN'), s('f02', 'PASS'), s('f10', 'FAIL')]).id, 'f10');
+  assert.equal(C.firstFindingOf([s('f01', 'PASS'), s('f03', 'WARN')]).id, 'f03');
+  assert.equal(C.firstFindingOf([s('f01', 'PASS')]), null);
+});
+check('ratios never round across a band (4.48 is not 4.5) and the fix names the ratio the pair needs', () => {
+  assert.equal(C.fmtRatio(4.48, T), '4.48');
+  assert.equal(C.fmtRatio(2.97, T), '2.97');
+  assert.equal(C.fmtRatio(1.21, T), '1.2');
+  const c = { id: 'f10', status: 'FAIL', declared: [{ path: 'colors.on', value: '#010102' }, { path: 'colors.bg', value: '#0A94FF' }], shipped: [{ path: 'colors.on', value: '#36A7FF', where: ['--on'] }, { path: 'colors.bg', value: '#0A94FF', where: ['--bg'] }], evidence: { findings: [{ source: 'components.button-primary', ratio: 1.21, need: 4.5, declaredRatio: 6.65 }] } };
+  const p = C.pairFinding(c, T);
+  assert.equal(p.detail, "The shipped label color on button-primary takes the pair to 1.2 to 1. Your contract's own pair is 6.7 to 1. The check needs 4.5 to 1.");
+  assert.equal(p.shipped.where, '--on on --bg');
+  assert.deepEqual(p.parts.map((x) => x.length > 0), [true, true, true]);
+  assert.equal(p.parts[1], 'button-primary');
+  const large = C.pairFinding({ ...c, evidence: { findings: [{ source: 'components.hero', ratio: 2.4, need: 3, declaredRatio: 2.4 }] }, shipped: c.declared }, T);
+  assert.equal(large.detail, "The shipped label and fill on hero take the pair to 2.4 to 1. Your contract's own pair is 2.4 to 1. The check needs 3 to 1.");
+});
+check('weight and criterion lines (A-CP-6)', () => {
+  assert.equal(C.fidelityWeight('Typography', 18), 'Typography, 18 of 100 in the fidelity score, shared by the scored checks in its category');
+  assert.equal(C.baselineWeight('Accessibility', 15, 57, false), 'Accessibility, 15 of 57 in the static score');
+  assert.equal(C.baselineWeight('Responsive', 3, 57, true), 'Responsive, left out of the static score');
+  assert.equal(C.fidelityCriterion('Derived from v06', '9.9.9'), 'Derived from v06 · engine 9.9.9');
+  assert.equal(C.baselineCriterion(':focus-visible declared in CSS', 'v9.9.9'), ':focus-visible declared in CSS · baseline rules v9.9.9');
+});
+check('list sub-lines, filters and their announcements ("Not scored", R31-04)', () => {
+  assert.equal(C.fidelitySub(14, 9, false), '14 checks · 9 scored · each reads a field of your contract');
+  assert.equal(C.fidelitySub(14, 1, true, 3), '14 checks · 1 scored · at least 3 are needed for a score');
+  assert.equal(C.baselineSub(18, 16), '18 universal checks · 16 scored · they read no contract');
+  assert.equal(C.filterSaid('needs', 3), 'Showing 3 checks that need work.');
+  assert.equal(C.filterSaid('needs', 1), 'Showing 1 check that needs work.');
+  assert.equal(C.filterSaid('notrun', 5), 'Showing 5 checks that were not scored.');
+  assert.equal(C.filterSaid('passed', 2), 'Showing 2 checks that passed.');
+  assert.equal(C.filterSaid('all', 14), 'Showing all 14 checks.');
+  assert.equal(C.showPassing(1), 'Show 1 passing check');
+  assert.equal(C.showMore(9), 'Show 9 more checks');
+});
+check('why fidelity has no score (W7) from coverage', () => {
+  const cov = { declared: 5, located: 0, byMap: 0, byName: 0, byValue: 0, groups: { colors: { declared: 3, located: 0, shippedCompared: 2 }, spacing: { declared: 2, located: 0, shippedCompared: 0 } } };
+  assert.equal(C.whyLine(cov), 'Located 0 of 5 declared tokens. This page shows 2 colors and no spacing values the engine can compare.');
+});
+check('empty runs (W8, W9): titles, the stylesheet counts, the actions', () => {
+  assert.equal(C.emptyRun('empty_shell', {}).title, 'This page builds itself in the browser');
+  assert.equal(C.emptyRun('no_css', { stylesheetsTotal: 1, stylesheetsFetched: 0 }).reason, 'The engine found the page but no CSS it could read (1 stylesheet linked, 0 fetched). No score is reported for either number.');
+  // The engine reads inline <style> blocks as well as linked stylesheets, so
+  // the advice names both; `<style>` renders as code.
+  assert.deepEqual(C.emptyRun('no_css', {}).todo, ['Score a page whose HTML carries its styles, in a linked stylesheet or a `<style>` block.', 'If your styles load with JavaScript, score a page your server renders with its CSS in place.']);
+  assert.equal(C.emptyRun('site_unreachable', { detail: 'Could not read x.' }).reason, 'Could not read x.');
+  assert.equal(C.emptyRun('site_unreachable', {}).action, 'Try again');
+  assert.equal(C.contractOk('Studio', 16), 'Your contract was read and is valid: Studio, 16 tokens. It is still in the form above.');
+});
+check('receipt: digests in groups of 8, the copied text, the file name', () => {
+  assert.equal(C.groups8('0123456789abcdef01'), '01234567 89abcdef 01');
+  const l = (s, g, k, n) => ({ score: s, grade: g, scored: k, total: n });
+  const text = C.receiptText({ site: 'https://a.com/', name: 'Acme', format: 'DESIGN.md', contractDigest: 'a'.repeat(64), verdictDigest: 'b'.repeat(64), fidelity: l(70, 'C', 9, 14), baseline: l(100, 'A', 16, 18), coverage: { declared: 10, located: 8, byMap: 1, byName: 2, byValue: 5, groups: {} }, failing: [{ id: 'f10', title: 'Your primary action pair meets contrast on shipped values', value: '1.2 to 1' }, { id: 'v03', title: 'Interactive elements show focus-visible rings' }], engineVersion: '9.9.9', contractVersion: 'v9.9.9', linter: { package: '@google/design.md', version: '0.4.0', errors: 0, warnings: 1 }, retrievedAt: '2026-10-15T00:16:50.566Z' });
+  assert.equal(text, ['Designesy contract check', 'Site: https://a.com/', 'Your contract: Acme (DESIGN.md), sha256 aaaaaaaa...aaaa', 'Contract fidelity: 70.0 /100 (C), 9 of 14 checks scored', 'Baseline: 100.0 /100 (A), 16 of 18 checks scored', 'Coverage: 8 of 10 declared tokens located (5 by value, 3 by name)', 'Failing: f10 Your primary action pair meets contrast on shipped values, 1.2 to 1; v03 Interactive elements show focus-visible rings', 'Verdict digest: bbbbbbbb...bbbb', 'Engine: 9.9.9, baseline rules v9.9.9, linter @google/design.md 0.4.0', 'Read at: 2026-10-15T00:16:50Z'].join('\n'));
+  assert.equal(C.downloadName('www.acme.com/pricing', new Date(2026, 9, 14, 20, 5)), 'designesy-acme.com-20261014-2005.json');
+  assert.equal(C.failingLine([]), 'Failing: none');
+  assert.equal(`${C.REVIEW_LINE.lead} ${C.REVIEW_LINE.link}`, 'Want a person to walk your team through this? The Review →');
+  assert.equal(C.REVIEW_LINE.href, '/pricing/review');
+  assert.equal(C.failingValue({ id: 'f10', status: 'FAIL', evidence: { findings: [{ ratio: 2.44 }] } }, T), '2.4 to 1');
+  assert.equal(C.failingValue({ id: 'f03', status: 'FAIL' }, T), undefined);
+  assert.ok(C.shareNote('pasted').startsWith('No share link for this result. You pasted your contract'));
 });
 
 // ── 5. No typed versions or counts in the page's source ──

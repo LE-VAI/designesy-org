@@ -18,9 +18,12 @@
  *
  * WHAT IT ASSERTS
  * Surfaces: the score form on the home page (the run line's lone dot over
- * the loader and the B′ result; /api/score held) and the four-engine
+ * the loader and the B′ result; /api/score held), the four-engine
  * instrument on /score (the dot in its mark; /api/report held,
- * /api/guardrails failing). A run is submitted, and the browser clock is
+ * /api/guardrails failing) and the contract instrument on /score/contract
+ * (the dot in its mark; /api/score held, then answered with the recorded
+ * landing in scripts/fixtures/contract-page/landed.json, a pasted
+ * contract). A run is submitted, and the browser clock is
  * paused before the held response is released, so every frame after the
  * result lands is read at an exact time. The fill is read from the dot's
  * ::before, the rim from the dot's box-shadow.
@@ -59,6 +62,12 @@
  *            The page-wide claim (claimLanding) is also checked directly:
  *            two lamps in one landing get one ignition, the next landing
  *            gets its own.
+ *   pixels   in every mode, read from the centre of a 2x screenshot of the
+ *            dot: just before the result is released the dot is not the
+ *            flame (CIE76 ΔE from #F56B00 above 10), and 600ms after it
+ *            lands it is (ΔE 10 or less). On /score/contract this is the
+ *            instrument that was running when the result landed: a page
+ *            that mounts a new one for the result never lights it.
  *   no land  a run that fails never shows the flame.
  *   artwork  the header and footer (the logo and lockup) hold no ignition
  *            element, so the rim and the breath never reach them.
@@ -72,10 +81,11 @@
  *
  * Usage:
  *   node scripts/check-ignition.js --base http://127.0.0.1:3422 [--channel chrome]
- *     [--surfaces home,score] [--themes dark,light] [--modes motion,reduced,paused]
+ *     [--surfaces home,score,contract] [--themes dark,light] [--modes motion,reduced,paused]
  *     [--frames <dir>] [--break] [--json]
  * --frames writes 2x crops of the dot while running, at the breath's maximum
- * and minimum, at 0, 80, 160 and 320ms, at the hold (1000ms), just before the
+ * and minimum, just before the release, at 0, 80, 160, 320 and 600ms, at the
+ * hold (1000ms), just before the
  * swap back (1384ms), at the swap (1400ms) and settled (1800ms), plus the
  * sampled colours and rim pixels, to <dir>.
  * Exit 1 on any failure, 2 on a fatal error (no browser, bad arguments).
@@ -99,7 +109,7 @@ const AS_JSON = args.includes('--json');
 const FRAMES = arg('--frames', '');
 const THEMES = arg('--themes', 'dark,light').split(',');
 const MODES = arg('--modes', 'motion,reduced,paused').split(',');
-const SURFACE_NAMES = arg('--surfaces', 'home,score').split(',');
+const SURFACE_NAMES = arg('--surfaces', 'home,score,contract').split(',');
 const ONLOAD_ROUTES = ['/score/v0', '/score/bolt', '/score/lovable'];
 
 if (!BASE) {
@@ -167,6 +177,19 @@ function parseColor(s) {
 }
 const near = (a, b, tol = 1) => a.length === 3 && a.every((v, i) => Math.abs(v - b[i]) <= tol);
 const chromaOf = (rgb) => hexToOklch(hex(rgb))[1];
+/** CIE76 colour difference between two [r, g, b] colours, in CIELAB (D65). */
+function deltaE(p, q) {
+  const lab = (rgb) => {
+    const [r, g, b] = rgb.map((v) => toLin(v / 255));
+    const f = (t) => (t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116);
+    const x = f((0.4124564 * r + 0.3575761 * g + 0.1804375 * b) / 0.95047);
+    const y = f(0.2126729 * r + 0.7151522 * g + 0.072175 * b);
+    const z = f((0.0193339 * r + 0.119192 * g + 0.9503041 * b) / 1.08883);
+    return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+  };
+  const [a, b] = [lab(p), lab(q)];
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
 /** The rim from a computed box-shadow: its colour and spread, or null. */
 function parseRim(boxShadow) {
   if (!boxShadow || boxShadow === 'none') return null;
@@ -268,6 +291,12 @@ const SCORED = {
   ],
 };
 
+// /score/contract: a recorded landing (the contract-page gate's own record)
+// and the contract it was run with, pasted.
+const CONTRACT_FIX = path.join(__dirname, 'fixtures', 'contract-page');
+const CONTRACT_LANDED = JSON.parse(fs.readFileSync(path.join(CONTRACT_FIX, 'landed.json'), 'utf8')).body;
+const CONTRACT_TEXT = fs.readFileSync(path.join(CONTRACT_FIX, 'good.md'), 'utf8');
+
 const SURFACES = {
   home: {
     route: '/',
@@ -284,6 +313,18 @@ const SURFACES = {
     held: '**/api/report',
     body: REPORT,
     other: { '**/api/guardrails': FAIL },
+    atRest: true,
+  },
+  contract: {
+    route: '/score/contract',
+    label: 'Site URL',
+    lamp: '.eg-mark[data-ignite]',
+    held: '**/api/score',
+    body: CONTRACT_LANDED,
+    other: {},
+    atRest: true,
+    // The run needs a contract as well as a URL.
+    fill: async (page) => page.getByRole('textbox', { name: 'Contract text', exact: true }).fill(CONTRACT_TEXT),
   },
 };
 
@@ -455,9 +496,9 @@ async function run(browser, surfaceName, theme, mode, land) {
       return { top: best(0, -1), bottom: best(0, 1), left: best(-1, 0), right: best(1, 0) };
     };
 
-    // The home form draws its lamp only once a run starts; the instrument's
+    // The home form draws its lamp only once a run starts; an instrument's
     // mark is there at rest, Azure.
-    if (surfaceName === 'score') {
+    if (surface.atRest) {
       if ((await page.locator(`${LAMP} > .ig-dot`).count()) !== 1) {
         failures.push(`no ignition dot (${LAMP} > .ig-dot) at rest`);
         return { label, failures, samples, rimPixels };
@@ -468,12 +509,39 @@ async function run(browser, surfaceName, theme, mode, land) {
       failures.push('the run line is drawn before any run');
     }
 
+    // A run the visitor started brings the run line into view: a smooth
+    // scroll on the real clock, started from an animation frame on the fake
+    // one. Each read waits for it to settle, so every crop frames the same spot.
+    // An instrument below the fold (/score/contract at 1440x900) can start
+    // that scroll a few hundred ms after the run, so the wait first lets the
+    // lamp reach the screen. Both waits poll from here, never on the page's
+    // clock, which is paused for most reads.
+    const settleScroll = async () => {
+      for (let i = 0; i < 40; i++) {
+        const shown = await page.evaluate((sel) => {
+          const r = document.querySelector(sel)?.getBoundingClientRect();
+          return !!r && r.top >= 0 && r.bottom <= window.innerHeight;
+        }, LAMP);
+        if (shown) break;
+        await page.waitForTimeout(100);
+      }
+      let lastY = -1;
+      for (let i = 0; i < 30; i++) {
+        const y = await page.evaluate(() => window.scrollY);
+        if (y === lastY) return;
+        lastY = y;
+        await page.waitForTimeout(150);
+      }
+    };
+
     // Run.
-    const field = page.getByRole('textbox', { name: surface.label });
+    const field = page.getByRole('textbox', { name: surface.label, exact: !!surface.fill });
     await field.fill('example.com');
+    if (surface.fill) await surface.fill(page);
     await field.press('Enter');
     await page.locator(`${LAMP}[data-phase="running"] > .ig-dot`).waitFor({ timeout: 15000 });
     await page.waitForTimeout(250);
+    await settleScroll();
     const running = await read();
     if (running.signal.toUpperCase() !== AZURE) failures.push(`--signal is ${running.signal}, the reference assumes ${AZURE}`);
     if (running.activation.toUpperCase() !== FLAME) failures.push(`--activation is ${running.activation}, the reference assumes ${FLAME}`);
@@ -533,6 +601,15 @@ async function run(browser, surfaceName, theme, mode, land) {
       }, LAMP);
     }
 
+    // No flame before the result is released, read from the pixels.
+    {
+      const pre = await read();
+      const c = await centrePixel('pre', pre);
+      if (pre.lamp) failures.push(`before release: data-lamp is ${pre.lamp}`);
+      if (deltaE(c, rgbOf(FLAME)) <= 10) failures.push(`before release: the dot is the flame (${hex(c)}, ΔE ${deltaE(c, rgbOf(FLAME)).toFixed(1)})`);
+      samples.push({ at: 'before release', pixel: hex(c), deltaE: Number(deltaE(c, rgbOf(FLAME)).toFixed(1)) });
+    }
+
     // Stop the clock, then let the result land: t = 0 is the commit.
     const now = await page.evaluate(() => Date.now());
     await page.clock.pauseAt(now + 1000);
@@ -552,10 +629,10 @@ async function run(browser, surfaceName, theme, mode, land) {
 
     if (!land) {
       // The instrument stays, Azure; the home form's run line leaves with the loader.
-      if (surfaceName === 'score') await page.locator(`${LAMP}[data-phase="error"]`).waitFor({ timeout: 15000 });
+      if (surface.atRest) await page.locator(`${LAMP}[data-phase="error"]`).waitFor({ timeout: 15000 });
       else await page.locator('.score-error-card').waitFor({ timeout: 15000 });
       await page.clock.runFor(1600);
-      if (surfaceName === 'score') {
+      if (surface.atRest) {
         const r = await read();
         if (r.lamp || !near(parseColor(r.fill), rgbOf(AZURE), 0)) failures.push(`a failed run left the dot ${r.fill} (${r.lamp})`);
         if (r.haloAnims.length) failures.push('a failed run rang the ring');
@@ -589,18 +666,6 @@ async function run(browser, surfaceName, theme, mode, land) {
         { t, sel: LAMP },
       );
     await seekAnims(0);
-    // A run the visitor started brings the run line into view: a smooth
-    // scroll on the real clock, started from an animation frame on the fake
-    // one. Each read waits for it to settle, so every crop frames the same spot.
-    const settleScroll = async () => {
-      let lastY = -1;
-      for (let i = 0; i < 30; i++) {
-        const y = await page.evaluate(() => window.scrollY);
-        if (y === lastY) return;
-        lastY = y;
-        await page.waitForTimeout(150);
-      }
-    };
 
     const calm = mode !== 'motion';
     let t = 0;
@@ -675,6 +740,15 @@ async function run(browser, surfaceName, theme, mode, land) {
     if (!calm) {
       const end = await at(320);
       if (end.lamp !== 'lit') failures.push(`motion: after the sweep data-lamp is ${end.lamp}, expected lit`);
+    }
+
+    // The flame, read from the pixels, 600ms after the landing.
+    {
+      const lit = await at(600);
+      const c = await centrePixel('t0600', lit);
+      const d = deltaE(c, rgbOf(FLAME));
+      if (d > 10) failures.push(`600ms after landing: the dot is ${hex(c)}, ΔE ${d.toFixed(1)} from ${FLAME} (10 at most)`);
+      samples.push({ ms: 600, pixel: hex(c), deltaE: Number(d.toFixed(1)) });
     }
 
     const hold = await at(1000);
