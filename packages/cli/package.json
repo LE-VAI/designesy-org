@@ -1,6 +1,6 @@
 {
   "name": "@designesy/cli",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Unified CLI for Designesy design verification — dispatches to tokens (DTCG validation) and score (45-check engine) subcommands.",
   "license": "MIT",
   "author": "Designesy <hello@designesy.org>",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@designesy/tokens": "^0.2.2",
-    "@designesy/score": "^0.5.0"
+    "@designesy/score": "^0.9.2"
   },
   "devDependencies": {
     "@types/node": "^26.6.1",
