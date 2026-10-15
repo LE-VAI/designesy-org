@@ -81,7 +81,10 @@ if (BASE) {
 const generated = JSON.parse(fs.readFileSync(path.join(SITE, 'app/lib/critical-css.generated.json'), 'utf8'));
 // Redirect-only routes (redirect() in a page, e.g. /blog) prerender Next's bare
 // error shell, <html id="__next_error__">, which renders no layout and no content.
-const rendered = docs.filter((d) => !d.html.includes('<html id="__next_error__">'));
+// With a deployment id (Vercel sets one) Next 16 writes data-dpl-id into that
+// <html> tag before the id, so the shell is matched by its id alone.
+const ERROR_SHELL = /<html\b[^>]*\sid="__next_error__"/;
+const rendered = docs.filter((d) => !ERROR_SHELL.test(d.html));
 const unwired = rendered.filter((d) => !d.html.includes('data-href="globals-critical"') || !d.html.includes(generated.href));
 if (unwired.length) failures.push(`${unwired.length} page(s) lack the inline critical CSS or the loader for ${generated.href}, e.g. ${unwired.slice(0, 5).map((d) => d.name).join(', ')}`);
 if (!fs.existsSync(path.join(SITE, 'public', generated.href))) failures.push(`${generated.href} is referenced but not in public/`);

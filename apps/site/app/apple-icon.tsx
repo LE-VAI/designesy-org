@@ -1,4 +1,5 @@
 import { ImageResponse } from 'next/og';
+import { IMAGE_CACHE_HEADERS } from './lib/image-cache';
 
 export const size = { width: 180, height: 180 };
 export const contentType = 'image/png';
@@ -41,6 +42,6 @@ export default function AppleIcon() {
         </svg>
       </div>
     ),
-    size
+    { ...size, headers: IMAGE_CACHE_HEADERS }
   );
 }
