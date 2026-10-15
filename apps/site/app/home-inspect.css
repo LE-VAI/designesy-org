@@ -226,7 +226,7 @@
 .inspect-stage {
   position: sticky;
   /* Centred on the reading line: half the armed window plus its caption. */
-  top: max(6rem, calc(50vh - 20rem));
+  top: max(6rem, calc(50vh - 20.5rem));
 }
 
 /* Wide: the body runs 5 then 7 under a head that runs 7 then 5, a chiasmus.
@@ -294,7 +294,7 @@
   height: 2.6rem;
   padding: 0 0.95rem;
   border-bottom: 1px solid var(--line-faint);
-  font: 500 0.72rem/1 var(--mono);
+  font: 500 var(--text-label)/1 var(--mono);
   color: var(--muted);
 }
 
@@ -504,7 +504,7 @@
   --ix-dock-g: calc(1.1 * var(--mp-fs));
   --ix-log-rows: 4;
   --ix-log-fs: 0.68rem;
-  --ix-log-lh: 1rem;
+  --ix-log-lh: 1.25rem;
   --ix-log-pad: var(--space-8);
   --ix-log-h: 0px;
 }
@@ -1382,12 +1382,13 @@
   display: none;
 }
 
-/* Sized in row units: the pin plus its 1.5px ring is one log row (16px
-   wide, 14.4px on the phone) less a pixel, top-aligned with 2px above and
-   below, so the ring is drawn inside its row and the phone's two stacked
-   rings keep a 1px gap. At 1.5em of the 10px floor the pin drew 18px in a
-   14.4px row and its ring was cut flat by the row's clip (judged at 390,
-   2026-10-03). The type stays on the specimen's 10px floor. */
+/* Sized in row units: the pin plus its 1.5px ring is one log row (20px)
+   less a pixel, top-aligned with 2px above and below, so the ring is drawn
+   inside its row and the phone's two stacked rings keep a 1px gap. The
+   numeral is set at the label step, so the row (--ix-log-lh) is 1.25rem at
+   every width: its 16px circle holds a two-digit numeral. At 1.5em of a
+   10px numeral the pin drew 18px in a 14.4px row and its ring was cut flat
+   by the row's clip (judged at 390, 2026-10-03). */
 .ix-log-pin {
   display: inline-grid;
   place-items: center;
@@ -1399,7 +1400,7 @@
   border-radius: 50%;
   background: var(--mp-paper);
   color: var(--mp-ink);
-  font: 700 10px/1 var(--mono);
+  font: 700 var(--text-label)/1 var(--mono);
 }
 
 .ix-log-pin.is-warn { box-shadow: 0 0 0 1.5px var(--ix-warn); }
@@ -1450,9 +1451,10 @@
 }
 
 /* The row is a whole pixel. The strip writes --ds-lh = 1.25em inline
-   (lib/digit-strip), 14.4px on the 11.52px title bar, so a strip moved in
-   steps() came to rest on fractional offsets (14 rows = 201.6px) and showed
-   doubled strokes between rows (judged at 1440, 2026-10-03). Rounded, every
+   (lib/digit-strip), a fractional row on most type (14.4px on the title
+   bar's 11.52px type of the time), so a strip moved in steps() came to
+   rest on fractional offsets (14 rows = 201.6px) and showed doubled
+   strokes between rows (judged at 1440, 2026-10-03). Rounded, every
    step lands on an exact row. !important only to outrank the inline value;
    browsers without round() keep the inline 1.25em. */
 @supports (width: round(1.25em, 1px)) {
@@ -2042,15 +2044,33 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   }
 }
 
+/* Narrower still (a stage under 320px, phones up to about 366px wide): at
+   the label size the URL needs up to 26px more than that bar leaves (a
+   273px stage, 320px wide), so the bar's insets and gaps close up and
+   "yoursite.com" stays whole. */
+@container g12 (width < 20rem) {
+  .inspect-chrome {
+    gap: 0.5rem;
+    padding-inline: 0.6rem;
+  }
+  .inspect-url {
+    padding-inline: 0.5rem;
+  }
+  .inspect-status {
+    gap: 0.375rem;
+  }
+}
+
 /* Large screens (the shell's region at 1920 and up): the specimen grows
    with the canvas (see .inspect-canvas), so the window is taller, and its
    sticky top moves up by half that growth to keep window and caption
    centred on the reading line. The window is about 36.5 specimen ems of
-   canvas plus the chrome; the canvas is the stage's seven columns. */
+   canvas plus the chrome and the log's rows, which are set in rem and do
+   not grow; the canvas is the stage's seven columns. */
 @container g12 (width >= 85rem) {
   .inspect > .inspect-stage {
     --ix-cw: calc((100cqi - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
-    top: max(6rem, calc(50vh - 2.3rem - 18.25 * clamp(15px, 0.022 * var(--ix-cw), 22px)));
+    top: max(6rem, calc(50vh - 2.8rem - 18.25 * clamp(15px, 0.022 * var(--ix-cw), 22px)));
   }
 }
 
@@ -2110,7 +2130,7 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .ix-log {
     --ix-log-rows: 2;
     --ix-log-fs: 0.64rem;
-    --ix-log-lh: 0.9rem;
+    --ix-log-lh: 1.25rem;
     --ix-log-pad: var(--space-6);
   }
 

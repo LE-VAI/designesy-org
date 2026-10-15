@@ -164,7 +164,7 @@ The older `cli/designesy-score.mjs` (`npm run score`) reads the same build. It i
 
 ## Repository
 
-The site is a Next.js 15 App Router app (React 19), deployed on Vercel. The npm packages and the MCP server live beside it.
+The site is a Next.js 16 App Router app (React 19, webpack build), deployed on Vercel. The npm packages and the MCP server live beside it.
 
 ```
 apps/site                              the site, its API routes (/api/score, /api/mcp) and its build checks (scripts/)

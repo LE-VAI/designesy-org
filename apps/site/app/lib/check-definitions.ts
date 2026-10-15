@@ -230,5 +230,17 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      /api/score/checks/own-contract. Requests without
  *                      `contract` are unchanged: no legacy verdict, detail
  *                      or score moves.
+ *   1.5.1  2026-10-15  linear-time matching: the patterns that read page
+ *                      CSS and HTML read each run once and return the same
+ *                      matches, so no verdict, detail or score moves on a
+ *                      well-formed page. The CSS rule parser stops at 16
+ *                      levels of nesting and closes at most 4 blocks left
+ *                      open at the end of a sheet. The hosted route caps
+ *                      the bytes it reads from a page and its stylesheets.
+ *                      No check added, no weight or ceiling moved.
+ *   1.5.2  2026-10-15  v46 also reads the size inside the font shorthand
+ *                      (font: 500 0.66rem/1 var(--mono)), and finds each
+ *                      finding's rule from one index of the sheet. No check
+ *                      added, no weight or ceiling moved.
  */
-export const ENGINE_VERSION = '1.5.0';
+export const ENGINE_VERSION = '1.5.2';

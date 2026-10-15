@@ -72,6 +72,14 @@ const OUT = join(HERE, '..', 'corpus.json');
  * Engine 1.5.0 (2026-10-14) adds own-contract mode, which these fixtures do
  * not exercise (they send no contract); no fixture's verdict, detail or score
  * moves, so the corpus version stands.
+ *
+ * Engine 1.5.1 (2026-10-15) changes how the patterns run and leaves what they
+ * find as it was; no fixture's verdict, detail or score moves, so the corpus
+ * version stands.
+ *
+ * Engine 1.5.2 (2026-10-15) adds no fixture either: v46 reads the font
+ * shorthand, pinned in test/engine-1-5-2.test.mjs, and no fixture uses the
+ * shorthand under a type scale, so no verdict, detail or score moves.
  */
 const CORPUS_VERSION = '1.4.0';
 
@@ -81,7 +89,7 @@ const CORPUS_VERSION = '1.4.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.5.0';
+const ENGINE_VERSION = '1.5.2';
 
 async function build() {
   const rows = await runCorpus();

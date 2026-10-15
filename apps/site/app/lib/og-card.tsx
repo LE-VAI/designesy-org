@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { ImageResponse } from 'next/og';
 import { LOGO_AZURE, lockupGeometry, markChildren, wordChildren } from './brand-logotype';
 import { BrandIcon, type BrandIconName } from './brand-icons';
+import { IMAGE_CACHE_HEADERS } from './image-cache';
 
 export const OG_SIZE = { width: 1200, height: 630 };
 export const OG_CONTENT_TYPE = 'image/png';
@@ -281,6 +282,6 @@ export function renderOgCard({
         ) : null}
       </div>
     ),
-    { ...OG_SIZE, fonts: ogFonts() }
+    { ...OG_SIZE, fonts: ogFonts(), headers: IMAGE_CACHE_HEADERS }
   );
 }

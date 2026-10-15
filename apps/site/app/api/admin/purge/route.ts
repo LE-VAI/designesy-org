@@ -26,7 +26,12 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  revalidateTag('score');
+  // Next 16 requires a second argument. `{ expire: 0 }` is the documented
+  // equivalent of the one-argument form this route used on 15.x: the entry is
+  // expired now and the next request blocks on a fresh compute, which is what a
+  // manual purge is for. `'max'` would serve the stale entry while it
+  // revalidated, and a purge after a scoring change must not.
+  revalidateTag('score', { expire: 0 });
 
   return Response.json({
     ok: true,
