@@ -238,5 +238,9 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      open at the end of a sheet. The hosted route caps
  *                      the bytes it reads from a page and its stylesheets.
  *                      No check added, no weight or ceiling moved.
+ *   1.5.2  2026-10-15  v46 also reads the size inside the font shorthand
+ *                      (font: 500 0.66rem/1 var(--mono)), and finds each
+ *                      finding's rule from one index of the sheet. No check
+ *                      added, no weight or ceiling moved.
  */
-export const ENGINE_VERSION = '1.5.1';
+export const ENGINE_VERSION = '1.5.2';
