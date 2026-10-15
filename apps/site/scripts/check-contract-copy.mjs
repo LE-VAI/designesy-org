@@ -292,6 +292,9 @@ check('why fidelity has no score (W7) from coverage', () => {
 check('empty runs (W8, W9): titles, the stylesheet counts, the actions', () => {
   assert.equal(C.emptyRun('empty_shell', {}).title, 'This page builds itself in the browser');
   assert.equal(C.emptyRun('no_css', { stylesheetsTotal: 1, stylesheetsFetched: 0 }).reason, 'The engine found the page but no CSS it could read (1 stylesheet linked, 0 fetched). No score is reported for either number.');
+  // The engine reads inline <style> blocks as well as linked stylesheets, so
+  // the advice names both; `<style>` renders as code.
+  assert.deepEqual(C.emptyRun('no_css', {}).todo, ['Score a page whose HTML carries its styles, in a linked stylesheet or a `<style>` block.', 'If your styles load with JavaScript, score a page your server renders with its CSS in place.']);
   assert.equal(C.emptyRun('site_unreachable', { detail: 'Could not read x.' }).reason, 'Could not read x.');
   assert.equal(C.emptyRun('site_unreachable', {}).action, 'Try again');
   assert.equal(C.contractOk('Studio', 16), 'Your contract was read and is valid: Studio, 16 tokens. It is still in the form above.');

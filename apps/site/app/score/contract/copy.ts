@@ -674,7 +674,7 @@ export function emptyRun(code: string, ctx: { detail?: string; stylesheetsTotal?
       eyebrow: 'No score',
       title: 'This page has no styles the engine could read',
       reason: `The engine found the page but no CSS it could read (${countWords(linked, 'stylesheet', 'stylesheets')} linked, ${fetched} fetched). No score is reported for either number.`,
-      todo: ['Score a page that links its stylesheets in its HTML.', 'If the styles load with JavaScript, score a page your server renders.'],
+      todo: ['Score a page whose HTML carries its styles, in a linked stylesheet or a `<style>` block.', 'If your styles load with JavaScript, score a page your server renders with its CSS in place.'],
       action: 'Score another page',
     };
   }

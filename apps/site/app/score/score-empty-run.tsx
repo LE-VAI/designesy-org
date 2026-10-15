@@ -38,7 +38,8 @@ export function ScoreEmptyRun({
   title?: string;
   /** /score/contract: the contract was read and is valid (W8, W9). */
   contractLine?: string;
-  /** /score/contract: what the visitor can do instead (W8). */
+  /** /score/contract: what the visitor can do instead (W8). Text between
+      backticks is set as code, e.g. `<style>`. */
   todo?: string[];
   actionLabel?: string;
 }) {
@@ -55,7 +56,7 @@ export function ScoreEmptyRun({
           <p className="score-empty-run-eyebrow">What you can do</p>
           <ul>
             {todo.map((t) => (
-              <li key={t}>{t}</li>
+              <li key={t}>{t.split('`').map((part, i) => (i % 2 ? <code key={i}>{part}</code> : part))}</li>
             ))}
           </ul>
         </div>
