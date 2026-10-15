@@ -12693,13 +12693,15 @@ select {
 }
 
 /* One voice: the letter takes the numeral's face, size, weight and baseline,
-   coloured by grade; no box around it. */
+   coloured by grade; no box around it. The size is fluid, from the h1 step
+   (39px) on a phone to 52px from about 1120px wide. Its bounds are rem
+   literals, not tokens, so a reader of the stylesheet sees the floor. */
 .rs-readout {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   column-gap: var(--space-12);
-  font: 700 3.25rem/1 var(--display);
+  font: 700 clamp(2.441rem, 1.5rem + 2.5vw, 3.25rem)/1 var(--display);
   letter-spacing: -0.02em;
 }
 .rs-grade {
