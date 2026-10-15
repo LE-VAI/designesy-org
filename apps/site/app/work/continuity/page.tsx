@@ -179,7 +179,7 @@ export default function ContinuityCaseStudyPage() {
             <span className="status-badge">Needs revision</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · le-vai.github.io/continuity</span>
-            <span className="lab-meta-item">Date · 2026-07-12</span>
+            <span className="lab-meta-item">Reviewed · 2026-07-12</span>
           </div>
           <AgentActions mdPath="/work/continuity.md" label="the continuity case study" />
         </section>

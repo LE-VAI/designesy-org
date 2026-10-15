@@ -216,7 +216,8 @@ export default function CompileCaseStudyPage() {
             it into tokens, anti-patterns, a review checklist, and a portable
             verification script. Built and locally verified. Self-documents
             to the 10-cell Lab anatomy. Demonstrates the Sources to Contracts
-            to Tools chain. Live at le-vai.github.io/compile.
+            to Tools chain. Live at{' '}
+            <a className="text-link" href="https://le-vai.github.io/compile/">le-vai.github.io/compile</a>.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             {/* Neutral, not brand blue: the /work index shows this same state
@@ -224,7 +225,7 @@ export default function CompileCaseStudyPage() {
             <span className="status-badge status-badge--neutral">Ready for review</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · le-vai.github.io/compile</span>
-            <span className="lab-meta-item">Date · 2026-07-13</span>
+            <span className="lab-meta-item">Reviewed · 2026-07-13</span>
           </div>
           <AgentActions mdPath="/work/compile.md" label="the compile case study" />
         </section>
