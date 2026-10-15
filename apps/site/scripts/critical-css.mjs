@@ -22,7 +22,11 @@
  * file builds it the way Next does: the same PostCSS plugins with the same
  * options and browser targets, then the same minifier with the same options.
  * The output was checked byte for byte against the chunk Next 15.5.27 emitted
- * for the same source (255,336 bytes, identical). `next` is pinned exactly in
+ * for the same source (255,336 bytes, identical), and again against the chunk
+ * Next 16.4.1 emits with `next build --webpack` (232,637 bytes, identical; the
+ * Next 16 browser floor drops the older vendor prefixes). This is the webpack
+ * pipeline: Turbopack builds CSS with lightningcss instead, so a move to
+ * Turbopack means revisiting this file. `next` is pinned exactly in
  * package.json, so the internals used below cannot move under a caret range.
  *
  * WHAT COUNTS AS CRITICAL
@@ -57,7 +61,7 @@ import { selectOne, compile } from 'css-select';
 
 const require = createRequire(import.meta.url);
 
-/** Build globals.css exactly as Next 15.5's production webpack pipeline does. */
+/** Build globals.css exactly as Next's production webpack pipeline does. */
 export async function buildGlobalsCss(siteDir) {
   const req = (m) => require(require.resolve(m, { paths: [siteDir] }));
   const postcss = req('postcss');
