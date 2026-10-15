@@ -1,62 +1,28 @@
 # designesy-score
 
-<picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-score-gate.png">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="Designesy Score Gate: a URL flows in, the contract grid fires check by check, the score counts up to its grade, and the gate passes" width="960">
-</picture>
+> **Deprecated.** `designesy-score` is superseded by [`@designesy/score`](https://www.npmjs.com/package/@designesy/score), which runs the same 45-check engine. The `designesy-score` package on npm is deprecated: its last release, 1.0.5, carries an older engine and gets no updates.
 
-Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. **Runs locally, with no Designesy server:** every check that needs no browser runs in-process, and the browser checks return MANUAL. Zero dependencies.
+## Use @designesy/score instead
 
 ```bash
-npx designesy-score designesy.org
+npx @designesy/score designesy.org
+npx @designesy/score linear.app --min-score 70 --min-grade B
+npx @designesy/score vercel.com --format canonical --json
 ```
 
-## What's new in 1.0.0
+The flags are the same, except `--api`, which `@designesy/score` does not have. See [`packages/score/README.md`](../packages/score/README.md) for the full reference.
 
-**The engine runs locally.** In 0.x, the CLI called the designesy.org API. In 1.0.0,
-it fetches the target URL, extracts CSS + `:root` tokens, and runs every check
-that needs no browser in-process (the browser checks return MANUAL). No server dependency, no rate limits, works even if designesy.org is down.
+## Running this file from a clone
 
-- **`--scope` flag** — `contract` (strict) or `universal` (fair to external sites)
-- **Anti-slop + originality** in the report — 12 deduction patterns, 7 craft lifts
-- **Zero dependencies** — `node:https` + pure-JS SSRF guard (was: `fetch()` + `ipaddr.js`)
-- **`--api` remote fallback** — still works if you need the old server-based mode
-
-See the [migration guide](../MIGRATION.md) for the full 0.4.2 → 1.0.0 upgrade path.
-
-## Install
+`cli/designesy-score.mjs` stays in the repo for existing users and for the `verify` subcommand, which `@designesy/score` does not have. It imports the engine from `packages/score/dist/`, which is not committed, so build the engine first:
 
 ```bash
-# One-off (no install):
-npx designesy-score <url>
-
-# Global:
-npm install -g designesy-score
-designesy-score <url>
+npm --prefix packages/score ci
+npm run build:score
+node cli/designesy-score.mjs designesy.org
 ```
 
-## Usage
-
-```bash
-# Score a site (default format, formatted report):
-designesy-score designesy.org
-
-# Gate on score + grade (exit 1 on failure — for CI / pre-commit):
-designesy-score linear.app --min-score 70 --min-grade B
-
-# JSON output for piping:
-designesy-score vercel.com --format canonical --json
-
-# Strict vs fair scoring scope:
-designesy-score designesy.org --scope contract
-designesy-score linear.app --scope universal
-
-# Remote fallback (deprecated, removed in 2.0.0):
-designesy-score example.com --api https://www.designesy.org
-
-# Quiet mode (only output on failure — for CI noise reduction):
-designesy-score my-app.vercel.app --min-score 90 --quiet
-```
+The engine runs locally, with no Designesy server: every check that needs no browser runs in-process, and the browser checks return MANUAL. Node built-ins only.
 
 ## Verify a DESIGN.md
 
@@ -64,8 +30,8 @@ Check whether a site serves a valid `/DESIGN.md` at its origin root.
 Runs the v37 spec-layer check from the local engine.
 
 ```bash
-npx designesy-score verify designesy.org
-npx designesy-score verify linear.app --json
+node cli/designesy-score.mjs verify designesy.org
+node cli/designesy-score.mjs verify linear.app --json
 ```
 
 | Result | Meaning | Exit |
@@ -76,42 +42,38 @@ npx designesy-score verify linear.app --json
 | **SKIP** | `/DESIGN.md` not served (no public convention requires it) | `0` |
 
 This checks the **spec layer** (file format). For the full 45-check
-design-system contract score, use `designesy-score <url>`.
+design-system contract score, score the URL itself.
 
 ## Options
 
 | Flag | Default | Description |
 |---|---|---|
 | `--format <f>` | `designesy` | Emission format: `designesy` (native), `canonical` (review-findings.json), `review` (markdown), `google` (design.md-compatible) |
-| `--scope <s>` | `auto` | Scoring scope: `contract` (strict — penalizes absence), `universal` (fair — SKIPs optional features). `auto` detects Designesy tokens. [NEW in 1.0.0] |
-| `--api <url>` | disabled | Remote fallback — use a scoring server instead of local engine. Also reads `SCORE_API` env var. [DEPRECATED — removed in 2.0.0] |
+| `--scope <s>` | `auto` | Scoring scope: `contract` (strict, penalizes absence), `universal` (fair, SKIPs optional features). `auto` detects Designesy tokens. |
+| `--api <url>` | disabled | Remote fallback: send the URL to a scoring server instead of scoring locally. Also reads the `SCORE_API` env var. Off unless you set it. |
 | `--min-score <n>` | `0` | Exit 1 if score < n. `0` disables the score floor. |
 | `--min-grade <g>` | `""` | Exit 1 if grade is worse than g (`A`/`B`/`C`/`D`/`F`). Empty disables. |
 | `--json` | off | Output raw JSON (no formatted report). |
 | `--quiet` | off | Only output on failure. |
-| `--help`, `-h` | — | Show help. |
+| `--help`, `-h` | n/a | Show help. |
 
 ## Exit codes
 
-- `0` — score meets all gates (or no gates set)
-- `1` — score below `--min-score` or grade worse than `--min-grade`, or engine error
-- `2` — invalid arguments
+- `0`: score meets all gates (or no gates set)
+- `1`: score below `--min-score`, grade worse than `--min-grade`, or engine error
+- `2`: invalid arguments
 
 ## What it scores
 
 The Designesy v0.4.6 design-system contract, with 45 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
-See the [full methodology](https://www.designesy.org/methodology).
-
-## Zero dependencies
-
-Node built-ins only (`node:https`, `node:dns`, `node:net`, `process`). No install step, no postinstall, no transitive deps. The SSRF guard is pure JavaScript — no `ipaddr.js` dependency.
+See the [full methodology](https://www.designesy.org/methodology). The upgrade notes from 0.4.2 to 1.0.0 are in the [migration guide](../MIGRATION.md).
 
 ## Related
 
-- [GitHub Action](https://github.com/LE-VAI/designesy-org/tree/main/action) — same engine as a CI quality gate
-- [MCP server](https://www.designesy.org/api/mcp) — 17 tools for AI agents
-- [Contract](https://www.designesy.org/contracts/design-system) — the design-system contract
-- [@designesy/score](https://www.npmjs.com/package/@designesy/score) — the engine as a library package
-- [@designesy/cli](https://www.npmjs.com/package/@designesy/cli) — unified CLI (tokens + score)
+- [@designesy/score](https://www.npmjs.com/package/@designesy/score): the engine and CLI, current
+- [@designesy/cli](https://www.npmjs.com/package/@designesy/cli): one CLI for tokens and score
+- [GitHub Action](https://github.com/LE-VAI/designesy-org/tree/main/action): the same engine as a CI quality gate
+- [MCP server](https://www.designesy.org/api/mcp): 17 tools for AI agents
+- [Contract](https://www.designesy.org/contracts/design-system): the design-system contract
 - [designesy.org](https://www.designesy.org)
