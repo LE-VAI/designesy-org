@@ -3587,7 +3587,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* Reduced motion: the rails hold still. Each rail becomes its links, wrapped,
    once each: the loop's second copy is aria-hidden and goes.
 
-   Touch screens keep the marquee (an operator decision, 2026-09-30: the
+   Touch screens keep the marquee (the
    wrapped rails turned the phone footer into a ~1000px wall of pills). The
    two risks that froze it on 2026-09-28 are handled in scroll-pause.tsx: a
    finger landing freezes the rail in place, so a tap resolves on the pill the
@@ -8899,7 +8899,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ===========================================================================
    MASTER REDUCED-MOTION OVERRIDE (final word): TIERED
    ---------------------------------------------------------------------------
-   Operator decision 2026-10-01. Under prefers-reduced-motion: reduce:
+   Under prefers-reduced-motion: reduce:
      * anything that MOVES stops: translate, scale, rotate, position. Travel
        across the screen is the vestibular trigger reduce exists for;
      * fades (opacity-only) may keep running, and short transitions (<= 200 ms)
@@ -11188,8 +11188,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
   /* 2. Topbar control cluster — all four controls read at 44px hit area on mobile.
      Theme-toggle + cmdk-trigger get the same floor as sense-toggle so the cluster
-     stays uniform (sound button was 44px while theme/cmdk stayed 32px — operator
-     feedback: "sound icon is not aligned with the theme switcher/search").
+     stays uniform (the sound button was 44px while theme/cmdk stayed 32px, so
+     the icons sat out of line).
      Borders are stripped on mobile: the 44px hit area + visual gap is enough,
      and borders on 3 of 4 controls (sense-toggle, theme-toggle, cmdk-trigger
      had borders; nav-trigger didn't) created a visible misalignment line under
@@ -13448,11 +13448,8 @@ button.rs-row:focus-visible {
    the same background-clip:text technique as .hero-word-free, but in
    signal-blue. The band is WIDE (20% at 40–60% of image) and BRIGHT
    (pure --signal at the core). The shimmer band alone carries the emphasis —
-   NO drop-shadow glow: the halo blurred past the glyph edges and halo'd the
-   entire sentence, which the operator explicitly rejected ("remove the glow,
-   don't apply it to the entire text"). A brief earlier pass had added a
-   drop-shadow here ("add a slight glow to the shimmer only") — removed on
-   operator correction: flat clip:text band only. */
+   NO drop-shadow glow: the halo blurs past the glyph edges and spreads over
+   the entire sentence. Flat clip:text band only. */
 
 [data-data-scramble-rotate] [data-word],
 [data-scramble-rotate-words] [data-word] {
@@ -13496,19 +13493,17 @@ button.rs-row:focus-visible {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* NO GLOW — the shimmer band alone carries the emphasis. The drop-shadow()
-     halo that rode the band blurred across the glyph edges and halo'd the
-     entire sentence, which the operator explicitly rejected: "I told you NOT
-     to apply that glow to the entire text — remove the glow." Flat clip:text
-     band only. */
+  /* NO GLOW — the shimmer band alone carries the emphasis. A drop-shadow()
+     halo on the band blurs across the glyph edges and spreads over the
+     entire sentence. Flat clip:text band only. */
   /* 2.6s sweep reversed direction — enters LEFT, exits RIGHT, no dwell
      so the loop reads as a continuous crossing (faster perception even
      at same duration). */
   animation: hero-word-rotate-shimmer 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
-/* Light theme — NO GLOW either. Same operator rejection applies on paper:
-   the drop-shadow halo'd the whole sentence. Flat clip:text band only. */
+/* Light theme — NO GLOW either, for the same reason on paper: the
+   drop-shadow spreads over the whole sentence. Flat clip:text band only. */
 
 @keyframes hero-word-rotate-shimmer {
   /* LEFT→RIGHT: start with the band parked off the LEFT edge
@@ -13573,7 +13568,7 @@ button.rs-row:focus-visible {
 /* ---------------------------------------------------------------------------
    Chapter rhythm — "book chapter" separators for the homepage flow.
    ---------------------------------------------------------------------------
-   Operator brief: "Think in chapters. Like reading a premium book." The
+   The homepage reads in chapters, like a book. The
    six content .section blocks after the hero already breathe (Stage-3
    clamp padding); this layer adds a hairline construction rule above each
    chapter so the page reads as bounded chapters rather than a continuous

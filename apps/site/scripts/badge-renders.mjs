@@ -96,7 +96,7 @@ try {
   if (check) {
     console.log(
       stale
-        ? `[badge-renders] ${stale} of ${n} file(s) differ from the renderer. If the change is meant, run npm run badge-renders and send the new set for brand review.`
+        ? `[badge-renders] ${stale} of ${n} file(s) differ from the renderer. If the change is meant, run npm run badge-renders and include the new renders in the PR.`
         : `[badge-renders] OK - ${n} files match the renderer (2 static images, ${n - 2} live badge states)`,
     );
   } else {

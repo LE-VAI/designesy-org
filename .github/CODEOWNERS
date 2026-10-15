@@ -2,10 +2,8 @@
 #
 # GitHub will require a review from these owners on the paths below when
 # branch protection is enabled with "Require review from Code Owners."
-# Since this is a solo-operator repo (LE-VAI), the owner is the operator's
-# GitHub account. This still adds a visible gate: direct pushes to main
-# on owned paths will be blocked, and PRs touching these paths will show
-# a review request.
+# Direct pushes to main on owned paths are blocked, and PRs touching these
+# paths show a review request.
 #
 # Format: <path pattern> @<github-username>
 

@@ -16,6 +16,9 @@ exclude_path = [
   "node_modules",
   "install_tmp",
   "\\.git",
+  # The MCP server's tests feed made-up and private addresses to the URL
+  # guard on purpose; they are inputs under test, not links.
+  "packages/designesy-mcp/test/",
   # package-lock.json contains transitive dep funding URLs (patreon,
   # opencollective, tidelift) that 403 bots — not our content to fix.
   "package-lock\\.json",
@@ -63,6 +66,9 @@ exclude_path = [
   "test/fixtures/tokens/",
 ]
 
+# Private, loopback and link-local addresses are never public links.
+exclude_all_private = true
+
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
 # 1. cursor:// — native URI scheme (like vscode://), not an HTTP URL.
 #    Browsers hand it to the Cursor app; lychee can't follow it.
@@ -91,6 +97,14 @@ exclude = [
   # npmjs.com package pages — return 403 to lychee's bot user-agent.
   # Verified manually; these are our own published packages.
   '^https://www\.npmjs\.com/package/',
+  # Test data in the MCP server's tests: made-up hosts, a path-scrubbing
+  # sample, and the cloud metadata address the URL guard must refuse.
+  # None of them is a link this repo publishes.
+  '^https://fixture\.local',
+  '^http://169\.254\.169\.254',
+  '^https://wrong-schema\.com',
+  '^https://x\.org/Users/',
+  '^file://',
 ]
 
 # ── Accept these status codes as OK ─────────────────────────────────────────

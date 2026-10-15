@@ -1,4 +1,4 @@
-// Every templated string on /score/contract, as pure builders (HANDOFF 10.2).
+// Every templated string on /score/contract, as pure builders.
 // The page renders these and never retypes a count, a score or a version:
 // counts come from the result or the published formula, scores from
 // verdict.ts fmtScore, problem sentences from the engine (own-contract
