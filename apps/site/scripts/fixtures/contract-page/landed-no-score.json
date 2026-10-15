@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.6",
-  "engineVersion": "1.5.0",
+  "engineVersion": "1.5.2",
   "score": null,
   "grade": null,
   "fidelity": {
@@ -653,9 +653,9 @@
   "tokensExtracted": 0,
   "receipt": {
    "subject": "https://pamphlet.studio.example.com/",
-   "retrieved_at": "2026-10-15T00:18:28.467Z",
+   "retrieved_at": "2026-10-15T18:40:16.502Z",
    "contract_version": "v0.4.6",
-   "engine_version": "1.5.0",
+   "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": "1bb29c9c123ca4db6ef01fa572b382a7ae5eedf9a95f9c8060b5e0796921e70c",
    "verify": {

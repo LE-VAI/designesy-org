@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.6",
-  "engineVersion": "1.5.0",
+  "engineVersion": "1.5.2",
   "score": 0,
   "grade": "F",
   "fidelity": {
@@ -240,7 +240,7 @@
    "format": "design.md",
    "formatVersion": null,
    "source": "inline",
-   "bytes": 284,
+   "bytes": 263,
    "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
    "tokens": {
     "colors": 4,
@@ -265,8 +265,8 @@
   },
   "site": {
    "requestedUrl": "https://www.designesy.org/",
-   "htmlBytes": 403858,
-   "cssBytes": 497879,
+   "htmlBytes": 393057,
+   "cssBytes": 489942,
    "stylesheetsFetched": 7,
    "stylesheetsTotal": 7,
    "stylesheetsTruncated": false
@@ -990,7 +990,7 @@
     "item": "Shipped font families are in your contract",
     "category": "typography",
     "status": "FAIL",
-    "detail": "3 shipped families are not in your contract: Fraunces in .__className_5fcedc, Schibsted Grotesk in .__className_caefae, Atkinson Hyperlegible Mono in .__className_869df3",
+    "detail": "3 shipped families are not in your contract: Fraunces in .__className_e021a4, Schibsted Grotesk in .__className_91317c, Atkinson Hyperlegible Mono in .__className_3a756f",
     "layer": "fidelity",
     "reads": [
      "typography.*.fontFamily"
@@ -1007,21 +1007,21 @@
      {
       "value": "Fraunces",
       "where": [
-       ".__className_5fcedc"
+       ".__className_e021a4"
       ],
       "uses": 1
      },
      {
       "value": "Schibsted Grotesk",
       "where": [
-       ".__className_caefae"
+       ".__className_91317c"
       ],
       "uses": 1
      },
      {
       "value": "Atkinson Hyperlegible Mono",
       "where": [
-       ".__className_869df3"
+       ".__className_3a756f"
       ],
       "uses": 1
      }
@@ -1480,7 +1480,7 @@
        ".motion-toggle-row",
        ".hero-actions"
       ],
-      "uses": 196
+      "uses": 173
      },
      {
       "value": "2.4px",
@@ -1507,7 +1507,7 @@
        ".button",
        ".checkmark-list"
       ],
-      "uses": 20
+      "uses": 19
      },
      {
       "value": "8.8px",
@@ -1516,7 +1516,7 @@
        "button.row",
        ".layer-item,.row"
       ],
-      "uses": 17
+      "uses": 16
      },
      {
       "value": "9.6px",
@@ -1534,7 +1534,7 @@
        ".sr-only",
        ".surface-card:before"
       ],
-      "uses": 49
+      "uses": 47
      },
      {
       "value": "4px",
@@ -1543,7 +1543,7 @@
        ".status-badge",
        ".row>.row-side"
       ],
-      "uses": 49
+      "uses": 44
      },
      {
       "value": "20px",
@@ -1561,7 +1561,7 @@
        ".principle-body h3",
        ".field-card"
       ],
-      "uses": 15
+      "uses": 13
      },
      {
       "value": "40px",
@@ -1570,7 +1570,7 @@
        ".status-note",
        ".hero"
       ],
-      "uses": 18
+      "uses": 16
      },
      {
       "value": "32px",
@@ -1579,7 +1579,7 @@
        ".definition",
        ".doctrine-cols:has(>.definition)"
       ],
-      "uses": 32
+      "uses": 31
      },
      {
       "value": "5.6px",
@@ -1615,7 +1615,7 @@
        ".footer-dock-pill",
        ".docs-toc-list a"
       ],
-      "uses": 17
+      "uses": 16
      },
      {
       "value": "1.6px",
@@ -1658,7 +1658,7 @@
      "findings": [
       {
        "value": "12px",
-       "uses": 196,
+       "uses": 173,
        "where": ".topbar-right, .motion-toggle-row, .hero-actions"
       },
       {
@@ -1673,12 +1673,12 @@
       },
       {
        "value": "10.4px",
-       "uses": 20,
+       "uses": 19,
        "where": ".nav-links a, .button, .checkmark-list"
       },
       {
        "value": "8.8px",
-       "uses": 17,
+       "uses": 16,
        "where": ".cmdk-trigger, button.row, .layer-item,.row"
       },
       {
@@ -1688,12 +1688,12 @@
       },
       {
        "value": "1px",
-       "uses": 49,
+       "uses": 47,
        "where": ".cmdk-trigger-kbd, .sr-only, .surface-card:before"
       },
       {
        "value": "4px",
-       "uses": 49,
+       "uses": 44,
        "where": ".cmdk-trigger-kbd, .status-badge, .row>.row-side"
       },
       {
@@ -1703,17 +1703,17 @@
       },
       {
        "value": "7.2px",
-       "uses": 15,
+       "uses": 13,
        "where": ".surface-card, .principle-body h3, .field-card"
       },
       {
        "value": "40px",
-       "uses": 18,
+       "uses": 16,
        "where": ".footer, .status-note, .hero"
       },
       {
        "value": "32px",
-       "uses": 32,
+       "uses": 31,
        "where": ".footer, .definition, .doctrine-cols:has(>.definition)"
       },
       {
@@ -1733,7 +1733,7 @@
       },
       {
        "value": "4.8px",
-       "uses": 17,
+       "uses": 16,
        "where": ".footer-dock-label, .footer-dock-pill, .docs-toc-list a"
       },
       {
@@ -1843,7 +1843,7 @@
     "item": "Styles use your contract's tokens",
     "category": "tokens",
     "status": "FAIL",
-    "detail": "39% of color, spacing, radius and type declarations use a token (1373 of 3492)",
+    "detail": "40% of color, spacing, radius and type declarations use a token (1353 of 3397)",
     "layer": "fidelity",
     "reads": [
      "all located tokens"
@@ -1854,9 +1854,9 @@
     "evidence": {
      "findings": [
       {
-       "declarations": 3492,
-       "usingTokens": 1373,
-       "share": 0.393
+       "declarations": 3397,
+       "usingTokens": 1353,
+       "share": 0.398
       }
      ],
      "truncated": 0
@@ -2374,9 +2374,9 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://www.designesy.org/",
-   "retrieved_at": "2026-10-15T00:02:12.060Z",
+   "retrieved_at": "2026-10-15T18:40:17.613Z",
    "contract_version": "v0.4.6",
-   "engine_version": "1.5.0",
+   "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": "8cdd84d7bedf2cdce29e764fdba1bfcd84323aced18cf175c283fd6c38ee07b9",
    "verify": {

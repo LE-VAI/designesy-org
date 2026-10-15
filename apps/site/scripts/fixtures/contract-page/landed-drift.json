@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.6",
-  "engineVersion": "1.5.0",
+  "engineVersion": "1.5.2",
   "score": 70,
   "grade": "C",
   "fidelity": {
@@ -265,9 +265,9 @@
     {
      "code": "LINT_WARNING",
      "severity": "warning",
-     "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing y… (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors",
-     "value": "No 'primary' color defined. The agent will auto-generate key colors, reducing y…",
+     "linterMessage": "No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette.",
      "rule": "missing-primary"
     },
     {
@@ -275,7 +275,8 @@
      "severity": "warning",
      "message": "colors.c01: 'c01' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c01",
-     "value": "'c01' is defined but never referenced by any component.",
+     "value": "#F5F5F7",
+     "linterMessage": "'c01' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -283,7 +284,8 @@
      "severity": "warning",
      "message": "colors.c02: 'c02' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c02",
-     "value": "'c02' is defined but never referenced by any component.",
+     "value": "#010102",
+     "linterMessage": "'c02' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -291,7 +293,8 @@
      "severity": "warning",
      "message": "colors.c03: 'c03' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c03",
-     "value": "'c03' is defined but never referenced by any component.",
+     "value": "#0A94FF",
+     "linterMessage": "'c03' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -299,7 +302,8 @@
      "severity": "warning",
      "message": "colors.c04: 'c04' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c04",
-     "value": "'c04' is defined but never referenced by any component.",
+     "value": "#A0A0A0",
+     "linterMessage": "'c04' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -307,7 +311,8 @@
      "severity": "warning",
      "message": "colors.c05: 'c05' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c05",
-     "value": "'c05' is defined but never referenced by any component.",
+     "value": "#36A7FF",
+     "linterMessage": "'c05' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -315,7 +320,8 @@
      "severity": "warning",
      "message": "colors.c06: 'c06' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c06",
-     "value": "'c06' is defined but never referenced by any component.",
+     "value": "#7D7D7D",
+     "linterMessage": "'c06' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -323,7 +329,8 @@
      "severity": "warning",
      "message": "colors.c07: 'c07' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c07",
-     "value": "'c07' is defined but never referenced by any component.",
+     "value": "#0A0A0C",
+     "linterMessage": "'c07' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -331,7 +338,8 @@
      "severity": "warning",
      "message": "colors.c08: 'c08' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c08",
-     "value": "'c08' is defined but never referenced by any component.",
+     "value": "#121216",
+     "linterMessage": "'c08' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -339,7 +347,8 @@
      "severity": "warning",
      "message": "colors.c09: 'c09' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c09",
-     "value": "'c09' is defined but never referenced by any component.",
+     "value": "#7AE4A1",
+     "linterMessage": "'c09' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -347,7 +356,8 @@
      "severity": "warning",
      "message": "colors.c10: 'c10' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c10",
-     "value": "'c10' is defined but never referenced by any component.",
+     "value": "#75E69E",
+     "linterMessage": "'c10' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -355,7 +365,8 @@
      "severity": "warning",
      "message": "colors.c11: 'c11' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c11",
-     "value": "'c11' is defined but never referenced by any component.",
+     "value": "#F8D859",
+     "linterMessage": "'c11' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -363,7 +374,8 @@
      "severity": "warning",
      "message": "colors.c12: 'c12' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c12",
-     "value": "'c12' is defined but never referenced by any component.",
+     "value": "#FBD84C",
+     "linterMessage": "'c12' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -371,7 +383,8 @@
      "severity": "warning",
      "message": "colors.c13: 'c13' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c13",
-     "value": "'c13' is defined but never referenced by any component.",
+     "value": "#F78989",
+     "linterMessage": "'c13' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -379,7 +392,8 @@
      "severity": "warning",
      "message": "colors.c14: 'c14' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c14",
-     "value": "'c14' is defined but never referenced by any component.",
+     "value": "#FA9292",
+     "linterMessage": "'c14' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -387,7 +401,8 @@
      "severity": "warning",
      "message": "colors.c15: 'c15' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c15",
-     "value": "'c15' is defined but never referenced by any component.",
+     "value": "#18181C",
+     "linterMessage": "'c15' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -395,7 +410,8 @@
      "severity": "warning",
      "message": "colors.c16: 'c16' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c16",
-     "value": "'c16' is defined but never referenced by any component.",
+     "value": "#16161B",
+     "linterMessage": "'c16' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -403,7 +419,8 @@
      "severity": "warning",
      "message": "colors.c17: 'c17' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c17",
-     "value": "'c17' is defined but never referenced by any component.",
+     "value": "#F87171",
+     "linterMessage": "'c17' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -411,7 +428,8 @@
      "severity": "warning",
      "message": "colors.c18: 'c18' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c18",
-     "value": "'c18' is defined but never referenced by any component.",
+     "value": "#4ADE80",
+     "linterMessage": "'c18' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -419,7 +437,8 @@
      "severity": "warning",
      "message": "colors.c19: 'c19' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c19",
-     "value": "'c19' is defined but never referenced by any component.",
+     "value": "#F56B00",
+     "linterMessage": "'c19' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -427,7 +446,8 @@
      "severity": "warning",
      "message": "colors.c20: 'c20' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c20",
-     "value": "'c20' is defined but never referenced by any component.",
+     "value": "#29A2FF",
+     "linterMessage": "'c20' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -435,7 +455,8 @@
      "severity": "warning",
      "message": "colors.c21: 'c21' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c21",
-     "value": "'c21' is defined but never referenced by any component.",
+     "value": "#FFFFFF",
+     "linterMessage": "'c21' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -443,7 +464,8 @@
      "severity": "warning",
      "message": "colors.c22: 'c22' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c22",
-     "value": "'c22' is defined but never referenced by any component.",
+     "value": "#0A151F",
+     "linterMessage": "'c22' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -451,7 +473,8 @@
      "severity": "warning",
      "message": "colors.c23: 'c23' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c23",
-     "value": "'c23' is defined but never referenced by any component.",
+     "value": "#FACC15",
+     "linterMessage": "'c23' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -459,7 +482,8 @@
      "severity": "warning",
      "message": "colors.c24: 'c24' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c24",
-     "value": "'c24' is defined but never referenced by any component.",
+     "value": "#22C55E",
+     "linterMessage": "'c24' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -467,7 +491,8 @@
      "severity": "warning",
      "message": "colors.c25: 'c25' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c25",
-     "value": "'c25' is defined but never referenced by any component.",
+     "value": "#84CC16",
+     "linterMessage": "'c25' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -475,7 +500,8 @@
      "severity": "warning",
      "message": "colors.c26: 'c26' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c26",
-     "value": "'c26' is defined but never referenced by any component.",
+     "value": "#EAB308",
+     "linterMessage": "'c26' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -483,7 +509,8 @@
      "severity": "warning",
      "message": "colors.c27: 'c27' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c27",
-     "value": "'c27' is defined but never referenced by any component.",
+     "value": "#FB7185",
+     "linterMessage": "'c27' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -491,7 +518,8 @@
      "severity": "warning",
      "message": "colors.c28: 'c28' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c28",
-     "value": "'c28' is defined but never referenced by any component.",
+     "value": "#EF4444",
+     "linterMessage": "'c28' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -499,7 +527,8 @@
      "severity": "warning",
      "message": "colors.c29: 'c29' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c29",
-     "value": "'c29' is defined but never referenced by any component.",
+     "value": "#28282D",
+     "linterMessage": "'c29' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -507,7 +536,8 @@
      "severity": "warning",
      "message": "colors.c30: 'c30' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c30",
-     "value": "'c30' is defined but never referenced by any component.",
+     "value": "#2FA4FF",
+     "linterMessage": "'c30' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -515,7 +545,8 @@
      "severity": "warning",
      "message": "colors.c31: 'c31' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c31",
-     "value": "'c31' is defined but never referenced by any component.",
+     "value": "#111C29",
+     "linterMessage": "'c31' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -523,7 +554,8 @@
      "severity": "warning",
      "message": "colors.c32: 'c32' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c32",
-     "value": "'c32' is defined but never referenced by any component.",
+     "value": "#FECACA",
+     "linterMessage": "'c32' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -531,7 +563,8 @@
      "severity": "warning",
      "message": "colors.c33: 'c33' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c33",
-     "value": "'c33' is defined but never referenced by any component.",
+     "value": "#34D399",
+     "linterMessage": "'c33' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     },
     {
@@ -539,15 +572,16 @@
      "severity": "warning",
      "message": "colors.c34: 'c34' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors.c34",
-     "value": "'c34' is defined but never referenced by any component.",
+     "value": "#C9A227",
+     "linterMessage": "'c34' is defined but never referenced by any component.",
      "rule": "orphaned-tokens"
     }
    ]
   },
   "site": {
    "requestedUrl": "https://designesy.org/",
-   "htmlBytes": 403858,
-   "cssBytes": 497879,
+   "htmlBytes": 393057,
+   "cssBytes": 489942,
    "stylesheetsFetched": 7,
    "stylesheetsTotal": 7,
    "stylesheetsTruncated": false
@@ -1043,7 +1077,7 @@
     "item": "Styles use your contract's tokens",
     "category": "tokens",
     "status": "WARN",
-    "detail": "75% of color, spacing, radius and type declarations use a token (2632 of 3492)",
+    "detail": "76% of color, spacing, radius and type declarations use a token (2571 of 3397)",
     "layer": "fidelity",
     "reads": [
      "all located tokens"
@@ -1054,9 +1088,9 @@
     "evidence": {
      "findings": [
       {
-       "declarations": 3492,
-       "usingTokens": 2632,
-       "share": 0.754
+       "declarations": 3397,
+       "usingTokens": 2571,
+       "share": 0.757
       }
      ],
      "truncated": 0
@@ -1574,9 +1608,9 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://designesy.org/",
-   "retrieved_at": "2026-10-15T00:19:33.977Z",
+   "retrieved_at": "2026-10-15T18:40:13.336Z",
    "contract_version": "v0.4.6",
-   "engine_version": "1.5.0",
+   "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": "927ef2329650c7eb8cb317e1ee4b749fb0d2ca2204ac70ce98eac792a13b746c",
    "verify": {

@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.6",
-  "engineVersion": "1.5.0",
+  "engineVersion": "1.5.2",
   "score": 100,
   "grade": "A",
   "fidelity": {
@@ -265,17 +265,17 @@
     {
      "code": "LINT_WARNING",
      "severity": "warning",
-     "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing y… (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette (a warning from the DESIGN.md format's linter; scoring went ahead).",
      "path": "colors",
-     "value": "No 'primary' color defined. The agent will auto-generate key colors, reducing y…",
+     "linterMessage": "No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette.",
      "rule": "missing-primary"
     }
    ]
   },
   "site": {
    "requestedUrl": "https://designesy.org/",
-   "htmlBytes": 403858,
-   "cssBytes": 497879,
+   "htmlBytes": 393057,
+   "cssBytes": 489942,
    "stylesheetsFetched": 7,
    "stylesheetsTotal": 7,
    "stylesheetsTruncated": false
@@ -1086,9 +1086,9 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://designesy.org/",
-   "retrieved_at": "2026-10-15T00:19:32.562Z",
+   "retrieved_at": "2026-10-15T18:40:12.101Z",
    "contract_version": "v0.4.6",
-   "engine_version": "1.5.0",
+   "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": "0e8600610732e379ad2143efbf906f3c12e4a97d1fda74898c774f5c360aab06",
    "verify": {
