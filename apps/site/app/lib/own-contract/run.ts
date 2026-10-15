@@ -19,6 +19,8 @@ export interface SiteFacts {
   stylesheetsFetched?: number;
   stylesheetsTotal?: number;
   stylesheetsTruncated?: boolean;
+  /** The page or a stylesheet was longer than the hosted engine reads, and was read up to its byte cap (engine 1.5.1). */
+  bytesTruncated?: boolean;
 }
 
 export interface Coverage {
@@ -85,6 +87,7 @@ export function coverageOf(ctx: Ctx, site: SiteFacts = {}): Coverage {
   const total = site.stylesheetsTotal ?? 0;
   const fetched = site.stylesheetsFetched ?? total;
   if (site.stylesheetsTruncated) notes.push(`STYLESHEET_CAP: the page links ${total} stylesheets; the first ${STYLESHEET_CAP} were read.`);
+  if (site.bytesTruncated) notes.push('DOCUMENT_CAP: the page or its stylesheets are longer than the hosted engine reads; each was read up to its byte cap.');
   const expected = Math.min(total, STYLESHEET_CAP);
   if (fetched < expected) notes.push(`STYLESHEETS_MISSING: ${expected - fetched} of ${expected} stylesheets could not be read before the deadline or answered with an error.`);
   const hint = declared && ratio < 0.2
@@ -98,7 +101,7 @@ export interface OwnContractRun {
   baseline: LayerResult & { a11yFloorApplied: boolean };
   coverage: Coverage;
   checks: Array<CheckResultV2 | (BaselineInput & { layer: 'baseline' })>;
-  site: Required<SiteFacts>;
+  site: Required<Pick<SiteFacts, 'stylesheetsFetched' | 'stylesheetsTotal' | 'stylesheetsTruncated'>>;
   pass: number;
   warn: number;
   fail: number;
