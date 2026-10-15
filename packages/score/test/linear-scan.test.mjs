@@ -627,8 +627,8 @@ const SITES = [
     id: ':root blocks', alerts: [],
     old: (s) => execAll(/:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g, s),
     neu: (s) => E.rootTokenBlocks(s),
-    samples: [':root{--a:1}', ':root , :host {--b:2}', ':root,:host{}'],
-    alphabet: [':root', ':ROOT', ',', ' ', ':host', '{', '}', '--a:1;', 'x'],
+    samples: [':root{--a:1}', ':root , :host {--b:2}', ':root,:host{}', ':root\t,\n:host\u00a0{--c:3}', ':root , :hos {x}'],
+    alphabet: [':root', ':ROOT', ',', ' ', '\t', '\n', '\u00a0', ':host', ':hos', '{', '}', '--a:1;', 'x'],
   },
   {
     id: ':root custom properties', alerts: [],

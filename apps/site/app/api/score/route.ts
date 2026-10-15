@@ -1318,7 +1318,6 @@ function lowerBound(list: number[], x: number): number {
 /** Matches of /:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g: groups [body]. */
 function rootTokenBlocks(css: string): ScanMatch[] {
   const start = /:root/g;
-  const host = /\s*,\s*:host/y;
   const out: ScanMatch[] = [];
   for (let pos = 0; ;) {
     start.lastIndex = pos;
@@ -1326,11 +1325,14 @@ function rootTokenBlocks(css: string): ScanMatch[] {
     if (!m) break;
     const p = m.index + m[0].length;
     let b = -1;
-    host.lastIndex = p;
-    const h = host.exec(css);
-    if (h) {
-      const q = wsEnd(css, p + h[0].length);
-      if (css.charCodeAt(q) === 123) b = q;
+    // The optional ", :host": whitespace, a comma, whitespace, ":host".
+    const comma = wsEnd(css, p);
+    if (css.charCodeAt(comma) === 44) {
+      const h = wsEnd(css, comma + 1);
+      if (css.startsWith(':host', h)) {
+        const q = wsEnd(css, h + 5);
+        if (css.charCodeAt(q) === 123) b = q;
+      }
     }
     if (b < 0) {
       const q = wsEnd(css, p);
