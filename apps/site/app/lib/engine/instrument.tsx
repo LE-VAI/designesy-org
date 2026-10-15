@@ -9,7 +9,7 @@
 // Pointer or keyboard focus on a check shows that check's contract criterion
 // and result in the side column; activating it opens the matching finding.
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { display } from './types';
@@ -88,6 +88,30 @@ type Props = {
   /** The loading ignition (lib/engine/ignition.ts): the mark's dot breathes
       while a run is out and lights when a verdict lands. The score only. */
   ignite?: boolean;
+  /** Whether a result landed, for the ignition, where the page passes no
+      single verdict (contract mode lands two numbers). Defaults to !!verdict. */
+  landed?: boolean;
+  /** Rows under the face, inside the checks group (contract mode's "What the
+      run reads" and its step list). */
+  faceBottom?: ReactNode;
+  /** A full-width block after the face and the side (contract mode's first
+      finding); the page's sheet places it. */
+  wide?: ReactNode;
+  /** The state text in the bar, per phase, in place of "{n} checks · ...".
+      Running keeps its elapsed seconds after it. */
+  stateText?: Partial<Record<Phase, string>>;
+  /** The page carries the announcements in its own live region: the
+      instrument draws none. */
+  quiet?: boolean;
+  /** engines: each register is one Tab stop; the arrow keys move along it,
+      Home and End jump to its ends. */
+  roving?: boolean;
+  /** engines: the face's label and the line under it ("Four engines" by default). */
+  enginesLabel?: string;
+  enginesHint?: ReactNode;
+  /** The side column per phase, in place of the house side for that phase
+      (contract mode draws two numbers where an engine draws one). */
+  phaseSides?: Partial<Record<Phase, ReactNode>>;
 };
 
 // The status words every result surface uses (score/verdict.ts STATUS_LABEL),
@@ -167,7 +191,7 @@ export function Instrument(props: Props) {
   const { live: elapsed, took } = useElapsed(phase);
   const lampDot = useRef<HTMLElement | null>(null);
   const lampHalo = useRef<HTMLElement | null>(null);
-  useIgnition(lampDot, lampHalo, phase, !!verdict, !!props.ignite);
+  useIgnition(lampDot, lampHalo, phase, props.landed ?? !!verdict, !!props.ignite);
 
   const index = useMemo(() => new Map(registry.checks.map((c, i) => [c.id, i])), [registry.checks]);
   const byId = useMemo(() => new Map(registry.checks.map((c) => [c.id, c])), [registry.checks]);
@@ -181,6 +205,27 @@ export function Instrument(props: Props) {
     leave.current = window.setTimeout(() => setInspect(null), 140);
   };
   useEffect(() => () => { if (leave.current) window.clearTimeout(leave.current); }, []);
+
+  // Roving focus in a register (props.roving): the cell that holds the Tab
+  // stop, per register, and the arrow keys that move it.
+  const [rove, setRove] = useState<Record<string, number>>({});
+  const roveKey = (ev: KeyboardEvent<HTMLUListElement>) => {
+    const cells = [...ev.currentTarget.querySelectorAll<HTMLButtonElement>('.eg-minicell')];
+    const at = cells.indexOf(document.activeElement as HTMLButtonElement);
+    if (at < 0) return;
+    const last = cells.length - 1;
+    const to =
+      ev.key === 'ArrowRight' || ev.key === 'ArrowDown' ? Math.min(last, at + 1)
+        : ev.key === 'ArrowLeft' || ev.key === 'ArrowUp' ? Math.max(0, at - 1)
+          : ev.key === 'Home' ? 0
+            : ev.key === 'End' ? last
+              : null;
+    if (to === null) return;
+    ev.preventDefault();
+    const key = ev.currentTarget.dataset.register ?? '';
+    setRove((r) => ({ ...r, [key]: to }));
+    cells[to].focus();
+  };
 
   // A run the visitor just started plays out where they can see it: on a
   // phone the instrument sits under the bar, below the fold (bring-into-view).
@@ -316,9 +361,10 @@ export function Instrument(props: Props) {
     faceNode = (
       <div className="eg-group" style={{ '--n': 12 } as CSSProperties}>
         <div className="eg-group-head">
-          <span className="eg-label">Four engines</span>
+          <span className="eg-label">{props.enginesLabel ?? 'Four engines'}</span>
           <span className="eg-count">{registry.checks.length} checks</span>
         </div>
+        {props.enginesHint && <p className="eg-group-hint">{props.enginesHint}</p>}
         <div className="eg-engines">
           {(props.engines ?? []).map((e) => (
             <div className="eg-engine" key={e.key}>
@@ -330,8 +376,10 @@ export function Instrument(props: Props) {
                 className="eg-minicells"
                 aria-label={`${e.name}, ${e.count} checks`}
                 style={registerStyle(e.count, contractCount) as CSSProperties}
+                onKeyDown={props.roving ? roveKey : undefined}
+                data-register={props.roving ? e.key : undefined}
               >
-                {e.ids.map((id) => {
+                {e.ids.map((id, k) => {
                   const o = outcomes[id];
                   const c = byId.get(id);
                   return (
@@ -344,6 +392,8 @@ export function Instrument(props: Props) {
                         onMouseEnter={() => enter(id)}
                         onFocus={() => enter(id)}
                         onClick={() => onOpen?.(id)}
+                        tabIndex={props.roving ? ((rove[e.key] ?? 0) === k ? 0 : -1) : undefined}
+                        data-k={props.roving ? k : undefined}
                         aria-label={`${id} ${c?.label ?? ''}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`}
                       />
                     </li>
@@ -418,7 +468,7 @@ export function Instrument(props: Props) {
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
   // The verdict light's hue: the verdict's grade once it lands, in the grade
-  // palette (brand ledger D56); the fail hue when the run stops without one.
+  // palette; the fail hue when the run stops without one.
   // No verdict and no stop, no light.
   const lightGrade = phase === 'done' && verdict ? verdict.grade.toLowerCase() : undefined;
   const lightBand = phase === 'error' ? 'fail' : undefined;
@@ -449,7 +499,9 @@ export function Instrument(props: Props) {
   ) : null;
 
   let side: ReactNode;
-  if (phase === 'running') {
+  if (props.phaseSides?.[phase] !== undefined) {
+    side = props.phaseSides[phase];
+  } else if (phase === 'running') {
     side = (
       <>
         <span className="eg-label">Checking</span>
@@ -588,7 +640,7 @@ export function Instrument(props: Props) {
               loop that wrapped back to 1 with nothing received (live audit
               2026-10-11, V11). Keyed by the phase, so each swap fades in. */}
           <span key={phase}>
-            {registry.checks.length} checks · {stateLabel}
+            {props.stateText?.[phase] ?? `${registry.checks.length} checks · ${stateLabel}`}
             {phase === 'running' ? ` · ${Math.floor(elapsed / 1000)} s` : ''}
           </span>
         </span>
@@ -604,6 +656,7 @@ export function Instrument(props: Props) {
           }}
         >
           {faceNode}
+          {props.faceBottom}
         </div>
         {/* Both states share one grid cell, so the panel's height is the larger
             of the two and never jumps. Swapping one for the other resized it on
@@ -617,6 +670,7 @@ export function Instrument(props: Props) {
           <div className="eg-side-rest">{side}</div>
           {probeNode}
         </div>
+        {props.wide}
       </div>
       <div className="eg-legend">
         <ul aria-label="Legend">
@@ -633,7 +687,7 @@ export function Instrument(props: Props) {
           ))}
         </span>
       </div>
-      <p className="sr-only" aria-live="polite">{announce}</p>
+      {!props.quiet && <p className="sr-only" aria-live="polite">{announce}</p>}
     </section>
   );
 }

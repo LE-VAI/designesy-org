@@ -1,11 +1,10 @@
-// The published own-contract formula (engine spec 10.5 rule 3; owner decisions
-// D1 to D3, D6, D10): the fourteen fidelity checks with their categories,
-// thresholds and evidence minimums, the weights and ceilings, the baseline
-// groups, and the null rules. GET /api/score/checks/own-contract serves
+// The published own-contract formula (contract-mode spec §10.5 rule 3): the fourteen
+// fidelity checks with their categories, thresholds and evidence minimums,
+// the weights and ceilings, the baseline groups, and the null rules. GET /api/score/checks/own-contract serves
 // ownContractFormula(); the checks and the scorer read the same constants, so
 // the page, the API and the engine cannot state different rules.
 //
-// Versioned and dated from its first release (brand D76): any later change to
+// Versioned and dated from its first release: any later change to
 // a threshold, weight, title or rule here bumps FORMULA_VERSION, dates it, and
 // moves ENGINE_VERSION when a verdict can move.
 
@@ -15,13 +14,18 @@ import { MAX_ALIAS_HOPS, MAX_BODY_BYTES, MAX_CONTRACT_BYTES, MAX_DEPTH, MAX_RESO
 import { ERROR_CODES, WARNING_CODES } from './problems';
 import { DROP_REASONS } from './types';
 
-export const FORMULA_VERSION = '1.0.0';
+// 1.0.1 (2026-10-14): problems carry the linter's sentence whole as
+// linterMessage, and `value` is the offending value (it held the linter's
+// sentence cut to 80 characters); a rejected DESIGN.md carries the linter's
+// own totals (linter) and marks the problems that absorbed a linter finding
+// (linterFinding). No threshold, weight or verdict moved.
+export const FORMULA_VERSION = '1.0.1';
 export const FORMULA_DATE = '2026-10-14';
 
-/** Share thresholds (engine spec 6.2; calibration defaults, lesser decision L6). */
+/** Share thresholds (contract-mode spec §6.2; calibration defaults, lesser decision L6). */
 export const SHARE_PASS_AT = 0.9;
 export const SHARE_WARN_AT = 0.7;
-/** f13 and f14 use their own bars (engine spec 6.3). */
+/** f13 and f14 use their own bars (contract-mode spec §6.3). */
 export const ALIAS_PASS_AT = 0.8;
 export const TOKEN_USE_PASS_AT = 0.8;
 export const TOKEN_USE_WARN_AT = 0.5;
@@ -31,15 +35,15 @@ export const CONTRAST_LARGE_PASS = 3;
 export const CONTRAST_FAIL_BELOW = 3;
 /** WCAG 2.5.8 AA target floor, raised by a larger declared interactive size (lesser decision L2). */
 export const TARGET_FLOOR_PX = 24;
-/** Fewer scored fidelity checks than this: fidelity has no score (owner decision D2). */
+/** Fewer scored fidelity checks than this: fidelity has no score. */
 export const MIN_SCORED_CHECKS = 3;
 
-/** Fidelity category weights (owner decision D1). */
+/** Fidelity category weights. */
 export const FIDELITY_WEIGHTS: Record<string, number> = {
   contrast: 20, typography: 18, color: 16, tokens: 14, spacing: 12, shape: 8, motion: 6, targets: 6,
 };
 
-/** Fidelity ceilings, applied after scoring (owner decision D1). */
+/** Fidelity ceilings, applied after scoring. */
 export const FIDELITY_CEILINGS: Array<{ check: string; cap: number }> = [
   { check: 'f09', cap: 65 },
   { check: 'f10', cap: 70 },
@@ -175,10 +179,10 @@ export function ownContractFormula() {
     intake: {
       minimum: { colors: MIN_COLORS, typeStyles: MIN_TYPE_STYLES },
       limits: { bodyBytes: MAX_BODY_BYTES, contractBytes: MAX_CONTRACT_BYTES, tokens: MAX_TOKENS, depth: MAX_DEPTH, aliasHops: MAX_ALIAS_HOPS, resolutionSteps: MAX_RESOLUTION_STEPS, tokenMapEntries: MAX_TOKEN_MAP_ENTRIES },
-      rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large') },
+      rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large'), linter: 'DESIGN.md: the totals the format linter reported (package, version, errors, warnings, infos), exactly; null when it did not read the file. A structured problem whose path the linter also flagged carries linterFinding: true.' },
       warnings: WARNING_CODES,
       problem: {
-        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
+        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'linterMessage', 'linterFinding', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
         confusable: 'CONFUSABLE_NAME: one warning per lookalike character, with char, script, codePoint (hex), position (1-based) and latin (absent when the confusable table names no Latin counterpart).',
         valueMaxChars: MAX_VALUE_CHARS,
         chain: 'ALIAS_CYCLE: the loop as an ordered list of token paths, the first path repeated last.',

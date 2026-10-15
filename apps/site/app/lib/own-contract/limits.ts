@@ -1,4 +1,4 @@
-// Own-contract intake limits (engine spec section 4.2), checked before and
+// Own-contract intake limits (contract-mode spec §4.2), checked before and
 // during parsing. One place, so the published formula, the API and the tests
 // read the same numbers.
 
@@ -28,11 +28,13 @@ export const INTAKE_BUDGET_MS = 1_000;
 export const YAML_MAX_ALIASES = 100;
 /** At most this many characters of any offending value reach a message. */
 export const MAX_VALUE_CHARS = 80;
+/** A linter sentence is shown whole; only past this length is it cut, at a word boundary. */
+export const MAX_LINTER_MESSAGE_CHARS = 400;
 /** Evidence entries per check; the rest are counted in `truncated`. */
 export const EVIDENCE_CAP = 20;
 /** The 16px root the engine assumes for rem (the existing engine's rule). */
 export const ROOT_PX = 16;
 
-/** The minimum scoreable contract (owner decision D2). */
+/** The minimum scoreable contract. */
 export const MIN_COLORS = 3;
 export const MIN_TYPE_STYLES = 1;

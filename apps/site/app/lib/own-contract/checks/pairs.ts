@@ -1,4 +1,4 @@
-// The contrast pair evaluation f09 and f10 share (engine spec 6.3).
+// The contrast pair evaluation f09 and f10 share (contract-mode spec §6.3).
 // When both colors are located by map or name, the page's values are used
 // ("shipped values"); when located only by value, the shipped value equals
 // the declared one and the detail says "evaluated on declared values; not

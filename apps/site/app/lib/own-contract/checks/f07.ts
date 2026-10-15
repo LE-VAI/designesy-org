@@ -1,4 +1,4 @@
-// f07 Shipped corner radii are on your radius scale (engine spec 6.3; derived from d07).
+// f07 Shipped corner radii are on your radius scale (contract-mode spec §6.3; derived from d07).
 // border-radius and its longhands, each component. Left out: 0, percentages
 // (circles are geometry), values under 2px (hairlines) and em. Unlike d07 there
 // is no 40px pill cutoff: when the contract declares a full radius (999px or

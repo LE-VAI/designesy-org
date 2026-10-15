@@ -47,6 +47,8 @@
  *   /score/report  renders only with ?url= and errors without one; it is
  *                  reached from a score result, and a bare Find row to it
  *                  would land on that error.
+ *   /score/contract  built in parts and unlinked until its launch change,
+ *                  which adds its Find entry and removes this exemption.
  *
  * Reported, not gated: prerendered pages missing from the index. Pagefind drops
  * every page without data-pagefind-body once any page has one, so this list is
@@ -81,12 +83,14 @@ const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
 
 /** Public page routes Find does not have to reach, each with its reason. */
 const FIND_EXEMPT = {
-  '/test': 'scratch page, robots noindex (app/test/page.tsx)',
   '/score/report': 'renders only with ?url= (errors without one); reached from a score result',
+  '/score/contract': 'built ahead of its launch and not linked anywhere yet; the launch change adds its Find entry and drops this line',
 };
 
 const TRACE = /\.nft(?:\.json)?(?:\.html)?$/i;
-const INTERNAL_ROUTE = /^\/(?:_not-found|_error|404|500)$/;
+// _global-error is Next 16's prerendered fallback for the global error boundary;
+// it is an internal page (a direct request answers 500), never a public route.
+const INTERNAL_ROUTE = /^\/(?:_not-found|_error|_global-error|404|500)$/;
 
 function walkFiles(dir) {
   const out = [];
@@ -203,9 +207,10 @@ function routeOf(fragment) {
  * emitting `.then(t=>import("".concat(e,"/pagefind.js?v=").concat(t)))` with
  * the import( BEFORE the literal.
  */
-function loaderSites(chunksDir) {
+function loaderSites(staticDir) {
+  const chunksDir = staticDir;
   const sites = [];
-  const skip = path.join(chunksDir, 'app', 'pagefind') + path.sep;
+  const skip = path.join(staticDir, 'chunks', 'app', 'pagefind') + path.sep;
   for (const file of walkFiles(chunksDir)) {
     if (!file.endsWith('.js') || file.startsWith(skip)) continue;
     const code = fs.readFileSync(file, 'utf8');
@@ -247,7 +252,9 @@ function check(nextDir) {
   }
 
   // 1. The loader is a native import().
-  const sites = loaderSites(path.join(nextDir, 'static', 'chunks'));
+  // All of .next/static, not only static/chunks: with immutable assets (a
+  // deployment adapter's default) the client chunks sit under static/immutable.
+  const sites = loaderSites(path.join(nextDir, 'static'));
   if (sites.length === 0) {
     add(
       'native-pagefind-import',
@@ -276,6 +283,22 @@ function check(nextDir) {
       'Read the [postbuild-pagefind] lines in the build log: it exits 0 when Pagefind fails, so its error is printed there, not raised.'
     );
     return { findings, notes, sites };
+  }
+
+  // 2b. With a deployment adapter (.next/output exists) the index must be in
+  // the adapter's static output too: that copy is what is deployed, and it was
+  // taken before postbuild-pagefind.js ran.
+  const adapterStatic = path.join(nextDir, 'output', 'static');
+  if (fs.existsSync(adapterStatic)) {
+    const deployed = path.join(adapterStatic, '_next', PAGEFIND_REL);
+    const absent = ['pagefind.js', 'pagefind-entry.json', 'fragment'].filter((f) => !fs.existsSync(path.join(deployed, f)));
+    if (absent.length) {
+      add(
+        'index-deployed',
+        `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
+        'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
+      );
+    }
   }
 
   let fragments;

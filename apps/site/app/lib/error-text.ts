@@ -23,14 +23,46 @@
  */
 
 export function sanitizeErrorText(text: string): string {
-  const keep = (label: string) => (m: string): string => `${label}${/[.,;:!?)]+$/.exec(m)?.[0] ?? ''}`;
-  return text
+  // The punctuation a replaced path ended with, read back from its end
+  // (engine 1.5.1: /[.,;:!?)]+$/ was retried from every mark in a run).
+  const tail = (m: string): string => {
+    let k = m.length;
+    while (k > 0 && '.,;:!?)'.indexOf(m[k - 1]) >= 0) k--;
+    return m.slice(k);
+  };
+  const keep = (label: string) => (m: string): string => `${label}${tail(m)}`;
+  const pathless = text
     .replace(/\bfile:\/\/[^\s'"<>`|]*/gi, keep('a local file'))
     .replace(/\\\\[^\\\s'"<>`|]+\\(?:[^\\\r\n'"<>`|*?]+\\)*[^\\\s'"<>`|*?]*/g, keep('a local path'))
     .replace(/(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'"<>`|*?]+\1)*[^\\/\s'"<>`|*?]*/g, keep('a local path'))
     .replace(
       /(^|[\s'"`(=,:[])\/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel|workspace|workspaces|github|runner|nix|snap)(?:\/[^/\r\n'"<>`|]+(?=\/))*\/[^/\s'"<>`|]+/g,
       (m: string, lead: string) => `${lead}${keep('a local path')(m.slice(lead.length))}`,
-    )
-    .replace(/[^\s'"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'"<>`|]*/gi, keep('the npm cache'));
+    );
+  // npm cache segments: a run of characters other than space, quotes, angle
+  // brackets, backtick and pipe that holds npm-cache, /_npx/ or /.npm/ is
+  // replaced whole. Each run is read once (engine 1.5.1: the run pattern was
+  // retried from every character in it).
+  const marker = /npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/]/gi;
+  const stop = /[\s'"<>`|]/;
+  const parts: string[] = [];
+  let last = 0;
+  let markerAt = -1;
+  for (let a = 0; a < pathless.length;) {
+    if (stop.test(pathless[a])) { a++; continue; }
+    let b = a + 1;
+    while (b < pathless.length && !stop.test(pathless[b])) b++;
+    if (markerAt < a) {
+      marker.lastIndex = a;
+      const found = marker.exec(pathless);
+      markerAt = found ? found.index : Infinity;
+    }
+    if (markerAt < b) {
+      parts.push(pathless.slice(last, a), keep('the npm cache')(pathless.slice(a, b)));
+      last = b;
+    }
+    a = b;
+  }
+  parts.push(pathless.slice(last));
+  return parts.join('');
 }

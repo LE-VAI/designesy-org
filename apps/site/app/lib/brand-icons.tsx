@@ -1,5 +1,5 @@
-// The Designesy icon family v2 (identity v1, D15 and D22) and its v2.1
-// additions (D41: theme, motion, mention, machine, studio, continuity, error,
+// The Designesy icon family v2 (identity v1) and its v2.1
+// additions (theme, motion, mention, machine, studio, continuity, error,
 // share, chevron), from the brand masters designesy-icon-*.v2.svg, unchanged.
 //
 // Grammar: a 24-unit grid, a 2px stroke with round caps and joins, rounded
@@ -17,7 +17,7 @@
 // globals.css). The share cards render outside the page, so they pass the
 // colours in (`sig`, `live`).
 //
-// Small sizes (D45): at 18px or smaller a `sig` or `live` dot is drawn at
+// Small sizes: at 18px or smaller a `sig` or `live` dot is drawn at
 // least SMALL_DOT_R grid units in radius, about its centre, so the one
 // coloured part stays legible; `hub` dots stay exactly as drawn. The rule
 // follows the size prop, not CSS.

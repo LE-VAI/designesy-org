@@ -1,0 +1,6 @@
+{
+ "_about": "Per-file match counts for check-comment-provenance.js. A file may not rise above its count and no new file may appear; lower the counts with --update after a cleanup.",
+ "files": {
+  "apps/site/scripts/check-extractor-brace-bound.js": 1
+ }
+}

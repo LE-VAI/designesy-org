@@ -1,4 +1,4 @@
-// What every fidelity check shares (engine spec 6.2): the result shape, the
+// What every fidelity check shares (contract-mode spec §6.2): the result shape, the
 // share thresholds, the SKIP reasons, and evidence capped at 20 entries.
 
 import type { Binding } from '../bind';
@@ -12,7 +12,7 @@ export type SkipReason = 'not_declared' | 'not_located' | 'not_applicable';
 export interface Evidence { path?: string; value: string; where?: string[]; uses?: number }
 export type Finding = Record<string, string | number | null>;
 
-/** CheckResult (the engine's shape) plus the own-contract fields (engine spec 10.3). */
+/** CheckResult (the engine's shape) plus the own-contract fields (contract-mode spec §10.3). */
 export interface CheckResultV2 {
   id: string;
   item: string;

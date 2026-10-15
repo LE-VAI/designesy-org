@@ -1,0 +1,38 @@
+{
+ "status": 422,
+ "retryAfter": null,
+ "body": {
+  "ok": false,
+  "error": "Your contract cannot be scored yet.",
+  "code": "contract_not_scoreable",
+  "problems": [
+   {
+    "code": "TOKENS_IN_PROSE",
+    "severity": "error",
+    "message": "Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.",
+    "colorRows": 3,
+    "colorLines": [
+     11,
+     13
+    ],
+    "typeRows": 1,
+    "typeLines": [
+     19,
+     19
+    ],
+    "keys": [
+     "name",
+     "version"
+    ]
+   }
+  ],
+  "warnings": [],
+  "linter": {
+   "package": "@google/design.md",
+   "version": "0.4.0",
+   "errors": 0,
+   "warnings": 0,
+   "infos": 0
+  }
+ }
+}

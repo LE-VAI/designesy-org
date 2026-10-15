@@ -1,4 +1,4 @@
-// Scoring both layers (engine spec 8; owner decisions D1, D3, D6).
+// Scoring both layers (contract-mode spec §8).
 //
 // One rule for both, the engine's existing one: each category's weight is
 // shared by its scored checks; PASS earns the share, WARN half, FAIL nothing;
@@ -12,7 +12,7 @@
 // accessibility floor (a group under 60% caps at 70), the any-FAIL cap
 // (89.9: no A while a baseline check fails), then the registry
 // ceilings of its checks (v25 at 75, v44 at 65). When a ceiling or the floor
-// lowers a score, uncappedScore carries the score before it (D6).
+// lowers a score, uncappedScore carries the score before it.
 
 import { BASELINE_ANY_FAIL_CAP, BASELINE_FLOOR, BASELINE_GROUPS, BASELINE_GROUP_OF, baselineCeilings } from './baseline';
 import { fmtRatio } from './checks/pairs';

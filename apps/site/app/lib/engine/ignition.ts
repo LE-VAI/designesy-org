@@ -1,6 +1,6 @@
 'use client';
 
-// The loading ignition (brand D51, rulings D54): one Azure dot per score
+// The loading ignition: one Azure dot per score
 // loader, the run line's lone dot or the four-engine instrument's mark.
 //
 //   running   the dot breathes: scale 1 -> .86 -> 1 and the fill's opacity
@@ -25,7 +25,7 @@
 //             sweep, no ring, no fade. The flame arrives as an instant swap,
 //             holds, and swaps back to Azure.
 //
-// Orange only when a result lands (D16): an error, or a run with no verdict,
+// Orange only when a result lands: an error, or a run with no verdict,
 // stops the breath and leaves the dot Azure. One ignition per landing, page
 // wide (claimLanding). No colour is written here: every end is read from the
 // tokens on the dot itself.

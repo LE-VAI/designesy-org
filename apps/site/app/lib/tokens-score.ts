@@ -15,9 +15,9 @@
 //
 // Since 1.13.8 (tokens contract 0.1.2), three more defects are fixed:
 //   - A WARN counts half, as it does in designesy_motion_score, the score
-//     engine and the npm @designesy/tokens validator (owner decision
-//     2026-10-10). It counted zero here alone, so the same file graded
-//     differently depending on which Designesy tool read it.
+//     engine and the npm @designesy/tokens validator. It counted zero
+//     here alone, so the same file graded differently depending on which
+//     Designesy tool read it.
 //   - A DTCG alias such as {space.16} was read as a literal dimension with no
 //     unit, so a file that aliased its dimensions WARNed twice (t08 and t10)
 //     for doing what the format asks. An alias is now a reference: t08 checks
@@ -112,6 +112,17 @@ function isAlias(v: Json): v is string {
 }
 
 /**
+ * t01: a $schema points at designtokens.org when its URL's host is that name or
+ * a subdomain of it (www.designtokens.org). A substring test passed any URL
+ * that only contained the name, such as https://designtokens.org.example.com/
+ * or https://example.com/designtokens.org. One anchored pattern rather than a
+ * URL parser, because the WHATWG parser here and urllib in the PyPI port read
+ * a host differently in edge cases (a backslash, a userinfo part); the pattern
+ * reads the same in both ports and admits neither.
+ */
+const DTCG_SCHEMA_HOST = /^https?:\/\/(?:[a-z0-9-]+\.)*designtokens\.org(?::[0-9]+)?(?:[/?#]|$)/i;
+
+/**
  * Follow an alias to the literal value it names, through any chain of aliases,
  * with the $type of the token that holds it (null when that token has none).
  * Path segments are group and token names, $root included. Returns undefined
@@ -182,7 +193,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
 
   // t01: $schema present and points to designtokens.org
   const hasSchema = typeof tokens.$schema === 'string' && tokens.$schema !== '';
-  const schemaValid = hasSchema && (tokens.$schema as string).includes('designtokens.org');
+  const schemaValid = hasSchema && DTCG_SCHEMA_HOST.test(tokens.$schema as string);
   add('t01', schemaValid ? 'PASS' : hasSchema ? 'WARN' : 'FAIL',
     hasSchema ? `Schema: ${tokens.$schema as string}` : 'No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json');
 

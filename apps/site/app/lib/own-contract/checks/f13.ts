@@ -1,4 +1,4 @@
-// f13 Declared aliases ship as variable references (engine spec 6.3; derived
+// f13 Declared aliases ship as variable references (contract-mode spec §6.3; derived
 // from v29). For each alias whose two ends are located by map or name: shipped
 // as a reference when the alias variable's value is var(--target) (a fallback
 // is allowed), flattened when it holds the literal. PASS when 80% ship as

@@ -97,6 +97,11 @@ function main() {
   // them deploys with the site, and a Vercel build may upload only apps/site,
   // so the build has nothing of theirs to gate. The site's own retired-literal
   // gate stays in both lists.
+  //
+  // check-comment-provenance.js reads every tracked source file in the repo
+  // through `git ls-files`: packages, workflows and root scripts included. A
+  // Vercel build may upload only apps/site, without git, and a comment cannot
+  // change what the deploy serves, so the build has nothing to gate.
   const CI_ONLY = new Set([
     'check-gate-parity.js',
     'edge-contract.js',
@@ -110,12 +115,14 @@ function main() {
     'check-flame-flip.js',
     'check-a11y-modes.js',
     'check-results-readout.js',
+    'check-contract-page.js',
     'a11y-sweep.js',
     'check-dock-clearance.js',
     'check-word-boundaries-render.js',
     'touched-routes.js',
     'check-readme-facts.js',
     'check-retired-literals-packages.js',
+    'check-comment-provenance.js',
   ]);
 
   const onlyInBuild = inBuild.filter((g) => !inCi.includes(g));

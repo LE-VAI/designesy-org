@@ -1,4 +1,4 @@
-// DESIGN.md reader (engine spec section 4.3).
+// DESIGN.md reader (contract-mode spec §4.3).
 //
 // Two reads of the same text, because the format's linter (@google/design.md
 // 0.4.0) drops some values from its resolved model without an error:
@@ -18,7 +18,7 @@ import { LineCounter, parseDocument } from 'yaml';
 import { YAML_MAX_ALIASES } from './limits';
 import { cleanFamily, dimension, hasOtherUnit, parseColor, parseDimension, parseFeatureTags, parseLineHeight, splitFamilies, typeRole, hexOf } from './normalize';
 import { problem, warning } from './problems';
-import type { Alias, ColorToken, ContrastPair, DimensionToken, DropReason, FamilyToken, ParsedContract, Problem, ReadOutcome, SizeToken, TypeStyle } from './types';
+import type { LinterTotals, Alias, ColorToken, ContrastPair, DimensionToken, DropReason, FamilyToken, ParsedContract, Problem, ReadOutcome, SizeToken, TypeStyle } from './types';
 
 /** The linter's import, injectable so tests and the route share one loader. */
 export type LintFn = (text: string) => LintReportLike;
@@ -127,6 +127,17 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
   const warnings: Problem[] = [];
   const lines = text.split('\n');
   const { blocks, bodyStartLine } = yamlBlocks(text);
+  // The linter reads every file, accepted or not, so its own totals can be
+  // cited on every outcome (the provenance line).
+  let report: LintReportLike | null = null;
+  try {
+    report = lint(text);
+  } catch {
+    report = null;
+  }
+  const linter: LinterTotals | null = report
+    ? { package: '@google/design.md', version: LINTER_VERSION, errors: report.summary.errors, warnings: report.summary.warnings, infos: report.summary.infos }
+    : null;
 
   // ── 1. Raw read ──
   const raw = new Map<string, unknown>();
@@ -162,7 +173,7 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     else seen.set(key, h.line);
   }
 
-  if (errors.some((p) => p.code === 'YAML_INVALID')) return { errors, warnings, parsed: null };
+  if (errors.some((p) => p.code === 'YAML_INVALID')) return { errors, warnings, parsed: null, linter };
 
   const hasGroups = TOKEN_GROUPS.some((g) => asEntries(raw.get(g)).length > 0);
   if (!hasGroups) {
@@ -179,19 +190,29 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     } else {
       errors.push(problem('NO_TOKENS_FOUND'));
     }
-    return { errors, warnings, parsed: null };
+    return { errors, warnings, parsed: null, linter };
   }
 
   // ── 3. Linter read ──
-  const report = lint(text);
+  if (!report) report = lint(text);
   const ds = report.designSystem;
-  const lintErrorPaths = new Set<string>();
+  // The linter's own sentence rides as linterMessage, whole (a long one is
+  // cut at a word boundary, never mid-word); `value` stays what the engine
+  // spec says it is, the offending value, cut to 80 characters. A LINT_ERROR
+  // is the reading only where no structured code covers its path: the dedupe
+  // at the end of this reader drops it when one does.
+  const scalarAt = (path: string | undefined): string | undefined => {
+    if (!path) return undefined;
+    const dot = path.indexOf('.');
+    if (dot < 0) return undefined;
+    for (const [k, v] of asEntries(raw.get(path.slice(0, dot)))) if (k === path.slice(dot + 1)) return v === null || typeof v === 'object' ? undefined : String(v);
+    return undefined;
+  };
   for (const f of report.findings) {
     if (f.severity === 'error') {
-      errors.push(problem('LINT_ERROR', { path: f.path, value: f.message, rule: f.rule }));
-      if (f.path) lintErrorPaths.add(f.path);
+      errors.push(problem('LINT_ERROR', { path: f.path, value: scalarAt(f.path), linterMessage: f.message, rule: f.rule }));
     } else if (f.severity === 'warning') {
-      warnings.push(warning('LINT_WARNING', { path: f.path, value: f.message, rule: f.rule }));
+      warnings.push(warning('LINT_WARNING', { path: f.path, value: scalarAt(f.path), linterMessage: f.message, rule: f.rule }));
     }
   }
 
@@ -255,8 +276,17 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
   };
   const dropped = (group: string, name: string, v: unknown) => {
     const path = `${group}.${name}`;
-    if (lintErrorPaths.has(path) || cyclePaths.has(path)) return;
+    if (cyclePaths.has(path)) return;
     const reason = dropReason(group, path, v) ?? 'unknown';
+    // A literal that is not a value of its kind is VALUE_INVALID, the approved
+    // per-kind sentence, as the DTCG reader reports it; the linter's row for
+    // the same path then gives way to it (below).
+    if (reason === 'value_invalid' || reason === 'unit_unsupported') {
+      errors.push(problem('VALUE_INVALID', { path, value: String(v), kind: group === 'colors' ? 'color' : 'dimension' }));
+      return;
+    }
+    // The linter already said why for this path, in its own words.
+    if (reason === 'unknown' && errors.some((p) => p.code === 'LINT_ERROR' && p.path === path)) return;
     errors.push(problem('TOKEN_DROPPED', { path, reason, ref: isRef(v) ? String(v).trim() : undefined, value: isRef(v) ? undefined : (typeof v === 'object' ? undefined : String(v)) }));
   };
 
@@ -402,7 +432,19 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     aliases,
     omitted,
     declaredTokenMap: new Map(),
-    linter: { package: '@google/design.md', version: LINTER_VERSION, errors: report.summary.errors, warnings: report.summary.warnings, infos: report.summary.infos },
+    linter,
   };
-  return { errors, warnings, parsed };
+  return { errors: withoutCoveredLint(errors), warnings, parsed, linter };
+}
+
+/** One cause per path: a LINT_ERROR is dropped where a structured code
+    (VALUE_INVALID, TOKEN_DROPPED, ALIAS_*) names the same path, so the
+    caller reads the approved sentence once instead of two sentences for one
+    fault. A LINT_ERROR with no structured code beside it stays. */
+export function withoutCoveredLint(errors: Problem[]): Problem[] {
+  const covered = new Set(errors.filter((p) => p.code !== 'LINT_ERROR' && p.path).map((p) => p.path as string));
+  const linted = new Set(errors.filter((p) => p.code === 'LINT_ERROR' && p.path && covered.has(p.path)).map((p) => p.path as string));
+  return errors
+    .filter((p) => p.code !== 'LINT_ERROR' || !p.path || !covered.has(p.path))
+    .map((p) => (p.code !== 'LINT_ERROR' && p.path && linted.has(p.path) ? { ...p, linterFinding: true } : p));
 }

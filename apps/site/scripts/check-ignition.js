@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Ignition gate: the score's loading ignition does what brand D51 and its
- * rulings (D54) say, on both score loaders, in both themes, with motion on,
+ * Ignition gate: the score's loading ignition does what lib/engine/ignition.ts
+ * says, on both score loaders, in both themes, with motion on,
  * with reduced motion and with motion paused.
  *
  * WHY THIS EXISTS

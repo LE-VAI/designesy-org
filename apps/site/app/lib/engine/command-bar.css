@@ -467,10 +467,9 @@
   cursor: progress;
 }
 
-/* Light theme: the spec's primary edge on light (03-SYSTEM-SPEC, Primary
-   action, "Edge on light"; brand ledger D67), so the run key stays anchored on
-   a light slab. Presence only, not a contrast boundary (it composites to
-   about 1.7:1); the ink label is what identifies the key. */
+/* Light theme: a primary action takes an edge on light, so the run key
+   stays anchored on a light slab. Presence only, not a contrast boundary
+   (it composites to about 1.7:1); the ink label is what identifies the key. */
 [data-theme="light"] .eg-bar-go {
   box-shadow:
     inset 0 0 0 1px rgb(1 106 187 / 0.35),
@@ -815,6 +814,18 @@
   overflow-wrap: normal;
   overflow-x: auto;
   resize: vertical;
+}
+
+/* The well's 1px focus ring is an inset shadow, so it paints under the
+   textarea that fills the well. The textarea does not wrap and scrolls, so on
+   a narrow well the glyphs of a clipped line (and a classic scrollbar, where
+   there is one) sat on the ring's bottom or top edge, and only the 22% halo
+   read there. The textarea's own painting stops 2px inside the well, so the
+   ring and the well's edge are never covered. Its box, its padding and its
+   text position do not change. (A ring drawn above the text on ::after was
+   tried: on dark it measured 2.88:1 over the glyphs.) */
+.eg-bar-field.is-area > .m3-textarea {
+  clip-path: inset(2px round max(0px, calc(var(--ctl-r-in) - 2px)));
 }
 
 .m3-go {

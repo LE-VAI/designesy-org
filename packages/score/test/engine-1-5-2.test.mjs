@@ -1,12 +1,14 @@
 /**
- * Engine 1.5.1, pinned rule by rule.
+ * Engine 1.5.2, pinned rule by rule.
  *
- *   - v46 reads the size inside the `font` shorthand. 1.4.0 read only
- *     `font-size`, so designesy.org's own hero console, sized through
+ *   - v46 reads the size inside the `font` shorthand. Through 1.5.1 it read
+ *     only `font-size`, so designesy.org's own hero console, sized through
  *     `font: 500 0.66rem/1 var(--mono)`, sat at 10.56px under its 12.8px floor
  *     and v46 never saw it.
  *
- * The rule tests fail on the 1.4.1 build; the controls (marked) pass on both.
+ * The rule tests fail on the 1.5.1 build; the controls (marked) pass on both.
+ * test/linear-scan.test.mjs holds the scan, the size test and the selector
+ * finder to the patterns they stand for, and times each on 100 KB.
  * Zero dependencies: node:test + node:assert/strict.
  */
 import { describe, it } from 'node:test';
@@ -48,9 +50,15 @@ describe('v46: the font shorthand carries a size', () => {
     assert.equal(c.status, 'WARN');
     assert.deepEqual(values(c), ['clamp(0.6rem, 2vw, 1rem) fluid minimum below the floor']);
   });
+
+  it('a `font:` written inside a shorthand value is that value\'s own text, and only the declaration\'s size is read', async () => {
+    const c = await v46('.a { font: 400 1rem/1.5 serif /* font: 10px */; } p { font-size: 1rem; }');
+    assert.equal(c.status, 'PASS');
+    assert.match(c.detail, /^2 static and 0 fluid sizes/);
+  });
 });
 
-describe('v46 controls (pass on 1.4.1 and 1.5.1)', () => {
+describe('v46 controls (pass on 1.5.1 and 1.5.2)', () => {
   it('control: a shorthand sized by a type token passes', async () => {
     const c = await v46('.a { font: 500 var(--text-label)/1 var(--mono); } p { font-size: var(--text-body); } .l { font-size: 1.25rem; }');
     assert.equal(c.status, 'PASS');
@@ -74,5 +82,11 @@ describe('v46 controls (pass on 1.4.1 and 1.5.1)', () => {
   it('control: a relative shorthand size (em, keyword) is not judged', async () => {
     const c = await v46('small { font: 600 0.8em/1 sans-serif; } .k { font: bold smaller serif; } p { font-size: 1rem; }');
     assert.equal(c.status, 'PASS');
+  });
+
+  it('control: a font-size inside a shorthand value is still read, as it was before the shorthand counted', async () => {
+    const c = await v46('.a { font: 400 1rem/1.5 serif /* font-size: 0.6rem; */ } p { font-size: 1rem; }');
+    assert.deepEqual(values(c), ['0.6rem below the floor']);
+    assert.equal(c.evidence.findings[0].selector, '.a');
   });
 });

@@ -1,5 +1,5 @@
-// Own-contract problem codes and the engine's sentence for each (engine spec
-// section 4.7). Messages go to the caller only and are never logged (section
+// Own-contract problem codes and the engine's sentence for each (contract-mode spec
+// §4.7). Messages go to the caller only and are never logged (section
 // 13): every builder here takes a value through clipValue(), so at most 80
 // characters of anything the caller sent come back.
 //
@@ -7,7 +7,7 @@
 // ref, chain, reason, ...); `message` is the API's plain sentence for callers
 // that read only that.
 
-import { MAX_VALUE_CHARS, MAX_CONTRACT_BYTES, MAX_TOKENS, MAX_DEPTH, MAX_ALIAS_HOPS, MIN_COLORS } from './limits';
+import { MAX_LINTER_MESSAGE_CHARS, MAX_VALUE_CHARS, MAX_CONTRACT_BYTES, MAX_TOKENS, MAX_DEPTH, MAX_ALIAS_HOPS, MIN_COLORS } from './limits';
 import type { DropReason, Problem } from './types';
 
 /** Codes that reject a contract (HTTP 422 unless listed in HTTP_STATUS). */
@@ -68,6 +68,15 @@ export function clipValue(v: unknown): string {
   }
   s = s.replace(/[\u0000-\u001f\u007f]/g, ' ');
   return s.length > MAX_VALUE_CHARS ? `${s.slice(0, MAX_VALUE_CHARS - 1)}…` : s;
+}
+
+/** A sentence cut, if at all, at the last word boundary that fits, with "…" (never mid-word). */
+export function clipWords(s: string, max = MAX_LINTER_MESSAGE_CHARS): string {
+  const t = s.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > 0 ? cut.slice(0, at) : cut).replace(/[\s,;:.(-]+$/, '')}…`;
 }
 
 function sizeWords(bytes: number): string {
@@ -158,7 +167,13 @@ function withClippedValue(extra: Extra): Omit<Problem, 'code' | 'severity' | 'me
   if (out.ref !== undefined) out.ref = clipValue(out.ref);
   if (out.key !== undefined) out.key = clipValue(out.key);
   if (out.chain) out.chain = out.chain.map((p) => clipValue(p));
+  if (out.linterMessage !== undefined) out.linterMessage = clipWords(String(out.linterMessage));
   return out;
+}
+
+/** The linter's sentence for a lint problem: whole, or cut at a word boundary. */
+function lintWords(p: Extra | Problem): string {
+  return p.linterMessage !== undefined ? clipWords(String(p.linterMessage)) : '';
 }
 
 export function messageFor(code: string, p: Extra | Problem): string {
@@ -174,16 +189,16 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'NO_TOKENS_FOUND':
       return 'No tokens found. A DESIGN.md keeps its tokens in YAML front matter between --- lines.';
     case 'TOKENS_IN_PROSE':
-      // The approved sentence (brand D75 wording). The counts, line ranges and
+      // The fixed sentence. The counts, line ranges and
       // front-matter keys ride as fields (colorRows, colorLines, typeRows,
       // typeLines, keys) for the page's second paragraph.
       return 'Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.';
     case 'DUPLICATE_SECTION':
       return `The heading "${clipValue(p.heading ?? '')}" appears twice. The DESIGN.md format allows each section once, so merge the two and run it again.`;
     case 'LINT_ERROR':
-      return `${path}: ${noStop(value) || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
+      return `${path}: ${noStop(lintWords(p)) || 'linter error'}. The DESIGN.md format's linter rejects this, so scoring can't read the file as written.`;
     case 'LINT_WARNING':
-      return `${path}: ${noStop(value) || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
+      return `${path}: ${noStop(lintWords(p)) || 'linter warning'} (a warning from the DESIGN.md format's linter; scoring went ahead).`;
     case 'TOKEN_DROPPED':
       return `${path} is declared, but its value didn't survive reading (${REASON_WORDS[p.reason ?? 'unknown']}), so it was left out. Give it a literal value or a reference that resolves, then run it again.`;
     case 'VALUE_INVALID':
@@ -230,7 +245,7 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'scope_conflict':
       return 'Send either `scope: "contract"` or a contract in the request, not both.';
     case 'NO_TYPE':
-      // Owner-approved template (2026-10-14).
+      // Fixed wording, asserted by scripts/check-own-contract.mjs.
       return `${path} has no $type, so it was skipped: the DTCG format doesn't let scoring guess a type. Add "$type": "color" (or "dimension", "duration", and so on) to the token or its group.`;
     case 'LEGACY_COLOR_STRING':
       return `${path} uses an older colour string. It was read as ${value}. The 2025.10 format prefers a colour object.`;
@@ -239,8 +254,9 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'DIMENSION_ROLE_UNKNOWN':
       return `${path}: scoring couldn't tell what this size is for (spacing, radius or type), so it isn't used in role-specific checks.`;
     case 'CONFUSABLE_NAME':
-      // Owner-approved template (2026-10-14). The Latin clause is dropped when
-      // the confusable table names no Latin counterpart for the character.
+      // Fixed wording, asserted by scripts/check-own-contract.mjs. The Latin
+      // clause is dropped when the confusable table names no Latin counterpart
+      // for the character.
       return `${path} contains a lookalike character: "${p.char ?? ''}" (${p.script ?? 'Unknown'}, U+${p.codePoint ?? '????'}) at position ${p.position ?? '?'}${p.latin ? `, where a Latin "${p.latin}" is expected` : ''}. Retype the name so it uses only the characters you mean.`;
     default:
       return `${path}: ${value || code}`;

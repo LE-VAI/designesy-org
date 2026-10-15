@@ -26,14 +26,14 @@ npx @designesy/score@latest https://your-site.com
 **Add to Claude Desktop, Cursor, or any MCP client:**
 
 ```bash
-# Remote (zero install, no auth):
-claude mcp add designesy --transport http https://www.designesy.org/api/mcp
+# Claude Code, remote (zero install, no auth):
+claude mcp add --transport http designesy https://www.designesy.org/api/mcp
 
 # Or local stdio via PyPI:
 pip install designesy-mcp && designesy-mcp
 ```
 
-**Clone this repo?** The `.mcp.json` at root auto-registers the server in Cursor and Claude Code — just open the project.
+**Clone this repo?** The `.mcp.json` at root adds the local server (`uvx designesy-mcp`) to Claude Code as a project server. Claude Code asks you to approve it the first time you open the project. It needs [uv](https://docs.astral.sh/uv/).
 
 **Gate your CI on design-contract compliance:**
 
@@ -42,7 +42,7 @@ pip install designesy-mcp && designesy-mcp
   with:
     url: https://your-app.vercel.app
     min-score: 70
-    min-grade: B
+    min-grade: C
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
@@ -113,8 +113,8 @@ The live site is verified against the design system contract — 45 deterministi
 - **45 verification checks** across 14 weighted categories — tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting
 - **Copywriting principles** (added in v0.4.0) — 16 UX copy principles + 4 verification checks (button verb phrases, no trailing periods, descriptive link text, no ALL CAPS)
 - **10 Non-Negotiable Motion Standards** — deliberate easing, explicit properties, opacity entrances, keyboard stillness, no layout animation, touch gating, bounded duration, reduced-motion paths, asymmetric press, no ease-in
-- **19 acoustic cues** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume 0.2 engine (MIT), interaction-only
-- **9 open tensions** — documented, not hidden
+- **10 acoustic cue tokens** — custom `$type: sound` (net-new vs W3C DTCG 2025.10), Cuelume 0.2 engine (MIT), interaction-only. The [acoustic token document](https://www.designesy.org/acoustic-tokens) adds 9 extended feedback cues, 19 in all
+- **10 open tensions** — documented, not hidden
 - **Spring physics** — default + momentum tokens via custom `$type: spring`
 - **Machine-readable** — W3C DTCG 2025.10 format + custom extensions
 
@@ -140,33 +140,52 @@ Scores a URL via the live `/api/score` engine and fails the workflow if the scor
 Score a URL from the command line — for local development, pre-commit hooks, or scripts:
 
 ```bash
-# Local (no install needed):
-node cli/designesy-score.mjs designesy.org
+# No install needed:
+npx @designesy/score designesy.org
 
 # With gating (exit 1 on failure):
-node cli/designesy-score.mjs linear.app --min-score 70 --min-grade B
+npx @designesy/score linear.app --min-score 70 --min-grade B
 
 # JSON output for piping:
-node cli/designesy-score.mjs vercel.com --format canonical --json
-
-# Via npm script:
-npm run score -- designesy.org
+npx @designesy/score vercel.com --format canonical --json
 ```
 
-Zero dependencies — Node built-ins only. The `--api` flag or `SCORE_API` env var overrides the scoring engine URL (defaults to `https://www.designesy.org`). See `--help` for all options.
+No required dependencies. The engine runs locally, with no Designesy server; the checks that need a browser return MANUAL. See `--help` for all options and [`packages/score/README.md`](packages/score/README.md) for the full reference.
+
+**From a clone of this repo:** the engine's `dist/` folder is not committed, so build it first.
+
+```bash
+npm --prefix packages/score ci
+npm run build:score
+node packages/score/dist/cli.js designesy.org
+```
+
+The older `cli/designesy-score.mjs` (`npm run score`) reads the same build. It is superseded by `@designesy/score`. Its `--api` flag (or the `SCORE_API` env var) is an opt-in remote fallback that sends the URL to a scoring server instead of scoring locally; it is off by default.
 
 ## Repository
 
-This is the controlled public root for Designesy — a Next.js 15 App Router site (React 19, Turbopack, Vercel deploy).
+The site is a Next.js 16 App Router app (React 19, webpack build), deployed on Vercel. The npm packages and the MCP server live beside it.
 
 ```
-apps/site          Next.js application
-action/            designesy/contract-check GitHub Action
-cli/               designesy-score CLI
-docs/designesy     context, architecture, logs, registries
-DESIGN.md          the design contract (human-readable)
-AGENTS.md          agent operating rules
+apps/site                              the site, its API routes (/api/score, /api/mcp) and its build checks (scripts/)
+packages/score                         @designesy/score: the scoring engine and CLI (npm)
+packages/cli                           @designesy/cli: one CLI for tokens and score (npm)
+packages/tokens                        @designesy/tokens: DTCG token validator (npm)
+packages/stylelint-plugin-dtcg-tokens  @designesy/stylelint-plugin-dtcg-tokens (npm)
+packages/lab-builder                   @designesy/lab-builder (npm)
+packages/designesy-mcp                 designesy-mcp: the local stdio MCP server (PyPI)
+packages/vai-icons, vai-motion         @vai/icons and @vai/motion (not yet published)
+action.yml, action/dist                the Designesy Contract Check GitHub Action
+cli/                                   designesy-score, the older CLI (superseded by @designesy/score)
+scripts/                               repo-level scripts
+docs/designesy                         founding notes from May 2026: mission, architecture, contracts, labs
+DESIGN.md                              operating principles and agent rules (v0.1)
+AGENTS.md                              agent operating rules
 ```
+
+Contract mode, which scores a page against your own DESIGN.md or DTCG token file, is specified in [docs/contract-mode-spec.md](docs/contract-mode-spec.md).
+
+The design contract in DESIGN.md format is generated from the contract source and served at [designesy.org/DESIGN.md](https://www.designesy.org/DESIGN.md). The root `DESIGN.md` file is the older v0.1 charter.
 
 ## What Designesy is not
 

@@ -1,8 +1,8 @@
 // Own-contract intake: readContract(input) -> { ok, contract } or the problems
-// that stop it (engine spec section 4). Next-free.
+// that stop it (contract-mode spec §4, docs/contract-mode-spec.md). Next-free.
 //
 // Order: size (413) -> format -> the format's reader -> the minimum scoreable
-// contract (owner decision D2) -> the token map (section 5.3) -> confusable
+// contract -> the token map (section 5.3) -> confusable
 // names (section 4.5) -> the 1 s budget -> digest.
 
 import { contractDigest } from './digest';
@@ -11,7 +11,7 @@ import { readDesignMd, type LintFn } from './design-md';
 import { readDtcg } from './dtcg';
 import { INTAKE_BUDGET_MS, MAX_CONTRACT_BYTES, MAX_TOKEN_MAP_ENTRIES, MIN_COLORS, MIN_TYPE_STYLES, TOKEN_MAP_NAME } from './limits';
 import { confusableWarnings, problem } from './problems';
-import type { ContractFormat, GroupName, OwnContract, ParsedContract, Problem } from './types';
+import type { ContractFormat, GroupName, LinterTotals, OwnContract, ParsedContract, Problem } from './types';
 
 export type { OwnContract, Problem } from './types';
 export { detectFormat, readAsLabel } from './detect';
@@ -34,7 +34,7 @@ export interface IntakeOptions {
 
 export type IntakeResult =
   | { ok: true; contract: OwnContract }
-  | { ok: false; status: 413 | 422; problems: Problem[]; warnings: Problem[] };
+  | { ok: false; status: 413 | 422; problems: Problem[]; warnings: Problem[]; linter?: LinterTotals | null };
 
 /** Load the linter lazily, the way v37 does, so the module stays importable without it. */
 export async function loadLinter(): Promise<LintFn> {
@@ -73,7 +73,7 @@ export function declaredStats(p: ParsedContract): OwnContract['stats'] {
     easings: own(p.easings).length,
   };
   // Coverage's "declared": colors, faces, type sizes, radii, spacing, sizes,
-  // durations and easings (engine spec 5.4).
+  // durations and easings (contract-mode spec §5.4).
   const declared = byGroup.colors + faces.size + typeSizes + byGroup.radii + byGroup.spacing + byGroup.sizes + byGroup.durations + byGroup.easings;
   return { declared, byGroup };
 }
@@ -104,7 +104,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
   const outcome = format === 'design.md' ? readDesignMd(text, opts.lint ?? (await loadLinter())) : readDtcg(text);
   const warnings = [...outcome.warnings];
   if (outcome.errors.length || !outcome.parsed) {
-    return { ok: false, status: 422, problems: outcome.errors, warnings };
+    return { ok: false, status: 422, problems: outcome.errors, warnings, linter: outcome.linter ?? null };
   }
   const p = outcome.parsed;
   format = p.format;
@@ -129,7 +129,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
       else if (typeof v !== 'string' || !TOKEN_MAP_NAME.test(v)) errors.push(problem('TOKEN_MAP_INVALID', { key: k, value: String(v) }));
     }
   }
-  if (errors.length) return { ok: false, status: 422, problems: errors, warnings };
+  if (errors.length) return { ok: false, status: 422, problems: errors, warnings, linter: outcome.linter ?? null };
 
   // ── Confusable names (v36's helper over every path and mapped variable) ──
   if (opts.findConfusables) {
@@ -141,7 +141,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
   }
 
   if (now() - started > INTAKE_BUDGET_MS) {
-    return { ok: false, status: 422, problems: [problem('CONTRACT_TOO_COMPLEX', { limit: INTAKE_BUDGET_MS })], warnings };
+    return { ok: false, status: 422, problems: [problem('CONTRACT_TOO_COMPLEX', { limit: INTAKE_BUDGET_MS })], warnings, linter: outcome.linter ?? null };
   }
 
   // Mapped tokens carry their variable.

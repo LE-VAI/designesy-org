@@ -1,7 +1,7 @@
 /**
  * Engine 1.3.0, pinned rule by rule.
  *
- *   - No A while any check FAILs (owner decision 2026-10-11): any FAIL caps the
+ *   - No A while any check FAILs (see CHANGELOG): any FAIL caps the
  *     score at 89.9, and v44 joins the contrast ceilings at 65. Every cap runs
  *     after the originality lift.
  *

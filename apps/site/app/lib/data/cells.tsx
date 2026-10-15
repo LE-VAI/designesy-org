@@ -9,7 +9,7 @@ import type { CategoryBreakdown } from '../../leaderboard/seed';
 import { CATEGORY_LABELS, RELATIONSHIP_LABEL, scoreTone, type CohortSite } from './cohort';
 
 /** A site the latest run could not re-score keeps its last score, outside the
-    ranking, and the tag says so in the owner's words: "last scored <date> ·
+    ranking, and the tag says so in these words: "last scored <date> ·
     could not re-score". In a phone-width table it reads "last scored 08-31";
     the full wording is the one assistive tech hears (data.css, .dx-tag). */
 export function HeldTag({ date }: { date: string | null | undefined }) {

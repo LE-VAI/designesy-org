@@ -82,11 +82,12 @@ function midCols(count: number, stack: boolean, long: boolean) {
  * opportunity whatever `hyphens` says, so "--radius-" / "sm 4px" happened in
  * a 235px cell). Internal route paths (`/contracts#design-system-contract`)
  * are code too, for the same reason: a path that broke at its hyphen read
- * "/contracts#design-system-" / "contract" (round-3 judges, Evidence cells).
+ * "/contracts#design-system-" / "contract". A host with a path
+ * (`le-vai.github.io/compile`) is one token, so a URL is never half mono.
  * Plain hyphenated words ("press-and-release") stay prose.
  */
 const CODE_TOKEN =
-  /(^|[^\w-])(var\(--[\w-]+\)|--[a-z][\w-]*|:root|\/[a-z0-9/#._-]*[a-z0-9](?:-[a-z0-9]+)+[a-z0-9/#._-]*|#[a-z][\w-]*|\[[a-z-]+(?:="?[\w-]+"?)?\]|[a-z][a-z0-9-]*(?:\.[a-z][\w-]*)+|[a-z]+(?:-[a-z0-9]+)+(?=:)|(?:prefers|margin|padding|border|font|text|user|will|focus|tabular|inset|scroll|overflow|line|letter|word|white|align|justify|grid|flex|place|box|outline|transition|animation|transform|backdrop|background|aspect|pointer|touch|data|aria)-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z]+(?:-[a-z]+)*-\d+)(?![\w-])/g;
+  /(^|[^\w-])(var\(--[\w-]+\)|--[a-z][\w-]*|:root|\/[a-z0-9/#._-]*[a-z0-9](?:-[a-z0-9]+)+[a-z0-9/#._-]*|#[a-z][\w-]*|\[[a-z-]+(?:="?[\w-]+"?)?\]|[a-z][a-z0-9-]*(?:\.[a-z][\w-]*)+(?:\/[\w#-]+(?:\.[\w#-]+)*)*|[a-z]+(?:-[a-z0-9]+)+(?=:)|(?:prefers|margin|padding|border|font|text|user|will|focus|tabular|inset|scroll|overflow|line|letter|word|white|align|justify|grid|flex|place|box|outline|transition|animation|transform|backdrop|background|aspect|pointer|touch|data|aria)-[a-z0-9]+(?:-[a-z0-9]+)*|[a-z]+(?:-[a-z]+)*-\d+)(?![\w-])/g;
 
 // No lookbehind in the pattern (a parse error before Safari 16.4 would take
 // the whole client bundle down): the boundary is a captured leading character.

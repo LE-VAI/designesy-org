@@ -1,4 +1,4 @@
-// f03 Shipped font sizes are on your type scale (engine spec 6.3; derived from v16).
+// f03 Shipped font sizes are on your type scale (contract-mode spec §6.3; derived from v16).
 // Distinct font-size values in px or rem (em and keywords left out; clamp()
 // gives its absolute bounds). On the scale within 0.01px of a declared size.
 // Share: PASS at 0.90, WARN from 0.70. Needs 3 sizes.

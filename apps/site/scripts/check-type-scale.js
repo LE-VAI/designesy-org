@@ -2,12 +2,12 @@
 /**
  * Type scale gate: text sizes stay on the brand's type scale.
  *
- * WHY THIS EXISTS (brand ledger D59, amended by D68, 2026-10-11)
+ * WHY THIS EXISTS
  * The live home page rendered 45 distinct text sizes and set 394 of its 794
  * text nodes under 12px, and /score, /work and /compare were the same. No
  * floor existed and every component picked its own size, so the sizes
- * multiplied and the small ones kept getting smaller. D59 set a floor and a
- * scale. D68 named the scale: a Major Third (x1.25) on a 16px root.
+ * multiplied and the small ones kept getting smaller. The fix is a floor and a
+ * scale: a Major Third (x1.25) on a 16px root.
  *
  *   0.8rem    12.8px   label: labels, meta, captions, mono uppercase. The floor.
  *   1rem      16px     body: reading and UI text. The reading floor.
@@ -26,18 +26,18 @@
  *    decimals), so no two adjacent steps are closer than the Major Third.
  * 2. In every stylesheet in COVERED (the sheets on the scale), every font-size
  *    and every size inside a font shorthand is:
- *   - with ENFORCE_LADDER (D68): one of the six tokens, var(--text-*). A rem
+ *   - with ENFORCE_LADDER: one of the six tokens, var(--text-*). A rem
  *     literal with a step's value fails too: the token is the scale, so a
  *     literal is a copy that would not move with it. A var() of a local
  *     custom property passes only when every value that property is given in
  *     the covered sheets passes (a size hidden behind a local property is
  *     still a size), and a var() fallback must pass as well;
- *   - without it (the D59 floor alone, the owner's "labels only" fallback): a
+ *   - without it (the 0.8rem floor alone, a "labels only" fallback): a
  *     rem size of 0.8rem or more, max(0.8rem, <n>em), or a token;
  * or, either way, a clamp() (display titles keep their fluid sizes) or
  * `inherit`. Three kinds of rule are exempt, each listed below with its
  * reason: display numerals, a type specimen whose sizes are its content, and
- * home-page rules that the home rebuild (D60) owns. Sheets outside COVERED are
+ * home-page rules that the home rebuild owns. Sheets outside COVERED are
  * legacy until they are moved, so the gate does not fail on pages nobody has
  * touched yet.
  *
@@ -63,7 +63,7 @@ const LADDER = [
 ];
 const TOKENS = new Set(LADDER.map(([t]) => t));
 
-/** On: sizes must be one of the six steps (D68). Off: the floor alone (D59). */
+/** On: sizes must be one of the six steps. Off: the 0.8rem floor alone. */
 const ENFORCE_LADDER = true;
 
 /** The sheets on the scale. Add a sheet here once its sizes are moved. */
@@ -93,15 +93,16 @@ const COVERED = [
   'app/lib/review-prompt.css',
   'app/pricing/pricing.css',
   'app/pricing/review/review.css',
+  'app/score/contract/contract.css',
   'app/spring-validator/spring-validator.css',
   'app/work/work.css',
 ];
 
 /** Display numerals: a readout set as one large figure, not running text.
-    They keep their size, as display titles keep their clamps (D68). */
+    They keep their size, as display titles keep their clamps. */
 const DISPLAY = new Map([
   ['.eg-grade', 'the engine verdict letter'],
-  ['.rs-readout', 'the score readout (results Tier 2, D48)'],
+  ['.rs-readout', 'the score readout'],
   ['.cs-glyph', 'the case study grade glyph'],
   ['.cs-big', 'the case study headline figure'],
 ]);
@@ -113,13 +114,13 @@ const SPECIMEN = new Map([
   ['.demo-scale-spec', 'the Cadence lab rem-scale specimen (/labs/cadence)'],
 ]);
 
-/** Home-page rules in globals.css that the home rebuild (brand ledger D60,
-    #290) kept: they style only the home page's "This site, by category" badge,
-    and home.css (D60's sheet) sets its size at the label step. They move with
+/** Home-page rules in globals.css that the home rebuild (#290) kept: they
+    style only the home page's "This site, by category" badge, and home.css
+    (the rebuild's sheet) sets its size at the label step. They move with
     the home page's next change, not this gate's. */
 const HOME = new Map([
-  ['.section-heading-badge-label', 'home section badge (D60)'],
-  ['.section-heading-badge-unit', 'home section badge (D60)'],
+  ['.section-heading-badge-label', 'home section badge'],
+  ['.section-heading-badge-unit', 'home section badge'],
 ]);
 
 const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
@@ -257,7 +258,7 @@ const failures = [];
     for (const m of r.body.matchAll(/(--text-[\w-]+)\s*:\s*([^;]+)/g)) declared.set(m[1], m[2].trim());
   }
   LADDER.forEach(([token, value], i) => {
-    if (declared.get(token) !== value) failures.push(`app/globals.css :root ${token} is ${declared.get(token) ?? 'missing'}, expected ${value} (D68)`);
+    if (declared.get(token) !== value) failures.push(`app/globals.css :root ${token} is ${declared.get(token) ?? 'missing'}, expected ${value} (the Major Third scale)`);
     const nominal = Math.round(Math.pow(1.25, i - 1) * 1000) / 1000;
     if (Math.abs(parseFloat(value) - nominal) > 1e-9) failures.push(`${token} ${value} is not 1.25^${i - 1} rem (${nominal}rem): the steps must stay a Major Third apart`);
   });
@@ -281,9 +282,9 @@ for (const [file, css] of sheets) {
 }
 
 if (failures.length) {
-  const rule = ENFORCE_LADDER ? `the D68 scale (${LADDER.map(([t, v]) => `var(${t}) ${v}`).join(', ')})` : 'the D59 floor (0.8rem, rem only)';
+  const rule = ENFORCE_LADDER ? `the Major Third scale (${LADDER.map(([t, v]) => `var(${t}) ${v}`).join(', ')})` : 'the 0.8rem floor (rem only)';
   console.error(`[check-type-scale] ${failures.length} failure(s) against ${rule}; a size must be a token, a clamp() or inherit:`);
   for (const f of failures) console.error('  ' + f);
   process.exit(1);
 }
-console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the D68 scale tokens' : 'at or above the D59 floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);
+console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);

@@ -1,4 +1,4 @@
-// f08 Shipped spacing is on your spacing scale (engine spec 6.3; derived from d04).
+// f08 Shipped spacing is on your spacing scale (contract-mode spec §6.3; derived from d04).
 // Every component of padding, margin, gap, row-gap and column-gap (negative
 // margins as their size; var() resolved; 0, auto, percentages, em and
 // functions left out). Share: PASS at 0.90, WARN from 0.70. Needs 5 values.

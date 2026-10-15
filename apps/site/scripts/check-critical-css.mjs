@@ -31,7 +31,7 @@
  *
  * --update ADDS what the pages use. It drops a listed rule only on a full read
  * (--base and --hydrated), because a narrower read cannot see the dynamic routes
- * (/score, /score/report) or the hydrated DOM, and would drop rules they use.
+ * (/score, /score/contract, /score/report) or the hydrated DOM, and would drop rules they use.
  *
  * --hydrated covers elements that exist only after hydration (the Back pill,
  * the definition copy badges, the report's error state ...). They are never in
@@ -54,7 +54,7 @@ const HYDRATED = args.includes('--hydrated');
 const chIdx = args.indexOf('--channel');
 const CHANNEL = chIdx >= 0 ? args[chIdx + 1] : 'chrome';
 if (HYDRATED && !BASE) { console.error('[critical-css] --hydrated needs --base <url of a running next start>'); process.exit(2); }
-const DYNAMIC_ROUTES = ['/score', '/score/report', '/score/report?url=example.com'];
+const DYNAMIC_ROUTES = ['/score', '/score/contract', '/score/report', '/score/report?url=example.com'];
 
 const failures = [];
 const full = await buildGlobalsCss(SITE);
@@ -81,7 +81,10 @@ if (BASE) {
 const generated = JSON.parse(fs.readFileSync(path.join(SITE, 'app/lib/critical-css.generated.json'), 'utf8'));
 // Redirect-only routes (redirect() in a page, e.g. /blog) prerender Next's bare
 // error shell, <html id="__next_error__">, which renders no layout and no content.
-const rendered = docs.filter((d) => !d.html.includes('<html id="__next_error__">'));
+// With a deployment id (Vercel sets one) Next 16 writes data-dpl-id into that
+// <html> tag before the id, so the shell is matched by its id alone.
+const ERROR_SHELL = /<html\b[^>]*\sid="__next_error__"/;
+const rendered = docs.filter((d) => !ERROR_SHELL.test(d.html));
 const unwired = rendered.filter((d) => !d.html.includes('data-href="globals-critical"') || !d.html.includes(generated.href));
 if (unwired.length) failures.push(`${unwired.length} page(s) lack the inline critical CSS or the loader for ${generated.href}, e.g. ${unwired.slice(0, 5).map((d) => d.name).join(', ')}`);
 if (!fs.existsSync(path.join(SITE, 'public', generated.href))) failures.push(`${generated.href} is referenced but not in public/`);

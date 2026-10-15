@@ -10,7 +10,7 @@ import { GRADE_BANDS } from '../score/verdict';
 import { SnippetCopy } from './snippet-copy';
 import { LiveBadgeBuilder } from './live-badge-builder';
 
-// Owner decision 2026-10-11: the embed is the live per-site badge, worded
+// The embed is the live per-site badge, worded
 // "Scored by Designesy", with a one-line disclaimer. The static images it
 // replaced as the lead read "Verified by Designesy" whatever the site's score,
 // and the page claimed the badge "stays honest", which a static file cannot.
@@ -57,7 +57,7 @@ const VARIANTS = [
 ];
 
 // The engine's bands (verdict.ts), highest first, each letter in its grade's
-// text token: a grade takes only its grade tokens (brand ledger D5).
+// text token: a grade takes only its grade tokens.
 const GRADES = [...GRADE_BANDS].reverse().map((b) => ({
   grade: b.grade,
   range: b.grade === 'F' ? 'Under 60' : b.grade === 'A' ? '90 to 100' : `${b.from} to ${(b.to - 0.1).toFixed(1)}`,
