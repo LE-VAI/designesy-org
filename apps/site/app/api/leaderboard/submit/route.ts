@@ -16,17 +16,18 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { SITE_CONTACT_EMAIL } from '../../../lib/site-meta';
+import { clientKey } from '../../../lib/rate-limit';
 
 /** The truth about a submission, in one place for the reply and the docs. */
 const NOT_STORED =
   `The submission is not stored, so the site does not join the leaderboard by being scored. To propose it for the leaderboard, email ${SITE_CONTACT_EMAIL}.`;
 
 const SUBMIT_RATE_LIMIT = 20; // per hour per IP (Pro Plan)
-const submitLog: { ip: string; ts: number }[] = [];
+const submitLog: { caller: string; ts: number }[] = [];
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(caller: string): boolean {
   const now = Date.now();
-  const recent = submitLog.filter((e) => e.ip === ip && now - e.ts < 3600_000);
+  const recent = submitLog.filter((e) => e.caller === caller && now - e.ts < 3600_000);
   submitLog.length = 0;
   submitLog.push(...recent);
   return recent.length >= SUBMIT_RATE_LIMIT;
@@ -61,8 +62,8 @@ export async function POST(request: Request) {
   }
 
   // Rate limit
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (isRateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (isRateLimited(caller)) {
     return Response.json(
       { ok: false, error: `Rate limit exceeded. Maximum ${SUBMIT_RATE_LIMIT} submissions per hour.` },
       { status: 429 }
@@ -104,8 +105,9 @@ export async function POST(request: Request) {
     const scoreData = await scoreResponse.json();
     const summary = scoreData.summary || scoreData;
 
-    // Rate limiting only: the IP and time, in memory, lost on a cold start.
-    submitLog.push({ ip, ts: Date.now() });
+    // Rate limiting only: the caller key (a keyed hash of the IP) and time,
+    // in memory, lost on a cold start.
+    submitLog.push({ caller, ts: Date.now() });
 
     return Response.json({
       ok: true,

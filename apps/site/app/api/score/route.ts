@@ -6,6 +6,7 @@ import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { handleOwnContract } from '../../lib/own-contract/api';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -5514,9 +5515,12 @@ function emitReview(url: string, result: ScoreResult): string {
     if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
-    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
-    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
-    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    // A cell escapes its backslashes before its pipes: a detail carries text
+    // read from the scored page, where a backslash before a pipe would
+    // otherwise escape the escape and leave a live cell separator.
+    const before = c.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) {
@@ -5540,8 +5544,8 @@ function emitReview(url: string, result: ScoreResult): string {
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },
       { status: 429 }
@@ -5605,7 +5609,7 @@ export async function POST(request: Request) {
     }
     try {
       const r = await handleOwnContract(
-        { body: body as Record<string, unknown>, bodyBytes, url, ip },
+        { body: body as Record<string, unknown>, bodyBytes, url, caller },
         {
           fetchPage: fetchPageResilient,
           legacyChecks: ({ html, css }) => {

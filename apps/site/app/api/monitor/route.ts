@@ -35,6 +35,7 @@ import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { Resend } from 'resend';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { clientKey } from '../../lib/rate-limit';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -83,6 +84,18 @@ function emailOnCooldown(url: string, email: string, alerts: string[]): boolean 
   }
   emailLog.set(key, { time: now, alertHash });
   return false;
+}
+
+// ── Email address check ─────────────────────────────────────────────────────
+// The address comes from the request body, so its length is checked before the
+// pattern runs: the pattern backtracks on a long run of "x." segments with no
+// valid ending (2.3 s at 100,000 characters in Node 24), and no deliverable
+// address is longer than 254 characters (RFC 5321's 256-octet path, less the
+// angle brackets).
+const EMAIL_MAX_LENGTH = 254;
+
+function isEmailAddress(email: string): boolean {
+  return email.length <= EMAIL_MAX_LENGTH && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 // ── Fetching (mirrors drift/score routes) ─────────────────────────────────────
@@ -474,7 +487,7 @@ async function sendAlertEmail(
   if (!apiKey) {
     return { attempted: false, delivered: false };
   }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !isEmailAddress(email)) {
     return { attempted: false, delivered: false };
   }
 
@@ -679,8 +692,8 @@ const scoreMonitor = unstable_cache(scoreMonitorUncached, ['designesy-monitor'],
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 50 monitor scans per hour.' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },
@@ -707,7 +720,7 @@ export async function POST(request: Request) {
 
   // Validate email if provided
   const email = body.email?.trim();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !isEmailAddress(email)) {
     return NextResponse.json(
       { ok: false, error: 'Invalid email address.' },
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
