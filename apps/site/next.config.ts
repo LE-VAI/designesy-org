@@ -145,6 +145,7 @@ const markdownPublicPath = (route: string) => (route === 'index' ? '/' : '/' + r
 const markdownFilePath = (route: string) => (route === 'index' ? '/index.md' : '/' + route + '.md');
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   // @sparticuz/chromium ships a prebuilt binary under bin/ and a WASM blob
   // under bin/. Next's server bundler (esbuild/webpack) relocates node_modules
   // and drops these assets, producing "input directory .../bin does not exist"
