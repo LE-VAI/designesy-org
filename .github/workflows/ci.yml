@@ -101,8 +101,24 @@ jobs:
       - name: Critical CSS
         run: node scripts/build-critical-css.mjs
 
+      # --webpack: Next 16 builds with Turbopack by default, and Turbopack's CSS
+      # pipeline (lightningcss) drops declarations this stylesheet relies on: it
+      # removes `backdrop-filter` when it precedes `-webkit-backdrop-filter`
+      # (the header capsule's blur dies; scripts/check-glass-blur.js catches it)
+      # and removes `translate` when `transform` follows it in the rule (.ix-pin).
+      # The package.json build script passes the same flag, so CI and Vercel
+      # build the same way.
       - name: Next build
-        run: npx next build
+        run: npx next build --webpack
+
+      # Vercel builds Next 16 with its deployment adapter, which leaves the
+      # prerendered HTML under .next/server/route-cache instead of
+      # .next/server/app, where every gate below reads it. This copies it back
+      # (see the header of the script); on this plain build it finds no
+      # route-cache and does nothing, so CI runs the same step the deploy does.
+      - name: Stage prerender output
+        if: always()
+        run: node scripts/stage-prerender-output.js
 
       - name: Contract drift
         if: always()

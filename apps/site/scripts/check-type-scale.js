@@ -40,6 +40,10 @@
  * home-page rules that the home rebuild owns. Sheets outside COVERED are
  * legacy until they are moved, so the gate does not fail on pages nobody has
  * touched yet.
+ * 3. In the home page's two sheets (SHORTHAND_ONLY, not covered: see there
+ *    for why), every static rem or px size inside a font shorthand is a
+ *    token: a literal under 0.8rem is under the floor, and any other literal
+ *    is off the scale (with the floor alone, only the first fails).
  *
  * A gate that cannot fail proves nothing: every run first feeds the parser
  * known-good and known-bad CSS and fails if it misjudges either.
@@ -98,11 +102,24 @@ const COVERED = [
   'app/work/work.css',
 ];
 
+/** The home page's two sheets, held to the scale only where a font shorthand
+    writes a static size. They are not in COVERED because most of their sizes
+    are not running text on the site's scale: the inspector's demo page sets
+    its type in em of its own fluid specimen size, with its own 10px floor
+    (those sizes are the demo's content), and the console and inspector set
+    their grade letters as display numerals. Covering the sheets would move
+    those. A size in a shorthand is still a size, though, and a static one
+    there is the site's own text: the title bar, the log's pins, the
+    console's progress line and score. */
+const SHORTHAND_ONLY = [
+  'app/home-inspect.css',
+  'app/home-lvl.css',
+];
+
 /** Display numerals: a readout set as one large figure, not running text.
     They keep their size, as display titles keep their clamps. */
 const DISPLAY = new Map([
   ['.eg-grade', 'the engine verdict letter'],
-  ['.rs-readout', 'the score readout'],
   ['.cs-glyph', 'the case study grade glyph'],
   ['.cs-big', 'the case study headline figure'],
 ]);
@@ -219,6 +236,25 @@ function check(file, css) {
   return bad;
 }
 
+/** Static rem or px sizes in font shorthands (SHORTHAND_ONLY sheets). A var(),
+    max(), clamp() or em size there is not static, and font-size is outside
+    this judge: both stay with the sheet's own rules until it is covered. */
+function checkShorthand(file, css) {
+  const bad = [];
+  for (const r of rules(css)) {
+    if (exempt(r.selector)) continue;
+    for (const m of r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)) {
+      const s = (' ' + m[1].trim()).match(SIZE_IN_FONT);
+      const lit = s && s[1].match(/^([\d.]+)(rem|px)$/);
+      if (!lit) continue;
+      const rem = parseFloat(lit[1]) / (lit[2] === 'px' ? 16 : 1);
+      if (rem < 0.8) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is under the 0.8rem floor`);
+      else if (ENFORCE_LADDER) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is off the scale`);
+    }
+  }
+  return bad;
+}
+
 // The gate must be able to fail: misjudging any canary fails the run.
 // Each canary: [css, failures with the ladder on, failures with the floor alone].
 const CANARIES = [
@@ -236,10 +272,23 @@ const CANARIES = [
   ['.a { --a-size: var(--text-body); font-size: var(--a-size, 0.98rem); }', 1, 0],
   ['.a { font-size: var(--undeclared-size); }', 1, 1],
 ];
-const misjudged = CANARIES.filter(([css, ladder, floor]) => {
-  LOCAL = locals([css]);
-  return check('canary', css).length !== (ENFORCE_LADDER ? ladder : floor);
-});
+// The shorthand judge's canaries, in the same form.
+const SHORTHAND_CANARIES = [
+  ['.a { font: 500 0.72rem/1 var(--mono); }', 1, 1],
+  ['.a { font: 700 10px/1 var(--mono); }', 1, 1],
+  ['.a { font: 500 1.2rem/1.25 var(--sans); }', 1, 0],
+  ['@media (min-width: 40rem) { .a { font: 500 1.5rem/1 var(--mono); } }', 1, 0],
+  ['.a { font: 500 var(--text-lead)/1.25 var(--sans); } .b { font: 500 var(--text-label)/1 var(--mono); }', 0, 0],
+  ['.a { font-size: 3.4rem; } .b { font: 700 max(10px, 0.6em) / 1 var(--mono); } .c { font: 500 var(--x-fs) / 1 var(--mono); }', 0, 0],
+  ['/* .a { font: 500 0.72rem/1 var(--mono); } */ .b { font: inherit; }', 0, 0],
+];
+const misjudged = [
+  ...CANARIES.filter(([css, ladder, floor]) => {
+    LOCAL = locals([css]);
+    return check('canary', css).length !== (ENFORCE_LADDER ? ladder : floor);
+  }),
+  ...SHORTHAND_CANARIES.filter(([css, ladder, floor]) => checkShorthand('canary', css).length !== (ENFORCE_LADDER ? ladder : floor)),
+];
 if (misjudged.length) {
   console.error('[check-type-scale] the parser misjudged its canaries:');
   for (const [css, ladder, floor] of misjudged) console.error(`  expected ${ENFORCE_LADDER ? ladder : floor} failure(s): ${css}`);
@@ -281,10 +330,23 @@ for (const [file, css] of sheets) {
   failures.push(...check(file, css));
 }
 
+// 3. The static sizes in the home sheets' font shorthands.
+let shorthands = 0;
+for (const file of SHORTHAND_ONLY) {
+  const p = path.join(SITE, file);
+  if (!fs.existsSync(p)) {
+    failures.push(`${file}: listed in SHORTHAND_ONLY but missing`);
+    continue;
+  }
+  const css = fs.readFileSync(p, 'utf8');
+  for (const r of rules(css)) shorthands += [...r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)].length;
+  failures.push(...checkShorthand(file, css));
+}
+
 if (failures.length) {
   const rule = ENFORCE_LADDER ? `the Major Third scale (${LADDER.map(([t, v]) => `var(${t}) ${v}`).join(', ')})` : 'the 0.8rem floor (rem only)';
   console.error(`[check-type-scale] ${failures.length} failure(s) against ${rule}; a size must be a token, a clamp() or inherit:`);
   for (const f of failures) console.error('  ' + f);
   process.exit(1);
 }
-console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);
+console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'}; ${shorthands} font shorthands in ${SHORTHAND_ONLY.length} home sheets with no static size ${ENFORCE_LADDER ? 'off the tokens' : 'under the floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);
