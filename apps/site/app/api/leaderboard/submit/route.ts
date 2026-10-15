@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   // Rate limit
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (isRateLimited(caller)) {
     return Response.json(
       { ok: false, error: `Rate limit exceeded. Maximum ${SUBMIT_RATE_LIMIT} submissions per hour.` },

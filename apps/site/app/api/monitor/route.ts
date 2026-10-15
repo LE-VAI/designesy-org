@@ -692,7 +692,7 @@ const scoreMonitor = unstable_cache(scoreMonitorUncached, ['designesy-monitor'],
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 50 monitor scans per hour.' },

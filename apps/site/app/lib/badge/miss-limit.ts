@@ -58,7 +58,7 @@ export async function decideBadgeMiss(headers: Headers): Promise<MissDecision> {
       : { allowed: true, outcome: 'inactive' };
   }
   try {
-    const mine = await perIp.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:${clientKey(headers)}`);
+    const mine = await perIp.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:${await clientKey(headers)}`);
     if (mine.reason === 'timeout') return { allowed: false, outcome: 'degraded', why: 'degraded' };
     if (!mine.success) return { allowed: false, outcome: 'active', why: 'per-ip' };
     const all = await global.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:all`);

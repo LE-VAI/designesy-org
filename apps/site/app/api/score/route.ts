@@ -5544,7 +5544,7 @@ function emitReview(url: string, result: ScoreResult): string {
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },

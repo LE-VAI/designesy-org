@@ -189,7 +189,7 @@ async function sendWebhook(data: Normalized): Promise<{ ok: boolean; detail?: st
 }
 
 export async function POST(req: Request) {
-  if (!rateLimit(clientKey(req.headers))) {
+  if (!rateLimit(await clientKey(req.headers))) {
     return NextResponse.json(
       { ok: false, error: 'Too many requests. Try again in a bit, or email hello@designesy.org.' },
       { status: 429 }

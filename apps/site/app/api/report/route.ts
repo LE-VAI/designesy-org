@@ -422,7 +422,7 @@ const runReport = unstable_cache(runReportUncached, ['designesy-report'], {
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 20 report scans per hour (report fires 3 engines per scan).' },

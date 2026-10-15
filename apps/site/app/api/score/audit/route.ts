@@ -633,7 +633,7 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: `Audit rate limit exceeded. Maximum ${RATE_LIMIT} browser audits per hour.` },

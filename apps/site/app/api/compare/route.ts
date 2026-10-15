@@ -620,7 +620,7 @@ const scoreCompare = unstable_cache(scoreCompareUncached, ['designesy-compare'],
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const caller = clientKey(request.headers);
+  const caller = await clientKey(request.headers);
   if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 30 compare scans per hour.' },
