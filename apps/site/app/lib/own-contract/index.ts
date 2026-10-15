@@ -11,7 +11,7 @@ import { readDesignMd, type LintFn } from './design-md';
 import { readDtcg } from './dtcg';
 import { INTAKE_BUDGET_MS, MAX_CONTRACT_BYTES, MAX_TOKEN_MAP_ENTRIES, MIN_COLORS, MIN_TYPE_STYLES, TOKEN_MAP_NAME } from './limits';
 import { confusableWarnings, problem } from './problems';
-import type { ContractFormat, GroupName, OwnContract, ParsedContract, Problem } from './types';
+import type { ContractFormat, GroupName, LinterTotals, OwnContract, ParsedContract, Problem } from './types';
 
 export type { OwnContract, Problem } from './types';
 export { detectFormat, readAsLabel } from './detect';
@@ -34,7 +34,7 @@ export interface IntakeOptions {
 
 export type IntakeResult =
   | { ok: true; contract: OwnContract }
-  | { ok: false; status: 413 | 422; problems: Problem[]; warnings: Problem[] };
+  | { ok: false; status: 413 | 422; problems: Problem[]; warnings: Problem[]; linter?: LinterTotals | null };
 
 /** Load the linter lazily, the way v37 does, so the module stays importable without it. */
 export async function loadLinter(): Promise<LintFn> {
@@ -104,7 +104,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
   const outcome = format === 'design.md' ? readDesignMd(text, opts.lint ?? (await loadLinter())) : readDtcg(text);
   const warnings = [...outcome.warnings];
   if (outcome.errors.length || !outcome.parsed) {
-    return { ok: false, status: 422, problems: outcome.errors, warnings };
+    return { ok: false, status: 422, problems: outcome.errors, warnings, linter: outcome.linter ?? null };
   }
   const p = outcome.parsed;
   format = p.format;
@@ -129,7 +129,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
       else if (typeof v !== 'string' || !TOKEN_MAP_NAME.test(v)) errors.push(problem('TOKEN_MAP_INVALID', { key: k, value: String(v) }));
     }
   }
-  if (errors.length) return { ok: false, status: 422, problems: errors, warnings };
+  if (errors.length) return { ok: false, status: 422, problems: errors, warnings, linter: outcome.linter ?? null };
 
   // ── Confusable names (v36's helper over every path and mapped variable) ──
   if (opts.findConfusables) {
@@ -141,7 +141,7 @@ export async function readContract(input: ContractInput, opts: IntakeOptions = {
   }
 
   if (now() - started > INTAKE_BUDGET_MS) {
-    return { ok: false, status: 422, problems: [problem('CONTRACT_TOO_COMPLEX', { limit: INTAKE_BUDGET_MS })], warnings };
+    return { ok: false, status: 422, problems: [problem('CONTRACT_TOO_COMPLEX', { limit: INTAKE_BUDGET_MS })], warnings, linter: outcome.linter ?? null };
   }
 
   // Mapped tokens carry their variable.

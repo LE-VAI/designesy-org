@@ -93,6 +93,7 @@ const COVERED = [
   'app/lib/review-prompt.css',
   'app/pricing/pricing.css',
   'app/pricing/review/review.css',
+  'app/score/contract/contract.css',
   'app/spring-validator/spring-validator.css',
   'app/work/work.css',
 ];

@@ -110,6 +110,7 @@ function main() {
     'check-flame-flip.js',
     'check-a11y-modes.js',
     'check-results-readout.js',
+    'check-contract-page.js',
     'a11y-sweep.js',
     'check-dock-clearance.js',
     'check-word-boundaries-render.js',

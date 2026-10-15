@@ -28,6 +28,8 @@ export const INTAKE_BUDGET_MS = 1_000;
 export const YAML_MAX_ALIASES = 100;
 /** At most this many characters of any offending value reach a message. */
 export const MAX_VALUE_CHARS = 80;
+/** A linter sentence is shown whole; only past this length is it cut, at a word boundary. */
+export const MAX_LINTER_MESSAGE_CHARS = 400;
 /** Evidence entries per check; the rest are counted in `truncated`. */
 export const EVIDENCE_CAP = 20;
 /** The 16px root the engine assumes for rem (the existing engine's rule). */

@@ -232,7 +232,9 @@ export async function handleOwnContract(req: ContractRequest, deps: RouteDeps): 
   );
   if (!intake.ok) {
     if (intake.status === 413) return reply(413, { ok: false, error: sentence(intake.problems), code: intake.problems[0]?.code ?? 'contract_too_large' });
-    return reply(422, { ok: false, error: 'Your contract cannot be scored yet.', code: 'contract_not_scoreable', problems: intake.problems, warnings: intake.warnings });
+    // linter: the totals the DESIGN.md format linter reported (null when it did not
+    // read the file), for the page's provenance line (brand D75).
+    return reply(422, { ok: false, error: 'Your contract cannot be scored yet.', code: 'contract_not_scoreable', problems: intake.problems, warnings: intake.warnings, linter: intake.linter ?? null });
   }
   const contract = intake.contract;
 

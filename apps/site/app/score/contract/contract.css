@@ -1,0 +1,804 @@
+/* ==========================================================================
+   /score/contract: "Your contract, verified". The route's own sheet.
+
+   Contract mode reuses the house engine page (engine.css, instrument.css,
+   command-bar.css); the rules here add only what it draws that no engine
+   draws: the contract slab's source wells, the run's steps, the two numbers
+   at rest, the rejected contract and the request-error notice. Route-scoped:
+   nothing here reaches another page.
+
+   Every colour, space, radius, duration and ease is a site token; every text
+   size is a type-scale token (brand ledger D68), never under --text-label
+   (12.8px). The only hex values that ever reach this page are a customer's
+   own declared and shipped colours, which arrive as data.
+   ========================================================================== */
+
+/* -- The input slab: a URL well, the contract source, the contract well ---- */
+
+/* A textarea bar runs full width in the bench (command-bar.css). Its rows sit
+   on the slab's own gap; every text line starts on the wells' content edge. */
+.cf-bar .eg-bar-field > .eg-bar-tag {
+  min-width: 4.75rem;
+}
+
+.cf-bar .m3-head {
+  align-items: center;
+}
+
+/* The source hint sits under the choice, on the wells' content edge, in the
+   house hint's voice (command-bar.css .eg-seg-hint, whose grid area belongs
+   to the choice's own grid, not the slab's). */
+.cf-src-hint {
+  margin: calc(-1 * var(--space-8)) 0 0;
+  padding-inline: var(--ctl-inset);
+  font: 400 var(--text-label)/1.25rem var(--sans);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.cf-readas {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  padding-right: var(--space-12);
+  font: 500 var(--text-label)/1.25rem var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@container ctl (width < 30rem) {
+  .cf-readas {
+    padding-inline-start: var(--ctl-inset);
+    white-space: normal;
+  }
+}
+
+.cf-readas .eg-lamp {
+  width: 0.9rem;
+  height: 0.42rem;
+}
+
+/* The contract well keeps the converter's code well (m3-textarea): 16px mono,
+   no soft wrap, resizable. Contract text is YAML or JSON, so it reads as code.
+   The well's own clip (command-bar.css) keeps the focus ring clear of it. */
+.cf-bar .m3-textarea {
+  min-height: 15rem;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+}
+
+.cf-bar .m3-textarea::placeholder {
+  color: var(--muted-dim);
+  opacity: 1;
+}
+
+.cf-bar .m3-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* An invalid contract marks its well the way an invalid URL marks its own
+   (command-bar.css [data-invalid]); the status line says why. Focused, it
+   keeps the amber edge and adds the house ring outside it. */
+.cf-bar .eg-bar-field.is-area[data-invalid],
+.cf-drop[data-invalid] {
+  box-shadow:
+    inset 0 0 0 1px var(--ctl-warn),
+    0 0 0 3px color-mix(in srgb, var(--ctl-warn) 18%, transparent);
+}
+
+.cf-bar .eg-bar-field.is-area[data-invalid]:focus-within,
+.cf-drop[data-invalid]:focus-within {
+  outline: 2px solid var(--ctl-focus, var(--signal-access));
+  outline-offset: 3px;
+}
+
+/* The disclosure sits on the text edge, like the foot it belongs to
+   (command-bar.css: every foot row starts on the wells' content edge); its
+   body steps back out by the same inset, so the map's well lines up with the
+   contract well above it. */
+.cf-map {
+  padding-inline: var(--ctl-inset);
+}
+
+.cf-map .eg-more-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cf-map-hint {
+  margin: 0 0 var(--space-8);
+  padding-inline: var(--ctl-inset);
+  font: 400 var(--text-label)/1.25rem var(--sans);
+  color: var(--muted);
+}
+
+.cf-map .m3-textarea {
+  min-height: 4.5rem;
+}
+
+.cf-aside {
+  margin: 0;
+  padding-inline: var(--space-4);
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.cf-aside a {
+  color: var(--ink);
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+/* The slab above is positioned, so it paints after this in-flow link, and its
+   drop shadow (--elev-3, 48px deep in dark) fell across the top of the link's
+   ring: the top edge read at about 55%, 2.6:1 (QA R31-08). A focused link
+   takes its own layer above the slab. Nothing moves (relative, no offset). */
+.cf-aside a:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+/* The upload well: decoration around a real file button (WIREFRAMES W1). */
+.cf-drop {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-12);
+  padding: var(--space-24) var(--ctl-inset);
+  border-radius: var(--ctl-r-in);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+
+.cf-drop[data-drag] {
+  box-shadow: inset 0 0 0 1px var(--signal-access);
+}
+
+.cf-drop-file {
+  font: 500 var(--text-label)/1.25rem var(--mono);
+  color: var(--ink);
+}
+
+/* -- The run summary: the slab, folded to one line after a run ------------- */
+
+.cf-run .cf-run-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-16);
+  min-height: var(--ctl-h);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--ctl-inset);
+}
+
+.cf-run-what {
+  display: flex;
+  flex: 1 1 24rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4) var(--space-12);
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+}
+
+.cf-run-what > svg {
+  flex: 0 0 auto;
+}
+
+.cf-run-url {
+  font: 500 var(--text-body)/1.4 var(--mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cf-run-contract {
+  font-size: var(--text-label);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.cf-run-contract b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cf-run-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* -- The verdict line, above the instrument -------------------------------- */
+
+/* score-verdict-line is the house sentence (words before numbers). In the
+   bench it opens the result, and it takes focus when a run lands. */
+.cf-bench > .score-verdict-line {
+  display: block;
+  font-size: var(--text-body);
+  line-height: 1.45;
+  max-inline-size: 72ch;
+  padding-block: var(--space-2);
+}
+
+.cf-bench > .score-verdict-line:focus-visible {
+  outline-offset: 6px;
+}
+
+/* -- Registers in the face: fidelity and baseline ------------------------- */
+
+/* One lattice for both registers: eight tracks on a narrow face, sixteen on
+   a wide one, so the registers close as whole rows. The length of each
+   register is its count. Each button stays a 24px target (engine.css). */
+.cf-inst .eg-minicells,
+.cf .eg-minicells {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+}
+
+@container face (width >= 34rem) {
+  .cf .eg-minicells {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+  }
+}
+
+/* -- What the run reads: contract, site, coverage, and the run's steps ----- */
+
+.cf-what {
+  display: grid;
+  gap: var(--space-12);
+  margin-top: var(--space-20);
+  padding-top: var(--space-20);
+  border-top: 1px solid var(--line-faint);
+}
+
+.cf-what-rows {
+  display: grid;
+  gap: var(--space-14);
+  margin: 0;
+}
+
+.cf-what-rows > div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: var(--space-4) var(--space-16);
+  align-items: baseline;
+}
+
+@container face (width < 30rem) {
+  .cf-what-rows > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cf-what-rows dt {
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cf-what-rows dd {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--text-label);
+  line-height: 1.45;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cf-what-rows dd small {
+  display: block;
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+
+.cf-what-rows code,
+.cf-mono {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-what-rows [data-state="waiting"] {
+  color: var(--muted);
+}
+
+/* The run's steps resolve into the same rows: the state each step is in reads
+   as a word, never only as a dot. POST /api/score answers once, so the steps
+   run together and resolve together when the answer lands (owner decision
+   O4). While they run, the marker is the house's running colour, Azure: the
+   flame is for the moment a result lands, on the instrument's mark (brand
+   D74, owner decision O3). */
+.cf-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  font: 500 var(--text-label)/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cf-step[data-state="done"],
+.cf-step[data-state="running"] {
+  color: var(--ink);
+}
+
+.cf-step i {
+  width: var(--space-6);
+  height: var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--line-strong);
+}
+
+.cf-step[data-state="running"] i {
+  border-radius: 50%;
+  background: var(--signal-access);
+}
+
+.cf-step[data-state="done"] i {
+  background: var(--ink);
+}
+
+/* -- The two numbers (contract fidelity and baseline), side by side -------- */
+
+.cf-pair {
+  display: grid;
+  gap: var(--space-20);
+}
+
+.cf-layer {
+  display: grid;
+  gap: var(--space-8);
+  min-width: 0;
+}
+
+.cf-layer > h2 {
+  margin: 0;
+}
+
+.cf-layer-line,
+.cf-count {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.cf-count b {
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-null {
+  margin: 0;
+  font: 500 var(--text-lead)/1.2 var(--sans);
+  color: var(--ink);
+}
+
+/* The site could not be read (W9): the engine's own sentence, then the
+   contract's standing, then the one action. */
+.cf-unreachable {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-8);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line-faint);
+}
+
+.cf-unreachable p {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* -- The instrument: a full-width row under the face and the side --------- */
+
+.cf-wide {
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  border-bottom: 1px solid var(--line-faint);
+}
+
+@container bench (width >= 52rem) {
+  .cf .eg-inst .cf-wide {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: 1px solid var(--line-faint);
+    border-bottom: 0;
+  }
+}
+
+/* -- Panels: the rejected contract and the request-error notice ----------- */
+
+.cf-panel {
+  position: relative;
+  display: grid;
+  gap: var(--space-16);
+  padding: var(--space-20) var(--space-20) var(--space-24);
+  border-radius: var(--radius-xl);
+  background: var(--mat-reading);
+  box-shadow: var(--specular), var(--elev-1);
+}
+
+.cf-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.cf-panel p {
+  margin: 0;
+  max-inline-size: 70ch;
+  font-size: var(--text-body);
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.cf-panel code {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.cf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* The divider runs the panel's full content width; the text inside keeps
+   its measure (house rule: measure caps belong on text, never on a rule). */
+.cf-quiet {
+  display: grid;
+  gap: var(--space-8);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--line-faint);
+}
+
+.cf-quiet > p {
+  max-inline-size: 70ch;
+}
+
+.cf-warnings {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding-inline-start: var(--space-20);
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Problems: an error summary. Each item starts with the field or a plain
+   sentence; the number beside it repeats what the order says. */
+.cf-problems {
+  gap: var(--space-20);
+}
+
+.cf-problems-head {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.cf-problems-head .eg-h2 {
+  margin: 0;
+}
+
+/* The heading takes focus when the panel arrives (tabindex="-1"), so a
+   screen reader starts at it. It is not a control: no Tab stop reaches it and
+   nothing on it can be pressed, so it draws no focus ring. The live region
+   still announces the stop, and focus still moves here. */
+.cf-problems-head .eg-h2[tabindex="-1"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.cf-problem-list {
+  display: grid;
+  gap: var(--space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: cf-problem;
+}
+
+.cf-problem-list > li {
+  counter-increment: cf-problem;
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: var(--space-12);
+  padding: var(--space-14) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--lv-fail-b) 7%, var(--lv-well));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lv-fail-a) 34%, transparent);
+}
+
+.cf-problem-list > li::before {
+  content: counter(cf-problem);
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font: 600 var(--text-label)/1 var(--mono);
+  color: var(--ink);
+}
+
+.cf-problem-list > li > div {
+  min-width: 0;
+}
+
+.cf-problem-list p {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.55;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.cf-problem-list p + p {
+  margin-top: var(--space-6);
+  font-size: var(--text-label);
+  color: var(--muted);
+}
+
+.cf-problem-where {
+  font-family: var(--mono);
+}
+
+.cf-minimum {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cf-minimum li {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  gap: var(--space-12);
+  align-items: baseline;
+  padding: var(--space-10) 0;
+  border-bottom: 1px solid var(--line-faint);
+  font-size: var(--text-label);
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.cf-minimum .eg-lamp {
+  width: 1rem;
+  transform: translateY(-0.1rem);
+}
+
+.cf-minimum span:last-child {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* The front-matter rewrite keeps its lines and scrolls sideways in its own
+   well, as the contract field does, so a long or CJK contract name in it can
+   never set the panel's width and push the heading off the screen (WCAG
+   1.4.10). It is then a Tab stop (contract-problems.tsx), with the house ring. */
+.cf-code {
+  contain: inline-size;
+  margin: 0;
+  padding: var(--space-14) var(--space-16);
+  border-radius: var(--radius-md);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  font: 400 var(--text-label)/1.6 var(--mono);
+  color: var(--ink);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.cf-code:focus-visible {
+  outline: 2px solid var(--signal-access);
+  outline-offset: 2px;
+}
+
+.cf-panel .cf-rewrite-note {
+  margin-top: var(--space-8);
+  font-size: var(--text-label);
+}
+
+.cf-split {
+  display: grid;
+  gap: var(--space-20);
+}
+
+@container bench (width >= 52rem) {
+  .cf-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.cf-panel .cf-sub {
+  margin: 0 0 var(--space-8);
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cf-panel .cf-sub-gap {
+  margin-top: var(--space-20);
+}
+
+/* A request that got no result (W10): one title per failure, then what to
+   do. The card is the announcement (role="alert"); nothing here moves focus. */
+.cf-notice {
+  gap: var(--space-6);
+}
+
+.cf-notice .cf-notice-title {
+  font: 600 var(--text-body)/1.4 var(--sans);
+  color: var(--ink);
+}
+
+/* The provenance line under a landed run (brand D75): the linter's own totals,
+   in the quiet tone of the panel's citation. */
+.cf-lint-run {
+  margin: 0;
+  padding-inline: var(--space-4);
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.cf-lint code {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--ink);
+}
+
+/* -- Running: skeleton rows, still under reduced motion -------------------- */
+
+.cf-skeleton {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cf-skeleton li {
+  height: var(--space-48);
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  animation: cf-pulse calc(3 * var(--duration-slow)) var(--ease-in-out) infinite alternate;
+}
+
+.cf-skeleton li:nth-child(2) { animation-delay: var(--duration-quick); }
+.cf-skeleton li:nth-child(3) { animation-delay: var(--duration-fast); }
+
+@keyframes cf-pulse {
+  from { opacity: 1; }
+  to { opacity: 0.35; }
+}
+
+/* --- Motion preferences ----------------------------------------------------- */
+
+/* Tiered, as the house does it: decorative pulses stop; content never hides;
+   the press and focus feedback in engine.css and command-bar.css stays. */
+@media (prefers-reduced-motion: reduce) {
+  .cf-skeleton li {
+    animation: none;
+  }
+}
+
+html[data-motion="paused"] .cf-skeleton li {
+  animation: none;
+}
+
+@media (forced-colors: active) {
+  .cf-panel::before {
+    display: none;
+  }
+  .cf-panel {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+}
+
+/* --- Reflow, resize and spacing (QA loop-backs) ---------------------------- */
+
+/* Narrow bench (WCAG 1.4.10 at 320, 1.4.12 at 390): contract mode's bar name
+   ("Your contract") and state are longer than an engine page's, and the
+   house's two-track bar overprinted them. The bar wraps instead: where both
+   fit it is the house's one line; where they do not, the state takes a second
+   line, still at the bar's end. 38rem is measured (QA round 3.1 refit probe). */
+@container bench (width < 38rem) {
+  .cf .eg-inst-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: var(--space-12);
+    row-gap: var(--space-4);
+    padding-block: var(--space-8);
+  }
+  .cf .eg-inst-state {
+    margin-inline-start: auto;
+  }
+}
+
+/* Text spacing in the equal-thirds bar (WCAG 1.4.12): where the bench is 38rem
+   to 64rem wide the state may wrap inside its own third instead of running
+   over the target pill. At default text nothing moves. */
+@container bench (width >= 38rem) and (width < 64rem) {
+  .cf .eg-inst-state {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .cf .eg-inst-state > span {
+    white-space: normal;
+    text-align: end;
+  }
+}
+
+/* The method plate: contract mode's formula is longer than an engine page's,
+   so below the width where the formula and the whole scale fit on one line
+   (78.5rem, measured in QA round 3.1), the scale takes its own row. */
+@container method (width < 78.5rem) {
+  .cf .eg-formula {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The source choice at 200% text (WCAG 1.4.4): where the slab is wide enough,
+   the choice keeps its labels whole and the reading wraps under it. */
+@container ctl (width >= 30rem) {
+  .cf-bar .m3-head .eg-seg {
+    grid-template-columns: auto max-content minmax(0, 1fr);
+    grid-template-areas:
+      "label track ."
+      "hint hint hint";
+    min-width: auto;
+  }
+}
+
+/* The path line (WCAG 2.4.11): contract mode's line is longer than an engine
+   page's, so where the one line does not fit (55rem of the page, measured)
+   the facts stack as the house stacks them under 36rem: no sideways strip, so
+   no clipped link at rest or in focus. Where it fits it may still wrap, so
+   under WCAG text spacing the link's ring draws whole. */
+@container eg (width < 55rem) {
+  .cf .eg-path {
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: var(--space-4);
+    overflow-x: visible;
+  }
+  .cf .eg-path > span + span::before {
+    content: none;
+  }
+}
+
+@container eg (width >= 55rem) {
+  .cf .eg-path {
+    flex-wrap: wrap;
+    row-gap: var(--space-4);
+    overflow-x: visible;
+  }
+}

@@ -348,12 +348,59 @@ await check('DM-9 malformed YAML: YAML_INVALID with the file line', async () => 
   const [p] = only(await readFix('DM-9.md'), 'YAML_INVALID');
   assert.ok(p.line >= 2 && p.line <= 6, `line ${p.line}`);
 });
-await check('DM-10 invalid color and unit (probe P6): LINT_ERROR per path, not doubled as TOKEN_DROPPED', async () => {
+await check('DM-10 invalid color and unit (probe P6): VALUE_INVALID per path, the linter row and TOKEN_DROPPED give way', async () => {
   const r = await readFix('DM-10.md');
-  assert.deepEqual(only(r, 'LINT_ERROR').map((p) => p.path).sort(), ['colors.accent', 'rounded.big']);
+  assert.deepEqual(only(r, 'VALUE_INVALID').map((p) => [p.path, p.kind]).sort(), [['colors.accent', 'color'], ['rounded.big', 'dimension']]);
+  assert.equal(r.problems.filter((p) => p.code === 'LINT_ERROR').length, 0, 'one cause per path: no linter row beside VALUE_INVALID');
   assert.equal(r.problems.filter((p) => p.code === 'TOKEN_DROPPED').length, 0);
-  for (const p of r.problems) assert.ok(!p.message.includes('..'), p.message);
-  assert.match(only(r, 'LINT_ERROR')[0].message, /\. The DESIGN\.md format's linter rejects this, so scoring can't read the file as written\.$/);
+  const accent = r.problems.find((p) => p.path === 'colors.accent');
+  assert.equal(accent.message, 'colors.accent: "#zzzzzz" is not a valid color. Use a form like "#0A94FF" or "oklch(0.66 0.18 250)".');
+  assert.equal(r.problems.find((p) => p.path === 'rounded.big').message, 'rounded.big: "16pt" is not a valid dimension. Use a form like "16px" or "1rem".');
+});
+await check('a rejected DESIGN.md cites the linter totals as reported and marks the problems that absorbed its findings', async () => {
+  const r = await readFix('DM-10.md');
+  const own = lint(fixture('DM-10.md')).summary;
+  assert.deepEqual(r.linter, { package: '@google/design.md', version: '0.4.0', errors: own.errors, warnings: own.warnings, infos: own.infos });
+  assert.ok(own.errors >= 2, `the linter reports ${own.errors} errors for DM-10`);
+  assert.deepEqual(only(r, 'VALUE_INVALID').map((p) => p.linterFinding), [true, true]);
+  const prose = await readFix('DM-3e.md');
+  assert.ok(prose.ok === false && prose.linter && typeof prose.linter.errors === 'number', 'a prose DESIGN.md still carries the linter totals');
+  const dt = await read('{"color": {"$type": "color", "a": {"$value": "{color.b}"}, "b": {"$value": "{color.a}"}}}');
+  assert.equal(dt.linter ?? null, null, 'the DESIGN.md linter never reads a DTCG file');
+});
+await check('a LINT_ERROR stays only where no structured code names its path', () => {
+  const dm = h.load('app/lib/own-contract/design-md.ts');
+  const e = (code, path) => ({ code, path, severity: 'error', message: code });
+  const out = dm.withoutCoveredLint([e('LINT_ERROR', 'colors.a'), e('VALUE_INVALID', 'colors.a'), e('LINT_ERROR', 'typography.body'), e('LINT_ERROR', undefined), e('TOKEN_DROPPED', 'colors.b'), e('LINT_ERROR', 'colors.b')]);
+  assert.deepEqual(out.map((p) => `${p.code}:${p.path}`), ['VALUE_INVALID:colors.a', 'LINT_ERROR:typography.body', 'LINT_ERROR:undefined', 'TOKEN_DROPPED:colors.b']);
+  assert.deepEqual(out.map((p) => !!p.linterFinding), [true, false, false, true]);
+});
+await check('a linter sentence is shown whole: never cut at 80 characters, never mid-word', async () => {
+  const doc = `---
+name: Whole
+colors:
+  ink: "#111111"
+  paper: "#FFFFFF"
+  surface: "#EEEEEE"
+typography:
+  body:
+    fontFamily: Inter
+    fontSize: 16px
+---
+`;
+  const r = await read(doc);
+  const w = (r.ok ? r.contract.problems : r.warnings).find((p) => p.code === 'LINT_WARNING' && p.linterMessage && p.linterMessage.length > 80);
+  assert.ok(w, 'a linter warning longer than 80 characters (missing-primary)');
+  assert.ok(!w.linterMessage.endsWith('…'), w.linterMessage);
+  assert.ok(w.message.includes(w.linterMessage.replace(/\.+$/, '')), w.message);
+  assert.ok(!/\S… \(/.test(w.message) && !w.message.includes('…'), w.message);
+});
+await check('clipWords cuts only past its limit, at a word boundary, with an ellipsis', () => {
+  assert.equal(problems.clipWords('short sentence'), 'short sentence');
+  assert.equal(problems.clipWords('alpha beta gamma delta', 13), 'alpha beta…');
+  assert.equal(problems.clipWords('one two (three four', 11), 'one two…');
+  assert.ok(problems.clipWords('w '.repeat(400)).length <= 400);
+  assert.equal(problems.messageFor('LINT_WARNING', { path: 'colors', linterMessage: 'alpha beta gamma.' }), "colors: alpha beta gamma (a warning from the DESIGN.md format's linter; scoring went ahead).");
 });
 await check('O6 copy: the size, URL, value and section messages read as approved', () => {
   const m = problems.messageFor;
@@ -533,9 +580,20 @@ await check('clipValue keeps at most 80 characters and makes control characters 
   assert.equal(problems.clipValue('a\nb'), 'a b');
   assert.equal(problems.clipValue('short'), 'short');
 });
-await check('a long linter value reaches the message cut to 80 characters', async () => {
-  const doc = `---\nname: Long\ncolors:\n  ink: "#111111"\n  paper: "#FFFFFF"\n  accent: "${'q'.repeat(300)}"\ntypography:\n  body:\n    fontFamily: Inter\n    fontSize: 16px\n---\n`;
-  const [p] = only(await read(doc), 'LINT_ERROR');
+await check('a long offending value reaches the message cut to 80 characters', async () => {
+  const doc = `---
+name: Long
+colors:
+  ink: "#111111"
+  paper: "#FFFFFF"
+  accent: "${'q'.repeat(300)}"
+typography:
+  body:
+    fontFamily: Inter
+    fontSize: 16px
+---
+`;
+  const [p] = only(await read(doc), 'VALUE_INVALID');
   assert.ok(p.value.length <= 80);
   assert.ok(!p.message.includes('q'.repeat(81)));
 });
