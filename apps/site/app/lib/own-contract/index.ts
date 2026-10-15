@@ -2,7 +2,7 @@
 // that stop it (engine spec section 4). Next-free.
 //
 // Order: size (413) -> format -> the format's reader -> the minimum scoreable
-// contract (owner decision D2) -> the token map (section 5.3) -> confusable
+// contract -> the token map (section 5.3) -> confusable
 // names (section 4.5) -> the 1 s budget -> digest.
 
 import { contractDigest } from './digest';

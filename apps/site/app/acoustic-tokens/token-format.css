@@ -10,7 +10,7 @@
    container) so the longest line, 37 characters, fits from a 320px screen up
    and the well never needs to scroll at a supported width; at 390 and wider
    it is the 12px mono step. The budget is 37 characters at the face's
-   widest rendered advance. Atkinson Hyperlegible Mono (D65) is 0.632em in
+   widest rendered advance. Atkinson Hyperlegible Mono is 0.632em in
    its font file, but Chrome on Windows rounds each advance to a whole pixel
    at these sizes: measured 0.694em at 11.52px and 0.667em at 12px (Geist
    Mono rendered 0.608em and 0.583em there). 37 x 0.697em is 25.8em, so the

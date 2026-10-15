@@ -73,7 +73,7 @@ export interface SeedSite {
   coiDisclosure?: string | null;
   /**
    * How the entry relates to Designesy, labelled on every surface that shows
-   * it (owner decision, 2026-10-11): 'operator' for a site Designesy runs
+   * it: 'operator' for a site Designesy runs
    * (designesy.org, the Studio), 'competitor' for a product that competes
    * with Designesy's own. Absent for an independent site.
    */
@@ -145,8 +145,7 @@ const merged: Omit<SeedSite, 'rank'>[] = RAW_SEED.map((s) =>
     : s
 );
 
-/** The words a stale entry carries wherever it is shown (owner decision,
-    2026-10-11). */
+/** The words a stale entry carries wherever it is shown. */
 export function staleLabel(scoredAt: string | null | undefined): string {
   return `last scored ${scoredAt ?? 'on an earlier run'} · could not re-score`;
 }

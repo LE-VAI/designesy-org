@@ -1,6 +1,6 @@
-// The flame flip's run (brand ledger D69), loaded on the first trigger only
-// (lib/flame-flip.tsx). Ported from the approved prototype
-// (flame/easter-egg/build_flame_flip.py, D64), unchanged in behaviour.
+// The flame flip's run, loaded on the first trigger only
+// (lib/flame-flip.tsx). Ported from a standalone prototype, unchanged in
+// behaviour.
 //
 // A fixed layer with backdrop-filter: invert(1) (globals.css, "The flame
 // flip") is clipped to a circle at the centre of the header lockup's mark

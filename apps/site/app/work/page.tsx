@@ -25,8 +25,8 @@ export const metadata: Metadata = pageMeta({
 
 /** The lamp states the status beside it: verified by the engine, live, or
     built and not yet hosted. The review verdict is the chip's to state. */
-// A confirmed fact takes the check (D57): a shipped site, or a verified score
-// whose page links the public re-run that proves it (D72: no "verified"
+// A confirmed fact takes the check: a shipped site, or a verified score
+// whose page links the public re-run that proves it (no "verified"
 // without proof; both verified studies link /score?url=<site>). Anything
 // else is plain words, with no glyph and no dot.
 function lampFor(cs: CaseStudy): 'done' | 'none' {

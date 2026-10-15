@@ -306,7 +306,7 @@
 
 .eg-inst-verdict[data-band="fail"] { --vc-hue: var(--lv-fail-a); }
 
-/* A verdict lights in its grade's colour (brand ledger D56), never a band's. */
+/* A verdict lights in its grade's colour, never a band's. */
 .eg-inst-verdict[data-grade="a"] { --vc-hue: var(--grade-a); }
 .eg-inst-verdict[data-grade="b"] { --vc-hue: var(--grade-b); }
 .eg-inst-verdict[data-grade="c"] { --vc-hue: var(--grade-c); }
@@ -457,7 +457,7 @@
 
 /* The running LED: working means moving. Its halo breathes on a 1.5s cycle
    (12s / 8, a divisor of the site's master period); the dot itself never
-   fades (brand ledger D54, D57: a live pulse is a halo, never the dot's
+   fades (a live pulse is a halo, never the dot's
    opacity). A run that lands stops it, and resolved means still. Reduced
    motion and the motion switch keep the colour and the resting ring and drop
    the breath (Motion, below). */
@@ -498,7 +498,7 @@
 }
 
 /* A finished run is a confirmed fact, so the LED becomes the check glyph the
-   site uses for one (brand ledger D57), not a coloured dot: the green it took
+   site uses for one, not a coloured dot: the green it took
    was grade A's, and orange is only for something happening now. */
 .eg-inst[data-phase="done"] .eg-dot {
   width: auto;
@@ -775,7 +775,7 @@
 /* Light theme: the Azure gradient's top stop is 2.5:1 on the paper, under the
    3:1 a status mark needs, so the lamp takes a 1px --signal-access rim, drawn
    as a ring outside it (a box-shadow, so the layout box does not move). Dark
-   keeps the bare gradient (D49). */
+   keeps the bare gradient. */
 [data-theme="light"] [data-status="PASS"] > .eg-cell-top .eg-lamp,
 [data-theme="light"] .eg-lamp[data-status="PASS"] {
   box-shadow: 0 0 0 1px var(--signal-access), inset 0 1px 0 var(--lv-shine), 0 0 12px -3px var(--lv-pass-glow);
@@ -794,8 +794,8 @@
 }
 
 /* Light theme: every other status lamp whose fill is under 3:1 on a light
-   surface takes a 1px ring of its own ink, as PASS does above (brand ledger
-   D67, extending D49). Measured on paper, surface, raised and lifted: the
+   surface takes a 1px ring of its own ink, as PASS does above (one hue
+   family per status). Measured on paper, surface, raised and lifted: the
    WARN fill's top stop #e0a917 is 1.81 to 2.13:1, FAIL's #ef5b5b falls to
    2.82:1 on lifted, and the SKIP/MANUAL hatch is about 1.5:1. The minicells
    and the scale marker take no ring: each repeats a figure printed beside it. */
@@ -819,7 +819,7 @@
   box-shadow: inset 0 0 0 1px var(--lv-hatch);
 }
 
-/* Light: the hatch's ring is its status word's ink (--muted), D67. */
+/* Light: the hatch's ring is its status word's ink (--muted). */
 [data-theme="light"] [data-status="SKIP"] > .eg-cell-top .eg-lamp,
 [data-theme="light"] [data-status="MANUAL"] > .eg-cell-top .eg-lamp,
 [data-theme="light"] .eg-lamp[data-status="SKIP"],
@@ -1060,7 +1060,7 @@
   box-shadow: none;
 }
 
-/* The zone the score lands in takes its grade's colour (brand ledger D56): a
+/* The zone the score lands in takes its grade's colour: a
    B is lime, not the brand's Azure, and a D is rose, not C's amber. */
 .eg-scale-zone.is-here[data-grade="a"] { background: var(--grade-a); }
 .eg-scale-zone.is-here[data-grade="b"] { background: var(--grade-b); }
@@ -1164,7 +1164,7 @@
 }
 
 .eg-start-detail {
-  /* The finding shows whole, unclamped. At the body size (D68) the drift
+  /* The finding shows whole, unclamped. At the body size the drift
      detail needs four lines in the side pane at 1440 and six at 390, and a
      three- or five-line clamp cut its last clause ("(0 runtime tokens
      excluded)"). */
@@ -2775,8 +2775,8 @@ button.mt-row {
 
 .eg-row[data-status="FAIL"] .eg-row-status { color: var(--error-ink); }
 .eg-row[data-status="WARN"] .eg-row-status { color: var(--warn-ink); }
-/* One hue family per status (brand ledger D67): PASS reads in the Azure of its
-   lamp, not the green of a score band (80 and up, D48/D56). */
+/* One hue family per status: PASS reads in the Azure of its
+   lamp, not the green of a score band (80 and up). */
 .eg-row[data-status="PASS"] .eg-row-status { color: var(--signal-access); }
 
 .eg-chev {
@@ -3007,7 +3007,7 @@ button.mt-row {
    that draws it on a mono cell instead (SF Mono, Menlo, Cascadia, Consolas,
    DejaVu Sans Mono), skipping the Arial fallback, and scaled to the mono
    face's x-height so its strokes match the figures beside it: 0.496 for
-   Atkinson Hyperlegible Mono, from the font file (D65; it was 0.53 for Geist
+   Atkinson Hyperlegible Mono, from the font file (it was 0.53 for Geist
    Mono). */
 .eg-op {
   font-family: 'SF Mono', ui-monospace, Menlo, 'Cascadia Mono', 'Cascadia Code', Consolas, 'DejaVu Sans Mono', monospace;

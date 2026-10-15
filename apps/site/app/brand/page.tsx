@@ -12,7 +12,7 @@ import { BrandIcon, type BrandIconName } from '../lib/brand-icons';
 import { SEED, LEADERBOARD_LAST_SCORED } from '../leaderboard/seed';
 
 /*
-  The public brand page (brand ledger D71): the Ctrl+I story, the logo, the
+  The public brand page: the Ctrl+I story, the logo, the
   colours with measured contrast, the grade palette, type, the icon family,
   a "Please don't" list and the brand kit.
 
@@ -341,7 +341,7 @@ export default function BrandPage() {
             </li>
             <li className="brand-type-row">
               <span className="brand-mono">Data · Atkinson Hyperlegible Mono</span>
-              {/* The data face (D65) is the site's mono token, --mono, which
+              {/* The data face is the site's mono token, --mono, which
                   points at Atkinson Hyperlegible Mono: this line renders in the
                   face it names. */}
               <span className="brand-type-data">

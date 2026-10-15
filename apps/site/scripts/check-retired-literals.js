@@ -4,8 +4,8 @@
  *
  * WHY THIS EXISTS
  * Identity v1 retired the old signal blue and its light tint, the old
- * activation yellow, the indigo pass and head hues and the orange grade D
- * (brand ledger D4, D5, D19, D33, D37). The token swap moved every token,
+ * activation yellow, the indigo pass and head hues and the orange grade D.
+ * The token swap moved every token,
  * but a token swap cannot see a literal: a hard-coded hex in a share card,
  * a favicon, a badge, a demo swatch or a lab preset kept painting the
  * retired colour after the tokens had moved. Before this gate the site carried the old blue 16 times in 12
@@ -45,7 +45,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // The retired colours, their patterns and the self-test vectors come from
-// the one canonical list (retired-literals.json, brand ledger D44), shared
+// the one canonical list (retired-literals.json), shared
 // with the packages gate and with designesy/score-action.
 const { buildPatterns, selfTest, matchLine } = require('./lib/retired-literals');
 

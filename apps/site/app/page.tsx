@@ -62,8 +62,8 @@ import {
 // this value. Lowering it re-renders the same stale number more often.
 export const revalidate = 3600;
 
-// The home page's one-liner is the confirmed listing line (owner decision,
-// 2026-10-12), used everywhere a one-liner appears and built from the engine
+// The home page's one-liner is the confirmed listing line,
+// used everywhere a one-liner appears and built from the engine
 // count (LISTING_LINE, lib/site-meta). The hero copy on the page is unchanged.
 export const metadata: Metadata = pageMeta({
   title: 'Designesy: design judgment, verified live',
@@ -130,9 +130,9 @@ const PILLARS: { title: string; text: string; note?: string }[] = [
   },
 ];
 
-// The index (D60): a typographic list, not a wall of cards. Score and the
+// The index: a typographic list, not a wall of cards. Score and the
 // contracts lead as the anchor row; every other surface is a name and one
-// line, in the board's reading order, then Brand (D71). Pricing is not
+// line, in the board's reading order, then Brand. Pricing is not
 // repeated here: the top bar and the footer both carry it.
 const INDEX_ANCHORS = [
   {
@@ -260,10 +260,10 @@ function FieldIcon({ name }: { name: 'contract' | 'review' | 'studio' | 'continu
   return <BrandIcon name="continuity" size={18} />;
 }
 
-// System state (D60, D72): one ledger. Each fact appears once, with its
+// System state: one ledger. Each fact appears once, with its
 // evidence and its state as a word beside a check, because every fact here is
 // already true: no numerals, no empty checkboxes, and no flame, which means
-// "happening now" and nothing else (D57). It merges the old register (twelve
+// "happening now" and nothing else. It merges the old register (twelve
 // rows with a checkbox each) and the status pane beside it (twelve pills, seven
 // of them repeating a row). Every row names its public evidence: the fact links
 // to the page that proves it, and a row whose proof is several pages links
@@ -371,7 +371,7 @@ function LedgerCheck() {
 // used to show four under "Nine principles. Four shown here.", a headline that
 // announced its own incompleteness. Titles only: the full wording lives in the
 // doctrine, one link away. They are a set with no order, so they read as a
-// plain list: no numerals, no cells, nothing to check off (D60).
+// plain list: no numerals, no cells, nothing to check off.
 const PRINCIPLES = [
   'Purpose earns form',
   'Economy is intelligence',
@@ -443,7 +443,7 @@ export default function HomePage() {
 
             {/* THE PRODUCT: the URL input, as one command bar. The version line
                 is the bar's resting note, a plain sentence under the form: the
-                H1 opens the page, with no badge above it (D60). */}
+                H1 opens the page, with no badge above it. */}
             <div id="score" className="score-hero-input">
               <ScoreForm
                 noteAfter={
@@ -530,7 +530,7 @@ export default function HomePage() {
             The page's largest claim after the hero, stated positively. The four
             points are a two-column read: a bold lead-in and its sentences,
             divided by hairlines. They have no order, so no numerals, and they
-            are not cards (D60). */}
+            are not cards. */}
         <section className="section home-statement" aria-labelledby="pillars-title">
           <h2 className="section-title home-title home-title--statement" id="pillars-title" data-scramble>
             Coherence is how a site earns trust now.
@@ -607,8 +607,8 @@ export default function HomePage() {
 
         {/* --- Four ways: a bento with one featured card (the contract) ---
             Each card carries one meta line in sentence case. Availability is a
-            plain word: the flame means "happening now" (D57), and the
-            contract card's full border is the set's one accent (D60). */}
+            plain word: the flame means "happening now", and the
+            contract card's full border is the set's one accent. */}
         <section className="section home-field" aria-labelledby="field-title">
           <h2 className="section-title home-title home-title--section" id="field-title" data-scramble>
             Four ways to put the contract to work.
@@ -655,7 +655,7 @@ export default function HomePage() {
         {/* --- Index: every public surface, as a typographic index ---
             Score and the contracts are the anchor row under a heavy rule; the
             rest are a name and one line each, in two columns divided by
-            hairlines. No card boxes, no micro-labels (D60). Visible at rest:
+            hairlines. No card boxes, no micro-labels. Visible at rest:
             no scroll-gated reveal on the homepage, so a crawler, a preview,
             print, or a full-page capture sees every entry. */}
         <section className="section home-index" aria-labelledby="surfaces-title">
@@ -685,7 +685,7 @@ export default function HomePage() {
         </section>
 
         {/* --- System state: one ledger ---
-            Fact, evidence, and a confirmed state (D60, D57). */}
+            Fact, evidence, and a confirmed state. */}
         <section className="section home-state" aria-labelledby="system-state-title">
           <h2 className="section-title home-title home-title--section" id="system-state-title" data-scramble>
             What is real on this site.

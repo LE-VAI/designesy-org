@@ -8,8 +8,7 @@
  * the site. The packages ship on their own (npm, PyPI, the GitHub Action, the
  * MCP registry), and nothing read them: a retired hex in a package's README,
  * a default in a CLI or a colour in an icon would publish with no gate in the
- * way. The owner put the gate on every package, with one list (brand ledger
- * D44, D46).
+ * way. So the gate covers every package, with one list.
  *
  * THE LIST
  * Not written here. Both this gate and the site gate read

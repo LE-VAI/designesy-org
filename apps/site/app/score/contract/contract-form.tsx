@@ -282,7 +282,7 @@ export function ContractForm({
     return () => window.clearTimeout(t);
   }, [source, contractText, link]);
 
-  // ── Field checks (WIREFRAMES W1), every failing field in field order ──
+  // ── Field checks: every failing field in field order ──
   const validate = (): FieldError[] => {
     const errs: FieldError[] = [];
     const u = url.trim();
