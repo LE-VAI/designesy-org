@@ -160,9 +160,11 @@ function buildStageIndex() {
     // same language index as the pages; without it Pagefind files it under an
     // "unknown" index that searches from English pages never load.
     const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Inside a double-quoted attribute a quote must be escaped too.
+    const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
     const wrapper =
       `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title></head>` +
-      `<body data-pagefind-body data-pagefind-meta="href:${esc(route)}"><h1>${esc(title)}</h1>` +
+      `<body data-pagefind-body data-pagefind-meta="href:${escAttr(route)}"><h1>${esc(title)}</h1>` +
       `<pre>${esc(jsonContent)}</pre></body></html>`;
 
     // Staged under endpoints/ with a .json.html name: if the meta were ever
