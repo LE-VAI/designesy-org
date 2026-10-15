@@ -70,7 +70,7 @@ const DIMENSIONS = [
     observation:
       'Full documentation: the article and its drafts, a visual brief, a status log, build scripts, previews and renders. The article is final and hosted.',
     judgment: 'Durable as a reference artifact.',
-    action: 'Retain at the hosted URL. Update STATUS if the narrative is revised.',
+    action: 'Retain at the hosted URL. Update the status log if the narrative is revised.',
   },
   {
     num: '07',

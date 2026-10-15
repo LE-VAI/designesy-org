@@ -18,7 +18,7 @@ export const metadata: Metadata = pageMeta({
   path: '/work/tile',
   ogTitle: 'Tile · case study',
   ogDescription:
-    'One story, many tiles, shared spine. Shipped, published, reviewed: 617 views on X, the breakout format.',
+    'One story, many tiles, shared spine. Shipped, published, reviewed: 617 views on X (24 h, 2026-07-13).',
   twitterDescription: 'Tile case study · designesy.org/work/tile',
   type: 'article',
 });

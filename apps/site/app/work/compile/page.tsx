@@ -18,7 +18,7 @@ export const metadata: Metadata = pageMeta({
   path: '/work/compile',
   ogTitle: 'Compile · case study',
   ogDescription:
-    'A principle compiled into tokens, a test, and a checklist. Built, verified, pending hosting. From contract to tool.',
+    'A principle compiled into tokens, a test, and a checklist. Built, verified, hosted. From contract to tool.',
   twitterDescription: 'Compile case study · designesy.org/work/compile',
   type: 'article',
 });
@@ -145,7 +145,7 @@ const INPUTS: Input[] = [
   {
     title: 'Artifact',
     meta: 'Self-contained single index.html: no framework, no CDN, no backend',
-    side: ['Local build', 'GitHub Pages · pending'],
+    side: ['Local build', 'GitHub Pages · live'],
   },
   {
     title: 'Purpose claim',
@@ -216,14 +216,14 @@ export default function CompileCaseStudyPage() {
             it into tokens, anti-patterns, a review checklist, and a portable
             verification script. Built and locally verified. Self-documents
             to the 10-cell Lab anatomy. Demonstrates the Sources to Contracts
-            to Tools chain. Pending hosting and publication.
+            to Tools chain. Live at le-vai.github.io/compile.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             {/* Neutral, not brand blue: the /work index shows this same state
                 as a neutral ink chip, and state chips are never brand blue. */}
             <span className="status-badge status-badge--neutral">Ready for review</span>
             <span className="lab-meta-item">Kit · Design Review</span>
-            <span className="lab-meta-item">Artifact · Local build · pending deploy</span>
+            <span className="lab-meta-item">Artifact · le-vai.github.io/compile</span>
             <span className="lab-meta-item">Date · 2026-07-13</span>
           </div>
           <AgentActions mdPath="/work/compile.md" label="the compile case study" />
@@ -240,9 +240,9 @@ export default function CompileCaseStudyPage() {
               covers motion, color, typography, spacing, shape, interaction,
               and acoustic. The output self-documents to the 10-cell Lab
               anatomy. Nine verification tests passed. A local path leak in
-              compiled output was found and fixed 2026-07-13. The only
-              remaining work is hosting, packaging, and publication; no
-              technical barrier remains.
+              compiled output was found and fixed 2026-07-13. At review,
+              the only remaining work was hosting, packaging, and
+              publication; it has since been hosted.
             </p>
           </div>
         </section>
@@ -335,7 +335,7 @@ export default function CompileCaseStudyPage() {
           Case study of Compile using Use Kit One · Design Review. Outcome:
           ready for review. The most complete tool in the set: the thesis is
           uncrowded, the seven-domain engine works, nine tests passed, and the
-          security fix is verified. Pending hosting and publication.
+          security fix is verified. Hosted since the review; not yet a listed lab.
         </div>
       </main>
 
