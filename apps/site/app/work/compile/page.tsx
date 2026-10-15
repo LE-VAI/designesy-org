@@ -259,6 +259,8 @@ export default function CompileCaseStudyPage() {
             total={9}
             domains={['motion', 'color', 'typography', 'spacing', 'shape', 'interaction', 'acoustic']}
             note="All nine compiled."
+            verdictWord="compiled"
+            legend="compiled"
             caption={
               <>
                 Nine test principles compiled across seven design domains. A
