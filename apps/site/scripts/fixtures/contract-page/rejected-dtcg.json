@@ -1,0 +1,19 @@
+{
+ "status": 422,
+ "retryAfter": null,
+ "body": {
+  "ok": false,
+  "error": "Your contract cannot be scored yet.",
+  "code": "contract_not_scoreable",
+  "problems": [
+   {
+    "code": "TOO_FEW_COLORS",
+    "severity": "error",
+    "message": "Your contract declares 2 colors that resolve to a value. Scoring needs at least 3.",
+    "count": 2
+   }
+  ],
+  "warnings": [],
+  "linter": null
+ }
+}

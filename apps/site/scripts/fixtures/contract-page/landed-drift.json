@@ -1,0 +1,1595 @@
+{
+ "status": 200,
+ "retryAfter": null,
+ "body": {
+  "ok": true,
+  "mode": "own-contract",
+  "scope": "own-contract",
+  "contractVersion": "v0.4.6",
+  "engineVersion": "1.5.0",
+  "score": 70,
+  "grade": "C",
+  "fidelity": {
+   "scored": 9,
+   "total": 14,
+   "pass": 6,
+   "warn": 1,
+   "fail": 2,
+   "skip": 5,
+   "manual": 0,
+   "categoryScores": {
+    "tokens": {
+     "score": 25,
+     "weight": 14,
+     "pass": 0,
+     "warn": 1,
+     "fail": 1,
+     "skip": 1,
+     "manual": 0
+    },
+    "color": {
+     "score": 100,
+     "weight": 16,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "typography": {
+     "score": 100,
+     "weight": 18,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 2,
+     "manual": 0
+    },
+    "shape": {
+     "score": 100,
+     "weight": 8,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "spacing": {
+     "score": 100,
+     "weight": 12,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "contrast": {
+     "score": 50,
+     "weight": 20,
+     "pass": 1,
+     "warn": 0,
+     "fail": 1,
+     "skip": 0,
+     "manual": 0
+    },
+    "motion": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "targets": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    }
+   },
+   "score": 70,
+   "grade": "C",
+   "ceilingApplied": true,
+   "ceilingReason": "Your primary action pair is 1.2 to 1 on shipped values, under 3 to 1.",
+   "uncappedScore": 76.7,
+   "nullReason": null
+  },
+  "baseline": {
+   "scored": 16,
+   "total": 18,
+   "pass": 16,
+   "warn": 0,
+   "fail": 0,
+   "skip": 0,
+   "manual": 2,
+   "categoryScores": {
+    "responsive": {
+     "score": null,
+     "weight": 3,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "keyboard": {
+     "score": 100,
+     "weight": 13,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "motion": {
+     "score": 100,
+     "weight": 10,
+     "pass": 4,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "performance": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "accessibility": {
+     "score": 100,
+     "weight": 15,
+     "pass": 4,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "identity": {
+     "score": 100,
+     "weight": 6,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "security": {
+     "score": 100,
+     "weight": 5,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "copywriting": {
+     "score": 100,
+     "weight": 8,
+     "pass": 3,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    }
+   },
+   "score": 100,
+   "grade": "A",
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": null,
+   "a11yFloorApplied": false
+  },
+  "coverage": {
+   "declared": 136,
+   "located": 134,
+   "byMap": 0,
+   "byName": 7,
+   "byValue": 127,
+   "ratio": 0.985,
+   "groups": {
+    "colors": {
+     "declared": 38,
+     "located": 38,
+     "shippedCompared": 34
+    },
+    "typography": {
+     "declared": 37,
+     "located": 35,
+     "shippedCompared": 37
+    },
+    "radii": {
+     "declared": 9,
+     "located": 9,
+     "shippedCompared": 9
+    },
+    "spacing": {
+     "declared": 52,
+     "located": 52,
+     "shippedCompared": 52
+    },
+    "sizes": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "durations": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "easings": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    }
+   },
+   "notes": [],
+   "hint": null
+  },
+  "ownContract": {
+   "name": "Designesy, as remembered",
+   "format": "design.md",
+   "formatVersion": null,
+   "source": "inline",
+   "bytes": 3754,
+   "digest": "a42d130ba8bb3e1baee88b94ce8565343b426b2022625345f4dd284e0cd99e4d",
+   "tokens": {
+    "colors": 38,
+    "typography": 34,
+    "radii": 9,
+    "spacing": 52,
+    "sizes": 0,
+    "durations": 0,
+    "easings": 0,
+    "pairs": 2,
+    "aliases": 0
+   },
+   "omitted": [],
+   "linter": {
+    "package": "@google/design.md",
+    "version": "0.4.0",
+    "errors": 0,
+    "warnings": 35,
+    "infos": 1
+   },
+   "problems": [
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors: No 'primary' color defined. The agent will auto-generate key colors, reducing y… (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors",
+     "value": "No 'primary' color defined. The agent will auto-generate key colors, reducing y…",
+     "rule": "missing-primary"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c01: 'c01' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c01",
+     "value": "'c01' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c02: 'c02' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c02",
+     "value": "'c02' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c03: 'c03' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c03",
+     "value": "'c03' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c04: 'c04' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c04",
+     "value": "'c04' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c05: 'c05' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c05",
+     "value": "'c05' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c06: 'c06' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c06",
+     "value": "'c06' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c07: 'c07' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c07",
+     "value": "'c07' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c08: 'c08' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c08",
+     "value": "'c08' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c09: 'c09' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c09",
+     "value": "'c09' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c10: 'c10' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c10",
+     "value": "'c10' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c11: 'c11' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c11",
+     "value": "'c11' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c12: 'c12' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c12",
+     "value": "'c12' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c13: 'c13' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c13",
+     "value": "'c13' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c14: 'c14' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c14",
+     "value": "'c14' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c15: 'c15' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c15",
+     "value": "'c15' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c16: 'c16' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c16",
+     "value": "'c16' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c17: 'c17' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c17",
+     "value": "'c17' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c18: 'c18' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c18",
+     "value": "'c18' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c19: 'c19' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c19",
+     "value": "'c19' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c20: 'c20' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c20",
+     "value": "'c20' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c21: 'c21' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c21",
+     "value": "'c21' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c22: 'c22' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c22",
+     "value": "'c22' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c23: 'c23' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c23",
+     "value": "'c23' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c24: 'c24' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c24",
+     "value": "'c24' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c25: 'c25' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c25",
+     "value": "'c25' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c26: 'c26' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c26",
+     "value": "'c26' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c27: 'c27' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c27",
+     "value": "'c27' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c28: 'c28' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c28",
+     "value": "'c28' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c29: 'c29' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c29",
+     "value": "'c29' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c30: 'c30' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c30",
+     "value": "'c30' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c31: 'c31' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c31",
+     "value": "'c31' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c32: 'c32' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c32",
+     "value": "'c32' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c33: 'c33' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c33",
+     "value": "'c33' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    },
+    {
+     "code": "LINT_WARNING",
+     "severity": "warning",
+     "message": "colors.c34: 'c34' is defined but never referenced by any component (a warning from the DESIGN.md format's linter; scoring went ahead).",
+     "path": "colors.c34",
+     "value": "'c34' is defined but never referenced by any component.",
+     "rule": "orphaned-tokens"
+    }
+   ]
+  },
+  "site": {
+   "requestedUrl": "https://designesy.org/",
+   "htmlBytes": 403858,
+   "cssBytes": 497879,
+   "stylesheetsFetched": 7,
+   "stylesheetsTotal": 7,
+   "stylesheetsTruncated": false
+  },
+  "checks": [
+   {
+    "id": "f01",
+    "item": "Mapped tokens ship their declared values",
+    "category": "tokens",
+    "status": "FAIL",
+    "detail": "6 of 7 tokens found by name ship their declared values; 1 differs: colors.signal-light declares #010102, --signal-light ships #36A7FF",
+    "layer": "fidelity",
+    "reads": [
+     "tokens located by map or name"
+    ],
+    "derivedFrom": [
+     "v01"
+    ],
+    "declared": [
+     {
+      "path": "colors.signal-light",
+      "value": "#010102"
+     }
+    ],
+    "shipped": [
+     {
+      "path": "colors.signal-light",
+      "value": "#36A7FF",
+      "where": [
+       "--signal-light"
+      ]
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "path": "colors.signal-light",
+       "declared": "#010102",
+       "shipped": "#36A7FF",
+       "cssVar": "--signal-light"
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Set each CSS variable to the value your contract declares, or update the contract."
+   },
+   {
+    "id": "f02",
+    "item": "Shipped colors are in your palette",
+    "category": "color",
+    "status": "PASS",
+    "detail": "34 of 34 shipped colors are in your palette (90% needed to pass).",
+    "layer": "fidelity",
+    "reads": [
+     "colors.*"
+    ],
+    "derivedFrom": [
+     "d03",
+     "d05"
+    ],
+    "shipped": [],
+    "evidence": {
+     "findings": [],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f03",
+    "item": "Shipped font sizes are on your type scale",
+    "category": "typography",
+    "status": "PASS",
+    "detail": "34 of 34 shipped sizes are on your scale",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontSize"
+    ],
+    "derivedFrom": [
+     "v16"
+    ],
+    "declared": [
+     {
+      "value": "12.48px"
+     },
+     {
+      "value": "12.8px"
+     },
+     {
+      "value": "15px"
+     },
+     {
+      "value": "16px"
+     },
+     {
+      "value": "16.8px"
+     },
+     {
+      "value": "17.6px"
+     },
+     {
+      "value": "18.75px"
+     },
+     {
+      "value": "19.2px"
+     },
+     {
+      "value": "20px"
+     },
+     {
+      "value": "20.8px"
+     },
+     {
+      "value": "24px"
+     },
+     {
+      "value": "24.8px"
+     },
+     {
+      "value": "25.01px"
+     },
+     {
+      "value": "25.6px"
+     },
+     {
+      "value": "28px"
+     },
+     {
+      "value": "28.8px"
+     },
+     {
+      "value": "29.6px"
+     },
+     {
+      "value": "30px"
+     },
+     {
+      "value": "31.25px"
+     },
+     {
+      "value": "32px"
+     }
+    ],
+    "shipped": [],
+    "evidence": {
+     "findings": [],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f04",
+    "item": "Shipped font families are in your contract",
+    "category": "typography",
+    "status": "PASS",
+    "detail": "All 3 shipped families are declared: Fraunces, Schibsted Grotesk, Atkinson Hyperlegible Mono",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontFamily"
+    ],
+    "derivedFrom": [
+     "v26"
+    ],
+    "declared": [
+     {
+      "value": "schibsted grotesk"
+     },
+     {
+      "value": "fraunces"
+     },
+     {
+      "value": "atkinson hyperlegible mono"
+     }
+    ],
+    "shipped": []
+   },
+   {
+    "id": "f05",
+    "item": "Shipped line heights are in your contract",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no line heights, so f05 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.lineHeight"
+    ],
+    "derivedFrom": [
+     "v17"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f06",
+    "item": "Declared font features ship",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not declared: your contract has no font features, so f06 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "typography.*.fontFeature"
+    ],
+    "derivedFrom": [
+     "v19"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f07",
+    "item": "Shipped corner radii are on your radius scale",
+    "category": "shape",
+    "status": "PASS",
+    "detail": "9 of 9 shipped radii are on your radius scale",
+    "layer": "fidelity",
+    "reads": [
+     "rounded.*"
+    ],
+    "derivedFrom": [
+     "d07"
+    ],
+    "declared": [
+     {
+      "value": "4px"
+     },
+     {
+      "value": "8px"
+     },
+     {
+      "value": "12px"
+     },
+     {
+      "value": "6px"
+     },
+     {
+      "value": "3px"
+     },
+     {
+      "value": "999px"
+     },
+     {
+      "value": "16px"
+     },
+     {
+      "value": "2px"
+     },
+     {
+      "value": "99px"
+     }
+    ],
+    "shipped": [],
+    "evidence": {
+     "findings": [],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f08",
+    "item": "Shipped spacing is on your spacing scale",
+    "category": "spacing",
+    "status": "PASS",
+    "detail": "52 of 52 shipped spacing values are on your scale",
+    "layer": "fidelity",
+    "reads": [
+     "spacing.*"
+    ],
+    "derivedFrom": [
+     "d04"
+    ],
+    "declared": [
+     {
+      "value": "4px"
+     },
+     {
+      "value": "8px"
+     },
+     {
+      "value": "16px"
+     },
+     {
+      "value": "24px"
+     },
+     {
+      "value": "12px"
+     },
+     {
+      "value": "2.4px"
+     },
+     {
+      "value": "6px"
+     },
+     {
+      "value": "10.4px"
+     },
+     {
+      "value": "8.8px"
+     },
+     {
+      "value": "9.6px"
+     },
+     {
+      "value": "1px"
+     },
+     {
+      "value": "20px"
+     },
+     {
+      "value": "7.2px"
+     },
+     {
+      "value": "40px"
+     },
+     {
+      "value": "32px"
+     },
+     {
+      "value": "5.6px"
+     },
+     {
+      "value": "1.92px"
+     },
+     {
+      "value": "6.4px"
+     },
+     {
+      "value": "4.8px"
+     },
+     {
+      "value": "1.6px"
+     }
+    ],
+    "shipped": [],
+    "evidence": {
+     "findings": [],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f09",
+    "item": "Declared text and background pairs meet contrast on shipped values",
+    "category": "contrast",
+    "status": "PASS",
+    "detail": "card is 18.2 to 1 on shipped values",
+    "layer": "fidelity",
+    "reads": [
+     "components.*.textColor",
+     "components.*.backgroundColor"
+    ],
+    "derivedFrom": [
+     "v06"
+    ],
+    "declared": [
+     {
+      "path": "colors.ink",
+      "value": "#F5F5F7"
+     },
+     {
+      "path": "colors.surface",
+      "value": "#0A0A0C"
+     }
+    ],
+    "shipped": [
+     {
+      "path": "colors.ink",
+      "value": "#F5F5F7",
+      "where": [
+       "--ink"
+      ]
+     },
+     {
+      "path": "colors.surface",
+      "value": "#0A0A0C",
+      "where": [
+       "--surface"
+      ]
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "source": "components.card",
+       "text": "#F5F5F7",
+       "background": "#0A0A0C",
+       "ratio": 18.17,
+       "need": 4.5,
+       "apcaLc": -101.2,
+       "values": "shipped",
+       "declaredRatio": 18.17
+      }
+     ],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f10",
+    "item": "Your primary action pair meets contrast on shipped values",
+    "category": "contrast",
+    "status": "FAIL",
+    "detail": "button-primary is 1.2 to 1 on shipped values (needs 4.5 to 1)",
+    "layer": "fidelity",
+    "reads": [
+     "components.button-primary"
+    ],
+    "derivedFrom": [
+     "v22"
+    ],
+    "remediation": "Darken or lighten one color of the pair in your contract and in the shipped CSS until the pair reaches 4.5 to 1.",
+    "declared": [
+     {
+      "path": "colors.signal-light",
+      "value": "#010102"
+     },
+     {
+      "path": "colors.signal",
+      "value": "#0A94FF"
+     }
+    ],
+    "shipped": [
+     {
+      "path": "colors.signal-light",
+      "value": "#36A7FF",
+      "where": [
+       "--signal-light"
+      ]
+     },
+     {
+      "path": "colors.signal",
+      "value": "#0A94FF",
+      "where": [
+       "--signal"
+      ]
+     }
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "source": "components.button-primary",
+       "text": "#36A7FF",
+       "background": "#0A94FF",
+       "ratio": 1.21,
+       "need": 4.5,
+       "apcaLc": 0,
+       "values": "shipped",
+       "declaredRatio": 6.65
+      }
+     ],
+     "truncated": 0
+    }
+   },
+   {
+    "id": "f11",
+    "item": "Shipped durations and easings are in your contract",
+    "category": "motion",
+    "status": "SKIP",
+    "detail": "Does not apply: the DESIGN.md format has no motion group, so f11 did not run. Use DTCG tokens to declare durations.",
+    "layer": "fidelity",
+    "reads": [
+     "not in the DESIGN.md format"
+    ],
+    "derivedFrom": [
+     "v23"
+    ],
+    "skipReason": "not_applicable"
+   },
+   {
+    "id": "f12",
+    "item": "Interactive targets meet your declared minimum size",
+    "category": "targets",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no interactive size, so f12 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "components.*.height",
+     "components.*.size"
+    ],
+    "derivedFrom": [
+     "v24"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f13",
+    "item": "Declared aliases ship as variable references",
+    "category": "tokens",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no aliases, so f13 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "aliases in your contract"
+    ],
+    "derivedFrom": [
+     "v29"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f14",
+    "item": "Styles use your contract's tokens",
+    "category": "tokens",
+    "status": "WARN",
+    "detail": "75% of color, spacing, radius and type declarations use a token (2632 of 3492)",
+    "layer": "fidelity",
+    "reads": [
+     "all located tokens"
+    ],
+    "derivedFrom": [
+     "token-vs-raw ratio"
+    ],
+    "evidence": {
+     "findings": [
+      {
+       "declarations": 3492,
+       "usingTokens": 2632,
+       "share": 0.754
+      }
+     ],
+     "truncated": 0
+    },
+    "remediation": "Replace raw values with var() references to your tokens."
+   },
+   {
+    "id": "v02",
+    "item": "Pages render without horizontal overflow",
+    "category": "responsive",
+    "status": "MANUAL",
+    "detail": "requires browser viewport trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v03",
+    "item": "Interactive elements show focus-visible rings",
+    "category": "interaction",
+    "status": "PASS",
+    "detail": ":focus-visible declared",
+    "layer": "baseline"
+   },
+   {
+    "id": "v09",
+    "item": "Keyboard affordances are present",
+    "category": "poise",
+    "status": "PASS",
+    "detail": "static half verified: 5 keyboard-affordance signals (tab-order traversal requires browser)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v05",
+    "item": "Reduced motion is honored",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "prefers-reduced-motion: reduce block declares rules",
+    "layer": "baseline"
+   },
+   {
+    "id": "v11",
+    "item": "No transition: all in the stylesheet",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "no transition:all found",
+    "layer": "baseline"
+   },
+   {
+    "id": "v12",
+    "item": "will-change stays on transform and opacity",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "will-change restricted cleanly",
+    "layer": "baseline"
+   },
+   {
+    "id": "v45",
+    "item": "Pausing motion keeps content visible",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "18 entrance(s) that start at opacity 0 end or are removed under the pause (html[data-motion=paused] *)",
+    "evidence": {
+     "findings": [
+      {
+       "keyframes": "fadeUp",
+       "selector": ".fade-up",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "senses-in",
+       "selector": ".senses-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .senses-panel",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "dock-in",
+       "selector": ".back-button",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.back-button,.director-dock)",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "dock-in",
+       "selector": ".director-dock",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.back-button,.director-dock)",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "cmdk-in",
+       "selector": ".cmdk-overlay[data-state=open]",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .cmdk-overlay[data-state]",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "cmdk-panel-in",
+       "selector": ".cmdk-overlay[data-state=open] .cmdk-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .cmdk-overlay[data-state] .cmdk-panel",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-block",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-dot",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-orbit",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-square",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "seamDockScatter",
+       "selector": ".hero-seam-mark .seam-triangle",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "check-pop",
+       "selector": ".row-check svg",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] .row-check svg",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "check-pop",
+       "selector": ".check-cell-check",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "auditPanelIn",
+       "selector": ".audit-progress-panel",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "auditStepIn",
+       "selector": ".audit-progress-step",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "scoreCardReveal",
+       "selector": ".score-card-item",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "scoreDrawerOpen",
+       "selector": ".score-card-drawer",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      },
+      {
+       "keyframes": "verifyStepIn",
+       "selector": ".score-verify-log-step",
+       "pauseRule": "html[data-motion=paused] *",
+       "override": "html[data-motion=paused] :is(.fade-up,.score-card-item,.score-card-drawer,.audit-progress-panel,.audit-progress-step,...",
+       "status": "PASS"
+      }
+     ],
+     "truncated": 0
+    },
+    "layer": "baseline"
+   },
+   {
+    "id": "v21",
+    "item": "Core Web Vitals are in range",
+    "category": "performance",
+    "status": "MANUAL",
+    "detail": "requires CDP trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v25",
+    "item": "One h1 and no skipped heading levels",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "single h1, 15 headings, no skipped levels",
+    "layer": "baseline"
+   },
+   {
+    "id": "v27",
+    "item": "Form fields are at least 16px",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "input font-size floor detected",
+    "layer": "baseline"
+   },
+   {
+    "id": "v35",
+    "item": "Forced-colors mode is handled",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "forced-colors media query + forced-color-adjust both present",
+    "layer": "baseline"
+   },
+   {
+    "id": "v44",
+    "item": "Status colors used as text meet contrast",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "211 status-color text use(s) clear contrast in 2 theme(s); the closest: .copy-prompt-btn.is-copied uses --signal-text #016abb on #e2edf8 in [data-theme=light] at 4.68:1 (needs 4.5:1)",
+    "evidence": {
+     "findings": [
+      {
+       "selector": ".copy-prompt-btn.is-copied",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#e2edf8",
+       "ratio": 4.68,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row--listen:not(.is-playing):focus-within .listen-btn:hover,.row--listen:not(.is-playing):hover .listen-btn:hover",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#eeeeef",
+       "ratio": 4.79,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row--listen.is-playing .listen-btn",
+       "token": "--activation-ink -> --activation",
+       "theme": "[data-theme=light]",
+       "value": "#b04d00",
+       "background": "#f3f3f4",
+       "ratio": 4.85,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-check-group.is-warn .score-check-group-count",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f0e8d7",
+       "ratio": 4.89,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-card-status-pill.is-warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f0e8d7",
+       "ratio": 4.89,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".status-badge--contract,.status-badge--open",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#e8f3fc",
+       "ratio": 4.94,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".eg-bar-field:focus-within",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f2f3f5",
+       "ratio": 5,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".row:hover .row-index",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f3f3f4",
+       "ratio": 5.01,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".report-count--warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f2ecde",
+       "ratio": 5.06,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".effect-flip-back .effect-desc",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#f5f5f7",
+       "ratio": 5.1,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".report-check-status--warn",
+       "token": "--warn-ink",
+       "theme": "[data-theme=light]",
+       "value": "#7f5e21",
+       "background": "#f3eee3",
+       "ratio": 5.15,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-f",
+       "token": "--grade-f-ink",
+       "theme": "[data-theme=light]",
+       "value": "#cd2323",
+       "background": "#fbfbfc",
+       "ratio": 5.26,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-f",
+       "token": "--grade-f-ink",
+       "theme": "[data-theme=light]",
+       "value": "#cd2323",
+       "background": "#fbfbfc",
+       "ratio": 5.26,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-b",
+       "token": "--grade-b-ink",
+       "theme": "[data-theme=light]",
+       "value": "#497509",
+       "background": "#fbfbfc",
+       "ratio": 5.3,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-b",
+       "token": "--grade-b-ink",
+       "theme": "[data-theme=light]",
+       "value": "#497509",
+       "background": "#fbfbfc",
+       "ratio": 5.3,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".hero-cohort-grade.is-c",
+       "token": "--grade-c-ink",
+       "theme": "[data-theme=light]",
+       "value": "#896203",
+       "background": "#fbfbfc",
+       "ratio": 5.33,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".score-history-emblem.is-c",
+       "token": "--grade-c-ink",
+       "theme": "[data-theme=light]",
+       "value": "#896203",
+       "background": "#fbfbfc",
+       "ratio": 5.33,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".wordmark-hero .dot",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".status-badge",
+       "token": "--signal-access",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      },
+      {
+       "selector": ".principle-num",
+       "token": "--signal-text",
+       "theme": "[data-theme=light]",
+       "value": "#016abb",
+       "background": "#fbfbfc",
+       "ratio": 5.37,
+       "need": 4.5,
+       "status": "PASS",
+       "note": null
+      }
+     ],
+     "truncated": 191
+    },
+    "layer": "baseline"
+   },
+   {
+    "id": "v07",
+    "item": "Semantic HTML: h1, title, description, landmark",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "single h1, title, meta description, landmark",
+    "layer": "baseline"
+   },
+   {
+    "id": "v34",
+    "item": "AI surfaces carry a disclosure",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "possible AI surface (AI prompt text); disclosure present (aria-label)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v36",
+    "item": "No confusable Unicode in CSS identifiers",
+    "category": "security",
+    "status": "PASS",
+    "detail": "scanned 227 token names, 882 classes, 38 ids, 8 url refs: no UTS #39 confusables detected (Unicode 16.0.0)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v38",
+    "item": "Button text is a verb phrase",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "14 button(s) checked: all start with a verb or recognized command",
+    "layer": "baseline"
+   },
+   {
+    "id": "v39",
+    "item": "No trailing period on buttons and labels",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "14 element(s) checked: no trailing periods on buttons, labels, or tabs",
+    "layer": "baseline"
+   },
+   {
+    "id": "v40",
+    "item": "Link text says where it goes",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "138 link(s) checked: all have descriptive text",
+    "layer": "baseline"
+   }
+  ],
+  "pass": 22,
+  "warn": 1,
+  "fail": 2,
+  "skip": 5,
+  "manual": 2,
+  "total": 32,
+  "scored": 25,
+  "tokensExtracted": 227,
+  "receipt": {
+   "subject": "https://designesy.org/",
+   "retrieved_at": "2026-10-15T00:19:33.977Z",
+   "contract_version": "v0.4.6",
+   "engine_version": "1.5.0",
+   "scope": "own-contract",
+   "digest": "927ef2329650c7eb8cb317e1ee4b749fb0d2ca2204ac70ce98eac792a13b746c",
+   "verify": {
+    "method": "re-run",
+    "endpoint": "/api/score",
+    "instructions": "POST the same URL with the same contract to /api/score. Compare own_contract.digest first: if it differs, the contract changed. Then compare digest: if it differs while engine_version matches, the page changed."
+   },
+   "own_contract": {
+    "digest": "a42d130ba8bb3e1baee88b94ce8565343b426b2022625345f4dd284e0cd99e4d",
+    "format": "design.md",
+    "source": "inline",
+    "linter": "@google/design.md@0.4.0"
+   }
+  }
+ }
+}

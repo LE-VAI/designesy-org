@@ -1,0 +1,13 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "Studio brand tokens",
+  "color": {
+    "$type": "color",
+    "brand": { "$value": { "colorSpace": "srgb", "components": [0.4, 0.2, 0.6], "hex": "#663399" } },
+    "brand-ink": { "$value": { "colorSpace": "srgb", "components": [0.1, 0.05, 0.15], "hex": "#1a0d26" } },
+    "paper": { "$value": { "colorSpace": "srgb", "components": [0.98, 0.97, 0.94], "hex": "#faf7f0" } }
+  },
+  "font": {
+    "body": { "$type": "typography", "$value": { "fontFamily": "Literata", "fontSize": { "value": 17, "unit": "px" }, "fontWeight": 400, "lineHeight": 1.6, "letterSpacing": { "value": 0, "unit": "px" } } }
+  }
+}

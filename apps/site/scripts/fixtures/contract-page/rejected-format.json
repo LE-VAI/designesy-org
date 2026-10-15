@@ -1,0 +1,18 @@
+{
+ "status": 422,
+ "retryAfter": null,
+ "body": {
+  "ok": false,
+  "error": "Your contract cannot be scored yet.",
+  "code": "contract_not_scoreable",
+  "problems": [
+   {
+    "code": "FORMAT_UNKNOWN",
+    "severity": "error",
+    "message": "We could not tell whether this is a DESIGN.md or a DTCG file. Choose the format and run it again."
+   }
+  ],
+  "warnings": [],
+  "linter": null
+ }
+}

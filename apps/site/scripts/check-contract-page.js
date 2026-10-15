@@ -30,10 +30,13 @@
  *      rejected run lists every problem the engine returned, each sentence
  *      whole (no ellipsis), and its heading, which takes focus for screen
  *      readers, paints no focus ring (it is not a control).
- *   7. Every rejected and landed state prints the provenance line (brand
- *      D75) once, with the linter's own totals as the engine returned them
- *      and, where linter findings were merged into structured problems, how
- *      many shown rows absorbed them.
+ *   7. The provenance line (brand D75): every rejected and landed state
+ *      whose DESIGN.md the linter read prints it exactly once, with the
+ *      linter's own totals as the engine returned them and, where linter
+ *      findings were merged into structured problems, how many shown rows
+ *      absorbed them. The three states where the linter never read the file
+ *      (a DTCG contract, a contract link that was not fetched, an unknown
+ *      format) print no line and no "Linted with" words at all.
  *   5. No text on the page under 12.8px (brand D68), sr-only text and
  *      role="img" drawings aside.
  *   6. No horizontal overflow of the document.
@@ -44,6 +47,10 @@
  *   --break ring    gives the focused result heading the control ring back
  *   --break lint    removes the provenance line ("Linted with ...")
  *   --break totals  serves linter totals one error off the record
+ *   --break phantom serves linter totals in the answers where the linter never
+ *                   read the file (a DTCG contract, an unfetched link, an
+ *                   unknown format), so the page prints a line the gate says
+ *                   must be absent
  *   --break         live and focus. Each must exit 1.
  *
  * Usage:
@@ -78,14 +85,31 @@ const RESP = {
   multi: fixture('rejected-multi.json'),
   landed: fixture('landed.json'),
   unreachable: fixture('unreachable.json'),
+  format: fixture('rejected-format.json'),
+  link: fixture('rejected-link.json'),
+  dtcgRejected: fixture('rejected-dtcg.json'),
+  pass: fixture('landed-pass.json'),
+  drift: fixture('landed-drift.json'),
+  capped: fixture('landed-capped.json'),
+  warn: fixture('landed-warn.json'),
+  oneFail: fixture('landed-one-fail.json'),
+  noScore: fixture('landed-no-score.json'),
+  shell: fixture('landed-empty-shell.json'),
+  noCss: fixture('landed-no-css.json'),
   tooMany: { status: 429, retryAfter: '42', body: { ok: false, error: 'Too many contract runs. Try again in a minute.', code: 'rate_limited' } },
   tooLarge: { status: 413, body: { ok: false, error: 'This contract is 300 KB. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.', code: 'contract_too_large' } },
 };
 
-/** Fill the slab and press the run key. */
-async function fillAndRun(page, contract, site = 'example.com') {
+/** Fill the slab and press the run key: a pasted contract, or a linked one
+    (the Link source, then its address). */
+async function fillAndRun(page, contract, site = 'example.com', how = 'paste') {
   await page.fill('.cf-bar .eg-bar-line input', site);
-  await page.fill('.cf-bar textarea.m3-textarea', contract);
+  if (how === 'link') {
+    await page.click('.cf-bar [role="radio"]:has-text("Link")');
+    await page.fill('.cf-bar input[placeholder^="https://"]', contract);
+  } else {
+    await page.fill('.cf-bar textarea.m3-textarea', contract);
+  }
   await page.waitForTimeout(250);
   await page.focus('.cf-bar .eg-bar-go');
   await page.keyboard.press('Enter');
@@ -124,13 +148,25 @@ const STATES = [
     focus: '.cf-bar .eg-bar-go',
     say: 'Scoring example.com against your contract.',
   },
-  { id: 'rejected-one', lint: true, reply: RESP.prose, go: async (page) => fillAndRun(page, text('prose.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
-  { id: 'rejected-multi', lint: true, reply: RESP.multi, go: async (page) => fillAndRun(page, text('multi.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 3 },
+  { id: 'rejected-one', lint: 'present', reply: RESP.prose, go: async (page) => fillAndRun(page, text('prose.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
+  { id: 'rejected-multi', lint: 'present', reply: RESP.multi, go: async (page) => fillAndRun(page, text('multi.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 3 },
   { id: 'request-429', reply: RESP.tooMany, go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Too many runs' },
   { id: 'request-413', reply: RESP.tooLarge, go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Contract too large' },
   { id: 'request-network', reply: 'abort', go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Could not reach the scoring server' },
-  { id: 'landed', lint: true, reply: RESP.landed, go: async (page) => fillAndRun(page, text('good.md'), 'www.designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
-  { id: 'unreachable', lint: true, reply: RESP.unreachable, go: async (page) => fillAndRun(page, text('good.md'), 'unreachable.invalid'), wait: '.cf-unreachable', focus: '.score-verdict-line', sayRe: /^Run stopped after \d+\.\d s\.$/ },
+  { id: 'landed', lint: 'present', reply: RESP.landed, go: async (page) => fillAndRun(page, text('good.md'), 'www.designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'unreachable', lint: 'present', reply: RESP.unreachable, go: async (page) => fillAndRun(page, text('good.md'), 'unreachable.invalid'), wait: '.cf-unreachable', focus: '.score-verdict-line', sayRe: /^Run stopped after \d+\.\d s\.$/ },
+  // The three refusals where the DESIGN.md linter never read the file: the
+  // provenance line must be absent (the record carries no totals).
+  { id: 'rejected-format', lint: 'absent', reply: RESP.format, go: async (page) => fillAndRun(page, text('contracts/unknown.txt')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
+  { id: 'rejected-link', lint: 'absent', reply: RESP.link, go: async (page) => fillAndRun(page, 'https://contracts.studio.example.com/missing.md', 'studio.example.com', 'link'), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
+  { id: 'rejected-dtcg', lint: 'absent', reply: RESP.dtcgRejected, go: async (page) => fillAndRun(page, text('contracts/two-colors.tokens.json')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
+  // Landed runs: every run whose DESIGN.md the linter read prints the line once; a DTCG run never does.
+  { id: 'landed-pass', lint: 'present', reply: RESP.pass, go: async (page) => fillAndRun(page, text('contracts/designesy-pass.md'), 'designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'landed-drift', lint: 'present', reply: RESP.drift, go: async (page) => fillAndRun(page, text('contracts/designesy-drift.md'), 'designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'landed-capped', lint: 'present', reply: RESP.capped, go: async (page) => fillAndRun(page, text('contracts/designesy-pair.md'), 'designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'landed-warn', lint: 'present', reply: RESP.warn, go: async (page) => fillAndRun(page, text('contracts/studio-warn.md'), 'studio.example.com'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'landed-one-fail', lint: 'present', reply: RESP.oneFail, go: async (page) => fillAndRun(page, 'https://contracts.studio.example.com/DESIGN.md', 'studio.example.com/work', 'link'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'landed-no-score', lint: 'absent', reply: RESP.noScore, go: async (page) => fillAndRun(page, text('contracts/studio-sparse.tokens.json'), 'pamphlet.studio.example.com'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
 ];
 
 const onlyStates = opt('--states', null);
@@ -176,6 +212,13 @@ async function main() {
         if (r.body.linter) r.body.linter.errors += 1;
         if (r.body.ownContract && r.body.ownContract.linter) r.body.ownContract.linter.errors += 1;
       }
+      // --break phantom: totals the linter never produced, in an answer where it never ran.
+      if (BREAK.includes('phantom') && st.lint === 'absent' && r.body) {
+        r = JSON.parse(JSON.stringify(r));
+        const fake = { package: '@google/design.md', version: '0.4.0', errors: 0, warnings: 0, infos: 0 };
+        if (r.body.ownContract) r.body.ownContract.linter = fake;
+        else r.body.linter = fake;
+      }
       return route.fulfill({ status: r.status, contentType: 'application/json', headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : {}, body: JSON.stringify(r.body) });
     });
     // No other write leaves the page.
@@ -216,6 +259,7 @@ async function main() {
           alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim()),
           problems: document.querySelectorAll('.cf-problem-list > li').length,
           lint: [...document.querySelectorAll('.cf-lint')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
+          lintWords: (() => { const m = /Linted with[^.]*\./.exec(document.querySelector('main').textContent.replace(/\s+/g, ' ')); return m ? m[0] : ''; })(),
           // Engine sentences are shown whole: no row ends a word on an ellipsis.
           clipped: [...document.querySelectorAll('.cf-problem-list p, .cf-warnings li')].map((e) => e.textContent).filter((t) => t.includes('…')),
           // The result heading takes focus for screen readers but is no control: it paints no ring.
@@ -244,11 +288,15 @@ async function main() {
       if (st.alert && (probe.alerts.length !== 1 || !probe.alerts[0].startsWith(st.alert))) fail(`alerts ${JSON.stringify(probe.alerts)}, wanted one starting "${st.alert}"`);
       if (!st.alert && probe.alerts.length) fail(`unexpected alert ${JSON.stringify(probe.alerts)}`);
       if (st.problems !== undefined && probe.problems !== st.problems) fail(`${probe.problems} problems listed, wanted ${st.problems}`);
-      if (st.lint) {
+      if (st.lint === 'present') {
         const want = provenance(st.reply);
         if (!want) fail('the recorded answer has no linter totals to cite');
         else if (probe.lint.length !== 1) fail(`${probe.lint.length} provenance lines, wanted 1: "${want}"`);
         else if (probe.lint[0] !== want) fail(`provenance line "${probe.lint[0]}", wanted the linter's own totals "${want}"`);
+      } else if (st.lint === 'absent') {
+        // The linter never read this file: no line, and no "Linted with" words anywhere in main.
+        if (provenance(st.reply)) fail('the recorded answer carries linter totals, but the linter never reads this state');
+        if (probe.lint.length || probe.lintWords) fail(`a provenance line where the linter never read the file: "${probe.lint[0] || probe.lintWords}"`);
       }
       if (probe.clipped.length) fail(`a problem or warning is cut short: ${probe.clipped[0].slice(0, 90)}`);
       if (probe.headingRing) fail(`the focused result heading paints a ring (${probe.headingRing}); it is not a control`);

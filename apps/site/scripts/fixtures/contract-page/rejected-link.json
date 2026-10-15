@@ -1,0 +1,20 @@
+{
+ "status": 422,
+ "retryAfter": null,
+ "body": {
+  "ok": false,
+  "error": "Your contract cannot be scored yet.",
+  "code": "contract_not_scoreable",
+  "problems": [
+   {
+    "code": "CONTRACT_URL_UNREACHABLE",
+    "severity": "error",
+    "message": "We could not fetch your contract from https://contracts.studio.example.com/missing.md: the server answered HTTP 404.",
+    "url": "https://contracts.studio.example.com/missing.md",
+    "why": "http_error",
+    "status": 404
+   }
+  ],
+  "warnings": []
+ }
+}

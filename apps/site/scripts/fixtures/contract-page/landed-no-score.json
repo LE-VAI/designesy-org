@@ -1,0 +1,673 @@
+{
+ "status": 200,
+ "retryAfter": null,
+ "body": {
+  "ok": true,
+  "mode": "own-contract",
+  "scope": "own-contract",
+  "contractVersion": "v0.4.6",
+  "engineVersion": "1.5.0",
+  "score": null,
+  "grade": null,
+  "fidelity": {
+   "scored": 1,
+   "total": 14,
+   "pass": 0,
+   "warn": 1,
+   "fail": 0,
+   "skip": 13,
+   "manual": 0,
+   "categoryScores": {
+    "tokens": {
+     "score": null,
+     "weight": 14,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 3,
+     "manual": 0
+    },
+    "color": {
+     "score": null,
+     "weight": 16,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "typography": {
+     "score": 50,
+     "weight": 18,
+     "pass": 0,
+     "warn": 1,
+     "fail": 0,
+     "skip": 3,
+     "manual": 0
+    },
+    "shape": {
+     "score": null,
+     "weight": 8,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "spacing": {
+     "score": null,
+     "weight": 12,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "contrast": {
+     "score": null,
+     "weight": 20,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 2,
+     "manual": 0
+    },
+    "motion": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "targets": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    }
+   },
+   "score": null,
+   "grade": null,
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": {
+    "code": "too_few_checks",
+    "detail": "1 of 14 checks scored; at least 3 are needed."
+   }
+  },
+  "baseline": {
+   "scored": 11,
+   "total": 18,
+   "pass": 9,
+   "warn": 2,
+   "fail": 0,
+   "skip": 5,
+   "manual": 2,
+   "categoryScores": {
+    "responsive": {
+     "score": null,
+     "weight": 3,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "keyboard": {
+     "score": 75,
+     "weight": 13,
+     "pass": 1,
+     "warn": 1,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "motion": {
+     "score": 100,
+     "weight": 10,
+     "pass": 3,
+     "warn": 0,
+     "fail": 0,
+     "skip": 1,
+     "manual": 0
+    },
+    "performance": {
+     "score": null,
+     "weight": 6,
+     "pass": 0,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 1
+    },
+    "accessibility": {
+     "score": 75,
+     "weight": 15,
+     "pass": 1,
+     "warn": 1,
+     "fail": 0,
+     "skip": 2,
+     "manual": 0
+    },
+    "identity": {
+     "score": 100,
+     "weight": 6,
+     "pass": 2,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "security": {
+     "score": 100,
+     "weight": 5,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 0,
+     "manual": 0
+    },
+    "copywriting": {
+     "score": 100,
+     "weight": 8,
+     "pass": 1,
+     "warn": 0,
+     "fail": 0,
+     "skip": 2,
+     "manual": 0
+    }
+   },
+   "score": 87.7,
+   "grade": "B",
+   "ceilingApplied": false,
+   "ceilingReason": null,
+   "uncappedScore": null,
+   "nullReason": null,
+   "a11yFloorApplied": false
+  },
+  "coverage": {
+   "declared": 5,
+   "located": 0,
+   "byMap": 0,
+   "byName": 0,
+   "byValue": 0,
+   "ratio": 0,
+   "groups": {
+    "colors": {
+     "declared": 3,
+     "located": 0,
+     "shippedCompared": 2
+    },
+    "typography": {
+     "declared": 2,
+     "located": 0,
+     "shippedCompared": 3
+    },
+    "radii": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "spacing": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "sizes": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "durations": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    },
+    "easings": {
+     "declared": 0,
+     "located": 0,
+     "shippedCompared": 0
+    }
+   },
+   "notes": [],
+   "hint": "Only 0 of 5 declared tokens were found on this page. If your CSS variables have other names, add a token map."
+  },
+  "ownContract": {
+   "name": "Studio brand tokens",
+   "format": "dtcg",
+   "formatVersion": "2025.10",
+   "source": "inline",
+   "bytes": 694,
+   "digest": "5ec7f18ffbd8b3bd6a7f2079e3a7161bce60685ae8dcce26f9839f4b5a7d91dc",
+   "tokens": {
+    "colors": 3,
+    "typography": 1,
+    "radii": 0,
+    "spacing": 0,
+    "sizes": 0,
+    "durations": 0,
+    "easings": 0,
+    "pairs": 0,
+    "aliases": 0
+   },
+   "omitted": [],
+   "linter": null,
+   "problems": []
+  },
+  "site": {
+   "requestedUrl": "https://pamphlet.studio.example.com/",
+   "htmlBytes": 548,
+   "cssBytes": 1008,
+   "stylesheetsFetched": 1,
+   "stylesheetsTotal": 1,
+   "stylesheetsTruncated": false
+  },
+  "checks": [
+   {
+    "id": "f01",
+    "item": "Mapped tokens ship their declared values",
+    "category": "tokens",
+    "status": "SKIP",
+    "detail": "Not located: 0 of your tokens were found by map or name on this page, and the check needs at least 3.",
+    "layer": "fidelity",
+    "reads": [
+     "tokens located by map or name"
+    ],
+    "derivedFrom": [
+     "v01"
+    ],
+    "skipReason": "not_located"
+   },
+   {
+    "id": "f02",
+    "item": "Shipped colors are in your palette",
+    "category": "color",
+    "status": "SKIP",
+    "detail": "Not located: this page shows 2 distinct colors, and the check needs at least 3.",
+    "layer": "fidelity",
+    "reads": [
+     "color tokens"
+    ],
+    "derivedFrom": [
+     "d03",
+     "d05"
+    ],
+    "skipReason": "not_located"
+   },
+   {
+    "id": "f03",
+    "item": "Shipped font sizes are on your type scale",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not located: this page shows 2 distinct font sizes, and the check needs at least 3.",
+    "layer": "fidelity",
+    "reads": [
+     "typography fontSize",
+     "dimension tokens with the fontSize role"
+    ],
+    "derivedFrom": [
+     "v16"
+    ],
+    "skipReason": "not_located"
+   },
+   {
+    "id": "f04",
+    "item": "Shipped font families are in your contract",
+    "category": "typography",
+    "status": "WARN",
+    "detail": "1 shipped family is not in your contract: Georgia in body",
+    "layer": "fidelity",
+    "reads": [
+     "fontFamily tokens",
+     "typography fontFamily"
+    ],
+    "derivedFrom": [
+     "v26"
+    ],
+    "declared": [
+     {
+      "value": "literata"
+     }
+    ],
+    "shipped": [
+     {
+      "value": "Georgia",
+      "where": [
+       "body"
+      ],
+      "uses": 1
+     }
+    ],
+    "remediation": "Remove the extra family, or declare it in your contract."
+   },
+   {
+    "id": "f05",
+    "item": "Shipped line heights are in your contract",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not located: this page shows 0 distinct line heights, and the check needs at least 3.",
+    "layer": "fidelity",
+    "reads": [
+     "typography lineHeight"
+    ],
+    "derivedFrom": [
+     "v17"
+    ],
+    "skipReason": "not_located"
+   },
+   {
+    "id": "f06",
+    "item": "Declared font features ship",
+    "category": "typography",
+    "status": "SKIP",
+    "detail": "Not declared: your contract has no font features, so f06 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "$extensions org.designesy features"
+    ],
+    "derivedFrom": [
+     "v19"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f07",
+    "item": "Shipped corner radii are on your radius scale",
+    "category": "shape",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no radius scale. f07 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "dimension tokens with the radius role"
+    ],
+    "derivedFrom": [
+     "d07"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f08",
+    "item": "Shipped spacing is on your spacing scale",
+    "category": "spacing",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no spacing scale. f08 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "dimension tokens with the spacing role"
+    ],
+    "derivedFrom": [
+     "d04"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f09",
+    "item": "Declared text and background pairs meet contrast on shipped values",
+    "category": "contrast",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no text and background pairs, so f09 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "$extensions org.designesy pairs"
+    ],
+    "derivedFrom": [
+     "v06"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f10",
+    "item": "Your primary action pair meets contrast on shipped values",
+    "category": "contrast",
+    "status": "SKIP",
+    "detail": "Not declared: your contract names no primary action pair (a button-primary, button, primary-button or cta component with a text and a background color), so f10 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "$extensions org.designesy pairs (role primary-action)"
+    ],
+    "derivedFrom": [
+     "v22"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f11",
+    "item": "Shipped durations and easings are in your contract",
+    "category": "motion",
+    "status": "SKIP",
+    "detail": "Not declared: your contract has no duration or easing tokens, so f11 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "duration tokens",
+     "cubicBezier tokens",
+     "transition tokens"
+    ],
+    "derivedFrom": [
+     "v23"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f12",
+    "item": "Interactive targets meet your declared minimum size",
+    "category": "targets",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no interactive size, so f12 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "dimension tokens with the size role"
+    ],
+    "derivedFrom": [
+     "v24"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f13",
+    "item": "Declared aliases ship as variable references",
+    "category": "tokens",
+    "status": "SKIP",
+    "detail": "Not declared: your contract declares no aliases, so f13 did not run.",
+    "layer": "fidelity",
+    "reads": [
+     "aliases in your contract"
+    ],
+    "derivedFrom": [
+     "v29"
+    ],
+    "skipReason": "not_declared"
+   },
+   {
+    "id": "f14",
+    "item": "Styles use your contract's tokens",
+    "category": "tokens",
+    "status": "SKIP",
+    "detail": "Not located: 0 of your tokens were found by map or name, and the check needs at least 3 to attribute a var() to your contract.",
+    "layer": "fidelity",
+    "reads": [
+     "all located tokens"
+    ],
+    "derivedFrom": [
+     "token-vs-raw ratio"
+    ],
+    "skipReason": "not_located"
+   },
+   {
+    "id": "v02",
+    "item": "Pages render without horizontal overflow",
+    "category": "responsive",
+    "status": "MANUAL",
+    "detail": "requires browser viewport trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v03",
+    "item": "Interactive elements show focus-visible rings",
+    "category": "interaction",
+    "status": "PASS",
+    "detail": ":focus-visible declared",
+    "layer": "baseline"
+   },
+   {
+    "id": "v09",
+    "item": "Keyboard affordances are present",
+    "category": "poise",
+    "status": "WARN",
+    "detail": "only 2 keyboard-affordance signals found",
+    "layer": "baseline"
+   },
+   {
+    "id": "v05",
+    "item": "Reduced motion is honored",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "prefers-reduced-motion: reduce block declares rules",
+    "layer": "baseline"
+   },
+   {
+    "id": "v11",
+    "item": "No transition: all in the stylesheet",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "no transition:all found",
+    "layer": "baseline"
+   },
+   {
+    "id": "v12",
+    "item": "will-change stays on transform and opacity",
+    "category": "motion",
+    "status": "PASS",
+    "detail": "will-change restricted cleanly",
+    "layer": "baseline"
+   },
+   {
+    "id": "v45",
+    "item": "Pausing motion keeps content visible",
+    "category": "motion",
+    "status": "SKIP",
+    "detail": "not applicable: no rule pauses every element (animation-play-state: paused on *)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v21",
+    "item": "Core Web Vitals are in range",
+    "category": "performance",
+    "status": "MANUAL",
+    "detail": "requires CDP trace: run the full audit to resolve",
+    "layer": "baseline"
+   },
+   {
+    "id": "v25",
+    "item": "One h1 and no skipped heading levels",
+    "category": "accessibility",
+    "status": "PASS",
+    "detail": "single h1, 1 headings, no skipped levels",
+    "layer": "baseline"
+   },
+   {
+    "id": "v27",
+    "item": "Form fields are at least 16px",
+    "category": "accessibility",
+    "status": "SKIP",
+    "detail": "no text input, textarea or select found in HTML: nothing for the 16px floor to protect",
+    "layer": "baseline"
+   },
+   {
+    "id": "v35",
+    "item": "Forced-colors mode is handled",
+    "category": "accessibility",
+    "status": "WARN",
+    "detail": "no forced-colors media query or forced-color-adjust detected: Windows HCM users may see illegible UI",
+    "layer": "baseline"
+   },
+   {
+    "id": "v44",
+    "item": "Status colors used as text meet contrast",
+    "category": "accessibility",
+    "status": "SKIP",
+    "detail": "not applicable: no status color is used as text",
+    "layer": "baseline"
+   },
+   {
+    "id": "v07",
+    "item": "Semantic HTML: h1, title, description, landmark",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "single h1, title, meta description, landmark",
+    "layer": "baseline"
+   },
+   {
+    "id": "v34",
+    "item": "AI surfaces carry a disclosure",
+    "category": "identity",
+    "status": "PASS",
+    "detail": "no AI-interactive surface detected: disclosure not required",
+    "layer": "baseline"
+   },
+   {
+    "id": "v36",
+    "item": "No confusable Unicode in CSS identifiers",
+    "category": "security",
+    "status": "PASS",
+    "detail": "scanned 0 token names, 0 classes, 1 ids, 0 url refs: no UTS #39 confusables detected (Unicode 16.0.0)",
+    "layer": "baseline"
+   },
+   {
+    "id": "v38",
+    "item": "Button text is a verb phrase",
+    "category": "copywriting",
+    "status": "SKIP",
+    "detail": "no button elements found in HTML",
+    "layer": "baseline"
+   },
+   {
+    "id": "v39",
+    "item": "No trailing period on buttons and labels",
+    "category": "copywriting",
+    "status": "SKIP",
+    "detail": "no button/label/tab elements found in HTML",
+    "layer": "baseline"
+   },
+   {
+    "id": "v40",
+    "item": "Link text says where it goes",
+    "category": "copywriting",
+    "status": "PASS",
+    "detail": "1 link(s) checked: all have descriptive text",
+    "layer": "baseline"
+   }
+  ],
+  "pass": 9,
+  "warn": 3,
+  "fail": 0,
+  "skip": 18,
+  "manual": 2,
+  "total": 32,
+  "scored": 12,
+  "tokensExtracted": 0,
+  "receipt": {
+   "subject": "https://pamphlet.studio.example.com/",
+   "retrieved_at": "2026-10-15T00:18:28.467Z",
+   "contract_version": "v0.4.6",
+   "engine_version": "1.5.0",
+   "scope": "own-contract",
+   "digest": "1bb29c9c123ca4db6ef01fa572b382a7ae5eedf9a95f9c8060b5e0796921e70c",
+   "verify": {
+    "method": "re-run",
+    "endpoint": "/api/score",
+    "instructions": "POST the same URL with the same contract to /api/score. Compare own_contract.digest first: if it differs, the contract changed. Then compare digest: if it differs while engine_version matches, the page changed."
+   },
+   "own_contract": {
+    "digest": "5ec7f18ffbd8b3bd6a7f2079e3a7161bce60685ae8dcce26f9839f4b5a7d91dc",
+    "format": "dtcg",
+    "source": "inline"
+   }
+  }
+ }
+}

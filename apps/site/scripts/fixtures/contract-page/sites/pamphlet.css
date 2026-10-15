@@ -1,0 +1,12 @@
+html { box-sizing: border-box; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+*, *::before, *::after { box-sizing: inherit; }
+body { margin: 0; font-family: Georgia, serif; font-size: 18px; color: #222222; background: #fafafa; }
+main { display: block; max-width: 40rem; margin-inline: auto; padding-block: 3rem; padding-inline: 1.5rem; }
+h1 { font-size: 40px; font-weight: 600; margin-block: 0 1.5rem; text-wrap: balance; }
+p { margin-block: 0 1rem; max-inline-size: 65ch; text-wrap: pretty; hyphens: auto; }
+a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+img, svg { display: block; max-inline-size: 100%; block-size: auto; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none; transition: none; scroll-behavior: auto; } }
+@media print { body { background: none; } a::after { content: " (" attr(href) ")"; } }
