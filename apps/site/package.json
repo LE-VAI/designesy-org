@@ -37,11 +37,11 @@
     "check-critical-css": "node scripts/check-critical-css.mjs",
     "update-critical-css": "node scripts/check-critical-css.mjs --update",
     "prose-lint": "node scripts/prose-lint.js",
-    "dev": "next dev",
-    "build": "node scripts/build-critical-css.mjs && next build && node scripts/check-contract-drift.js && node scripts/check-catalog-version-binding.js && node scripts/check-contract-lock.js && node scripts/check-sibling-contract-locks.js && node scripts/postbuild-pagefind.js && node scripts/check-search-coverage.js && node scripts/check-score-verdict.mjs && node scripts/check-own-contract.mjs && node scripts/check-contract-copy.mjs && node scripts/check-audit-rescore.mjs && node scripts/check-audit-ssrf.js && node scripts/check-results-language.mjs && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js && node scripts/check-mcp-tool-parity.js && node scripts/check-mcp-accuracy.js && node scripts/check-count-literal.js && node scripts/check-use-client-first.js && node scripts/check-hero-a11y-name.js && node scripts/check-console-tally-name.js && node scripts/check-extractor-brace-bound.js && node scripts/check-cross-engine-agreement.js && node scripts/check-engine-registry.js && node scripts/check-data-surfaces.js && node scripts/check-voice.js && node scripts/check-jsx-glue.js && node scripts/check-link-targets.js && node scripts/check-palette-excerpts.js && node scripts/check-warn-ink.js && node scripts/check-focus-rings.js && node scripts/check-paused-entrances.js && node scripts/check-retired-literals.js && node scripts/check-badge-grade-tokens.js && node scripts/check-analytics-redaction.js && node scripts/badge-renders.mjs --check && node scripts/check-badge-miss-limit.js && node scripts/check-type-scale.js && node scripts/check-critical-css.mjs",
+    "dev": "next dev --webpack",
+    "build": "node scripts/build-critical-css.mjs && next build --webpack && node scripts/stage-prerender-output.js && node scripts/check-contract-drift.js && node scripts/check-catalog-version-binding.js && node scripts/check-contract-lock.js && node scripts/check-sibling-contract-locks.js && node scripts/postbuild-pagefind.js && node scripts/check-search-coverage.js && node scripts/check-score-verdict.mjs && node scripts/check-own-contract.mjs && node scripts/check-contract-copy.mjs && node scripts/check-audit-rescore.mjs && node scripts/check-audit-ssrf.js && node scripts/check-results-language.mjs && node scripts/generate-markdown.js && node scripts/prose-lint.js && node scripts/check-contract-version.js && node scripts/check-probe-backticks.js && node scripts/check-count-up-seed.js && node scripts/check-d02-coverage.js && node scripts/check-mcp-tool-parity.js && node scripts/check-mcp-accuracy.js && node scripts/check-count-literal.js && node scripts/check-use-client-first.js && node scripts/check-hero-a11y-name.js && node scripts/check-console-tally-name.js && node scripts/check-extractor-brace-bound.js && node scripts/check-cross-engine-agreement.js && node scripts/check-engine-registry.js && node scripts/check-data-surfaces.js && node scripts/check-voice.js && node scripts/check-jsx-glue.js && node scripts/check-link-targets.js && node scripts/check-palette-excerpts.js && node scripts/check-warn-ink.js && node scripts/check-focus-rings.js && node scripts/check-paused-entrances.js && node scripts/check-retired-literals.js && node scripts/check-badge-grade-tokens.js && node scripts/check-analytics-redaction.js && node scripts/badge-renders.mjs --check && node scripts/check-badge-miss-limit.js && node scripts/check-type-scale.js && node scripts/check-critical-css.mjs",
     "build:win": "node scripts/build-win.js",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint app",
     "check-extractor-brace-bound": "node scripts/check-extractor-brace-bound.js",
     "check-cross-engine-agreement": "node scripts/check-cross-engine-agreement.js",
     "check-audit-rescore": "node scripts/check-audit-rescore.mjs",
@@ -64,7 +64,7 @@
     "cuelume": "^0.2.4",
     "ipaddr.js": "^2.5.0",
     "mcp-handler": "^2.2.0",
-    "next": "15.5.27",
+    "next": "16.4.1",
     "playwright-core": "^1.63.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -82,7 +82,7 @@
     "css-select": "7.0.0",
     "domhandler": "6.0.1",
     "eslint": "9.39.5",
-    "eslint-config-next": "15.5.27",
+    "eslint-config-next": "16.4.1",
     "htmlparser2": "12.0.0",
     "pagefind": "^1.5.2",
     "typescript": "5.9.3"
@@ -93,6 +93,9 @@
     "sharp": "0.35.5",
     "@hono/node-server": "2.1.0",
     "brace-expansion": "5.0.12",
+    "minimatch@3": {
+      "brace-expansion": "1.1.21"
+    },
     "@eslint/plugin-kit": "0.7.2",
     "js-yaml": "4.3.2",
     "fast-uri": "3.1.6"
