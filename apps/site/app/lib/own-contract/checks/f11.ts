@@ -1,4 +1,4 @@
-// f11 Shipped durations and easings are in your contract (engine spec 6.3;
+// f11 Shipped durations and easings are in your contract (contract-mode spec §6.3;
 // derived from v23). DTCG only: the DESIGN.md format has no motion group, so a
 // DESIGN.md contract SKIPs not_applicable. Durations must equal a declared
 // duration (0s left out); curves within 0.001 per point of a declared curve,

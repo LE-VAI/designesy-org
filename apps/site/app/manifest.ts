@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#010102',
     theme_color: '#010102',
-    // The brand avatar mark (D53), not /icon: that is a 32px PNG, which this
+    // The brand avatar mark, not /icon: that is a 32px PNG, which this
     // listed as sizes 'any'. Chromium installs need a 192 and a 512 icon.
     icons: [
       {

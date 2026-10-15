@@ -1,15 +1,15 @@
 # @vai/icons
 
-<picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/hero-icons-static.png">
-  <img src="https://www.designesy.org/hero-icons.gif" alt="VAI Icons — eight authored, motion-bearing icons on five principles" width="960">
-</picture>
-
 Eight hand-authored, motion-bearing icons for the VAI command surface. **Each icon carries its motion contract** — the principle it belongs to, the reduce tier it occupies, and the rationale that justifies both.
 
+Not yet published to npm. Install it from a clone of this repo, together with `@vai/motion`, its peer dependency:
+
 ```bash
-npm install @vai/icons
+git clone https://github.com/LE-VAI/designesy-org.git
+npm install ./designesy-org/packages/vai-motion ./designesy-org/packages/vai-icons
 ```
+
+To see all eight icons, run `npm run demo` in `packages/vai-icons` and open http://localhost:4273.
 
 ## Why this exists
 
@@ -57,7 +57,7 @@ The keystone test: if `pulse-presence` is silently collapsed under reduce, the t
 ## Usage
 
 ```js
-import { mountIcon, manifest, resolveTier } from '@vai/icons';
+import { mountIcon, manifest, iconContract, resolveTier } from '@vai/icons';
 
 // Mount an icon into a host element
 await mountIcon('pulse-presence', document.getElementById('here'));

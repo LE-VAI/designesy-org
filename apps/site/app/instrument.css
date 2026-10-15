@@ -30,7 +30,7 @@
   --lv-fail-b: #e0454a;
   --lv-hatch: rgba(255, 255, 255, 0.2);
   --lv-head: #36A7FF;
-  /* Ink for text ON a --lv-head fill (D33): #010102 in both themes, 8.08:1 on
+  /* Ink for text ON a --lv-head fill: #010102 in both themes, 8.08:1 on
      the dark head #36A7FF and 6.65:1 on the light head #0A94FF. */
   --lv-head-ink: #010102;
   --lv-ink-accent: var(--signal-access);

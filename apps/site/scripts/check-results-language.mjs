@@ -11,7 +11,7 @@
  * different numbers. Each surface had its own copy of the words, the formats
  * and the colour thresholds, so they drifted apart one edit at a time.
  *
- * The owner approved one language (2026-10-10): score as "67.9 /100", one
+ * One language for results: score as "67.9 /100", one
  * decimal; the contract's grade tokens for grades; one three-step rule (80, 60)
  * for categories and checks, pass in the contract's green; the plain names
  * (Contract score, Combined score, Standard and Strict rules, failed check,
@@ -201,7 +201,7 @@ check('the surface check fails on each retired form put back (the gate can fail)
 });
 
 // ── 3. Colours outside CSS ─────────────────────────────────────────────────
-check("share card and badge draw grades in the grade tokens, never a brand colour (D5)", () => {
+check("share card and badge draw grades in the grade tokens, never a brand colour", () => {
   const css = read('app/globals.css');
   const darkBlock = css.slice(css.indexOf(':root {'), css.indexOf('[data-theme="light"] {'));
   const lightStart = css.indexOf('[data-theme="light"] {');
@@ -215,7 +215,7 @@ check("share card and badge draw grades in the grade tokens, never a brand colou
   const bands = Object.fromEntries([...og.matchAll(/grade: '([A-F])', color: '(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2].toLowerCase()]));
   assert.deepEqual(bands, dark, 'opengraph-image.tsx BANDS');
   // The live badge carries its own ground, dark and light, and its letter is
-  // that ground's grade text token, --grade-<g>-ink (brand verdict D61).
+  // that ground's grade text token, --grade-<g>-ink.
   const inkOf = (block, g) => {
     const v = (block.match(new RegExp(`--grade-${g}-ink:\\s*([^;]+);`)) || [])[1]?.trim();
     const ref = v?.match(/^var\((--grade-[a-f])\)$/);

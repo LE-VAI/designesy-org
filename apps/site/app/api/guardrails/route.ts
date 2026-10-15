@@ -25,6 +25,7 @@ import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { cssTokensToDtcg } from '../../lib/dtcg';
 import { pageFabricatedTokens } from '../../lib/drift-checks';
 import { guardrailsContract } from '../../lib/guardrails-contract';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -911,8 +912,8 @@ const emitGuardrails = unstable_cache(emitGuardrailsUncached, ['designesy-guardr
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 50 guardrail generations per hour.' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },

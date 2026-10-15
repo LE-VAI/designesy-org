@@ -15,6 +15,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 800; // Pro Plan: 800s max (upgraded from 300s)
 
 import { SEED } from '../../../leaderboard/seed';
+import { SITE_BASE } from '../../../lib/site-meta';
 
 export async function GET(request: Request) {
   // Validate CRON_SECRET
@@ -24,7 +25,9 @@ export async function GET(request: Request) {
     return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
-  const baseUrl = new URL(request.url).origin;
+  // The canonical host, not the incoming request's origin: the Host header
+  // a request arrives with must not choose where this job sends its requests.
+  const baseUrl = SITE_BASE;
   const scored = SEED.filter((s) => s.score !== null);
   const results: { url: string; score: number | null; grade: string | null; error?: string }[] = [];
 

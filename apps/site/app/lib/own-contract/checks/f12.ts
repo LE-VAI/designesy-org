@@ -1,4 +1,4 @@
-// f12 Interactive targets meet your declared minimum size (engine spec 6.3;
+// f12 Interactive targets meet your declared minimum size (contract-mode spec §6.3;
 // derived from v24). Floor: the larger of 24px (WCAG 2.5.8 AA) and the
 // smallest declared interactive size. Shipped: explicit min-height and
 // min-width on interactive selectors (the v24 set). FAIL under 24px, WARN

@@ -115,7 +115,7 @@ export function Footer() {
               <Wordmark className="wordmark-word" />
               <span className="sr-only">designesy</span>
             </span>
-            {/* The flame flip's keycaps (brand D69). */}
+            {/* The flame flip's keycaps. */}
             <FlameFlipKeys />
           </div>
           <span>

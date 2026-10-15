@@ -1,17 +1,17 @@
 # @vai/motion
 
-<picture>
-  <source media="(prefers-reduced-motion: reduce)" srcset="https://www.designesy.org/labs/poise">
-  <img src="https://www.designesy.org/hero-score-gate.gif" alt="VAI Motion — five authored principles" width="960">
-</picture>
-
 Five authored, named motion principles from the VAI command surface. **Not components — principles.** Each one ships with its contract backing, its provenance (which audit produced it, what it replaced and why), and its reduced-motion tier.
 
 The counter-library to AI-default motion: every AI generator produces scanner beams by default. These five are the authored alternative.
 
+Not yet published to npm. Install it from a clone of this repo:
+
 ```bash
-npm install @vai/motion
+git clone https://github.com/LE-VAI/designesy-org.git
+npm install ./designesy-org/packages/vai-motion
 ```
+
+To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173.
 
 ## Why principles, not components
 

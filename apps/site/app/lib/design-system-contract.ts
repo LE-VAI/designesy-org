@@ -27,9 +27,9 @@
  *   weight or verdict changed.
  * v0.4.4 is the identity v1 colour system (2026-10-11).
  * v0.4.5 is the type pass (2026-10-12): Atkinson Hyperlegible Mono replaces
- *   Geist Mono as the mono face (brand ledger D65), and the six type-scale
- *   tokens (--text-label to --text-h1, a Major Third on a 16px root, ledger
- *   D68) join :root and this contract. No check, weight or verdict changed.
+ *   Geist Mono as the mono face, and the six type-scale
+ *   tokens (--text-label to --text-h1, a Major Third on a 16px root) join
+ *   :root and this contract. No check, weight or verdict changed.
  * v0.4.6 adds verification check v46 (2026-10-13, engine 1.4.0): type sizes
  *   come from the scale the :root type tokens declare. Fluid clamp() type is
  *   accepted as written; static sizes between steps and sizes under the

@@ -1,4 +1,4 @@
-// f02 Shipped colors are in your palette (engine spec 6.3; derived from d03, d05).
+// f02 Shipped colors are in your palette (contract-mode spec §6.3; derived from d03, d05).
 // Distinct base colors the usage CSS paints (color, backgrounds, borders,
 // outline, fill, stroke, caret, accent, text decoration); a color is in the
 // palette when its RGB is within 1 per channel of a declared color (alpha is
@@ -9,7 +9,7 @@ import { SHARE_PASS_AT } from '../formula';
 import { hex6, oklabDistance, sameRgb } from '../normalize';
 import { capList, result, shareStatus, skip, type Ctx, type CheckResultV2 } from './common';
 
-/** The collapsed line (brand D75, R3-07), built from the counts and the threshold. */
+/** The collapsed line, built from the counts and the threshold. */
 export function paletteLine(shipped: number, outside: string[], passAt = SHARE_PASS_AT): string {
   const inside = shipped - outside.length;
   const verb = inside === 1 ? 'is' : 'are';

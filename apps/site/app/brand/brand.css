@@ -1,14 +1,14 @@
-/* /brand route-only styles (brand ledger D71). Imported by brand/page.tsx, so
+/* /brand route-only styles. Imported by brand/page.tsx, so
    Next code-splits it to this route.
 
-   Sizes are the D68 type scale, a Major Third on a 16px root: 0.8rem labels
+   Sizes are the site type scale, a Major Third on a 16px root: 0.8rem labels
    (the floor), 1rem body, 1.25rem lead and card titles, 1.563rem, 1.953rem
    section titles; the page title keeps the site's display clamp (.surface-title)
-   at Fraunces 700 (D58). Colours are the site's tokens; the two specimen
+   at Fraunces 700. Colours are the site's tokens; the two specimen
    grounds, ink and white, are set on the page from the contract's values
    (--brand-ink, --brand-white in page.tsx) because they must not follow the
    theme: a lockup "on ink" is on ink in both themes. Cards keep a neutral
-   hairline and no coloured edge (D62); orange appears only where the page
+   hairline and no coloured edge; orange appears only where the page
    shows the flame. Nothing on the page moves. */
 
 /* --- Hero --- */
@@ -20,7 +20,7 @@
   margin-bottom: var(--space-12);
 }
 
-/* D58: one page-title style, Fraunces 700. */
+/* One page-title style, Fraunces 700. */
 .brand-page .brand-title {
   font-weight: 700;
 }

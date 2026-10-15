@@ -1,4 +1,4 @@
-// DTCG 2025.10 reader (engine spec section 4.4), ours, written against the
+// DTCG 2025.10 reader (contract-mode spec §4.4), ours, written against the
 // W3C Design Tokens Format Module 2025.10.
 //
 // The tree is walked with Map-based structures and plain key iteration: no

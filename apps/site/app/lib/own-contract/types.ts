@@ -1,4 +1,4 @@
-// Own-contract mode: the normalized contract model (engine spec section 3.1).
+// Own-contract mode: the normalized contract model (contract-mode spec §3.1).
 //
 // A team's own DESIGN.md or DTCG 2025.10 token file is read into this one
 // model, so binding, the fidelity checks and the digest never branch on the

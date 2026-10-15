@@ -1,4 +1,4 @@
-// f01 Mapped tokens ship their declared values (engine spec 6.3; derived from v01).
+// f01 Mapped tokens ship their declared values (contract-mode spec §6.3; derived from v01).
 // For each token located by map or name, the page's resolved custom property
 // against the declared value: colors within 1 per channel and 0.01 alpha,
 // dimensions within 0.01px, durations exactly, families case-folded.

@@ -1,4 +1,4 @@
-// Own-contract intake limits (engine spec section 4.2), checked before and
+// Own-contract intake limits (contract-mode spec §4.2), checked before and
 // during parsing. One place, so the published formula, the API and the tests
 // read the same numbers.
 
@@ -35,6 +35,6 @@ export const EVIDENCE_CAP = 20;
 /** The 16px root the engine assumes for rem (the existing engine's rule). */
 export const ROOT_PX = 16;
 
-/** The minimum scoreable contract (owner decision D2). */
+/** The minimum scoreable contract. */
 export const MIN_COLORS = 3;
 export const MIN_TYPE_STYLES = 1;

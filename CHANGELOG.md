@@ -52,9 +52,13 @@ verdict, detail or score moves.
 - **Receipt.** `receipt.own_contract.digest` is a sha256 of the contract as
   read (prose, names and key order do not move it); `receipt.digest` covers
   the fidelity verdicts, then the baseline's.
-- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.0,
+- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.1,
   2026-10-14): every check, threshold, weight, ceiling, baseline group and
-  null rule.
+  null rule. In 1.0.1 a linter problem carries the DESIGN.md linter's sentence
+  whole in `linterMessage` (`value` is the offending value), a rejected
+  DESIGN.md carries the linter's totals (`linter`), and a problem that
+  absorbed a linter finding says so (`linterFinding`). No threshold, weight or
+  verdict moved.
 - **Limits.** 300 KB per request, 256 KB per contract, linked contracts only
   through the SSRF guard with an 8 s abort, 20 runs a minute and 300 a day per
   IP (failing open, as the edge limiter does). Nothing is cached or stored; a
@@ -280,7 +284,7 @@ hosted /score page and API always run the current engine.
 
 ### Changed (engine 1.3.0)
 
-- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+- **No A while any check FAILs** (decided 2026-10-11). Any FAIL caps
   the score at 89.9, a B at most, and `hardFailCeilingReason` says which
   checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
   ceilings stay lower and win where they apply. Every cap runs after the
@@ -785,7 +789,7 @@ the site's. Contract mode moves to engine 1.3.0.
     -3600s). FAIL without one, WARN when the override's selector or scope does
     not clearly match, SKIP when no rule pauses every element.
 
-  **Owner decision D10: legacy scores gain both checks.** A request without a
+  **Legacy scores gain both checks.** A request without a
   contract returns what engine 1.1.0 returned except for v44 and v45. The
   registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
   Category weights are unchanged (accessibility 15, motion 10, of 117), so each

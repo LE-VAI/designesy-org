@@ -1,14 +1,14 @@
-// POST /api/score with a `contract` field: own-contract mode (engine spec
-// sections 10 to 13). The hosted route calls handleOwnContract() from its POST
+// POST /api/score with a `contract` field: own-contract mode (contract-mode spec
+// §10 to §13). The hosted route calls handleOwnContract() from its POST
 // handler and passes in the pieces only it holds (the page fetch, the legacy
 // check functions, v36's confusable helper, the detail sanitizer), so every
 // own-contract unit lives here and route.ts gains no new top-level function
 // (packages/score/scripts/source-drift.mjs compares the two engine copies).
 //
-// Order (engine spec 10.1): body size (413) -> scope conflict (400) ->
+// Order (contract-mode spec §10.1): body size (413) -> scope conflict (400) ->
 // contract shape (400) -> the mode's rate limit (429) -> intake (413, 422) ->
 // page fetch -> scoring. Never through the cached scoreUrl: nothing about a
-// contract run is stored (owner decision D4). Responses carry
+// contract run is stored. Responses carry
 // Cache-Control: no-store. Nothing here logs contract-derived data, the
 // scored URL or the contract URL (section 13).
 
@@ -25,7 +25,7 @@ import { scoreOwnContract, type OwnContractRun } from './run';
 import type { BaselineInput } from './baseline';
 import type { OwnContract, Problem } from './types';
 
-/** The mode's own limits per IP (engine spec 12): 20 per minute and 300 per day. */
+/** The mode's own limits per IP (contract-mode spec §12): 20 per minute and 300 per day. */
 export const CONTRACT_LIMITS = {
   minute: { prefix: 'score-contract-min', tokens: 20, window: '60 s' as const },
   day: { prefix: 'score-contract-day', tokens: 300, window: '1 d' as const },
@@ -55,8 +55,8 @@ export interface ContractRequest {
   bodyBytes: number;
   /** The normalized, validated page URL. */
   url: string;
-  /** The caller's IP, for the mode limiter only (never stored). */
-  ip: string;
+  /** The caller's rate-limit key (a keyed hash of the IP, see clientKey), for the mode limiter only. */
+  caller: string;
 }
 
 export type OwnContractResponse = { status: number; body: unknown; headers: Record<string, string> };
@@ -97,12 +97,12 @@ export function readContractField(raw: unknown): { ok: true; value: { content?: 
 }
 
 /** The mode limiter: fail open (as the edge limiter does) when Upstash is absent or does not answer. */
-async function limited(ip: string): Promise<{ limited: false } | { limited: true; retryAfter: number }> {
+async function limited(caller: string): Promise<{ limited: false } | { limited: true; retryAfter: number }> {
   for (const l of [CONTRACT_LIMITS.minute, CONTRACT_LIMITS.day]) {
     try {
       const limiter = getLimiter(l.prefix, fixedWindow(l.tokens, l.window));
       if (!limiter) continue;
-      const d = await limiter.limit(`${l.prefix}:${ip}`);
+      const d = await limiter.limit(`${l.prefix}:${caller}`);
       if (!d.success) return { limited: true, retryAfter: Math.max(1, Math.ceil((d.reset - Date.now()) / 1000)) };
     } catch {
       // Fail open: a missing or dead limiter must not take the mode down.
@@ -117,7 +117,7 @@ type OwnContractReceipt = Receipt & {
   own_contract: { digest: string; format: OwnContract['format']; source: 'inline' | 'url'; url?: string; linter?: string };
 };
 
-/** The receipt (engine spec 11.3): the verdict digest over fidelity then baseline, and the contract's own digest. */
+/** The receipt (contract-mode spec §11.3): the verdict digest over fidelity then baseline, and the contract's own digest. */
 export function ownContractReceipt(url: string, contract: OwnContract, checks: Array<{ id: string; status: string }>, at: Date): OwnContractReceipt {
   const base = buildReceipt({ requestedUrl: url, contractVersion: CONTRACT_VERSION, scope: 'own-contract', checks }, at);
   return {
@@ -139,7 +139,7 @@ export function ownContractReceipt(url: string, contract: OwnContract, checks: A
   };
 }
 
-/** The 200 body, `format=designesy` (engine spec 10.3). */
+/** The 200 body, `format=designesy` (contract-mode spec §10.3). */
 export function ownContractBody(url: string, contract: OwnContract, run: OwnContractRun | null, page: { htmlBytes: number; cssBytes: number }, at: Date, unreachable?: { reason: string; detail: string }) {
   const checks = run ? run.checks : [];
   const tokens = {
@@ -205,7 +205,7 @@ export async function handleOwnContract(req: ContractRequest, deps: RouteDeps): 
   }
   const field = readContractField(req.body.contract);
   if (!field.ok) return requestError(400, 'contract_shape', field.error);
-  const lim = await limited(req.ip);
+  const lim = await limited(req.caller);
   if (lim.limited) {
     return reply(429, { ok: false, error: 'Too many contract runs. Try again in a minute.', code: 'rate_limited' }, { 'Retry-After': String(lim.retryAfter) });
   }
@@ -233,7 +233,7 @@ export async function handleOwnContract(req: ContractRequest, deps: RouteDeps): 
   if (!intake.ok) {
     if (intake.status === 413) return reply(413, { ok: false, error: sentence(intake.problems), code: intake.problems[0]?.code ?? 'contract_too_large' });
     // linter: the totals the DESIGN.md format linter reported (null when it did not
-    // read the file), for the page's provenance line (brand D75).
+    // read the file), for the page's provenance line.
     return reply(422, { ok: false, error: 'Your contract cannot be scored yet.', code: 'contract_not_scoreable', problems: intake.problems, warnings: intake.warnings, linter: intake.linter ?? null });
   }
   const contract = intake.contract;

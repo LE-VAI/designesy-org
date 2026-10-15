@@ -8,7 +8,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export const alt = 'Designesy contract score and grade';
 
-// Grade inks on the dark surfaces (identity v1, D5 and D18): a data palette
+// Grade inks on the dark surfaces (identity v1): a data palette
 // that never borrows the brand's colours. Order is the band's, F to A.
 const BANDS = [
   { grade: 'F', color: '#EF4444', span: 2 },

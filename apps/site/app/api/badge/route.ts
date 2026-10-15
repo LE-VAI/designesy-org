@@ -8,7 +8,7 @@
 //   ?site=<host>               shields.io "endpoint" JSON for a leaderboard site
 //                              (below), for shields-style READMEs.
 //
-// The live badge is the lead embed on /badge (owner decision 2026-10-11): the
+// The live badge is the lead embed on /badge: the
 // static images read the same for every site, so a page could show one whatever
 // its score.
 //
@@ -25,7 +25,7 @@ import { liveBadgeResponse } from '../../lib/badge/live-badge-route';
 import { SEED, LEADERBOARD_LAST_SCORED, staleLabel } from '../../leaderboard/seed';
 
 // Grade → shields colour, as a bare hex. A grade takes only its grade token,
-// never a brand colour or a shields named colour (brand ledger D5, D37): the
+// never a brand colour or a shields named colour: the
 // named set painted D in the brand's flame orange. Each is the light-theme
 // grade token from globals.css, because the badge sits on other people's
 // pages and does not follow their theme.

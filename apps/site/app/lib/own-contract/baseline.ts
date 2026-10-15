@@ -1,8 +1,7 @@
-// The baseline layer (engine spec section 7 and 8.3; owner decisions D3, D7,
-// D10; HANDOFF O2): the universal checks that read no contract, grouped and
-// weighted for this mode. Eighteen checks: the sixteen of section 7 plus v44
-// (accessibility) and v45 (motion), which every legacy score gained in engine
-// 1.2.0. v46 (type sizes from the page's own scale) stays out: f03 measures
+// The baseline layer (contract-mode spec §7 and §8.3): the universal checks
+// that read no contract, grouped and weighted for this mode. Eighteen checks:
+// the sixteen of section 7 plus v44 (accessibility) and v45 (motion), which
+// every legacy score gained in engine 1.2.0. v46 (type sizes from the page's own scale) stays out: f03 measures
 // the same thing against the team's scale, and v46 has no ruling for this mode.
 //
 // The checks themselves run in the hosted route unchanged; this module picks
@@ -36,8 +35,8 @@ export const BASELINE_FLOOR = { group: 'accessibility', below: 0.6, cap: 70 };
 
 /**
  * No A while any baseline check fails: the URL engine's rule since engine
- * 1.3.0 (owner decision 2026-10-11), applied to this layer too (owner
- * decision 2026-10-14). After the floor; the lower registry ceilings win.
+ * 1.3.0 (see CHANGELOG), applied to this layer too. After the floor; the
+ * lower registry ceilings win.
  */
 export const BASELINE_ANY_FAIL_CAP = 89.9;
 

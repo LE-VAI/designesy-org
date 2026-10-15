@@ -103,3 +103,25 @@ export function clientIp(headers: Headers): string {
     'unknown'
   );
 }
+
+/**
+ * The key a limiter counts a caller under: a keyed hash (HMAC-SHA256) of the
+ * caller's IP, so no limiter, at the edge, in a route's memory or in the shared
+ * store, holds a network address. The key is stable, so a window that spans
+ * midnight keeps counting, and reversing it by trying addresses needs the
+ * server-only secret. The secret is the one the usage counter salts with; the
+ * "rate-limit:v1:" prefix keeps the two derivations apart. Web Crypto, so the
+ * edge middleware and the Node routes derive the same key.
+ */
+let hmacKey: { secret: string; key: Promise<CryptoKey> } | null = null;
+
+export async function clientKey(headers: Headers): Promise<string> {
+  // Locally neither secret may be set; a fixed dev key keeps the limiter keyed.
+  const secret = process.env.USAGE_SALT || process.env.CRON_SECRET || 'local-development';
+  if (!hmacKey || hmacKey.secret !== secret) {
+    const raw = new TextEncoder().encode(secret);
+    hmacKey = { secret, key: crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']) };
+  }
+  const mac = await crypto.subtle.sign('HMAC', await hmacKey.key, new TextEncoder().encode(`rate-limit:v1:${clientIp(headers)}`));
+  return Array.from(new Uint8Array(mac).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
+}
