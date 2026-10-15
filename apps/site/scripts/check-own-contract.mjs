@@ -1419,6 +1419,12 @@ await check('S-6 61 stylesheets, one unanswered: the cap and the missing sheet a
   assert.deepEqual(r.site, { stylesheetsFetched: 59, stylesheetsTotal: 61, stylesheetsTruncated: true });
   assert.ok(r.coverage.notes.some((n) => n.startsWith('STYLESHEET_CAP')), r.coverage.notes.join(' | '));
   assert.ok(r.coverage.notes.some((n) => n.startsWith('STYLESHEETS_MISSING')), r.coverage.notes.join(' | '));
+  assert.ok(!r.coverage.notes.some((n) => n.startsWith('DOCUMENT_CAP')), r.coverage.notes.join(' | '));
+});
+await check('S-6b a page read only up to the byte cap says so in the coverage notes, and site keeps its three counts', async () => {
+  const r = await runSite('S-1', 'DM-1.md', { bytesTruncated: true });
+  assert.deepEqual(r.site, { stylesheetsFetched: 1, stylesheetsTotal: 1, stylesheetsTruncated: false });
+  assert.ok(r.coverage.notes.some((n) => n.startsWith('DOCUMENT_CAP')), r.coverage.notes.join(' | '));
 });
 await check('S-7 hostile CSS (2 MB, long brace runs, 10,000-character selectors) completes in under 2 s', async () => {
   const hostile = `${'{'.repeat(200000)}${`.${'a'.repeat(10000)} { color: #111 }\n`.repeat(50)}${'a{color:#123456;padding:4px}'.repeat(60000)}`;
@@ -1527,7 +1533,7 @@ await check('a contract run answers 200 with the documented shape, no-store, ver
   const dsc = h.load('app/lib/design-system-contract.ts');
   assert.equal(b.contractVersion, dsc.CONTRACT_VERSION);
   assert.equal(b.engineVersion, defs.ENGINE_VERSION);
-  assert.equal(b.engineVersion, '1.5.0');
+  assert.equal(b.engineVersion, '1.5.1');
   assert.equal(b.score, b.fidelity.score);
   assert.equal(b.grade, b.fidelity.grade);
   for (const k of ['score', 'grade', 'scored', 'total', 'pass', 'warn', 'fail', 'skip', 'manual', 'categoryScores', 'ceilingApplied', 'ceilingReason', 'uncappedScore', 'nullReason']) {
@@ -1547,7 +1553,7 @@ await check('a contract run answers 200 with the documented shape, no-store, ver
   const rc = h.load('app/lib/receipt.ts');
   assert.equal(b.receipt.digest, rc.verdictDigest(b.checks));
   assert.equal(b.receipt.scope, 'own-contract');
-  assert.equal(b.receipt.engine_version, '1.5.0');
+  assert.equal(b.receipt.engine_version, '1.5.1');
   assert.deepEqual(b.receipt.own_contract, { digest: b.ownContract.digest, format: 'design.md', source: 'inline', linter: '@google/design.md@0.4.0' });
   assert.match(b.receipt.verify.instructions, /Compare own_contract\.digest first/);
 });
