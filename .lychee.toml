@@ -16,6 +16,9 @@ exclude_path = [
   "node_modules",
   "install_tmp",
   "\\.git",
+  # The MCP server's tests feed made-up and private addresses to the URL
+  # guard on purpose; they are inputs under test, not links.
+  "packages/designesy-mcp/test/",
   # package-lock.json contains transitive dep funding URLs (patreon,
   # opencollective, tidelift) that 403 bots — not our content to fix.
   "package-lock\\.json",
@@ -62,6 +65,9 @@ exclude_path = [
   # https://wrong-schema.com/schema.json, which is the input under test.
   "test/fixtures/tokens/",
 ]
+
+# Private, loopback and link-local addresses are never public links.
+exclude_all_private = true
 
 # ── Excludes (URLs that legitimately can't be HTTP-verified) ────────────────
 # 1. cursor:// — native URI scheme (like vscode://), not an HTTP URL.
