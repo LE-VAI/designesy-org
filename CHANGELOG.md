@@ -57,7 +57,7 @@ unchanged.
   the patterns and reads they stand for, with identical results on the repo's
   fixture pages, on 10,000 generated inputs each, and on every UTF-16 code
   unit for the case folding, the lookbehind and the size test. On 100 KB
-  inputs built to stress each one, each helper takes at most 3 ms, where the
+  inputs built to stress each one, the helpers take 1 to 3 ms, where the
   patterns took up to 5.1 seconds (the size test on a run of digits). Four
   mutants of the helpers each fail the test, and a fifth that gives the same
   answers in quadratic time fails its 50 ms budget.
