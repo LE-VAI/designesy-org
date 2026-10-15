@@ -1,4 +1,4 @@
-// A linked contract's fetch (engine spec section 4.2): only through the SSRF
+// A linked contract's fetch (contract-mode spec §4.2): only through the SSRF
 // guard's safeFetch (DNS-pinned, every redirect hop validated, at most 5
 // hops), aborted after 8 s, read up to 256 KB, and only as text, JSON or an
 // octet stream. Every failure is CONTRACT_URL_UNREACHABLE with its reason

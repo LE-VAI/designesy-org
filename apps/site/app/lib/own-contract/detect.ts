@@ -1,4 +1,4 @@
-// Format detection (engine spec section 4.1), one function for the page's
+// Format detection (contract-mode spec §4.1), one function for the page's
 // "Read as" line and the server's `format: auto`, so the two cannot disagree.
 //
 // Import-free: the page imports it in a client component.

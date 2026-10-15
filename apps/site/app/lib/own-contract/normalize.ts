@@ -1,4 +1,4 @@
-// Own-contract normalization (engine spec section 3.2): colors to 8-bit sRGB
+// Own-contract normalization (contract-mode spec §3.2): colors to 8-bit sRGB
 // plus alpha, dimensions to px, line heights, type roles, families, durations
 // and easings. Shared by both format readers and by the page reader, so a
 // declared value and a shipped value are always compared in one form.

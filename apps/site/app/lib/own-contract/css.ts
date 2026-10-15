@@ -1,4 +1,4 @@
-// The page reader for contract mode (engine spec 5.1): one linear pass over
+// The page reader for contract mode (contract-mode spec §5.1): one linear pass over
 // the page's CSS into declarations, the root custom properties, and the usage
 // declarations the fidelity checks count.
 //

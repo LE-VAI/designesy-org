@@ -1,4 +1,4 @@
-// f04 Shipped font families are in your contract (engine spec 6.3; derived from v26).
+// f04 Shipped font families are in your contract (contract-mode spec §6.3; derived from v26).
 // The first named family of each font-family stack, aliases resolved, generic
 // keywords skipped, next/font's "X Fallback" read as X. Unlike v26, Roboto,
 // Helvetica, Arial and Segoe UI are real faces here. A face is declared when
