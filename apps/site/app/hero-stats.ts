@@ -1,5 +1,5 @@
 // Single source of truth for every number the landing hero shows.
-// VWP Stage-1 receipt (hero-stat source-of-truth): any hero stat MUST read
+// Any hero stat MUST read
 // from this module — never a hardcoded literal in page.tsx or copy — so a
 // fabricated counter is architecturally impossible. Each export states its
 // provenance inline; add a stat only with a live data path behind it.

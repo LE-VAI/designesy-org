@@ -169,7 +169,7 @@ jobs:
           echo "Target: ${{ steps.url.outputs.target }}" >> $GITHUB_STEP_SUMMARY
           echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Check the [Vercel dashboard](https://vercel.com/le-vais-projects/designesy-org) for deployment status." >> $GITHUB_STEP_SUMMARY
+          echo "Check the Vercel dashboard for deployment status." >> $GITHUB_STEP_SUMMARY
 
   # ── Job 2: Alias verification ──────────────────────────────────────────────
   # Verifies that www.designesy.org is actually serving the deployment that
