@@ -169,6 +169,13 @@ jobs:
         if: always()
         run: node scripts/check-own-contract.mjs
 
+      # A slow or stalled server cannot hold POST /api/score open past its read
+      # timeouts: the real route and URL guard against a local server that
+      # trickles bytes, a redirect to a slow resolver included.
+      - name: Score read bounds
+        if: always()
+        run: node scripts/check-score-read-bounds.mjs
+
       # /score/contract's sentences are built from the result, never typed:
       # problems in field order, the verdict leads, the request-error card,
       # the steps (app/score/contract/copy.ts).
