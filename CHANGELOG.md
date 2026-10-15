@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**Engine 1.5.2: v46 reads the `font` shorthand** (the hosted API when the site
-deploys; npm in the next `@designesy/score` release). No check is added, no
+**Engine 1.5.2 and @designesy/score 0.9.3: v46 reads the `font` shorthand**
+(the hosted API and npm `score-v0.9.3`). No check is added, no
 weight or ceiling moves, and contract v0.4.6 is unchanged. The PyPI server's
 offline engine does not run v46 (listed as not ported), so it mirrors 1.5.2
 unchanged.
@@ -43,8 +43,10 @@ unchanged.
 
 ### Not changed (engine 1.5.2)
 
-- The MCP tools, their names and descriptions, the PyPI package version, and
-  the `@designesy/score` version (0.9.2, published from engine 1.5.1).
+- The MCP tools, their names and descriptions, and the PyPI package version.
+- `@designesy/score` 0.9.3 changes nothing but the engine: the API, the
+  options and the output formats are those of 0.9.2. `@designesy/cli` 0.3.2
+  asks for ^0.9.2, so a fresh install of the CLI runs engine 1.5.2 too.
 
 ### Measured (engine 1.5.2)
 
