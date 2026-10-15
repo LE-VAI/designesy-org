@@ -1,9 +1,9 @@
 'use client';
 
-// The rejected contract (422, WIREFRAMES W3): an error summary. Its heading
+// The rejected contract (422): an error summary. Its heading
 // takes focus when it arrives; every problem the engine returned is listed in
 // the order its field sits in the file, each in the engine's own approved
-// sentence (own-contract problems.ts, owner decision O6) with the line it sits
+// sentence (own-contract problems.ts) with the line it sits
 // on. A prose DESIGN.md also gets its first table rows written as front
 // matter, from the text the visitor pasted or uploaded.
 
@@ -145,7 +145,7 @@ export function ContractProblems({
   );
 }
 
-/** The provenance line (brand D75): the package as a source citation in the house inline-code style. */
+/** The provenance line: the package as a source citation in the house inline-code style. */
 export function LintLine({ lint, className }: { lint: { version: string; counts: string; absorbed: string }; className?: string }) {
   return (
     <p className={className ? `cf-lint ${className}` : 'cf-lint'}>

@@ -1,4 +1,4 @@
-// The contract digest (engine spec section 11.2): sha256 over a canonical JSON
+// The contract digest (contract-mode spec §11.2): sha256 over a canonical JSON
 // of the model. Prose, names, problems, the source and key or token order do
 // not move it; a token value, a path, a pair, an alias, an omission or the
 // token map does.

@@ -151,8 +151,7 @@ type FilterStatus = 'ALL' | 'PASS' | 'FAIL' | 'WARN' | 'SKIP' | 'MANUAL';
 
 // Words, formats and the verdict live in ./verdict, with the empty-run
 // guard, so a script can test them without a browser. The readout and the
-// category list are ./result-parts (owner-approved layout B′, 2026-10-10),
-// which replaced the ring.
+// category list are ./result-parts, which replaced the ring.
 
 // Sort order for check cards — failures and warnings first, passes/skips last.
 // This surfaces "what to fix first" without a separate quick-wins block, per
@@ -194,7 +193,7 @@ const SCOPE_OPTIONS: { value: ScopeMode; label: string; hint: string }[] = [
  *
  * noteAfter is a clause the page adds to the bar's resting note, after "No
  * login. N checks, a grade in seconds.": the home page puts its contract line
- * there (brand D60), so the version line sits under the form as plain text
+ * there, so the version line sits under the form as plain text
  * instead of in a pill above the headline.
  */
 export function ScoreForm({
@@ -229,7 +228,7 @@ export function ScoreForm({
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const verdictRef = useRef<HTMLParagraphElement | null>(null);
   const landRun = useRef<{ y: number } | null>(null);
-  // The loading ignition (brand D51): the run line's lone dot breathes while
+  // The loading ignition: the run line's lone dot breathes while
   // the run is out and lights when a scored result lands (lib/engine/ignition).
   const lampDot = useRef<HTMLElement | null>(null);
   const lampHalo = useRef<HTMLElement | null>(null);
@@ -769,7 +768,7 @@ export function ScoreForm({
         <div className="score-results fade-up" ref={resultsRef}>
           {/* Score Dashboard Card */}
           <div className={`score-hero-card is-${result.grade?.toLowerCase()}`}>
-            {/* B′ (owner-approved 2026-10-10): the readout and the grade scale,
+            {/* The result: the readout and the grade scale,
                 the verdict, the meta line, then one category list. It replaced
                 the ring, whose eleven nodes had no names and repeated the bars
                 below, and the second readout (the same figure with a percent sign). */}

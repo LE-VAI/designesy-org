@@ -45,6 +45,7 @@ const STAGE_DIR = path.join(ROOT, '.next', 'search-stage');
 const INTERNAL_PATTERNS = [
   /^_not-found\.html$/i,
   /^_error\.html$/i,
+  /^_global-error\.html$/i,
   /^(404|500)\.html$/i,
   // Metadata-route handlers (only relevant if glob is widened beyond *.html)
   /^(icon|apple-icon|favicon|opengraph-image|twitter-image|sitemap|robots|manifest)\./i,
@@ -160,9 +161,11 @@ function buildStageIndex() {
     // same language index as the pages; without it Pagefind files it under an
     // "unknown" index that searches from English pages never load.
     const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // Inside a double-quoted attribute a quote must be escaped too.
+    const escAttr = (s) => esc(s).replace(/"/g, '&quot;');
     const wrapper =
       `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title></head>` +
-      `<body data-pagefind-body data-pagefind-meta="href:${esc(route)}"><h1>${esc(title)}</h1>` +
+      `<body data-pagefind-body data-pagefind-meta="href:${escAttr(route)}"><h1>${esc(title)}</h1>` +
       `<pre>${esc(jsonContent)}</pre></body></html>`;
 
     // Staged under endpoints/ with a .json.html name: if the meta were ever
@@ -271,6 +274,27 @@ function main() {
       console.log(`[postbuild-pagefind] wrote pagefind-version.json (buildId: ${BUILD_ID})`);
     } catch (e) {
       console.warn(`[postbuild-pagefind] could not write pagefind-version.json: ${e.message}`);
+    }
+
+    // Deployment-adapter layout. Vercel builds Next >= 16.2 with its adapter,
+    // which copies .next/static into .next/output/static when `next build`
+    // finishes, before this step runs, and deploys that copy. The index written
+    // above would never ship: /_next/static/chunks/app/pagefind/pagefind.js
+    // would answer 404 and Find would fall back to the curated INDEX, with no
+    // error anywhere. The adapter's static directory mirrors the URL path, so
+    // the index is added there too. check-search-coverage.js fails the build if
+    // that copy is missing. Without an adapter there is no .next/output and
+    // nothing happens.
+    try {
+      const adapterStatic = path.join(SITE_DIR, 'output', 'static');
+      if (fs.existsSync(adapterStatic)) {
+        const dest = path.join(adapterStatic, '_next', 'static', 'chunks', 'app', 'pagefind');
+        fs.rmSync(dest, { recursive: true, force: true });
+        fs.cpSync(OUT_DIR, dest, { recursive: true });
+        console.log(`[postbuild-pagefind] adapter output present: copied the index to ${path.relative(ROOT, dest)}`);
+      }
+    } catch (e) {
+      console.error(`[postbuild-pagefind] could not copy the index into the adapter output: ${e.message}`);
     }
   } catch (err) {
     // A Pagefind failure must not break the deploy — search degrades to the

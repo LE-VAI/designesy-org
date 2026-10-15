@@ -1,4 +1,4 @@
-// Format detection (engine spec section 4.1), one function for the page's
+// Format detection (contract-mode spec §4.1), one function for the page's
 // "Read as" line and the server's `format: auto`, so the two cannot disagree.
 //
 // Import-free: the page imports it in a client component.
@@ -74,7 +74,7 @@ export function hasMarkdownHeading(text: string): boolean {
   return false;
 }
 
-/** The page's "Read as" words for a detection (WIREFRAMES W1). */
+/** The page's "Read as" words for a detection. */
 export function readAsLabel(d: Detection): string | null {
   if (d.format === 'design.md') return 'Read as DESIGN.md (alpha)';
   if (d.format === 'dtcg') return d.formatVersion ? `Read as DTCG tokens (${d.formatVersion})` : 'DTCG tokens (format version not stated)';

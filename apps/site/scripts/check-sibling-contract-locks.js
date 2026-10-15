@@ -6,8 +6,8 @@
  *
  * WHY THIS EXISTS (2026-10-13)
  * The home page says every contract change is versioned and dated, with the
- * checks it touched and the reason for it, in the public changelog. Brand
- * ledger D76 rules that any edit to a published contract's served text is at
+ * checks it touched and the reason for it, in the public changelog. Any
+ * edit to a published contract's served text is at
  * least a patch bump with a dated /changelog line, even when no rule, threshold
  * or weight moves. scripts/check-contract-lock.js held that for the
  * design-system contract only. The ten siblings in app/lib/*-contract.ts (a11y,

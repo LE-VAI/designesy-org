@@ -55,6 +55,19 @@ const APP = path.resolve(appArg >= 0 ? argv[appArg + 1] : path.join(__dirname, '
 const API_BADGE = 'app/api/badge/route.ts';
 const SCORE_BADGE = 'app/score/badge/route.ts';
 const IP = '203.0.113.7';
+
+/**
+ * The per-IP limiter's key for IP: clientKey() in app/lib/rate-limit.ts, a
+ * Web Crypto HMAC-SHA256 of the address under the server secret, so no limiter
+ * holds the address itself. Derived here independently to pin the scheme.
+ */
+async function expectedKey(ip) {
+  const secret = process.env.USAGE_SALT || process.env.CRON_SECRET || 'local-development';
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, enc.encode(`rate-limit:v1:${ip}`));
+  return Array.from(new Uint8Array(mac).slice(0, 16), (b) => b.toString(16).padStart(2, '0')).join('');
+}
 const LIMITED = 'public, max-age=60, s-maxage=60';
 
 const failures = [];
@@ -164,7 +177,8 @@ async function main() {
     assert.equal(r.status, 200);
     assert.match(r.type, /^image\/svg\+xml/);
     assert.match(r.said, /^Scored by Designesy: [ABCDF], \d+\.\d, \d{4}-\d{2}-\d{2}, a\.example$/, r.said);
-    assert.deepEqual(limiter.asked.perIp, [`badge-miss:${IP}`]);
+    assert.deepEqual(limiter.asked.perIp, [`badge-miss:${await expectedKey(IP)}`]);
+    assert.ok(!limiter.asked.perIp[0].includes(IP), 'the per-IP limiter key holds no address');
     assert.deepEqual(limiter.asked.global, ['badge-miss:all']);
     assert.ok(fetchedFor('a.example') > 0, 'the miss fetched the site');
     assert.equal(r.limiter, 'active');

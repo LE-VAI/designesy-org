@@ -6,6 +6,166 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.2: v46 reads the `font` shorthand** (the hosted API when the site
+deploys; npm in the next `@designesy/score` release). No check is added, no
+weight or ceiling moves, and contract v0.4.6 is unchanged. The PyPI server's
+offline engine does not run v46 (listed as not ported), so it mirrors 1.5.2
+unchanged.
+
+### Fixed (engine 1.5.2)
+
+- **v46 reads the `font` shorthand.** Through 1.5.1 v46 read only `font-size`,
+  so a size written as `font: 500 0.66rem/1 var(--mono)` was never judged.
+  designesy.org's own hero console sat at 8.8 to 12.5px under its 12.8px floor
+  that way; measuring the rendered page found it, and v46 never saw it. The
+  size is the first token that is a length, a size keyword or a size function,
+  ahead of the line-height slash and the family; a weight (`500`) has no unit
+  and a family is no length, so neither is taken. System font keywords
+  (`caption`, `menu`…) and CSS-wide keywords (`inherit`) carry no measurable
+  size and are skipped, as is a whole-shorthand `var()` the `:root` tokens
+  cannot resolve. A `font:` whose value holds a `{`, such as an
+  `@supports (font: …)` condition, declares nothing and swallows no rule after
+  it, and a `font:` written inside a shorthand's own value (in a comment, say)
+  is read as that value's text. `font-size` is read exactly as in 1.5.1,
+  custom properties such as `--chip-font-size` included; `font-family`,
+  `font-weight` and `--icon-font` are not the shorthand.
+- **v46 reads a sheet in linear time.** The shorthand scan, the size test and
+  the selector of each finding's rule each read the sheet once. Written as
+  patterns, the scan re-read a value once for every `font:` inside it, and the
+  size test could split a run of digits between two quantifiers in as many
+  ways as the run was long. The selector was already a cost in 1.5.1: each
+  finding read back toward the start of a sheet with few braces or
+  semicolons, so 256 KB of off-scale `font-size` declarations under a type
+  scale took about a second to score, 13 times as long as 64 KB. The sheet's
+  braces and semicolons are now listed once, each finding is answered by
+  binary search, and the findings of one rule share one reading of its
+  selector, which comes out as before.
+
+### Not changed (engine 1.5.2)
+
+- The MCP tools, their names and descriptions, the PyPI package version, and
+  the `@designesy/score` version (0.9.2, published from engine 1.5.1).
+
+### Measured (engine 1.5.2)
+
+- The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+  golden (152 cases, 297 runs) regenerate with only `engine_version` changed:
+  no fixture uses the shorthand under a type scale.
+- `packages/score/test/engine-1-5-2.test.mjs`: 5 rule tests fail on the 1.5.1
+  build, and 6 controls pass on both.
+- `packages/score/test/linear-scan.test.mjs` holds the three new helpers to
+  the patterns and reads they stand for, with identical results on the repo's
+  fixture pages, on 10,000 generated inputs each, and on every UTF-16 code
+  unit for the case folding, the lookbehind and the size test. On 100 KB
+  inputs built to stress each one, the helpers take 1 to 3 ms, where the
+  patterns took up to 5.1 seconds (the size test on a run of digits). Four
+  mutants of the helpers each fail the test, and a fifth that gives the same
+  answers in quadratic time fails its 50 ms budget.
+- The leaderboard cohort, re-scored with 1.5.1 and 1.5.2 on the same recorded
+  bytes (30 sites, 27 reachable) through the hosted route and the npm engine:
+  **no score or grade moves**, and every check other than v46 returns the same
+  result. v46 keeps its status on every site. It measures more sizes on three
+  sites and fewer on none:
+
+  | Site | Sizes measured | Under the floor | Off the scale |
+  |---|---|---|---|
+  | www.designesy.org | 348 → 405 | 0 → 2 | 7 → 10 |
+  | cohort site A | 518 → 527 | 3 → 4 | 75 → 75 |
+  | cohort site B | 233 → 234 | 1 → 1 | 36 → 36 |
+
+  designesy.org's five new findings were real, and the site has since moved
+  them onto the scale: two console numerals off the scale (1.2rem, 1.5rem),
+  a 3.25rem readout, and an 11.52px inspector label and a 10px log pin under
+  the floor. Cohort site A's new finding is an 11px keycap under its floor.
+- The whole engine, scored at 64 KB and at 256 KB of CSS under a type scale
+  on twelve inputs built for v46, takes at most 5.6 times as long on the input
+  four times the size (1.5.1 took up to 13.2 times as long on its `font-size`
+  inputs), and at most 0.3 seconds at 1 MB.
+
+**@designesy/cli 0.3.2** (npm), released on its own (`cli-v0.3.2`). It depends
+on `@designesy/score` ^0.9.2. 0.3.1 asked for ^0.5.0, which on a 0.x version
+means 0.5.x only, so `designesy score` kept running the 0.5 engine; it now runs
+engine 1.5.1. Installs also bring score's optional DESIGN.md linter
+(`@google/design.md`), as installing `@designesy/score` itself does.
+
+**Engine 1.5.1 and @designesy/score 0.9.2: linear-time matching and capped
+document reads** (the hosted API and npm `score-v0.9.2`; the PyPI server's
+offline engine carries the same change in its next release). Scoring time now
+grows in step with the page. No check
+is added, no weight or ceiling moves, and contract v0.4.6 is unchanged. On a
+well-formed page no verdict, detail or score moves.
+
+### Fixed (engine 1.5.1)
+
+- **Each pattern that reads a page reads each run of text once.** Some of the
+  patterns that read a page's CSS and HTML retried from every place a match
+  could start, or tried every way to split a run of characters between two
+  quantifiers, so their cost grew with the square of a long run of the right
+  characters (one with the cube). A page built for it could hold a scoring
+  request for many seconds. Each of those patterns is now a scan that returns
+  exactly what the pattern returned: the same matches at the same positions,
+  the same text after the same replacement, the same yes or no. The hosted
+  route and the npm engine change together (source-drift OK), and so do the
+  error-text copy the hosted MCP tools share (mcp-tool-parity OK) and the
+  Python offline engine in the MCP server.
+- **v27 finds the rule each font-size declaration sits in from one index of
+  the sheet.** It read backwards from each declaration to that rule's
+  selector, and on some sheets each read went back toward the start of the
+  sheet, so the check's cost grew with the square of the sheet's length. The
+  sheet's braces and semicolons are now listed once and each declaration is
+  answered by binary search, with the same rule and selector as before; the
+  declarations of one rule share one reading of its selector. All three
+  engines change together.
+- **The CSS rule parser has two bounds.** A brace that would open a block more
+  than 16 levels deep is read as text of the block it sits in, and at the end
+  of a sheet at most 4 blocks left open are closed and read, innermost first.
+  The leaderboard cohort nests at most 6 levels deep and leaves at most 1 block
+  open at the end of a page's CSS, so the bounds change a result only for a
+  malformed or hostile sheet. v44, v45 and S2 read through this parser.
+- **The hosted engine reads a capped number of bytes.** A page's HTML is read
+  up to 8 MiB, one stylesheet up to 4 MiB, a page's stylesheets together up to
+  16 MiB, and a /DESIGN.md up to 16 MiB; a longer body is read up to its cap.
+  Each cap is four or more times the largest in the cohort (1.8 MB of HTML,
+  0.87 MB for one stylesheet, 3.3 MB of CSS for one page, 2.6 MB for a
+  /DESIGN.md). A contract-mode run that reached a cap says so in its coverage
+  notes (`DOCUMENT_CAP:`).
+
+### Fixed (@designesy/score 0.9.2)
+
+- **The review table escapes backslashes before pipes.** A cell carries text
+  read from the scored page, and a backslash written before a pipe escaped the
+  table's own escape, which left a live cell separator. `--format review`
+  output now keeps every cell whole.
+- **Published from this repository's release workflow through npm trusted
+  publishing,** with provenance, and with no stored npm token.
+
+### Not changed (engine 1.5.1)
+
+- The MCP tools, their names and descriptions, and the PyPI package version.
+- Response shapes. A universal-mode response carries no field for a capped
+  read; contract mode reports it in its coverage notes.
+
+### Measured (engine 1.5.1)
+
+- The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+  golden (152 cases, 297 runs) regenerate with only `engine_version` changed.
+- Every rewritten pattern runs beside the pattern it replaced, on the repo's
+  fixture pages and on 10,000 generated inputs per call site, with identical
+  results: 87 call sites in `packages/score/test/linear-scan.test.mjs` and 37
+  in `packages/designesy-mcp/test/test_linear_scan.py`.
+- The leaderboard cohort, re-scored on the same recorded bytes before and
+  after: 30 sites, 27 reachable; every hosted result, npm result and assembled
+  page is identical, and every Python offline result is identical apart from
+  the engine version it reports.
+- Of 64 TypeScript patterns timed before and after on 100 KB inputs built
+  to stress each one, 44 took more than a second and 22 more than 10
+  seconds; each new helper takes tens of milliseconds at most. v27 on a
+  1.6 MB sheet built for it took 20 to 27 seconds and now takes about 0.1
+  seconds.
+- The whole engine, scored at 64 KB and at 256 KB on every input unit of
+  that stress table (1,974 runs, as CSS and as HTML), takes at most 4.8 times
+  as long on the input four times the size.
+
 **Engine 1.5.0: score a page against your own contract** (the hosted API;
 npm and PyPI unchanged). `POST /api/score` takes an optional `contract`
 field: a DESIGN.md or DTCG 2025.10 token file, pasted (`contract.content`)
@@ -52,9 +212,13 @@ verdict, detail or score moves.
 - **Receipt.** `receipt.own_contract.digest` is a sha256 of the contract as
   read (prose, names and key order do not move it); `receipt.digest` covers
   the fidelity verdicts, then the baseline's.
-- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.0,
+- **Published formula** at `GET /api/score/checks/own-contract` (version 1.0.1,
   2026-10-14): every check, threshold, weight, ceiling, baseline group and
-  null rule.
+  null rule. In 1.0.1 a linter problem carries the DESIGN.md linter's sentence
+  whole in `linterMessage` (`value` is the offending value), a rejected
+  DESIGN.md carries the linter's totals (`linter`), and a problem that
+  absorbed a linter finding says so (`linterFinding`). No threshold, weight or
+  verdict moved.
 - **Limits.** 300 KB per request, 256 KB per contract, linked contracts only
   through the SSRF guard with an 8 s abort, 20 runs a minute and 300 a day per
   IP (failing open, as the edge limiter does). Nothing is cached or stored; a
@@ -75,7 +239,8 @@ golden regenerate with only `engine_version` changed. 86 legacy requests (the
 every format) answer identically under 1.4.1 and 1.5.0, apart from timestamps
 and the engine version.
 
-**Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
+**Engine 1.4.1 and @designesy/score 0.9.1** (npm, published 2026-10-13 as
+`score-v0.9.1`). One
 check stops failing pages on a word it read in the wrong rule, and one check
 is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
 is unchanged. The hosted /score page and API change when the site deploys; the
@@ -290,7 +455,7 @@ hosted /score page and API always run the current engine.
 
 ### Changed (engine 1.3.0)
 
-- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+- **No A while any check FAILs** (decided 2026-10-11). Any FAIL caps
   the score at 89.9, a B at most, and `hardFailCeilingReason` says which
   checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
   ceilings stay lower and win where they apply. Every cap runs after the
@@ -795,7 +960,7 @@ the site's. Contract mode moves to engine 1.3.0.
     -3600s). FAIL without one, WARN when the override's selector or scope does
     not clearly match, SKIP when no rule pauses every element.
 
-  **Owner decision D10: legacy scores gain both checks.** A request without a
+  **Legacy scores gain both checks.** A request without a
   contract returns what engine 1.1.0 returned except for v44 and v45. The
   registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
   Category weights are unchanged (accessibility 15, motion 10, of 117), so each

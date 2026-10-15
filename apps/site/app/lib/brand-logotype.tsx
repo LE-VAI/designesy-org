@@ -1,4 +1,4 @@
-// The Designesy logotype, inlined (identity v1, D21; mark v1.1, D23).
+// The Designesy logotype, inlined (identity v1; mark v1.1).
 //
 // The data below is the path data of the brand masters
 // designesy-wordmark.currentcolor.v1.svg and
@@ -17,7 +17,7 @@
 // The share cards (og-card.tsx) draw from the same data, so a card and the
 // header can never disagree about the logotype.
 
-/** Azure, the only colour in the logotype (D2). */
+/** Azure, the only colour in the logotype. */
 export const LOGO_AZURE = '#0A94FF';
 
 export const WORDMARK_VIEWBOX = '-80 -1602 9162 2081';
@@ -65,7 +65,7 @@ export function wordChildren(body: string) {
 }
 
 /** The mark, as SVG children in its 512 box (y down). `small` draws the
-    favicon variant the small lockup uses (D66). */
+    favicon variant the small lockup uses. */
 export function markChildren(body: string, small = false) {
   const shapes = small ? SMALL_MARK_BODY : MARK_BODY;
   const dot = small ? SMALL_MARK_DOT : MARK_DOT;
@@ -76,7 +76,7 @@ export function markChildren(body: string, small = false) {
 }
 
 /** The horizontal lockup's geometry: the small master at mark heights of 48px
-    and under (D66), the standard one above. */
+    and under, the standard one above. */
 export function lockupGeometry(small: boolean) {
   return small
     ? { viewBox: SMALL_LOCKUP_VIEWBOX, mark: SMALL_LOCKUP_MARK_TRANSFORM, word: SMALL_LOCKUP_WORD_TRANSFORM }
@@ -93,7 +93,7 @@ export function Wordmark({ className }: { className?: string }) {
 }
 
 /** The mark and the wordmark, horizontal (header). Decorative; the caller
-    names it. `small` for a mark 48px tall or less (D66). */
+    names it. `small` for a mark 48px tall or less. */
 export function Lockup({ className, small = false }: { className?: string; small?: boolean }) {
   const g = lockupGeometry(small);
   return (
@@ -106,7 +106,7 @@ export function Lockup({ className, small = false }: { className?: string; small
   );
 }
 
-// The small lockup (D66), for a mark 48px tall or less: the master
+// The small lockup, for a mark 48px tall or less: the master
 // designesy-lockup-horizontal.small.currentcolor.v1.svg, unchanged. Its mark is
 // the favicon variant (module 120, gutter 40, corners r 7.5, dot r 60), whose
 // wider gutters stay open at 16 to 48px; the word is the same nine glyphs, and

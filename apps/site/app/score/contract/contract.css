@@ -8,7 +8,7 @@
    nothing here reaches another page.
 
    Every colour, space, radius, duration and ease is a site token; every text
-   size is a type-scale token (brand ledger D68), never under --text-label
+   size is a type-scale token, never under --text-label
    (12.8px). The only hex values that ever reach this page are a customer's
    own declared and shipped colours, which arrive as data.
    ========================================================================== */
@@ -143,7 +143,7 @@
   z-index: 1;
 }
 
-/* The upload well: decoration around a real file button (WIREFRAMES W1). */
+/* The upload well: decoration around a real file button. */
 .cf-drop {
   display: grid;
   justify-items: start;
@@ -312,10 +312,10 @@
 
 /* The run's steps resolve into the same rows: the state each step is in reads
    as a word, never only as a dot. POST /api/score answers once, so the steps
-   run together and resolve together when the answer lands (owner decision
-   O4). While they run, the marker is the house's running colour, Azure: the
-   flame is for the moment a result lands, on the instrument's mark (brand
-   D74, owner decision O3). */
+   run together and resolve together when the answer lands,
+   never as simulated progress. While they run, the marker is the house's
+   running colour, Azure: the flame is for the moment a result lands, on the
+   instrument's mark. */
 .cf-step {
   display: inline-flex;
   align-items: center;
@@ -656,7 +656,7 @@
   color: var(--ink);
 }
 
-/* The provenance line under a landed run (brand D75): the linter's own totals,
+/* The provenance line under a landed run: the linter's own totals,
    in the quiet tone of the panel's citation. */
 .cf-lint-run {
   margin: 0;

@@ -84,7 +84,7 @@ const STATE_OF: Record<string, State> = { PASS: 'pass', FAIL: 'fail', WARN: 'war
 
 /**
  * A check status as a chip in its state token: fail, warn and skip in their
- * own hue, pass in Azure, the engine's pass colour (brand ledger D67). `before` is the
+ * own hue, pass in Azure, the engine's pass colour. `before` is the
  * superseded state, drawn at reduced emphasis: a hollow lamp and a quieter
  * ring, the same hue.
  */
@@ -186,8 +186,8 @@ export function SourceList({ items }: { items: Source[] }) {
 
 // 'done' is a confirmed fact (shipped, verified with a public proof link):
 // the check glyph, not a lit dot. 'none' is a state stated in words alone (a
-// pending build, a measurement window): no glyph and no dot (brand ledger
-// D57; the flame is only for something happening now).
+// pending build, a measurement window): no glyph and no dot (the
+// flame is only for something happening now).
 type Lamp = 'pass' | 'done' | 'warn' | 'pending' | 'none';
 
 function Panel({
@@ -257,6 +257,7 @@ function RunRow({
   resolve,
   states = ORDER,
   count = false,
+  tally,
 }: {
   run: Run;
   scale: number;
@@ -271,8 +272,12 @@ function RunRow({
    * the count: a dotted line read as unfilled slots (round-3 judge).
    */
   count?: boolean;
+  /** Legend items in place of one per state: a run that records what it
+   *  produced, not a verdict, shows a single "9 compiled". */
+  tally?: { state: State; word: string }[];
 }) {
   const cells = cellsFor(run.counts);
+  const legend = tally ?? states.map((s) => ({ state: s, word: s as string }));
   return (
     <li
       className="cs-run"
@@ -300,10 +305,10 @@ function RunRow({
       </span>
       {count ? <span className="cs-run-count">{run.note}</span> : null}
       <span className="cs-tally">
-        {states.map((s) => (
-          <span key={s} className="cs-tally-item">
-            <span className={`cs-swatch is-${s}`} aria-hidden="true" />
-            <b>{run.counts[s]}</b> {s}
+        {legend.map(({ state, word }) => (
+          <span key={state} className="cs-tally-item">
+            <span className={`cs-swatch is-${state}`} aria-hidden="true" />
+            <b>{run.counts[state]}</b> {word}
           </span>
         ))}
       </span>
@@ -498,6 +503,8 @@ export function BuildReadout({
   domains,
   note,
   caption,
+  verdictWord = 'passed',
+  legend,
 }: {
   label: string;
   target: string;
@@ -510,6 +517,10 @@ export function BuildReadout({
   note: ReactNode;
   /** The face's caption, under the run. */
   caption?: ReactNode;
+  /** The verdict's word ("9/9 passed"). A run recorded without verdicts says what it did. */
+  verdictWord?: string;
+  /** One legend item in place of pass and fail, e.g. "compiled" ("9 compiled"). */
+  legend?: string;
 }) {
   const run: Run = {
     label: 'Tests',
@@ -526,7 +537,14 @@ export function BuildReadout({
       face={
         <>
           <ol className="cs-runs">
-            <RunRow run={run} scale={tests} resolve states={['pass', 'fail']} count />
+            <RunRow
+              run={run}
+              scale={tests}
+              resolve
+              states={['pass', 'fail']}
+              tally={legend ? [{ state: 'pass', word: legend }] : undefined}
+              count
+            />
           </ol>
           <div className="cs-domains">
             <span className="cs-label">{domains.length} domains</span>
@@ -546,11 +564,11 @@ export function BuildReadout({
             <span className="cs-big">
               {passed}/{tests}
             </span>
-            <span className="cs-unit">passed</span>
+            <span className="cs-unit">{verdictWord}</span>
           </div>
           <p className="cs-side-note">
             <span className="sr-only">
-              {passed} of {tests} tests passed.{' '}
+              {passed} of {tests} tests {verdictWord}.{' '}
             </span>
             {note}
           </p>

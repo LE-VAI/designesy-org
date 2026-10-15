@@ -1,4 +1,4 @@
-// f05 Shipped line heights are in your contract (engine spec 6.3; derived from v17).
+// f05 Shipped line heights are in your contract (contract-mode spec §6.3; derived from v17).
 // Distinct line-height values: unitless as ratios, px and rem as lengths. In
 // the contract when a ratio is within 0.01 of a declared ratio, a length within
 // 0.01px of a declared length, or a length over its own rule's font size within

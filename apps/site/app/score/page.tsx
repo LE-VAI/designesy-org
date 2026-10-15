@@ -62,8 +62,8 @@ export async function generateMetadata({
     // they had arrived where they aimed. Aligned to the majority term its own
     // URL already uses.
     //
-    // The badge product is worded "Scored by Designesy" since 2026-10-11
-    // (owner decision): "Verified by Designesy" read as a seal on every site,
+    // The badge product is worded "Scored by Designesy" since 2026-10-11:
+    // "Verified by Designesy" read as a seal on every site,
     // F included.
     title: 'Score',
     description:

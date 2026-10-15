@@ -1,4 +1,4 @@
-// Binding (engine spec 5.2, 5.3): where the page ships each declared token.
+// Binding (contract-mode spec §5.2, §5.3): where the page ships each declared token.
 //
 // A token is located, first rule that holds:
 //   1. by map:  the token map (request or $extensions) names a variable the

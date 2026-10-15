@@ -2,12 +2,12 @@
 /**
  * Type scale gate: text sizes stay on the brand's type scale.
  *
- * WHY THIS EXISTS (brand ledger D59, amended by D68, 2026-10-11)
+ * WHY THIS EXISTS
  * The live home page rendered 45 distinct text sizes and set 394 of its 794
  * text nodes under 12px, and /score, /work and /compare were the same. No
  * floor existed and every component picked its own size, so the sizes
- * multiplied and the small ones kept getting smaller. D59 set a floor and a
- * scale. D68 named the scale: a Major Third (x1.25) on a 16px root.
+ * multiplied and the small ones kept getting smaller. The fix is a floor and a
+ * scale: a Major Third (x1.25) on a 16px root.
  *
  *   0.8rem    12.8px   label: labels, meta, captions, mono uppercase. The floor.
  *   1rem      16px     body: reading and UI text. The reading floor.
@@ -26,20 +26,24 @@
  *    decimals), so no two adjacent steps are closer than the Major Third.
  * 2. In every stylesheet in COVERED (the sheets on the scale), every font-size
  *    and every size inside a font shorthand is:
- *   - with ENFORCE_LADDER (D68): one of the six tokens, var(--text-*). A rem
+ *   - with ENFORCE_LADDER: one of the six tokens, var(--text-*). A rem
  *     literal with a step's value fails too: the token is the scale, so a
  *     literal is a copy that would not move with it. A var() of a local
  *     custom property passes only when every value that property is given in
  *     the covered sheets passes (a size hidden behind a local property is
  *     still a size), and a var() fallback must pass as well;
- *   - without it (the D59 floor alone, the owner's "labels only" fallback): a
+ *   - without it (the 0.8rem floor alone, a "labels only" fallback): a
  *     rem size of 0.8rem or more, max(0.8rem, <n>em), or a token;
  * or, either way, a clamp() (display titles keep their fluid sizes) or
  * `inherit`. Three kinds of rule are exempt, each listed below with its
  * reason: display numerals, a type specimen whose sizes are its content, and
- * home-page rules that the home rebuild (D60) owns. Sheets outside COVERED are
+ * home-page rules that the home rebuild owns. Sheets outside COVERED are
  * legacy until they are moved, so the gate does not fail on pages nobody has
  * touched yet.
+ * 3. In the home page's two sheets (SHORTHAND_ONLY, not covered: see there
+ *    for why), every static rem or px size inside a font shorthand is a
+ *    token: a literal under 0.8rem is under the floor, and any other literal
+ *    is off the scale (with the floor alone, only the first fails).
  *
  * A gate that cannot fail proves nothing: every run first feeds the parser
  * known-good and known-bad CSS and fails if it misjudges either.
@@ -63,7 +67,7 @@ const LADDER = [
 ];
 const TOKENS = new Set(LADDER.map(([t]) => t));
 
-/** On: sizes must be one of the six steps (D68). Off: the floor alone (D59). */
+/** On: sizes must be one of the six steps. Off: the 0.8rem floor alone. */
 const ENFORCE_LADDER = true;
 
 /** The sheets on the scale. Add a sheet here once its sizes are moved. */
@@ -98,11 +102,24 @@ const COVERED = [
   'app/work/work.css',
 ];
 
+/** The home page's two sheets, held to the scale only where a font shorthand
+    writes a static size. They are not in COVERED because most of their sizes
+    are not running text on the site's scale: the inspector's demo page sets
+    its type in em of its own fluid specimen size, with its own 10px floor
+    (those sizes are the demo's content), and the console and inspector set
+    their grade letters as display numerals. Covering the sheets would move
+    those. A size in a shorthand is still a size, though, and a static one
+    there is the site's own text: the title bar, the log's pins, the
+    console's progress line and score. */
+const SHORTHAND_ONLY = [
+  'app/home-inspect.css',
+  'app/home-lvl.css',
+];
+
 /** Display numerals: a readout set as one large figure, not running text.
-    They keep their size, as display titles keep their clamps (D68). */
+    They keep their size, as display titles keep their clamps. */
 const DISPLAY = new Map([
   ['.eg-grade', 'the engine verdict letter'],
-  ['.rs-readout', 'the score readout (results Tier 2, D48)'],
   ['.cs-glyph', 'the case study grade glyph'],
   ['.cs-big', 'the case study headline figure'],
 ]);
@@ -114,13 +131,13 @@ const SPECIMEN = new Map([
   ['.demo-scale-spec', 'the Cadence lab rem-scale specimen (/labs/cadence)'],
 ]);
 
-/** Home-page rules in globals.css that the home rebuild (brand ledger D60,
-    #290) kept: they style only the home page's "This site, by category" badge,
-    and home.css (D60's sheet) sets its size at the label step. They move with
+/** Home-page rules in globals.css that the home rebuild (#290) kept: they
+    style only the home page's "This site, by category" badge, and home.css
+    (the rebuild's sheet) sets its size at the label step. They move with
     the home page's next change, not this gate's. */
 const HOME = new Map([
-  ['.section-heading-badge-label', 'home section badge (D60)'],
-  ['.section-heading-badge-unit', 'home section badge (D60)'],
+  ['.section-heading-badge-label', 'home section badge'],
+  ['.section-heading-badge-unit', 'home section badge'],
 ]);
 
 const strip = (css) => css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
@@ -219,6 +236,25 @@ function check(file, css) {
   return bad;
 }
 
+/** Static rem or px sizes in font shorthands (SHORTHAND_ONLY sheets). A var(),
+    max(), clamp() or em size there is not static, and font-size is outside
+    this judge: both stay with the sheet's own rules until it is covered. */
+function checkShorthand(file, css) {
+  const bad = [];
+  for (const r of rules(css)) {
+    if (exempt(r.selector)) continue;
+    for (const m of r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)) {
+      const s = (' ' + m[1].trim()).match(SIZE_IN_FONT);
+      const lit = s && s[1].match(/^([\d.]+)(rem|px)$/);
+      if (!lit) continue;
+      const rem = parseFloat(lit[1]) / (lit[2] === 'px' ? 16 : 1);
+      if (rem < 0.8) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is under the 0.8rem floor`);
+      else if (ENFORCE_LADDER) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is off the scale`);
+    }
+  }
+  return bad;
+}
+
 // The gate must be able to fail: misjudging any canary fails the run.
 // Each canary: [css, failures with the ladder on, failures with the floor alone].
 const CANARIES = [
@@ -236,10 +272,23 @@ const CANARIES = [
   ['.a { --a-size: var(--text-body); font-size: var(--a-size, 0.98rem); }', 1, 0],
   ['.a { font-size: var(--undeclared-size); }', 1, 1],
 ];
-const misjudged = CANARIES.filter(([css, ladder, floor]) => {
-  LOCAL = locals([css]);
-  return check('canary', css).length !== (ENFORCE_LADDER ? ladder : floor);
-});
+// The shorthand judge's canaries, in the same form.
+const SHORTHAND_CANARIES = [
+  ['.a { font: 500 0.72rem/1 var(--mono); }', 1, 1],
+  ['.a { font: 700 10px/1 var(--mono); }', 1, 1],
+  ['.a { font: 500 1.2rem/1.25 var(--sans); }', 1, 0],
+  ['@media (min-width: 40rem) { .a { font: 500 1.5rem/1 var(--mono); } }', 1, 0],
+  ['.a { font: 500 var(--text-lead)/1.25 var(--sans); } .b { font: 500 var(--text-label)/1 var(--mono); }', 0, 0],
+  ['.a { font-size: 3.4rem; } .b { font: 700 max(10px, 0.6em) / 1 var(--mono); } .c { font: 500 var(--x-fs) / 1 var(--mono); }', 0, 0],
+  ['/* .a { font: 500 0.72rem/1 var(--mono); } */ .b { font: inherit; }', 0, 0],
+];
+const misjudged = [
+  ...CANARIES.filter(([css, ladder, floor]) => {
+    LOCAL = locals([css]);
+    return check('canary', css).length !== (ENFORCE_LADDER ? ladder : floor);
+  }),
+  ...SHORTHAND_CANARIES.filter(([css, ladder, floor]) => checkShorthand('canary', css).length !== (ENFORCE_LADDER ? ladder : floor)),
+];
 if (misjudged.length) {
   console.error('[check-type-scale] the parser misjudged its canaries:');
   for (const [css, ladder, floor] of misjudged) console.error(`  expected ${ENFORCE_LADDER ? ladder : floor} failure(s): ${css}`);
@@ -258,7 +307,7 @@ const failures = [];
     for (const m of r.body.matchAll(/(--text-[\w-]+)\s*:\s*([^;]+)/g)) declared.set(m[1], m[2].trim());
   }
   LADDER.forEach(([token, value], i) => {
-    if (declared.get(token) !== value) failures.push(`app/globals.css :root ${token} is ${declared.get(token) ?? 'missing'}, expected ${value} (D68)`);
+    if (declared.get(token) !== value) failures.push(`app/globals.css :root ${token} is ${declared.get(token) ?? 'missing'}, expected ${value} (the Major Third scale)`);
     const nominal = Math.round(Math.pow(1.25, i - 1) * 1000) / 1000;
     if (Math.abs(parseFloat(value) - nominal) > 1e-9) failures.push(`${token} ${value} is not 1.25^${i - 1} rem (${nominal}rem): the steps must stay a Major Third apart`);
   });
@@ -281,10 +330,23 @@ for (const [file, css] of sheets) {
   failures.push(...check(file, css));
 }
 
+// 3. The static sizes in the home sheets' font shorthands.
+let shorthands = 0;
+for (const file of SHORTHAND_ONLY) {
+  const p = path.join(SITE, file);
+  if (!fs.existsSync(p)) {
+    failures.push(`${file}: listed in SHORTHAND_ONLY but missing`);
+    continue;
+  }
+  const css = fs.readFileSync(p, 'utf8');
+  for (const r of rules(css)) shorthands += [...r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)].length;
+  failures.push(...checkShorthand(file, css));
+}
+
 if (failures.length) {
-  const rule = ENFORCE_LADDER ? `the D68 scale (${LADDER.map(([t, v]) => `var(${t}) ${v}`).join(', ')})` : 'the D59 floor (0.8rem, rem only)';
+  const rule = ENFORCE_LADDER ? `the Major Third scale (${LADDER.map(([t, v]) => `var(${t}) ${v}`).join(', ')})` : 'the 0.8rem floor (rem only)';
   console.error(`[check-type-scale] ${failures.length} failure(s) against ${rule}; a size must be a token, a clamp() or inherit:`);
   for (const f of failures) console.error('  ' + f);
   process.exit(1);
 }
-console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the D68 scale tokens' : 'at or above the D59 floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);
+console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'}; ${shorthands} font shorthands in ${SHORTHAND_ONLY.length} home sheets with no static size ${ENFORCE_LADDER ? 'off the tokens' : 'under the floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);

@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
+import { IMAGE_CACHE_HEADERS } from '../lib/image-cache';
 
-// A plain route, not the app/icon.tsx metadata convention (brand D55). As a
+// A plain route, not the app/icon.tsx metadata convention. As a
 // metadata icon it put <link rel="icon" href="/icon" sizes="32x32"> in every
 // page head, and Chrome then showed this PNG in the tab at every scale, 100%
 // included, so the hand-hinted 16px frame in app/favicon.ico never appeared
@@ -12,7 +13,7 @@ export const dynamic = 'force-static';
 const size = { width: 32, height: 32 };
 
 /**
- * The 32px mark: the Designesy mark, favicon variant (identity v1, D3 and D23).
+ * The 32px mark: the Designesy mark, favicon variant (identity v1).
  * Four body shapes in white and the Azure dot, on --paper #010102. The favicon
  * variant widens the gutters to m/3 and enlarges the body so the figure holds
  * at 16 to 48px; its corners are rounded at r 7.5. The dot is flat Azure at
@@ -40,6 +41,6 @@ export function GET() {
         </svg>
       </div>
     ),
-    size
+    { ...size, headers: IMAGE_CACHE_HEADERS }
   );
 }

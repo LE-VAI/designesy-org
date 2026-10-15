@@ -1,4 +1,4 @@
-// DESIGN.md reader (engine spec section 4.3).
+// DESIGN.md reader (contract-mode spec §4.3).
 //
 // Two reads of the same text, because the format's linter (@google/design.md
 // 0.4.0) drops some values from its resolved model without an error:
@@ -128,7 +128,7 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
   const lines = text.split('\n');
   const { blocks, bodyStartLine } = yamlBlocks(text);
   // The linter reads every file, accepted or not, so its own totals can be
-  // cited on every outcome (brand D75: the provenance line).
+  // cited on every outcome (the provenance line).
   let report: LintReportLike | null = null;
   try {
     report = lint(text);

@@ -1,8 +1,8 @@
-// Every templated string on /score/contract, as pure builders (HANDOFF 10.2).
+// Every templated string on /score/contract, as pure builders.
 // The page renders these and never retypes a count, a score or a version:
 // counts come from the result or the published formula, scores from
 // verdict.ts fmtScore, problem sentences from the engine (own-contract
-// problems.ts, the owner-approved O6 messages). Nothing here touches the DOM
+// problems.ts, the approved messages). Nothing here touches the DOM
 // or React, so scripts/check-contract-copy.mjs runs each builder under Node.
 
 import { detectFormat, readAsLabel } from '../../lib/own-contract/detect';
@@ -37,7 +37,7 @@ export const PASTE_PLACEHOLDER = [
 
 export const TOKEN_MAP_PLACEHOLDER = '{ "colors.primary": "--brand", "spacing.md": "--gap-md" }';
 
-/** The client's field errors (WIREFRAMES W1), in the order the fields sit. */
+/** The client's field errors, in the order the fields sit. */
 export const FIELD_ERROR = {
   urlEmpty: 'Enter the address of the page to score.',
   urlInvalid: 'Enter a public web address, like staging.example.com.',
@@ -121,7 +121,7 @@ export type Step = { label: string; state: StepState; word: string; text: string
 
 /** The run's four steps. POST /api/score answers once, so the steps cannot
     advance one by one: they run together and resolve together when the
-    answer lands (owner decision O4), never as simulated progress. */
+    answer lands, never as simulated progress. */
 export function steps(site: string, state: 'running' | 'done' | 'rejected'): Step[] {
   const s = state === 'rejected' ? 'waiting' : state;
   const word = state === 'running' ? 'running' : state === 'done' ? 'done' : 'not run';
@@ -313,7 +313,7 @@ export function proseRewrite(text: string, p: ContractProblem): string | null {
 export type LinterTotals = { package?: string; version: string; errors: number; warnings: number; infos?: number };
 
 /**
- * The provenance line (brand D75): "Linted with @google/design.md {version}:
+ * The provenance line: "Linted with @google/design.md {version}:
  * {e} errors, {w} warnings", from the linter's OWN totals as the engine
  * returns them, never a count of the rows the page shows. Where linter
  * findings were merged into structured problems (VALUE_INVALID,
@@ -385,7 +385,7 @@ export function clause(title: string): string {
 }
 
 /**
- * The verdict line's words (owner decisions O5, 2026-10-09 and 2026-10-14):
+ * The verdict line's words:
  * the lead from the fidelity checks, the tail from the baseline's failures.
  * titles maps a check id to its title (fidelity from the published formula,
  * baseline from its contractTitle).

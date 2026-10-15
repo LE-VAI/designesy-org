@@ -36,7 +36,7 @@ function Half({ ground, body, dot }: { ground: string; body: string; dot: string
 /**
  * The /brand share card: the page's own picture in the tile's place, the mark
  * in Azure on ink beside its inverse in the flame on white (the hero pair).
- * The page leaves the endorsement line off (D71), so the card does too.
+ * The page leaves the endorsement line off, so the card does too.
  */
 export function renderBrandCard() {
   return renderOgCard({

@@ -2,11 +2,10 @@ name: Leaderboard freshness
 
 # Is the public leaderboard's data recent?
 #
-# From 2026-09-28 to 2026-10-08 the leaderboard served the same data while
-# nothing anywhere turned red: the weekly re-score opened its PR, the PR's CI
-# waited on an approval no one gave, and the run still reported success
-# (rescore-leaderboard.yml, v3 and v4 in its header). A check inside that workflow can only
-# report on runs that happen. This one reads what a visitor sees --
+# The leaderboard can serve the same data for weeks while nothing turns red:
+# the weekly re-score opens its PR, the PR waits unmerged, and the run still
+# reports success. A check inside that workflow can only report on runs that
+# happen. This one reads what a visitor sees --
 # /api/leaderboard's lastScored -- every day, so a missed week turns red
 # whatever the cause: a failed re-score, an unmerged PR, or a deploy that never
 # reached the domain.
