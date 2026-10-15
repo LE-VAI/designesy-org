@@ -2,56 +2,78 @@
 
 // /score/contract: the bench. The slab (a URL well, the contract by paste,
 // upload or link, an optional token map), the run, and what the run ends in:
-// a landing, a rejected contract (422, the problems panel), or a request that
-// got no result (the W10 card). One polite live region, present from first
-// paint, carries every announcement; the instrument draws none of its own.
+// a result (the verdict line, the two numbers, the first finding, both check
+// lists and the receipt), an empty run (no score for either number), a
+// rejected contract (422, the problems panel), or a request that got no
+// result (the W10 card). One polite live region, present from first paint,
+// carries every announcement; the instrument draws none of its own.
 //
 // The contract's text stays in this component's memory. It never enters a
 // URL, storage or analytics: only a linked contract can be deep-linked, and
 // the deep link carries its address, never its text.
 
 import Link from 'next/link';
-import { useEffect, useId, useRef, useState, type DragEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type DragEvent, type FormEvent, type ReactNode } from 'react';
 import { Segmented } from '../../lib/engine/command-bar';
-import { GradeScale, Instrument, Lamp, type EngineBlock } from '../../lib/engine/instrument';
+import { Instrument, Lamp, type EngineBlock } from '../../lib/engine/instrument';
 import { bringIntoView } from '../../lib/engine/bring-into-view';
 import { normalizeUrl, useAutoRun, useEngineRun } from '../../lib/engine/use-engine-run';
 import { toOutcomes, type Phase, type RegistryView } from '../../lib/engine/types';
-import { fmtScore } from '../verdict';
 import { MIN_COLORS, MIN_TYPE_STYLES } from '../../lib/own-contract/limits';
+import { ScoreEmptyRun } from '../score-empty-run';
 import { ContractProblems, LintLine } from './contract-problems';
+import { ContractReadout, ReadoutPair } from './contract-readout';
+import { CheckList, type CheckDef, type FindingsHandle } from './contract-findings';
+import { ContractReceipt } from './contract-receipt';
+import { FirstFinding } from './first-finding';
 import {
   ANNOUNCE,
+  EDITING_WITH_PREVIOUS,
   FIELD_ERROR,
   PASTE_PLACEHOLDER,
+  PREVIOUS_SAID,
   PRIVACY_NOTE,
   SOURCE_HINT,
   TOKEN_MAP_PLACEHOLDER,
   VERDICT_UNREACHABLE,
+  capFlag,
   caretLine,
+  contractOk,
+  emptyRun,
   fileTooLarge,
+  firstFindingOf,
   formatWords,
+  gapsFlag,
   howWord,
+  isFidelity,
   kb,
+  leaderboardFlag,
   lineOffset,
+  lintLine,
   looksLikeContractUrl,
   looksLikeSite,
   overLimit,
   readAs,
+  readAt,
+  receiptText,
   requestError,
   seconds,
   siteKey,
   steps as stepList,
+  tokenTotal,
   utf8Bytes,
   verdictFidelityNull,
   verdictPrefix,
   verdictWords,
-  lintLine,
+  whyLine,
   type ContractProblem,
+  type Coverage,
   type LayerResult,
   type LinterTotals,
+  type ResultCheck,
   type Source,
   type Step,
+  type Thresholds,
 } from './copy';
 
 type Layer = LayerResult & { nullReason?: { code: string; detail?: string } | null };
@@ -63,10 +85,35 @@ type ContractResponse = {
   contractVersion?: string;
   fidelity?: Layer;
   baseline?: Layer;
-  checks?: { id: string; status: string; detail?: string; layer?: string }[];
-  ownContract?: { name?: string | null; format?: string; tokens?: Record<string, number>; linter?: LinterTotals | null };
+  checks?: ResultCheck[];
+  coverage?: Coverage | null;
+  ownContract?: {
+    name?: string | null;
+    format?: string;
+    formatVersion?: string | null;
+    source?: 'inline' | 'url';
+    url?: string;
+    bytes?: number;
+    digest?: string;
+    tokens?: Record<string, number>;
+    linter?: LinterTotals | null;
+  };
+  site?: { requestedUrl?: string; cssBytes?: number; stylesheetsFetched?: number; stylesheetsTotal?: number; stylesheetsTruncated?: boolean };
+  receipt?: { digest?: string | null; retrieved_at?: string; own_contract?: { digest?: string } };
   unreachable?: boolean;
   unreachableDetail?: string;
+};
+
+/** What the page knows before any run, from the published formula and the registry (page.tsx). */
+export type ResultsSetup = {
+  defs: Record<string, CheckDef>;
+  thresholds: Thresholds;
+  /** Baseline: the weight the static engine can score (57). */
+  staticMax: number;
+  /** "How both numbers are calculated": the rule, then each layer's weights. */
+  calc: { rule: string; fidelity: string; baseline: string };
+  /** "What does not run against your contract": the lab checks' count and ids. */
+  leftOut: { count: number; ids: string };
 };
 
 type FieldKey = 'url' | 'contract' | 'map';
@@ -78,6 +125,20 @@ type Ending =
   | { kind: 'landed'; took: string }
   | { kind: 'rejected'; problems: ContractProblem[]; warnings: ContractProblem[]; linter: LinterTotals | null }
   | { kind: 'request'; title: string; message: string };
+
+type Ran = { site: string; url: string; how: 'pasted' | 'uploaded' | 'linked'; source: Source; text: string; link: string };
+
+/** A landed answer, by what it can show: two numbers, fidelity with no
+    score, nothing to read (the site), or nothing to compare (an empty run). */
+type LandedKind = 'scored' | 'fidelity-null' | 'unreachable' | 'empty';
+
+function landedKind(r: ContractResponse): LandedKind {
+  if (r.unreachable) return 'unreachable';
+  const code = r.fidelity?.nullReason?.code;
+  if (code === 'empty_shell' || code === 'no_css') return 'empty';
+  if (r.fidelity?.score === null || r.fidelity?.score === undefined) return 'fidelity-null';
+  return 'scored';
+}
 
 const GLOBE = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -101,45 +162,6 @@ const SOURCES: { value: Source; label: string }[] = [
 
 const FID_LINE = 'How closely this page follows your contract.';
 const BASE_LINE = 'Web standards every site is held to, whatever its contract says.';
-
-/** One number, at rest, landed, or with no score. */
-function LayerReadout({ id, label, line, layer, rest }: { id: string; label: string; line: string; layer?: Layer | null; rest?: boolean }) {
-  const scored = !rest && layer && layer.score !== null && layer.grade !== null;
-  return (
-    <section className="cf-layer" aria-labelledby={id}>
-      <h2 className="eg-label" id={id}>{label}</h2>
-      {scored ? (
-        <div className="eg-verdict-row" data-grade={layer.grade!.toLowerCase()}>
-          <span className="eg-grade">
-            <span className="sr-only">grade </span>
-            {layer.grade}
-          </span>
-          <span className="eg-score">
-            {fmtScore(layer.score!)}
-            <small aria-hidden="true">/100</small>
-            <span className="sr-only"> out of 100</span>
-          </span>
-        </div>
-      ) : rest || !layer ? (
-        <div className="eg-verdict-row is-rest" aria-hidden="true">
-          <span className="eg-grade" />
-          <span className="eg-score">
-            <small>/100</small>
-          </span>
-        </div>
-      ) : (
-        <p className="cf-null">No score</p>
-      )}
-      <p className="cf-layer-line">{line}</p>
-      {scored ? <GradeScale score={layer.score!} grade={layer.grade!} /> : <GradeScale />}
-      {!rest && layer && (
-        <p className="cf-count">
-          <b>{layer.scored}</b> of {layer.total} checks scored
-        </p>
-      )}
-    </section>
-  );
-}
 
 function StepRows({ rows }: { rows: Step[] }) {
   return (
@@ -176,6 +198,40 @@ function WhatRows({ label, rows }: { label: string; rows: [string, ReactNode][] 
   );
 }
 
+/** Coverage, as one bar of the declared total: located by name (a map or a
+    CSS variable name), by value, and not located. Neutral ink: coverage is a
+    reading, never a pass or a fail. The numbers are text in the key. */
+function CoverageMeter({ c }: { c: Coverage }) {
+  const name = c.byName + c.byMap;
+  const none = Math.max(0, c.declared - name - c.byValue);
+  return (
+    <span className="cf-coverage">
+      <span>
+        Located {name + c.byValue} of {c.declared} declared tokens
+      </span>
+      <span className="cf-meter" aria-hidden="true">
+        <i className="is-name" style={{ '--w': name } as CSSProperties} />
+        <i className="is-value" style={{ '--w': c.byValue } as CSSProperties} />
+        <i className="is-none" style={{ '--w': none } as CSSProperties} />
+      </span>
+      <span className="cf-meter-key">
+        <span>
+          <i className="is-name" aria-hidden="true" />
+          <b>{name}</b> by name
+        </span>
+        <span>
+          <i className="is-value" aria-hidden="true" />
+          <b>{c.byValue}</b> by value
+        </span>
+        <span>
+          <i className="is-none" aria-hidden="true" />
+          <b>{none}</b> not located
+        </span>
+      </span>
+    </span>
+  );
+}
+
 const MINIMUM_CARD = (
   <div className="eg-ref">
     <span className="eg-label">What your contract needs</span>
@@ -208,6 +264,8 @@ export function ContractForm({
   baselineIds,
   titles,
   ceilings,
+  minScored,
+  setup,
 }: {
   initialUrl: string;
   initialContract: string;
@@ -217,6 +275,7 @@ export function ContractForm({
   titles: Record<string, string>;
   ceilings: Record<string, number>;
   minScored: number;
+  setup: ResultsSetup;
 }) {
   const uid = useId();
   const ids = {
@@ -247,7 +306,9 @@ export function ContractForm({
   const [folded, setFolded] = useState(false);
   const [said, setSaid] = useState('');
   const started = useRef(0);
-  const ran = useRef<{ site: string; how: string; source: Source; text: string } | null>(null);
+  const ran = useRef<Ran | null>(null);
+  // A result kept below the reopened form after Edit inputs, until the next run lands.
+  const [prev, setPrev] = useState<{ result: ContractResponse; ran: Ran } | null>(null);
 
   const urlRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -258,7 +319,12 @@ export function ContractForm({
   const goRef = useRef<HTMLButtonElement>(null);
   const verdictRef = useRef<HTMLParagraphElement>(null);
   const problemsRef = useRef<HTMLHeadingElement>(null);
+  const cardRef = useRef<HTMLParagraphElement>(null);
   const benchRef = useRef<HTMLDivElement>(null);
+  const fidList = useRef<FindingsHandle>(null);
+  const baseList = useRef<FindingsHandle>(null);
+  const prevFid = useRef<FindingsHandle>(null);
+  const prevBase = useRef<FindingsHandle>(null);
 
   const busy = phase === 'running';
   const contractText = source === 'paste' ? text : source === 'upload' ? file?.text ?? '' : '';
@@ -344,7 +410,7 @@ export function ContractForm({
       source === 'link'
         ? { url: link.trim(), format: 'auto' as const, ...(map ? { tokenMap: map } : {}) }
         : { content: contractText, format: 'auto' as const, ...(map ? { tokenMap: map } : {}) };
-    ran.current = { site: siteKey(site), how, source, text: contractText };
+    ran.current = { site: siteKey(site), url: site, how, source, text: contractText, link: link.trim() };
     started.current = performance.now();
     setEnding({ kind: 'none' });
     setFolded(false);
@@ -374,13 +440,17 @@ export function ContractForm({
     if (phase !== 'done' && phase !== 'error') return;
     const took = seconds(performance.now() - started.current);
     if (phase === 'done' && result) {
+      // Any landing replaces a kept previous run.
+      setPrev(null);
       setEnding({ kind: 'landed', took });
       setFolded(true);
-      announce(result.unreachable ? ANNOUNCE.stopped(took) : ANNOUNCE.finished(took));
+      const k = landedKind(result);
+      announce(k === 'unreachable' || k === 'empty' ? ANNOUNCE.stopped(took) : ANNOUNCE.finished(took));
       return;
     }
     if (phase === 'error' && failure) {
       if (failure.status === 422 && failure.problems?.length) {
+        setPrev(null);
         setEnding({
           kind: 'rejected',
           problems: failure.problems as ContractProblem[],
@@ -398,21 +468,30 @@ export function ContractForm({
   }, [phase]);
 
   // Focus follows the ending once it is drawn: the verdict line for a
-  // landing, the panel heading for a rejected contract. A request error
-  // leaves focus on the key that was pressed.
+  // landing, the card's title for an empty run, the panel heading for a
+  // rejected contract. A request error leaves focus on the key that was pressed.
   useEffect(() => {
-    const el = ending.kind === 'landed' ? verdictRef.current : ending.kind === 'rejected' ? problemsRef.current : null;
+    const k = ending.kind === 'landed' && result ? landedKind(result) : null;
+    const el = k === 'empty' ? cardRef.current : k ? verdictRef.current : ending.kind === 'rejected' ? problemsRef.current : null;
     if (!el) return;
     el.focus({ preventScroll: true });
     bringIntoView(el);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ending]);
 
   // ── Actions after a run ──
-  const editInputs = () => {
+  const editInputs = (focus: 'url' | 'map' = 'url') => {
+    const keep = ending.kind === 'landed' && result && ran.current && (landedKind(result) === 'scored' || landedKind(result) === 'fidelity-null');
+    if (keep) setPrev({ result: result!, ran: ran.current! });
     setFolded(false);
     setEnding({ kind: 'none' });
-    announce(ANNOUNCE.editing);
+    announce(keep ? EDITING_WITH_PREVIOUS : ANNOUNCE.editing);
+    if (focus === 'map') setMapOpen(true);
     window.setTimeout(() => {
+      if (focus === 'map') {
+        mapRef.current?.focus();
+        return;
+      }
       urlRef.current?.focus();
       urlRef.current?.select();
     }, 0);
@@ -487,159 +566,445 @@ export function ContractForm({
       </span>
     ) : null;
 
-  // ── The instrument ──
-  const landed = ending.kind === 'landed' && result ? result : null;
-  const unreachable = !!landed?.unreachable;
-  const outcomes = landed && !unreachable ? toOutcomes(landed.checks) : {};
-  const layerScore = (l?: Layer | null) => (l && typeof l.score === 'number' ? l.score : null);
-  const engines: EngineBlock[] = [
-    {
-      key: 'fidelity',
-      name: 'Contract fidelity',
-      count: fidelityIds.length,
-      ids: fidelityIds,
-      score: landed && !unreachable ? layerScore(landed.fidelity) : null,
-      asks: 'Reads your contract: palette, type scale, line heights, radius, spacing, contrast pairs, aliases and token use.',
-    },
-    {
-      key: 'baseline',
-      name: 'Baseline',
-      count: baselineIds.length,
-      ids: baselineIds,
-      score: landed && !unreachable ? layerScore(landed.baseline) : null,
-      asks: 'Reads no contract: focus rings, reduced motion, headings, inputs, button and link copy, identity.',
-    },
-  ];
-
-  const instPhase: Phase =
-    busy ? 'running'
-      : landed ? (unreachable ? 'error' : 'done')
-        : ending.kind === 'request' ? 'error'
-          : 'idle';
-  const runSite = ran.current?.site ?? '';
-  const target = busy || landed || ending.kind !== 'none' ? runSite : looksLikeSite(url) ? site : '';
-
+  // ── A landed result, drawn for the live run or for a kept previous run ──
   const restPair = (note: string) => (
     <>
-      <div className="cf-pair">
-        <LayerReadout id={`${uid}-fid`} label="Contract fidelity" line={FID_LINE} rest />
-        <LayerReadout id={`${uid}-base`} label="Baseline" line={BASE_LINE} rest />
-      </div>
+      <ReadoutPair>
+        <ContractReadout id={`${uid}-fid`} label="Contract fidelity" line={FID_LINE} kind="rest" />
+        <ContractReadout id={`${uid}-base`} label="Baseline" line={BASE_LINE} kind="rest" />
+      </ReadoutPair>
       <p className="eg-side-note">{note}</p>
     </>
   );
 
-  const contractName = landed?.ownContract?.name || 'your contract';
-  const tokenCount = landed?.ownContract?.tokens
-    ? ['colors', 'typography', 'radii', 'spacing', 'sizes', 'durations', 'easings'].reduce((n, k) => n + (landed.ownContract!.tokens![k] ?? 0), 0)
-    : null;
-
-  const sides: Partial<Record<Phase, ReactNode>> = {
-    idle: (
-      <>
-        {restPair(ending.kind === 'rejected' ? 'Nothing was scored. Both numbers wait for a contract that meets the minimum.' : 'Run a page against your contract and both numbers land here, side by side.')}
-        {MINIMUM_CARD}
-      </>
-    ),
-    running: (
-      <>
-        <span className="eg-label">Checking</span>
-        <div className="eg-running">
-          <p className="eg-running-line">Scoring {runSite} against your contract</p>
-        </div>
-        {restPair('Both numbers land here when the run ends, usually within 3 to 8 seconds.')}
-      </>
-    ),
-    done: landed ? (
-      <div className="cf-pair">
-        <LayerReadout id={`${uid}-fid`} label="Contract fidelity" line={FID_LINE} layer={landed.fidelity ?? null} />
-        <LayerReadout id={`${uid}-base`} label="Baseline" line={BASE_LINE} layer={landed.baseline ?? null} />
-      </div>
-    ) : undefined,
-    error: unreachable ? (
-      <>
-        <div className="cf-pair">
-          <LayerReadout id={`${uid}-fid`} label="Contract fidelity" line="The site could not be read." layer={landed!.fidelity ?? null} />
-          <LayerReadout id={`${uid}-base`} label="Baseline" line="The site could not be read." layer={landed!.baseline ?? null} />
-        </div>
-        <div className="cf-unreachable">
-          <p>{landed!.unreachableDetail}</p>
-          <p>
-            Your contract was read and is valid: {contractName}
-            {tokenCount !== null ? `, ${tokenCount} tokens` : ''}. It is still in the form above.
-          </p>
-          <button type="button" className="eg-share-btn" onClick={() => start()}>
-            Try again
-          </button>
-        </div>
-      </>
-    ) : (
-      <>
-        <span className="eg-label">No result</span>
-        <p className="eg-side-note">Nothing was scored. The notice above says why, and your inputs are still in the form.</p>
-      </>
-    ),
+  const engines = (r: ContractResponse | null): EngineBlock[] => {
+    const scoreOf = (l?: Layer | null) => (r && !r.unreachable && l && typeof l.score === 'number' ? l.score : null);
+    return [
+      {
+        key: 'fidelity',
+        name: 'Contract fidelity',
+        count: fidelityIds.length,
+        ids: fidelityIds,
+        score: scoreOf(r?.fidelity),
+        asks: 'Reads your contract: palette, type scale, line heights, radius, spacing, contrast pairs, aliases and token use.',
+      },
+      {
+        key: 'baseline',
+        name: 'Baseline',
+        count: baselineIds.length,
+        ids: baselineIds,
+        score: scoreOf(r?.baseline),
+        asks: 'Reads no contract: focus rings, reduced motion, headings, inputs, button and link copy, identity.',
+      },
+    ];
   };
 
-  const rows: Step[] | null = busy ? stepList(runSite, 'running') : landed && !unreachable ? stepList(runSite, 'done') : null;
-  const faceBottom = busy ? (
-    <div className="cf-what">
-      <span className="eg-label">This run</span>
-      <StepRows rows={rows!} />
-    </div>
-  ) : landed && !unreachable ? (
-    <div className="cf-what">
-      <span className="eg-label">This run</span>
-      <StepRows rows={rows!} />
-    </div>
-  ) : unreachable ? (
-    <WhatRows
-      label="What the run read"
-      rows={[
-        ['Contract', <span key="c">{contractName}<small>{howWord(ran.current?.source ?? source)} · valid</small></span>],
-        ['Site', <span key="s"><span className="cf-mono">{runSite}</span><small>could not be read</small></span>],
-        ['Coverage', <span key="v" data-state="waiting">Not measured: no page to search</span>],
-      ]}
-    />
-  ) : ending.kind === 'rejected' ? (
-    <WhatRows
-      label="What the run read"
-      rows={[
-        ['Contract', <span key="c">Not accepted<small>{formatWords(ran.current?.text ?? '') ?? 'Format not recognized'} · {ran.current?.how}</small></span>],
-        ['Site', <span key="s" data-state="waiting">Not fetched</span>],
-        ['Coverage', <span key="v" data-state="waiting">Not measured</span>],
-      ]}
-    />
-  ) : (
-    <WhatRows
-      label="What the run reads"
-      rows={[
-        ['Contract', <span key="c" data-state="waiting">Paste, upload or link a DESIGN.md or DTCG file</span>],
-        ['Site', <span key="s" data-state="waiting">A public page, read as HTML and CSS without running JavaScript</span>],
-        ['Coverage', <span key="v" data-state="waiting">Your declared tokens, located by value and by CSS variable name</span>],
-      ]}
-    />
-  );
+  const formatOf = (r: ContractResponse, rn: Ran) =>
+    r.ownContract?.format === 'dtcg' ? 'DTCG tokens' : r.ownContract?.format === 'design.md' ? 'DESIGN.md' : formatWords(rn.text) ?? 'contract';
 
-  // ── The verdict line ──
-  let verdict: ReactNode = null;
-  if (landed && landed.fidelity && landed.baseline) {
-    const f = landed.fidelity;
-    const b = landed.baseline;
-    const words = unreachable
-      ? VERDICT_UNREACHABLE
-      : f.score === null
-        ? verdictFidelityNull(b)
-        : verdictWords(f, b, landed.checks ?? [], titles, ceilings);
-    verdict = (
-      <p className="score-verdict-line" tabIndex={-1} ref={verdictRef}>
-        {!unreachable && <span className="sr-only">{verdictPrefix(f, b)}</span>}
-        <span>{words}</span>
-      </p>
+  /** Everything a landed answer draws: the verdict line, the instrument's side,
+      its full-width first finding and face rows, the lists and the receipt. */
+  const resultParts = (r: ContractResponse, rn: Ran, idp: string, previous: boolean) => {
+    const k = landedKind(r);
+    const f = r.fidelity!;
+    const b = r.baseline!;
+    const checks = r.checks ?? [];
+    const fidChecks = fidelityIds.map((id) => checks.find((c) => c.id === id)).filter((c): c is ResultCheck => !!c);
+    const baseChecks = baselineIds.map((id) => checks.find((c) => c.id === id)).filter((c): c is ResultCheck => !!c);
+    const name = r.ownContract?.name || 'your contract';
+    const tokens = tokenTotal(r.ownContract?.tokens);
+    const lists = { fid: previous ? prevFid : fidList, base: previous ? prevBase : baseList };
+    const openRow = (id: string) => (isFidelity({ id }) ? lists.fid : lists.base).current?.open(id);
+    const verdictId = `${idp}cf-verdict`;
+
+    // The verdict line: the approved sentences, built from this run's counts.
+    let verdict: ReactNode = null;
+    if (k !== 'empty') {
+      const words = k === 'unreachable' ? VERDICT_UNREACHABLE : k === 'fidelity-null' ? verdictFidelityNull(b) : verdictWords(f, b, checks, titles, ceilings);
+      verdict = (
+        <p className="score-verdict-line" tabIndex={-1} ref={previous ? undefined : verdictRef} id={verdictId}>
+          {previous && <span className="sr-only">{PREVIOUS_SAID}</span>}
+          {k !== 'unreachable' && <span className="sr-only">{verdictPrefix(f, b)}</span>}
+          <span>{words}</span>
+        </p>
+      );
+    }
+
+    // The side: both readouts, then what bounds them.
+    const pair = (
+      <ReadoutPair>
+        <ContractReadout
+          id={`${idp}cf-fid-h`}
+          label="Contract fidelity"
+          line={k === 'unreachable' || k === 'empty' ? (k === 'unreachable' ? 'The site could not be read.' : 'Nothing on this page to compare.') : k === 'fidelity-null' ? 'Too few of your checks could run on this page.' : FID_LINE}
+          layer={f}
+          kind={k === 'scored' ? 'scored' : 'none'}
+          min={minScored}
+        />
+        <ContractReadout
+          id={`${idp}cf-base-h`}
+          label="Baseline"
+          line={k === 'unreachable' ? 'The site could not be read.' : k === 'empty' ? 'Nothing on this page to measure.' : BASE_LINE}
+          layer={b}
+          kind={b.score !== null && b.grade !== null && k !== 'unreachable' && k !== 'empty' ? 'scored' : 'none'}
+          min={minScored}
+        />
+      </ReadoutPair>
     );
-  }
+
+    let side: ReactNode;
+    if (k === 'unreachable' || k === 'empty') {
+      const copy = emptyRun(k === 'unreachable' ? 'site_unreachable' : f.nullReason?.code ?? '', {
+        detail: r.unreachableDetail,
+        stylesheetsTotal: r.site?.stylesheetsTotal,
+        stylesheetsFetched: r.site?.stylesheetsFetched,
+      });
+      side = (
+        <>
+          {pair}
+          <ScoreEmptyRun
+            url={rn.site}
+            reason={copy.reason}
+            eyebrow={copy.eyebrow}
+            title={copy.title}
+            contractLine={contractOk(name, tokens)}
+            todo={copy.todo}
+            actionLabel={copy.action}
+            titleRef={k === 'empty' && !previous ? cardRef : undefined}
+            onRetry={k === 'unreachable' ? () => start() : () => editInputs('url')}
+          />
+        </>
+      );
+    } else {
+      const cap = k === 'scored' ? capFlag(f) : null;
+      const gaps = k === 'scored' ? gapsFlag(fidChecks, f.scored) : null;
+      const lb = leaderboardFlag(b.total);
+      const flags: { status?: 'FAIL' | 'SKIP'; lead: string; text: string }[] = [];
+      if (cap) flags.push({ status: 'FAIL', ...cap });
+      if (gaps) flags.push({ status: 'SKIP', ...gaps });
+      flags.push(lb);
+      side = (
+        <>
+          {pair}
+          <ul className="cf-flags">
+            {flags.map((fl) => (
+              <li className="cf-flag" key={fl.lead}>
+                <Lamp status={fl.status} />
+                <span>
+                  <b>{fl.lead}</b> {fl.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {k === 'scored' ? (
+            <details className="eg-more cf-calc">
+              <summary>How both numbers are calculated</summary>
+              <div className="eg-more-body">
+                <p>{setup.calc.rule}</p>
+                <p>
+                  <b>Contract fidelity:</b> {setup.calc.fidelity}
+                </p>
+                <p>
+                  <b>Baseline:</b> {setup.calc.baseline}
+                </p>
+              </div>
+            </details>
+          ) : (
+            <div className="cf-why" role="group" aria-labelledby={`${idp}cf-why-h`}>
+              <h3 id={`${idp}cf-why-h`}>Why fidelity has no score</h3>
+              {r.coverage && <p>{whyLine(r.coverage)}</p>}
+              <p>Common causes:</p>
+              <ul>
+                <li>the styles load with JavaScript, so the engine never sees them</li>
+                <li>your CSS variables use other names: add a token map</li>
+                <li>this page uses only a small part of your system: score a fuller page</li>
+              </ul>
+              {!previous && (
+                <div className="cf-actions">
+                  <button type="button" className="eg-share-btn" onClick={() => editInputs('map')}>
+                    Add token map
+                  </button>
+                  <button type="button" className="eg-share-btn" onClick={() => editInputs('url')}>
+                    Score another page
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // The first finding: a full-width row under the face and the side.
+    const lead = k === 'scored' ? firstFindingOf(fidChecks) : null;
+    const wide = lead ? (
+      <div className="cf-wide">
+        <FirstFinding check={lead} title={titles[lead.id] ?? lead.id} coverage={r.coverage ?? null} thresholds={setup.thresholds} idp={idp} onGo={openRow} />
+      </div>
+    ) : null;
+
+    // What the run read: the contract, coverage and the site.
+    const at = r.receipt?.retrieved_at ? readAt(r.receipt.retrieved_at) : null;
+    const digest = r.ownContract?.digest ?? '';
+    const contractRow = (
+      <span>
+        {name}
+        <small>
+          {formatOf(r, rn)} · {rn.how}
+          {typeof r.ownContract?.bytes === 'number' ? ` · ${kb(r.ownContract.bytes)}` : ''}
+          {tokens !== null ? ` · ${tokens} tokens` : ''}
+          {k === 'unreachable' || k === 'empty' ? ' · valid' : digest ? <> · sha256 <span className="cf-mono">{digest.slice(0, 8)}</span></> : null}
+        </small>
+      </span>
+    );
+    const sheets = r.site && typeof r.site.stylesheetsTotal === 'number' ? `${r.site.stylesheetsFetched ?? 0} of ${r.site.stylesheetsTotal} stylesheets` : null;
+    const siteRow =
+      k === 'unreachable' ? (
+        <span>
+          <span className="cf-mono">{rn.site}</span>
+          <small>could not be read</small>
+        </span>
+      ) : (
+        <span>
+          <span className="cf-mono">{rn.site}</span>
+          <small>
+            {at ? `read ${at.local.slice(0, 5)} ${at.local.slice(-6)}` : 'read'}
+            {sheets ? ` · ${sheets}` : ''}
+            {typeof r.site?.cssBytes === 'number' && r.site.cssBytes > 0 ? ` · ${kb(r.site.cssBytes)} of CSS` : ''}
+          </small>
+        </span>
+      );
+    const faceBottom = (
+      <WhatRows
+        label="What the run read"
+        rows={[
+          ['Contract', contractRow],
+          ['Coverage', k === 'unreachable' ? <span key="v" data-state="waiting">Not measured: no page to search</span> : r.coverage ? <CoverageMeter c={r.coverage} /> : <span data-state="waiting">Not measured</span>],
+          ['Site', siteRow],
+        ]}
+      />
+    );
+
+    const instPhase: Phase = k === 'unreachable' || k === 'empty' ? 'error' : 'done';
+    const instrument = (
+      <Instrument
+        name="Your contract"
+        ariaLabel={previous ? `Previous run: your contract, ${total} checks` : undefined}
+        registry={registry}
+        face="engines"
+        engines={engines(r)}
+        enginesLabel="Two registers"
+        enginesHint="One reads your contract. The other reads no contract at all."
+        phase={instPhase}
+        target={rn.site}
+        idleTarget="waiting for a URL and a contract"
+        outcomes={k === 'unreachable' ? {} : toOutcomes(checks)}
+        verdict={null}
+        landed={!previous && instPhase === 'done'}
+        ignite={!previous}
+        quiet
+        roving
+        sideFirst
+        onOpen={k === 'scored' || k === 'fidelity-null' ? openRow : undefined}
+        phaseSides={{ [instPhase]: side }}
+        faceBottom={faceBottom}
+        wide={wide}
+        stateText={{ error: `${total} checks · stopped` }}
+        scoring="fidelity reads your contract · baseline reads none · never blended"
+        restNote=""
+      />
+    );
+
+    // Both lists and the receipt, for a run that read the page.
+    const hasLists = k === 'scored' || k === 'fidelity-null';
+    const say = previous ? () => {} : announce;
+    const lint = lintLine(r.ownContract?.linter);
+    const failing = [...fidChecks, ...baseChecks].filter((c) => c.status === 'FAIL').map((c) => ({ id: c.id, title: titles[c.id] ?? c.id }));
+    const shareUrl =
+      rn.how === 'linked' && typeof window !== 'undefined'
+        ? `${window.location.origin}/score/contract?url=${encodeURIComponent(rn.site)}&contract=${encodeURIComponent(rn.link)}`
+        : null;
+    const after = hasLists ? (
+      <>
+        <CheckList
+          ref={lists.fid}
+          kind="fidelity"
+          checks={fidChecks}
+          defs={setup.defs}
+          idp={idp}
+          noScore={k === 'fidelity-null'}
+          scored={f.scored}
+          min={minScored}
+          coverage={r.coverage ?? null}
+          thresholds={setup.thresholds}
+          engineVersion={r.engineVersion ?? ''}
+          contractVersion={r.contractVersion ?? ''}
+          staticMax={setup.staticMax}
+          say={say}
+          labelledBy={previous ? `${idp}cf-prev-h` : undefined}
+          after={
+            <details className="eg-more cf-calc cf-leftout">
+              <summary>What does not run against your contract</summary>
+              <div className="eg-more-body">
+                <p>
+                  Designesy&apos;s own lab checks ({setup.leftOut.count}), the slop deduction and the originality lift measure Designesy&apos;s taste. They are off when you score your own contract: {setup.leftOut.ids}.
+                </p>
+              </div>
+            </details>
+          }
+        />
+        <CheckList
+          ref={lists.base}
+          kind="baseline"
+          checks={baseChecks}
+          defs={setup.defs}
+          idp={idp}
+          noScore={false}
+          scored={b.scored}
+          min={minScored}
+          coverage={r.coverage ?? null}
+          thresholds={setup.thresholds}
+          engineVersion={r.engineVersion ?? ''}
+          contractVersion={r.contractVersion ?? ''}
+          staticMax={setup.staticMax}
+          say={say}
+          labelledBy={previous ? `${idp}cf-prev-h` : undefined}
+        />
+        {digest && r.receipt?.retrieved_at && (
+          <ContractReceipt
+            idp={idp}
+            verdictDigest={r.receipt.digest ?? null}
+            contractDigest={digest}
+            checkCount={checks.length}
+            format={formatOf(r, rn)}
+            how={rn.how}
+            engineVersion={r.engineVersion ?? ''}
+            contractVersion={r.contractVersion ?? ''}
+            linter={r.ownContract?.linter ?? null}
+            retrievedAt={r.receipt.retrieved_at}
+            receiptText={receiptText({
+              site: r.site?.requestedUrl ?? rn.url,
+              name,
+              format: formatOf(r, rn),
+              contractDigest: digest,
+              verdictDigest: r.receipt.digest ?? null,
+              fidelity: f,
+              baseline: b,
+              coverage: r.coverage ?? null,
+              failing,
+              engineVersion: r.engineVersion ?? '',
+              contractVersion: r.contractVersion ?? '',
+              linter: r.ownContract?.linter ?? null,
+              retrievedAt: r.receipt.retrieved_at,
+            })}
+            json={r}
+            site={rn.site}
+            shareUrl={shareUrl}
+            say={say}
+          />
+        )}
+      </>
+    ) : lint ? (
+      // An empty run has no receipt to carry the linter's line: it sits under the instrument.
+      <LintLine lint={lint} className="cf-lint-run" />
+    ) : null;
+
+    return { verdict, instrument, after };
+  };
+
+  // ── The live instrument ──
+  const landed = ending.kind === 'landed' && result ? result : null;
+  const live = landed && ran.current ? resultParts(landed, ran.current, '', false) : null;
+  const previous = prev ? resultParts(prev.result, prev.ran, 'prev-', true) : null;
+  const runSite = ran.current?.site ?? '';
+
+  const restInstrument = (instPhase: Phase) => {
+    const sides: Partial<Record<Phase, ReactNode>> = {
+      idle: (
+        <>
+          {restPair(ending.kind === 'rejected' ? 'Nothing was scored. Both numbers wait for a contract that meets the minimum.' : 'Run a page against your contract and both numbers land here, side by side.')}
+          {MINIMUM_CARD}
+        </>
+      ),
+      running: (
+        <>
+          <span className="eg-label">Checking</span>
+          <div className="eg-running">
+            <p className="eg-running-line">Scoring {runSite} against your contract</p>
+          </div>
+          {restPair('Both numbers land here when the run ends, usually within 3 to 8 seconds.')}
+        </>
+      ),
+      error: (
+        <>
+          <span className="eg-label">No result</span>
+          <p className="eg-side-note">Nothing was scored. The notice above says why, and your inputs are still in the form.</p>
+        </>
+      ),
+    };
+    const faceBottom = busy ? (
+      <div className="cf-what">
+        <span className="eg-label">This run</span>
+        <StepRows rows={stepList(runSite, 'running')} />
+      </div>
+    ) : ending.kind === 'rejected' ? (
+      <WhatRows
+        label="What the run read"
+        rows={[
+          ['Contract', <span key="c">Not accepted<small>{formatWords(ran.current?.text ?? '') ?? 'Format not recognized'} · {ran.current?.how}</small></span>],
+          ['Site', <span key="s" data-state="waiting">Not fetched</span>],
+          ['Coverage', <span key="v" data-state="waiting">Not measured</span>],
+        ]}
+      />
+    ) : (
+      <WhatRows
+        label="What the run reads"
+        rows={[
+          ['Contract', <span key="c" data-state="waiting">Paste, upload or link a DESIGN.md or DTCG file</span>],
+          ['Site', <span key="s" data-state="waiting">A public page, read as HTML and CSS without running JavaScript</span>],
+          ['Coverage', <span key="v" data-state="waiting">Your declared tokens, located by value and by CSS variable name</span>],
+        ]}
+      />
+    );
+    const target = busy || ending.kind !== 'none' ? runSite : looksLikeSite(url) ? site : '';
+    return (
+      <Instrument
+        name="Your contract"
+        registry={registry}
+        face="engines"
+        engines={engines(null)}
+        enginesLabel="Two registers"
+        enginesHint="One reads your contract. The other reads no contract at all."
+        phase={instPhase}
+        target={target}
+        idleTarget="waiting for a URL and a contract"
+        outcomes={{}}
+        verdict={null}
+        landed={false}
+        ignite
+        quiet
+        roving
+        sideFirst
+        phaseSides={sides}
+        faceBottom={faceBottom}
+        stateText={{
+          idle: `${total} checks · ${ending.kind === 'rejected' ? 'not run' : 'ready'}`,
+          running: `reading ${total} checks`,
+          error: `${total} checks · stopped`,
+        }}
+        scoring="fidelity reads your contract · baseline reads none · never blended"
+        restNote=""
+      />
+    );
+  };
+
+  const restPhase: Phase = busy ? 'running' : ending.kind === 'request' ? 'error' : 'idle';
+  // While inputs are open over a kept previous run, the previous run is the
+  // instrument on the page; a run that starts draws the live one above it.
+  const showRest = !live && !(prev && !busy && ending.kind === 'none');
 
   const hint = SOURCE_HINT[source];
+  const summaryRan = ran.current;
 
   return (
     <div className="eg-bench eg-dash cf-bench" ref={benchRef}>
@@ -647,19 +1012,18 @@ export function ContractForm({
         {said}
       </p>
 
-      {folded && landed ? (
+      {folded && landed && summaryRan ? (
         <div className="eg-bar cf-run" role="region" aria-label="This run">
           <div className="cf-run-line">
             <p className="cf-run-what">
               {GLOBE}
               <span className="cf-run-url">{runSite}</span>
               <span className="cf-run-contract">
-                against <b>{contractName}</b>
-                {formatWords(ran.current?.text ?? '') ? ` · ${formatWords(ran.current?.text ?? '')}` : ''} · {ran.current?.how}
+                against <b>{landed.ownContract?.name || 'your contract'}</b> · {formatOf(landed, summaryRan)} · {summaryRan.how}
               </span>
             </p>
             <div className="cf-run-actions">
-              <button type="button" className="eg-share-btn" onClick={editInputs}>
+              <button type="button" className="eg-share-btn" onClick={() => editInputs('url')}>
                 Edit inputs
               </button>
               <button type="button" className="eg-share-btn" onClick={() => start()}>
@@ -896,43 +1260,33 @@ export function ContractForm({
         </div>
       )}
 
-      {verdict}
+      {live ? (
+        <>
+          {live.verdict}
+          {live.instrument}
+          {live.after}
+        </>
+      ) : (
+        showRest && restInstrument(restPhase)
+      )}
 
-      <Instrument
-        name="Your contract"
-        registry={registry}
-        face="engines"
-        engines={engines}
-        enginesLabel="Two registers"
-        enginesHint="One reads your contract. The other reads no contract at all."
-        phase={instPhase}
-        target={target}
-        idleTarget="waiting for a URL and a contract"
-        outcomes={outcomes}
-        verdict={null}
-        landed={!!landed && !unreachable}
-        ignite
-        quiet
-        roving
-        phaseSides={sides}
-        faceBottom={faceBottom}
-        stateText={{
-          idle: `${total} checks · ${ending.kind === 'rejected' ? 'not run' : 'ready'}`,
-          running: `reading ${total} checks`,
-          error: `${total} checks · stopped`,
-        }}
-        scoring="fidelity reads your contract · baseline reads none · never blended"
-        restNote=""
-      />
-
-      {landed && lintLine(landed.ownContract?.linter) && <LintLine lint={lintLine(landed.ownContract?.linter)!} className="cf-lint-run" />}
-
-      {busy && (
+      {busy && !prev && (
         <ul className="cf-skeleton" aria-hidden="true">
           <li />
           <li />
           <li />
         </ul>
+      )}
+
+      {previous && (
+        <div className="cf-prev" data-prev="">
+          <p className="eg-label cf-prev-label" id="prev-cf-prev-h">
+            Previous run
+          </p>
+          {previous.verdict}
+          {previous.instrument}
+          {previous.after}
+        </div>
       )}
     </div>
   );

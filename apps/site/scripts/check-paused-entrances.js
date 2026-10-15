@@ -38,6 +38,8 @@ const ENDED = new Set([
 ]);
 const REMOVED = new Set([
   'cmdk-in', 'cmdk-panel-in', 'senses-in', 'back-button-in', 'dock-in', 'director-dock-in',
+  // /score/contract: a result arriving (contract.css, animation: none under the pause).
+  'cf-arrive', 'cf-arrive-fade',
 ]);
 const DECORATIVE = new Set([
   'eg-verdict-glow', 'ix-light', 'ix-scan', 'ix-verdict-glow', 'lottie-shimmer-sweep',

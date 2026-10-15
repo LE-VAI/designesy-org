@@ -162,6 +162,14 @@ const SURFACES = [
   'app/report/page.tsx',
   'app/report/report-form.tsx',
   'app/leaderboard/page.tsx',
+  // /score/contract: its builders and every result component.
+  'app/score/contract/copy.ts',
+  'app/score/contract/contract-form.tsx',
+  'app/score/contract/contract-readout.tsx',
+  'app/score/contract/contract-findings.tsx',
+  'app/score/contract/contract-receipt.tsx',
+  'app/score/contract/first-finding.tsx',
+  'app/score/contract/contract-problems.tsx',
 ];
 const RETIRED = [
   [/legitimacy/i, 'the old score name ("Contract score")'],

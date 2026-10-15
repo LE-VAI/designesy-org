@@ -349,59 +349,432 @@
 
 /* -- The two numbers (contract fidelity and baseline), side by side -------- */
 
+/* Side by side at every width (owner decisions D1 and D3: two numbers, never
+   blended). A phone gets two narrow columns, so both numbers stay in one
+   glance. */
 .cf-pair {
+  container: cf-pair / inline-size;
   display: grid;
-  gap: var(--space-20);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(5, auto);
+  gap: var(--space-8) var(--space-16);
 }
 
-.cf-layer {
+/* Each readout is five rows (label, figure, line, count, scale) on the pair's
+   own rows, so a line that wraps longer on one side never pushes that side's
+   count and scale off the other's. */
+.cf-readout {
   display: grid;
-  gap: var(--space-8);
+  grid-row: span 5;
+  grid-template-rows: subgrid;
+  align-content: start;
   min-width: 0;
 }
 
-.cf-layer > h2 {
+.cf-readout > .eg-scale {
+  align-self: end;
+}
+
+.cf-readout + .cf-readout {
+  padding-left: var(--space-16);
+  box-shadow: inset 1px 0 0 var(--line-faint);
+}
+
+/* R33-01 (brand D79): where "CONTRACT FIDELITY" cannot hold one line (375px
+   and narrower) it wraps to two balanced lines, at 12.8px (D68), never an
+   ellipsis and never past its column. A label that fits one line is
+   unaffected by balance, so the rule holds at every width. */
+.cf-readout-label {
+  margin: 0;
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: var(--muted-dim);
+}
+
+/* R31-02 (brand D78): the grade chip never wraps. D79: the numeral is the
+   hero at its full house size at every width (round 3.2's capped numeral is
+   rejected). Where the pair is wide enough (26rem and up) the chip sits
+   beside the numeral over "/100", on the numeral's last baseline. Below that,
+   "/100" and the chip are one deliberate row under the numeral that never
+   breaks (.cf-figure-meta, white-space: nowrap). 26rem is measured, not
+   guessed: at the house size, numeral + 8px + chip first fit at a pair of
+   about 379px, so 416px leaves at least 11.8px of air (QA round 3.3). The DOM
+   order, and so the reading order (score, out of 100, grade), is unchanged. */
+.cf-figure {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
+  align-items: end;
+  gap: var(--space-4) var(--space-8);
+  min-height: 3.6rem;
   margin: 0;
 }
 
-.cf-layer-line,
-.cf-count {
+.cf-figure > .cf-num {
+  grid-row: 1 / span 2;
+  align-self: last baseline;
+}
+
+.cf-figure-meta {
+  display: contents;
+}
+
+.cf-figure .cf-grade {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.cf-figure .cf-of {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: last baseline;
+}
+
+@container cf-pair (width < 26rem) {
+  .cf-figure:not(.is-rest) {
+    grid-template-columns: auto;
+    gap: var(--space-6) 0;
+  }
+
+  .cf-figure:not(.is-rest) > .cf-num {
+    grid-row: 1;
+  }
+
+  .cf-figure-meta {
+    display: flex;
+    grid-row: 2;
+    align-items: center;
+    gap: var(--space-8);
+    white-space: nowrap;
+  }
+
+  .cf-figure-meta > .cf-of,
+  .cf-figure-meta > .cf-grade {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  /* R32-03: at 12.8px (brand D68) "CONTRACT FIDELITY" needs 153.4px at the house 0.08em tracking, and the narrow readout gives it 144px at a 390px viewport. Below the 26rem pair width both labels track at 0.02em (140.4px), so the label holds one line at 390 without going under the 12.8px floor or changing the words. At 375px and narrower it still wraps (136px available), and R33-01 balances that wrap. Narrow only: never apply this tracking from 26rem up. */
+  .cf-readout-label {
+    letter-spacing: 0.02em;
+  }
+}
+
+/* The two exceptions the site's own fonts force (contract-readout.tsx,
+   ReadoutPair). Fraunces has no tabular figures, so a numeral's width follows
+   its digits ("80.0" is 100px and "100.0" 123px at a 320px viewport, where
+   the baseline column is 92.5px); the 26rem switch was measured on the
+   prototype's 70.0 and 74.0. The numeral keeps its full size (D79) and the
+   pair measures it instead: "row" sets "/100" and the chip under the numeral
+   where they do not fit beside it from 26rem; "stack" puts the two readouts
+   one above the other where a numeral is wider than its column side by side.
+   Neither applies the narrow label tracking, which stays a width rule. */
+.cf-pair[data-fit="row"] .cf-figure:not(.is-rest) {
+  grid-template-columns: auto;
+  gap: var(--space-6) 0;
+}
+
+.cf-pair[data-fit="row"] .cf-figure:not(.is-rest) > .cf-num {
+  grid-row: 1;
+}
+
+.cf-pair[data-fit="row"] .cf-figure-meta {
+  display: flex;
+  grid-row: 2;
+  align-items: center;
+  gap: var(--space-8);
+  white-space: nowrap;
+}
+
+.cf-pair[data-fit="row"] .cf-figure-meta > .cf-of,
+.cf-pair[data-fit="row"] .cf-figure-meta > .cf-grade {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+.cf-pair[data-fit="stack"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(10, auto);
+}
+
+.cf-pair[data-fit="stack"] > .cf-readout + .cf-readout {
+  padding-top: var(--space-12);
+  padding-left: 0;
+  box-shadow: inset 0 1px 0 var(--line-faint);
+}
+
+.cf-num {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 72, 'SOFT' 40;
+  /* The house clamp, uncapped (D79): the numeral is the hero at full size at
+     every width. */
+  font-size: clamp(2.6rem, 1.6rem + 9cqi, 4.25rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
+}
+
+.cf-of {
+  font: 500 var(--text-label)/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+.cf-grade {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font: 600 var(--text-label)/1 var(--mono);
+  color: var(--ink);
+}
+
+.cf-grade .eg-lamp {
+  width: 0.8rem;
+  height: 0.4rem;
+}
+
+/* The grade letter in its grade text token (brand D48, D56): grades never
+   borrow a brand colour. A kept previous run steps the letter down to its
+   block's muted ink, so it does not read as current. */
+.cf-grade[data-grade="A"] { color: var(--grade-a-ink); }
+.cf-grade[data-grade="B"] { color: var(--grade-b-ink); }
+.cf-grade[data-grade="C"] { color: var(--grade-c-ink); }
+.cf-grade[data-grade="D"] { color: var(--grade-d-ink); }
+.cf-grade[data-grade="F"] { color: var(--grade-f-ink); }
+[data-prev] .cf-grade[data-grade] { color: var(--ink); }
+
+/* "No score" holds the figure's slot in the display face, so the two
+   readouts keep one baseline and the slot reads as an answer, not a hole. */
+.cf-null {
+  font-family: var(--display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: clamp(1.5rem, 1.2rem + 3cqi, 2.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.cf-readout-line {
   margin: 0;
   font-size: var(--text-label);
   line-height: 1.45;
   color: var(--muted);
+  text-wrap: pretty;
 }
 
-.cf-count b {
-  font-weight: 600;
-  color: var(--ink);
+.cf-count {
+  margin: 0;
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
-.cf-null {
-  margin: 0;
-  font: 500 var(--text-lead)/1.2 var(--sans);
+.cf-count b {
+  font-weight: 500;
   color: var(--ink);
 }
 
-/* The site could not be read (W9): the engine's own sentence, then the
-   contract's standing, then the one action. */
-.cf-unreachable {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-8);
-  padding-top: var(--space-16);
-  border-top: 1px solid var(--line-faint);
+/* The rest state: a hairline where the figure will land (the house mark). */
+.cf-figure.is-rest .cf-num::before {
+  content: "";
+  display: inline-block;
+  width: 2.5rem;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--line-strong);
+  vertical-align: middle;
 }
 
-.cf-unreachable p {
+.cf-readout .eg-scale {
+  margin-top: var(--space-4);
+}
+
+/* Under a ceiling the scale keeps the uncapped reading as an outline marker,
+   so the cap is seen, not only stated. Like the marker, it takes no rim (D75). */
+.cf-ghost {
+  --at: 0;
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: calc(var(--at) * 1%);
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px var(--muted-dim);
+  background: var(--surface-raised);
+}
+
+/* Flags under the pair: the cap, the gaps, the leaderboard. Each starts with its cause. */
+.cf-flags {
+  display: grid;
+  gap: var(--space-10);
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cf-flag {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  gap: var(--space-10);
+  align-items: start;
+  font-size: var(--text-label);
+  line-height: 1.55;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.cf-flag b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.cf-flag .eg-lamp {
+  width: 1rem;
+  margin-top: 0.42rem;
+}
+
+.cf-calc > summary {
+  min-height: 2.25rem;
+  font-size: var(--text-label);
+}
+
+.cf-calc p {
+  margin: var(--space-4) 0 0;
   font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
 }
 
-/* -- The instrument: a full-width row under the face and the side --------- */
+.cf-calc p b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* -- The instrument: the side comes first in the source -------------------- */
+
+/* Contract mode puts the side (both numbers, the first finding) before the
+   registers in the DOM, in the priority order of WIREFRAMES 1.3: a screen
+   reader, the Tab key and a phone all meet the two numbers first, and "Go to
+   this check" is the second Tab stop after the verdict. A wide bench draws
+   the side in the instrument's second column, as every engine page does. */
+@container bench (width >= 52rem) {
+  .cf .eg-inst-body[data-side-first] > .eg-faces {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .cf .eg-inst-body[data-side-first] > .eg-side {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+@container bench (width < 52rem) {
+  .cf .eg-inst-body[data-side-first] > .eg-side {
+    border-top: 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+}
+
+/* The side keeps the house column (engine.css: .eg-side-rest is a flex
+   column that stretches its children). The readouts and the empty-run card
+   are inline-size containers with no content width of their own. */
+.cf .eg-side-rest > * {
+  min-width: 0;
+}
+
+/* The empty-run card (W8, W9) sits in the side under both "No score"
+   readouts: the house card, with the contract's line and what to do. */
+.cf .eg-side .score-hero-card.score-empty-run {
+  padding: var(--space-16);
+  border-radius: var(--radius-lg);
+}
+
+.cf .score-empty-run-contract {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.cf .score-empty-run-todo {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.cf .score-empty-run-todo ul {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding-left: var(--space-16);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Coverage: located by name, by value, and not located, as one bar of the
+   declared total. Neutral ink: coverage is a reading, never a pass or fail. */
+.cf-coverage {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.cf-meter {
+  display: flex;
+  gap: 2px;
+  height: var(--space-8);
+  max-width: 26rem;
+}
+
+.cf-meter > i {
+  flex: var(--w) 0 0;
+  border-radius: var(--radius-sm);
+}
+
+.cf-meter > .is-name,
+.cf-meter-key .is-name { background: var(--ink); }
+.cf-meter > .is-value,
+.cf-meter-key .is-value { background: color-mix(in srgb, var(--ink) 42%, transparent); }
+.cf-meter > .is-none,
+.cf-meter-key .is-none { background: var(--lv-well); box-shadow: inset 0 0 0 1px var(--lv-well-line); }
+
+.cf-meter-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-16);
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cf-meter-key > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.cf-meter-key i {
+  width: var(--space-10);
+  height: var(--space-6);
+  border-radius: var(--radius-sm);
+}
+
+.cf-meter-key b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* -- The first finding: declared beside shipped ----------------------------- */
 
 .cf-wide {
   padding: var(--space-20) var(--space-20) var(--space-24);
@@ -415,6 +788,616 @@
     border-top: 1px solid var(--line-faint);
     border-bottom: 0;
   }
+}
+
+.cf-start {
+  /* A well inside the instrument is a lifted surface: the dim tier rides
+     --muted there, as a touched cell's does (engine.css). */
+  --muted-dim: var(--muted);
+  container: cf-start / inline-size;
+  display: grid;
+  gap: var(--space-12);
+  padding: var(--space-14) var(--space-14) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.cf-start-head {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.cf-start-head > .eg-label {
+  margin: 0;
+}
+
+.cf-start-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-8);
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.cf-start-title .eg-lamp {
+  flex: 0 0 auto;
+  width: 1rem;
+  transform: translateY(-0.12rem);
+}
+
+.cf-start-title .cf-mono {
+  color: var(--muted);
+}
+
+.cf-start-detail {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.cf-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.cf-spec {
+  display: grid;
+  align-content: start;
+  gap: var(--space-8);
+  min-width: 0;
+  padding: var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.cf-spec p {
+  margin: 0;
+}
+
+.cf-spec-label {
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cf-spec-where,
+.cf-spec-values {
+  font: 500 var(--text-label)/1.45 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* The specimen draws the pair in the customer's own colours (data from the
+   response, never a style token), so the difference is seen, then read. It is
+   decorative and aria-hidden: the values and the ratio are text beside it. */
+.cf-swatch {
+  display: grid;
+  place-items: center;
+  min-height: var(--space-40);
+  padding: 0 var(--space-12);
+  border-radius: var(--radius-md);
+  background: var(--spec-bg);
+  color: var(--spec-fg);
+  font: 600 var(--text-body)/1 var(--sans);
+}
+
+.cf-ratio {
+  font: 500 var(--text-lead)/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.cf-ratio small {
+  margin-left: var(--space-4);
+  font-size: var(--text-label);
+  color: var(--muted-dim);
+}
+
+/* Every other check: what the contract declared, and the shipped values outside it. */
+.cf-evidence {
+  display: grid;
+  gap: var(--space-10);
+  margin: 0;
+}
+
+.cf-evidence > div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: var(--space-4) var(--space-12);
+  align-items: baseline;
+}
+
+@container cf-start (width < 26rem) {
+  .cf-evidence > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cf-evidence dt {
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cf-evidence dd {
+  margin: 0;
+  min-width: 0;
+  font: 500 var(--text-label)/1.5 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.cf-evidence ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cf-evidence code {
+  color: var(--ink);
+}
+
+.cf-evidence-more {
+  display: block;
+  margin-top: var(--space-4);
+}
+
+/* Wide: the finding's words on the left, the evidence on the right. */
+@container cf-start (width >= 44rem) {
+  .cf-start {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-24);
+    padding: var(--space-16) var(--space-16) var(--space-16) var(--space-20);
+  }
+  .cf-start-head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .cf-start-foot {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: end;
+  }
+  .cf-specs,
+  .cf-evidence {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+/* Narrow: declared above shipped (WIREFRAMES W4 at 375). */
+@container cf-start (width < 26rem) {
+  .cf-specs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cf-start-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-8) var(--space-12);
+}
+
+.cf-start-foot p {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* -- No score: why, and what to do ------------------------------------------ */
+
+.cf-why {
+  display: grid;
+  gap: var(--space-10);
+  padding: var(--space-14) var(--space-14) var(--space-16);
+  border-radius: var(--radius-lg);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+}
+
+.cf-why h3 {
+  margin: 0;
+  font: 600 var(--text-body)/1.35 var(--sans);
+  color: var(--ink);
+}
+
+.cf-why p,
+.cf-why li {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.cf-why ul {
+  display: grid;
+  gap: var(--space-6);
+  margin: 0;
+  padding-left: var(--space-16);
+}
+
+.cf-why li::marker {
+  color: var(--muted-dim);
+}
+
+/* -- Check lists: the field each check read ---------------------------------- */
+
+.cf-list .eg-section-head {
+  align-items: flex-end;
+}
+
+.cf-reads {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+  align-items: baseline;
+  font-size: var(--text-label);
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.cf-reads code {
+  padding: var(--space-fine-10) var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--lv-well);
+  box-shadow: inset 0 0 0 1px var(--lv-well-line);
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* R31-01 (brand D78): below the narrow breakpoint the status word takes its
+   own line under the check title, so the title and the detail keep the row's
+   full width and the long #267 words ("Does not apply", "Needs a browser
+   run") are kept whole. The row body's three parts join the row's grid
+   (display: contents on a plain span) so the status can sit between the
+   title and the rest; the DOM order, and so the button's name, is unchanged. */
+@container eg (width < 36rem) {
+  .cf-list .eg-row {
+    grid-template-columns: 1.4rem minmax(0, 1fr);
+  }
+  .cf-list .eg-row > .eg-lamp {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .cf-list .eg-row-body {
+    display: contents;
+  }
+  .cf-list .eg-row-body > *,
+  .cf-list .eg-row > .eg-row-status {
+    grid-column: 2;
+  }
+  .cf-list .eg-row-title {
+    grid-row: 1;
+  }
+  .cf-list .eg-row > .eg-row-status {
+    grid-row: 2;
+    padding-top: 0;
+  }
+}
+
+/* The check id rides inline before the title on a narrow list, where the
+   house row hides its id column (engine.css, eg-row under 36rem). Only one of
+   the two is ever displayed, so it is announced once. */
+.cf-id-inline {
+  display: none;
+  margin-right: var(--space-6);
+  font: 500 var(--text-label)/1 var(--mono);
+  color: var(--muted-dim);
+}
+
+@container eg (width < 36rem) {
+  .cf-id-inline {
+    display: inline;
+  }
+  .cf-list .eg-section-head > .eg-seg {
+    flex: 1 1 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "track";
+  }
+  .cf-list .eg-seg-label {
+    display: none;
+  }
+  .cf-list .eg-seg-track {
+    justify-self: stretch;
+  }
+  .cf-list .eg-seg-opt {
+    padding: var(--space-4) var(--space-6);
+    white-space: normal;
+    text-wrap: balance;
+    line-height: 1.15;
+    text-overflow: clip;
+  }
+}
+
+.cf-list .eg-find-group > h3.eg-label {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+}
+
+.cf-more-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-12);
+  width: 100%;
+  min-height: 3rem;
+  padding: var(--space-12) var(--space-16);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-faint);
+  color: var(--muted);
+  font: 500 var(--text-body)/1.3 var(--sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cf-more-row:hover {
+    background: var(--surface-hover);
+    color: var(--ink);
+  }
+}
+
+.cf-more-row .eg-chev {
+  margin: 0;
+}
+
+.cf-more-row[aria-expanded="true"] .eg-chev {
+  transform: rotate(90deg);
+}
+
+.cf-skip .eg-row-detail {
+  color: var(--muted);
+}
+
+/* "Go to this check" lands the row clear of the sticky top bar. */
+.cf-list .eg-row {
+  scroll-margin-top: calc(var(--topbar-h, var(--space-72)) + var(--space-16));
+}
+
+/* The expanded comparison: a real table; on a narrow list each row becomes a
+   stack of labelled pairs in the same reading order (WIREFRAMES W5). */
+.cf-table {
+  container: cf-table / inline-size;
+  margin: var(--space-4) 0 var(--space-8);
+}
+
+.cf-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-label);
+  line-height: 1.45;
+}
+
+.cf-table caption {
+  padding-bottom: var(--space-8);
+  font: 500 var(--text-label)/1.3 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+  text-align: left;
+}
+
+.cf-table th {
+  padding: var(--space-6) var(--space-12) var(--space-6) 0;
+  border-bottom: 1px solid var(--line);
+  font: 500 var(--text-label)/1.3 var(--mono);
+  color: var(--muted);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cf-table td {
+  padding: var(--space-8) var(--space-12) var(--space-8) 0;
+  border-bottom: 1px solid var(--line-faint);
+  color: var(--ink);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.cf-table td code {
+  font: 500 var(--text-label)/1.4 var(--mono);
+}
+
+.cf-table td small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+
+.cf-dot {
+  display: inline-block;
+  width: var(--space-10);
+  height: var(--space-10);
+  margin-right: var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--spec-bg);
+  box-shadow: inset 0 0 0 1px var(--line);
+  vertical-align: -1px;
+}
+
+@container cf-table (width < 34rem) {
+  .cf-table thead {
+    display: none;
+  }
+  .cf-table table,
+  .cf-table tbody,
+  .cf-table tr,
+  .cf-table td {
+    display: block;
+  }
+  .cf-table tr {
+    padding: var(--space-8) 0;
+    border-bottom: 1px solid var(--line-faint);
+  }
+  .cf-table td {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: var(--space-8);
+    padding: var(--space-2) 0;
+    border: 0;
+  }
+  .cf-table caption {
+    display: block;
+  }
+  .cf-table td::before {
+    content: attr(data-label);
+    font: 500 var(--text-label)/1.6 var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-dim);
+  }
+}
+
+.cf-more-copy {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cf-more-copy p {
+  margin: 0 0 var(--space-6);
+  color: var(--muted);
+  max-inline-size: 70ch;
+}
+
+.cf-leftout {
+  margin-top: var(--space-8);
+}
+
+/* -- The receipt ------------------------------------------------------------ */
+
+.cf-receipt {
+  display: grid;
+  gap: var(--space-12);
+  margin: 0;
+}
+
+.cf-receipt > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--space-4) var(--space-16);
+  align-items: baseline;
+}
+
+@container eg (width < 36rem) {
+  .cf-receipt > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.cf-receipt dt {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-dim);
+}
+
+.cf-receipt dd {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  min-width: 0;
+  font: 500 var(--text-label)/1.55 var(--mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.cf-receipt dd small {
+  font: 400 var(--text-label)/1.4 var(--sans);
+  color: var(--muted);
+}
+
+.cf-digest {
+  word-spacing: 0.4ch;
+}
+
+.cf-lint-receipt {
+  margin: 0;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* -- A kept previous run (Edit inputs) -------------------------------------- */
+
+/* The last result stays under the reopened form until the next run lands
+   (owner decision 2026-10-08). Its ink steps down to the house muted tier, so
+   it never reads as current; one plain label names it. */
+.cf-prev {
+  --ink: var(--muted);
+  display: grid;
+  gap: var(--space-16);
+  min-width: 0;
+}
+
+.cf-prev > .cf-prev-label {
+  margin: 0;
+  padding-top: var(--space-8);
+}
+
+.cf-prev > .score-verdict-line {
+  display: block;
+  font-size: var(--text-body);
+  line-height: 1.45;
+  max-inline-size: 72ch;
+  padding-block: var(--space-2);
+}
+
+/* -- A result arriving ------------------------------------------------------- */
+
+/* Fade and rise (transform and opacity only), once, when the result lands.
+   Reduced motion fades only; the house Pause motion switch plays nothing and
+   holds nothing invisible. */
+.cf-bench > .score-verdict-line,
+.cf-bench > .cf-list,
+.cf-bench > .cf-receipt-section {
+  animation: cf-arrive var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes cf-arrive {
+  from { opacity: 0; transform: translateY(var(--space-6)); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes cf-arrive-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-bench > .score-verdict-line,
+  .cf-bench > .cf-list,
+  .cf-bench > .cf-receipt-section {
+    animation: cf-arrive-fade var(--duration-quick) linear both;
+  }
+}
+
+html[data-motion="paused"] .cf-bench > .score-verdict-line,
+html[data-motion="paused"] .cf-bench > .cf-list,
+html[data-motion="paused"] .cf-bench > .cf-receipt-section {
+  animation: none;
 }
 
 /* -- Panels: the rejected contract and the request-error notice ----------- */
