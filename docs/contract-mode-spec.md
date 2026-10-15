@@ -762,7 +762,7 @@ A contract-mode run stores nothing about the contract or the page.
 | Result JSON | No | returned with `Cache-Control: no-store` |
 | Scored URL, contract URL | No | kept out of counters and out of logs written by this code |
 | Contract digest | No | returned to the caller only; no counter key is derived from it |
-| Caller IP | Briefly | the rate limiters key their counters by IP for the length of each window; usage counters hold only a salted hash in a daily sketch (below) |
+| Caller IP | No | the rate limiters key their counters by `clientKey()`, a keyed hash of the IP (`app/lib/rate-limit.ts`), for the length of each window; usage counters hold only a salted hash in a daily sketch (below) |
 
 **Usage counters.** `app/lib/usage.ts` counts calls per UTC day. Every request that passes the general rate limits of `/api/score` counts once under `score:<client>`. A contract run that answers 200 also counts once under `score-contract:<client>`. `<client>` comes from the user agent and is one of `browser`, `mcp`, `action`, `cli` or `script`. Each key holds a call count and a HyperLogLog sketch of a salted hash of the caller's IP; the salt changes daily, so one caller cannot be linked across days, and a sketch cannot list its members. Keys come from closed lists and expire.
 
