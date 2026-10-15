@@ -1223,7 +1223,7 @@
 
 .ix-verdict-tally {
   font-family: var(--mono);
-  font-size: 0.8rem;
+  font-size: var(--text-label);
   line-height: 1.2;
   color: var(--muted);
 }

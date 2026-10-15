@@ -909,11 +909,14 @@
   min-height: 3.6rem;
 }
 
+/* A display numeral, fluid: 50px on a phone, 57.6px from about 850px wide,
+   and its lower bound is the h1 step. The row's 3.6rem min-height holds its
+   line at every size. */
 .eg-grade {
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: 3.6rem;
+  font-size: clamp(2.441rem, 2.8rem + 1.5vw, 3.6rem);
   line-height: 0.9;
   letter-spacing: -0.02em;
   color: var(--ink);
