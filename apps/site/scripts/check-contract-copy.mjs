@@ -116,11 +116,13 @@ check('caret line', () => {
   assert.equal(C.caretLine([{ code: 'A' }, { code: 'B', line: 5 }, { code: 'C', line: 2 }]), 2);
   assert.equal(C.lineOffset('ab\ncd\nef', 3), 6);
 });
-check('lint line only when the linter spoke', () => {
-  assert.equal(C.lintLine([{ code: 'TOO_FEW_COLORS' }], [], '0.4.0'), null);
-  assert.deepEqual(C.lintLine([{ code: 'LINT_ERROR' }], [{ code: 'LINT_WARNING' }, { code: 'NO_TYPE' }], '0.4.0'), { version: '0.4.0', errors: 1, warnings: 1 });
-  // Beside a structured code the engine has dropped the linter's row for that path: no short count.
-  assert.equal(C.lintLine([{ code: 'VALUE_INVALID' }, { code: 'LINT_ERROR' }], [{ code: 'LINT_WARNING' }], '0.4.0'), null);
+check('provenance line: the linter totals as reported, and the rows that absorbed findings', () => {
+  const L = { package: '@google/design.md', version: '0.4.0', errors: 2, warnings: 1, infos: 0 };
+  assert.equal(C.lintLine(null, []), null);
+  assert.equal(C.lintText(C.lintLine(L, [{ code: 'VALUE_INVALID', linterFinding: true }, { code: 'TOKEN_DROPPED', linterFinding: true }, { code: 'DUPLICATE_SECTION' }])), 'Linted with @google/design.md 0.4.0: 2 errors, 1 warning (shown above as 2 problems).');
+  assert.equal(C.lintText(C.lintLine({ ...L, errors: 1, warnings: 0 }, [{ code: 'VALUE_INVALID', linterFinding: true }])), 'Linted with @google/design.md 0.4.0: 1 error, 0 warnings (shown above as 1 problem).');
+  // The totals are the linter's own, whatever the rows show.
+  assert.equal(C.lintText(C.lintLine({ ...L, errors: 5, warnings: 3 }, [])), 'Linted with @google/design.md 0.4.0: 5 errors, 3 warnings.');
 });
 
 // ── 2. Verdict ──

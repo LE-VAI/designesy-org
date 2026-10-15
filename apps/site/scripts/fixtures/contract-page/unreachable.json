@@ -54,7 +54,7 @@
    "format": "design.md",
    "formatVersion": null,
    "source": "inline",
-   "bytes": 263,
+   "bytes": 284,
    "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
    "tokens": {
     "colors": 4,
@@ -99,7 +99,7 @@
   "tokensExtracted": 0,
   "receipt": {
    "subject": "https://unreachable.invalid/",
-   "retrieved_at": "2026-10-14T23:14:37.816Z",
+   "retrieved_at": "2026-10-15T00:02:12.551Z",
    "contract_version": "v0.4.6",
    "engine_version": "1.5.0",
    "scope": "own-contract",

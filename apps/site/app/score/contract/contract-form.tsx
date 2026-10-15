@@ -19,7 +19,7 @@ import { normalizeUrl, useAutoRun, useEngineRun } from '../../lib/engine/use-eng
 import { toOutcomes, type Phase, type RegistryView } from '../../lib/engine/types';
 import { fmtScore } from '../verdict';
 import { MIN_COLORS, MIN_TYPE_STYLES } from '../../lib/own-contract/limits';
-import { ContractProblems } from './contract-problems';
+import { ContractProblems, LintLine } from './contract-problems';
 import {
   ANNOUNCE,
   FIELD_ERROR,
@@ -46,8 +46,10 @@ import {
   verdictFidelityNull,
   verdictPrefix,
   verdictWords,
+  lintLine,
   type ContractProblem,
   type LayerResult,
+  type LinterTotals,
   type Source,
   type Step,
 } from './copy';
@@ -62,7 +64,7 @@ type ContractResponse = {
   fidelity?: Layer;
   baseline?: Layer;
   checks?: { id: string; status: string; detail?: string; layer?: string }[];
-  ownContract?: { name?: string | null; format?: string; tokens?: Record<string, number> };
+  ownContract?: { name?: string | null; format?: string; tokens?: Record<string, number>; linter?: LinterTotals | null };
   unreachable?: boolean;
   unreachableDetail?: string;
 };
@@ -74,7 +76,7 @@ type FieldError = { field: FieldKey; message: string };
 type Ending =
   | { kind: 'none' }
   | { kind: 'landed'; took: string }
-  | { kind: 'rejected'; problems: ContractProblem[]; warnings: ContractProblem[] }
+  | { kind: 'rejected'; problems: ContractProblem[]; warnings: ContractProblem[]; linter: LinterTotals | null }
   | { kind: 'request'; title: string; message: string };
 
 const GLOBE = (
@@ -206,7 +208,6 @@ export function ContractForm({
   baselineIds,
   titles,
   ceilings,
-  linterVersion,
 }: {
   initialUrl: string;
   initialContract: string;
@@ -216,7 +217,6 @@ export function ContractForm({
   titles: Record<string, string>;
   ceilings: Record<string, number>;
   minScored: number;
-  linterVersion: string;
 }) {
   const uid = useId();
   const ids = {
@@ -381,7 +381,12 @@ export function ContractForm({
     }
     if (phase === 'error' && failure) {
       if (failure.status === 422 && failure.problems?.length) {
-        setEnding({ kind: 'rejected', problems: failure.problems as ContractProblem[], warnings: (failure.warnings ?? []) as ContractProblem[] });
+        setEnding({
+          kind: 'rejected',
+          problems: failure.problems as ContractProblem[],
+          warnings: (failure.warnings ?? []) as ContractProblem[],
+          linter: (failure.body?.linter as LinterTotals | null | undefined) ?? null,
+        });
         announce(ANNOUNCE.rejected);
       } else {
         // The alert card speaks for itself; focus stays on the pressed key.
@@ -873,7 +878,7 @@ export function ContractForm({
           problems={ending.problems}
           warnings={ending.warnings}
           text={ran.current?.source !== 'link' ? ran.current?.text ?? '' : ''}
-          linterVersion={linterVersion}
+          linter={ending.linter}
           onEdit={editContract}
         />
       )}
@@ -919,6 +924,8 @@ export function ContractForm({
         scoring="fidelity reads your contract · baseline reads none · never blended"
         restNote=""
       />
+
+      {landed && lintLine(landed.ownContract?.linter) && <LintLine lint={lintLine(landed.ownContract?.linter)!} className="cf-lint-run" />}
 
       {busy && (
         <ul className="cf-skeleton" aria-hidden="true">

@@ -10,7 +10,6 @@ import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../../lib/engine/engine-page';
 import { BASELINE_GROUPS, BASELINE_IDS, baselineTitle } from '../../lib/own-contract/baseline';
 import { FIDELITY_CEILINGS, FIDELITY_DEFS, FIDELITY_WEIGHTS, MIN_SCORED_CHECKS } from '../../lib/own-contract/formula';
-import { LINTER_VERSION } from '../../lib/own-contract/design-md';
 import { MIN_COLORS } from '../../lib/own-contract/limits';
 import type { RegistryCheck } from '../../lib/engine/types';
 import { ContractForm } from './contract-form';
@@ -74,7 +73,6 @@ export default async function ContractPage({ searchParams }: { searchParams?: Pr
           titles={titles}
           ceilings={ceilings}
           minScored={MIN_SCORED_CHECKS}
-          linterVersion={LINTER_VERSION}
         />
 
         <EngineMethod

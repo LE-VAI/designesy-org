@@ -30,6 +30,10 @@
  *      rejected run lists every problem the engine returned, each sentence
  *      whole (no ellipsis), and its heading, which takes focus for screen
  *      readers, paints no focus ring (it is not a control).
+ *   7. Every rejected and landed state prints the provenance line (brand
+ *      D75) once, with the linter's own totals as the engine returned them
+ *      and, where linter findings were merged into structured problems, how
+ *      many shown rows absorbed them.
  *   5. No text on the page under 12.8px (brand D68), sr-only text and
  *      role="img" drawings aside.
  *   6. No horizontal overflow of the document.
@@ -38,6 +42,8 @@
  *   --break live    removes the live region before the checks (2 fails)
  *   --break focus   sends focus to <body> after each state
  *   --break ring    gives the focused result heading the control ring back
+ *   --break lint    removes the provenance line ("Linted with ...")
+ *   --break totals  serves linter totals one error off the record
  *   --break         live and focus. Each must exit 1.
  *
  * Usage:
@@ -85,6 +91,18 @@ async function fillAndRun(page, contract, site = 'example.com') {
   await page.keyboard.press('Enter');
 }
 
+/** The provenance line the page must print for a recorded engine answer:
+    the linter's own totals (rejected: body.linter; landed: ownContract.linter)
+    and the shown rows that absorbed linter findings. */
+const words = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+function provenance(reply) {
+  const b = reply.body;
+  const l = b.linter !== undefined ? b.linter : b.ownContract && b.ownContract.linter;
+  if (!l) return null;
+  const n = (b.problems || []).filter((p) => p.linterFinding === true).length;
+  return `Linted with @google/design.md ${l.version}: ${words(l.errors, 'error', 'errors')}, ${words(l.warnings, 'warning', 'warnings')}${n ? ` (shown above as ${words(n, 'problem', 'problems')})` : ''}.`;
+}
+
 const STATES = [
   { id: 'entry', reply: null, go: async () => {}, focus: null, say: '' },
   {
@@ -106,13 +124,13 @@ const STATES = [
     focus: '.cf-bar .eg-bar-go',
     say: 'Scoring example.com against your contract.',
   },
-  { id: 'rejected-one', reply: RESP.prose, go: async (page) => fillAndRun(page, text('prose.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
-  { id: 'rejected-multi', reply: RESP.multi, go: async (page) => fillAndRun(page, text('multi.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 3 },
+  { id: 'rejected-one', lint: true, reply: RESP.prose, go: async (page) => fillAndRun(page, text('prose.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 1 },
+  { id: 'rejected-multi', lint: true, reply: RESP.multi, go: async (page) => fillAndRun(page, text('multi.md')), wait: '#cf-problems-h', focus: '#cf-problems-h', say: 'Run stopped: your contract was not accepted.', problems: 3 },
   { id: 'request-429', reply: RESP.tooMany, go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Too many runs' },
   { id: 'request-413', reply: RESP.tooLarge, go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Contract too large' },
   { id: 'request-network', reply: 'abort', go: async (page) => fillAndRun(page, text('good.md')), wait: '.cf-notice', focus: '.cf-bar .eg-bar-go', alert: 'Could not reach the scoring server' },
-  { id: 'landed', reply: RESP.landed, go: async (page) => fillAndRun(page, text('good.md'), 'www.designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
-  { id: 'unreachable', reply: RESP.unreachable, go: async (page) => fillAndRun(page, text('good.md'), 'unreachable.invalid'), wait: '.cf-unreachable', focus: '.score-verdict-line', sayRe: /^Run stopped after \d+\.\d s\.$/ },
+  { id: 'landed', lint: true, reply: RESP.landed, go: async (page) => fillAndRun(page, text('good.md'), 'www.designesy.org'), wait: '.eg-inst[data-phase="done"]', focus: '.score-verdict-line', sayRe: /^Run finished in \d+\.\d s\.$/ },
+  { id: 'unreachable', lint: true, reply: RESP.unreachable, go: async (page) => fillAndRun(page, text('good.md'), 'unreachable.invalid'), wait: '.cf-unreachable', focus: '.score-verdict-line', sayRe: /^Run stopped after \d+\.\d s\.$/ },
 ];
 
 const onlyStates = opt('--states', null);
@@ -151,7 +169,13 @@ async function main() {
       posts++;
       if (st.reply === 'hold') return; // never answered: the run stays in flight
       if (st.reply === 'abort') return route.abort('failed');
-      const r = st.reply;
+      let r = st.reply;
+      // --break totals: the page is served totals that differ from the record it is checked against.
+      if (BREAK.includes('totals') && r.body) {
+        r = JSON.parse(JSON.stringify(r));
+        if (r.body.linter) r.body.linter.errors += 1;
+        if (r.body.ownContract && r.body.ownContract.linter) r.body.ownContract.linter.errors += 1;
+      }
       return route.fulfill({ status: r.status, contentType: 'application/json', headers: r.retryAfter ? { 'Retry-After': String(r.retryAfter) } : {}, body: JSON.stringify(r.body) });
     });
     // No other write leaves the page.
@@ -168,6 +192,7 @@ async function main() {
       await page.waitForTimeout(700);
       if (BREAK.includes('live')) await page.evaluate(() => document.querySelector('.cf-bench > p[role="status"]')?.remove());
       if (BREAK.includes('focus')) await page.evaluate(() => document.activeElement?.blur?.());
+      if (BREAK.includes('lint')) await page.evaluate(() => document.querySelectorAll('.cf-lint').forEach((e) => e.remove()));
       if (BREAK.includes('ring')) await page.addStyleTag({ content: '.cf-problems-head .eg-h2[tabindex="-1"]:focus { outline: 2px solid var(--signal-access); }' });
 
       const probe = await page.evaluate(() => {
@@ -190,6 +215,7 @@ async function main() {
           activeDesc: a ? `${a.tagName.toLowerCase()}${a.id ? '#' + a.id : ''}.${String(a.className).split(' ')[0]}` : 'none',
           alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim()),
           problems: document.querySelectorAll('.cf-problem-list > li').length,
+          lint: [...document.querySelectorAll('.cf-lint')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
           // Engine sentences are shown whole: no row ends a word on an ellipsis.
           clipped: [...document.querySelectorAll('.cf-problem-list p, .cf-warnings li')].map((e) => e.textContent).filter((t) => t.includes('…')),
           // The result heading takes focus for screen readers but is no control: it paints no ring.
@@ -218,6 +244,12 @@ async function main() {
       if (st.alert && (probe.alerts.length !== 1 || !probe.alerts[0].startsWith(st.alert))) fail(`alerts ${JSON.stringify(probe.alerts)}, wanted one starting "${st.alert}"`);
       if (!st.alert && probe.alerts.length) fail(`unexpected alert ${JSON.stringify(probe.alerts)}`);
       if (st.problems !== undefined && probe.problems !== st.problems) fail(`${probe.problems} problems listed, wanted ${st.problems}`);
+      if (st.lint) {
+        const want = provenance(st.reply);
+        if (!want) fail('the recorded answer has no linter totals to cite');
+        else if (probe.lint.length !== 1) fail(`${probe.lint.length} provenance lines, wanted 1: "${want}"`);
+        else if (probe.lint[0] !== want) fail(`provenance line "${probe.lint[0]}", wanted the linter's own totals "${want}"`);
+      }
       if (probe.clipped.length) fail(`a problem or warning is cut short: ${probe.clipped[0].slice(0, 90)}`);
       if (probe.headingRing) fail(`the focused result heading paints a ring (${probe.headingRing}); it is not a control`);
       if (probe.small.length) fail(`text under 12.8px: ${probe.small.join('; ')}`);

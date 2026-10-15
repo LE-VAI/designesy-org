@@ -26,6 +26,13 @@
     ]
    }
   ],
-  "warnings": []
+  "warnings": [],
+  "linter": {
+   "package": "@google/design.md",
+   "version": "0.4.0",
+   "errors": 0,
+   "warnings": 0,
+   "infos": 0
+  }
  }
 }

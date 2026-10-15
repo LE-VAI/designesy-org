@@ -18,7 +18,7 @@ import { LineCounter, parseDocument } from 'yaml';
 import { YAML_MAX_ALIASES } from './limits';
 import { cleanFamily, dimension, hasOtherUnit, parseColor, parseDimension, parseFeatureTags, parseLineHeight, splitFamilies, typeRole, hexOf } from './normalize';
 import { problem, warning } from './problems';
-import type { Alias, ColorToken, ContrastPair, DimensionToken, DropReason, FamilyToken, ParsedContract, Problem, ReadOutcome, SizeToken, TypeStyle } from './types';
+import type { LinterTotals, Alias, ColorToken, ContrastPair, DimensionToken, DropReason, FamilyToken, ParsedContract, Problem, ReadOutcome, SizeToken, TypeStyle } from './types';
 
 /** The linter's import, injectable so tests and the route share one loader. */
 export type LintFn = (text: string) => LintReportLike;
@@ -127,6 +127,17 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
   const warnings: Problem[] = [];
   const lines = text.split('\n');
   const { blocks, bodyStartLine } = yamlBlocks(text);
+  // The linter reads every file, accepted or not, so its own totals can be
+  // cited on every outcome (brand D75: the provenance line).
+  let report: LintReportLike | null = null;
+  try {
+    report = lint(text);
+  } catch {
+    report = null;
+  }
+  const linter: LinterTotals | null = report
+    ? { package: '@google/design.md', version: LINTER_VERSION, errors: report.summary.errors, warnings: report.summary.warnings, infos: report.summary.infos }
+    : null;
 
   // ── 1. Raw read ──
   const raw = new Map<string, unknown>();
@@ -162,7 +173,7 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     else seen.set(key, h.line);
   }
 
-  if (errors.some((p) => p.code === 'YAML_INVALID')) return { errors, warnings, parsed: null };
+  if (errors.some((p) => p.code === 'YAML_INVALID')) return { errors, warnings, parsed: null, linter };
 
   const hasGroups = TOKEN_GROUPS.some((g) => asEntries(raw.get(g)).length > 0);
   if (!hasGroups) {
@@ -179,11 +190,11 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     } else {
       errors.push(problem('NO_TOKENS_FOUND'));
     }
-    return { errors, warnings, parsed: null };
+    return { errors, warnings, parsed: null, linter };
   }
 
   // ── 3. Linter read ──
-  const report = lint(text);
+  if (!report) report = lint(text);
   const ds = report.designSystem;
   // The linter's own sentence rides as linterMessage, whole (a long one is
   // cut at a word boundary, never mid-word); `value` stays what the engine
@@ -421,9 +432,9 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     aliases,
     omitted,
     declaredTokenMap: new Map(),
-    linter: { package: '@google/design.md', version: LINTER_VERSION, errors: report.summary.errors, warnings: report.summary.warnings, infos: report.summary.infos },
+    linter,
   };
-  return { errors: withoutCoveredLint(errors), warnings, parsed };
+  return { errors: withoutCoveredLint(errors), warnings, parsed, linter };
 }
 
 /** One cause per path: a LINT_ERROR is dropped where a structured code
@@ -432,5 +443,8 @@ export function readDesignMd(text: string, lint: LintFn): ReadOutcome {
     fault. A LINT_ERROR with no structured code beside it stays. */
 export function withoutCoveredLint(errors: Problem[]): Problem[] {
   const covered = new Set(errors.filter((p) => p.code !== 'LINT_ERROR' && p.path).map((p) => p.path as string));
-  return errors.filter((p) => p.code !== 'LINT_ERROR' || !p.path || !covered.has(p.path));
+  const linted = new Set(errors.filter((p) => p.code === 'LINT_ERROR' && p.path && covered.has(p.path)).map((p) => p.path as string));
+  return errors
+    .filter((p) => p.code !== 'LINT_ERROR' || !p.path || !covered.has(p.path))
+    .map((p) => (p.code !== 'LINT_ERROR' && p.path && linted.has(p.path) ? { ...p, linterFinding: true } : p));
 }

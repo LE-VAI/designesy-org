@@ -357,11 +357,23 @@ await check('DM-10 invalid color and unit (probe P6): VALUE_INVALID per path, th
   assert.equal(accent.message, 'colors.accent: "#zzzzzz" is not a valid color. Use a form like "#0A94FF" or "oklch(0.66 0.18 250)".');
   assert.equal(r.problems.find((p) => p.path === 'rounded.big').message, 'rounded.big: "16pt" is not a valid dimension. Use a form like "16px" or "1rem".');
 });
+await check('a rejected DESIGN.md cites the linter totals as reported and marks the problems that absorbed its findings', async () => {
+  const r = await readFix('DM-10.md');
+  const own = lint(fixture('DM-10.md')).summary;
+  assert.deepEqual(r.linter, { package: '@google/design.md', version: '0.4.0', errors: own.errors, warnings: own.warnings, infos: own.infos });
+  assert.ok(own.errors >= 2, `the linter reports ${own.errors} errors for DM-10`);
+  assert.deepEqual(only(r, 'VALUE_INVALID').map((p) => p.linterFinding), [true, true]);
+  const prose = await readFix('DM-3e.md');
+  assert.ok(prose.ok === false && prose.linter && typeof prose.linter.errors === 'number', 'a prose DESIGN.md still carries the linter totals');
+  const dt = await read('{"color": {"$type": "color", "a": {"$value": "{color.b}"}, "b": {"$value": "{color.a}"}}}');
+  assert.equal(dt.linter ?? null, null, 'the DESIGN.md linter never reads a DTCG file');
+});
 await check('a LINT_ERROR stays only where no structured code names its path', () => {
   const dm = h.load('app/lib/own-contract/design-md.ts');
   const e = (code, path) => ({ code, path, severity: 'error', message: code });
   const out = dm.withoutCoveredLint([e('LINT_ERROR', 'colors.a'), e('VALUE_INVALID', 'colors.a'), e('LINT_ERROR', 'typography.body'), e('LINT_ERROR', undefined), e('TOKEN_DROPPED', 'colors.b'), e('LINT_ERROR', 'colors.b')]);
   assert.deepEqual(out.map((p) => `${p.code}:${p.path}`), ['VALUE_INVALID:colors.a', 'LINT_ERROR:typography.body', 'LINT_ERROR:undefined', 'TOKEN_DROPPED:colors.b']);
+  assert.deepEqual(out.map((p) => !!p.linterFinding), [true, false, false, true]);
 });
 await check('a linter sentence is shown whole: never cut at 80 characters, never mid-word', async () => {
   const doc = `---

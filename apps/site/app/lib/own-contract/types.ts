@@ -145,6 +145,9 @@ export interface Problem {
       boundary only past MAX_LINTER_MESSAGE_CHARS). Never the offending value:
       that is `value`, cut to 80 characters. */
   linterMessage?: string;
+  /** A structured problem (VALUE_INVALID, TOKEN_DROPPED, ALIAS_*) whose path the
+      linter also flagged: the linter's row is merged into this one. */
+  linterFinding?: boolean;
 }
 
 export interface OwnContract {
@@ -174,7 +177,7 @@ export interface OwnContract {
   problems: Problem[];
   stats: { declared: number; byGroup: Record<GroupName, number> };
   /** DESIGN.md only: the linter that read it. */
-  linter: { package: '@google/design.md'; version: string; errors: number; warnings: number; infos: number } | null;
+  linter: LinterTotals | null;
 }
 
 /** What a format reader hands to the shared intake (no digest, source or map yet). */
@@ -188,4 +191,17 @@ export interface ReadOutcome {
   errors: Problem[];
   warnings: Problem[];
   parsed: ParsedContract | null;
+  /** DESIGN.md: the linter's own totals for the file, as it reported them,
+      whether or not the contract was accepted (null when it did not run). */
+  linter?: LinterTotals | null;
+}
+
+/** The DESIGN.md format linter's own totals, exactly as it reported them: the
+    provenance line on the page cites these, never a count of shown rows. */
+export interface LinterTotals {
+  package: '@google/design.md';
+  version: string;
+  errors: number;
+  warnings: number;
+  infos: number;
 }

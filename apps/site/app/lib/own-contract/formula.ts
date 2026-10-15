@@ -17,7 +17,9 @@ import { DROP_REASONS } from './types';
 
 // 1.0.1 (2026-10-14): problems carry the linter's sentence whole as
 // linterMessage, and `value` is the offending value (it held the linter's
-// sentence cut to 80 characters). No threshold, weight or verdict moved.
+// sentence cut to 80 characters); a rejected DESIGN.md carries the linter's
+// own totals (linter) and marks the problems that absorbed a linter finding
+// (linterFinding). No threshold, weight or verdict moved.
 export const FORMULA_VERSION = '1.0.1';
 export const FORMULA_DATE = '2026-10-14';
 
@@ -178,10 +180,10 @@ export function ownContractFormula() {
     intake: {
       minimum: { colors: MIN_COLORS, typeStyles: MIN_TYPE_STYLES },
       limits: { bodyBytes: MAX_BODY_BYTES, contractBytes: MAX_CONTRACT_BYTES, tokens: MAX_TOKENS, depth: MAX_DEPTH, aliasHops: MAX_ALIAS_HOPS, resolutionSteps: MAX_RESOLUTION_STEPS, tokenMapEntries: MAX_TOKEN_MAP_ENTRIES },
-      rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large') },
+      rejected: { status: 422, code: 'contract_not_scoreable', codes: ERROR_CODES.filter((c) => c !== 'contract_too_large'), linter: 'DESIGN.md: the totals the format linter reported (package, version, errors, warnings, infos), exactly; null when it did not read the file. A structured problem whose path the linter also flagged carries linterFinding: true.' },
       warnings: WARNING_CODES,
       problem: {
-        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'linterMessage', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
+        fields: ['code', 'severity', 'message', 'path', 'line', 'column', 'value', 'linterMessage', 'linterFinding', 'ref', 'chain', 'reason', 'kind', 'heading', 'key', 'count', 'limit', 'colorRows', 'colorLines', 'typeRows', 'typeLines', 'keys', 'space', 'url', 'why', 'status', 'rule', 'char', 'script', 'codePoint', 'position', 'latin'],
         confusable: 'CONFUSABLE_NAME: one warning per lookalike character, with char, script, codePoint (hex), position (1-based) and latin (absent when the confusable table names no Latin counterpart).',
         valueMaxChars: MAX_VALUE_CHARS,
         chain: 'ALIAS_CYCLE: the loop as an ordered list of token paths, the first path repeated last.',

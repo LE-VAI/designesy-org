@@ -41,6 +41,8 @@ export type RunFailure = {
   warnings?: RunProblem[];
   retryAfter?: number;
   error?: string;
+  /** The 4xx JSON body as received, for fields a page reads beyond these. */
+  body?: Record<string, unknown>;
 };
 
 /** Retry-After in seconds: a number of seconds, or an HTTP date. */
@@ -93,6 +95,7 @@ export function useEngineRun<T extends Base>(api: string, engine: string) {
             warnings: Array.isArray(raw.warnings) ? (raw.warnings as RunProblem[]) : undefined,
             retryAfter: retryAfterSeconds(resp.headers.get('Retry-After')),
             error: data.error,
+            body: data as unknown as Record<string, unknown>,
           });
           setPhase('error');
           return null;

@@ -20,6 +20,7 @@ import {
   proseDetail,
   proseRewrite,
   type ContractProblem,
+  type LinterTotals,
 } from './copy';
 
 export function ContractProblems({
@@ -27,7 +28,7 @@ export function ContractProblems({
   problems,
   warnings,
   text,
-  linterVersion,
+  linter,
   onEdit,
 }: {
   ref?: Ref<HTMLHeadingElement>;
@@ -35,14 +36,15 @@ export function ContractProblems({
   warnings: ContractProblem[];
   /** The contract's text, when the visitor pasted or uploaded it (never for a link). */
   text: string;
-  linterVersion: string;
+  /** The linter's own totals from the engine (null when it did not read the file). */
+  linter: LinterTotals | null;
   onEdit: () => void;
 }) {
   const ordered = inFieldOrder(problems);
   const minimum = ordered.some((p) => isMinimumCode(p.code));
   const prose = ordered.find((p) => p.code === 'TOKENS_IN_PROSE');
   const rewrite = prose && text ? proseRewrite(text, prose) : null;
-  const lint = lintLine(problems, warnings, linterVersion);
+  const lint = lintLine(linter, problems);
 
   // The rewrite keeps its lines and scrolls sideways in its own well; it is a
   // Tab stop only while it scrolls, so a stop that scrolls nothing is not added.
@@ -136,11 +138,19 @@ export function ContractProblems({
       )}
       {lint && (
         <div className="cf-quiet">
-          <p>
-            Linted with <code>@google/design.md</code> {lint.version}: {lint.errors} {lint.errors === 1 ? 'error' : 'errors'}, {lint.warnings} {lint.warnings === 1 ? 'warning' : 'warnings'}.
-          </p>
+          <LintLine lint={lint} />
         </div>
       )}
     </section>
+  );
+}
+
+/** The provenance line (brand D75): the package as a source citation in the house inline-code style. */
+export function LintLine({ lint, className }: { lint: { version: string; counts: string; absorbed: string }; className?: string }) {
+  return (
+    <p className={className ? `cf-lint ${className}` : 'cf-lint'}>
+      Linted with <code>@google/design.md</code> {lint.version}: {lint.counts}
+      {lint.absorbed}.
+    </p>
   );
 }

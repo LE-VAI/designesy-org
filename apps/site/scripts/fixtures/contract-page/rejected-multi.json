@@ -27,7 +27,8 @@
     "message": "colors.surface: \"notacolor\" is not a valid color. Use a form like \"#0A94FF\" or \"oklch(0.66 0.18 250)\".",
     "path": "colors.surface",
     "value": "notacolor",
-    "kind": "color"
+    "kind": "color",
+    "linterFinding": true
    }
   ],
   "warnings": [
@@ -39,6 +40,13 @@
     "linterMessage": "No 'primary' color defined. The agent will auto-generate key colors, reducing your control over the palette.",
     "rule": "missing-primary"
    }
-  ]
+  ],
+  "linter": {
+   "package": "@google/design.md",
+   "version": "0.4.0",
+   "errors": 1,
+   "warnings": 1,
+   "infos": 3
+  }
  }
 }

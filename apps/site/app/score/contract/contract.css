@@ -656,6 +656,21 @@
   color: var(--ink);
 }
 
+/* The provenance line under a landed run (brand D75): the linter's own totals,
+   in the quiet tone of the panel's citation. */
+.cf-lint-run {
+  margin: 0;
+  padding-inline: var(--space-4);
+  font-size: var(--text-label);
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.cf-lint code {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--ink);
+}
+
 /* -- Running: skeleton rows, still under reduced motion -------------------- */
 
 .cf-skeleton {

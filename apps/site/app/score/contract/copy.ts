@@ -148,6 +148,8 @@ export type ContractProblem = {
   typeRows?: number;
   typeLines?: [number, number];
   keys?: string[];
+  /** The linter also flagged this path; its row is merged into this one. */
+  linterFinding?: boolean;
   [field: string]: unknown;
 };
 
@@ -308,16 +310,30 @@ export function proseRewrite(text: string, p: ContractProblem): string | null {
   return out.join('\n');
 }
 
-/** The lint line, when the DESIGN.md format's linter ran (it reported
-    something) and its counts are whole. The engine drops a linter error where
-    a structured code names the same path (VALUE_INVALID, TOKEN_DROPPED), so
-    beside one of those the rows no longer count the linter's errors, and the
-    line is left out rather than print a count that is short. */
-export function lintLine(problems: { code: string }[], warnings: { code: string }[], version: string): { version: string; errors: number; warnings: number } | null {
-  if (problems.some((p) => p.code === 'VALUE_INVALID' || p.code === 'TOKEN_DROPPED')) return null;
-  const e = problems.filter((p) => p.code === 'LINT_ERROR').length;
-  const w = warnings.filter((p) => p.code === 'LINT_WARNING').length;
-  return e || w ? { version, errors: e, warnings: w } : null;
+export type LinterTotals = { package?: string; version: string; errors: number; warnings: number; infos?: number };
+
+/**
+ * The provenance line (brand D75): "Linted with @google/design.md {version}:
+ * {e} errors, {w} warnings", from the linter's OWN totals as the engine
+ * returns them, never a count of the rows the page shows. Where linter
+ * findings were merged into structured problems (VALUE_INVALID,
+ * TOKEN_DROPPED, ALIAS_*, each marked linterFinding), the line says how many
+ * shown rows absorbed them. Null only when the linter never read the file
+ * (a DTCG file, a link that was not fetched, an unknown format).
+ */
+export function lintLine(linter: LinterTotals | null | undefined, problems: { linterFinding?: unknown }[] = []): { version: string; counts: string; absorbed: string } | null {
+  if (!linter || typeof linter.errors !== 'number' || typeof linter.warnings !== 'number') return null;
+  const n = problems.filter((p) => p.linterFinding === true).length;
+  return {
+    version: linter.version,
+    counts: `${countWords(linter.errors, 'error', 'errors')}, ${countWords(linter.warnings, 'warning', 'warnings')}`,
+    absorbed: n ? ` (shown above as ${countWords(n, 'problem', 'problems')})` : '',
+  };
+}
+
+/** The provenance line as plain text (the gate reads it back). */
+export function lintText(l: { version: string; counts: string; absorbed: string }): string {
+  return `Linted with @google/design.md ${l.version}: ${l.counts}${l.absorbed}.`;
 }
 
 export function countWords(n: number, one: string, many: string): string {
