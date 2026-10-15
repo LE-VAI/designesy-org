@@ -83,7 +83,6 @@ const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
 
 /** Public page routes Find does not have to reach, each with its reason. */
 const FIND_EXEMPT = {
-  '/test': 'scratch page, robots noindex (app/test/page.tsx)',
   '/score/report': 'renders only with ?url= (errors without one); reached from a score result',
   '/score/contract': 'built ahead of its launch and not linked anywhere yet; the launch change adds its Find entry and drops this line',
 };

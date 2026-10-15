@@ -199,5 +199,5 @@ MIT
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
 - [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score
 - [Score badge](https://www.designesy.org/badge) — live SVG badge with a site's cached grade, score and scoring date
-- [Live score API](https://www.designesy.org/api/score?url=designesy.org) — JSON, no key, no login
+- [Score API](https://www.designesy.org/specs) — `POST /api/score` with a JSON body, no key, no login (request example on the specs page)
 - [Methodology](https://www.designesy.org/methodology)

@@ -10,7 +10,6 @@ apps/*/.env.*
 !apps/*/.env.example
 temp_install/
 install_tmp/
-apps/site/cuelume.d.ts
 apps/site/tsconfig.tsbuildinfo
 
 .vercel
@@ -23,6 +22,7 @@ packages/*/dist/
 packages/*/build/
 .venv/
 .env*
+!.env.example
 
 # Build-generated per-page markdown (apps/site/scripts/generate-markdown.js).
 # Regenerated on every build from the prerendered HTML, so committing them would

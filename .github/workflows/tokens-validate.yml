@@ -7,6 +7,8 @@ on:
       - 'apps/site/app/lib/design-system-contract.ts'
       - 'apps/site/app/lib/tokens-contract.ts'
       - 'packages/tokens/**'
+      - '.github/actions/tokens-validate/**'
+      - '.github/workflows/tokens-validate.yml'
   workflow_dispatch:
 
 permissions:

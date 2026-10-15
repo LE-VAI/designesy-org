@@ -19,7 +19,9 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -31,13 +33,13 @@ SITE_DIR = Path(__file__).resolve().parent.parent   # apps/site
 PUBLIC_AUDIO = SITE_DIR / "public" / "audio" / "open"
 LIB_DIR = SITE_DIR / "app" / "lib"
 MANIFEST = LIB_DIR / "open-audio.ts"
-FFMPEG = r"C:\ffmpeg-2025-12-18-git-78c75d546a-essentials_build\bin\ffmpeg.exe"
-PIPER_APP = Path.home() / "AppData" / "Local" / "ReadAloudTTS"
-VOICES_DIR = PIPER_APP / "voices"
+# ffmpeg from FFMPEG or PATH; Piper voice models from PIPER_VOICES_DIR.
+FFMPEG = os.environ.get("FFMPEG") or shutil.which("ffmpeg") or "ffmpeg"
+VOICES_DIR = Path(os.environ.get("PIPER_VOICES_DIR") or Path.home() / ".local" / "share" / "piper" / "voices")
 
 OPEN_JSON_URL = "https://www.designesy.org/open.json"
 
-# Prosody: tuned naturality values (see read-aloud-tts-windows v0.8.1).
+# Prosody: tuned naturality values.
 LENGTH_SCALE = 1.15
 NOISE_SCALE = 0.4
 NOISE_W = 0.3
@@ -64,14 +66,9 @@ KIND_PHRASE = {
 
 
 def load_catalog() -> list[dict]:
-    cache = SITE_DIR / "scripts" / "open.json.cache"
-    if cache.exists():
-        raw = cache.read_text(encoding="utf-8")
-    else:
-        req = urllib.request.Request(OPEN_JSON_URL, headers={"User-Agent": "designesy-build"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            raw = resp.read().decode("utf-8")
-        cache.write_text(raw, encoding="utf-8")
+    req = urllib.request.Request(OPEN_JSON_URL, headers={"User-Agent": "designesy-build"})
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        raw = resp.read().decode("utf-8")
     return json.loads(raw)["packages"]
 
 

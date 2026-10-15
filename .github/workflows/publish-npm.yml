@@ -3,7 +3,10 @@ name: Publish to npm
 # Auto-publishes @designesy/* packages to npmjs.org on version tags, with
 # cryptographically signed build provenance (npm --provenance).
 #
-# Provenance uses GitHub OIDC + Sigstore keyless signing — no stored secrets.
+# Provenance is signed with GitHub OIDC + Sigstore (keyless). Publishing
+# itself still authenticates with the NPM_TOKEN secret until npm trusted
+# publishing is configured for each package on npmjs.com; then the token is
+# removed and npm (11.5.1 or later, installed below) uses OIDC instead.
 # Consumers can verify the package was built from this exact source:
 #   gh attestation verify @designesy/tokens@0.2.1 -o LE-VAI
 #
@@ -18,7 +21,7 @@ name: Publish to npm
 #   - npm provenance requires a PUBLIC repo (this one is public ✓)
 #   - Node >= 18, npm >= 9.5 (we use Node 22 ✓)
 #   - The package must be public in package.json (not private)
-#   - NPM_TOKEN secret must be set (automation token or granular access token)
+#   - NPM_TOKEN secret (granular access token) until trusted publishing is set
 #   - id-token: write enables the --provenance flag (OIDC → Sigstore keyless)
 
 on:
@@ -35,10 +38,16 @@ permissions:
   contents: read
   id-token: write            # REQUIRED for npm provenance (OIDC + Sigstore)
 
+concurrency:
+  group: publish-npm-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
+    # Publishes only from a version tag; a manual run must pick the tag as its ref.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -49,6 +58,11 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
+
+      # npm 11.5.1+ can publish through trusted publishing (OIDC) once each
+      # package names this workflow on npmjs.com. Pinned, not "latest".
+      - name: Install npm 11
+        run: npm install -g npm@11.20.0
 
       - name: Determine package directory and name from tag
         id: pkg
@@ -80,36 +94,47 @@ jobs:
             exit 1
           fi
 
-      - name: Sync package version with tag
+      # VERIFY, never sync: a tag must point at a commit whose package.json
+      # already carries that version, as publish-pypi.yml requires for PyPI.
+      - name: Verify the tag matches package.json
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
+          PKG_DIR: ${{ steps.pkg.outputs.dir }}
         run: |
-          VERSION=${{ steps.pkg.outputs.version }}
-          cd ${{ steps.pkg.outputs.dir }}
-          # --allow-same-version handles the case where package.json already has this version
-          npm version "$VERSION" --no-git-tag-version --no-commit-hooks --allow-same-version
-          echo "Synced package.json version -> $VERSION"
+          FILE_VERSION=$(node -p "require('./$PKG_DIR/package.json').version")
+          if [ "$FILE_VERSION" != "$VERSION" ]; then
+            echo "::error::Tag says $VERSION but $PKG_DIR/package.json says $FILE_VERSION. Bump the package in a commit, then tag that commit."
+            exit 1
+          fi
+          echo "Tag and package.json agree: $VERSION"
 
       - name: Build
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          PKG_DIR: ${{ steps.pkg.outputs.dir }}
         run: |
-          cd ${{ steps.pkg.outputs.dir }}
+          cd "$PKG_DIR"
           npm ci
           npm run build
 
       - name: Run tests
         if: startsWith(github.ref, 'refs/tags/')
+        env:
+          PKG_DIR: ${{ steps.pkg.outputs.dir }}
         run: |
-          cd ${{ steps.pkg.outputs.dir }}
+          cd "$PKG_DIR"
           npm test
 
       - name: Publish to npm with provenance
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          cd ${{ steps.pkg.outputs.dir }}
+          cd "$PKG_DIR"
           # --provenance signs the package with GitHub OIDC + Sigstore.
           # --access public ensures scoped packages are publicly readable.
           npm publish --provenance --access public
         env:
+          PKG_DIR: ${{ steps.pkg.outputs.dir }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Confirm publication
@@ -118,9 +143,10 @@ jobs:
         # about 3 on 2026-10-08). Poll for up to 10 minutes; a version that never
         # appears fails the run. This step used to print a note and pass on a
         # 404, so a failed publish read green.
+        env:
+          VERSION: ${{ steps.pkg.outputs.version }}
+          NAME: ${{ steps.pkg.outputs.name }}
         run: |
-          VERSION=${{ steps.pkg.outputs.version }}
-          NAME=${{ steps.pkg.outputs.name }}
           for i in $(seq 1 30); do
             if [ "$(npm view "$NAME@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
               echo "npm serves $NAME@$VERSION (check $i)"
