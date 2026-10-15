@@ -109,7 +109,7 @@ const HOLDS = [
 
 const TENSIONS = [
   {
-    title: 'Hosted, not yet a listed lab',
+    title: 'Live; lab listing to follow',
     meta: 'Live at le-vai.github.io/compile with its share image; the Designesy lab registry does not list it yet',
   },
   {
@@ -341,7 +341,7 @@ export default function CompileCaseStudyPage() {
           Case study of Compile using Use Kit One · Design Review. Outcome:
           ready for review. The most complete tool in the set: the thesis is
           uncrowded, the seven-domain engine works, nine tests passed, and the
-          security fix is verified. Hosted since the review; not yet a listed lab.
+          security fix is verified. Hosted since the review; lab listing to follow.
         </div>
       </main>
 
