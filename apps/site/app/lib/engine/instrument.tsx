@@ -475,7 +475,7 @@ export function Instrument(props: Props) {
     phase === 'running' ? 'checking' : phase === 'done' ? (took === null ? 'done' : `done in ${seconds(took)}`) : phase === 'error' ? 'stopped' : 'ready';
 
   // The verdict light's hue: the verdict's grade once it lands, in the grade
-  // palette (brand ledger D56); the fail hue when the run stops without one.
+  // palette; the fail hue when the run stops without one.
   // No verdict and no stop, no light.
   const lightGrade = phase === 'done' && verdict ? verdict.grade.toLowerCase() : undefined;
   const lightBand = phase === 'error' ? 'fail' : undefined;

@@ -189,7 +189,7 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'NO_TOKENS_FOUND':
       return 'No tokens found. A DESIGN.md keeps its tokens in YAML front matter between --- lines.';
     case 'TOKENS_IN_PROSE':
-      // The approved sentence (brand D75 wording). The counts, line ranges and
+      // The fixed sentence. The counts, line ranges and
       // front-matter keys ride as fields (colorRows, colorLines, typeRows,
       // typeLines, keys) for the page's second paragraph.
       return 'Your DESIGN.md lists tokens in tables. Scoring reads tokens from YAML front matter, as the DESIGN.md format defines them. Move the values into colors, typography, rounded and spacing groups at the top of the file.';
@@ -245,7 +245,7 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'scope_conflict':
       return 'Send either `scope: "contract"` or a contract in the request, not both.';
     case 'NO_TYPE':
-      // Owner-approved template (2026-10-14).
+      // Fixed wording, asserted by scripts/check-own-contract.mjs.
       return `${path} has no $type, so it was skipped: the DTCG format doesn't let scoring guess a type. Add "$type": "color" (or "dimension", "duration", and so on) to the token or its group.`;
     case 'LEGACY_COLOR_STRING':
       return `${path} uses an older colour string. It was read as ${value}. The 2025.10 format prefers a colour object.`;
@@ -254,8 +254,9 @@ export function messageFor(code: string, p: Extra | Problem): string {
     case 'DIMENSION_ROLE_UNKNOWN':
       return `${path}: scoring couldn't tell what this size is for (spacing, radius or type), so it isn't used in role-specific checks.`;
     case 'CONFUSABLE_NAME':
-      // Owner-approved template (2026-10-14). The Latin clause is dropped when
-      // the confusable table names no Latin counterpart for the character.
+      // Fixed wording, asserted by scripts/check-own-contract.mjs. The Latin
+      // clause is dropped when the confusable table names no Latin counterpart
+      // for the character.
       return `${path} contains a lookalike character: "${p.char ?? ''}" (${p.script ?? 'Unknown'}, U+${p.codePoint ?? '????'}) at position ${p.position ?? '?'}${p.latin ? `, where a Latin "${p.latin}" is expected` : ''}. Retype the name so it uses only the characters you mean.`;
     default:
       return `${path}: ${value || code}`;

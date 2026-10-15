@@ -1,4 +1,4 @@
-// Page-level null rules (engine spec section 9; owner decision D2), evaluated
+// Page-level null rules (engine spec section 9), evaluated
 // on the fetched page before scoring, in this mode only.
 //
 // Hand-written scans (indexOf, bounded tag reads): hostile HTML costs one pass.

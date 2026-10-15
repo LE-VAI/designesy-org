@@ -6,8 +6,8 @@
  * The published contract (designesy.org/contracts/a11y.json) is scored by hand
  * on the routes someone thought to check. What shipped as regressions were the
  * routes nobody re-checked after a change — and a full 77-route sweep on every
- * PR costs minutes nobody wants to pay. The operator's rule for this gate
- * (2026-10-04): sweep the routes a commit TOUCHES, and nothing else; when a
+ * PR costs minutes nobody wants to pay. The rule for this gate:
+ * sweep the routes a commit TOUCHES, and nothing else; when a
  * commit touches shared surfaces (globals.css, layout, lib), it touches every
  * route, so the full set runs. The CI step computes the list from the git
  * diff; this script only executes the list it is given.

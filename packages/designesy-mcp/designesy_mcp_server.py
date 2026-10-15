@@ -3410,6 +3410,17 @@ def _is_alias(v: Any) -> bool:
     return isinstance(v, str) and _ALIAS.fullmatch(v) is not None
 
 
+# t01: a $schema points at designtokens.org when its URL's host is that name or
+# a subdomain of it. The pattern is DTCG_SCHEMA_HOST in tokens-score.ts, written
+# for Python: re.ASCII keeps case folding to ASCII letters, as JavaScript's /i
+# does, and \Z is JavaScript's $ (Python's $ also matches before a final
+# newline). A substring test passed any URL that only contained the name.
+_DTCG_SCHEMA_HOST = re.compile(
+    r"https?://(?:[a-z0-9-]+\.)*designtokens\.org(?::[0-9]+)?(?:[/?#]|\Z)",
+    re.IGNORECASE | re.ASCII,
+)
+
+
 def _resolve_alias(alias: str, root: dict[str, Any]) -> tuple[Any, str | None] | None:
     """(value, $type): the literal value an alias names, through any chain of
     aliases, with the $type of the token that holds it (None when it has none);
@@ -3501,7 +3512,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     # t01: $schema present and points to designtokens.org
     schema = tokens.get("$schema")
     has_schema = isinstance(schema, str) and schema != ""
-    schema_valid = has_schema and "designtokens.org" in schema
+    schema_valid = has_schema and _DTCG_SCHEMA_HOST.match(schema) is not None
     add("t01", "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
         f"Schema: {schema}" if has_schema else
         "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json")

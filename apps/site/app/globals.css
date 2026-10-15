@@ -48,7 +48,7 @@
   line-gap-override: 0%;
 }
 
-/* Mono fallbacks, matched to Atkinson Hyperlegible Mono (brand ledger D65).
+/* Mono fallbacks, matched to Atkinson Hyperlegible Mono.
    next/font has no metrics for this family, so it generates no adjusted
    fallback, and before the web face arrives the stack would paint in the
    platform mono: Cascadia Code on Windows 11 (0.586em a character) or
@@ -102,32 +102,32 @@
   --line-strong: rgba(255, 255, 255, 0.22);
   --line-faint: rgba(255, 255, 255, 0.06);
 
-  /* Identity v1 (brand ledger D2, D19): Azure. 6.65:1 on --paper, 5.75:1 on
+  /* Identity v1: Azure. 6.65:1 on --paper, 5.75:1 on
      --surface-lifted, so on dark it is fill, text, link and focus at once. */
   --signal: #0A94FF;
   --signal-light: #36A7FF;
   --signal-access: #0A94FF;
   /* Signal used AS TEXT: --signal-access in both themes. Dark is Azure itself
-     (>= 5.75:1 on every dark surface); light is Deep Azure #016ABB (D19). */
+     (>= 5.75:1 on every dark surface); light is Deep Azure #016ABB. */
   --signal-text: var(--signal-access);
   /* Deep Azure: Azure's own 251 degree hue, darker. Links, focus and selected
-     states on light surfaces (D19). */
+     states on light surfaces. */
   --signal-deep: #016ABB;
   --signal-dim: rgba(10, 148, 255, 0.14);
-  /* Gradient end only, never a standalone colour (D7). */
+  /* Gradient end only, never a standalone colour. */
   --signal-teal: #2CEBCA;
   /* Text placed ON an Azure fill, and nothing else: ink, 6.65:1 on Azure.
-     White on Azure is 3.14:1 and is not used (D9, D19, D33). */
+     White on Azure is 3.14:1 and is not used. */
   --paper-on-signal: #010102;
-  /* The constant white, the same in both themes (D33): the dark
+  /* The constant white, the same in both themes: the dark
      increase-contrast ink, text on red fills, shimmer and shine highlights. */
   --paper-white: #FFFFFF;
-  /* Activated Orange, the exact RGB inverse of --signal (D1). Live moments
-     only (D16). 6.0 to 6.94:1 on the dark surfaces. */
+  /* Activated Orange, the exact RGB inverse of --signal. Live moments
+     only. 6.0 to 6.94:1 on the dark surfaces. */
   --activation: #F56B00;
   --activation-ink: var(--activation);
 
-  /* Primary action (D19): the same pair in both themes, Azure + ink. */
+  /* Primary action: the same pair in both themes, Azure + ink. */
   --action: var(--signal);
   --on-action: #010102;
   --action-pressed: #087ED9;
@@ -245,7 +245,7 @@
   --grade-c-ink: var(--grade-c);
   --grade-d-ink: var(--grade-d);
   --grade-f-ink: var(--grade-f);
-  --grade-d-glow: #FB7185;   /* D is rose (D5): the orange is the brand's flame, not a grade */
+  --grade-d-glow: #FB7185;   /* D is rose: the orange is the brand's flame, not a grade */
   --signal-pos: #34d399;     /* emerald for positive signal points */
   --error-text: #fecaca;     /* light red-200 for error text on dark error surfaces */
   --amber-notice: #c9a227;   /* amber for score-drawer remediation heading */
@@ -277,7 +277,7 @@
        tuning.
      --display: Fraunces Variable — brand/headline face, aliased to --serif.
      --mono: Atkinson Hyperlegible Mono for labels, URLs, timestamps, score
-       units, check IDs and token names (brand ledger D65, replaced Geist
+       units, check IDs and token names (replaced Geist
        Mono 2026-10-12): the low-vision face, with every confusable pair
        (0/O, 1/l/I, 5/S, 8/B) drawn distinct.
      The serif/sans split is the 2026 hybrid system: serifs for brand-level
@@ -287,7 +287,7 @@
   --display: var(--serif);
   --mono: var(--font-mono), ui-monospace, 'SF Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
-  /* Type scale (brand ledger D68): a Major Third (x1.25) on the 16px root, so
+  /* Type scale: a Major Third (x1.25) on the 16px root, so
      no two adjacent steps sit closer than 25%. Theme-agnostic, so it lives
      here once and not in the light block. Every text size on a covered sheet
      reads one of these (scripts/check-type-scale.js); below --text-lead,
@@ -310,7 +310,7 @@
   --surface-card-gradient: linear-gradient(135deg, #0d0d11 0%, var(--surface) 100%);
   --inner-light: inset 0 1px 0 rgba(255, 255, 255, 0.055);
   --signal-glow: 0 0 60px rgba(54, 167, 255, 0.18), 0 0 24px rgba(54, 167, 255, 0.28);
-  /* Azure to Teal, on black or white grounds only; one per view (D7). */
+  /* Azure to Teal, on black or white grounds only; one per view. */
   --signal-gradient: linear-gradient(135deg, #0A94FF 0%, #0A94FF 35%, #2CEBCA 100%);
 
   /* Local-scope aliases (declared to close drift d02 — var() refs to undeclared
@@ -573,7 +573,7 @@ read-along {
   --line-strong: rgba(0, 0, 0, 0.18);
   --line-faint: rgba(0, 0, 0, 0.05);
 
-  /* Signal: one blue family in both themes (D19). Azure is for fills, the
+  /* Signal: one blue family in both themes. Azure is for fills, the
      mark's dot and data highlights only on light; never text (3.14:1 on
      white). Text, links, focus and selected states take Deep Azure. */
   --signal: #0A94FF;
@@ -589,7 +589,7 @@ read-along {
   --activation: #F56B00;
   --activation-ink: #B04D00;
 
-  /* Primary action (D19): Azure + ink in light too. */
+  /* Primary action: Azure + ink in light too. */
   --action: #0A94FF;
   --on-action: #010102;
   --action-pressed: #087ED9;
@@ -632,10 +632,10 @@ read-along {
   --ok-ink: color-mix(in oklab, var(--ok) 70%, var(--ink));
   --error-ink: color-mix(in oklab, var(--error) 70%, var(--ink));
 
-  /* Grade scale colors (D18). Bases are mark colours (arcs, fills, emblems),
+  /* Grade scale colors. Bases are mark colours (arcs, fills, emblems),
      at least 3:1 on all four light surfaces (WCAG 1.4.11); a grade letter or
      word uses the --grade-*-ink text token, at least 4.6:1 on all four. D is
-     rose (D5, D17): the orange is the brand's flame. */
+     rose: the orange is the brand's flame. */
   --grade-a: #15803d;
   --grade-b: #5D960C;
   --grade-c: #b07d04;
@@ -1339,7 +1339,7 @@ html[data-motion="paused"] :is(
   background: transparent;
   color: var(--muted);
   font: inherit;
-  /* "Find" reads at the nav links' size (D68 body); its Ctrl K keycap stays
+  /* "Find" reads at the nav links' size (the body step); its Ctrl K keycap stays
      at the label step, as a shortcut hint. */
   font-size: var(--text-body);
   cursor: pointer;
@@ -2212,7 +2212,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   transform: scale(0.97);
 }
 
-/* The primary action (identity v1, D19): Azure with an ink label in both
+/* The primary action (identity v1): Azure with an ink label in both
    themes, 6.65:1. Pressed is --action-pressed (ink on it 4.96:1); the token
    carries the darkening, so no brightness filter stacks on it (a 0.92 filter
    on #087ED9 paints #0774c8, 4.31:1). Hover lightens on dark and darkens on
@@ -2258,7 +2258,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   box-shadow: var(--inner-light);
 }
 
-/* Light pressed is shown by depth, not colour (D33): hover is already
+/* Light pressed is shown by depth, not colour: hover is already
    #087ED9, and the darkest Azure that keeps ink at 4.5:1 or more (#0878CE,
    4.56) looks the same. The 1px drop goes under reduced motion; the inset
    shadow stays. */
@@ -2835,7 +2835,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 /* --- Definitions: plain reading material. No edge stripe in any state
-   (brand ledger D62): the 3px signal bar that drew in on hover, focus and
+   (no coloured edge stripes): the 3px signal bar that drew in on hover, focus and
    Copied was the side-stripe card pattern. Focus has its ring and Copied its
    badge, so nothing is lost. --- */
 .definition {
@@ -3252,7 +3252,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   min-width: 0;
   overflow: hidden;
   /* Room inside the clip for a focus ring on the first row (the house ring
-     reaches 5px out; the flame flip's keycaps sit on that row, D69). Taken
+     reaches 5px out; the flame flip's keycaps sit on that row). Taken
      from the footer's own top padding, so nothing moves. */
   padding-top: var(--space-8);
   /* The overflow clips at the padding box, and nothing padded the foot (the
@@ -3312,7 +3312,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   gap: var(--space-8);
 }
 
-/* The flame flip's keycaps (brand ledger D69): "ctrl + i" in the mono face,
+/* The flame flip's keycaps: "ctrl + i" in the mono face,
    a real button (lib/flame-flip.tsx) with the house focus ring. 44px tall
    like the wordmark beside it, so the hit area meets the target size. */
 .flip-keys {
@@ -3587,7 +3587,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 /* Reduced motion: the rails hold still. Each rail becomes its links, wrapped,
    once each: the loop's second copy is aria-hidden and goes.
 
-   Touch screens keep the marquee (an operator decision, 2026-09-30: the
+   Touch screens keep the marquee (the
    wrapped rails turned the phone footer into a ~1000px wall of pills). The
    two risks that froze it on 2026-09-28 are handled in scroll-pause.tsx: a
    finger landing freezes the rail in place, so a tap resolves on the pill the
@@ -3707,7 +3707,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 .surface-title {
-  /* One page-title style (brand ledger D58): Fraunces 700, the published
+  /* One page-title style: Fraunces 700, the published
      contract's heading weight, at the instrument title's size, leading,
      tracking and optical size (.eg-title, engine.css), so a document page and
      an engine page open on the same title. It was 400 at up to 56px, a second
@@ -4880,7 +4880,7 @@ html[data-motion="paused"] .docs-card-grid .row::before {
 }
 
 /* Hover lifts the row's ground and firms its rule in the line colour; a
-   signal-coloured left edge is the side-stripe pattern (brand ledger D62). */
+   signal-coloured left edge is the side-stripe pattern, which no card carries. */
 @media (hover: hover) {
   .row:hover,
 .layer-item:hover {
@@ -5837,7 +5837,7 @@ button.check-cell {
 
 /* Avoid items show an X instead of the checkmark, in the text colour: the
    shape carries "avoid". It took the flame's ink, and the flame means
-   something happening now, nothing else (brand ledger D57). */
+   something happening now, nothing else. */
 .check-cell.is-avoid .check-cell-check {
   color: var(--ink);
 }
@@ -5958,7 +5958,7 @@ button.check-cell {
    shorter than its cell never needs the break. */
 :is(.check-cell-title, .check-cell-meta) code {
   font-family: var(--mono);
-  /* The label step (D68): a token sets as one unit, and at the 16px title
+  /* The label step: a token sets as one unit, and at the 16px title
      size "prefers-reduced-motion" overran its cell at 1088px. */
   font-size: var(--text-label);
   font-weight: 500;
@@ -7667,7 +7667,7 @@ html:not(.js-ready) .demo-stagger-bar {
   Field card kind language (existing tokens only):
   - contract = structure / agreement → square mark, steadier breath; on the
     home page the featured card's full border is the set's one accent, and no
-    card carries a one-sided edge stripe (D60, D62)
+    card carries a one-sided edge stripe
   - lab      = living experiment    → circle mark, full wordmark breath, signal-light lift
 */
 .field-card {
@@ -8031,7 +8031,7 @@ html[data-motion="paused"] .copy-prompt-btn:active {
   }
 
   /* Ambient pulses: slow to 4x duration, keep the heartbeat. Live dots
-     are not here: they are static under reduce (D36, above). */
+     are not here: they are static under reduce. */
   .pipeline-step.is-end .pipeline-node-core,
   .wordmark-hero .dot,
   .mark-glyph--open .mark-glyph-core,
@@ -8899,7 +8899,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* ===========================================================================
    MASTER REDUCED-MOTION OVERRIDE (final word): TIERED
    ---------------------------------------------------------------------------
-   Operator decision 2026-10-01. Under prefers-reduced-motion: reduce:
+   Under prefers-reduced-motion: reduce:
      * anything that MOVES stops: translate, scale, rotate, position. Travel
        across the screen is the vestibular trigger reduce exists for;
      * fades (opacity-only) may keep running, and short transitions (<= 200 ms)
@@ -9292,7 +9292,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   /* clip, not hidden: it clips the same paint (the rounded corners) without
      making the card a scroll container, so the result's sticky readout
      column holds against the viewport. With hidden it stuck 96px down inside
-     the card, under nothing, at rest (D48). */
+     the card, under nothing, at rest. */
   overflow: clip;
 }
 
@@ -9569,7 +9569,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-audit-btn {
   background: var(--signal);
   border-color: var(--signal);
-  /* --paper-on-signal: ink on the Azure fill, 6.65:1 (D19, D33). White on
+  /* --paper-on-signal: ink on the Azure fill, 6.65:1. White on
      Azure is 3.14:1 and is not used. */
   color: var(--paper-on-signal);
 }
@@ -9781,7 +9781,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 /* A tile takes its grade's colour from the contract's grade tokens: the letter
    and score (text) in --grade-*-ink. It used a 90/70 status rule of its own,
    so a D drew red and a B drew yellow. The grade-coloured 2px top bar is gone
-   (brand ledger D62, no coloured edge stripes on cards): the letter carries
+   (no coloured edge stripes on cards): the letter carries
    the grade, and the tile keeps its neutral line border. */
 .score-engine-tile[data-grade="a"] { --tile-ink: var(--grade-a-ink); }
 .score-engine-tile[data-grade="b"] { --tile-ink: var(--grade-b-ink); }
@@ -11188,8 +11188,8 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 
   /* 2. Topbar control cluster — all four controls read at 44px hit area on mobile.
      Theme-toggle + cmdk-trigger get the same floor as sense-toggle so the cluster
-     stays uniform (sound button was 44px while theme/cmdk stayed 32px — operator
-     feedback: "sound icon is not aligned with the theme switcher/search").
+     stays uniform (the sound button was 44px while theme/cmdk stayed 32px, so
+     the icons sat out of line).
      Borders are stripped on mobile: the 44px hit area + visual gap is enough,
      and borders on 3 of 4 controls (sense-toggle, theme-toggle, cmdk-trigger
      had borders; nav-trigger didn't) created a visible misalignment line under
@@ -11485,7 +11485,7 @@ html[data-motion="paused"] .pricing-card::after {
   border: 1px solid var(--line);
 }
 
-/* A past score's grade in the grade palette (brand ledger D56): the letter in
+/* A past score's grade in the grade palette: the letter in
    --grade-*-ink, the rim in --grade-*. The old fallbacks drew A and B in the
    brand's Azure and C, D and F in grey, since nothing set the --grade-*-text
    properties they read first. */
@@ -12663,7 +12663,7 @@ select {
 }
 
 
-/* ── Result readout and category list (B′, owner-approved 2026-10-10) ───────
+/* ── Result readout and category list ───────
    One design wherever a contract score renders (score-form.tsx, the report;
    score/result-parts.tsx). It replaced the ring: a grade letter in one face
    and a percentage in another, eleven unlabelled nodes, and the same eleven
@@ -12783,8 +12783,8 @@ select {
   min-width: 0;
 }
 /* Four keys on one line in the 311px a 390 phone gives the score form. At
-   the 12.8px floor (D59) the 8px gap and 6px swatch margin wrapped it; a 6px
-   gap and a 4px margin keep it to one line (results-readout R2). */
+   the 12.8px text floor the 8px gap and 6px swatch margin wrapped it; a 6px
+   gap and a 4px margin keep it to one line. */
 .rs-legend {
   display: flex;
   flex-wrap: wrap;
@@ -12911,7 +12911,7 @@ button.rs-row:focus-visible {
       align-items: start;
       gap: var(--space-32);
     }
-    /* The readout's top meets the first list row's (D48): the list opens
+    /* The readout's top meets the first list row's: the list opens
        with its one-line legend (1rem) and the list's gap. */
     .rs-side {
       position: sticky;
@@ -13044,7 +13044,7 @@ button.rs-row:focus-visible {
   color: var(--ink);
 }
 
-/* The loading ignition (brand D51, rulings D54; lib/engine/ignition.ts). One
+/* The loading ignition (lib/engine/ignition.ts). One
    Azure dot (--signal) per score loader: the lone dot on the score form's
    run line, or the dot in the four-engine instrument's mark. Its container
    carries data-ignite and the run's data-phase. While a run is out the dot
@@ -13055,7 +13055,7 @@ button.rs-row:focus-visible {
 
    The fill is the dot's ::before, so a fade touches the fill alone. On light
    the dot itself draws a 1px rim of the fill's deep counterpart:
-   --signal-access on Azure (D49), --activation-ink on the flame (D35), swept
+   --signal-access on Azure, --activation-ink on the flame, swept
    between the two with the fill. The rim never fades, and its width is
    divided by the breath's scale, so it is 1px in every frame. The ring sits
    under the dot, so at scale 1 it is hidden and only its growth shows. */
@@ -13448,11 +13448,8 @@ button.rs-row:focus-visible {
    the same background-clip:text technique as .hero-word-free, but in
    signal-blue. The band is WIDE (20% at 40–60% of image) and BRIGHT
    (pure --signal at the core). The shimmer band alone carries the emphasis —
-   NO drop-shadow glow: the halo blurred past the glyph edges and halo'd the
-   entire sentence, which the operator explicitly rejected ("remove the glow,
-   don't apply it to the entire text"). A brief earlier pass had added a
-   drop-shadow here ("add a slight glow to the shimmer only") — removed on
-   operator correction: flat clip:text band only. */
+   NO drop-shadow glow: the halo blurs past the glyph edges and spreads over
+   the entire sentence. Flat clip:text band only. */
 
 [data-data-scramble-rotate] [data-word],
 [data-scramble-rotate-words] [data-word] {
@@ -13496,19 +13493,17 @@ button.rs-row:focus-visible {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* NO GLOW — the shimmer band alone carries the emphasis. The drop-shadow()
-     halo that rode the band blurred across the glyph edges and halo'd the
-     entire sentence, which the operator explicitly rejected: "I told you NOT
-     to apply that glow to the entire text — remove the glow." Flat clip:text
-     band only. */
+  /* NO GLOW — the shimmer band alone carries the emphasis. A drop-shadow()
+     halo on the band blurs across the glyph edges and spreads over the
+     entire sentence. Flat clip:text band only. */
   /* 2.6s sweep reversed direction — enters LEFT, exits RIGHT, no dwell
      so the loop reads as a continuous crossing (faster perception even
      at same duration). */
   animation: hero-word-rotate-shimmer 2.6s cubic-bezier(0.42, 0, 0.2, 1) infinite;
 }
 
-/* Light theme — NO GLOW either. Same operator rejection applies on paper:
-   the drop-shadow halo'd the whole sentence. Flat clip:text band only. */
+/* Light theme — NO GLOW either, for the same reason on paper: the
+   drop-shadow spreads over the whole sentence. Flat clip:text band only. */
 
 @keyframes hero-word-rotate-shimmer {
   /* LEFT→RIGHT: start with the band parked off the LEFT edge
@@ -13573,7 +13568,7 @@ button.rs-row:focus-visible {
 /* ---------------------------------------------------------------------------
    Chapter rhythm — "book chapter" separators for the homepage flow.
    ---------------------------------------------------------------------------
-   Operator brief: "Think in chapters. Like reading a premium book." The
+   The homepage reads in chapters, like a book. The
    six content .section blocks after the hero already breathe (Stage-3
    clamp padding); this layer adds a hairline construction rule above each
    chapter so the page reads as bounded chapters rather than a continuous
@@ -13657,7 +13652,7 @@ button.rs-row:focus-visible {
   }
 
   /* -- Caps micro-labels at the label step, 12.8px: the floor for all text,
-     mono uppercase included (brand ledger D68). Tracking stays at <= 0.12em so
+     mono uppercase included. Tracking stays at <= 0.12em so
      the "words" read as words, not letter strings. -- */
   .section-heading-badge-label {
     font-size: var(--text-label);
@@ -14232,8 +14227,8 @@ button.rs-row:focus-visible {
 
 
 /* Playing is happening now, so the listen button takes the flame; the row
-   only lifts its ground. An orange left edge was a coloured stripe (brand
-   ledger D62). */
+   only lifts its ground. An orange left edge was a coloured stripe, which
+   no card carries. */
 .row--listen.is-playing {
   background: var(--surface-soft);
 }
@@ -14267,7 +14262,7 @@ button.rs-row:focus-visible {
   margin-top: var(--space-fine-30);
 }
 
-/* A check row carries no edge stripe (brand ledger D62, no coloured edge
+/* A check row carries no edge stripe (no coloured edge
    stripes anywhere). The 3px status spine on fail, warn, manual and skip rows
    repeated what the row's status pill and its group header already say, in
    the side-stripe pattern. */
@@ -14776,7 +14771,7 @@ html[data-motion="paused"] .topbar .topbar-right::before {
 }
 
 /* Icon family v2 (app/lib/brand-icons.tsx): the dot is the only colour.
-   Azure for a signature dot; the flame only for a live moment (D16, D22). */
+   Azure for a signature dot; the flame only for a live moment. */
 .brand-icon .sig {
   fill: var(--signal);
 }

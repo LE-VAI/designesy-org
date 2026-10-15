@@ -25,7 +25,7 @@
  * Then the walk: down and back up in steps of 1.8 viewports (each step moves
  * the pacing one way or the other; the sweep below covers the positions
  * between stops), the last 72px on the way down in 6px steps (where the pill
- * first comes up at the end of the page), and on a results page the owner's
+ * first comes up at the end of the page), and on a results page the reader's
  * own move: each category row brought to the bottom corner by a scroll up.
  * At each stop, after the pacing's frame, a pill counts as shown when it is
  * rendered (checkVisibility, opacity and visibility included) and on screen.
@@ -469,7 +469,7 @@ function installProbe(cfg) {
     ys.push(M);
     for (let y = M - coarse; y > 0; y -= coarse) ys.push(y);
     ys.push(0);
-    // The owner's move: an anchor brought to the bottom corner by a scroll
+    // The reader's move: an anchor brought to the bottom corner by a scroll
     // up (from 300px further down), so its right end sits under the pill.
     if (cfg.anchors) {
       for (const a of document.querySelectorAll(cfg.anchors)) {

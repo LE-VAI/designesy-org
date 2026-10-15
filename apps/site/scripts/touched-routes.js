@@ -3,7 +3,7 @@
  * touched-routes — the route set a commit's diff actually affects.
  *
  * Feeds the incremental a11y sweep (a11y-sweep.js) in the visual-gates job.
- * The operator's rule for the sweep (2026-10-04): measure the routes a commit
+ * The rule for the sweep: measure the routes a commit
  * TOUCHES, nothing else. The mapping:
  *
  *   apps/site/app/<...>/page.tsx      -> that page's route

@@ -86,7 +86,7 @@ const schibsted = Schibsted_Grotesk({
 
 /*
   Mono face for labels, URLs, timestamps, score units and code. Atkinson
-  Hyperlegible Mono replaced Geist Mono on 2026-10-12 (brand ledger D65).
+  Hyperlegible Mono replaced Geist Mono on 2026-10-12.
 
   Why: it is the Braille Institute's low-vision face (SIL OFL 1.1). Every
   confusable pair (0/O, 1/l/I, 5/S, 8/B) is drawn distinct, and the site's mono
@@ -288,7 +288,7 @@ export default function RootLayout({
         <ScrambleEnhancer />
         <ScrollDepth />
         <ScrollRegions />
-        {/* Ctrl+I flips the page to the flame (brand D69): one keydown
+        {/* Ctrl+I flips the page to the flame: one keydown
             listener; the flip itself loads on the first press. */}
         <FlameFlipShortcut />
         {/* Ambient signal wash — fixed full-viewport gradient layer, sits

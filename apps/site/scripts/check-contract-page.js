@@ -2,7 +2,7 @@
 /**
  * Contract page gate: /score/contract renders every state of its first part
  * from recorded engine responses, each accessible, announced and focused as
- * the handoff specifies.
+ * listed below.
  *
  * WHY THIS EXISTS
  * The page's states only exist after a run: a field error, a run in flight,
@@ -30,14 +30,14 @@
  *      rejected run lists every problem the engine returned, each sentence
  *      whole (no ellipsis), and its heading, which takes focus for screen
  *      readers, paints no focus ring (it is not a control).
- *   7. The provenance line (brand D75): every rejected and landed state
- *      whose DESIGN.md the linter read prints it exactly once, with the
- *      linter's own totals as the engine returned them and, where linter
- *      findings were merged into structured problems, how many shown rows
- *      absorbed them. The three states where the linter never read the file
- *      (a DTCG contract, a contract link that was not fetched, an unknown
- *      format) print no line and no "Linted with" words at all.
- *   5. No text on the page under 12.8px (brand D68), sr-only text and
+ *   7. The provenance line: every rejected and landed state whose DESIGN.md
+ *      the linter read prints it exactly once, with the linter's own totals
+ *      as the engine returned them and, where linter findings were merged
+ *      into structured problems, how many shown rows absorbed them. The three
+ *      states where the linter never read the file (a DTCG contract, a
+ *      contract link that was not fetched, an unknown format) print no line
+ *      and no "Linted with" words at all.
+ *   5. No text on the page under 12.8px (the type floor), sr-only text and
  *      role="img" drawings aside.
  *   6. No horizontal overflow of the document.
  *   8. Every landed state draws its result from the record, not from a

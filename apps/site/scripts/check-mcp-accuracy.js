@@ -26,8 +26,8 @@
  *
  * 1.13.8 added three more, re-derived on 2026-10-10:
  *   7. designesy_tokens_score counted a WARN as 0 where designesy_motion_score,
- *      the score engine and the npm validator count it 0.5 (owner decision
- *      2026-10-10: warnings count half everywhere).
+ *      the score engine and the npm validator count it 0.5 (warnings
+ *      count half everywhere).
  *   8. The tokens validator read a DTCG alias such as {space.16} as a literal
  *      with no unit (a WARN in t08 and t10), skipped $root tokens, and did not
  *      read the 2025.10 dimension form { value, unit }.

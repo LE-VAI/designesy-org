@@ -4187,7 +4187,7 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
   // contrast or horizontal overflow cannot be A-grade no matter how good its
   // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
   //
-  // No A while any check FAILs (engine 1.3.0, owner decision 2026-10-11). A
+  // No A while any check FAILs (engine 1.3.0, see CHANGELOG). A
   // FAIL is the engine's own finding that the page breaks a rule, so any FAIL
   // caps the score at 89.9, a B at most. Until 1.3.0 a page could score 100, an
   // A, beside FAIL verdicts, including the engine's own WCAG contrast FAIL
@@ -4213,7 +4213,7 @@ function scoreArithmetic(checks: CheckResult[], slopTotal: number, originalityPo
     if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
     // v44 Status text contrast — the words that report a state fail WCAG
     // 1.4.3 (or 1.4.11 for a graphic) on a surface the stylesheet attests.
-    // Same cap as v06 (engine 1.3.0, owner decision 2026-10-11): both are
+    // Same cap as v06 (engine 1.3.0): both are
     // measured WCAG contrast failures on text.
     if (c.id === 'v44') { cap = 65; reason = 'Status text below WCAG contrast (4.5:1, or 3:1 for large text and graphics): the words that report errors, warnings and success are hard to read.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
@@ -4964,9 +4964,12 @@ export function emitReview(url: string, result: ScoreResult): string {
     if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
-    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
-    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
-    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    // A cell escapes its backslashes before its pipes: a detail carries text
+    // read from the scored page, where a backslash before a pipe would
+    // otherwise escape the escape and leave a live cell separator.
+    const before = c.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) lines.push('| | | | | No actionable findings | | |');

@@ -10,7 +10,7 @@
 // The rendered HTML page lives at /leaderboard (app/leaderboard/page.tsx).
 // v0.3: weekly re-scoring via .github/workflows/rescore-leaderboard.yml.
 //
-// Trust fields (owner decision, 2026-10-11). Each site carries `status`
+// Trust fields. Each site carries `status`
 // ('current', ranked; 'stale', last scored on an earlier run because the latest
 // could not re-score it, rank null; 'unscored') with a `statusLabel` in the
 // page's words, a `relationship` ('operator' for a site Designesy runs,

@@ -6,6 +6,7 @@ import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { handleOwnContract } from '../../lib/own-contract/api';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -4458,7 +4459,7 @@ export function scoreArithmetic(checks: CheckResult[], slopTotal: number, origin
   // contrast or horizontal overflow cannot be A-grade no matter how good its
   // tokens are. Caps are applied AFTER the a11y floor (floor wins over ceilings).
   //
-  // No A while any check FAILs (engine 1.3.0, owner decision 2026-10-11). A
+  // No A while any check FAILs (engine 1.3.0, see CHANGELOG). A
   // FAIL is the engine's own finding that the page breaks a rule, so any FAIL
   // caps the score at 89.9, a B at most. Until 1.3.0 a page could score 100, an
   // A, beside FAIL verdicts, including the engine's own WCAG contrast FAIL
@@ -4484,7 +4485,7 @@ export function scoreArithmetic(checks: CheckResult[], slopTotal: number, origin
     if (c.id === 'v06') { cap = 65; reason = 'Contrast below WCAG minimum: text is unreadable for many users.'; }
     // v44 Status text contrast — the words that report a state fail WCAG
     // 1.4.3 (or 1.4.11 for a graphic) on a surface the stylesheet attests.
-    // Same cap as v06 (engine 1.3.0, owner decision 2026-10-11): both are
+    // Same cap as v06 (engine 1.3.0): both are
     // measured WCAG contrast failures on text.
     if (c.id === 'v44') { cap = 65; reason = 'Status text below WCAG contrast (4.5:1, or 3:1 for large text and graphics): the words that report errors, warnings and success are hard to read.'; }
     // v22 Contrast signal — CTA text unreadable on brand color
@@ -5514,9 +5515,12 @@ function emitReview(url: string, result: ScoreResult): string {
     if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
-    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
-    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
-    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    // A cell escapes its backslashes before its pipes: a detail carries text
+    // read from the scored page, where a backslash before a pipe would
+    // otherwise escape the escape and leave a live cell separator.
+    const before = c.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) {
@@ -5540,8 +5544,8 @@ function emitReview(url: string, result: ScoreResult): string {
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },
       { status: 429 }
@@ -5605,7 +5609,7 @@ export async function POST(request: Request) {
     }
     try {
       const r = await handleOwnContract(
-        { body: body as Record<string, unknown>, bodyBytes, url, ip },
+        { body: body as Record<string, unknown>, bodyBytes, url, caller },
         {
           fetchPage: fetchPageResilient,
           legacyChecks: ({ html, css }) => {

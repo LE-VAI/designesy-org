@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -377,8 +378,8 @@ const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readin
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = await clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 50 readiness scans per hour.' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },
