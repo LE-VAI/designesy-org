@@ -73,10 +73,10 @@ unchanged.
   | cohort site A | 518 → 527 | 3 → 4 | 75 → 75 |
   | cohort site B | 233 → 234 | 1 → 1 | 36 → 36 |
 
-  designesy.org's five new findings are real and left for a site change: two
-  console numerals off the scale (1.2rem, 1.5rem), a 3.25rem readout, and an
-  11.52px inspector label and a 10px log pin under the floor. Cohort site A's
-  new finding is an 11px keycap under its floor.
+  designesy.org's five new findings were real, and the site has since moved
+  them onto the scale: two console numerals off the scale (1.2rem, 1.5rem),
+  a 3.25rem readout, and an 11.52px inspector label and a 10px log pin under
+  the floor. Cohort site A's new finding is an 11px keycap under its floor.
 - The whole engine, scored at 64 KB and at 256 KB of CSS under a type scale
   on twelve inputs built for v46, takes at most 5.6 times as long on the input
   four times the size (1.5.1 took up to 13.2 times as long on its `font-size`
