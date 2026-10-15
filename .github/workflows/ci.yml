@@ -865,8 +865,12 @@ jobs:
   visual-gates-2:
     name: 'Visual gates (part 2: focus visibility, a11y modes, a11y sweep)'
     runs-on: ubuntu-latest
-    # About 6 minutes; 15 leaves room for the full-set sweep on a slow runner.
-    timeout-minutes: 15
+    # About 14 minutes since the contract page gate gained its readout sweep
+    # (/score/contract, 7.5 minutes: every landed state at 1440 and 390 in both
+    # themes, then 161 widths per landed state and theme); 25 leaves room for
+    # the full-set a11y sweep on a slow runner. At 15 the job was cancelled
+    # mid-sweep on #334.
+    timeout-minutes: 25
     needs: build-site
     if: always() && needs.build-site.result == 'success'
     defaults:
@@ -920,9 +924,11 @@ jobs:
 
       # /score/contract's states, driven from recorded engine responses
       # (scripts/fixtures/contract-page): entry, field error, running,
-      # rejected, request errors and the landing, each with axe 0, the one
-      # live region present from first paint, focus where each state puts
-      # it, and no text under 12.8px.
+      # rejected, request errors, every landed result, empty runs and the
+      # previous run, each with axe 0, the one live region present from first
+      # paint, focus where each state puts it, no text under 12.8px, the
+      # result read back against its record, and the readout sweep from 320
+      # to 1600px.
       - name: Contract page states
         run: node scripts/check-contract-page.js --base http://127.0.0.1:3422 --channel chrome
 
