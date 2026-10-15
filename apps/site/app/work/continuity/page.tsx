@@ -44,7 +44,7 @@ const DIMENSIONS = [
     num: '03',
     title: 'Context',
     observation:
-      'Deployed on GitHub Pages. X audience (1,891 followers, building-in-public) rewards shipped product demos over narrative content. The context is a feed rather than a reading surface.',
+      'Deployed on GitHub Pages and shared on X, where builders respond to shipped product demos more than to narrative. The context is a feed rather than a reading surface.',
     judgment: 'Channel-format mismatch. The artifact is sound; the distribution channel was wrong for this format.',
     action: 'Match format to channel. Keep the hosted URL as a profile reference.',
   },
@@ -68,7 +68,7 @@ const DIMENSIONS = [
     num: '06',
     title: 'Durability',
     observation:
-      'Full documentation: ARTICLE_DRAFT, VISUAL_BRIEF, STATUS, build scripts, host, preview, renders. Article locked. Hosting live. Publication receipt recorded.',
+      'Full documentation: the article draft, a visual brief, a status log, build scripts, previews and renders. The article is final and hosted.',
     judgment: 'Durable as a reference artifact.',
     action: 'Retain at the hosted URL. Update STATUS if the narrative is revised.',
   },
@@ -95,7 +95,7 @@ const FINDINGS = [
   'Channel-format mismatch: long-form narrative does not communicate in a scroll feed',
   'Artifact is durable as a reference; distribution channel was the constraint',
   'Yellow-field VAI surface mode is coherent and retained',
-  'Full documentation preserved: ARTICLE_DRAFT, VISUAL_BRIEF, STATUS, build scripts',
+  'Full documentation preserved: article draft, visual brief, status log, build scripts',
   'Single engagement data point: the pattern is consistent, but the sample is too small to be statistically robust',
 ];
 
@@ -115,7 +115,7 @@ const INPUTS: Input[] = [
   {
     title: 'Audience and context',
     meta: 'Public builders on X, in a feed context',
-    side: ['@levainbey · 1,891 followers'],
+    side: ['@levainbey on X'],
   },
   {
     title: 'Governing rules',
