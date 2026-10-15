@@ -24,7 +24,8 @@
  *      seconds), 413 (the engine's sentence kept), 400 scope_conflict, 502,
  *      and no answer at all.
  *   4. Inputs: "Read as" from the engine's own detector, sizes, the site and
- *      contract URL checks, the four running steps resolving together.
+ *      contract URL checks, the four running steps resolving together, and
+ *      the running note (no fixed run-time range: runs take about a second).
  *   5. No builder prints a version or a check count literal: the page's
  *      source holds no "v0.4." and no engine version string.
  *   6. The result: f02's line from its counts (equal to the engine's own
@@ -205,6 +206,12 @@ check('steps run and resolve together', () => {
   assert.deepEqual(C.steps('a.com', 'running').map((s) => s.state), ['running', 'running', 'running', 'running']);
   assert.deepEqual(C.steps('a.com', 'done').map((s) => s.state), ['done', 'done', 'done', 'done']);
   assert.equal(C.steps('a.com', 'running')[1].text, 'a.com');
+});
+check('the running note promises no fixed range', () => {
+  assert.equal(C.RUNNING_NOTE, 'Both numbers land here when the run ends, usually within a few seconds.');
+  const form = fs.readFileSync(path.join(APP, 'app', 'score', 'contract', 'contract-form.tsx'), 'utf8');
+  assert.ok(form.includes('restPair(RUNNING_NOTE)'), 'contract-form.tsx no longer draws RUNNING_NOTE under the running readouts');
+  assert.ok(!/within \d+ to \d+ seconds/.test(form), 'contract-form.tsx types a fixed run-time range');
 });
 
 // ── 6. The result: readouts, flags, first finding, lists, receipt ──
