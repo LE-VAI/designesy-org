@@ -175,26 +175,13 @@ jobs:
   # Verifies that www.designesy.org is actually serving the deployment that
   # Vercel just marked Ready.
   #
-  # THIS JOB WAS DEAD, AND ITS DEATH WAS INVISIBLE (fixed 2026-09-25)
-  # It previously looked for an `X-Mcp-Shim` response header on /api/mcp, as a
-  # proxy for "the domain is serving recent code". `X-Mcp-Shim` no longer exists
-  # anywhere in this repository — grep finds it ONLY in this file, in the very
-  # check that looks for it. A compatibility shim was removed at some point and
-  # the detector of that shim was left behind.
+  # It asserts the deployed commit, not a proxy for it. A proxy (a response
+  # header some build once sent) stops matching when the code that sent it is
+  # removed, and a check that only warns is one nobody acts on. The failure
+  # mode is a domain exactly ONE deployment behind, which only a direct commit
+  # comparison catches.
   #
-  # Two consequences, both quiet:
-  #   • The check could never pass again. It reported "⚠️ Alias may be stale" on
-  #     EVERY deploy regardless of truth, so it produced a permanent false alarm.
-  #   • It only warned. It never failed the workflow, so nothing ever acted on
-  #     the warning. A check that always fires and never blocks is one nobody
-  #     reads — which is why the real alias failures on 2026-09-25 went unnoticed.
-  #
-  # Worse, even when it worked it could only answer "is the domain newer than a
-  # specific 2026-08-08 commit?" — a seven-week-wide window. It was structurally
-  # incapable of detecting the actual failure mode, which is a domain exactly ONE
-  # deployment behind.
-  #
-  # THE REPLACEMENT asserts the deployed commit directly. /api/version reports
+  # HOW: it asserts the deployed commit directly. /api/version reports
   # VERCEL_GIT_COMMIT_SHA; the domain-serving-the-wrong-build answers with the
   # wrong SHA, and the comparison catches it at any distance. It FAILS the
   # workflow rather than warning, because the whole point is that a stale alias
@@ -263,8 +250,7 @@ jobs:
               echo "| \`${DOMAIN}\` is serving | \`${DOMAIN_SHA}\` |"
               echo ""
               echo "The deployment is live and Ready; only the production alias has"
-              echo "not moved. Vercel does this intermittently — it fired on every"
-              echo "deploy on 2026-09-25."
+              echo "not moved. Vercel does this intermittently."
               echo ""
               echo "**Fix (promote, not alias — promote keeps rollback bookkeeping"
               echo "coherent):**"
@@ -302,12 +288,9 @@ jobs:
   # rotated or revoked in Vercel settings, the next preview fails here with
   # the header mismatch, instead of a future consumer discovering it mid-run.
   #
-  # KNOWN DELIVERY GAP (2026-10-05): deployment_status events do not reliably
-  # create workflow runs in this repo — the smoke workflow has zero
-  # deployment-triggered runs in its entire life (all manual dispatches), a
-  # 2026-09-28 burst of deployment_status runs failed at startup against a
-  # since-deleted dynamic workflow, and a controlled status post created no
-  # run. So this job ALSO accepts workflow_dispatch with a preview_url input:
+  # KNOWN DELIVERY GAP: deployment_status events do not reliably create
+  # workflow runs in this repo. So this job ALSO accepts workflow_dispatch
+  # with a preview_url input:
   # the gate logic is identical either way, and a manual dispatch can prove
   # any preview while the event chain is repaired separately.
   #

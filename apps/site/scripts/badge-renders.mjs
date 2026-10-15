@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * badge renders: the badge images match the renderer, and the renderer still
- * draws the set the brand review approved.
+ * draws the reviewed set in scripts/fixtures/live-badge.
  *
  * WHAT IT COVERS
  *   1. public/badge.svg and public/badge-light.svg, the static images, drawn by
@@ -12,7 +12,7 @@
  *      (/api/badge?url=) drawn for fixed states: grades A to F from the
  *      leaderboard's 2026-10-11 rows, a host long enough to truncate, and the
  *      two "Not scored" states, each on the dark and the light ground. These
- *      are the bytes the brand review approved (round 2, ledger D61), so a
+ *      are the reviewed bytes, so a
  *      change to the badge's type, layout or colour fails here until the new
  *      set is written on purpose and reviewed.
  *

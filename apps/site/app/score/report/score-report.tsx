@@ -350,7 +350,7 @@ export function ScoreReport({ initialUrl = '' }: { initialUrl?: string } = {}) {
     <>
     {live}
     <div key="report" className="report">
-      {/* ── RESULT (B′, owner-approved 2026-10-10): the readout and grade
+      {/* ── RESULT: the readout and grade
           scale, the verdict, the meta line, and one category list. A row opens
           that category's checks below; selected again, every section shows. ── */}
       <section className="report-result rs" aria-label="Result">

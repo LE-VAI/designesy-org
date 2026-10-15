@@ -28,7 +28,7 @@ on:
   push:
     branches: [main]
   # Manual runs. A dispatched run does not unblock a PR whose own pull_request
-  # run is waiting for approval (PR #242, 2026-10-10); re-run that run instead.
+  # run is waiting for approval; re-run that run instead.
   workflow_dispatch:
 
 # Cancel superseded runs on the same ref — saves CI minutes.
@@ -199,22 +199,22 @@ jobs:
         if: always()
         run: node scripts/check-readme-facts.js
 
-      # ── The gates below ran in `npm run build` but NOT here ────────────────
+      # Comments cite only what a reader of the repo can open: no private
+      # decision IDs, attributions or unpublished documents. Per-file counts in
+      # scripts/comment-provenance-baseline.json may only go down.
+      - name: Comment provenance
+        if: always()
+        run: node scripts/check-comment-provenance.js
+
+      # ── The gates below also run in `npm run build` ────────────────────────
       #
-      # This job's own comment promised it mirrors `npm run build` "step for
-      # step". It did not: the script chains twelve gates, this job invoked five.
-      # The other seven ran only when Vercel built for production — i.e. AFTER
-      # merge, on main, with no PR-level signal. That included
-      # check-use-client-first, the guard for the directive-ordering defect that
-      # took every route down on 2026-09-24, and check-count-up-seed, whose
-      # regression is invisible to tsc, lint, and the prerender alike.
+      # Every gate `npm run build` chains runs here too. A gate that only the
+      # Vercel production build runs fires after the merge, so a PR could pass
+      # CI green and only fail at deploy.
       #
-      # The practical effect: a PR could pass CI green and only fail at deploy.
-      # Vercel building it is not a substitute — by then it is merged.
-      #
-      # Restored to parity 2026-09-25. If a gate is added to `npm run build`,
-      # add it here in the same commit; the two lists are asserted equal by
-      # scripts/check-gate-parity.js so they cannot silently diverge again.
+      # If a gate is added to `npm run build`, add it here in the same commit;
+      # the two lists are asserted equal by scripts/check-gate-parity.js so they
+      # cannot silently diverge.
       - name: Probe backticks
         if: always()
         run: node scripts/check-probe-backticks.js
@@ -285,7 +285,7 @@ jobs:
 
       # next/link prefetches its href as a page, so a link to an endpoint or a
       # file sent GET ?_rsc= to it: POST-only API routes answered 405 and logged
-      # a console error on 71 of 74 routes (live audit 2026-10-11). Endpoints
+      # a console error on 71 of 74 routes. Endpoints
       # and files take a plain <a> (or RouteLink, app/lib/route-link.tsx).
       - name: Link targets
         if: always()
@@ -329,7 +329,7 @@ jobs:
       # The score badge is an SVG string, so its grade colours are literals a
       # token swap cannot see. Each fill must equal its light --grade-* base,
       # the letter must hold 4.5:1 on it, and the fill 3:1 on a white and a
-      # near-black host page (brand ledger D37).
+      # near-black host page.
       - name: Badge grade tokens
         if: always()
         run: node scripts/check-badge-grade-tokens.js
@@ -352,9 +352,9 @@ jobs:
         run: node scripts/check-analytics-redaction.js
 
       # The static badge images match their renderer, and the renderer still
-      # draws the live badge set the brand review approved
-      # (scripts/fixtures/live-badge, ledger D61). A meant change rewrites the
-      # set with `npm run badge-renders` and goes back for review.
+      # draws the reviewed live badge set in scripts/fixtures/live-badge. A
+      # meant change rewrites the set with `npm run badge-renders` and includes
+      # the new renders in the PR.
       - name: Badge renders
         if: always()
         run: node scripts/badge-renders.mjs --check
@@ -367,7 +367,7 @@ jobs:
         run: node scripts/check-badge-miss-limit.js
 
       # Text sizes stay on the brand's type scale in the sheets moved onto it
-      # (brand ledger D59, D68): nothing under the 0.8rem floor, and with the
+      # (a Major Third scale): nothing under the 0.8rem floor, and with the
       # ladder on, only the six steps (or a clamp, var or inherit). Display
       # numerals and the home page's rules are exempt, each with its reason.
       - name: Type scale
@@ -455,7 +455,7 @@ jobs:
         run: python -m pytest test/ -v
 
   # ── Job 3: npm package test gate ─────────────────────────────────────────
-  # No retired brand colour ships from any package (brand ledger D44, D46).
+  # No retired brand colour ships from any package.
   # The site has its own step above ("Retired literals"); this one reads what
   # every package publishes: each npm package's manifest-declared files (dist/
   # read from the source it compiles from), the PyPI package's sdist and wheel
@@ -577,15 +577,9 @@ jobs:
   # WHY THIS LIVES HERE AND NOT ONLY IN post-deploy-smoke.yml
   # post-deploy-smoke.yml already has an `alias-verify` job for this, and it is
   # the right place conceptually. But its trigger is `deployment_status`, and
-  # that event has fired ZERO runs for this repository. Measured 2026-09-25:
-  # every one of the 9 smoke runs in history was `workflow_dispatch` (manual);
-  # the only `deployment_status`-event run ever recorded was an unrelated
-  # `startup_failure` on a leaderboard branch on 2026-08-31.
-  #
-  # Meanwhile the alias trap — a `Ready` deployment whose build the domain never
-  # serves — fired on EVERY deploy on 2026-09-25. So the check existed, in a
-  # workflow that never ran, and the failure it was written for happened four
-  # times in one session with nothing detecting it.
+  # that event is not reliably delivered for this repository, so a check that
+  # waits on it may never run. The alias trap it guards against (a `Ready`
+  # deployment whose build the domain never serves) is intermittent.
   #
   # This job runs on `push: branches: [main]`, which is the trigger that
   # demonstrably works in this repo. It duplicates the smoke job's assertion on
@@ -639,7 +633,7 @@ jobs:
               echo ""
               echo "Most likely cause: *Enable access to System Environment Variables*"
               echo "is off in Vercel project settings, so \`VERCEL_GIT_COMMIT_SHA\` is"
-              echo "never injected. (It was ON as of 2026-09-25 — verified live.)"
+              echo "never injected."
             } >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
@@ -680,8 +674,8 @@ jobs:
   # measures it. The a11y sweep runs on the routes the commit touches
   # (touched-routes.js maps the diff; shared surfaces mean the full set).
   #
-  # WHY THREE PARTS: as one job the gates ran one after another, and on
-  # 2026-10-10 that job grew from about 8 minutes to 17-25 as the focus, dock,
+  # WHY THREE PARTS: as one job the gates ran one after another, and that
+  # job grew from about 8 minutes to 17-25 as the focus, dock,
   # status and LCP gates arrived; on a pull request it hit its 25-minute limit
   # inside Dock clearance. The parts run side by side, balanced by the step
   # times of a green run on main (38086271824):
@@ -768,14 +762,14 @@ jobs:
           cat /tmp/next.log
           exit 1
 
-      # Normally ~80 s. On 2026-10-08 it hung with no output until the job's
-      # 20-minute timeout, cancelling every gate after it, while the identical
-      # tree had passed minutes earlier. Each attempt is bounded at 240 s and a
+      # Normally ~80 s, but it has hung with no output until the job's 20-minute
+      # timeout, cancelling every gate after it, on a tree that passed minutes
+      # earlier. Each attempt is bounded at 240 s and a
       # timeout gets one retry; a real failure is never retried, and a hang
       # that repeats still fails. The step shell runs `bash -e`, so the exit
       # code is captured with `|| rc=$?` rather than read after the pipeline.
       #
-      # Every recorded hang (2026-10-08 to 2026-10-10) ran on @sparticuz/chromium;
+      # Every recorded hang ran on @sparticuz/chromium;
       # the gate now launches Chrome with `--channel chrome`, like the gates
       # after it. It also writes a timestamped stderr line before and after
       # each browser operation, so the last line of a killed attempt names the
@@ -820,7 +814,7 @@ jobs:
       - name: Status messages
         run: node scripts/check-status-messages.js --base http://127.0.0.1:3422 --channel chrome
 
-      # The score's loading ignition (brand D51, rulings D54) runs on a fake
+      # The score's loading ignition (lib/engine/ignition.ts) runs on a fake
       # clock and every frame is read: the OKLCH sweep, the ring, the hold, the
       # swap back, the light rim at full strength through the breath, the calm
       # path's instant swaps (no intermediate colour) under reduced motion and
@@ -828,7 +822,7 @@ jobs:
       - name: Loading ignition
         run: node scripts/check-ignition.js --base http://127.0.0.1:3422 --channel chrome
 
-      # The flame flip (brand D69): nothing loads before the first trigger;
+      # The flame flip (lib/flame-flip.tsx): nothing loads before the first trigger;
       # the circle opens from the logo's dot, holds and closes on its timings;
       # Azure under the layer reads the flame exactly; clicks pass through it;
       # the calm path swaps whole; the keycaps and Ctrl+I work by keyboard and
@@ -911,7 +905,7 @@ jobs:
       # /score/contract's states, driven from recorded engine responses
       # (scripts/fixtures/contract-page): entry, field error, running,
       # rejected, request errors and the landing, each with axe 0, the one
-      # live region present from first paint, focus where the handoff puts
+      # live region present from first paint, focus where each state puts
       # it, and no text under 12.8px.
       - name: Contract page states
         run: node scripts/check-contract-page.js --base http://127.0.0.1:3422 --channel chrome
@@ -933,7 +927,7 @@ jobs:
       - name: Results readout
         run: node scripts/check-results-readout.js --base http://127.0.0.1:3422 --channel chrome
 
-      # The incremental a11y sweep (handoff item #10): measure the routes the
+      # The incremental a11y sweep: measure the routes the
       # commit touches — page.tsx -> its route, shared surfaces (globals.css,
       # layout, lib, next.config, public/) -> the full set, scripts-only
       # commits -> nothing. On a pull request the base is the merge base; on
@@ -1024,11 +1018,11 @@ jobs:
       # route at 320, 390, 768 and 1440, dark and light, plus a mocked
       # stripe.com score result, walked down and back up.
       #
-      # Normally 304-458 s (18 green runs, 2026-10-10). That evening three
-      # part-3 runs sat in this step until the job's 20-minute limit with no
-      # output. Each attempt is now bounded at 960 s, about twice the slowest
-      # green run, and a timeout gets one retry; a real failure is never
-      # retried, and a hang that repeats still fails. The script writes a
+      # Normally 304-458 s (18 green runs). Part-3 runs have sat in this step
+      # until the job's 20-minute limit with no output. Each attempt is now
+      # bounded at 960 s, about twice the slowest green run, and a timeout gets
+      # one retry; a real failure is never retried, and a hang that repeats
+      # still fails. The script writes a
       # timestamped stderr line before and after each browser operation, and
       # when the bound signals it, it lists the operations still in flight,
       # longest last, so the last line names the route, width, theme and step

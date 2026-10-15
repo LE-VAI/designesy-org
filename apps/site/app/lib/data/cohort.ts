@@ -183,9 +183,9 @@ export const GRADE_BANDS: { grade: Grade; min: number; max: number }[] = [
 ];
 
 /** A and B pass, C and D warn, F fails: the three-tier band of a grade, for
-    category bars on the grade thresholds (D48). A grade itself is never drawn
+    category bars on the grade thresholds. A grade itself is never drawn
     in a band: chips, dots, zones and grade bars take data-grade and the grade
-    palette (brand ledger D56). */
+    palette. */
 export function toneOf(grade: string): 'pass' | 'warn' | 'fail' {
   return grade === 'A' || grade === 'B' ? 'pass' : grade === 'C' || grade === 'D' ? 'warn' : 'fail';
 }

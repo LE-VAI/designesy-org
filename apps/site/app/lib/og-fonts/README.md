@@ -22,7 +22,7 @@ travel with the font.
 cut from the families' variable fonts (Fraunces wght 700, opsz 144, SOFT 0,
 WONK 0; Atkinson Hyperlegible Mono wght 400, names updated) with fontTools
 `varLib.instancer`, because Satori reads static fonts only. The mono face
-replaced Geist Mono on 2026-10-12 (brand ledger D65).
+replaced Geist Mono on 2026-10-12.
 
 The logotype on the cards is outlined artwork (`lib/brand-logotype.tsx`), so
 no font is loaded for it.

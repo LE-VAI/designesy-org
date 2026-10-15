@@ -15,9 +15,9 @@
 //
 // Since 1.13.8 (tokens contract 0.1.2), three more defects are fixed:
 //   - A WARN counts half, as it does in designesy_motion_score, the score
-//     engine and the npm @designesy/tokens validator (owner decision
-//     2026-10-10). It counted zero here alone, so the same file graded
-//     differently depending on which Designesy tool read it.
+//     engine and the npm @designesy/tokens validator. It counted zero
+//     here alone, so the same file graded differently depending on which
+//     Designesy tool read it.
 //   - A DTCG alias such as {space.16} was read as a literal dimension with no
 //     unit, so a file that aliased its dimensions WARNed twice (t08 and t10)
 //     for doing what the format asks. An alias is now a reference: t08 checks

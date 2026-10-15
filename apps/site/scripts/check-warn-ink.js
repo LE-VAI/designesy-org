@@ -35,7 +35,7 @@
  *   5. Every inline text mix of a hue toward --ink found in a stylesheet
  *      (`color: color-mix(in srgb, var(--warn) 70%, var(--ink))`) is measured
  *      the same way.
- *   4b. The four-surface standard of identity v1 (brand ledger D17 to D19):
+ *   4b. The four-surface standard of identity v1:
  *      --signal-access, the text, link and focus colour, is at least 4.5:1 on
  *      all four surfaces in both themes, like an ink token; and the grade
  *      bases, which paint arcs, fills and emblems, are at least 3:1 on all
@@ -83,9 +83,9 @@ const HUES = ['ok', 'warn', 'error', 'grade-a', 'grade-b', 'grade-c', 'grade-d',
 // roles whose light values point at an ink token.
 const INK = ['warn-ink', 'ok-ink', 'error-ink', 'grade-a-ink', 'grade-b-ink', 'grade-c-ink', 'grade-d-ink', 'grade-f-ink', 'activation-ink'];
 const TEXT_ROLES = ['grade-b-light', 'error-text', 'amber-notice'];
-// The signal used as text, links and focus in both themes (identity v1, D19).
+// The signal used as text, links and focus in both themes (identity v1).
 const LINK = ['signal-access'];
-// Mark colours: arcs, fills and emblems, held to 3:1 (WCAG 1.4.11, D18).
+// Mark colours: arcs, fills and emblems, held to 3:1 (WCAG 1.4.11).
 const MARKS = ['grade-a', 'grade-b', 'grade-c', 'grade-d', 'grade-f'];
 const MARK_MIN = 3;
 const SURFACES = ['paper', 'surface', 'surface-raised', 'surface-lifted'];

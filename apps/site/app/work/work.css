@@ -151,8 +151,8 @@
   background: var(--cs-hue);
 }
 
-/* A check's PASS is Azure, as the engine's lamp and status word are (brand
-   ledger D67); green belongs to score bands (80 and up), not check states. */
+/* A check's PASS is Azure, as the engine's lamp and status word are (one
+   hue family per status); green belongs to score bands (80 and up), not check states. */
 .cs-state[data-state="pass"] { --cs-hue: var(--signal); --cs-ink: var(--signal-access); }
 .cs-state[data-state="fail"] { --cs-hue: var(--error); --cs-ink: var(--error-ink); }
 .cs-state[data-state="warn"] { --cs-hue: var(--warn); --cs-ink: var(--warn-ink); }
@@ -312,15 +312,15 @@
 .cs-led[data-lamp="pass"] { --cs-lamp: var(--lv-pass-a); }
 
 /* Light theme: the pass lamp's Azure is 2.19 to 2.58:1 on the light surfaces,
-   under the 3:1 a status mark needs, so it takes a 1px ring of its own ink
-   (brand ledger D49, D67). The warn lamp's --warn holds 3.08:1 or more. */
+   under the 3:1 a status mark needs, so it takes a 1px ring of its own ink.
+   The warn lamp's --warn holds 3.08:1 or more. */
 [data-theme="light"] .cs-led[data-lamp="pass"] {
   box-shadow: 0 0 0 1px var(--signal-access), 0 0 0 3px color-mix(in srgb, var(--cs-lamp) 18%, transparent);
 }
 .cs-led[data-lamp="warn"] { --cs-lamp: var(--warn); }
 
 /* Done: a confirmed fact (a shipped site, a closed measurement) reads as the
-   site's check glyph, not a lamp (brand ledger D57). It was a green dot, and
+   site's check glyph, not a lamp. It was a green dot, and
    green is grade A's. */
 .cs-led[data-lamp="done"] {
   width: auto;
@@ -337,7 +337,7 @@
 }
 
 /* None: the words say it all (a pending build, a measurement window), so the
-   slot stays, empty, to keep the rows' columns aligned (D57). */
+   slot stays, empty, to keep the rows' columns aligned. */
 .cs-led[data-lamp="none"] {
   background: none;
   box-shadow: none;

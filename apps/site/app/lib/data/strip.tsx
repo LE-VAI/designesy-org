@@ -24,7 +24,7 @@ export type StripSite = {
 };
 
 // Each band, its dots and the readout's chip are drawn in the grade palette
-// (brand ledger D56), never in a pass/warn/fail band tone.
+// never in a pass/warn/fail band tone.
 const BANDS = [
   { grade: 'F', from: 0, to: 60 },
   { grade: 'D', from: 60, to: 70 },

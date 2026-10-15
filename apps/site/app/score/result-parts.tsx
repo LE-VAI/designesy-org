@@ -11,7 +11,7 @@ import {
 
 // The result's readout and its category list, one design for every surface
 // that shows a contract score: the score form (/ and /score/{lovable,v0,bolt})
-// and the report. Owner-approved layout "B′" (2026-10-10), which replaced the
+// and the report. This layout replaced the
 // ring: the grade letter set in the numeral's own face, size and baseline; a
 // grade scale whose F band takes a third of the strip; and one category list
 // whose second line names only what needs attention.

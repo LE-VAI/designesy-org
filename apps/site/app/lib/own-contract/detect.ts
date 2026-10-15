@@ -74,7 +74,7 @@ export function hasMarkdownHeading(text: string): boolean {
   return false;
 }
 
-/** The page's "Read as" words for a detection (WIREFRAMES W1). */
+/** The page's "Read as" words for a detection. */
 export function readAsLabel(d: Detection): string | null {
   if (d.format === 'design.md') return 'Read as DESIGN.md (alpha)';
   if (d.format === 'dtcg') return d.formatVersion ? `Read as DTCG tokens (${d.formatVersion})` : 'DTCG tokens (format version not stated)';

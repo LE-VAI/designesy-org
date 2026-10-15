@@ -308,7 +308,7 @@ await check('DM-6 confusable token name: accepted with CONFUSABLE_NAME', async (
   assert.equal(w.length, 1);
   assert.equal(w[0].path, 'colors.pаper');
   assert.equal(w[0].severity, 'warning');
-  // The owner-approved payload: character, script, code point, 1-based position, Latin counterpart.
+  // The payload: character, script, code point, 1-based position, Latin counterpart.
   assert.equal(w[0].char, 'а');
   assert.equal(w[0].script, 'Cyrillic');
   assert.equal(w[0].codePoint, '0430');
@@ -402,7 +402,7 @@ await check('clipWords cuts only past its limit, at a word boundary, with an ell
   assert.ok(problems.clipWords('w '.repeat(400)).length <= 400);
   assert.equal(problems.messageFor('LINT_WARNING', { path: 'colors', linterMessage: 'alpha beta gamma.' }), "colors: alpha beta gamma (a warning from the DESIGN.md format's linter; scoring went ahead).");
 });
-await check('O6 copy: the size, URL, value and section messages read as approved', () => {
+await check('problem copy: the size, URL, value and section messages read as approved', () => {
   const m = problems.messageFor;
   assert.equal(m('contract_too_large', { count: 300 * 1024 }), 'This contract is 300 KB. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.');
   assert.equal(m('CONTRACT_URL_UNREACHABLE', { url: 'https://x.example.com/D.md', why: 'http_error', status: 403 }), 'We could not fetch your contract from https://x.example.com/D.md: the server answered HTTP 403. Check the link opens without signing in.');
@@ -1206,7 +1206,7 @@ await check('evidence lists stop at 20 entries with a truncated count', async ()
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('12. Scoring both layers (engine spec 8; owner decisions D1, D3, D6, D10)');
+section('12. Scoring both layers (engine spec 8)');
 
 const fid = (statuses) => Object.entries(statuses).map(([id, status]) => ({ id, status, category: formula.FIDELITY_CATEGORY[id], layer: 'fidelity' }));
 const STATE4_FID = { f01: 'PASS', f02: 'PASS', f03: 'PASS', f04: 'PASS', f05: 'WARN', f06: 'SKIP', f07: 'PASS', f08: 'PASS', f09: 'PASS', f10: 'FAIL', f11: 'SKIP', f12: 'SKIP', f13: 'PASS', f14: 'WARN' };
@@ -1294,9 +1294,9 @@ await check('category scores carry weight and counts per category', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('13. Baseline set and titles (owner decisions D7, D10; O2)');
+section('13. Baseline set and titles');
 
-await check('the baseline is the 18 checks of D10 in registry order; v46 stays out', () => {
+await check('the baseline is its 18 checks in registry order; v46 stays out', () => {
   assert.deepEqual([...baselineMod.BASELINE_IDS].sort(), ['v02', 'v03', 'v05', 'v07', 'v09', 'v11', 'v12', 'v21', 'v25', 'v27', 'v34', 'v35', 'v36', 'v38', 'v39', 'v40', 'v44', 'v45']);
   const order = defs.CHECKS.map((c) => c.id).filter((id) => baselineMod.BASELINE_IDS.includes(id));
   assert.deepEqual([...baselineMod.BASELINE_IDS], order);
@@ -1337,7 +1337,7 @@ await check('baseline results take their contractTitle and layer, keep their reg
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('14. Null scores (engine spec 9; owner decision D2)');
+section('14. Null scores (engine spec 9)');
 
 await check('empty shell: little text, an empty mount node and a module script', () => {
   assert.equal(nulls.isEmptyShell('<html><body><div id="root"></div><script type="module" src="/a.js"></script></body></html>'), true);
@@ -1352,7 +1352,7 @@ await check('no CSS: under 500 bytes after trimming', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-section('15. The published formula (engine spec 10.5 rule 3; brand D76)');
+section('15. The published formula (engine spec 10.5 rule 3)');
 
 await check('lists f01 to f14 with weights summing to 100, ceilings, baseline groups, null rules, a version and a date', () => {
   const f = formula.ownContractFormula();

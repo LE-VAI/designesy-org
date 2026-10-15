@@ -56,7 +56,7 @@ export function ogFonts(): OgFont[] {
  */
 export function OgLockup({ height }: { height: number }) {
   // The mark is 74% of the lockup's height, so a lockup up to 65px tall has a
-  // mark of 48px or less and takes the small master (D66), as the header does.
+  // mark of 48px or less and takes the small master, as the header does.
   // Every card draws it 46px tall.
   const small = height <= 65;
   const g = lockupGeometry(small);
@@ -71,7 +71,7 @@ export function OgLockup({ height }: { height: number }) {
   );
 }
 
-/** The quiet endorsement (D24): text only, no mark. */
+/** The quiet endorsement: text only, no mark. */
 export const OG_ENDORSEMENT = 'A VAI project';
 
 export type OgKind =
@@ -92,8 +92,8 @@ export type OgCardProps = {
   /** The icon in the card's tile; null for none. Defaults by kind and path. */
   icon?: BrandIconName | null;
   /**
-   * The quiet endorsement line (D24). On by default; false for a page whose
-   * own copy leaves it off, so its card matches it (/brand, D71).
+   * The quiet endorsement line. On by default; false for a page whose
+   * own copy leaves it off, so its card matches it (/brand).
    */
   endorsement?: boolean;
   /**
@@ -128,7 +128,7 @@ function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
  * Portable share card for designesy.org handoffs (identity v1, the brand-world
  * og-generic composition): the lockup, a mono eyebrow, the Fraunces
  * claim, the lede, and the page's icon in a raised tile. The VAI link is the
- * quiet text "A VAI project" (D24).
+ * quiet text "A VAI project".
  * Used by route-level opengraph-image files.
  */
 export function renderOgCard({
