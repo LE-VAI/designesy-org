@@ -14,7 +14,7 @@ import { BuildReadout, InputList, SourceList, type Input, type Source } from '..
 export const metadata: Metadata = pageMeta({
   title: 'Compile: case study',
   description:
-    'Principle compiler: takes plain language and compiles it into verifiable design contracts. Built and locally verified. Demonstrates the Sources to Contracts to Tools chain.',
+    'Principle compiler, a VAI tool: takes plain language and compiles it into verifiable design contracts. Demonstrates the Sources to Contracts to Tools chain.',
   path: '/work/compile',
   ogTitle: 'Compile · case study',
   ogDescription:
@@ -28,9 +28,9 @@ const DIMENSIONS = [
     num: '01',
     title: 'Purpose',
     observation:
-      'Compile states a single thesis: a principle can be compiled into tokens, a test, and a checklist, the same way source code compiles into a binary. No existing tool does this: palette tools give swatches, Lighthouse checks performance, linters check syntax. Nothing takes a plain-language design principle and outputs a verifiable contract.',
+      'Compile states a single thesis: a principle can be compiled into tokens, a test, and a checklist, the same way source code compiles into a binary. Nearby tools do other jobs: palette tools give swatches, Lighthouse checks performance, linters check syntax. Compile starts from a plain-language principle and outputs a verifiable contract.',
     judgment:
-      'Purpose is sharp and genuinely uncrowded. The tool demonstrates the Sources to Principles to Contracts to Tools chain in a way no competitor does.',
+      'Purpose is sharp. The tool demonstrates the Sources to Principles to Contracts to Tools chain end to end.',
     action: 'Keep. The thesis is the moat; do not dilute it with generic design-tool features.',
   },
   {
@@ -64,18 +64,18 @@ const DIMENSIONS = [
     num: '05',
     title: 'System coherence',
     observation:
-      'The compilation engine derives tokens from Designesy DESIGN.md v0.2.0. The output contract structure matches the Designesy contract contents list. The review checklist generates all eight Designesy review dimensions. The tool IS the Lab: its output satisfies the 10-cell Lab anatomy.',
+      'At review, the compilation engine derived tokens from Designesy DESIGN.md v0.2.0; it has used the VAI token system since 2026-08-01. The output contract structure followed the Designesy contract contents list, and the review checklist generated the eight Designesy review dimensions.',
     judgment:
-      'Coherence is the strongest dimension. The tool is the pipeline made visible: a principle goes in, a contract comes out. The Lab anatomy mapping is self-documenting.',
+      'Coherence is the strongest dimension. The tool is the pipeline made visible: a principle goes in, a contract comes out.',
     action: 'Keep the DESIGN.md derivation explicit. When the contract moves to ' + CONTRACT_VERSION + ', update the compilation engine.',
   },
   {
     num: '06',
     title: 'Durability',
     observation:
-      'A full brief documents intent, thesis, feel, what it does, the seven-domain engine, the Lab anatomy mapping, and the substitute test. A status log tracks every build item (all built) and what remains (share image, hosting, lab registration). Nine verification tests passed.',
+      'A full brief documents intent, thesis, feel, what it does, the seven-domain engine and the substitute test. A status log tracks every build item (all built) and what remained at review (share image, hosting).',
     judgment:
-      'Durable as a built artifact. The documentation is the most complete of any tool in the set: it self-documents to the Lab anatomy.',
+      'Durable as a built artifact. The documentation is the most complete of any tool in the set.',
     action: 'Host it with its share image. The tool is built; the packaging is what remains.',
   },
   {
@@ -99,18 +99,17 @@ const DIMENSIONS = [
 ];
 
 const HOLDS = [
-  'Thesis is uncrowded: compile principles into verifiable contracts; no substitute exists',
+  'Thesis: compile plain-language principles into verifiable design contracts',
   'Seven-domain compilation engine: motion, color, typography, spacing, shape, interaction, acoustic',
-  'Self-documenting: output satisfies the 10-cell Lab anatomy',
-  'Nine verification tests passed across seven domains',
+  'Nine test principles compiled across seven domains at review (2026-07-13)',
   'Zero-dependency deployment pattern, the same as Tile and Continuity',
   'Security fix documented: local path leak in compiled output, found and fixed 2026-07-13',
 ];
 
 const TENSIONS = [
   {
-    title: 'Live; lab listing to follow',
-    meta: 'Live at le-vai.github.io/compile with its share image; the Designesy lab registry does not list it yet',
+    title: 'Live as a VAI tool',
+    meta: 'Live at le-vai.github.io/compile with its share image. Compile carries the VAI identity, so this review links it as a VAI tool.',
   },
   {
     title: 'DESIGN.md derivation is v0.2.0',
@@ -131,11 +130,10 @@ const CORRECTIONS = [
 
 const VERIFICATION = [
   'Local build inspected: compilation engine, four output tabs, live preview, ZIP export',
-  'Nine test principles compiled across seven domains; all passed',
+  'Nine test principles compiled across seven domains (2026-07-13); each detected its domains and produced anti-patterns, and nonsense input fell back to motion and interaction',
   'Security audit 2026-07-13: local path leak found, fixed, verified clean',
   'Compared to design system contract v0.2.0 token derivation',
   'Compared to Use Kit One Design Review output format',
-  'Lab anatomy mapping verified: output satisfies all 10 cells',
   'Deployment pattern verified: matches Tile and Continuity exactly',
 ];
 
@@ -159,7 +157,7 @@ const INPUTS: Input[] = [
   },
   {
     title: 'Governing rules',
-    meta: 'Kit One Design Review · 10-cell Lab anatomy',
+    meta: 'Kit One Design Review',
     side: ['Contract v0.2.0'],
   },
 ];
@@ -168,7 +166,7 @@ const SOURCES: Source[] = [
   {
     href: 'https://le-vai.github.io/compile/',
     title: 'Compile · live artifact',
-    meta: 'Principle compiler',
+    meta: 'A VAI tool: principle compiler',
   },
   {
     href: '/kits/design-review',
@@ -219,9 +217,8 @@ export default function CompileCaseStudyPage() {
           <p className="surface-note">
             A tool that takes any plain-language design principle and compiles
             it into tokens, anti-patterns, a review checklist, and a portable
-            verification script. Built and locally verified. Self-documents
-            to the 10-cell Lab anatomy. Demonstrates the Sources to Contracts
-            to Tools chain. Live at{' '}
+            verification script. A VAI tool, reviewed here as part of the
+            Sources to Contracts to Tools chain. Live at{' '}
             <a className="text-link" href="https://le-vai.github.io/compile/">le-vai.github.io/compile</a>.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
@@ -241,12 +238,11 @@ export default function CompileCaseStudyPage() {
             <p className="definition-label">Outcome · ready for review</p>
             <p>
               Compile is the most complete tool in the set. The thesis is
-              uncrowded: no existing tool compiles plain-language principles
-              into verifiable design contracts. The seven-domain engine
-              covers motion, color, typography, spacing, shape, interaction,
-              and acoustic. The output self-documents to the 10-cell Lab
-              anatomy. Nine verification tests passed. A local path leak in
-              compiled output was found and fixed 2026-07-13. At review,
+              focused: compile plain-language principles into verifiable
+              design contracts. The seven-domain engine covers motion,
+              color, typography, spacing, shape, interaction, and acoustic.
+              A local path leak in compiled output was found and fixed
+              2026-07-13. At review,
               the only remaining work was hosting, packaging, and
               publication; it has since been hosted.
             </p>
@@ -256,13 +252,13 @@ export default function CompileCaseStudyPage() {
         <section className="doctrine-section fade-up" id="engagement">
           <h2 className="doctrine-heading">Verification evidence</h2>
           <BuildReadout
-            label="Build verification for Compile, 2026-07-13: nine test principles compiled across seven design domains, all passed"
+            label="Build verification for Compile, 2026-07-13: nine test principles compiled across seven design domains"
             target="Local build"
             date="2026-07-13"
             passed={9}
             total={9}
             domains={['motion', 'color', 'typography', 'spacing', 'shape', 'interaction', 'acoustic']}
-            note="All passed. The tool is ready for hosting."
+            note="All nine compiled."
             caption={
               <>
                 Nine test principles compiled across seven design domains. A
@@ -339,9 +335,9 @@ export default function CompileCaseStudyPage() {
 
         <div className="status-note">
           Case study of Compile using Use Kit One · Design Review. Outcome:
-          ready for review. The most complete tool in the set: the thesis is
-          uncrowded, the seven-domain engine works, nine tests passed, and the
-          security fix is verified. Hosted since the review; lab listing to follow.
+          ready for review. The most complete tool in the set: the seven-domain
+          engine works, and the security fix is verified. Hosted since the
+          review, as a VAI tool.
         </div>
       </main>
 
