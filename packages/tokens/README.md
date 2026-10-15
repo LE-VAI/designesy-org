@@ -178,17 +178,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # SHA-pinned (replace with current SHAs from the action repos)
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af573 # v4.2.2
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
-      - run: npx @designesy/tokens@0.2.1 tokens.json --min-score 80
+      - run: npx @designesy/tokens@0.3.0 tokens.json --min-score 80
 ```
 
 Or use the composite action (no Node setup needed):
 
 ```yaml
-- uses: LE-VAI/designesy-org/.github/actions/tokens-validate@main
+- uses: LE-VAI/designesy-org/.github/actions/tokens-validate@v1
   with:
     url: https://example.com/tokens.json
     min-score: 80

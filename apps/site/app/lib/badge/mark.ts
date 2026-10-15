@@ -1,10 +1,11 @@
 // The Designesy mark for the badges: the favicon variant, the master for any
-// mark drawn at 48px or smaller (brand ledger D37; masters/designesy-mark.v1.
-// favicon*.svg). The body takes one colour, ink on light and white on dark;
-// the dot is the only colour carrier and is Azure (03-SYSTEM-SPEC, "The mark").
+// mark drawn at 48px or smaller. The paths below are the ones in
+// svg/designesy-mark-small-ink.svg inside public/brand/designesy-brand-kit.zip.
+// The body takes one colour, ink on light and white on dark; the dot is the
+// only colour carrier and is Azure.
 //
 // Kept apart from the badge renderer on purpose: the renderer draws grades,
-// and a grade never takes a brand colour (D5), which
+// and a grade never takes a brand colour, which
 // scripts/check-results-language.mjs asserts by finding no brand blue in it.
 // The Azure here is the mark's dot, which is artwork, not a grade.
 
@@ -16,7 +17,7 @@ const BODY = [
   'M283.50 356.00L388.25 356.00A7.50 7.50 0 0 1 395.73 364.00A120.00 120.00 0 0 1 284.00 475.73A7.50 7.50 0 0 1 276.00 468.25L276.00 363.50A7.50 7.50 0 0 1 283.50 356.00Z',
 ];
 
-/** Azure, the mark's dot (D2). */
+/** Azure, the mark's dot. */
 const DOT = '#0A94FF';
 
 /**

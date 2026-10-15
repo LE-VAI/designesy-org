@@ -7,7 +7,7 @@ export const SITE_BASE = 'https://www.designesy.org';
 export const SITE_NAME = 'Designesy';
 
 /**
- * The confirmed one-liner (owner decision 2026-10-11), the line server.json and
+ * The confirmed one-liner, the line server.json and
  * the MCP Server Card publish. The check count is the engine's own constant, so
  * the line cannot fall behind the registry; the static copies (server.json,
  * package descriptions, READMEs) are held to the same count by

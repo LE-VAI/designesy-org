@@ -23,7 +23,7 @@ export interface CheckDefinition {
   ceiling: number | null;
   weight: number;
   /**
-   * The title this check shows in own-contract mode (owner decision D7): the
+   * The title this check shows in own-contract mode: the
    * baseline layer that reads no contract. Only the baseline checks carry one;
    * legacy surfaces keep `item`, so their output does not change. No title
    * names Designesy's own work (Poise, Takt, the wordmark) or Designesy.
@@ -109,8 +109,8 @@ const CHECK_DEFINITIONS: Omit<CheckDefinition, 'weight'>[] = [
   // it as a mark WARNs at most, and so do neutral text under a status name and
   // a pairing whose surface the sheet cannot attest (an ancestor in a hover or
   // open state with no declared fill).
-  // Engine 1.3.0: a v44 FAIL caps the score at 65, as a v06 FAIL does (owner
-  // decision 2026-10-11); before 1.3.0 v44 had no ceiling.
+  // Engine 1.3.0: a v44 FAIL caps the score at 65, as a v06 FAIL does;
+  // before 1.3.0 v44 had no ceiling.
   { id: 'v44', item: 'Status colors used as text meet contrast in every declared theme', category: 'accessibility', type: 'auto', threshold: 'WCAG AA 4.5:1 (3:1 at 24px, or 18.66px bold) for every status color used as text, and 3:1 for a graphic (an svg, icon or glyph, a progress bar, a color named for an icon, a currentColor fill; WCAG 1.4.11), in every declared theme, on the surface the sheet attests; disabled states exempt (WCAG 1.4.3)', pass: 'every status-color text use clears its threshold in every theme', fail: 'a color named as a status (ok, warn, error, info, grade) that has a hue (Oklch chroma 0.06 or more) is under its threshold in a theme, on an attested surface', warn: 'a hue counted only because the sheet also paints it as a mark is under its threshold; neutral text (white or grey) under a status name is under its threshold; a surface the sheet cannot attest (an ancestor in a hover, active, focus, expanded or open state that paints no declared fill); a background that cannot be resolved; or alpha-reduced status text that clears only at full alpha', ceiling: 65, contractTitle: 'Status colors used as text meet contrast' },
 
   // ── Identity (weight 6) ──
@@ -195,11 +195,11 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *   1.2.0  2026-10-09  two checks found on this site: v44 (status colors used
  *                      as text meet contrast in every declared theme) and v45
  *                      (pausing motion keeps content visible); legacy scores
- *                      gain both (owner decision D10). The S2 and S8 anti-slop
+ *                      gain both. The S2 and S8 anti-slop
  *                      rules stop firing on components and prose, and the npm
  *                      engine's accessibility floor matches this one. The
  *                      CHANGELOG entry lists the leaderboard score movement.
- *   1.3.0  2026-10-11  no A while any check FAILs (owner decision): any FAIL
+ *   1.3.0  2026-10-11  no A while any check FAILs: any FAIL
  *                      caps the score at 89.9, after the originality lift,
  *                      and v44 caps at 65 as v06 does. v34 FAILs only a
  *                      positively identified AI chat surface and cites SB

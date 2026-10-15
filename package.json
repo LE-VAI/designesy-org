@@ -43,7 +43,7 @@
   "private": true,
   "scripts": {
     "dev": "cd apps/site && npm run dev",
-    "build": "cd apps/site && npm run build && cd packages/score && npx tsc -p tsconfig.json",
+    "build": "npm --prefix apps/site run build && npm --prefix packages/score run build",
     "build:score": "cd packages/score && npx tsc -p tsconfig.json",
     "lint": "cd apps/site && npm run lint",
     "score": "node cli/designesy-score.mjs",

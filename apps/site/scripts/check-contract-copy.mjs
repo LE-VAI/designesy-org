@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
  * Contract page copy gate: every string /score/contract builds from a result
- * reads the way the approved copy says (HANDOFF 10.2, owner decisions O4, O5,
- * O6), with the counts, scores and versions taken from the data, never typed.
+ * reads the way the approved copy says, with the counts, scores and versions taken from the data, never typed.
  *
  * WHY THIS EXISTS
  * The page's sentences carry numbers: how many problems a contract has, which
@@ -31,7 +30,7 @@
  *
  * PROVING IT CAN FAIL
  *   --break  expects the singular baseline tail to use "starting with"
- *            (the wording the owner retired on 2026-10-09); the run must
+ *            (the retired wording); the run must
  *            exit 1.
  *
  * Usage:  node scripts/check-contract-copy.mjs [--break]
@@ -149,7 +148,7 @@ check('lead: several failures, baseline plural', () => {
   const got = C.verdictWords(L(50, 'F'), L(60, 'D'), [{ id: 'f02', status: 'FAIL' }, { id: 'f03', status: 'FAIL' }, { id: 'v25', status: 'FAIL' }, { id: 'v34', status: 'FAIL' }], titles, ceilings);
   assert.equal(got, 'The page follows most of your contract. 2 checks failed, starting with shipped colors are in your palette. The baseline also has 2 failing checks, starting with one h1 and no skipped heading levels.');
 });
-check('singular tail takes a colon (owner decision 2026-10-09)', () => {
+check('singular tail takes a colon', () => {
   const got = C.verdictWords(L(95, 'A'), L(80, 'B'), [{ id: 'v34', status: 'FAIL' }], titles, ceilings);
   const want = BREAK ? 'The page follows your contract. Every scored check passed. The baseline also has 1 failing check, starting with AI surfaces carry a disclosure.' : 'The page follows your contract. Every scored check passed. The baseline also has 1 failing check: AI surfaces carry a disclosure.';
   assert.equal(got, want);
@@ -195,7 +194,7 @@ check('sizes and addresses', () => {
   assert.equal(C.looksLikeContractUrl('https://a.com/DESIGN.md'), true);
   assert.equal(C.siteKey('https://acme.dev/pricing/'), 'acme.dev/pricing');
 });
-check('steps run and resolve together (O4)', () => {
+check('steps run and resolve together', () => {
   assert.deepEqual(C.steps('a.com', 'running').map((s) => s.state), ['running', 'running', 'running', 'running']);
   assert.deepEqual(C.steps('a.com', 'done').map((s) => s.state), ['done', 'done', 'done', 'done']);
   assert.equal(C.steps('a.com', 'running')[1].text, 'a.com');

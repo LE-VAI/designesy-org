@@ -280,7 +280,7 @@ hosted /score page and API always run the current engine.
 
 ### Changed (engine 1.3.0)
 
-- **No A while any check FAILs** (owner decision, 2026-10-11). Any FAIL caps
+- **No A while any check FAILs** (decided 2026-10-11). Any FAIL caps
   the score at 89.9, a B at most, and `hardFailCeilingReason` says which
   checks failed ("A FAIL caps the grade at B: v11 fails, ..."). The specific
   ceilings stay lower and win where they apply. Every cap runs after the
@@ -785,7 +785,7 @@ the site's. Contract mode moves to engine 1.3.0.
     -3600s). FAIL without one, WARN when the override's selector or scope does
     not clearly match, SKIP when no rule pauses every element.
 
-  **Owner decision D10: legacy scores gain both checks.** A request without a
+  **Legacy scores gain both checks.** A request without a
   contract returns what engine 1.1.0 returned except for v44 and v45. The
   registry grows from 42 to 44 checks, and 39 to 41 of them are scored.
   Category weights are unchanged (accessibility 15, motion 10, of 117), so each

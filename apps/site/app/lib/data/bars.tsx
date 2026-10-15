@@ -17,7 +17,7 @@ export type Bar = {
   /** The value as printed; one decimal by default. */
   display?: string;
   tone?: 'pass' | 'warn' | 'fail' | 'plain';
-  /** A bar that stands for a grade takes that grade's colour (D56), not a tone. */
+  /** A bar that stands for a grade takes that grade's colour, not a tone. */
   grade?: string;
   /** A reference value on the same scale, drawn as a tick. */
   mark?: number | null;

@@ -41,7 +41,7 @@ const SITE = 'https://www.designesy.org';
 /** The server's name in the official MCP registry, the one canonical listing. */
 export const MCP_REGISTRY_NAME = 'io.github.LE-VAI/designesy-org';
 export const MCP_SERVER_TITLE = 'Designesy';
-/** Owner decision 2026-10-11. At most 100 characters (registry and card schema). */
+/** The listing line. At most 100 characters (registry and card schema). */
 export const MCP_SERVER_DESCRIPTION =
   'Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade.';
 export const MCP_ENDPOINT = `${SITE}/api/mcp`;
@@ -63,7 +63,7 @@ export const MCP_REPOSITORY = 'https://github.com/LE-VAI/designesy-org';
 export const MCP_SUPPORTED_PROTOCOL_VERSIONS = ['2024-11-05', '2025-03-26', '2025-06-18', '2025-11-25', '2026-07-28'] as const;
 
 /**
- * The v1 icon tile (brand ledger D53): the mark and its dot on the dark
+ * The v1 icon tile: the mark and its dot on the dark
  * paper, which reads on light and dark client backgrounds alike, so no theme
  * is set. Files: public/brand/.
  */

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Guard: the READMEs state the engine's real check count, category count and
- * contract version.
+ * contract version, and the contract's acoustic cue and open tension counts.
  *
  * Why (2026-10-08): the code already has single sources of truth --
  * ENGINE_CHECK_COUNT (lib/check-definitions.ts) and CONTRACT_VERSION
@@ -45,6 +45,22 @@ const VERSION = versionMatch[1];
 const CHECKS = checkIds.length;
 const CATEGORIES = (weights[1].match(/\b[a-z]+\s*:\s*\d+/g) || []).length;
 
+// Acoustic cues and open tensions (2026-10-15): the repo README said 19 cues
+// and 9 tensions while the contract held 10 cue tokens and 10 tensions. The 19
+// is a real count, of a different document: the acoustic token document holds
+// the 10 adopted cues plus the extended feedback cues. So the contract's cue
+// count and the document's count are read from their own sources.
+const acousticSrc = read(path.join(SITE, 'app', 'lib', 'acoustic-tokens.ts'));
+const CUES = (contractSrc.match(/\{\s*token:\s*'--cue:/g) || []).length;
+const DOC_CUES = (acousticSrc.match(/\btoken:\s*'--cue:/g) || []).length;
+// One string per line inside `open_tensions: [ ... ]`.
+const tensionsBlock = contractSrc.match(/\n\s*open_tensions:\s*\[([\s\S]*?)\n\s*\],/);
+const TENSIONS = tensionsBlock ? (tensionsBlock[1].match(/^\s*['"`]/gm) || []).length : 0;
+if (CUES === 0 || DOC_CUES < CUES || TENSIONS === 0) {
+  console.error('[readme-facts] could not read acoustic cues or open tensions from source');
+  process.exit(2);
+}
+
 // The GitHub Action's metadata is what the Marketplace listing shows, so it is
 // held to the same facts as the READMEs.
 //
@@ -76,7 +92,7 @@ const FILES = [
   path.join('packages', 'cli', 'README.md'),
   path.join('packages', 'cli', 'package.json'),
   path.join('packages', 'vai-motion', 'README.md'),
-  // The PyPI summary carries the listing line (owner decision 2026-10-11).
+  // The PyPI summary carries the listing line.
   path.join('packages', 'designesy-mcp', 'pyproject.toml'),
 ];
 
@@ -93,6 +109,10 @@ const RULES = [
   { what: 'contract version', expect: VERSION, re: /\bcontract v(\d+\.\d+\.\d+)\b/gi },
   { what: 'contract version', expect: VERSION, re: /\bv(\d+\.\d+\.\d+) design-system contract\b/gi },
   { what: 'contract version', expect: VERSION, re: /^#+\s*Contract v(\d+\.\d+\.\d+)/gim },
+  { what: 'acoustic cue count', expect: CUES, re: /\b(\d+) acoustic cue tokens\b/gi },
+  { what: 'extended cue count', expect: DOC_CUES - CUES, re: /\badds (\d+) extended feedback cues\b/gi },
+  { what: 'acoustic document cue count', expect: DOC_CUES, re: /\bextended feedback cues, (\d+) in all\b/gi },
+  { what: 'open tension count', expect: TENSIONS, re: /\b(\d+) open tensions\b/gi },
 ];
 
 const LINE_EXEMPTIONS = [
@@ -124,10 +144,11 @@ for (const rel of FILES) {
   });
 }
 
+const FACTS = `checks ${CHECKS}, categories ${CATEGORIES}, contract v${VERSION}, cues ${CUES} (document ${DOC_CUES}), open tensions ${TENSIONS}`;
 if (findings.length) {
-  console.error(`[readme-facts] ${findings.length} README claim(s) disagree with the engine source (checks ${CHECKS}, categories ${CATEGORIES}, contract v${VERSION}):`);
+  console.error(`[readme-facts] ${findings.length} README claim(s) disagree with the engine source (${FACTS}):`);
   for (const f of findings) console.error('  ' + f);
   console.error('Fix the README, or add a LINE_EXEMPTIONS entry WITH a reason if the line is history.');
   process.exit(1);
 }
-console.log(`[readme-facts] OK: READMEs agree with source (checks ${CHECKS}, categories ${CATEGORIES}, contract v${VERSION}).`);
+console.log(`[readme-facts] OK: READMEs agree with source (${FACTS}).`);
