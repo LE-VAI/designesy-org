@@ -6,8 +6,7 @@
 
   The site's motion vocabulary is already pure SVG+CSS (ScoreDial,
   RadarChart, ContractHealthRack, CountUp). This extends that vocabulary
-  with decorative micro-animations and contextual tip bubbles — the
-  "lottie helpers/tips" the operator requested.
+  with decorative micro-animations and contextual tip bubbles.
 
   Three animation types:
   1. `pulse` — subtle breathing ring (decorative loop, 2s cycle)
