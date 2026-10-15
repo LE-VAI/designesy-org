@@ -747,6 +747,21 @@ const CHANGELOG: ChangelogEntry[] = [
       'A scoring request should take time in proportion to the page it reads. Re-scored on the same bytes before release, every leaderboard result is identical. The parser bounds sit well above the deepest nesting in the cohort, so only a malformed or hostile sheet reaches them. No check, weight or ceiling moved.',
     source: 'engine 1.5.1 entry in CHANGELOG.md',
   },
+
+  // ── v0.4.6 (engine 1.5.2): v46 reads the font shorthand ──
+  {
+    version: 'v0.4.6 · engine 1.5.2',
+    date: '2026-10-15',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.5.2: v46 reads the font shorthand',
+    description:
+      'v46 read only font-size, so a size set through the font shorthand, such as font: 500 0.66rem/1 var(--mono), sat outside the check. It now takes the size from the shorthand: the first length, size keyword or size function ahead of the line-height slash and the family. A weight has no unit and a family is no length, so neither is read as a size. System font keywords (caption, menu) and inherit set no measurable size and are skipped. font-size is read exactly as before. The scan, the size test and the selector of each finding read the sheet once, so v46 takes time in step with the sheet.',
+    checks: ['v46'],
+    rationale:
+      "This site's own hero console was sized through the shorthand, down to 8.8px under a 12.8px floor, and v46 never saw it: measuring the rendered page found the gap. Re-scored on the leaderboard cohort on the same bytes, no score or grade moves (v46 WARNs, it never FAILs); v46 measures more sizes on three sites, this one included, fewer on none, and finds new sub-floor or off-scale sizes on two.",
+    source: 'engine 1.5.2 entry in CHANGELOG.md; CSS Fonts 4 (the font shorthand); the design-system contract type scale (12.8px floor)',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -783,6 +798,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.5.0', date: '2026-10-14', checks: 45, title: 'Your own contract', summary: 'POST /api/score takes your own DESIGN.md or DTCG file and answers with contract fidelity and a baseline, never blended. Requests without a contract are unchanged. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.5.1', date: '2026-10-15', checks: 45, title: 'Linear-time matching', summary: 'Every pattern that read a page now reads each run once and returns what it returned, so scoring time grows in step with the page. The rule parser and the hosted reads are bounded. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.5.2', date: '2026-10-15', checks: 45, title: 'v46 reads the font shorthand', summary: 'v46 takes the size from font: as well as font-size, so a sub-floor size set through the shorthand is listed, and it reads a sheet in linear time. No score moves. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

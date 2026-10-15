@@ -33,6 +33,12 @@
  * The helpers are read from src/engine.ts itself (TypeScript is a dev
  * dependency), so the test runs the code that ships; source-drift holds
  * route.ts to the same text. Zero test dependencies beyond that.
+ *
+ * ENGINE 1.5.2
+ * v46 reads the font shorthand. Its scan, its size test and the selector of
+ * a finding's rule are written below as the patterns and the lastIndexOf
+ * reads they stand for, and held to the one-pass helpers the engine runs, on
+ * the same inputs and to the same 100 KB budget.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -388,6 +394,33 @@ const O = (() => {
   }
   return { optsIntoMotion, checkReducedMotion, parseCssRulesUncached, cssTimeMs, cssNumber, v46StaticPx, sanitizeErrorText, multiStop, ruleSelectorAt, resolveFontSizeVars, checkInputFontFloor };
 })();
+
+// ── Engine 1.5.2: v46's shorthand scan and size test, as patterns ────────────
+// The scan as a global pattern: a font-size match is read past its value; a
+// `font` match is read again from the end of the word, and dropped inside the
+// value of the shorthand before it or when its value holds a `{`.
+function v46DeclsByPattern(css) {
+  const re = /(font-size|(?<![\w-])font)\s*:\s*([^;}]+)/gi;
+  const out = [];
+  let shorthandEnd = -1;
+  for (let m = re.exec(css); m; m = re.exec(css)) {
+    if (m[1].toLowerCase() === 'font') {
+      re.lastIndex = m.index + m[1].length;
+      if (m.index < shorthandEnd || m[2].includes('{')) continue;
+      shorthandEnd = m.index + m[0].length;
+    }
+    out.push({ index: m.index, text: m[0], groups: m.slice(1) });
+  }
+  return out;
+}
+const V46_SIZE_TOKEN = /^(?:\d*\.?\d+(?:[a-z]+|%)|(?:xx?-|xxx-)?(?:small|large)|medium|smaller|larger|(?:clamp|min|max|calc)\(.*\))$/i;
+// v46's selector read as engine 1.5.1 ran it, once per finding.
+function v46SelectorBefore(css, at) {
+  const open = css.lastIndexOf('{', at);
+  if (open < 0) return '';
+  const start = Math.max(css.lastIndexOf('}', open), css.lastIndexOf(';', open), css.lastIndexOf('{', open - 1)) + 1;
+  return E.withoutCssComments(css.slice(start, open), ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+}
 
 // ── The reference: each old pattern as the engine ran it ─────────────────────
 
@@ -1091,6 +1124,32 @@ const SITES = [
     long: [['file://', '!', 'x']],
     alphabet: ['C:\\', '/home/', '/Users/', 'file://', 'npm-cache', '/_npx/', '\\', '/', 'jane', ' ', '.', '!', ')', ',', '"', "'", 'x'],
   },
+  {
+    id: 'v46 size declarations (engine 1.5.2)', alerts: [],
+    old: (s) => v46DeclsByPattern(s),
+    neu: (s) => E.v46SizeDecls(s),
+    samples: ['p{font-size:1rem}', '.a{font:500 0.66rem/1 var(--mono)}', 'font: 12px serif;', '@supports (font: -apple-system-body) and (x:y){.b{font:9px a}}', '.c{--chip-font-size:.7rem}', '.d{font:400 1rem/1.5 serif /* font: 10px */;}', '.e{font:1rem x /* font-size:2px; */}', 'font-size: ;', 'FONT : 1px}', 'x-font:1px;', 'font:  }'],
+    long: [['a{', 'font:', ''], ['', 'font:', '{'], ['a{', 'font:(', ''], ['a{', 'font : ', ''], ['a{font-size:', ' ', ''], ['a{font:', 'font-size:', '']],
+    alphabet: ['font', 'FONT', 'Font', 'font-size', 'FONT-SIZE', '-size', ':', ' ', ';', '}', '{', '/*', '*/', '12px', 'x', '-', '_', 'a', '--x-', 'font-family', 'font-sizes', '(', '\n'],
+  },
+  {
+    id: 'v46 size token (engine 1.5.2)', alerts: [], anchored: true,
+    old: (s) => V46_SIZE_TOKEN.test(s),
+    neu: (s) => E.isV46SizeToken(s),
+    samples: ['12px', '0.66rem', '.5em', '1.5%', 'x-small', 'XX-Large', 'xxx-small', 'medium', 'smaller', 'Larger', 'clamp(1rem, 2vw, 3rem)', 'MIN(1px)', 'calc()', 'max(a)b)'],
+    long: [['', '1', 'x!'], ['', '1', ''], ['.', '1', '%%'], ['clamp(', 'x', '\n)'], ['min(', ')', '']],
+    alphabet: ['1', '0', '9', '.', 'px', 'rem', 'PX', '%', 'e', 'x-', 'xx-', 'xxx-', 'small', 'large', 'medium', 'smaller', 'larger', 'clamp(', 'min(', 'max(', 'calc(', 'CLAMP(', '(', ')', '\n', '\u2028', 'a', 'Z', '-'],
+  },
+  {
+    id: 'v46 rule selector (engine 1.5.2)', alerts: [],
+    old: (s) => ruleOffsets(s).map((o) => [o, v46SelectorBefore(s, o)]).filter((x) => x[1] !== ''),
+    neu: (s) => {
+      const at = E.v46SelectorFinder(s);
+      return ruleOffsets(s).map((o) => [o, at(o)]).filter((x) => x[1] !== '');
+    },
+    samples: ['a{font-size:12px}', '@media x{.b{font:9px y}}', 'p;q{r}', '/* c */.d , .e{f}', '{x}', '}{', 'a{b}c{'],
+    alphabet: ['{', '}', ';', '.a', ' ', '\n', '/*', '*/', 'font-size:12px', '@media x', ','],
+  },
 ];
 
 // ── Inputs ───────────────────────────────────────────────────────────────────
@@ -1216,6 +1275,19 @@ describe('linear scanning: the character classes match the regex classes', () =>
       assert.equal(E.isTagNameChar(c), /[a-z0-9-]/i.test(ch), `[a-z0-9-]/i at ${c}`);
       assert.equal(E.isDigit(c), /[0-9]/.test(ch), `[0-9] at ${c}`);
       assert.equal(E.isLineTerminator(c), /[\n\r\u2028\u2029]/.test(ch), `line terminator at ${c}`);
+    }
+  });
+
+  it('engine 1.5.2: v46\'s case-insensitive words, its lookbehind and its size test agree with the patterns on every code unit', () => {
+    for (let c = 0; c < 0x10000; c++) {
+      const ch = String.fromCharCode(c);
+      assert.equal(E.isNameChar(c), /[\w-]/i.test(ch), `[\\w-]/i at ${c}`);
+      for (const s of [`1${ch}`, `1${ch}x`, `.5p${ch}`, `x-smal${ch}`, `${ch}edium`, `mi${ch}(1)`, `min(${ch})`, `calc(${ch}x)`]) {
+        assert.equal(E.isV46SizeToken(s), V46_SIZE_TOKEN.test(s), `size token ${JSON.stringify(s)}`);
+      }
+      for (const s of [`${ch}font:1px;`, `fon${ch}:1px;`, `font-siz${ch}:1px;`, `font:${ch};`, `font${ch}:1px;`, `font-size:${ch}`]) {
+        assert.deepEqual(E.v46SizeDecls(s), v46DeclsByPattern(s), `declarations ${JSON.stringify(s)}`);
+      }
     }
   });
 });

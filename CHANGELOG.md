@@ -6,6 +6,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.2: v46 reads the `font` shorthand** (the hosted API when the site
+deploys; npm in the next `@designesy/score` release). No check is added, no
+weight or ceiling moves, and contract v0.4.6 is unchanged. The PyPI server's
+offline engine does not run v46 (listed as not ported), so it mirrors 1.5.2
+unchanged.
+
+### Fixed (engine 1.5.2)
+
+- **v46 reads the `font` shorthand.** Through 1.5.1 v46 read only `font-size`,
+  so a size written as `font: 500 0.66rem/1 var(--mono)` was never judged.
+  designesy.org's own hero console sat at 8.8 to 12.5px under its 12.8px floor
+  that way; measuring the rendered page found it, and v46 never saw it. The
+  size is the first token that is a length, a size keyword or a size function,
+  ahead of the line-height slash and the family; a weight (`500`) has no unit
+  and a family is no length, so neither is taken. System font keywords
+  (`caption`, `menu`…) and CSS-wide keywords (`inherit`) carry no measurable
+  size and are skipped, as is a whole-shorthand `var()` the `:root` tokens
+  cannot resolve. A `font:` whose value holds a `{`, such as an
+  `@supports (font: …)` condition, declares nothing and swallows no rule after
+  it, and a `font:` written inside a shorthand's own value (in a comment, say)
+  is read as that value's text. `font-size` is read exactly as in 1.5.1,
+  custom properties such as `--chip-font-size` included; `font-family`,
+  `font-weight` and `--icon-font` are not the shorthand.
+- **v46 reads a sheet in linear time.** The shorthand scan, the size test and
+  the selector of each finding's rule each read the sheet once. Written as
+  patterns, the scan re-read a value once for every `font:` inside it, and the
+  size test could split a run of digits between two quantifiers in as many
+  ways as the run was long. The selector was already a cost in 1.5.1: each
+  finding read back toward the start of a sheet with few braces or
+  semicolons, so 256 KB of off-scale `font-size` declarations under a type
+  scale took about a second to score, 13 times as long as 64 KB. The sheet's
+  braces and semicolons are now listed once, each finding is answered by
+  binary search, and the findings of one rule share one reading of its
+  selector, which comes out as before.
+
+### Not changed (engine 1.5.2)
+
+- The MCP tools, their names and descriptions, the PyPI package version, and
+  the `@designesy/score` version (0.9.2, published from engine 1.5.1).
+
+### Measured (engine 1.5.2)
+
+- The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+  golden (152 cases, 297 runs) regenerate with only `engine_version` changed:
+  no fixture uses the shorthand under a type scale.
+- `packages/score/test/engine-1-5-2.test.mjs`: 5 rule tests fail on the 1.5.1
+  build, and 6 controls pass on both.
+- `packages/score/test/linear-scan.test.mjs` holds the three new helpers to
+  the patterns and reads they stand for, with identical results on the repo's
+  fixture pages, on 10,000 generated inputs each, and on every UTF-16 code
+  unit for the case folding, the lookbehind and the size test. On 100 KB
+  inputs built to stress each one, the helpers take 1 to 3 ms, where the
+  patterns took up to 5.1 seconds (the size test on a run of digits). Four
+  mutants of the helpers each fail the test, and a fifth that gives the same
+  answers in quadratic time fails its 50 ms budget.
+- The leaderboard cohort, re-scored with 1.5.1 and 1.5.2 on the same recorded
+  bytes (30 sites, 27 reachable) through the hosted route and the npm engine:
+  **no score or grade moves**, and every check other than v46 returns the same
+  result. v46 keeps its status on every site. It measures more sizes on three
+  sites and fewer on none:
+
+  | Site | Sizes measured | Under the floor | Off the scale |
+  |---|---|---|---|
+  | www.designesy.org | 348 → 405 | 0 → 2 | 7 → 10 |
+  | cohort site A | 518 → 527 | 3 → 4 | 75 → 75 |
+  | cohort site B | 233 → 234 | 1 → 1 | 36 → 36 |
+
+  designesy.org's five new findings were real, and the site has since moved
+  them onto the scale: two console numerals off the scale (1.2rem, 1.5rem),
+  a 3.25rem readout, and an 11.52px inspector label and a 10px log pin under
+  the floor. Cohort site A's new finding is an 11px keycap under its floor.
+- The whole engine, scored at 64 KB and at 256 KB of CSS under a type scale
+  on twelve inputs built for v46, takes at most 5.6 times as long on the input
+  four times the size (1.5.1 took up to 13.2 times as long on its `font-size`
+  inputs), and at most 0.3 seconds at 1 MB.
+
 **@designesy/cli 0.3.2** (npm), released on its own (`cli-v0.3.2`). It depends
 on `@designesy/score` ^0.9.2. 0.3.1 asked for ^0.5.0, which on a 0.x version
 means 0.5.x only, so `designesy score` kept running the 0.5 engine; it now runs

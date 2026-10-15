@@ -4827,11 +4827,153 @@ function v46FluidFloor(value: string): number | null {
   return statics.length ? Math.max(...statics) : null;
 }
 
-function v46Selector(css: string, at: number): string {
-  const open = css.lastIndexOf('{', at);
-  if (open < 0) return '';
-  const start = Math.max(css.lastIndexOf('}', open), css.lastIndexOf(';', open), css.lastIndexOf('{', open - 1)) + 1;   // stop at an enclosing @media brace too
-  return withoutCssComments(css.slice(start, open), ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+// Engine 1.5.2: the `font` shorthand sets a size too, and until 1.5.2 v46 read
+// only `font-size`, so `font: 500 0.66rem/1 var(--mono)` sat outside the check.
+// The size is the first token that is a length, a size keyword or a size
+// function, ahead of the line-height slash and the family; a weight (500) has
+// no unit and a family name is no length, so neither is taken. A system font
+// keyword (caption, menu…) or a CSS-wide keyword sets no measurable size.
+const V46_FONT_SYSTEM = /^(?:caption|icon|menu|message-box|small-caption|status-bar|inherit|initial|unset|revert|revert-layer)$/i;
+const V46_SIZE_WORDS = new Set(['small', 'large', 'x-small', 'x-large', 'xx-small', 'xx-large', 'xxx-small', 'xxx-large', 'medium', 'smaller', 'larger']);
+
+/** `s` with A to Z lower-cased and every other code unit kept: the case folding of the /i flag without the u flag. */
+function foldAsciiCase(s: string): string {
+  return s.replace(/[A-Z]+/g, (run) => run.toLowerCase());
+}
+
+/**
+ * Whether a shorthand token is a size, as
+ * /^(?:\d*\.?\d+(?:[a-z]+|%)|(?:xx?-|xxx-)?(?:small|large)|medium|smaller|larger|(?:clamp|min|max|calc)\(.*\))$/i
+ * answers: a number and then a unit or %, a size keyword, or a size function
+ * whose parenthesis closes at the end of the token with no line break inside.
+ * Read in one pass: the number in that pattern can split a run of digits
+ * between \d* and \d+ in as many ways as the run is long.
+ */
+function isV46SizeToken(s: string): boolean {
+  const n = s.length;
+  let k = 0;
+  let dot = false;
+  for (; k < n; k++) {
+    const c = s.charCodeAt(k);
+    if (c === 46) {
+      if (dot) return false;                                       // a second dot ends every reading
+      dot = true;
+    } else if (!isDigit(c)) break;
+  }
+  if (k > 0) {
+    if (k === n || s.charCodeAt(k - 1) === 46) return false;       // the number ends in a digit, and a unit follows it
+    if (k === n - 1 && s.charCodeAt(k) === 37) return true;        // %
+    for (let i = k; i < n; i++) {
+      const c = s.charCodeAt(i) | 32;
+      if (c < 97 || c > 122) return false;
+    }
+    return true;
+  }
+  if (n <= 9 && V46_SIZE_WORDS.has(foldAsciiCase(s))) return true;
+  const open = s.indexOf('(');
+  if (open < 3 || open > 5 || n < open + 2 || s.charCodeAt(n - 1) !== 41) return false;
+  const fn = foldAsciiCase(s.slice(0, open));
+  if (fn !== 'clamp' && fn !== 'min' && fn !== 'max' && fn !== 'calc') return false;
+  for (let i = open + 1; i < n - 1; i++) if (isLineTerminator(s.charCodeAt(i))) return false;
+  return true;
+}
+
+/** The size written inside a `font` shorthand value, or null when it carries none. */
+function v46ShorthandSize(value: string, tokens: Record<string, string>): string | null {
+  const whole = resolveVar(value, tokens);                         // a whole-shorthand token alias
+  if (V46_FONT_SYSTEM.test(whole)) return null;
+  for (const part of splitCssTopLevel(whole.replace(/\//g, ' / ').replace(/\s+/g, ' '), ' ')) {
+    if (part === '/') return null;                                 // a slash before any size: not a shorthand v46 can read
+    if (isV46SizeToken(resolveVar(part, tokens))) return part;
+  }
+  return null;
+}
+
+/**
+ * The declarations v46 reads: matches of
+ * /(font-size|(?<![\w-])font)\s*:\s*([^;}]+)/gi, groups [property, value].
+ * A font-size match is read past its value, as the global pattern reads it.
+ * After a `font` match the scan goes on from the end of the word, so a
+ * shorthand never swallows a font-size written after it. A `font` match is
+ * dropped when it sits inside the value of the shorthand before it (it is
+ * that value's own text), or when its value holds a `{`: an @supports
+ * condition such as `(font: -apple-system-body) and …{` declares nothing.
+ *
+ * Engine 1.5.2. Each start is tried once, and the starts that share a value's
+ * end share one search for it, so the scan reads the sheet in linear time.
+ */
+function v46SizeDecls(css: string): ScanMatch[] {
+  const start = /font/gi;
+  const sizeWord = /-size/iy;
+  const valueEnd = nextMatchFinder(css, /[;}]/g);
+  const brace = nextMatchFinder(css, /\{/g);
+  const out: ScanMatch[] = [];
+  let shorthandEnd = -1;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const at = m.index;
+    pos = at + 1;
+    sizeWord.lastIndex = at + 4;
+    const size = sizeWord.test(css);
+    if (!size && (at < shorthandEnd || (at > 0 && isNameChar(css.charCodeAt(at - 1))))) continue;
+    const word = size ? 9 : 4;
+    const colon = wsEnd(css, at + word);
+    if (css.charCodeAt(colon) !== 58) continue;
+    const ws = wsEnd(css, colon + 1);
+    let from = ws;
+    let end = ws;
+    if (ws < css.length && css.charCodeAt(ws) !== 59 && css.charCodeAt(ws) !== 125) {
+      const r = valueEnd(ws);
+      end = r === Infinity ? css.length : r;
+    } else if (ws > colon + 1) {
+      from = ws - 1;                                               // only white space before the end: the value is its last character
+    } else continue;
+    if (size) {
+      pos = end;
+    } else {
+      pos = at + 4;
+      if (brace(from) < end) continue;
+      shorthandEnd = end;
+    }
+    out.push({ index: at, text: css.slice(at, end), groups: [css.slice(at, at + word), css.slice(from, end)] });
+  }
+  return out;
+}
+
+/**
+ * The selector of the rule a v46 finding sits in, by offset: the text from
+ * the `{`, `}` or `;` before the last `{` at or before the offset up to that
+ * brace, without comments, white space collapsed, cut to 80 characters (''
+ * when no `{` comes before the offset).
+ *
+ * Engine 1.5.2: the sheet's braces and semicolons are listed once, each offset
+ * is answered by binary search, and the findings of one rule share one
+ * reading of its selector. Before, each finding ran four lastIndexOf scans,
+ * and on a sheet with few braces or semicolons each one read back toward the
+ * start of the sheet, so the check's cost grew with the square of its length.
+ */
+function v46SelectorFinder(css: string): (at: number) => string {
+  const opens: number[] = [];
+  const marks: number[] = [];
+  for (let i = 0; i < css.length; i++) {
+    const c = css.charCodeAt(i);
+    if (c === 123) { opens.push(i); marks.push(i); } else if (c === 125 || c === 59) marks.push(i);
+  }
+  const read = new Map<number, string>();
+  return (at: number) => {
+    const k = lowerBound(opens, at + 1) - 1;                       // the last `{` at or before the offset
+    if (k < 0) return '';
+    const open = opens[k];
+    let selector = read.get(open);
+    if (selector === undefined) {
+      const j = lowerBound(marks, open) - 1;                       // the `{`, `}` or `;` before it
+      selector = withoutCssComments(css.slice(j < 0 ? 0 : marks[j] + 1, open), ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+      read.set(open, selector);
+    }
+    return selector;
+  };
 }
 
 function checkTypeScale(css: string, tokens: Record<string, string>): CheckResult {
@@ -4852,17 +4994,18 @@ function checkTypeScale(css: string, tokens: Record<string, string>): CheckResul
   };
   let judged = 0;
   let fluid = 0;
-  const re = /font-size\s*:\s*([^;}]+)/gi;
-  let m;
-  while ((m = re.exec(css)) !== null) {
-    const written = withoutCssComments(m[1], '').replace(/!important/i, '').trim();
+  const selectorAt = v46SelectorFinder(css);
+  for (const m of v46SizeDecls(css)) {                             // engine 1.5.2: font-size and the font shorthand
+    const declared = withoutCssComments(m.groups[1] as string, '').replace(/!important/i, '').trim();
+    const written = (m.groups[0] as string).length === 4 ? v46ShorthandSize(declared, tokens) : declared;
+    if (written === null) continue;
     const value = resolveVar(written, tokens);
     if (/^var\(/i.test(value)) continue;                            // an alias the token table cannot resolve
     if (/^(?:clamp|min|max)\(/i.test(value) && V46_FLUID.test(value)) {
       fluid++;
       const low = v46FluidFloor(value);
       if (low !== null && below(low)) {
-        add({ selector: v46Selector(css, m.index), value: written, px: Math.round(low * 100) / 100, issue: 'fluid minimum below the floor', nearest: floor });
+        add({ selector: selectorAt(m.index), value: written, px: Math.round(low * 100) / 100, issue: 'fluid minimum below the floor', nearest: floor });
       }
       continue;
     }
@@ -4870,9 +5013,9 @@ function checkTypeScale(css: string, tokens: Record<string, string>): CheckResul
     if (px === null) continue;                                      // em, %, keywords, calc(): relative or not static
     judged++;
     if (below(px)) {
-      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'below the floor', nearest: floor });
+      add({ selector: selectorAt(m.index), value: written, px: Math.round(px * 100) / 100, issue: 'below the floor', nearest: floor });
     } else if (!onScale(px)) {
-      add({ selector: v46Selector(css, m.index), value: written, px: Math.round(px * 100) / 100, issue: 'off the scale', nearest: nearest(px) });
+      add({ selector: selectorAt(m.index), value: written, px: Math.round(px * 100) / 100, issue: 'off the scale', nearest: nearest(px) });
     }
   }
   const scaleText = `${steps.length}-step scale (ratio ${ratio.toFixed(3)}, ${scale.count} type tokens, floor ${floor}px)`;
