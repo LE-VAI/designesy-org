@@ -6,9 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**Engine 1.5.1: linear-time matching and capped document reads** (the hosted
-API; the npm engine and the PyPI server's offline engine carry the same change
-in their next releases). Scoring time now grows in step with the page. No check
+**Engine 1.5.1 and @designesy/score 0.9.2: linear-time matching and capped
+document reads** (the hosted API and npm `score-v0.9.2`; the PyPI server's
+offline engine carries the same change in its next release). Scoring time now
+grows in step with the page. No check
 is added, no weight or ceiling moves, and contract v0.4.6 is unchanged. On a
 well-formed page no verdict, detail or score moves.
 
@@ -46,6 +47,15 @@ well-formed page no verdict, detail or score moves.
   0.87 MB for one stylesheet, 3.3 MB of CSS for one page, 2.6 MB for a
   /DESIGN.md). A contract-mode run that reached a cap says so in its coverage
   notes (`DOCUMENT_CAP:`).
+
+### Fixed (@designesy/score 0.9.2)
+
+- **The review table escapes backslashes before pipes.** A cell carries text
+  read from the scored page, and a backslash written before a pipe escaped the
+  table's own escape, which left a live cell separator. `--format review`
+  output now keeps every cell whole.
+- **Published from this repository's release workflow through npm trusted
+  publishing,** with provenance, and with no stored npm token.
 
 ### Not changed (engine 1.5.1)
 
@@ -147,7 +157,8 @@ golden regenerate with only `engine_version` changed. 86 legacy requests (the
 every format) answer identically under 1.4.1 and 1.5.0, apart from timestamps
 and the engine version.
 
-**Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
+**Engine 1.4.1 and @designesy/score 0.9.1** (npm, published 2026-10-13 as
+`score-v0.9.1`). One
 check stops failing pages on a word it read in the wrong rule, and one check
 is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
 is unchanged. The hosted /score page and API change when the site deploys; the
