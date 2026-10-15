@@ -35,6 +35,7 @@ import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { Resend } from 'resend';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
+import { clientKey } from '../../lib/rate-limit';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -679,8 +680,8 @@ const scoreMonitor = unstable_cache(scoreMonitorUncached, ['designesy-monitor'],
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 50 monitor scans per hour.' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },

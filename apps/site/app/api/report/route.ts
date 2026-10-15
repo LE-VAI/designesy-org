@@ -12,6 +12,7 @@ import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -421,8 +422,8 @@ const runReport = unstable_cache(runReportUncached, ['designesy-report'], {
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 20 report scans per hour (report fires 3 engines per scan).' },
       { status: 429, headers: { 'Cache-Control': 'no-store' } },

@@ -11,6 +11,7 @@
 // must not take the scoring API down with it), the badge's miss path fails
 // CLOSED (a dead Redis must not let anyone start unlimited fresh scores).
 
+import { createHmac } from 'node:crypto';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -102,4 +103,17 @@ export function clientIp(headers: Headers): string {
     headers.get('x-real-ip')?.trim() ||
     'unknown'
   );
+}
+
+/**
+ * The key a limiter counts a caller under: a keyed hash (HMAC-SHA256) of the
+ * caller's IP, so no limiter, in memory or in the shared store, holds a network
+ * address. The key is stable, so a window that spans midnight keeps counting,
+ * and reversing it by trying addresses needs the server-only secret. The secret
+ * is the one the usage counter salts with; the "rate-limit:v1:" prefix keeps
+ * the two derivations apart.
+ */
+export function clientKey(headers: Headers): string {
+  const secret = process.env.USAGE_SALT || process.env.CRON_SECRET || '';
+  return createHmac('sha256', secret).update(`rate-limit:v1:${clientIp(headers)}`).digest('hex').slice(0, 32);
 }

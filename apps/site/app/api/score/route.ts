@@ -6,6 +6,7 @@ import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { handleOwnContract } from '../../lib/own-contract/api';
+import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -5540,8 +5541,8 @@ function emitReview(url: string, result: ScoreResult): string {
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: 'Rate limit exceeded. Maximum 100 scores per hour.' },
       { status: 429 }
@@ -5605,7 +5606,7 @@ export async function POST(request: Request) {
     }
     try {
       const r = await handleOwnContract(
-        { body: body as Record<string, unknown>, bodyBytes, url, ip },
+        { body: body as Record<string, unknown>, bodyBytes, url, caller },
         {
           fetchPage: fetchPageResilient,
           legacyChecks: ({ html, css }) => {

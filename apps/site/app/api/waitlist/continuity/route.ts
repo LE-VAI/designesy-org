@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { clientKey } from '../../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -45,11 +46,6 @@ type Normalized = {
 
 const hits = new Map<string, { count: number; resetAt: number }>();
 
-function clientKey(req: Request): string {
-  const xf = req.headers.get('x-forwarded-for') || '';
-  const ip = xf.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
-  return ip.slice(0, 64);
-}
 
 function rateLimit(key: string, limit = 8, windowMs = 60 * 60 * 1000): boolean {
   const now = Date.now();
@@ -193,7 +189,7 @@ async function sendWebhook(data: Normalized): Promise<{ ok: boolean; detail?: st
 }
 
 export async function POST(req: Request) {
-  if (!rateLimit(clientKey(req))) {
+  if (!rateLimit(clientKey(req.headers))) {
     return NextResponse.json(
       { ok: false, error: 'Too many requests. Try again in a bit, or email hello@designesy.org.' },
       { status: 429 }

@@ -34,7 +34,7 @@
 //     ("inactive"). There is no shared store to count against, and a single
 //     local process is not the open internet.
 
-import { clientIp, fixedWindow, getLimiter, type LimiterOutcome } from '../rate-limit';
+import { clientKey, fixedWindow, getLimiter, type LimiterOutcome } from '../rate-limit';
 
 export const BADGE_MISS_LIMITS = {
   perIp: { prefix: 'badge-miss', tokens: 20, window: '1 h' },
@@ -58,7 +58,7 @@ export async function decideBadgeMiss(headers: Headers): Promise<MissDecision> {
       : { allowed: true, outcome: 'inactive' };
   }
   try {
-    const mine = await perIp.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:${clientIp(headers)}`);
+    const mine = await perIp.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:${clientKey(headers)}`);
     if (mine.reason === 'timeout') return { allowed: false, outcome: 'degraded', why: 'degraded' };
     if (!mine.success) return { allowed: false, outcome: 'active', why: 'per-ip' };
     const all = await global.limit(`${BADGE_MISS_LIMITS.perIp.prefix}:all`);

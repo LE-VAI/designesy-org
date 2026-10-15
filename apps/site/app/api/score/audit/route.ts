@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { normalizeInputUrl, isPublicUrl } from '../../../lib/url-guard';
 import { createUrlVerdict, guardBrowser, type GuardedBrowser, type UrlVerdict } from '../../../lib/browser-guard';
+import { clientKey } from '../../../lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -632,8 +633,8 @@ async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'univers
 // ── POST Handler ───────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  if (rateLimited(ip)) {
+  const caller = clientKey(request.headers);
+  if (rateLimited(caller)) {
     return NextResponse.json(
       { ok: false, error: `Audit rate limit exceeded. Maximum ${RATE_LIMIT} browser audits per hour.` },
       { status: 429 }
