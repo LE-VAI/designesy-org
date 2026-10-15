@@ -6,6 +6,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.1 and @designesy/score 0.9.2: linear-time matching and capped
+document reads** (the hosted API and npm `score-v0.9.2`; the PyPI server's
+offline engine carries the same change in its next release). Scoring time now
+grows in step with the page. No check
+is added, no weight or ceiling moves, and contract v0.4.6 is unchanged. On a
+well-formed page no verdict, detail or score moves.
+
+### Fixed (engine 1.5.1)
+
+- **Each pattern that reads a page reads each run of text once.** Some of the
+  patterns that read a page's CSS and HTML retried from every place a match
+  could start, or tried every way to split a run of characters between two
+  quantifiers, so their cost grew with the square of a long run of the right
+  characters (one with the cube). A page built for it could hold a scoring
+  request for many seconds. Each of those patterns is now a scan that returns
+  exactly what the pattern returned: the same matches at the same positions,
+  the same text after the same replacement, the same yes or no. The hosted
+  route and the npm engine change together (source-drift OK), and so do the
+  error-text copy the hosted MCP tools share (mcp-tool-parity OK) and the
+  Python offline engine in the MCP server.
+- **v27 finds the rule each font-size declaration sits in from one index of
+  the sheet.** It read backwards from each declaration to that rule's
+  selector, and on some sheets each read went back toward the start of the
+  sheet, so the check's cost grew with the square of the sheet's length. The
+  sheet's braces and semicolons are now listed once and each declaration is
+  answered by binary search, with the same rule and selector as before; the
+  declarations of one rule share one reading of its selector. All three
+  engines change together.
+- **The CSS rule parser has two bounds.** A brace that would open a block more
+  than 16 levels deep is read as text of the block it sits in, and at the end
+  of a sheet at most 4 blocks left open are closed and read, innermost first.
+  The leaderboard cohort nests at most 6 levels deep and leaves at most 1 block
+  open at the end of a page's CSS, so the bounds change a result only for a
+  malformed or hostile sheet. v44, v45 and S2 read through this parser.
+- **The hosted engine reads a capped number of bytes.** A page's HTML is read
+  up to 8 MiB, one stylesheet up to 4 MiB, a page's stylesheets together up to
+  16 MiB, and a /DESIGN.md up to 16 MiB; a longer body is read up to its cap.
+  Each cap is four or more times the largest in the cohort (1.8 MB of HTML,
+  0.87 MB for one stylesheet, 3.3 MB of CSS for one page, 2.6 MB for a
+  /DESIGN.md). A contract-mode run that reached a cap says so in its coverage
+  notes (`DOCUMENT_CAP:`).
+
+### Fixed (@designesy/score 0.9.2)
+
+- **The review table escapes backslashes before pipes.** A cell carries text
+  read from the scored page, and a backslash written before a pipe escaped the
+  table's own escape, which left a live cell separator. `--format review`
+  output now keeps every cell whole.
+- **Published from this repository's release workflow through npm trusted
+  publishing,** with provenance, and with no stored npm token.
+
+### Not changed (engine 1.5.1)
+
+- The MCP tools, their names and descriptions, and the PyPI package version.
+- Response shapes. A universal-mode response carries no field for a capped
+  read; contract mode reports it in its coverage notes.
+
+### Measured (engine 1.5.1)
+
+- The calibration corpus (34 fixtures, 47 pinned verdicts) and the offline
+  golden (152 cases, 297 runs) regenerate with only `engine_version` changed.
+- Every rewritten pattern runs beside the pattern it replaced, on the repo's
+  fixture pages and on 10,000 generated inputs per call site, with identical
+  results: 87 call sites in `packages/score/test/linear-scan.test.mjs` and 37
+  in `packages/designesy-mcp/test/test_linear_scan.py`.
+- The leaderboard cohort, re-scored on the same recorded bytes before and
+  after: 30 sites, 27 reachable; every hosted result, npm result and assembled
+  page is identical, and every Python offline result is identical apart from
+  the engine version it reports.
+- Of 64 TypeScript patterns timed before and after on 100 KB inputs built
+  to stress each one, 44 took more than a second and 22 more than 10
+  seconds; each new helper takes tens of milliseconds at most. v27 on a
+  1.6 MB sheet built for it took 20 to 27 seconds and now takes about 0.1
+  seconds.
+- The whole engine, scored at 64 KB and at 256 KB on every input unit of
+  that stress table (1,974 runs, as CSS and as HTML), takes at most 4.8 times
+  as long on the input four times the size.
+
 **Engine 1.5.0: score a page against your own contract** (the hosted API;
 npm and PyPI unchanged). `POST /api/score` takes an optional `contract`
 field: a DESIGN.md or DTCG 2025.10 token file, pasted (`contract.content`)
@@ -79,7 +157,8 @@ golden regenerate with only `engine_version` changed. 86 legacy requests (the
 every format) answer identically under 1.4.1 and 1.5.0, apart from timestamps
 and the engine version.
 
-**Engine 1.4.1 and @designesy/score 0.9.1** (npm, not yet published). One
+**Engine 1.4.1 and @designesy/score 0.9.1** (npm, published 2026-10-13 as
+`score-v0.9.1`). One
 check stops failing pages on a word it read in the wrong rule, and one check
 is renamed. No check is added, no weight or ceiling moves, and contract v0.4.6
 is unchanged. The hosted /score page and API change when the site deploys; the

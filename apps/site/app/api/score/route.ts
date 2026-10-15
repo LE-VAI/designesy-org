@@ -190,6 +190,1789 @@ function rateLimited(ip: string): boolean {
 
 export { normalizeInputUrl, isValidUrl };
 
+// ── Linear-time scanning, shared by both engine copies (engine 1.5.1) ──────
+// Each helper below returns exactly what the regular expression it replaced
+// returned: the same matches at the same indexes with the same groups, or the
+// same string after the same replace. The replaced patterns retried from every
+// candidate start and rescanned the rest of the run each time, so their cost
+// grew with the square (one url() pattern with the cube) of a long run of the
+// right characters on a fetched page. These read each run once.
+// test/linear-scan.test.mjs runs every helper against the pattern it replaced,
+// over the fixture pages and generated input, and times each on 100 KB.
+
+/** JavaScript's \s: WhiteSpace and LineTerminator code units. */
+function isJsSpace(c: number): boolean {
+  return c === 32 || (c >= 9 && c <= 13) || c === 0xa0 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a)
+    || c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+}
+
+/** The index after the run of \s that starts at `i`. */
+function wsEnd(s: string, i: number): number {
+  while (i < s.length && isJsSpace(s.charCodeAt(i))) i++;
+  return i;
+}
+
+/** A regex match as the helpers report it: start, matched text, groups. */
+type ScanMatch = { index: number; text: string; groups: Array<string | undefined> };
+
+/**
+ * Spans of OPEN[\s\S]*?CLOSE, global and leftmost, as [start, end, ...] pairs.
+ * `open` matches a fixed-length opener, `close` the closer; both global. A
+ * closer is looked for once per opener, and when there is none after one
+ * opener there is none after any later one, so the scan stops there.
+ */
+function lazyBlockSpans(text: string, open: RegExp, close: RegExp): number[] {
+  const spans: number[] = [];
+  let pos = 0;
+  for (;;) {
+    open.lastIndex = pos;
+    const o = open.exec(text);
+    if (!o) break;
+    close.lastIndex = o.index + o[0].length;
+    const c = close.exec(text);
+    if (!c) break;
+    spans.push(o.index, c.index + c[0].length);
+    pos = c.index + c[0].length;
+  }
+  return spans;
+}
+
+/** `text` with each [start, end) span replaced by `rep`. */
+function replaceSpans(text: string, spans: number[], rep: string): string {
+  if (spans.length === 0) return text;
+  const parts: string[] = [];
+  let last = 0;
+  for (let k = 0; k < spans.length; k += 2) {
+    parts.push(text.slice(last, spans[k]), rep);
+    last = spans[k + 1];
+  }
+  parts.push(text.slice(last));
+  return parts.join('');
+}
+
+/** html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '') */
+function withoutScriptsAndStyles(html: string): string {
+  const noScripts = replaceSpans(html, lazyBlockSpans(html, /<script/gi, /<\/script>/gi), '');
+  return replaceSpans(noScripts, lazyBlockSpans(noScripts, /<style/gi, /<\/style>/gi), '');
+}
+
+/** css.replace(/\/\*[\s\S]*?\*\//g, rep) */
+function withoutCssComments(css: string, rep: string): string {
+  return replaceSpans(css, lazyBlockSpans(css, /\/\*/g, /\*\//g), rep);
+}
+
+/** text.replace(/<[^>]*>/g, rep), or /<[^>]+>/g when `nonEmpty`. */
+function withoutTags(text: string, rep: string, nonEmpty: boolean): string {
+  const spans: number[] = [];
+  let pos = 0;
+  for (;;) {
+    const lt = text.indexOf('<', pos);
+    if (lt < 0) break;
+    if (nonEmpty && text.charCodeAt(lt + 1) === 62) { pos = lt + 1; continue; }
+    const gt = text.indexOf('>', lt + 1);
+    if (gt < 0) break;
+    spans.push(lt, gt + 1);
+    pos = gt + 1;
+  }
+  return replaceSpans(text, spans, rep);
+}
+
+/**
+ * Matches of <TAG[^>]*>([\s\S]*?)<\/TAG> (global): `open` matches `<TAG`,
+ * `close` the closing tag, both global. groups[0] is the content.
+ */
+function elementMatches(html: string, open: RegExp, close: RegExp): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  let pos = 0;
+  for (;;) {
+    open.lastIndex = pos;
+    const o = open.exec(html);
+    if (!o) break;
+    const gt = html.indexOf('>', o.index + o[0].length);
+    if (gt < 0) break;
+    close.lastIndex = gt + 1;
+    const c = close.exec(html);
+    if (!c) break;
+    const end = c.index + c[0].length;
+    out.push({ index: o.index, text: html.slice(o.index, end), groups: [html.slice(gt + 1, c.index)] });
+    pos = end;
+  }
+  return out;
+}
+
+/**
+ * Matches of <NAME[^>]*ATTR[^>]*>([\s\S]*?)CLOSE (global). `open` matches `<`
+ * and as much of the name as must precede the attribute; `attr` and `close`
+ * are global. An opener whose tag holds no ATTR rules out every opener before
+ * the same `>`; one with no CLOSE after it rules out every later one.
+ */
+function roleElementMatches(html: string, open: RegExp, attr: RegExp, close: RegExp): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  let pos = 0;
+  let attrFrom = -1;
+  let attrAt = -1;
+  for (;;) {
+    open.lastIndex = pos;
+    const o = open.exec(html);
+    if (!o) break;
+    const gt = html.indexOf('>', o.index + 1);
+    if (gt < 0) break;
+    const from = o.index + o[0].length;
+    if (!(attrFrom >= 0 && from >= attrFrom && from <= attrAt)) {
+      attr.lastIndex = from;
+      const a = attr.exec(html);
+      attrFrom = from;
+      attrAt = a ? a.index : Infinity;
+    }
+    if (attrAt >= gt) { pos = gt + 1; continue; }
+    close.lastIndex = gt + 1;
+    const c = close.exec(html);
+    if (!c) break;
+    const end = c.index + c[0].length;
+    out.push({ index: o.index, text: html.slice(o.index, end), groups: [html.slice(gt + 1, c.index)] });
+    pos = end;
+  }
+  return out;
+}
+
+/** v41: matches of /<(button|a|label|td|th|p|li|h[1-6])\s([^>]*?)>([\s\S]*?)<\/\1>/gi, groups [tag, attrs, content]. */
+function capsElementMatches(html: string): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  const open = /<(button|a|label|td|th|p|li|h[1-6])\s/gi;
+  const closers: Record<string, RegExp> = {};
+  const noCloserFrom: Record<string, number> = {};
+  let gtFrom = -1;
+  let gtAt = -1;
+  let pos = 0;
+  for (;;) {
+    open.lastIndex = pos;
+    const o = open.exec(html);
+    if (!o) break;
+    const from = o.index + o[0].length;
+    if (!(gtFrom >= 0 && from >= gtFrom && from <= gtAt)) {
+      gtFrom = from;
+      gtAt = html.indexOf('>', from);
+    }
+    if (gtAt < 0) break;
+    const tag = o[1].toLowerCase();
+    if (noCloserFrom[tag] !== undefined && gtAt + 1 >= noCloserFrom[tag]) { pos = o.index + 1; continue; }
+    const close = closers[tag] ?? (closers[tag] = new RegExp(`</${tag}>`, 'gi'));
+    close.lastIndex = gtAt + 1;
+    const c = close.exec(html);
+    if (!c) { noCloserFrom[tag] = gtAt + 1; pos = o.index + 1; continue; }
+    const end = c.index + c[0].length;
+    out.push({ index: o.index, text: html.slice(o.index, end), groups: [o[1], html.slice(from, gtAt), html.slice(gtAt + 1, c.index)] });
+    pos = end;
+  }
+  return out;
+}
+
+/**
+ * /NAME[^"']*NEEDLE[^"']*["']/i.test(attrs), where `name` (global) matches
+ * the attribute name, `=` and its opening quote, and `needle` (global) holds
+ * no quote: true when NEEDLE sits wholly inside one quoted value that closes.
+ */
+function quotedAttrHas(attrs: string, name: RegExp, needle: RegExp): boolean {
+  let pos = 0;
+  let needleFrom = -1;
+  let needleAt = -1;
+  for (;;) {
+    name.lastIndex = pos;
+    const n = name.exec(attrs);
+    if (!n) return false;
+    const from = n.index + n[0].length;
+    let q = from;
+    while (q < attrs.length && attrs[q] !== '"' && attrs[q] !== "'") q++;
+    if (q >= attrs.length) return false;
+    if (!(needleFrom >= 0 && from >= needleFrom && from <= needleAt)) {
+      needle.lastIndex = from;
+      const m = needle.exec(attrs);
+      needleFrom = from;
+      needleAt = m ? m.index : Infinity;
+    }
+    if (needleAt < q) return true;
+    pos = n.index + 1;
+  }
+}
+/** The first match of a global regex at or after `from`, remembered while later queries fall before it. */
+function nextMatchFinder(text: string, re: RegExp): (from: number) => number {
+  let memoFrom = -1;
+  let memoAt = -1;
+  return (from: number): number => {
+    if (!(memoFrom >= 0 && from >= memoFrom && from <= memoAt)) {
+      re.lastIndex = from;
+      const m = re.exec(text);
+      memoFrom = from;
+      memoAt = m ? m.index : Infinity;
+    }
+    return memoAt;
+  };
+}
+
+/** Start positions of every match of a global regex, ascending. */
+function matchStarts(text: string, re: RegExp): number[] {
+  const out: number[] = [];
+  re.lastIndex = 0;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    out.push(m.index);
+    if (m[0].length === 0) re.lastIndex++;
+  }
+  return out;
+}
+
+/**
+ * Matches of START[^{]*\{[^}]*BODY (global): after each start, the rule body
+ * from the first `{` to the first `}` must hold BODY, and the match ends where
+ * BODY last matches in it (the greedy [^}]*). `next(from, lastEnd)` returns the
+ * first start at or after `from` whose prelude reaches a `{` (brace -1 when no
+ * later start can), or null; it is told where the previous match ended because
+ * some starts reach back before their first character. `lead` (global) finds
+ * where BODY can begin and `body` is BODY, sticky. Starts that share a body's
+ * `}` share its answer, so each body is read once. `first` stops at one match.
+ */
+function ruleBodyScan(
+  css: string,
+  next: (from: number, lastEnd: number) => { index: number; brace: number } | null,
+  lead: RegExp,
+  body: RegExp,
+  first: boolean,
+): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  const leads = matchStarts(css, lead);
+  let ptr = 0;
+  let pos = 0;
+  let lastEnd = 0;
+  let deadUntil = -1;
+  for (;;) {
+    const st = next(pos, lastEnd);
+    if (!st || st.brace < 0) break;
+    const b = st.brace;
+    if (b < deadUntil) { pos = b + 1; continue; }
+    let c = css.indexOf('}', b + 1);
+    if (c < 0) c = css.length;
+    deadUntil = c;
+    while (ptr < leads.length && leads[ptr] <= b) ptr++;
+    let end = ptr;
+    while (end < leads.length && leads[end] <= c) end++;
+    let hit: RegExpExecArray | null = null;
+    for (let k = end - 1; k >= ptr && !hit; k--) {
+      body.lastIndex = leads[k];
+      hit = body.exec(css);
+    }
+    ptr = end;
+    if (!hit) { pos = b + 1; continue; }
+    const stop = hit.index + hit[0].length;
+    out.push({ index: st.index, text: css.slice(st.index, stop), groups: hit.slice(1) });
+    if (first) break;
+    pos = stop;
+    lastEnd = stop;
+  }
+  return out;
+}
+
+/** next() for ruleBodyScan when the start is a plain pattern (global) followed by [^{]*\{. */
+function bracedStarts(css: string, start: RegExp): (from: number) => { index: number; brace: number } | null {
+  const brace = nextMatchFinder(css, /\{/g);
+  return (from: number) => {
+    start.lastIndex = from;
+    const m = start.exec(css);
+    if (!m) return null;
+    const b = brace(m.index + m[0].length);
+    return { index: m.index, brace: b === Infinity ? -1 : b };
+  };
+}
+
+/** next() for v27's floor rule: input\s*(?:,[^{]*)?\{ */
+function inputFloorStarts(css: string): (from: number) => { index: number; brace: number } | null {
+  const start = /input/gi;
+  const brace = nextMatchFinder(css, /\{/g);
+  return (from: number) => {
+    for (let at = from; ;) {
+      start.lastIndex = at;
+      const m = start.exec(css);
+      if (!m) return null;
+      const p = wsEnd(css, m.index + 5);
+      if (css.charCodeAt(p) === 123) return { index: m.index, brace: p };
+      if (css.charCodeAt(p) === 44) {
+        const b = brace(p + 1);
+        return { index: m.index, brace: b === Infinity ? -1 : b };
+      }
+      at = m.index + 1;
+    }
+  };
+}
+
+/** A LineTerminator code unit, where ^ matches under the m flag. */
+function isLineTerminator(c: number): boolean {
+  return c === 10 || c === 13 || c === 0x2028 || c === 0x2029;
+}
+
+/**
+ * next() for v24's selector start (?:^|[,}\s])\s*(?:button|a\b|...) with the m
+ * flag: a keyword counts when the space before it begins on a line start, a
+ * space, a comma or a closing brace at or after the previous match's end.
+ */
+function touchTargetStarts(css: string): (from: number, lastEnd: number) => { index: number; brace: number } | null {
+  const keyword = /button|a\b|input|textarea|select|\[role\s*=\s*["']?button["']?\]|\.btn|\.button|\.chip|\.tab|\.nav-link/gi;
+  const brace = nextMatchFinder(css, /\{/g);
+  return (from: number, lastEnd: number) => {
+    for (let at = from; ;) {
+      keyword.lastIndex = at;
+      const k = keyword.exec(css);
+      if (!k) return null;
+      const q = k.index;
+      let w = q;
+      while (w > lastEnd && isJsSpace(css.charCodeAt(w - 1))) w--;
+      let index = -1;
+      if (w - 1 >= lastEnd && (css.charCodeAt(w - 1) === 44 || css.charCodeAt(w - 1) === 125)) index = w - 1;
+      else if (w < q) index = w;
+      else if (q >= lastEnd && (q === 0 || isLineTerminator(css.charCodeAt(q - 1)))) index = q;
+      if (index < 0) { at = q + 1; continue; }
+      const b = brace(q + k[0].length);
+      return { index, brace: b === Infinity ? -1 : b };
+    }
+  };
+}
+
+/** next() for O-motion's breath keyframes: @keyframes\s+[^{]*breath[^{]*\{ */
+function breathKeyframeStarts(css: string): (from: number) => { index: number; brace: number } | null {
+  const start = /@keyframes/gi;
+  const brace = nextMatchFinder(css, /\{/g);
+  const breath = nextMatchFinder(css, /breath/gi);
+  return (from: number) => {
+    for (let at = from; ;) {
+      start.lastIndex = at;
+      const m = start.exec(css);
+      if (!m) return null;
+      const after = m.index + m[0].length;
+      if (!isJsSpace(css.charCodeAt(after))) { at = m.index + 1; continue; }
+      const b = brace(after);
+      if (b === Infinity) return { index: m.index, brace: -1 };
+      if (breath(after + 1) < b) return { index: m.index, brace: b };
+      at = b + 1;
+    }
+  };
+}
+
+/**
+ * /START[^{]*X/i.test(css): X (global, no `{`) begins in the prelude between
+ * a start and the first `{` after it. Only the first start of each prelude
+ * needs reading; later ones see less of it.
+ */
+function preludeHas(css: string, start: RegExp, x: RegExp): boolean {
+  const brace = nextMatchFinder(css, /\{/g);
+  const found = nextMatchFinder(css, x);
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) return false;
+    const after = m.index + m[0].length;
+    const b = brace(after);
+    if (found(after) < b) return true;
+    if (b === Infinity) return false;
+    pos = b + 1;
+  }
+}
+
+/**
+ * Matches of START[^{]*X[^{]*\{ (global): X's last match in the prelude before
+ * the first `{` after the start; the match runs to that `{`. `lead` (global)
+ * finds where X can begin, `x` is X, sticky.
+ */
+function preludeMatches(css: string, start: RegExp, lead: RegExp, x: RegExp): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  const leads = matchStarts(css, lead);
+  let ptr = 0;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    const b = css.indexOf('{', after);
+    if (b < 0) break;
+    while (ptr < leads.length && leads[ptr] < after) ptr++;
+    let end = ptr;
+    while (end < leads.length && leads[end] < b) end++;
+    let hit: RegExpExecArray | null = null;
+    for (let k = end - 1; k >= ptr && !hit; k--) {
+      x.lastIndex = leads[k];
+      hit = x.exec(css);
+    }
+    ptr = end;
+    if (hit) out.push({ index: m.index, text: css.slice(m.index, b + 1), groups: hit.slice(1) });
+    pos = b + 1;
+  }
+  return out;
+}
+
+/** css.replace(/@media[^{]*\{[^@]*?\}\s*\}/gi, '') */
+function withoutMediaBlocks(css: string): string {
+  const start = /@media/gi;
+  const spans: number[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const b = css.indexOf('{', m.index + m[0].length);
+    if (b < 0) break;
+    let end = -1;
+    for (let k = b + 1; k < css.length; k++) {
+      const ch = css.charCodeAt(k);
+      if (ch === 64) break;
+      if (ch === 125) {
+        const t = wsEnd(css, k + 1);
+        if (css.charCodeAt(t) === 125) { end = t + 1; break; }
+      }
+    }
+    if (end < 0) { pos = b + 1; continue; }
+    spans.push(m.index, end);
+    pos = end;
+  }
+  return replaceSpans(css, spans, '');
+}
+
+/** css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gi, '') */
+function withoutKeyframesBlocks(css: string): string {
+  const start = /@keyframes/gi;
+  const spans: number[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    if (!isJsSpace(css.charCodeAt(after))) { pos = m.index + 1; continue; }
+    const b = css.indexOf('{', after);
+    if (b < 0) break;
+    if (b < after + 2) { pos = m.index + 1; continue; }
+    let end = -1;
+    for (let k = b + 1; k < css.length; k++) {
+      const ch = css.charCodeAt(k);
+      if (ch === 64) break;
+      if (ch === 125) { end = k + 1; break; }
+    }
+    if (end < 0) { pos = b + 1; continue; }
+    spans.push(m.index, end);
+    pos = end;
+  }
+  return replaceSpans(css, spans, '');
+}
+
+/** css.match(/::selection\s*\{[^}]*\}/gi) */
+function selectionRules(css: string): string[] | null {
+  const start = /::selection/gi;
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const b = wsEnd(css, m.index + m[0].length);
+    if (css.charCodeAt(b) !== 123) { pos = m.index + 1; continue; }
+    const c = css.indexOf('}', b + 1);
+    if (c < 0) break;
+    out.push(css.slice(m.index, c + 1));
+    pos = c + 1;
+  }
+  return out.length ? out : null;
+}
+
+/** The matches css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, fn) hands fn: groups [lead, value]. */
+function fontSizeVarMatches(css: string): ScanMatch[] {
+  const start = /font-size/gi;
+  const varAt = /var\(/iy;
+  const out: ScanMatch[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const colon = wsEnd(css, m.index + m[0].length);
+    if (css.charCodeAt(colon) !== 58) { pos = m.index + 1; continue; }
+    const v = wsEnd(css, colon + 1);
+    varAt.lastIndex = v;
+    if (!varAt.test(css)) { pos = m.index + 1; continue; }
+    let r = v + 4;
+    while (r < css.length) {
+      const ch = css.charCodeAt(r);
+      if (ch === 59 || ch === 123 || ch === 125) break;
+      r++;
+    }
+    let close = r - 1;
+    while (close >= v + 4 && css.charCodeAt(close) !== 41) close--;
+    if (close >= v + 4) {
+      out.push({ index: m.index, text: css.slice(m.index, close + 1), groups: [css.slice(m.index, v), css.slice(v, close + 1)] });
+    }
+    // Every later start before r ends at the same r and finds no ')' after this one.
+    pos = r;
+  }
+  return out;
+}
+
+/** Matches of /([^{}]+)\{([^{}]*)\}/g: groups [prelude, body]. */
+function cssRuleBlocks(css: string): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  const n = css.length;
+  const braceAt = (k: number): boolean => {
+    const ch = css.charCodeAt(k);
+    return ch === 123 || ch === 125;
+  };
+  for (let pos = 0; pos < n;) {
+    let b = pos;
+    while (b < n && !braceAt(b)) b++;
+    if (b === n) break;
+    if (b === pos || css.charCodeAt(b) === 125) { pos = b + 1; continue; }
+    let c = b + 1;
+    while (c < n && !braceAt(c)) c++;
+    if (c === n) break;
+    if (css.charCodeAt(c) === 123) { pos = b + 1; continue; }
+    out.push({ index: pos, text: css.slice(pos, c + 1), groups: [css.slice(pos, b), css.slice(b + 1, c)] });
+    pos = c + 1;
+  }
+  return out;
+}
+
+/** Matches of /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi: groups [path]. */
+function cssUrlMatches(css: string): ScanMatch[] {
+  const start = /url\(/gi;
+  const urlAt = /url\(/iy;
+  const out: ScanMatch[] = [];
+  const n = css.length;
+  const isQuote = (c: number): boolean => c === 34 || c === 39;
+  // First quote or ')' at or after `from`.
+  const stopAt = (from: number): number => {
+    let k = from;
+    while (k < n) {
+      const ch = css.charCodeAt(k);
+      if (ch === 34 || ch === 39 || ch === 41) break;
+      k++;
+    }
+    return k;
+  };
+  // ['"]?\s*\) at a quote or ')': the index after it, or -1.
+  const tailEnd = (r: number): number => {
+    if (r >= n) return -1;
+    if (css.charCodeAt(r) === 41) return r + 1;
+    const t = wsEnd(css, r + 1);
+    return css.charCodeAt(t) === 41 ? t + 1 : -1;
+  };
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const p0 = m.index + m[0].length;
+    const p1 = wsEnd(css, p0);
+    let hit = -1;
+    let from = -1;
+    let to = -1;
+    // All the leading space, then the quote after it taken, then not taken.
+    if (p1 < n && isQuote(css.charCodeAt(p1))) {
+      const r = stopAt(p1 + 1);
+      const e = r > p1 + 1 ? tailEnd(r) : -1;
+      if (e >= 0) { hit = e; from = p1 + 1; to = r; }
+    }
+    if (hit < 0) {
+      const r = stopAt(p1);
+      const e = r > p1 ? tailEnd(r) : -1;
+      if (e >= 0) { hit = e; from = p1; to = r; }
+    }
+    // Less leading space: the path starts on a space and runs to the same stop.
+    if (hit < 0 && p1 > p0) {
+      const r = stopAt(p1 - 1);
+      const e = tailEnd(r);
+      if (e >= 0) { hit = e; from = p1 - 1; to = r; }
+    }
+    if (hit >= 0) {
+      out.push({ index: m.index, text: css.slice(m.index, hit), groups: [css.slice(from, to)] });
+      pos = hit;
+      continue;
+    }
+    // A later url( before the first quote or ')' after this one reads the same
+    // stop and fails the same way, unless only space separates it from a
+    // quote at that stop: that one can take the quote and must be tried.
+    const r1 = stopAt(p0);
+    if (r1 >= n) break;
+    let w = r1;
+    while (w > p0 && isJsSpace(css.charCodeAt(w - 1))) w--;
+    urlAt.lastIndex = w - 4;
+    pos = w - 4 > m.index && urlAt.test(css) ? w - 4 : r1;
+  }
+  return out;
+}
+
+/** css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [] */
+function gradientClipRules(css: string): string[] {
+  const found = nextMatchFinder(css, /background-clip\s*:\s*text/gi);
+  const out: string[] = [];
+  const n = css.length;
+  let pos = 0;
+  for (let first = true; ;) {
+    let i: number;
+    let from: number;
+    if (first) {
+      first = false;
+      i = 0;
+      from = css.charCodeAt(0) === 125 ? 1 : 0;
+    } else {
+      i = css.indexOf('}', pos);
+      if (i < 0) break;
+      from = i + 1;
+    }
+    let b = from;
+    while (b < n && css.charCodeAt(b) !== 123 && css.charCodeAt(b) !== 125) b++;
+    if (b >= n) break;
+    if (css.charCodeAt(b) === 125) { pos = b; continue; }
+    const c = css.indexOf('}', b + 1);
+    if (c < 0) break;
+    if (found(b + 1) < c) { out.push(css.slice(i, c + 1)); pos = c + 1; } else pos = c;
+  }
+  return out;
+}
+
+/**
+ * block.match(/linear-gradient\(([\s\S]+)\)\s*;?\s*background-size|linear-gradient\(([^;]+)\)/i):
+ * groups [args before background-size, args before the first ';'].
+ */
+function linearGradientArgs(block: string): ScanMatch | null {
+  const start = /linear-gradient\(/gi;
+  const size = /background-size/iy;
+  const n = block.length;
+  // The last ')' followed by \s*;?\s*background-size anywhere in the block.
+  let tailParen = -1;
+  let tailStop = -1;
+  for (let p = block.lastIndexOf(')'); p >= 0; p = p > 0 ? block.lastIndexOf(')', p - 1) : -1) {
+    let t = wsEnd(block, p + 1);
+    if (block.charCodeAt(t) === 59) t = wsEnd(block, t + 1);
+    size.lastIndex = t;
+    if (size.test(block)) { tailParen = p; tailStop = t + 15; break; }
+  }
+  let semiFor = -1;
+  let semi = -1;
+  let parenFor = -1;
+  let paren = -1;
+  for (let m = start.exec(block); m; m = start.exec(block)) {
+    const a = m.index + m[0].length;
+    if (tailParen >= a + 1) {
+      return { index: m.index, text: block.slice(m.index, tailStop), groups: [block.slice(a, tailParen), undefined] };
+    }
+    if (!(semiFor >= 0 && a >= semiFor && a <= semi)) {
+      semiFor = a;
+      semi = block.indexOf(';', a);
+      if (semi < 0) semi = n;
+    }
+    // The last ')' before that ';' and after this opener: the same for every
+    // opener before the ';', so it is looked for once and only as far back as
+    // the first of them.
+    if (parenFor !== semi) {
+      parenFor = semi;
+      paren = semi - 1;
+      while (paren >= a + 1 && block.charCodeAt(paren) !== 41) paren--;
+    }
+    if (paren >= a + 1) {
+      return { index: m.index, text: block.slice(m.index, paren + 1), groups: [undefined, block.slice(a, paren)] };
+    }
+  }
+  return null;
+}
+
+/** css.match(/grid-template-columns[^}]*repeat\s*\(\s*(?:auto-fit|auto-fill|\d+)/gi) || [] */
+function gridRepeatRules(css: string): string[] {
+  const start = /grid-template-columns/gi;
+  const x = /repeat\s*\(\s*(?:auto-fit|auto-fill|\d+)/iy;
+  const leads = matchStarts(css, /repeat/gi);
+  const out: string[] = [];
+  let ptr = 0;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    let c = css.indexOf('}', after);
+    if (c < 0) c = css.length;
+    while (ptr < leads.length && leads[ptr] < after) ptr++;
+    let end = ptr;
+    while (end < leads.length && leads[end] < c) end++;
+    let hit: RegExpExecArray | null = null;
+    for (let k = end - 1; k >= ptr && !hit; k--) {
+      x.lastIndex = leads[k];
+      hit = x.exec(css);
+    }
+    ptr = end;
+    if (hit) out.push(css.slice(m.index, hit.index + hit[0].length));
+    if (c >= css.length) break;
+    pos = c + 1;
+  }
+  return out;
+}
+
+/**
+ * html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}(?:[\p{Emoji_Presentation}]|[\p{Emoji}]\uFE0F)/giu)
+ */
+function emojiCtaMatches(html: string): string[] | null {
+  const n = html.length;
+  const start = /<button|<a/giu;
+  const cls = nextMatchFinder(html, /class/giu);
+  const word = nextMatchFinder(html, /btn|cta|primary|action/giu);
+  const gt = nextMatchFinder(html, />/g);
+  const emoji = /[\p{Emoji_Presentation}]|[\p{Emoji}]\uFE0F/gu;
+  const emojiAt: number[] = [];
+  const emojiEnd: number[] = [];
+  for (let e = emoji.exec(html); e; e = emoji.exec(html)) { emojiAt.push(e.index); emojiEnd.push(e.index + e[0].length); }
+  // End of the match for the content after `>` at g: the last emoji that
+  // starts within 200 code points of it, or -1.
+  const tail = (g: number): number => {
+    let w = g + 1;
+    for (let k = 0; k < 200 && w < n; k++) {
+      const c = html.charCodeAt(w);
+      w += c >= 0xd800 && c <= 0xdbff && w + 1 < n && html.charCodeAt(w + 1) >= 0xdc00 && html.charCodeAt(w + 1) <= 0xdfff ? 2 : 1;
+    }
+    let lo = 0;
+    let hi = emojiAt.length - 1;
+    let best = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (emojiAt[mid] <= w) { best = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    return best >= 0 && emojiAt[best] >= g + 1 ? emojiEnd[best] : -1;
+  };
+  const out: string[] = [];
+  let tailFor = -1;
+  let tailStop = -1;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) break;
+    const g = gt(m.index + 1);
+    if (g === Infinity) break;
+    if (tailFor !== g) { tailFor = g; tailStop = tail(g); }
+    if (tailStop < 0) { pos = g + 1; continue; }
+    let ok = m[0].length === 7;
+    if (!ok) {
+      const c = cls(m.index + 2);
+      ok = c < g && word(c + 5) < g;
+    }
+    if (!ok) { pos = m.index + 1; continue; }
+    out.push(html.slice(m.index, tailStop));
+    pos = tailStop;
+  }
+  return out.length ? out : null;
+}
+
+/** key.replace(/(\.\d*?)0+(?=\D|$)/g, '$1') */
+function withoutTrailingDecimalZeros(key: string): string {
+  const parts: string[] = [];
+  let last = 0;
+  for (let i = key.indexOf('.'); i >= 0;) {
+    let d = i + 1;
+    while (d < key.length && key.charCodeAt(d) >= 48 && key.charCodeAt(d) <= 57) d++;
+    let z = d;
+    while (z > i + 1 && key.charCodeAt(z - 1) === 48) z--;
+    if (z < d) { parts.push(key.slice(last, z)); last = d; }
+    i = key.indexOf('.', d);
+  }
+  parts.push(key.slice(last));
+  return parts.join('');
+}
+
+/** /prefers-reduced-motion[\s\S]{0,200}\*\s*\{[^}]*animation\s*:\s*none/i.test(css) */
+function hasBlanketMotionKill(css: string): boolean {
+  const start = /prefers-reduced-motion/gi;
+  const kill = nextMatchFinder(css, /animation\s*:\s*none/gi);
+  const close = nextMatchFinder(css, /\}/g);
+  let checked = -1;
+  for (let m = start.exec(css); m; m = start.exec(css)) {
+    const from = m.index + m[0].length;
+    const to = Math.min(css.length - 1, from + 200);
+    // A `*` reads the same whichever start reaches it, so each is read once.
+    for (let q = Math.max(from, checked + 1); q <= to; q++) {
+      if (css.charCodeAt(q) !== 42) continue;
+      const b = wsEnd(css, q + 1);
+      if (css.charCodeAt(b) !== 123) continue;
+      if (kill(b + 1) < close(b + 1)) return true;
+    }
+    if (to > checked) checked = to;
+  }
+  return false;
+}
+
+/** html.match(/<svg[^>]*viewBox=/gi) || [] */
+function svgViewBoxTags(html: string): string[] {
+  const start = /<svg/gi;
+  const leads = matchStarts(html, /viewBox=/gi);
+  const gt = nextMatchFinder(html, />/g);
+  const out: string[] = [];
+  let ptr = 0;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    const g = Math.min(gt(after), html.length);
+    while (ptr < leads.length && leads[ptr] < after) ptr++;
+    let end = ptr;
+    while (end < leads.length && leads[end] < g) end++;
+    if (end > ptr) {
+      const k = leads[end - 1];
+      out.push(html.slice(m.index, k + 8));
+      pos = k + 8;
+      ptr = end;
+      continue;
+    }
+    if (g >= html.length) break;
+    pos = g + 1;
+  }
+  return out;
+}
+
+/** html.match(/<symbol[^>]*>/gi) || [] */
+function symbolTags(html: string): string[] {
+  const start = /<symbol/gi;
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) break;
+    const g = html.indexOf('>', m.index + m[0].length);
+    if (g < 0) break;
+    out.push(html.slice(m.index, g + 1));
+    pos = g + 1;
+  }
+  return out;
+}
+
+/** A [\w-] code unit (\w without the u flag). */
+function isNameChar(c: number): boolean {
+  return (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95 || c === 45;
+}
+
+/** The index after the run of [\w-] that starts at `i`. */
+function nameEnd(s: string, i: number): number {
+  while (i < s.length && isNameChar(s.charCodeAt(i))) i++;
+  return i;
+}
+
+/** css.match(/--[\w-]+\s*:/g) || [] */
+function customPropertyDecls(css: string): string[] {
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    const i = css.indexOf('--', pos);
+    if (i < 0) break;
+    const r = nameEnd(css, i + 2);
+    if (r === i + 2) { pos = i + 1; continue; }
+    const t = wsEnd(css, r);
+    if (css.charCodeAt(t) === 58) { out.push(css.slice(i, t + 1)); pos = t + 1; continue; }
+    // Every later `--` inside the same name ends at the same r and fails too.
+    pos = r;
+  }
+  return out;
+}
+
+/** Matches of /--([\w-]+)\s*:\s*([^;]+?)(?:;|$)/g: groups [name, value]. */
+function customPropertyValues(block: string): ScanMatch[] {
+  const out: ScanMatch[] = [];
+  const n = block.length;
+  for (let pos = 0; ;) {
+    const i = block.indexOf('--', pos);
+    if (i < 0) break;
+    const r = nameEnd(block, i + 2);
+    if (r === i + 2) { pos = i + 1; continue; }
+    const colon = wsEnd(block, r);
+    if (block.charCodeAt(colon) !== 58) { pos = r; continue; }
+    let v = wsEnd(block, colon + 1);
+    // ([^;]+?) needs one character: when the space runs up to a ';' or the
+    // end, the last space is that character.
+    if (v >= n || block.charCodeAt(v) === 59) {
+      if (v === colon + 1) { pos = r; continue; }
+      v--;
+    }
+    let e = block.indexOf(';', v + 1);
+    if (e < 0) e = n;
+    const stop = e < n ? e + 1 : n;
+    out.push({ index: i, text: block.slice(i, stop), groups: [block.slice(i + 2, r), block.slice(v, e)] });
+    pos = stop;
+  }
+  return out;
+}
+
+/** /--(?:color|surface|accent|action|feedback)[\w-]*\s*:\s*var\(--/i.test(css) */
+function hasTokenLayering(css: string): boolean {
+  const start = /--(?:color|surface|accent|action|feedback)/gi;
+  const varAt = /var\(--/iy;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) return false;
+    const r = nameEnd(css, m.index + m[0].length);
+    const t = wsEnd(css, r);
+    if (css.charCodeAt(t) === 58) {
+      varAt.lastIndex = wsEnd(css, t + 1);
+      if (varAt.test(css)) return true;
+    }
+    // Every later start inside the same name reaches the same r.
+    pos = Math.max(r, m.index + 1);
+  }
+}
+
+/** `text` with each [start, end) span replaced by fn(the spanned text). */
+function replaceSpansWith(text: string, spans: number[], fn: (m: string) => string): string {
+  if (spans.length === 0) return text;
+  const parts: string[] = [];
+  let last = 0;
+  for (let k = 0; k < spans.length; k += 2) {
+    parts.push(text.slice(last, spans[k]), fn(text.slice(spans[k], spans[k + 1])));
+    last = spans[k + 1];
+  }
+  parts.push(text.slice(last));
+  return parts.join('');
+}
+
+/** Spans of /\[[^\]]*\]/g. */
+function bracketSpans(text: string): number[] {
+  const spans: number[] = [];
+  for (let pos = 0; ;) {
+    const i = text.indexOf('[', pos);
+    if (i < 0) break;
+    const j = text.indexOf(']', i + 1);
+    if (j < 0) break;
+    spans.push(i, j + 1);
+    pos = j + 1;
+  }
+  return spans;
+}
+
+/** text.match(/\[[^\]]*\]|\.[\w-]+/g) */
+function attrAndClassParts(text: string): string[] | null {
+  const out: string[] = [];
+  const lastClose = text.lastIndexOf(']');
+  for (let pos = 0; pos < text.length;) {
+    const ch = text.charCodeAt(pos);
+    if (ch === 91 && lastClose > pos) {
+      const j = text.indexOf(']', pos + 1);
+      out.push(text.slice(pos, j + 1));
+      pos = j + 1;
+      continue;
+    }
+    if (ch === 46) {
+      const r = nameEnd(text, pos + 1);
+      if (r > pos + 1) { out.push(text.slice(pos, r)); pos = r; continue; }
+    }
+    pos++;
+  }
+  return out.length ? out : null;
+}
+
+/** v45: /^\[[\w-]*(?:motion|anim)[\w-]*(?:[~|^$*]?=[^\]]*)?\]$/i.test(s) */
+function isMotionToggleAttr(s: string): boolean {
+  const n = s.length;
+  if (n < 2 || s.charCodeAt(0) !== 91 || s.charCodeAt(n - 1) !== 93) return false;
+  const r = nameEnd(s, 1);
+  if (!/motion|anim/i.test(s.slice(1, r))) return false;
+  if (r === n - 1) return true;
+  let k = r;
+  if ('~|^$*'.indexOf(s[k]) >= 0) k++;
+  if (s.charCodeAt(k) !== 61) return false;
+  return s.indexOf(']', k + 1) === n - 1;
+}
+
+/** Where `\s*!\s*important\s*$` (case-insensitive) begins in `value`, or -1. */
+function importantSuffixStart(value: string): number {
+  let e = value.length;
+  while (e > 0 && isJsSpace(value.charCodeAt(e - 1))) e--;
+  if (e < 9 || !/^important$/i.test(value.slice(e - 9, e))) return -1;
+  let k = e - 9;
+  while (k > 0 && isJsSpace(value.charCodeAt(k - 1))) k--;
+  if (k === 0 || value.charCodeAt(k - 1) !== 33) return -1;
+  k--;
+  while (k > 0 && isJsSpace(value.charCodeAt(k - 1))) k--;
+  return k;
+}
+
+/** A [0-9] code unit. */
+function isDigit(c: number): boolean {
+  return c >= 48 && c <= 57;
+}
+
+/** color-mix: /^([\s\S]*?)\s+(\d*\.?\d+)%$/.exec(p) */
+function percentAfter(p: string): string[] | null {
+  const n = p.length;
+  if (n === 0 || p.charCodeAt(n - 1) !== 37) return null;
+  let q = n - 1;
+  while (q > 0 && (isDigit(p.charCodeAt(q - 1)) || p.charCodeAt(q - 1) === 46)) q--;
+  if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(p.slice(q, n - 1))) return null;
+  if (q === 0 || !isJsSpace(p.charCodeAt(q - 1))) return null;
+  let w = q - 1;
+  while (w > 0 && isJsSpace(p.charCodeAt(w - 1))) w--;
+  return [p, p.slice(0, w), p.slice(q, n - 1)];
+}
+
+/**
+ * Relative colour syntax:
+ * /^from\s+([\s\S]+?)\s+(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$/.exec(args)
+ */
+function relativeColorMatch(args: string): Array<string | undefined> | null {
+  if (!args.startsWith('from') || !isJsSpace(args.charCodeAt(4))) return null;
+  const channels = /(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$/y;
+  const tail = (k: number): RegExpExecArray | null => {
+    channels.lastIndex = k;
+    return channels.exec(args);
+  };
+  const start = wsEnd(args, 4);
+  // The base is lazy: it ends at the first run of space after its first
+  // character that the channel keywords and the rest of the value follow.
+  for (let k = start + 1; k < args.length; k++) {
+    if (!isJsSpace(args.charCodeAt(k))) continue;
+    const w = wsEnd(args, k);
+    const t = tail(w);
+    if (t) return [args, args.slice(start, k), t[1], t[2]];
+    k = w;
+  }
+  // With less of the leading space taken, the base can be one space whose
+  // following space leads straight to the keywords.
+  if (start - 4 >= 3) {
+    const t = tail(start);
+    if (t) return [args, args.slice(start - 2, start - 1), t[1], t[2]];
+  }
+  return null;
+}
+
+/** html.match(/<input\b[^>]*>/gi) || [] */
+function inputTags(html: string): string[] {
+  const start = /<input\b/gi;
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) break;
+    const g = html.indexOf('>', m.index + m[0].length);
+    if (g < 0) break;
+    out.push(html.slice(m.index, g + 1));
+    pos = g + 1;
+  }
+  return out;
+}
+
+/** /<title\b[^>]*>[^<]+<\/title>/i.test(html) */
+function hasTitleText(html: string): boolean {
+  const start = /<title\b/gi;
+  const close = /<\/title>/iy;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) return false;
+    const g = html.indexOf('>', m.index + m[0].length);
+    if (g < 0) return false;
+    const lt = html.indexOf('<', g + 1);
+    if (lt < 0) return false;
+    if (lt > g + 1) {
+      close.lastIndex = lt;
+      if (close.test(html)) return true;
+    }
+    // Every start before g reaches the same `>` and the same `<` after it.
+    pos = g + 1;
+  }
+}
+
+/**
+ * /TAG[^>]*ATTR[^"']*WORD/i.test(html): `open` (global) matches the tag's
+ * start, `attr` (global) an attribute name with its `=` and opening quote, and
+ * `word` (global, holding no quote) what the value must contain before its
+ * closing quote.
+ */
+function tagAttrValueHas(html: string, open: RegExp, attr: RegExp, word: RegExp): boolean {
+  const attrs: number[] = [];
+  const values: number[] = [];
+  attr.lastIndex = 0;
+  for (let a = attr.exec(html); a; a = attr.exec(html)) { attrs.push(a.index); values.push(a.index + a[0].length); }
+  const gt = nextMatchFinder(html, />/g);
+  const found = nextMatchFinder(html, word);
+  const n = html.length;
+  let ptr = 0;
+  for (let pos = 0; ;) {
+    open.lastIndex = pos;
+    const m = open.exec(html);
+    if (!m) return false;
+    const after = m.index + m[0].length;
+    const g = Math.min(gt(after), n);
+    // Each attribute in the tag is read once: what follows it does not
+    // depend on which start reached it.
+    while (ptr < attrs.length && attrs[ptr] < after) ptr++;
+    for (; ptr < attrs.length && attrs[ptr] < g; ptr++) {
+      const v = values[ptr];
+      let q = v;
+      while (q < n && html.charCodeAt(q) !== 34 && html.charCodeAt(q) !== 39) q++;
+      if (found(v) < q) return true;
+    }
+    if (g >= n) return false;
+    pos = g + 1;
+  }
+}
+
+/** The index of the first entry of an ascending list at or after `x` (the length when none). */
+function lowerBound(list: number[], x: number): number {
+  let lo = 0;
+  let hi = list.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid] < x) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+/** Matches of /:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g: groups [body]. */
+function rootTokenBlocks(css: string): ScanMatch[] {
+  const start = /:root/g;
+  const out: ScanMatch[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const p = m.index + m[0].length;
+    let b = -1;
+    // The optional ", :host": whitespace, a comma, whitespace, ":host".
+    const comma = wsEnd(css, p);
+    if (css.charCodeAt(comma) === 44) {
+      const h = wsEnd(css, comma + 1);
+      if (css.startsWith(':host', h)) {
+        const q = wsEnd(css, h + 5);
+        if (css.charCodeAt(q) === 123) b = q;
+      }
+    }
+    if (b < 0) {
+      const q = wsEnd(css, p);
+      if (css.charCodeAt(q) === 123) b = q;
+    }
+    if (b < 0) { pos = m.index + 1; continue; }
+    const c = css.indexOf('}', b + 1);
+    if (c < 0) break;
+    out.push({ index: m.index, text: css.slice(m.index, c + 1), groups: [css.slice(b + 1, c)] });
+    pos = c + 1;
+  }
+  return out;
+}
+
+/** v05: /@view-transition\s*\{[^}]*navigation\s*:\s*auto/i.test(body) */
+function hasViewTransitionNavigation(body: string): boolean {
+  const start = /@view-transition/gi;
+  const found = nextMatchFinder(body, /navigation\s*:\s*auto/gi);
+  const close = nextMatchFinder(body, /\}/g);
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(body);
+    if (!m) return false;
+    const b = wsEnd(body, m.index + m[0].length);
+    if (body.charCodeAt(b) !== 123) { pos = m.index + 1; continue; }
+    const c = close(b + 1);
+    if (found(b + 1) < c) return true;
+    if (c === Infinity) return false;
+    // Every later start before c reads the same body, or less of it.
+    pos = c + 1;
+  }
+}
+
+/**
+ * v34: /<script\s+type\s*=\s*["']application\/ld\+json["'][\s\S]*?"@type"\s*:\s*"[^"]*\b(?:ai|softwareapplication)\b[^"]*"[\s\S]*?(?:"applicationCategory"\s*:\s*"[^"]*ai[^"]*"|"[^"]*ai[^"]*")/i.test(html)
+ * Only the first opener and the first matching @type matter: later ones see
+ * less of the page. The applicationCategory form is one of the quoted
+ * strings holding "ai" that the second form accepts.
+ */
+function hasAiJsonLd(html: string): boolean {
+  const open = /<script\s+type\s*=\s*["']application\/ld\+json["']/i.exec(html);
+  if (!open) return false;
+  const type = /"@type"\s*:\s*"/gi;
+  const word = nextMatchFinder(html, /\b(?:ai|softwareapplication)\b/gi);
+  type.lastIndex = open.index + open[0].length;
+  for (let t = type.exec(html); t; t = type.exec(html)) {
+    const v = t.index + t[0].length;
+    const q = html.indexOf('"', v);
+    if (q < 0) return false;
+    if (word(v) < q) {
+      for (let p = html.indexOf('"', q + 1); p >= 0;) {
+        const e = html.indexOf('"', p + 1);
+        if (e < 0) return false;
+        if (/ai/i.test(html.slice(p + 1, e))) return true;
+        p = e;
+      }
+      return false;
+    }
+    type.lastIndex = q;
+  }
+  return false;
+}
+
+/** v10: /transition\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\([^)]*0[, ])/i.test(css) */
+function hasTransformEaseTransition(css: string): boolean {
+  const start = /transition\s*:/gi;
+  const transform = nextMatchFinder(css, /transform/gi);
+  const ease = nextMatchFinder(css, /ease-out/gi);
+  const paren = nextMatchFinder(css, /\)/g);
+  const beziers = matchStarts(css, /cubic-bezier\(/gi);
+  const zeros = matchStarts(css, /0[, ]/g);
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) return false;
+    const p = m.index + m[0].length;
+    let r = css.indexOf(';', p);
+    if (r < 0) r = css.length;
+    const t = transform(p);
+    if (t < r) {
+      const from = t + 9;
+      if (ease(from) < r) return true;
+      // A cubic-bezier( that starts before r and holds a 0 followed by a
+      // comma or a space before its first ')'.
+      for (let k = lowerBound(beziers, from); k < beziers.length && beziers[k] < r; k++) {
+        const inner = beziers[k] + 13;
+        const z = lowerBound(zeros, inner);
+        if (z < zeros.length && zeros[z] + 1 < paren(inner)) return true;
+      }
+    }
+    // Every later start before r reads the same declaration, or less of it.
+    if (r >= css.length) return false;
+    pos = r + 1;
+  }
+}
+
+/** S3: css.match(/(?:background(?:-image)?\s*:[^;]*linear-gradient[^;]*(?:#?(?:615fff|8e51ff|4f39f6|7f22fe|a855f7|9333ea|7c3aed|6d28d9|5b21b6|4c1d95)))/gi) */
+function purpleGradientDecls(css: string): string[] | null {
+  const start = /background(?:-image)?\s*:/gi;
+  const gradient = nextMatchFinder(css, /linear-gradient/gi);
+  const hueRe = /615fff|8e51ff|4f39f6|7f22fe|a855f7|9333ea|7c3aed|6d28d9|5b21b6|4c1d95/gi;
+  // Every place a hue starts, overlapping ones included (a855f7f22fe holds two).
+  const hues: number[] = [];
+  for (let h = hueRe.exec(css); h; h = hueRe.exec(css)) { hues.push(h.index); hueRe.lastIndex = h.index + 1; }
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const p = m.index + m[0].length;
+    let r = css.indexOf(';', p);
+    if (r < 0) r = css.length;
+    const g = gradient(p);
+    if (g < r) {
+      // The last hue before r, if it starts after the gradient's name.
+      const k = lowerBound(hues, r) - 1;
+      if (k >= 0 && hues[k] >= g + 15) out.push(css.slice(m.index, hues[k] + 6));
+    }
+    // Every later start before r finds no hue after this one.
+    if (r >= css.length) break;
+    pos = r + 1;
+  }
+  return out.length ? out : null;
+}
+
+/** S4: stop.match(/rgba?\(([^)]+)\)/i) */
+function rgbArgs(stop: string): string[] | null {
+  const start = /rgba?\(/gi;
+  for (let m = start.exec(stop); m; m = start.exec(stop)) {
+    const p = m.index + m[0].length;
+    const c = stop.indexOf(')', p);
+    if (c < 0) return null;
+    if (c > p) return [stop.slice(m.index, c + 1), stop.slice(p, c)];
+  }
+  return null;
+}
+
+/** A tag-name code unit for [a-z0-9-] under the i flag. */
+function isTagNameChar(c: number): boolean {
+  return (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 45;
+}
+
+/** A \w code unit (no u flag). */
+function isWordChar(c: number): boolean {
+  return (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95;
+}
+
+/** The first entry of an ascending list at or after `x`, or -1. */
+function firstAtOrAfter(list: number[], x: number): number {
+  let lo = 0;
+  let hi = list.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid] < x) lo = mid + 1; else hi = mid;
+  }
+  return lo < list.length ? list[lo] : -1;
+}
+
+/**
+ * v38: inner.replace(/<([a-z][a-z0-9-]*)\b[^>]*\baria-hidden\s*=\s*["']?true["']?[^>]*>[\s\S]*?<\/\1>/gi, '')
+ * The closing tag must repeat the name, so the names of the closing tags are
+ * kept in a trie and each opener's name is walked through it once.
+ */
+function withoutAriaHiddenElements(inner: string): string {
+  const n = inner.length;
+  type Node = { kids: Map<number, Node>; at: number[] };
+  const root: Node = { kids: new Map(), at: [] };
+  const closeRe = /<\/([a-z0-9-]+)>/gi;
+  for (let c = closeRe.exec(inner); c; c = closeRe.exec(inner)) {
+    let node = root;
+    const name = c[1].toLowerCase();
+    for (let k = 0; k < name.length; k++) {
+      const code = name.charCodeAt(k);
+      let next = node.kids.get(code);
+      if (!next) { next = { kids: new Map(), at: [] }; node.kids.set(code, next); }
+      node = next;
+    }
+    node.at.push(c.index);
+  }
+  const hidden = matchStarts(inner, /\baria-hidden\s*=\s*["']?true/gi);
+  const gt = nextMatchFinder(inner, />/g);
+  const start = /<[a-z]/gi;
+  const spans: number[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(inner);
+    if (!m) break;
+    const i = m.index;
+    const g = gt(i + 1);
+    if (g === Infinity) break;
+    // Name lengths whose name is also a closing tag's name, longest last.
+    const lens: number[] = [];
+    const nodes: Node[] = [];
+    let node: Node | undefined = root;
+    for (let e = i + 1; e < n && isTagNameChar(inner.charCodeAt(e)); e++) {
+      const code = inner.charCodeAt(e);
+      node = node.kids.get(code >= 65 && code <= 90 ? code + 32 : code);
+      if (!node) break;
+      if (node.at.length) { lens.push(e + 1 - (i + 1)); nodes.push(node); }
+    }
+    let stop = -1;
+    for (let k = lens.length - 1; k >= 0 && stop < 0; k--) {
+      const ne = i + 1 + lens[k];
+      const before = isWordChar(inner.charCodeAt(ne - 1));
+      const after = ne < n && isWordChar(inner.charCodeAt(ne));
+      if (before === after) continue;
+      const a = firstAtOrAfter(hidden, ne);
+      if (a < 0 || a >= g) continue;
+      const c = firstAtOrAfter(nodes[k].at, g + 1);
+      if (c < 0) continue;
+      stop = c + 3 + lens[k];
+    }
+    if (stop >= 0) { spans.push(i, stop); pos = stop; } else pos = i + 1;
+  }
+  return replaceSpans(inner, spans, '');
+}
+
+/** text.replace(/<kbd\b[^>]*>(?:(?!<kbd\b)[\s\S])*?<\/kbd>/gi, ' ') */
+function withoutKbdElements(text: string): string {
+  const start = /<kbd\b/gi;
+  const gt = nextMatchFinder(text, />/g);
+  const opener = nextMatchFinder(text, /<kbd\b/gi);
+  const closer = nextMatchFinder(text, /<\/kbd>/gi);
+  const spans: number[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(text);
+    if (!m) break;
+    const g = gt(m.index + m[0].length);
+    if (g === Infinity) break;
+    const c = closer(g + 1);
+    if (c === Infinity) break;
+    // A nested <kbd> opens first: no start before this `>` matches; the
+    // nested one is tried in turn.
+    if (opener(g + 1) < c) { pos = g + 1; continue; }
+    spans.push(m.index, c + 6);
+    pos = c + 6;
+  }
+  return replaceSpans(text, spans, ' ');
+}
+
+/** s.replace(/[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i, '') */
+function withoutGlyphShortcut(s: string): string {
+  let lt = -1;
+  for (let k = s.length - 1; k >= 0; k--) {
+    if (isLineTerminator(s.charCodeAt(k))) { lt = k; break; }
+  }
+  for (let k = lt + 1; k < s.length; k++) {
+    const c = s.charCodeAt(k);
+    if (c === 0x2303 || c === 0x2318 || c === 0x2325 || c === 0x21e7 || c === 0x2387) {
+      let w = k;
+      while (w > 0 && isJsSpace(s.charCodeAt(w - 1))) w--;
+      return s.slice(0, w);
+    }
+  }
+  return s;
+}
+
+/** s.replace(/[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/, '') */
+function withoutTextShortcut(s: string): string {
+  const n = s.length;
+  let plusRun = n;
+  while (plusRun > 0) {
+    const c = s.charCodeAt(plusRun - 1);
+    if (!(isDigit(c) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 43 || c === 45)) break;
+    plusRun--;
+  }
+  let upperRun = n;
+  while (upperRun > 0) {
+    const c = s.charCodeAt(upperRun - 1);
+    if (!(isDigit(c) || (c >= 65 && c <= 90))) break;
+    upperRun--;
+  }
+  const mod = /Ctrl|Cmd|Shift|Alt|Option|Command/g;
+  for (let m = mod.exec(s); m; m = mod.exec(s)) {
+    const t = m.index + m[0].length;
+    if (t === n || (s.charCodeAt(t) === 43 && t + 1 >= plusRun) || t >= upperRun) {
+      let w = m.index;
+      while (w > 0 && isJsSpace(s.charCodeAt(w - 1))) w--;
+      return s.slice(0, w);
+    }
+  }
+  return s;
+}
+
+/** s.replace(/(?:\s*\+)+$/, '') */
+function withoutTrailingPluses(s: string): string {
+  if (s.charCodeAt(s.length - 1) !== 43) return s;
+  let k = s.length;
+  while (k > 0 && (s.charCodeAt(k - 1) === 43 || isJsSpace(s.charCodeAt(k - 1)))) k--;
+  return s.slice(0, k);
+}
+
+/** S2: /(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8})\s+1px(?:\s*,)/.test(text) */
+function hasColorThenHairline(text: string): boolean {
+  const close = nextMatchFinder(text, /\)/g);
+  let tailAt = -1;
+  let tailOk = false;
+  const tail = (e: number): boolean => {
+    if (e !== tailAt) {
+      tailAt = e;
+      const t = wsEnd(text, e);
+      tailOk = t > e && text.startsWith('1px', t) && text.charCodeAt(wsEnd(text, t + 3)) === 44;
+    }
+    return tailOk;
+  };
+  const head = /transparent|rgba\(|color-mix\(|var\(|#/g;
+  for (let m = head.exec(text); m; m = head.exec(text)) {
+    const i = m.index;
+    const after = i + m[0].length;
+    // `transparent` can overlap itself: try the very next position too.
+    head.lastIndex = i + 1;
+    if (m[0] === 'transparent') {
+      if (tail(after)) return true;
+    } else if (m[0] === '#') {
+      let h = after;
+      while (h < text.length && /[0-9a-fA-F]/.test(text[h])) h++;
+      if (h - after >= 3 && h - after <= 8 && tail(h)) return true;
+    } else {
+      const p = close(after);
+      if (p === Infinity) continue;
+      if (m[0] === 'rgba(' && p === after) continue;
+      if (tail(p + 1)) return true;
+    }
+  }
+  return false;
+}
+
+/** S2: /\s+1px\s*,\s*(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\))/.test(text) */
+function hasHairlineThenColor(text: string): boolean {
+  const lastClose = text.lastIndexOf(')');
+  for (let at = text.indexOf('1px'); at >= 0; at = text.indexOf('1px', at + 1)) {
+    if (at === 0 || !isJsSpace(text.charCodeAt(at - 1))) continue;
+    let t = wsEnd(text, at + 3);
+    if (text.charCodeAt(t) !== 44) continue;
+    t = wsEnd(text, t + 1);
+    if (text.startsWith('transparent', t)) return true;
+    if (text.startsWith('rgba(', t) && text.charCodeAt(t + 5) !== 41 && lastClose > t + 5) return true;
+    if (text.startsWith('color-mix(', t) && lastClose >= t + 10) return true;
+    if (text.startsWith('var(', t) && lastClose >= t + 4) return true;
+  }
+  return false;
+}
+
+/** S2: /\/\s*[^,/]*(?:^|\s)1px(?:$|[\s,])/.test(value) */
+function hasSlashThenHairline(value: string): boolean {
+  let lastSep = -1;
+  for (let k = 0; k < value.length; k++) {
+    const c = value.charCodeAt(k);
+    if (c === 44 || c === 47) { lastSep = k; continue; }
+    if (c !== 49 || k === 0 || !value.startsWith('1px', k) || !isJsSpace(value.charCodeAt(k - 1))) continue;
+    const next = value.charCodeAt(k + 3);
+    if ((k + 3 === value.length || isJsSpace(next) || next === 44) && lastSep >= 0 && value.charCodeAt(lastSep) === 47) return true;
+  }
+  return false;
+}
+
+/** css.match(/linear\(\s*[^)]{20,}\)/gi) || [] */
+function longLinearEasings(css: string): string[] {
+  const start = /linear\(/gi;
+  const out: string[] = [];
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(css);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    const c = css.indexOf(')', after);
+    if (c < 0) break;
+    if (c - after >= 20) out.push(css.slice(m.index, c + 1));
+    // Every start before c reads the same ')' with less between.
+    pos = c + 1;
+  }
+  return out;
+}
+
+/**
+ * Group 1 of each match of
+ * /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi:
+ * the last quoted href in the tag after its first rel=stylesheet.
+ */
+function stylesheetLinkMatches(html: string): ScanMatch[] {
+  const start = /<link/gi;
+  const rel = nextMatchFinder(html, /rel=["']?stylesheet/gi);
+  const hrefs = matchStarts(html, /href=["']/gi);
+  const gt = nextMatchFinder(html, />/g);
+  const n = html.length;
+  const isQuote = (c: number): boolean => c === 34 || c === 39;
+  let lastQuote = n - 1;
+  while (lastQuote >= 0 && !isQuote(html.charCodeAt(lastQuote))) lastQuote--;
+  const out: ScanMatch[] = [];
+  let ptr = 0;
+  for (let pos = 0; ;) {
+    start.lastIndex = pos;
+    const m = start.exec(html);
+    if (!m) break;
+    const after = m.index + m[0].length;
+    const g = Math.min(gt(after), n);
+    while (ptr < hrefs.length && hrefs[ptr] < after) ptr++;
+    let end = ptr;
+    while (end < hrefs.length && hrefs[end] < g) end++;
+    // The last href=" in the tag whose value is non-empty and closes.
+    let h = -1;
+    for (let k = end - 1; k >= ptr && h < 0; k--) {
+      const v = hrefs[k] + 6;
+      if (v < n && !isQuote(html.charCodeAt(v)) && lastQuote > v) h = hrefs[k];
+    }
+    const r = rel(after);
+    if (h >= 0 && r < g && r + (isQuote(html.charCodeAt(r + 4)) ? 15 : 14) <= h) {
+      let q = h + 7;
+      while (!isQuote(html.charCodeAt(q))) q++;
+      out.push({ index: m.index, text: html.slice(m.index, q + 1), groups: [html.slice(h + 6, q)] });
+      pos = q + 1;
+      continue;
+    }
+    // Every start before g sees less of the same tag.
+    if (g >= n) break;
+    pos = g + 1;
+  }
+  return out;
+}
+
+/**
+ * For each `{` in `opens`, the index of the `}` that brings the depth back to
+ * zero from it, or -1: what a depth-counting walk from that brace finds, for
+ * every brace in one pass.
+ */
+function closingBraces(code: string, opens: Set<number>): Map<number, number> {
+  const out = new Map<number, number>();
+  const stack: number[] = [];
+  for (let k = 0; k < code.length; k++) {
+    const ch = code.charCodeAt(k);
+    if (ch === 123) stack.push(k);
+    else if (ch === 125 && stack.length) {
+      const open = stack.pop() as number;
+      if (opens.has(open)) out.set(open, k);
+    }
+  }
+  return out;
+}
+// ── The call sites, one helper each, so the test runs exactly what they run ──
+
+/** /<button[^>]*>([\s\S]*?)<\/button>/gi (v38, v39). */
+function buttonElements(html: string): ScanMatch[] {
+  return elementMatches(html, /<button/gi, /<\/button>/gi);
+}
+
+/** /<label[^>]*>([\s\S]*?)<\/label>/gi (v39). */
+function labelElements(html: string): ScanMatch[] {
+  return elementMatches(html, /<label/gi, /<\/label>/gi);
+}
+
+/** /<a[^>]*>([\s\S]*?)<\/a>/gi (v40). */
+function anchorElements(html: string): ScanMatch[] {
+  return elementMatches(html, /<a/gi, /<\/a>/gi);
+}
+
+/** /<style[^>]*>([\s\S]*?)<\/style>/gi (inline stylesheets). */
+function styleElements(html: string): ScanMatch[] {
+  return elementMatches(html, /<style/gi, /<\/style>/gi);
+}
+
+/** /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi (v38). */
+function roleButtonElements(html: string): ScanMatch[] {
+  return roleElementMatches(html, /<(?:a|div|span)/gi, /role=["']button["']/gi, /<\/(?:a|div|span)>/gi);
+}
+
+/** /<[a-z]+[^>]*role=["']tab["'][^>]*>([\s\S]*?)<\/[a-z]+>/gi (v39). */
+function roleTabElements(html: string): ScanMatch[] {
+  return roleElementMatches(html, /<[a-z]/gi, /role=["']tab["']/gi, /<\/[a-z]+>/gi);
+}
+
+/** v41: /class=["'][^"']*(eyebrow|eyebro|meta-label)[^"']*["']/i.test(attrs) */
+function hasEyebrowClass(attrs: string): boolean {
+  return quotedAttrHas(attrs, /class=["']/gi, /eyebro|meta-label/gi);
+}
+
+/** v41: /style=["'][^"']*text-transform:\s*uppercase[^"']*["']/i.test(attrs) */
+function hasUppercaseStyle(attrs: string): boolean {
+  return quotedAttrHas(attrs, /style=["']/gi, /text-transform:\s*uppercase/gi);
+}
+
+/** v17: /(?:h1|h2|h3|h4|h5|h6|\.h\d|heading|title)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi */
+function headingLineHeights(css: string): ScanMatch[] {
+  return ruleBodyScan(css, bracedStarts(css, /h1|h2|h3|h4|h5|h6|\.h\d|heading|title/gi), /line-height/gi, /line-height\s*:\s*([0-9.]+)/iy, false);
+}
+
+/** v17: /(?:body|p|article|\.body|\.prose|\.copy)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi */
+function bodyLineHeights(css: string): ScanMatch[] {
+  return ruleBodyScan(css, bracedStarts(css, /body|p|article|\.body|\.prose|\.copy/gi), /line-height/gi, /line-height\s*:\s*([0-9.]+)/iy, false);
+}
+
+/**
+ * v24: /(?:^|[,}\s])\s*(?:button|a\b|input|textarea|select|\[role\s*=\s*["']?button["']?\]|\.btn|\.button|\.chip|\.tab|\.nav-link)\s*[^{]*\{[^}]*(?:min-height|min-width)\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gim
+ */
+function touchTargetSizes(css: string): ScanMatch[] {
+  return ruleBodyScan(css, touchTargetStarts(css), /min-(?:height|width)/gi, /(?:min-height|min-width)\s*:\s*(\d+(?:\.\d+)?)(px|rem)/iy, false);
+}
+
+/** v27: /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi */
+function fieldFontSizes(sheet: string): ScanMatch[] {
+  return ruleBodyScan(sheet, bracedStarts(sheet, /input|textarea|select|\.input|\.field/gi), /font-size/gi, /font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/iy, false);
+}
+
+/** v27: /input\s*(?:,[^{]*)?\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/gi */
+function fieldFontFloors(sheet: string): ScanMatch[] {
+  return ruleBodyScan(sheet, inputFloorStarts(sheet), /font-size/gi, /font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/iy, false);
+}
+
+/** v09: /:focus[^{]*\{[^}]*outline\s*:\s*(none|0)\s*[;}]/i.test(css) */
+function focusStripsOutline(css: string): boolean {
+  return ruleBodyScan(css, bracedStarts(css, /:focus/gi), /outline/gi, /outline\s*:\s*(none|0)\s*[;}]/iy, true).length > 0;
+}
+
+/** v09: /:focus[^{]*\{[^}]*(box-shadow|outline\s*:\s*[^n0])/i.test(css) */
+function focusHasRing(css: string): boolean {
+  return ruleBodyScan(css, bracedStarts(css, /:focus/gi), /box-shadow|outline/gi, /(box-shadow|outline\s*:\s*[^n0])/iy, true).length > 0;
+}
+
+/** v08: /@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:/i.test(css) */
+function hasBreathKeyframes(css: string): boolean {
+  return ruleBodyScan(css, breathKeyframeStarts(css), /opacity/gi, /opacity\s*:/iy, true).length > 0;
+}
+
+/** v08: /@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)/i.test(css) */
+function mediaQueryHasHoverGuard(css: string): boolean {
+  return preludeHas(css, /@media/gi, /hover\s*:\s*hover|pointer\s*:\s*fine/gi);
+}
+
+/** v35: /@media[^{]*forced-colors\s*:\s*active/i.test(css) */
+function mediaQueryHasForcedColors(css: string): boolean {
+  return preludeHas(css, /@media/gi, /forced-colors\s*:\s*active/gi);
+}
+
+/** v35: /@media[^{]*-ms-high-contrast/i.test(css) */
+function mediaQueryHasHighContrast(css: string): boolean {
+  return preludeHas(css, /@media/gi, /-ms-high-contrast/gi);
+}
+
+/** O4: /@media[^{]*prefers-reduced-motion/i.test(css) */
+function mediaQueryHasReducedMotion(css: string): boolean {
+  return preludeHas(css, /@media/gi, /prefers-reduced-motion/gi);
+}
+
+/** v05: /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi */
+function reducedMotionQueries(code: string): ScanMatch[] {
+  return preludeMatches(code, /@media/gi, /prefers-reduced-motion/gi, /prefers-reduced-motion\s*:\s*(reduce|no-preference)\b/iy);
+}
+
+/** color-mix: /^(\d*\.?\d+)%\s+([\s\S]*)$/.exec(p), the number without the ambiguous \d*\.?\d+ */
+function percentBefore(p: string): RegExpExecArray | null {
+  return /^(\d+(?:\.\d+)?|\.\d+)%\s+([\s\S]*)$/.exec(p);
+}
+
+/** v45: /^(?:0*\.?0*|0*(?:\.0+)?%)$/.test(v), without the ambiguous 0*\.?0* */
+function isZeroOpacity(v: string): boolean {
+  return /^(?:0*(?:\.0*)?|0*(?:\.0+)?%)$/.test(v);
+}
+
+/** O1: the cubic-bezier() matches, each number written without the ambiguous \d*\.?\d+ */
+function cubicBezierMatches(css: string): ScanMatch[] {
+  const re = /cubic-bezier\(\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d+)?|\.\d+))\s*\)/gi;
+  const out: ScanMatch[] = [];
+  for (let m = re.exec(css); m; m = re.exec(css)) out.push({ index: m.index, text: m[0], groups: m.slice(1) });
+  return out;
+}
+
+/** v34: /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|ai-widget|dialogflow)\b/i.test(html) */
+function hasAiWidgetScript(html: string): boolean {
+  return tagAttrValueHas(html, /<script\b/gi, /src\s*=\s*["']/gi, /\b(?:chatbot|ai-widget|dialogflow)\b/gi);
+}
+
+/** v34: /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:assistant|claude|gemini|rasa|intercom|drift|tawk|crisp|livechat|conversational)\b/i.test(html) */
+function hasChatScript(html: string): boolean {
+  return tagAttrValueHas(html, /<script\b/gi, /src\s*=\s*["']/gi, /\b(?:assistant|claude|gemini|rasa|intercom|drift|tawk|crisp|livechat|conversational)\b/gi);
+}
+
+/** v34: /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat)\b/i.test(html) */
+function hasAiChatContainer(html: string): boolean {
+  return tagAttrValueHas(html, /<(?:iframe|div|section|aside)\b/gi, /(?:class|id)\s*=\s*["']/gi, /\b(?:chatbot|chat-bot|ai-assistant|ai_chat)\b/gi);
+}
+
+/** v34: /<(?:input|textarea|form)\b[^>]*(?:placeholder|aria-label)\s*=\s*["'][^"']*\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/i.test(html) */
+function hasAiInput(html: string): boolean {
+  return tagAttrValueHas(html, /<(?:input|textarea|form)\b/gi, /(?:placeholder|aria-label)\s*=\s*["']/gi, /\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/gi);
+}
+
+/** v34: /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i.test(html) */
+function hasChatWidgetContainer(html: string): boolean {
+  return tagAttrValueHas(html, /<(?:iframe|div|section|aside)\b/gi, /(?:class|id)\s*=\s*["']/gi, /\b(?:assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/gi);
+}
+
+/** v34: /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i.test(html) */
+function hasAmbiguousWidget(html: string): boolean {
+  return tagAttrValueHas(html, /<(?:iframe|div|section)\b/gi, /(?:class|id)\s*=\s*["']/gi, /\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/gi);
+}
+
+/** v34: /<meta\s+name\s*=\s*["']generator["'][^>]*content\s*=\s*["'][^"']*\b(?:ai|gpt|claude|gemini|llm|generated|artificial\s+intelligence)\b/i.test(html) */
+function hasAiGeneratorMeta(html: string): boolean {
+  return tagAttrValueHas(html, /<meta\s+name\s*=\s*["']generator["']/gi, /content\s*=\s*["']/gi, /\b(?:ai|gpt|claude|gemini|llm|generated|artificial\s+intelligence)\b/gi);
+}
+
+/** text.replace(/\[[^\]]*\]/g, fn) */
+function replaceBrackets(text: string, fn: (m: string) => string): string {
+  return replaceSpansWith(text, bracketSpans(text), fn);
+}
+
+/**
+ * S8: html with <script>, <style> and <template> elements and comments each
+ * replaced by a space (/<script\b[\s\S]*?<\/script\s*>/gi and the like).
+ */
+function withoutNonVisibleMarkup(html: string): string {
+  const a = replaceSpans(html, lazyBlockSpans(html, /<script\b/gi, /<\/script\s*>/gi), ' ');
+  const b = replaceSpans(a, lazyBlockSpans(a, /<style\b/gi, /<\/style\s*>/gi), ' ');
+  const c = replaceSpans(b, lazyBlockSpans(b, /<template\b/gi, /<\/template\s*>/gi), ' ');
+  return replaceSpans(c, lazyBlockSpans(c, /<!--/g, /-->/g), ' ');
+}
+/**
+ * S2: does some linear-gradient() in the value carry two or more colour stops?
+ * The lower-cased copy is made once; it was remade for every gradient read.
+ */
+function hasMultiStopGradient(value: string): boolean {
+  const lower = value.toLowerCase();
+  let from = 0;
+  for (;;) {
+    const at = lower.indexOf('linear-gradient(', from);
+    if (at < 0) return false;
+    let depth = 0;
+    let end = -1;
+    for (let i = at + 15; i < value.length; i++) {
+      if (value[i] === '(') depth++;
+      else if (value[i] === ')' && --depth === 0) { end = i; break; }
+    }
+    if (end < 0) return false;
+    const args = splitCssTopLevel(value.slice(at + 16, end), ',');
+    const stops = /^(?:to\s|[-+]?[\d.]+(?:deg|turn|rad|grad)\b)/i.test(args[0] ?? '') ? args.slice(1) : args;
+    if (stops.length >= 2) return true;
+    from = end;
+  }
+}
+
 // ── Resilient CSS & HTML Fetching ──────────────────────────────────────────
 
 const BROWSER_HEADERS: Record<string, string> = {
@@ -210,15 +1993,12 @@ const BROWSER_HEADERS: Record<string, string> = {
 
 function extractCssLinks(html: string, baseUrl: string): string[] {
   const links: string[] = [];
-  const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  let m;
-  while ((m = styleRe.exec(html)) !== null) {
-    links.push(m[1]);
+  for (const m of styleElements(html)) {
+    links.push(m.groups[0] as string);
   }
-  const linkRe = /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi;
-  while ((m = linkRe.exec(html)) !== null) {
+  for (const m of stylesheetLinkMatches(html)) {
     try {
-      links.push(new URL(m[1], baseUrl).href);
+      links.push(new URL(m.groups[0] as string, baseUrl).href);
     } catch {
       // ignore malformed hrefs
     }
@@ -242,11 +2022,60 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
  * `ok: false` means the attempt yielded no document; `reason` says which
  * failure it was, so the caller can report it instead of guessing.
  */
+/**
+ * Byte caps on what the hosted engine reads from a site (engine 1.5.1).
+ *
+ * Measured 2026-10-15 through this route's own fetch on the leaderboard
+ * cohort: the largest page HTML was 1.80 MB, the largest single stylesheet
+ * 0.87 MB, the largest page's stylesheets together 3.29 MB, and the largest
+ * /DESIGN.md answered with a 200 was 2.61 MB. Each cap is four or more times
+ * the largest, rounded up to a power of two, so no page in the cohort comes
+ * near one. A body longer than its cap is read up to the cap and the outcome
+ * says so (htmlTruncated, stylesheetBytesTruncated), as stylesheetsTruncated
+ * reports the stylesheet count cap. The stylesheets share one budget, read as
+ * they arrive.
+ */
+const MAX_HTML_BYTES = 8 * 1024 * 1024;
+const MAX_STYLESHEET_BYTES = 4 * 1024 * 1024;
+const MAX_TOTAL_STYLESHEET_BYTES = 16 * 1024 * 1024;
+const MAX_DESIGN_MD_BYTES = 16 * 1024 * 1024;
+
+/**
+ * A response body as text, as Response.text() decodes it (UTF-8, a leading
+ * byte order mark dropped, U+FFFD for a malformed sequence), read only up to
+ * `maxBytes`, and up to what is left of `budget` when one is shared.
+ */
+async function readCapped(resp: Response, maxBytes: number, budget?: { left: number }): Promise<{ text: string; truncated: boolean }> {
+  if (!resp.body) return { text: '', truncated: false };
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let read = 0;
+  let truncated = false;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const room = Math.max(0, Math.min(maxBytes - read, budget ? budget.left : Infinity));
+      const chunk = value.byteLength > room ? value.subarray(0, room) : value;
+      if (chunk !== value) truncated = true;
+      read += chunk.byteLength;
+      if (budget) budget.left -= chunk.byteLength;
+      parts.push(decoder.decode(chunk, { stream: true }));
+      if (truncated) break;
+    }
+  } finally {
+    if (truncated) await reader.cancel().catch(() => undefined);
+  }
+  parts.push(decoder.decode());
+  return { text: parts.join(''), truncated };
+}
+
 type FetchOutcome =
-  | { ok: true; text: string }
+  | { ok: true; text: string; truncated: boolean }
   | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number };
 
-async function fetchCssSingleDetailed(url: string): Promise<FetchOutcome> {
+async function fetchCssSingleDetailed(url: string, maxBytes = MAX_STYLESHEET_BYTES, budget?: { left: number }): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -255,9 +2084,9 @@ async function fetchCssSingleDetailed(url: string): Promise<FetchOutcome> {
       signal: controller.signal,
     });
     if (!resp.ok) return { ok: false, reason: 'http_error', status: resp.status };
-    const text = await resp.text();
+    const { text, truncated } = await readCapped(resp, maxBytes, budget);
     if (!text || text.length <= 50) return { ok: false, reason: 'empty_body' };
-    return { ok: true, text };
+    return { ok: true, text, truncated };
   } catch (e) {
     const aborted = e instanceof Error && (e.name === 'AbortError' || /abort/i.test(e.message));
     return { ok: false, reason: aborted ? 'timeout' : 'network' };
@@ -325,6 +2154,10 @@ type PageOutcome =
       stylesheetsTotal: number;
       /** True when stylesheetsTotal exceeded the cap and the CSS surface is partial. */
       stylesheetsTruncated: boolean;
+      /** True when the HTML was longer than MAX_HTML_BYTES and was read up to it. */
+      htmlTruncated: boolean;
+      /** True when a stylesheet, or the stylesheets together, were read only up to their byte cap. */
+      stylesheetBytesTruncated: boolean;
     }
   | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] };
 
@@ -337,14 +2170,15 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   ].filter(Boolean);
 
   let html = '';
+  let htmlTruncated = false;
   // Remember WHY each candidate failed. A 403 on every candidate means the site
   // is blocking us — a different fact from a timeout, and the caller needs to
   // tell them apart.
   let lastFail: (FetchOutcome & { ok: false }) | null = null;
 
   for (const candidate of candidateUrls) {
-    const outcome = await fetchCssSingleDetailed(candidate);
-    if (outcome.ok) { html = outcome.text; break; }
+    const outcome = await fetchCssSingleDetailed(candidate, MAX_HTML_BYTES);
+    if (outcome.ok) { html = outcome.text; htmlTruncated = outcome.truncated; break; }
     lastFail = outcome;
   }
 
@@ -394,12 +2228,16 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
     setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS).unref?.()
       ?? setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS),
   );
+  // Engine 1.5.1: the sheets share one byte budget as well as the deadline.
+  const budget = { left: MAX_TOTAL_STYLESHEET_BYTES };
+  let stylesheetBytesTruncated = false;
   let fetched: string[] = [];
   try {
     fetched = await Promise.race([
       Promise.all(
         externalParts.map(async (part) => {
-          const r = await fetchCssSingleDetailed(part);
+          const r = await fetchCssSingleDetailed(part, MAX_STYLESHEET_BYTES, budget);
+          if (r.ok && r.truncated) stylesheetBytesTruncated = true;
           return r.ok ? r.text : '';
         }),
       ),
@@ -417,6 +2255,8 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
     stylesheetsFetched: fetched.filter(Boolean).length,
     stylesheetsTotal: uniqueExternal.length,
     stylesheetsTruncated: uniqueExternal.length > externalParts.length,
+    htmlTruncated,
+    stylesheetBytesTruncated,
   };
 }
 
@@ -427,18 +2267,13 @@ function extractRootTokens(css: string): Record<string, string> {
   // Media-query overrides (e.g. @media (prefers-contrast: more) { :root { ... } })
   // are accessibility enhancements, not contract drift — they must NOT clobber
   // the base tokens.  Strip @media blocks before extracting :root.
-  const stripped = css.replace(/@media[^{]*\{[^@]*?\}\s*\}/gi, '');
+  const stripped = withoutMediaBlocks(css);
   const tokens: Record<string, string> = {};
   // `:root, :host { ... }` is the block Tailwind v4 writes its theme into;
   // until engine 1.3.0 only `:root {` was read, so those tokens were missed.
-  const rootRe = /:root(?:\s*,\s*:host)?\s*\{([^}]*)\}/g;
-  let m;
-  while ((m = rootRe.exec(stripped)) !== null) {
-    const block = m[1];
-    const propRe = /--([\w-]+)\s*:\s*([^;]+?)(?:;|$)/g;
-    let p;
-    while ((p = propRe.exec(block)) !== null) {
-      tokens[`--${p[1]}`] = p[2].trim();
+  for (const m of rootTokenBlocks(stripped)) {
+    for (const p of customPropertyValues(m.groups[0] as string)) {
+      tokens[`--${p.groups[0]}`] = (p.groups[1] as string).trim();
     }
   }
   return tokens;
@@ -830,7 +2665,7 @@ function checkTabularNums(css: string): CheckResult {
  * fixture broken-reduced-motion-inverted pins that case.
  */
 function optsIntoMotion(body: string): boolean {
-  if (/@view-transition\s*\{[^}]*navigation\s*:\s*auto/i.test(body)) return true;
+  if (hasViewTransitionNavigation(body)) return true;
   const declRe = /(?:^|[{;\s])(animation|animation-name|animation-duration|transition|transition-property|transition-duration|scroll-behavior|view-transition-name)\s*:\s*([^;{}]+)/gi;
   let m: RegExpExecArray | null;
   while ((m = declRe.exec(body)) !== null) {
@@ -841,7 +2676,7 @@ function optsIntoMotion(body: string): boolean {
       continue;
     }
     if (/^(?:none|initial|unset|revert|revert-layer|0|0s|0ms)$/.test(value)) continue;
-    const times = [...value.matchAll(/(?:^|[\s,(])(\d*\.?\d+)(ms|s)\b/g)].map((t) => parseFloat(t[1]) * (t[2] === 's' ? 1000 : 1));
+    const times = [...value.matchAll(/(?:^|[\s,(])(\d+(?:\.\d+)?|\.\d+)(ms|s)\b/g)].map((t) => parseFloat(t[1]) * (t[2] === 's' ? 1000 : 1));
     if (times.length > 0 && times.every((t) => t <= 10)) continue;
     return true;
   }
@@ -856,7 +2691,7 @@ function checkReducedMotion(css: string): CheckResult {
   // prose mentioning prefers-reduced-motion — satisfied the old check. The
   // calibration corpus caught exactly that: the previous regex matched the
   // string anywhere, including inside /* */.
-  const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const code = withoutCssComments(css, '');
 
   // Match the media query and read its VALUE. Two shapes honour reduced motion:
   //   * `reduce` with a non-empty body: motion is switched off for those users.
@@ -867,28 +2702,28 @@ function checkReducedMotion(css: string): CheckResult {
   // pattern. A bare substring match on the feature name stays wrong in both
   // directions: an empty block, or a `no-preference` block that only switches
   // motion off, honours nothing and still WARNs.
-  const mqRe = /@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{/gi;
-  let match: RegExpExecArray | null;
+  const queries = reducedMotionQueries(code);
   let sawReduce = false;
   let sawMotionOptIn = false;
   let sawNoPreference = false;
-  while ((match = mqRe.exec(code)) !== null) {
-    const value = match[1].toLowerCase();
-    // Capture the block body by brace-matching from the opening brace.
-    const open = match.index + match[0].length - 1;
-    let depth = 0;
-    let close = -1;
-    for (let i = open; i < code.length; i++) {
-      if (code[i] === '{') depth++;
-      else if (code[i] === '}') {
-        depth--;
-        if (depth === 0) { close = i; break; }
-      }
-    }
+  // Each block body ends at the brace that brings the depth back to zero,
+  // found for every query in one pass (engine 1.5.1; a walk per query read
+  // nested queries' bodies over and over).
+  const closes = closingBraces(code, new Set(queries.map((q) => q.index + q.text.length - 1)));
+  // A no-preference block inside one already read opts into motion only if
+  // that one does, so it is not read again.
+  let readUntil = -1;
+  for (const match of queries) {
+    const value = (match.groups[0] as string).toLowerCase();
+    const open = match.index + match.text.length - 1;
+    const close = closes.get(open) ?? -1;
     const body = close > open ? code.slice(open + 1, close).trim() : '';
     if (value === 'no-preference') {
       sawNoPreference = true;
-      if (optsIntoMotion(body)) sawMotionOptIn = true;
+      if (!sawMotionOptIn && close > readUntil) {
+        if (optsIntoMotion(body)) sawMotionOptIn = true;
+        readUntil = close;
+      }
       continue;
     }
     // A `reduce` query that declares no rules reduces nothing.
@@ -918,9 +2753,9 @@ function checkSemanticHtmlFoundation(html: string): CheckResult {
   // <meta name="description">, and a <main>/<header>/<nav> landmark. These are
   // Lighthouse a11y basics (document-title weight 4.1, heading-order 0.8) and
   // apply to every site. The check name/id stays v07 for continuity.
-  const visibleHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+  const visibleHtml = withoutScriptsAndStyles(html);
   const h1Count = (visibleHtml.match(/<h1\b/gi) || []).length;
-  const hasTitle = /<title\b[^>]*>[^<]+<\/title>/i.test(html);
+  const hasTitle = hasTitleText(html);
   const hasMetaDesc = /<meta\s+name=["']description["']/i.test(html);
   const hasLandmark = /<(main|header|nav)\b/i.test(visibleHtml);
   const signals: string[] = [];
@@ -943,7 +2778,7 @@ function checkSemanticHtmlFoundation(html: string): CheckResult {
 function checkPressScale(css: string): CheckResult {
   // Strip @keyframes blocks — scale(0) inside a ripple/particle keyframe is a
   // legitimate animation starting point, not a press scale.
-  const stripped = css.replace(/@keyframes\s+[^{]+\{[^@]*?\}/gi, '');
+  const stripped = withoutKeyframesBlocks(css);
 
   // Collect all press-scale candidates: scale() < 1 found in CSS rule blocks
   // (not keyframes). We split by '}' to get individual rule blocks so we can
@@ -1005,13 +2840,8 @@ function checkPressScale(css: string): CheckResult {
 // v17 — REAL line-height by role check. Scans for heading-tight (1.0-1.15)
 // and body-relaxed (1.4-1.7) line-heights. Contract: headings 1.08, body 1.55.
 function checkLineHeightByRole(css: string): CheckResult {
-  const headingRe = /(?:h1|h2|h3|h4|h5|h6|\.h\d|heading|title)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi;
-  const bodyRe = /(?:body|p|article|\.body|\.prose|\.copy)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)/gi;
-  const headingLhs: number[] = [];
-  const bodyLhs: number[] = [];
-  let m;
-  while ((m = headingRe.exec(css)) !== null) headingLhs.push(parseFloat(m[1]));
-  while ((m = bodyRe.exec(css)) !== null) bodyLhs.push(parseFloat(m[1]));
+  const headingLhs = headingLineHeights(css).map((m) => parseFloat(m.groups[0] as string));
+  const bodyLhs = bodyLineHeights(css).map((m) => parseFloat(m.groups[0] as string));
   const headingOk = headingLhs.some(lh => lh >= 1.0 && lh <= 1.15);
   const bodyOk = bodyLhs.some(lh => lh >= 1.4 && lh <= 1.7);
   if (headingOk && bodyOk) return { id: 'v17', item: 'Line-height by role: headings 1.08, body 1.55 confirmed', category: 'cadence', status: 'PASS', detail: `headings ${headingLhs.join(',') || 'n/a'}, body ${bodyLhs.join(',') || 'n/a'}` };
@@ -1026,7 +2856,7 @@ function checkLineHeightByRole(css: string): CheckResult {
 // var(--signal) reference (or any non-default color). Browser default is
 // #000/#fff text on #0000ff blue background — any custom rule beats that.
 function checkSelectionStyled(css: string): CheckResult {
-  const selMatch = css.match(/::selection\s*\{[^}]*\}/gi);
+  const selMatch = selectionRules(css);
   if (!selMatch || selMatch.length === 0) return { id: 'v20', item: '::selection styled with var(--signal) instead of the browser default', category: 'cadence', status: 'WARN', detail: 'no ::selection rule found: browser default will show' };
   const usesSignal = selMatch.some(r => /var\(\s*--signal/i.test(r));
   const hasColor = selMatch.some(r => /(background|color)\s*:/i.test(r));
@@ -1079,12 +2909,10 @@ function checkSkipInk(css: string): CheckResult {
 // Full verification needs a browser (getBoundingClientRect on rendered elements).
 function checkTouchTargets(css: string): CheckResult {
   // Look for min-height/min-width ≥ 44px on button, a, input, [role=button] selectors.
-  const interactiveRe = /(?:^|[,}\s])\s*(?:button|a\b|input|textarea|select|\[role\s*=\s*["']?button["']?\]|\.btn|\.button|\.chip|\.tab|\.nav-link)\s*[^{]*\{[^}]*(?:min-height|min-width)\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gim;
   const targets: number[] = [];
-  let m;
-  while ((m = interactiveRe.exec(css)) !== null) {
-    const val = parseFloat(m[1]);
-    const unit = m[2].toLowerCase();
+  for (const m of touchTargetSizes(css)) {
+    const val = parseFloat(m.groups[0] as string);
+    const unit = (m.groups[1] as string).toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
     targets.push(px);
   }
@@ -1097,7 +2925,7 @@ function checkTouchTargets(css: string): CheckResult {
 // v25 — Heading hierarchy: single h1, no skipped levels (h1→h3 jump = fail).
 // Scans HTML for heading order. design-auditor + Lighthouse heading-order check.
 function checkHeadingHierarchy(html: string): CheckResult {
-  const visibleHtml = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+  const visibleHtml = withoutScriptsAndStyles(html);
   const headings = [...visibleHtml.matchAll(/<h([1-6])\b/gi)];
   if (headings.length === 0) return { id: 'v25', item: 'Heading hierarchy: single h1, no skipped levels', category: 'accessibility', status: 'WARN', detail: 'no heading elements found: page may lack structure' };
   const levels = headings.map(h => parseInt(h[1]));
@@ -1219,7 +3047,7 @@ function checkFontFamilyCount(css: string, tokens: Record<string, string>): Chec
  * ".field label" and "user-select" are not fields.
  */
 function isFieldSelector(selector: string): boolean {
-  const clean = selector.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const clean = withoutCssComments(selector, ' ');
   return splitCssTopLevel(clean, ',').some((part) => {
     const compounds = part.trim().split(/\s*[>+~]\s*|\s+/);
     const subject = compounds[compounds.length - 1] || '';
@@ -1230,22 +3058,49 @@ function isFieldSelector(selector: string): boolean {
 }
 
 /**
- * v27 helper (engine 1.4.1): the selector of the rule whose body holds the
- * declaration at `offset`, read backwards from that body's opening brace to
- * the previous closing brace, opening brace or semicolon. Null when the offset
- * is not inside a rule body (a stray declaration, or a brace closed in
- * between). Linear: a few lastIndexOf scans per call, no whole-sheet regex.
+ * v27 helper (engine 1.4.1): the rule whose body holds the declaration at an
+ * offset, its selector read backwards from that body's opening brace to the
+ * previous closing brace, opening brace or semicolon. The finder returns
+ * [start, open], the selector being css.slice(start, open), or null when the
+ * offset is not inside a rule body (a stray declaration, or a brace closed in
+ * between).
+ *
+ * Engine 1.5.1: the finder lists the sheet's braces and semicolons once and
+ * answers each offset by binary search. Before, each declaration ran three
+ * lastIndexOf scans, each reading back to the last character of its kind, so
+ * a sheet with no semicolons was read back to its start once per declaration
+ * and cost the square of its length. Each answer is the one those scans gave.
  */
-function ruleSelectorAt(css: string, offset: number): string | null {
-  const open = css.lastIndexOf('{', offset);
-  if (open < 0 || css.lastIndexOf('}', offset) > open) return null;
-  const start = Math.max(css.lastIndexOf('}', open - 1), css.lastIndexOf('{', open - 1), css.lastIndexOf(';', open - 1)) + 1;
-  return css.slice(start, open);
+function ruleSelectorFinder(css: string): (offset: number) => [number, number] | null {
+  const opens: number[] = [];
+  const closes: number[] = [];
+  const marks: number[] = [];
+  for (let i = 0; i < css.length; i++) {
+    const c = css.charCodeAt(i);
+    if (c === 123) { opens.push(i); marks.push(i); } else if (c === 125) { closes.push(i); marks.push(i); } else if (c === 59) marks.push(i);
+  }
+  // The last entry at or before x in an ascending list, or -1.
+  const atOrBefore = (list: number[], x: number): number => {
+    let lo = 0;
+    let hi = list.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid] <= x) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo > 0 ? list[lo - 1] : -1;
+  };
+  return (offset: number) => {
+    const at = Math.max(0, offset);
+    const open = atOrBefore(opens, at);
+    if (open < 0 || atOrBefore(closes, at) > open) return null;
+    return [atOrBefore(marks, open - 1) + 1, open];
+  };
 }
 
 /**
- * v27 helper (engine 1.4.1): does the font-size declaration at `offset` sit in
- * a rule whose own selector names a field keyword (input, textarea, select,
+ * v27 helper (engine 1.4.1): for an offset, does the font-size declaration
+ * there sit in a rule whose own selector names a field keyword (input, textarea, select,
  * .input, .field), the same words the literal scan looks for? v27's literal
  * regexes find a keyword and then the next rule body, and their `[^{]*` runs
  * across a closing brace. So the word "select" in `.chip { user-select: none }`
@@ -1258,9 +3113,21 @@ function ruleSelectorAt(css: string, offset: number): string | null {
  * isFieldSelector test dropped real fields (a 14px textarea, a 16px search
  * input's floor).
  */
-function inFieldRule(css: string, offset: number): boolean {
-  const selector = ruleSelectorAt(css, offset);
-  return selector !== null && /input|textarea|select|\.field/i.test(selector.replace(/\/\*[\s\S]*?\*\//g, ' '));
+function fieldRuleFinder(css: string): (offset: number) => boolean {
+  const ruleAt = ruleSelectorFinder(css);
+  let seen = -1;
+  let verdict = false;
+  return (offset: number) => {
+    const rule = ruleAt(offset);
+    if (rule === null) return false;
+    // The declarations of one rule share its verdict (engine 1.5.1: each one
+    // read the selector again).
+    if (rule[1] !== seen) {
+      seen = rule[1];
+      verdict = /input|textarea|select|\.field/i.test(withoutCssComments(css.slice(rule[0], rule[1]), ' '));
+    }
+    return verdict;
+  };
 }
 
 /**
@@ -1275,20 +3142,35 @@ function inFieldRule(css: string, offset: number): boolean {
  * a card caption) as an input below 16px. Only values that start with var(
  * are touched; calc(), clamp() and min()/max() stay as written, as before.
  *
- * The scan is anchored on each `font-size: var(` and reads its rule's selector
- * backwards from the opening brace, so its cost is linear in the sheet. A
+ * The scan is anchored on each `font-size: var(` and finds its rule's selector
+ * through ruleSelectorFinder, so its cost is linear in the sheet. A
  * whole-sheet rule regex (`([^{}]*)\{([^{}]*)\}`) is quadratic on a long
  * @media prelude: measured at +4.5 s on five 43 KB preludes.
  */
 function resolveFontSizeVars(css: string, tokens: Record<string, string>): string {
   if (css.indexOf('var(') < 0) return css;
-  return css.replace(/(font-size\s*:\s*)(var\([^;{}]*\))/gi, (decl: string, lead: string, value: string, offset: number) => {
+  const parts: string[] = [];
+  const ruleAt = ruleSelectorFinder(css);
+  let seen = -1;
+  let styled = false;
+  let last = 0;
+  for (const m of fontSizeVarMatches(css)) {
+    const decl = m.text;
+    const lead = m.groups[0] as string;
+    const value = m.groups[1] as string;
+    const offset = m.index;
+    parts.push(css.slice(last, offset));
+    last = offset + decl.length;
     // Not inside a rule body (a stray declaration, or a brace closed between).
-    const selector = ruleSelectorAt(css, offset);
-    if (selector === null || !isFieldSelector(selector)) return decl;
+    const rule = ruleAt(offset);
+    if (rule === null) { parts.push(decl); continue; }
+    if (rule[1] !== seen) { seen = rule[1]; styled = isFieldSelector(css.slice(rule[0], rule[1])); }
+    if (!styled) { parts.push(decl); continue; }
     const sub = substituteCssVars(value, [tokens]);
-    return sub === null ? decl : lead + sub.trim();
-  });
+    parts.push(sub === null ? decl : lead + sub.trim());
+  }
+  parts.push(css.slice(last));
+  return parts.join('');
 }
 
 /**
@@ -1298,9 +3180,9 @@ function resolveFontSizeVars(css: string, tokens: Record<string, string>): strin
  * image, file, range and color. An <input> with no type is a text field.
  */
 function hasZoomableField(html: string): boolean {
-  const visible = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
+  const visible = withoutScriptsAndStyles(html);
   if (/<(?:textarea|select)\b/i.test(visible)) return true;
-  const inputs = visible.match(/<input\b[^>]*>/gi) || [];
+  const inputs = inputTags(visible);
   return inputs.some((tag) => {
     const type = /\stype\s*=\s*["']?([a-z-]+)/i.exec(tag);
     return !type || !/^(?:hidden|checkbox|radio|submit|button|reset|image|file|range|color)$/i.test(type[1]);
@@ -1326,15 +3208,14 @@ function hasZoomableField(html: string): boolean {
 // cannot resolve is left as written, so it reads as it did before.
 function checkInputFontFloor(css: string, html: string, tokens: Record<string, string> = {}): CheckResult {
   const sheet = resolveFontSizeVars(css, tokens);
+  const inFieldRule = fieldRuleFinder(sheet);
   // Find input/textarea/select rules with font-size < 16px or < 1rem.
-  const inputRe = /(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)/gi;
   const below: string[] = [];
-  let m;
-  while ((m = inputRe.exec(sheet)) !== null) {
+  for (const m of fieldFontSizes(sheet)) {
     // Engine 1.4.1: only a declaration whose own rule styles a field counts.
-    if (!inFieldRule(sheet, m.index + m[0].lastIndexOf('font-size'))) continue;
-    const val = parseFloat(m[1]);
-    const unit = m[2].toLowerCase();
+    if (!inFieldRule(m.index + m.text.lastIndexOf('font-size'))) continue;
+    const val = parseFloat(m.groups[0] as string);
+    const unit = (m.groups[1] as string).toLowerCase();
     const px = unit === 'rem' ? val * 16 : val;
     if (px < 16) below.push(`${val}${unit} (${px}px)`);
   }
@@ -1343,11 +3224,10 @@ function checkInputFontFloor(css: string, html: string, tokens: Record<string, s
     // The strict form `input\s*\{` matches standalone rules; the grouped form
     // `input,...,{` matches selectors merged by CSS minifiers (e.g. `input,textarea,select{font-size:1rem}`).
     // Engine 1.4.1: the floor rule must itself style a field, as above.
-    const floorRe = /input\s*(?:,[^{]*)?\{[^}]*font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)/gi;
     let hasGlobalFloor = false;
-    let f;
-    while (!hasGlobalFloor && (f = floorRe.exec(sheet)) !== null) {
-      hasGlobalFloor = inFieldRule(sheet, f.index + f[0].lastIndexOf('font-size'));
+    for (const f of fieldFontFloors(sheet)) {
+      if (hasGlobalFloor) break;
+      hasGlobalFloor = inFieldRule(f.index + f.text.lastIndexOf('font-size'));
     }
     if (hasGlobalFloor) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'PASS', detail: 'input font-size floor detected' };
     if (!hasZoomableField(html)) return { id: 'v27', item: 'Input font-size ≥16px (prevents iOS Safari auto-zoom)', category: 'accessibility', status: 'SKIP', detail: 'no text input, textarea or select found in HTML: nothing for the 16px floor to protect' };
@@ -1370,15 +3250,13 @@ function checkReadingWidth(css: string): CheckResult {
   const STRUCTURAL_SELECTOR = /grid|table|row|col\b|flex|swatch|chip|badge|tab\b|nav\b|toolbar|chart|canvas|pre\b|code\b|kbd/i;
 
   // Walk every rule block, capturing selector + declarations together.
-  const ruleRe = /([^{}]+)\{([^{}]*)\}/g;
   const proseInRange: number[] = [];
   const proseOutOfRange: number[] = [];
   const nonProse: number[] = [];
-  let m: RegExpExecArray | null;
 
-  while ((m = ruleRe.exec(css)) !== null) {
-    const selector = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim();
-    const body = m[2];
+  for (const m of cssRuleBlocks(css)) {
+    const selector = withoutCssComments(m.groups[0] as string, '').trim();
+    const body = m.groups[1] as string;
     // Skip at-rule preludes (`@media (...)`, `@supports (...)`) — the block
     // body is walked on the next iteration when the inner rule is seen. A
     // media query wrapping prose rules should not itself be classified.
@@ -1709,6 +3587,17 @@ function parseCssRules(css: string): { rules: CssRuleBlock[]; keyframes: CssKeyf
   return result;
 }
 
+// Engine 1.5.1: limits that only a malformed or hostile sheet reaches. The
+// leaderboard cohort, measured 2026-10-15, nests at most 6 levels deep and
+// leaves at most one block open at the end of a page's CSS. A brace that
+// would open a level deeper than CSS_MAX_NESTING is read as text of the block
+// it sits in. At the end of the sheet at most CSS_MAX_OPEN_AT_END blocks left
+// open are closed and read, innermost first: each one reads to the end of the
+// sheet, so every further one was another full copy of the rest of it, and a
+// short sheet that left many blocks open cost seconds.
+const CSS_MAX_NESTING = 16;
+const CSS_MAX_OPEN_AT_END = 4;
+
 function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes: CssKeyframesBlock[] } {
   const src = stripCssComments(css);
   const n = src.length;
@@ -1727,6 +3616,7 @@ function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes:
   let order = 0;
   let start = 0;
   let paren = 0;
+  let overflow = 0;
   const close = (f: Frame, end: number) => {
     f.parts.push(src.slice(f.segStart, end));
     const decls = f.parts.join(' ').trim();
@@ -1765,6 +3655,7 @@ function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes:
     if (c === 59) { if (paren === 0) start = i + 1; i++; continue; }
     if (c === 123) {
       paren = 0;
+      if (stack.length >= CSS_MAX_NESTING) { overflow++; start = i + 1; i++; continue; }
       const prelude = src.slice(start, i).trim();
       const parent = stack.length ? stack[stack.length - 1] : null;
       if (parent) parent.parts.push(src.slice(parent.segStart, start));
@@ -1799,6 +3690,7 @@ function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes:
     }
     if (c === 125) {
       paren = 0;
+      if (overflow > 0) { overflow--; start = i + 1; i++; continue; }
       const f = stack.pop();
       if (f) {
         close(f, i);
@@ -1811,9 +3703,9 @@ function parseCssRulesUncached(css: string): { rules: CssRuleBlock[]; keyframes:
     }
     i++;
   }
-  while (stack.length) {
+  for (let closed = 0; stack.length; closed++) {
     const f = stack.pop();
-    if (f) close(f, n);
+    if (f && closed < CSS_MAX_OPEN_AT_END) close(f, n);
   }
   return { rules, keyframes };
 }
@@ -1826,8 +3718,9 @@ function parseCssDecls(decls: string): CssDecl[] {
     const name = raw.slice(0, colon).trim();
     if (!/^-{0,2}[a-zA-Z_][\w-]*$/.test(name)) continue;
     let value = raw.slice(colon + 1).trim();
-    const important = /!\s*important\s*$/i.test(value);
-    if (important) value = value.replace(/\s*!\s*important\s*$/i, '').trim();
+    const cut = importantSuffixStart(value);
+    const important = cut >= 0;
+    if (important) value = value.slice(0, cut).trim();
     out.push({ prop: name.startsWith('--') ? name : name.toLowerCase(), value, important });
   }
   return out;
@@ -1911,7 +3804,7 @@ function oklabToSrgb(lab: [number, number, number]): [number, number, number] {
 function cssNumber(token: string, percentScale: number): number | null {
   const t = token.trim().toLowerCase();
   if (t === 'none') return 0;
-  const m = /^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$/.exec(t);
+  const m = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$/.exec(t);
   if (!m) return null;
   const x = parseFloat(m[1]);
   if (m[2] === '%') return (x / 100) * percentScale;
@@ -1982,8 +3875,8 @@ function parseCssColor(input: string, dark: boolean, depth = 0): Rgba | null {
     const space = /^in\s+([a-z-]+)/.exec(parts[0])?.[1] ?? '';
     if (!['srgb', 'oklab', 'oklch'].includes(space)) return null;
     const side = (p: string) => {
-      const after = /^([\s\S]*?)\s+(\d*\.?\d+)%$/.exec(p);
-      const before = /^(\d*\.?\d+)%\s+([\s\S]*)$/.exec(p);
+      const after = percentAfter(p);
+      const before = percentBefore(p);
       if (after) return { color: after[1], pct: parseFloat(after[2]) / 100 };
       if (before) return { color: before[2], pct: parseFloat(before[1]) / 100 };
       return { color: p, pct: null as number | null };
@@ -2033,9 +3926,9 @@ function parseCssColor(input: string, dark: boolean, depth = 0): Rgba | null {
     const mult = Math.min(1, sum);
     return [Math.round(rgb[0]), Math.round(rgb[1]), Math.round(rgb[2]), Math.round(alpha * mult * 255) / 255];
   }
-  const rel = /^from\s+([\s\S]+?)\s+(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$/.exec(args);
+  const rel = relativeColorMatch(args);
   if (rel) {
-    const base = parseCssColor(rel[1], dark, depth + 1);
+    const base = parseCssColor(rel[1] as string, dark, depth + 1);
     if (!base) return null;
     const a = rel[3] === undefined ? base[3] : cssAlpha(rel[3]);
     return a === null ? null : [base[0], base[1], base[2], a];
@@ -2173,8 +4066,7 @@ function themeSelectorKeys(selector: string): string[] {
 
 /** A selector part with its theme attributes and classes removed. */
 function withoutThemeKeys(part: string): string {
-  return part
-    .replace(/\[[^\]]*\]/g, (a) => (themeSelectorKeys(a).length ? '' : a))
+  return replaceBrackets(part, (a) => (themeSelectorKeys(a).length ? '' : a))
     .replace(V44_THEME_CLASS, '')
     .trim();
 }
@@ -2316,7 +4208,7 @@ function checkStatusTextContrast(css: string): CheckResult {
       const mediaKey = `@media (prefers-color-scheme: ${scheme})`;
       const theme = t === 'root'
         ? (scheme ? ensure(mediaKey, [], mediaKey) : root)
-        : ensure(t, t.match(/\[[^\]]*\]|\.[\w-]+/g) ?? [], null);
+        : ensure(t, attrAndClassParts(t) ?? [], null);
       if (t === 'root' && scheme) theme.dark = scheme === 'dark';
       for (const d of decls) {
         if (d.prop.startsWith('--')) theme.tokens[d.prop] = d.value;
@@ -2799,7 +4691,7 @@ function compareSpecificity(a: number[], b: number[]): number {
 
 /** One time value in ms, null when it is not a literal time. */
 function cssTimeMs(token: string): number | null {
-  const m = /^(-?(?:\d+\.?\d*|\.\d+))(ms|s)$/i.exec(token.trim());
+  const m = /^(-?(?:\d+(?:\.\d*)?|\.\d+))(ms|s)$/i.exec(token.trim());
   return m ? parseFloat(m[1]) * (m[2].toLowerCase() === 's' ? 1000 : 1) : null;
 }
 
@@ -2855,7 +4747,6 @@ const V45_USER_ACTION = /^:(?:hover|focus|focus-within|focus-visible|active|targ
 // ([data-motion=paused], [data-reduced-motion]), or a class that is one
 // (.reduce-motion, .no-motion, .motion-paused, .animations-off). Component
 // classes that only end in "paused" (a marquee's .logobar--paused) are not.
-const V45_TOGGLE_ATTR = /^\[[\w-]*(?:motion|anim)[\w-]*(?:[~|^$*]?=[^\]]*)?\]$/i;
 const V45_TOGGLE_CLASS = /^\.(?:is-|has-|prefers-)?(?:reduced?-motion|no-motion|motion-(?:off|paused|reduced?|none)|paused-motion|(?:no-)?animations?(?:-(?:off|paused|disabled|none))?|(?:pause|stop)-animations?|still)$/i;
 
 /**
@@ -2871,7 +4762,7 @@ function isDocumentScope(compound: string): boolean {
   const type = simple.find((s) => /^[a-z]/i.test(s) || /^:root$/i.test(s));
   if (type) return /^(?:html|body|:root)$/i.test(type);
   return simple.every((s) => s.startsWith('.') || s.startsWith('['))
-    && simple.some((s) => V45_TOGGLE_ATTR.test(s) || V45_TOGGLE_CLASS.test(s));
+    && simple.some((s) => isMotionToggleAttr(s) || V45_TOGGLE_CLASS.test(s));
 }
 
 // v46 — Type sizes come from the scale (engine 1.4.0).
@@ -2899,7 +4790,7 @@ const V46_TOLERANCE = 0.025;
 const V46_FLUID = /(?:^|[^a-z-])(?:[sld]?v[wh]|v[ib]|vmin|vmax|cq[iwhb]|cqmin|cqmax)\b/i;
 
 function v46StaticPx(value: string): number | null {
-  const m = value.trim().match(/^(\d*\.?\d+)(rem|px)$/i);
+  const m = value.trim().match(/^(\d+(?:\.\d+)?|\.\d+)(rem|px)$/i);
   if (!m) return null;
   return parseFloat(m[1]) * (m[2].toLowerCase() === 'rem' ? 16 : 1);
 }
@@ -2940,7 +4831,7 @@ function v46Selector(css: string, at: number): string {
   const open = css.lastIndexOf('{', at);
   if (open < 0) return '';
   const start = Math.max(css.lastIndexOf('}', open), css.lastIndexOf(';', open), css.lastIndexOf('{', open - 1)) + 1;   // stop at an enclosing @media brace too
-  return css.slice(start, open).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  return withoutCssComments(css.slice(start, open), ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
 }
 
 function checkTypeScale(css: string, tokens: Record<string, string>): CheckResult {
@@ -2964,7 +4855,7 @@ function checkTypeScale(css: string, tokens: Record<string, string>): CheckResul
   const re = /font-size\s*:\s*([^;}]+)/gi;
   let m;
   while ((m = re.exec(css)) !== null) {
-    const written = m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim();
+    const written = withoutCssComments(m[1], '').replace(/!important/i, '').trim();
     const value = resolveVar(written, tokens);
     if (/^var\(/i.test(value)) continue;                            // an alias the token table cannot resolve
     if (/^(?:clamp|min|max)\(/i.test(value) && V46_FLUID.test(value)) {
@@ -3056,7 +4947,7 @@ function checkPausedEntrances(css: string): CheckResult {
           if (d.prop === 'visibility') visibility = d.value.trim().toLowerCase();
         }
       }
-      return (opacity !== null && /\d/.test(opacity) && /^(?:0*\.?0*|0*(?:\.0+)?%)$/.test(opacity)) || visibility === 'hidden';
+      return (opacity !== null && /\d/.test(opacity) && isZeroOpacity(opacity)) || visibility === 'hidden';
     };
     if (frameHides(/^(?:from|0*(?:\.0+)?%)$/) && !frameHides(/^(?:to|100(?:\.0+)?%)$/)) hiddenNames.add(name);
   }
@@ -3250,19 +5141,19 @@ function checkPoiseInteractionRules(css: string): CheckResult {
   const rules = [
     {
       name: 'fine-pointer hover guard',
-      re: /@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)/i,
+      test: (s: string) => mediaQueryHasHoverGuard(s),
     },
     {
       name: 'press settle scale ~0.97',
-      re: /scale\s*\(\s*0?\.9[5-9]\s*\)/i,
+      test: (s: string) => /scale\s*\(\s*0?\.9[5-9]\s*\)/i.test(s),
     },
     {
       name: 'opacity-only mark breath',
-      re: /@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:/i,
+      test: (s: string) => hasBreathKeyframes(s),
     },
   ];
-  const found = rules.filter(r => r.re.test(css)).map(r => r.name);
-  const missing = rules.filter(r => !r.re.test(css)).map(r => r.name);
+  const found = rules.filter(r => r.test(css)).map(r => r.name);
+  const missing = rules.filter(r => !r.test(css)).map(r => r.name);
   if (found.length >= 2) {
     return {
       id: 'v08',
@@ -3292,8 +5183,8 @@ function checkPoiseKeyboardPath(css: string, html: string): CheckResult {
   const hasFocusVisible = /:focus-visible/i.test(css);
   const hasFocus = /:focus[^-]/i.test(css);
   // Detect focus styles that strip outline without a replacement ring/box-shadow
-  const stripsOutline = /:focus[^{]*\{[^}]*outline\s*:\s*(none|0)\s*[;}]/i.test(css);
-  const hasFocusRing = /:focus[^{]*\{[^}]*(box-shadow|outline\s*:\s*[^n0])/i.test(css);
+  const stripsOutline = focusStripsOutline(css);
+  const hasFocusRing = focusHasRing(css);
   const hasTabindex = /tabindex\s*=/i.test(html);
   const hasAria = /aria-(label|labelledby|describedby|expanded|selected|pressed)/i.test(html);
 
@@ -3337,19 +5228,19 @@ function checkTaktFeelRules(css: string): CheckResult {
   const rules = [
     {
       name: 'stagger enter animation-delay',
-      re: /animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)/i,
+      test: (s: string) => /animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)/i.test(s),
     },
     {
       name: 'soften exit transform ease-out',
-      re: /transition\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\([^)]*0[, ])/i,
+      test: (s: string) => hasTransformEaseTransition(s),
     },
     {
       name: 'concentric border-radius set',
-      re: /border-radius\s*:\s*\d+/i,
+      test: (s: string) => /border-radius\s*:\s*\d+/i.test(s),
     },
   ];
-  const found = rules.filter(r => r.re.test(css)).map(r => r.name);
-  const missing = rules.filter(r => !r.re.test(css)).map(r => r.name);
+  const found = rules.filter(r => r.test(css)).map(r => r.name);
+  const missing = rules.filter(r => !r.test(css)).map(r => r.name);
   if (found.length >= 2) {
     return {
       id: 'v10',
@@ -3393,50 +5284,40 @@ function checkAiDisclosure(html: string): CheckResult {
 
   // Strip scripts/styles for visible-text checks but keep them for script-src
   // and JSON-LD detection. We use both raw html and a visible-only variant.
-  const visibleHtml = html
-    .replace(/<script[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '');
+  const visibleHtml = withoutScriptsAndStyles(html);
   // Text-only: strip all tags so attribute values like class="chatbot" don't
   // false-positive as disclosure TEXT. Disclosure text must be human-readable
   // content between tags, not class/id/aria attribute values.
-  const textOnly = visibleHtml.replace(/<[^>]+>/g, ' ');
+  const textOnly = withoutTags(visibleHtml, ' ', true);
 
   // ── AI chat surfaces, positively identified ─────────────────────────────
-  const aiContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:chatbot|chat-bot|ai-assistant|ai_chat)\b/i;
-  const aiScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:chatbot|ai-widget|dialogflow)\b/i;
-  const aiInputRe = /<(?:input|textarea|form)\b[^>]*(?:placeholder|aria-label)\s*=\s*["'][^"']*\b(?:ask\s+ai|message\s+ai|chat\s+with\s+ai|ai\s+assistant)\b/i;
 
   // ── Possible AI surfaces: a review item, never a FAIL ───────────────────
-  const chatContainerRe = /<(?:iframe|div|section|aside)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:assistant-widget|intercom|drift|zendesk-chat|tawk(?:\.to)?|crisp\.chat|livechat|chat-widget|chat-container)\b/i;
-  const chatScriptRe = /<script\b[^>]*src\s*=\s*["'][^"']*\b(?:assistant|claude|gemini|rasa|intercom|drift|tawk|crisp|livechat|conversational)\b/i;
   const aiTextRe = /\b(?:chat\s*with\s*(?:ai|our\s*bot|ai\s*assistant)|ask\s+ai|ai\s+assistant|talk\s+to\s+(?:our\s+)?bot|powered\s+by\s+ai|ai-generated|ai\s+chatbot|virtual\s+assistant)\b/i;
-  const ambiguousRe = /<(?:iframe|div|section)\b[^>]*(?:class|id)\s*=\s*["'][^"']*\b(?:contact-widget|smart-search|virtual-agent|message-us|help-widget)\b/i;
 
   const surfaceSignals: string[] = [];
-  if (aiContainerRe.test(html)) surfaceSignals.push('chatbot container');
-  if (aiScriptRe.test(html)) surfaceSignals.push('AI widget script');
-  if (aiInputRe.test(html)) surfaceSignals.push('AI input');
+  if (hasAiChatContainer(html)) surfaceSignals.push('chatbot container');
+  if (hasAiWidgetScript(html)) surfaceSignals.push('AI widget script');
+  if (hasAiInput(html)) surfaceSignals.push('AI input');
 
   const possibleSignals: string[] = [];
-  if (chatContainerRe.test(html)) possibleSignals.push('chat widget container');
-  if (chatScriptRe.test(html)) possibleSignals.push('chat or assistant script');
+  if (hasChatWidgetContainer(html)) possibleSignals.push('chat widget container');
+  if (hasChatScript(html)) possibleSignals.push('chat or assistant script');
   if (aiTextRe.test(textOnly)) possibleSignals.push('AI prompt text');
-  if (ambiguousRe.test(html)) possibleSignals.push('ambiguous widget');
+  if (hasAmbiguousWidget(html)) possibleSignals.push('ambiguous widget');
 
   // ── Disclosure detection ────────────────────────────────────────────────
   const disclosureTextRe = /\b(?:ai\s+assistant|ai\s+chatbot|ai-powered|powered\s+by\s+ai|automated\s+assistant|virtual\s+assistant|chatbot)\b/i;
   const ariaDisclosureRe = /aria-(?:label|description)\s*=\s*["'][^"']*\b(?:ai|assistant|bot|automated|chatbot)\b/i;
-  const generatorMetaRe = /<meta\s+name\s*=\s*["']generator["'][^>]*content\s*=\s*["'][^"']*\b(?:ai|gpt|claude|gemini|llm|generated|artificial\s+intelligence)\b/i;
   const c2paRe = /(?:<link\s+rel\s*=\s*["']c2pa-manifest["']|<meta\s+name\s*=\s*["']c2pa["'])/i;
-  const jsonldAiRe = /<script\s+type\s*=\s*["']application\/ld\+json["'][\s\S]*?"@type"\s*:\s*"[^"]*\b(?:ai|softwareapplication)\b[^"]*"[\s\S]*?(?:"applicationCategory"\s*:\s*"[^"]*ai[^"]*"|"[^"]*ai[^"]*")/i;
   const dataAiRe = /data-ai-disclosure\s*=/i;
 
   const disclosureSignals: string[] = [];
   if (disclosureTextRe.test(textOnly)) disclosureSignals.push('visible AI text');
   if (ariaDisclosureRe.test(html)) disclosureSignals.push('aria-label');
-  if (generatorMetaRe.test(html)) disclosureSignals.push('generator meta');
+  if (hasAiGeneratorMeta(html)) disclosureSignals.push('generator meta');
   if (c2paRe.test(html)) disclosureSignals.push('C2PA manifest');
-  if (jsonldAiRe.test(html)) disclosureSignals.push('JSON-LD');
+  if (hasAiJsonLd(html)) disclosureSignals.push('JSON-LD');
   if (dataAiRe.test(html)) disclosureSignals.push('data-ai-disclosure');
 
   // ── Condition evaluation ────────────────────────────────────────────────
@@ -3467,11 +5348,11 @@ function checkForcedColors(css: string): CheckResult {
   const CATEGORY = 'accessibility';
 
   // Primary signal: @media (forced-colors: active) block exists
-  const hasForcedColorsMedia = /@media[^{]*forced-colors\s*:\s*active/i.test(css);
+  const hasForcedColorsMedia = mediaQueryHasForcedColors(css);
   // Secondary signal: forced-color-adjust property used anywhere
   const hasForcedColorAdjust = /forced-color-adjust\s*:/i.test(css);
   // Tertiary signal: -ms-high-contrast (legacy Edge/IE) — still relevant
-  const hasHighContrast = /@media[^{]*-ms-high-contrast/i.test(css);
+  const hasHighContrast = mediaQueryHasHighContrast(css);
 
   if (hasForcedColorsMedia && hasForcedColorAdjust) {
     return { id: 'v35', item: ITEM, category: CATEGORY, status: 'PASS', detail: 'forced-colors media query + forced-color-adjust both present' };
@@ -3664,11 +5545,10 @@ function checkSecurityConfusables(css: string, tokens: Record<string, string>): 
 
   // Scan 3: url() references — confusables in file paths can redirect to
   // different assets (logo spoofing, CSS injection via @import)
-  const urlRe = /url\(\s*['"]?([^'")]+)['"]?\s*\)/gi;
   const urlConfusables: string[] = [];
   const scannedUrls = new Set<string>();
-  while ((m = urlRe.exec(css)) !== null) {
-    const urlPath = m[1];
+  for (const u of cssUrlMatches(css)) {
+    const urlPath = u.groups[0] as string;
     if (scannedUrls.has(urlPath)) continue;
     scannedUrls.add(urlPath);
     // Skip data: URIs (no security risk from confusables in base64)
@@ -3816,8 +5696,6 @@ function checkButtonTextVerb(html: string): CheckResult {
   const CATEGORY = 'copywriting';
 
   // Extract <button> and [role="button"] text content
-  const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
-  const roleButtonRe = /<(?:a|div|span)[^>]*role=["']button["'][^>]*>([\s\S]*?)<\/(?:a|div|span)>/gi;
 
   // Remove aria-hidden subtrees before extracting text.
   //
@@ -3835,10 +5713,7 @@ function checkButtonTextVerb(html: string): CheckResult {
     let out = inner;
     for (let i = 0; i < 4; i++) {
       // Repeat to handle an aria-hidden wrapper containing another.
-      const next = out.replace(
-        /<([a-z][a-z0-9-]*)\b[^>]*\baria-hidden\s*=\s*["']?true["']?[^>]*>[\s\S]*?<\/\1>/gi,
-        '',
-      );
+      const next = withoutAriaHiddenElements(out);
       if (next === out) break;
       out = next;
     }
@@ -3861,12 +5736,10 @@ function checkButtonTextVerb(html: string): CheckResult {
   // Carry the opening tag alongside the label so the violation loop can tell a
   // command button from a selection control (see isSelectionControl).
   const buttonTexts: { text: string; tag: string }[] = [];
-  let m;
   // Strip keyboard shortcut hints that are fused to or appended after the
   // button label — e.g. "Find⌘K", "Search ⌘+K", "Save Ctrl+S". These are
   // visual hints, not part of the verb. Ranges: ⌘ (U+2318), ⌃ (U+2303),
   // ⌥ (U+2325), ⇧ (U+21E7), and common "Ctrl+", "Cmd+", "Shift+" prefixes.
-  const SHORTCUT_RE = /[\s]*[\u2303\u2318\u2325\u21E7\u21E7\u2387].*$/i;
   // The `+` is optional and the key may be fused directly to the modifier
   // ("CtrlK"), because the badge is now platform-aware and renders "Ctrl" with
   // no glyph to strip. Requiring a literal '+' meant "FindCtrlK" survived and
@@ -3875,8 +5748,6 @@ function checkButtonTextVerb(html: string): CheckResult {
   // The key must be ADJACENT to the modifier (plus form, or fused alphanumerics
   // with no space between). A space separates a real word: "Alt text" is a
   // label, not a shortcut, and must not be eaten.
-  const TEXT_SHORTCUT_RE =
-    /[\s]*(?:Ctrl|Cmd|Shift|Alt|Option|Command)(?:\+[A-Za-z0-9+\-]*|[A-Z0-9]+)?$/;
   // Engine 1.3.1: a "+key" hint written in lower case ("Save ctrl+s",
   // "Find ctrl+k") is a hint too. The modifier is case-insensitive here but
   // must stand as its own word (the start of the label or after a space), so
@@ -3885,7 +5756,7 @@ function checkButtonTextVerb(html: string): CheckResult {
   const PLUS_SHORTCUT_RE =
     /(?:^|\s)(?:ctrl|cmd|shift|alt|option|command)(?:\s*\+\s*[a-z0-9]+)+$/i;
   const stripShortcut = (s: string): string =>
-    s.replace(SHORTCUT_RE, '').replace(TEXT_SHORTCUT_RE, '').replace(PLUS_SHORTCUT_RE, '').trim();
+    withoutTextShortcut(withoutGlyphShortcut(s)).replace(PLUS_SHORTCUT_RE, '').trim();
   // Engine 1.3.1: keycaps are read from the markup, not guessed from text.
   // A <kbd> element is keyboard input (HTML Living Standard, the kbd element),
   // a hint beside the label rather than the label, so its text is dropped
@@ -3900,22 +5771,22 @@ function checkButtonTextVerb(html: string): CheckResult {
     const visible = stripAriaHidden(inner);
     let out = visible;
     for (let i = 0; i < 4; i++) {
-      const next = out.replace(/<kbd\b[^>]*>(?:(?!<kbd\b)[\s\S])*?<\/kbd>/gi, ' ');
+      const next = withoutKbdElements(out);
       if (next === out) break;
       out = next;
     }
-    const text = out.replace(/<[^>]*>/g, '').trim();
-    return out === visible ? text : text.replace(/(?:\s*\+)+$/, '').trim();
+    const text = withoutTags(out, '', false).trim();
+    return out === visible ? text : withoutTrailingPluses(text).trim();
   };
-  while ((m = buttonRe.exec(html)) !== null) {
-    let text = labelText(m[1]);
+  for (const m of buttonElements(html)) {
+    let text = labelText(m.groups[0] as string);
     // Strip leading icon characters so "✕Close" → "Close"
     text = text.replace(ICON_PREFIX_RE, '').trim();
     // Strip trailing keyboard shortcut hints so "Find⌘K" → "Find"
     text = stripShortcut(text);
     // Icon-only button with an accessible name: use the aria-label verb.
     if (!text) {
-      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m.text);
       if (aria) text = aria[1].trim();
     }
     // A one- or two-character visible label is an initial/symbol, not a label a
@@ -3924,17 +5795,17 @@ function checkButtonTextVerb(html: string): CheckResult {
     // Without this, v38 reported six single-letter "buttons" as non-verb labels
     // on /maturity — an accurate observation of the wrong string.
     if (text && text.length <= 2) {
-      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m.text);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push({ text, tag: m[0] });
+    if (text) buttonTexts.push({ text, tag: m.text });
   }
-  while ((m = roleButtonRe.exec(html)) !== null) {
-    let text = labelText(m[1]);
+  for (const m of roleButtonElements(html)) {
+    let text = labelText(m.groups[0] as string);
     text = text.replace(ICON_PREFIX_RE, '').trim();
     text = stripShortcut(text);
     if (!text) {
-      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m.text);
       if (aria) text = aria[1].trim();
     }
     // A one- or two-character visible label is an initial/symbol, not a label a
@@ -3943,10 +5814,10 @@ function checkButtonTextVerb(html: string): CheckResult {
     // Without this, v38 reported six single-letter "buttons" as non-verb labels
     // on /maturity — an accurate observation of the wrong string.
     if (text && text.length <= 2) {
-      const aria = /aria-label=["']([^"']+)["']/i.exec(m[0]);
+      const aria = /aria-label=["']([^"']+)["']/i.exec(m.text);
       if (aria) text = aria[1].trim();
     }
-    if (text) buttonTexts.push({ text, tag: m[0] });
+    if (text) buttonTexts.push({ text, tag: m.text });
   }
 
   if (buttonTexts.length === 0) {
@@ -4015,22 +5886,17 @@ function checkNoTrailingPeriod(html: string): CheckResult {
   const ITEM = 'No trailing period on button text, labels, or tab text';
   const CATEGORY = 'copywriting';
 
-  const buttonRe = /<button[^>]*>([\s\S]*?)<\/button>/gi;
-  const labelRe = /<label[^>]*>([\s\S]*?)<\/label>/gi;
-  const tabRe = /<[a-z]+[^>]*role=["']tab["'][^>]*>([\s\S]*?)<\/[a-z]+>/gi;
-
   const texts: { type: string; text: string }[] = [];
-  let m;
-  while ((m = buttonRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+  for (const m of buttonElements(html)) {
+    const text = withoutTags(m.groups[0] as string, '', false).trim();
     if (text) texts.push({ type: 'button', text });
   }
-  while ((m = labelRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+  for (const m of labelElements(html)) {
+    const text = withoutTags(m.groups[0] as string, '', false).trim();
     if (text) texts.push({ type: 'label', text });
   }
-  while ((m = tabRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+  for (const m of roleTabElements(html)) {
+    const text = withoutTags(m.groups[0] as string, '', false).trim();
     if (text) texts.push({ type: 'tab', text });
   }
 
@@ -4066,11 +5932,9 @@ function checkLinkTextDescriptive(html: string): CheckResult {
   const ITEM = 'Link text is descriptive (not bare "click here", "learn more", "here")';
   const CATEGORY = 'copywriting';
 
-  const linkRe = /<a[^>]*>([\s\S]*?)<\/a>/gi;
   const linkTexts: string[] = [];
-  let m;
-  while ((m = linkRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]*>/g, '').trim();
+  for (const m of anchorElements(html)) {
+    const text = withoutTags(m.groups[0] as string, '', false).trim();
     if (text) linkTexts.push(text);
   }
 
@@ -4104,19 +5968,17 @@ function checkNoAllCaps(html: string): CheckResult {
   const CATEGORY = 'copywriting';
 
   // Match elements with their class attributes so we can exclude eyebrow labels
-  const elementRe = /<(button|a|label|td|th|p|li|h[1-6])\s([^>]*?)>([\s\S]*?)<\/\1>/gi;
   const violations: string[] = [];
-  let m;
-  while ((m = elementRe.exec(html)) !== null) {
-    const attrs = m[2] || '';
-    const text = m[3].replace(/<[^>]*>/g, '').trim();
+  for (const m of capsElementMatches(html)) {
+    const attrs = m.groups[1] || '';
+    const text = withoutTags(m.groups[2] as string, '', false).trim();
     if (!text || text.length < 4) continue;
 
     // Skip eyebrow labels (class contains "eyebrow" or "label" — per typography
     // contract, eyebrows are intentionally uppercase)
-    if (/class=["'][^"']*(eyebrow|eyebro|meta-label)[^"']*["']/i.test(attrs)) continue;
+    if (hasEyebrowClass(attrs)) continue;
     // Skip elements with text-transform: uppercase in inline style
-    if (/style=["'][^"']*text-transform:\s*uppercase[^"']*["']/i.test(attrs)) continue;
+    if (hasUppercaseStyle(attrs)) continue;
 
     // Check if text is ALL CAPS (only letters, all uppercase, >3 chars)
     const letters = text.replace(/[^a-zA-Z]/g, '');
@@ -4197,7 +6059,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
         detail: `/DESIGN.md not publicly served (HTTP ${resp.status}). No public convention exists yet, so this is expected. Designesy scores the shipped CSS directly.`,
       };
     }
-    designMdContent = await resp.text();
+    designMdContent = (await readCapped(resp, MAX_DESIGN_MD_BYTES)).text;
     // Basic validation: must contain YAML frontmatter (---) and be > 50 chars
     if (designMdContent.length < 50 || !designMdContent.includes('---')) {
       return {
@@ -4303,16 +6165,48 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
 // (an account name often does); the last one may not, so the sentence after
 // a path survives, and trailing punctuation is kept.
 function sanitizeErrorText(text: string): string {
-  const keep = (label: string) => (m: string): string => `${label}${/[.,;:!?)]+$/.exec(m)?.[0] ?? ''}`;
-  return text
+  // The punctuation a replaced path ended with, read back from its end
+  // (engine 1.5.1: /[.,;:!?)]+$/ was retried from every mark in a run).
+  const tail = (m: string): string => {
+    let k = m.length;
+    while (k > 0 && '.,;:!?)'.indexOf(m[k - 1]) >= 0) k--;
+    return m.slice(k);
+  };
+  const keep = (label: string) => (m: string): string => `${label}${tail(m)}`;
+  const pathless = text
     .replace(/\bfile:\/\/[^\s'"<>`|]*/gi, keep('a local file'))
     .replace(/\\\\[^\\\s'"<>`|]+\\(?:[^\\\r\n'"<>`|*?]+\\)*[^\\\s'"<>`|*?]*/g, keep('a local path'))
     .replace(/(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'"<>`|*?]+\1)*[^\\/\s'"<>`|*?]*/g, keep('a local path'))
     .replace(
       /(^|[\s'"`(=,:[])\/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel|workspace|workspaces|github|runner|nix|snap)(?:\/[^/\r\n'"<>`|]+(?=\/))*\/[^/\s'"<>`|]+/g,
       (m: string, lead: string) => `${lead}${keep('a local path')(m.slice(lead.length))}`,
-    )
-    .replace(/[^\s'"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'"<>`|]*/gi, keep('the npm cache'));
+    );
+  // npm cache segments: a run of characters other than space, quotes, angle
+  // brackets, backtick and pipe that holds npm-cache, /_npx/ or /.npm/ is
+  // replaced whole. Each run is read once (engine 1.5.1: the run pattern was
+  // retried from every character in it).
+  const marker = /npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/]/gi;
+  const stop = /[\s'"<>`|]/;
+  const parts: string[] = [];
+  let last = 0;
+  let markerAt = -1;
+  for (let a = 0; a < pathless.length;) {
+    if (stop.test(pathless[a])) { a++; continue; }
+    let b = a + 1;
+    while (b < pathless.length && !stop.test(pathless[b])) b++;
+    if (markerAt < a) {
+      marker.lastIndex = a;
+      const found = marker.exec(pathless);
+      markerAt = found ? found.index : Infinity;
+    }
+    if (markerAt < b) {
+      parts.push(pathless.slice(last, a), keep('the npm cache')(pathless.slice(a, b)));
+      last = b;
+    }
+    a = b;
+  }
+  parts.push(pathless.slice(last));
+  return parts.join('');
 }
 
 /** The checks with every detail passed through sanitizeErrorText. */
@@ -4739,33 +6633,12 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     // reverse, `linear-gradient(color-mix(...) 1px, transparent 1px)`, and its
     // graph-paper grid was reported at the maximum severity. Match a 1px stop
     // in EITHER order, which is what "hairline" means however it is written.
-    const isGridPattern = (text: string) =>
-      /(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\)|#[0-9a-fA-F]{3,8})\s+1px(?:\s*,)/.test(text)
-      || /\s+1px\s*,\s*(?:transparent|rgba\([^)]+\)|color-mix\([^)]*\)|var\([^)]*\))/.test(text);
-    // Two or more colour stops in some linear-gradient() of the value.
-    const multiStop = (value: string): boolean => {
-      let from = 0;
-      for (;;) {
-        const at = value.toLowerCase().indexOf('linear-gradient(', from);
-        if (at < 0) return false;
-        let depth = 0;
-        let end = -1;
-        for (let i = at + 15; i < value.length; i++) {
-          if (value[i] === '(') depth++;
-          else if (value[i] === ')' && --depth === 0) { end = i; break; }
-        }
-        if (end < 0) return false;
-        const args = splitCssTopLevel(value.slice(at + 16, end), ',');
-        const stops = /^(?:to\s|[-+]?[\d.]+(?:deg|turn|rad|grad)\b)/i.test(args[0] ?? '') ? args.slice(1) : args;
-        if (stops.length >= 2) return true;
-        from = end;
-      }
-    };
+    const isGridPattern = (text: string) => hasColorThenHairline(text) || hasHairlineThenColor(text);
     const pageGrad: string[] = [];
     for (const rule of parseCssRules(css).rules) {
       if (!/linear-gradient\s*\(/i.test(rule.decls)) continue;
       const decls = parseCssDecls(rule.decls);
-      if (!decls.some((d) => (d.prop === 'background' || d.prop === 'background-image') && multiStop(d.value))) continue;
+      if (!decls.some((d) => (d.prop === 'background' || d.prop === 'background-image') && hasMultiStopGradient(d.value))) continue;
       const text = `${rule.selector}{${rule.decls}}`;
       if (isGridPattern(text)) continue;
       const last = (prop: string) => [...decls].reverse().find((d) => d.prop === prop)?.value.trim().toLowerCase() ?? '';
@@ -4786,7 +6659,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
       const hairline = decls.some((d) => (/^(?:height|width|block-size|inline-size)$/.test(d.prop) && d.value.trim() === '1px')
         || (/^border(?:-top|-bottom)?-width$/.test(d.prop) && d.value.trim() === '1px')
         || (d.prop === 'background-size' && /(?:^|[\s,])1px(?:$|[\s,])/.test(d.value))
-        || (d.prop === 'background' && /\/\s*[^,/]*(?:^|\s)1px(?:$|[\s,])/.test(d.value)));
+        || (d.prop === 'background' && hasSlashThenHairline(d.value)));
       const fixedCover = last('position') === 'fixed' && (pinned || viewportSized);
       if ((pageSelector || fixedCover || (viewportSized && !component)) && !hairline) pageGrad.push(text.replace(/\s+/g, ' ').slice(0, 160));
     }
@@ -4804,8 +6677,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 
   // S3. Purple/violet gradient on text or background — the "VibeCode Purple" tell
   {
-    const purplePattern = /(?:background(?:-image)?\s*:[^;]*linear-gradient[^;]*(?:#?(?:615fff|8e51ff|4f39f6|7f22fe|a855f7|9333ea|7c3aed|6d28d9|5b21b6|4c1d95)))/gi;
-    const matches = css.match(purplePattern);
+    const matches = purpleGradientDecls(css);
     if (matches) {
       slopFindings.push({
         id: 'S3',
@@ -4828,7 +6700,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     // pattern anchored to `(?:^|})` takes 4 ms and matches the same rule.
     // Measured 2026-09-19, Node 24. This was the real cause of the 55s cold
     // score, not the network (0.9s) and not the sequential CSS fetch.
-    const gradientClips = css.match(/(?:^|\})[^{}]*\{[^}]*background-clip\s*:\s*text[^}]*\}/gi) || [];
+    const gradientClips = gradientClipRules(css);
     // Extract a comparable hue signature from a color stop; var()/token stops are ignored
     // (they resolve to brand tokens, not literal slop colors).
     const hueKey = (stop: string): string | null => {
@@ -4850,7 +6722,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
         h = Math.round(((h * 60) + 360) % 360);
         return 'h' + Math.floor(h / 45);
       }
-      const rgb = stop.match(/rgba?\(([^)]+)\)/i);
+      const rgb = rgbArgs(stop);
       if (rgb) {
         const p = rgb[1].split(',').map(x => parseFloat(x));
         if (p.length >= 3) {
@@ -4869,8 +6741,8 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
       return null; // oklch/hsl/var or unparseable — don't count as evidence of slop
     };
     const multiColorGradient = gradientClips.filter(block => {
-      const gradientMatch = block.match(/linear-gradient\(([\s\S]+)\)\s*;?\s*background-size|linear-gradient\(([^;]+)\)/i);
-      const gradText = (gradientMatch && (gradientMatch[1] || gradientMatch[2])) || '';
+      const gradientMatch = linearGradientArgs(block);
+      const gradText = (gradientMatch && (gradientMatch.groups[0] || gradientMatch.groups[1])) || '';
       const stops = gradText.split(',').map(s => s.trim());
       const hueKeys = new Set(stops.map(hueKey).filter((k): k is string => k !== null && k !== 'neutral'));
       // Need 2+ distinct hue FAMILIES — a single-hue shimmer buckets to one family
@@ -4915,8 +6787,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     const cardPattern = /\.(card|panel|tile|feature|item|box|cell|block)\b/gi;
     const cardClasses = css.match(cardPattern) || [];
     // Look for grid with repeated card children (same class repeated)
-    const gridCardPattern = /grid-template-columns[^}]*repeat\s*\(\s*(?:auto-fit|auto-fill|\d+)/gi;
-    const gridMatches = css.match(gridCardPattern) || [];
+    const gridMatches = gridRepeatRules(css);
     // If we have card classes AND repeating grid layouts, likely card grid
     if (cardClasses.length >= 3 && gridMatches.length > 0) {
       slopFindings.push({
@@ -4947,7 +6818,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // missed despite both being genuine Emoji_Presentation characters — the old
   // class was wrong in both directions, not merely too broad.
   {
-    const emojiInButtons = html.match(/(?:<button|<a[^>]*class[^>]*(?:btn|cta|primary|action))[^>]*>[\s\S]{0,200}(?:[\p{Emoji_Presentation}]|[\p{Emoji}]\uFE0F)/giu);
+    const emojiInButtons = emojiCtaMatches(html);
     if (emojiInButtons && emojiInButtons.length >= 2) {
       slopFindings.push({
         id: 'S7',
@@ -4973,11 +6844,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
   // Skipped on a page that documents the rules (see isDocumentingSlopRules):
   // the anti-slop rule table on /methodology lists these phrases.
   {
-    const visible = html
-      .replace(/<script\b[\s\S]*?<\/script\s*>/gi, ' ')
-      .replace(/<style\b[\s\S]*?<\/style\s*>/gi, ' ')
-      .replace(/<template\b[\s\S]*?<\/template\s*>/gi, ' ')
-      .replace(/<!--[\s\S]*?-->/g, ' ');
+    const visible = withoutNonVisibleMarkup(html);
     const pillPhrase = /\b(?:AI-powered|Generate|Chat with AI|Powered by AI|Built with AI|AI-driven)\b/i;
     const openRe = /<(span|a|button|div|small|strong|b|em|mark|label|p|li)\b([^<>]*)>/gi;
     const tagRe: Record<string, RegExp> = {};
@@ -5003,7 +6870,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
         if (depth === 0) { end = t.index; break; }
       }
       if (end < 0) continue;
-      const text = windowText.slice(0, end).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const text = withoutTags(windowText.slice(0, end), ' ', false).replace(/\s+/g, ' ').trim();
       if (text && text.length <= 40 && pillPhrase.test(text)) pills.push(text);
     }
     if (pills.length > 0 && !isDocumentingSlopRules) {
@@ -5059,7 +6926,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     const buzzwords = ['streamline', 'empower', 'supercharge', 'world-class', 'enterprise-grade',
       'next-generation', 'unlock', 'leverage', 'seamless', 'cutting-edge', 'revolutionize',
       'game-chang', 'disrupt', 'synerg'];
-    const bodyText = html.replace(/<[^>]+>/g, ' ').toLowerCase();
+    const bodyText = withoutTags(html, ' ', true).toLowerCase();
     const found: string[] = [];
     for (const word of buzzwords) {
       if (bodyText.includes(word)) found.push(word);
@@ -5129,7 +6996,6 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     // keyword equivalents AND the template presets. Generic sites reuse keyword
     // easings or Material/Tailwind defaults; craft authors curves. Overshoot
     // (y<0 or y>1) is deliberate physics — a strong bespoke-motion tell.
-    const bezierRe = /cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)/gi;
     // Template presets — keyword equivalents + Material + Tailwind v4 + Bootstrap back-ease.
     const EASING_PRESETS = new Set([
       '0.25,0.1,0.25,1',   // ease
@@ -5144,16 +7010,16 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     ]);
     const distinct = new Set<string>();
     let hasOvershoot = false;
-    let m: RegExpExecArray | null;
-    while ((m = bezierRe.exec(css)) !== null) {
-      const key = `${m[1]},${m[2]},${m[3]},${m[4]}`.replace(/(\.\d*?)0+(?=\D|$)/g, '$1').replace(/\s+/g, '');
+    for (const b of cubicBezierMatches(css)) {
+      const [x1, y1s, x2, y2s] = b.groups as string[];
+      const key = withoutTrailingDecimalZeros(`${x1},${y1s},${x2},${y2s}`).replace(/\s+/g, '');
       if (EASING_PRESETS.has(key)) continue;
       distinct.add(key);
-      const y1 = parseFloat(m[2]), y2 = parseFloat(m[4]);
+      const y1 = parseFloat(y1s), y2 = parseFloat(y2s);
       if (y1 < 0 || y1 > 1 || y2 < 0 || y2 > 1) hasOvershoot = true;
     }
     // linear() spring easings (State of CSS pick — needs ≥3 stops to be a spring)
-    const linearSprings = css.match(/linear\(\s*[^)]{20,}\)/gi) || [];
+    const linearSprings = longLinearEasings(css);
     if (linearSprings.length > 0) { hasOvershoot = true; }
     const easingCount = distinct.size;
     // Require ≥3 distinct non-preset curves for the full signal. Template CSS
@@ -5191,8 +7057,8 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     // (soften, not just kill-switch) is a maturity tell. Reward a media query
     // that references a specific animation/transition (targeted) over a blanket
     // `* { animation: none }`.
-    const reducedMotion = /@media[^{]*prefers-reduced-motion/i.test(css);
-    const blanketKill = /prefers-reduced-motion[\s\S]{0,200}\*\s*\{[^}]*animation\s*:\s*none/i.test(css);
+    const reducedMotion = mediaQueryHasReducedMotion(css);
+    const blanketKill = hasBlanketMotionKill(css);
     if (reducedMotion && !blanketKill) {
       originalitySignals.push({ id: 'O4', label: 'Tiered reduced-motion', points: 1, evidence: 'targeted (not blanket) motion reduction' });
     }
@@ -5212,8 +7078,8 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 
     // O6. Bespoke iconography / SVG art-direction — inline SVG with viewBox (hand-
     // placed iconography/diagrams) rather than emoji or an icon-font/CDN sprite.
-    const inlineSvg = html.match(/<svg[^>]*viewBox=/gi) || [];
-    const svgSymbols = html.match(/<symbol[^>]*>/gi) || [];
+    const inlineSvg = svgViewBoxTags(html);
+    const svgSymbols = symbolTags(html);
     if (inlineSvg.length >= 3 || svgSymbols.length >= 2) {
       originalitySignals.push({ id: 'O6', label: 'Bespoke iconography', points: 1, evidence: `${inlineSvg.length} inline SVGs${svgSymbols.length ? ` + ${svgSymbols.length} symbols` : ''}` });
     }
@@ -5235,7 +7101,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
     const referencesTwPrimitives = /var\(--color-[a-z]+-\d{2,3}\)/i.test(css);
     const isShadcnTemplate = shadcnHits >= 6 || (shadcnHits >= 4 && referencesTwPrimitives);
 
-    const customProps = css.match(/--[\w-]+\s*:/g) || [];
+    const customProps = customPropertyDecls(css);
     const semanticTokens = customProps.filter((p) => /--(surface|ink|paper|signal|line|muted|elevation|radius|duration|ease|accent|foreground|space|gap|shadow|canvas|action|feedback|success|warning|danger|error|info|subtle|on-[a-z]+)/i.test(p));
     // Exclude primitive hue tokens (--color-blue-500, --red-500) — those are a
     // framework palette, not a semantic system.
@@ -5244,7 +7110,7 @@ async function scoreUrlUncached(targetUrl: string, scope?: ScoreScope) {
 
     // Layering: a semantic token whose value references a primitive (var(--x-500))
     // indicates a primitive→semantic→component architecture.
-    const hasLayering = /--(?:color|surface|accent|action|feedback)[\w-]*\s*:\s*var\(--/i.test(css);
+    const hasLayering = hasTokenLayering(css);
     // Theming: same token redefined under a theme selector or light-dark().
     const hasTheming = /light-dark\(|prefers-color-scheme\s*:\s*dark|data-theme/i.test(css);
 
