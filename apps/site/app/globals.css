@@ -13641,13 +13641,13 @@ button.rs-row:focus-visible {
   
   
 
-  /* -- Type floors: body to 15px (was 13.9px, under the 14px floor). ----- -- */
+  /* -- Card body and title on the type scale: both at --text-body (16px). -- */
   .principle-body p {
     font-size: var(--text-body); /* 15px */
     line-height: 1.55;
   }
-  /* The card title holds its desktop 16px: weight and ink rank it over the
-     15px muted body, and 18.75px crowded the 20px section heading (1.07). */
+  /* The card title stays at 16px: weight and ink rank it over the muted body,
+     and 18.75px crowded the 20px section heading (1.07). */
   .principle-body h3 {
     font-size: var(--text-body);
     line-height: 1.35;

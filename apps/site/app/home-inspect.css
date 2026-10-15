@@ -1209,7 +1209,7 @@
 .ix-verdict-grade {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 2.6rem;
+  font-size: var(--text-h1);
   line-height: 0.9;
   color: var(--ink);
 }
@@ -1234,7 +1234,7 @@
 }
 
 .ix-verdict-note {
-  font-size: 0.78rem;
+  font-size: var(--text-label);
   color: var(--muted);
 }
 
@@ -2181,7 +2181,7 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
     display: block;
     font-family: var(--display);
     font-weight: 700;
-    font-size: 1.85rem;
+    font-size: var(--text-h2);
     line-height: 1;
     color: var(--ink);
   }

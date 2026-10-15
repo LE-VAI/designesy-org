@@ -321,15 +321,6 @@
   
   
 
-  .principle-body p {
-    font-size: 0.9375rem;
-    line-height: 1.55;
-  }
-  .principle-body h3 {
-    font-size: 1.171875rem;
-    line-height: 1.3;
-  }
-
   .section-heading-badge-label {
     font-size: var(--text-label);
     letter-spacing: 0.11em;
