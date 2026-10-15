@@ -166,6 +166,11 @@ const INPUTS: Input[] = [
 
 const SOURCES: Source[] = [
   {
+    href: 'https://le-vai.github.io/compile/',
+    title: 'Compile · live artifact',
+    meta: 'Principle compiler',
+  },
+  {
     href: '/kits/design-review',
     title: 'Use Kit One · Design Review',
     meta: 'Method and output format',
