@@ -169,6 +169,14 @@ jobs:
         if: always()
         run: node scripts/check-own-contract.mjs
 
+      # /DESIGN.md carries its tokens in YAML front matter for tools and in
+      # tables for people: the two agree with each other and with the :root
+      # tokens globals.css ships, and the format's linter reads it clean
+      # (app/lib/design-md-front-matter.ts).
+      - name: DESIGN.md agreement
+        if: always()
+        run: node scripts/check-design-md.mjs
+
       # /score/contract's sentences are built from the result, never typed:
       # problems in field order, the verdict leads, the request-error card,
       # the steps (app/score/contract/copy.ts).
