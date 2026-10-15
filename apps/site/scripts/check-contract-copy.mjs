@@ -239,8 +239,9 @@ check('cap flag from the run: ceiling, the engine reason, the uncapped score and
 check('gaps flag: both clauses, and a zero clause left out', () => {
   const sk = (id, r) => ({ id, status: 'SKIP', skipReason: r });
   assert.equal(C.gapsFlag([sk('f06', 'not_declared'), sk('f11', 'not_applicable'), sk('f07', 'not_located'), { id: 'f02', status: 'PASS' }], 11).text,
-    'Your contract declares no font features and no motion, so 2 checks did not run, and 1 found too little on this page. Fidelity covers the 11 that ran.');
-  assert.equal(C.gapsFlag([sk('f13', 'not_declared')], 13).text, 'Your contract declares no aliases, so 1 check did not run. Fidelity covers the 13 that ran.');
+    'Font features not declared and motion does not apply, so 2 checks did not run, and 1 found too little on this page. Fidelity covers the 11 that ran.');
+  assert.equal(C.gapsFlag([sk('f13', 'not_declared')], 13).text, 'Aliases not declared, so 1 check did not run. Fidelity covers the 13 that ran.');
+  assert.equal(C.gapsFlag([sk('f07', 'not_declared'), sk('f08', 'not_declared'), sk('f11', 'not_declared')], 9).text, 'Radius not declared, spacing not declared and motion not declared, so 3 checks did not run. Fidelity covers the 9 that ran.');
   assert.equal(C.gapsFlag([sk('f07', 'not_located'), sk('f08', 'not_located')], 12).text, '2 checks found too little on this page. Fidelity covers the 12 that ran.');
   assert.equal(C.gapsFlag([{ id: 'f02', status: 'PASS' }], 14), null);
 });
@@ -261,6 +262,8 @@ check('ratios never round across a band (4.48 is not 4.5) and the fix names the 
   const p = C.pairFinding(c, T);
   assert.equal(p.detail, "The shipped label color on button-primary takes the pair to 1.2 to 1. Your contract's own pair is 6.7 to 1. The check needs 4.5 to 1.");
   assert.equal(p.shipped.where, '--on on --bg');
+  assert.deepEqual(p.parts.map((x) => x.length > 0), [true, true, true]);
+  assert.equal(p.parts[1], 'button-primary');
   const large = C.pairFinding({ ...c, evidence: { findings: [{ source: 'components.hero', ratio: 2.4, need: 3, declaredRatio: 2.4 }] }, shipped: c.declared }, T);
   assert.equal(large.detail, "The shipped label and fill on hero take the pair to 2.4 to 1. Your contract's own pair is 2.4 to 1. The check needs 3 to 1.");
 });
@@ -297,9 +300,14 @@ check('empty runs (W8, W9): titles, the stylesheet counts, the actions', () => {
 check('receipt: digests in groups of 8, the copied text, the file name', () => {
   assert.equal(C.groups8('0123456789abcdef01'), '01234567 89abcdef 01');
   const l = (s, g, k, n) => ({ score: s, grade: g, scored: k, total: n });
-  const text = C.receiptText({ site: 'https://a.com/', name: 'Acme', format: 'DESIGN.md', contractDigest: 'a'.repeat(64), verdictDigest: 'b'.repeat(64), fidelity: l(70, 'C', 9, 14), baseline: l(100, 'A', 16, 18), coverage: { declared: 10, located: 8, byMap: 1, byName: 2, byValue: 5, groups: {} }, failing: [{ id: 'f10', title: 'Your primary action pair meets contrast on shipped values' }], engineVersion: '9.9.9', contractVersion: 'v9.9.9', linter: { package: '@google/design.md', version: '0.4.0', errors: 0, warnings: 1 }, retrievedAt: '2026-10-15T00:16:50.566Z' });
-  assert.equal(text, ['Designesy contract check', 'Site: https://a.com/', 'Your contract: Acme (DESIGN.md), sha256 aaaaaaaa...aaaa', 'Contract fidelity: 70.0 /100 (C), 9 of 14 checks scored', 'Baseline: 100.0 /100 (A), 16 of 18 checks scored', 'Coverage: 8 of 10 declared tokens located (5 by value, 3 by name)', 'Failing: f10 Your primary action pair meets contrast on shipped values', 'Verdict digest: bbbbbbbb...bbbb', 'Engine: 9.9.9, baseline rules v9.9.9, linter @google/design.md 0.4.0', 'Read at: 2026-10-15T00:16:50Z'].join('\n'));
+  const text = C.receiptText({ site: 'https://a.com/', name: 'Acme', format: 'DESIGN.md', contractDigest: 'a'.repeat(64), verdictDigest: 'b'.repeat(64), fidelity: l(70, 'C', 9, 14), baseline: l(100, 'A', 16, 18), coverage: { declared: 10, located: 8, byMap: 1, byName: 2, byValue: 5, groups: {} }, failing: [{ id: 'f10', title: 'Your primary action pair meets contrast on shipped values', value: '1.2 to 1' }, { id: 'v03', title: 'Interactive elements show focus-visible rings' }], engineVersion: '9.9.9', contractVersion: 'v9.9.9', linter: { package: '@google/design.md', version: '0.4.0', errors: 0, warnings: 1 }, retrievedAt: '2026-10-15T00:16:50.566Z' });
+  assert.equal(text, ['Designesy contract check', 'Site: https://a.com/', 'Your contract: Acme (DESIGN.md), sha256 aaaaaaaa...aaaa', 'Contract fidelity: 70.0 /100 (C), 9 of 14 checks scored', 'Baseline: 100.0 /100 (A), 16 of 18 checks scored', 'Coverage: 8 of 10 declared tokens located (5 by value, 3 by name)', 'Failing: f10 Your primary action pair meets contrast on shipped values, 1.2 to 1; v03 Interactive elements show focus-visible rings', 'Verdict digest: bbbbbbbb...bbbb', 'Engine: 9.9.9, baseline rules v9.9.9, linter @google/design.md 0.4.0', 'Read at: 2026-10-15T00:16:50Z'].join('\n'));
   assert.equal(C.downloadName('www.acme.com/pricing', new Date(2026, 9, 14, 20, 5)), 'designesy-acme.com-20261014-2005.json');
+  assert.equal(C.failingLine([]), 'Failing: none');
+  assert.equal(`${C.REVIEW_LINE.lead} ${C.REVIEW_LINE.link}`, 'Want a person to walk your team through this? The Review →');
+  assert.equal(C.REVIEW_LINE.href, '/pricing/review');
+  assert.equal(C.failingValue({ id: 'f10', status: 'FAIL', evidence: { findings: [{ ratio: 2.44 }] } }, T), '2.4 to 1');
+  assert.equal(C.failingValue({ id: 'f03', status: 'FAIL' }, T), undefined);
   assert.ok(C.shareNote('pasted').startsWith('No share link for this result. You pasted your contract'));
 });
 

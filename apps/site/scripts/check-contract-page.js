@@ -55,11 +55,16 @@
  *      stop; Enter focuses its row, open, clear of the top bar.
  *  10. The readout sweep (D79, R33-01), once per landed state and theme:
  *      every width from 320 to 1600 every 8px, no readout part past its
- *      column; below a 26rem pair "/100" and the grade sit in one row under
- *      the numeral, from 26rem beside it; the numeral is the uncapped house
- *      clamp at every width; labels at 12.8px, tracked 0.02em only under
+ *      column and the two readouts never stacked (D8, D81); below a 26rem
+ *      pair "/100" and the grade sit in one row under the numeral, from 26rem
+ *      beside it unless they do not fit there; the numeral is the house clamp
+ *      or, where "100.0" would not fit its column, the D81 fit size, and one
+ *      size per width for every score; labels at 12.8px, tracked 0.02em only under
  *      26rem; "CONTRACT FIDELITY" one line from 390px, two balanced lines
  *      (one word each, text-wrap: balance) at 375px and narrower.
+ *  12. D82: "Want a person to walk your team through this? The Review →",
+ *      linking /pricing/review, once under a landed result that scored, and
+ *      absent from every other state (rejected, errors, no score, empty runs).
  *  11. The previous run (Edit inputs): the result stays below the reopened
  *      form, labelled, with no duplicate ids; a new run draws the live
  *      instrument above it and no skeleton.
@@ -77,6 +82,9 @@
  *   --break verdict replaces the verdict with a sentence the counts do not support
  *   --break cap     caps the numeral (round 3.2's rejected readout)
  *   --break row     drops the narrow row, so the chip sits beside the numeral
+ *   --break review  removes the Review line where it is due, and adds one to every other state
+ *   --break stack   stacks the two readouts (D8 and D81 forbid it)
+ *   --break digits  sizes the numeral by its digits in one state (D81: one size per width)
  *   --break tracking tracks the labels at 0.08em under 26rem
  *   --break balance removes text-wrap: balance from the labels
  *   --break         live and focus. Each must exit 1.
@@ -450,6 +458,9 @@ async function checkPrevious(page, st, fail) {
 }
 
 /** 10. The readout sweep (D79, R33-01): every width 320 to 1600 every 8px. */
+/** D81: one numeral size per width, whatever the digits: filled by every sweep, checked once at the end. */
+const sizes = new Map();
+
 async function sweepReadouts(page, fail) {
   let readouts = 0;
   let bad = 0;
@@ -519,13 +530,10 @@ async function sweepReadouts(page, fail) {
       if (r.spill.length) errs.push(`${r.spill.map((p) => p.c).join(', ')} past the column`);
       const narrow = r.pairW < 416 - 0.5;
       const row = narrow || r.fit === 'row';
-      // The two font-forced exceptions must each be needed: a stack only where a
-      // numeral is wider than its column side by side; a row from 26rem only where
-      // numeral, gap and chip do not fit beside.
-      if (r.fit === 'stack' && !(r.maxNum > r.sideColumn + 0.5)) errs.push(`stacked although the numeral (${r.maxNum.toFixed(1)}px) fits its side-by-side column (${r.sideColumn.toFixed(1)}px)`);
-      if (r.fit === 'stack' && !r.stacked) errs.push('data-fit stack but the readouts sit side by side');
-      if (r.fit !== 'stack' && r.stacked) errs.push('the readouts stack without the measured reason');
-      if (r.fit !== 'stack' && r.maxNum > r.sideColumn + 0.5) errs.push('a numeral wider than its column, side by side');
+      // The row from 26rem must be needed: only where numeral, gap and chip do not fit beside.
+      // D8, D81: the two readouts never stack, and the numeral always fits its column.
+      if (r.stacked || r.fit === 'stack') errs.push('the readouts stack');
+      if (r.maxNum > r.sideColumn + 0.5) errs.push(`a numeral (${r.maxNum.toFixed(1)}px) wider than its column (${r.sideColumn.toFixed(1)}px)`);
       if (r.fit === 'row' && (narrow || !(r.maxNum + r.figGap + r.chip > r.sideColumn + 0.5))) errs.push('row forced where the chip fits beside');
       if (r.num && r.grade) {
         if (row && !(r.grade.top >= r.num.bottom - 4)) errs.push('chip beside the numeral where the row is due');
@@ -533,19 +541,20 @@ async function sweepReadouts(page, fail) {
         if (!row && !(r.grade.left >= r.num.right - 0.5)) errs.push('chip under the numeral from a 26rem pair');
       }
       if (r.numSize !== null) {
-        const want = Math.min(68, Math.max(41.6, 25.6 + 0.09 * r.pairW));
-        if (Math.abs(r.numSize - want) > 0.6) errs.push(`numeral ${r.numSize.toFixed(1)}px, the uncapped clamp gives ${want.toFixed(1)}px`);
+        // D79 with D81: the house clamp, or the size at which "100.0" fits its column, whichever is smaller.
+        const want = Math.min(68, Math.max(24, Math.min(25.6 + 0.09 * r.pairW, 0.18519 * r.pairW - 8.889)));
+        if (Math.abs(r.numSize - want) > 0.6) errs.push(`numeral ${r.numSize.toFixed(1)}px, D79 with D81 gives ${want.toFixed(1)}px`);
+        sizes.set(W, (sizes.get(W) || new Set()).add(r.numSize.toFixed(2)));
       }
       if (r.labelSize < 12.75) errs.push(`label at ${r.labelSize}px`);
       const track = narrow ? 0.02 : 0.08;
       if (Math.abs(r.labelTrack - track) > 0.002) errs.push(`label tracked ${r.labelTrack.toFixed(3)}em, wanted ${track}em`);
       if (!/balance/.test(r.balance || '')) errs.push(`label wraps "${r.balance}", not balance`);
       // A-RS-4: one line at 390, 414, 1024 and 1440; two lines, one word each, at
-      // 375 and narrower; never more than two anywhere. A stacked pair gives the
-      // label the pair's whole width, so it may hold one line there.
+      // 375 and narrower; never more than two anywhere.
       if (r.label === 'Contract fidelity') {
         if ([390, 414, 1024, 1440].includes(W) && r.labelLines !== 1) errs.push(`"CONTRACT FIDELITY" on ${r.labelLines} lines at ${W}px`);
-        if (W <= 375 && !r.stacked && r.labelLines !== 2) errs.push(`"CONTRACT FIDELITY" on ${r.labelLines} lines at ${W}px, wanted 2`);
+        if (W <= 375 && r.labelLines !== 2) errs.push(`"CONTRACT FIDELITY" on ${r.labelLines} lines at ${W}px, wanted 2`);
         if (r.labelLines > 2) errs.push(`"CONTRACT FIDELITY" on ${r.labelLines} lines`);
       }
       if (errs.length) {
@@ -631,6 +640,9 @@ async function main() {
       if (BREAK.includes('verdict')) await page.evaluate(() => { const s = document.querySelector('.cf-bench > .score-verdict-line > span:last-child'); if (s) s.textContent = 'The page follows most of your contract.'; });
       if (BREAK.includes('cap')) await page.addStyleTag({ content: '.cf-num { font-size: 2.25rem !important; }' });
       if (BREAK.includes('row')) await page.addStyleTag({ content: '.cf-figure-meta { display: contents !important; } .cf-figure:not(.is-rest) { grid-template-columns: auto auto !important; } .cf-figure:not(.is-rest) > .cf-num { grid-row: 1 / span 2 !important; } .cf-figure .cf-grade { grid-column: 2 !important; grid-row: 1 !important; } .cf-figure .cf-of { grid-column: 2 !important; grid-row: 2 !important; }' });
+      if (BREAK.includes('review')) await page.evaluate(() => { const r = document.querySelector('.cf-review'); if (r) r.remove(); else document.querySelector('.cf-bench').insertAdjacentHTML('beforeend', '<p class="cf-aside cf-review">Want a person to walk your team through this? <a href="/pricing/review">The Review →</a></p>'); });
+      if (BREAK.includes('stack')) await page.addStyleTag({ content: '.cf-pair { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: repeat(10, auto) !important; }' });
+      if (BREAK.includes('digits') && st.id === 'landed-pass') await page.addStyleTag({ content: '.cf-num { font-size: calc(1px + clamp(1.5rem, min(1.6rem + 9cqi, 18.519cqi - 0.556rem), 4.25rem)) !important; }' });
       if (BREAK.includes('tracking')) await page.addStyleTag({ content: '.cf-readout-label { letter-spacing: 0.08em !important; }' });
       if (BREAK.includes('balance')) await page.addStyleTag({ content: '.cf-readout-label { text-wrap: wrap !important; }' });
 
@@ -655,6 +667,7 @@ async function main() {
           alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim()),
           problems: document.querySelectorAll('.cf-problem-list > li').length,
           lint: [...document.querySelectorAll('.cf-lint')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()),
+          review: [...document.querySelectorAll('.cf-review')].map((e) => ({ text: e.textContent.replace(/\s+/g, ' ').trim(), href: e.querySelector('a')?.getAttribute('href') })),
           lintWords: (() => { const m = /Linted with[^.]*\./.exec(document.querySelector('main').textContent.replace(/\s+/g, ' ')); return m ? m[0] : ''; })(),
           // Engine sentences are shown whole: no row ends a word on an ellipsis.
           clipped: [...document.querySelectorAll('.cf-problem-list p, .cf-warnings li')].map((e) => e.textContent).filter((t) => t.includes('…')),
@@ -694,6 +707,10 @@ async function main() {
         if (provenance(Array.isArray(st.reply) ? st.reply[0] : st.reply)) fail('the recorded answer carries linter totals, but the linter never reads this state');
         if (probe.lint.length || probe.lintWords) fail(`a provenance line where the linter never read the file: "${probe.lint[0] || probe.lintWords}"`);
       }
+      // D82: the Review line under a landed result that scored, exactly once; nowhere else.
+      const reviewDue = st.result === 'scored' && !st.previous;
+      if (reviewDue && (probe.review.length !== 1 || probe.review[0].text !== 'Want a person to walk your team through this? The Review →' || probe.review[0].href !== '/pricing/review')) fail(`Review line ${JSON.stringify(probe.review)}, wanted it once, linking /pricing/review`);
+      if (!reviewDue && probe.review.length) fail(`a Review line on a state that must not carry one: ${probe.review[0].text}`);
       if (probe.clipped.length) fail(`a problem or warning is cut short: ${probe.clipped[0].slice(0, 90)}`);
       if (probe.headingRing) fail(`the focused result heading paints a ring (${probe.headingRing}); it is not a control`);
       if (probe.small.length) fail(`text under 12.8px: ${probe.small.join('; ')}`);
@@ -722,6 +739,7 @@ async function main() {
     await ctx.close();
   }
   await browser.close();
+  for (const [W, set] of sizes) if (set.size > 1) failures.push(`readout sweep at ${W}px: numerals at ${[...set].join(', ')}px; D81 sets one size per width for every score`);
   if (failures.length) {
     if (sweeps.readouts) console.error(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
     console.error(`[contract-page] FAIL: ${failures.length} finding(s) over ${runs} state renders${BREAK.length ? ` (--break ${BREAK.join(',')})` : ''}`);

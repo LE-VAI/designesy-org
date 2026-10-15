@@ -113,24 +113,16 @@ export function ContractReadout({
 }
 
 /**
- * The pair, side by side (owner decision D8), with the one exception the
- * site's own fonts force. D79 keeps the numeral at its full house size at
- * every width, and the beside/row switch at a 26rem pair was measured on the
- * prototype's scenario scores (70.0 and 74.0). Fraunces has no tabular
- * figures, so a numeral's width follows its digits: on the site "80.0" is
- * 100px and "100.0" 123px at 320px, where the baseline column is 92.5px.
- * Rather than shrink the numeral (D79 rejects that) or let it run past its
- * column, the pair measures its own numerals and:
- *   - sets the chip in the row under the numeral (data-fit="row") where the
- *     pair is 26rem or wider but numeral, gap and chip do not fit beside;
- *   - stacks the two readouts (data-fit="stack") only where a numeral is
- *     wider than its column side by side.
- * Every other width keeps the CSS switch exactly as D79 specifies. The
- * readouts' order and words are unchanged; only their placement moves.
+ * The pair, always side by side (owner decision D8, brand D81). The numeral's
+ * size already fits "100.0" in its column at every width (contract.css), so
+ * the readouts never stack. From a 26rem pair "/100" and the grade chip sit
+ * beside the numeral; where numeral, gap and chip do not fit there, the pair
+ * sets them in the row under it (data-fit="row"), measured, because Fraunces
+ * has no tabular figures and a numeral's width follows its digits.
  */
 export function ReadoutPair({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState<'' | 'row' | 'stack'>('');
+  const [fit, setFit] = useState<'' | 'row'>('');
   useLayoutEffect(() => {
     const pair = ref.current;
     if (!pair) return;
@@ -147,10 +139,6 @@ export function ReadoutPair({ children }: { children: ReactNode }) {
       // gap and its own inset (the inset is the same --space-16 as the gap).
       const column = (w - gap) / 2 - gap;
       const num = Math.max(...nums.map((n) => n.getBoundingClientRect().width));
-      if (num > column + 0.5) {
-        setFit('stack');
-        return;
-      }
       const grade = Math.max(0, ...[...pair.querySelectorAll<HTMLElement>('.cf-grade, .cf-of')].map((g) => g.getBoundingClientRect().width));
       // The beside gap is --space-8 (the figure's column gap when beside); read
       // from the token, not the figure, whose gap is 0 while it is a row.

@@ -33,6 +33,7 @@ import {
   PASTE_PLACEHOLDER,
   PREVIOUS_SAID,
   PRIVACY_NOTE,
+  REVIEW_LINE,
   SOURCE_HINT,
   TOKEN_MAP_PLACEHOLDER,
   VERDICT_UNREACHABLE,
@@ -40,6 +41,7 @@ import {
   caretLine,
   contractOk,
   emptyRun,
+  failingValue,
   fileTooLarge,
   firstFindingOf,
   formatWords,
@@ -819,7 +821,7 @@ export function ContractForm({
     const hasLists = k === 'scored' || k === 'fidelity-null';
     const say = previous ? () => {} : announce;
     const lint = lintLine(r.ownContract?.linter);
-    const failing = [...fidChecks, ...baseChecks].filter((c) => c.status === 'FAIL').map((c) => ({ id: c.id, title: titles[c.id] ?? c.id }));
+    const failing = [...fidChecks, ...baseChecks].filter((c) => c.status === 'FAIL').map((c) => ({ id: c.id, title: titles[c.id] ?? c.id, value: failingValue(c, setup.thresholds) }));
     const shareUrl =
       rn.how === 'linked' && typeof window !== 'undefined'
         ? `${window.location.origin}/score/contract?url=${encodeURIComponent(rn.site)}&contract=${encodeURIComponent(rn.link)}`
@@ -902,6 +904,12 @@ export function ContractForm({
             shareUrl={shareUrl}
             say={say}
           />
+        )}
+        {k === 'scored' && !previous && (
+          // D82: one quiet line to the human Review, under a result that scored only.
+          <p className="cf-aside cf-review">
+            {REVIEW_LINE.lead} <Link href={REVIEW_LINE.href}>{REVIEW_LINE.link}</Link>
+          </p>
         )}
       </>
     ) : lint ? (

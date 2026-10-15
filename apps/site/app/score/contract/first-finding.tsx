@@ -49,7 +49,17 @@ export function FirstFinding({
             <span className="cf-mono">{check.id}</span> {title}
           </span>
         </p>
-        <p className="cf-start-detail">{pair ? pair.detail : rowDetail(check, coverage, thresholds)}</p>
+        <p className="cf-start-detail">
+          {pair ? (
+            <>
+              {pair.parts[0]}
+              <code>{pair.parts[1]}</code>
+              {pair.parts[2]}
+            </>
+          ) : (
+            rowDetail(check, coverage, thresholds)
+          )}
+        </p>
       </div>
       {pair ? (
         <div className="cf-specs">

@@ -484,37 +484,38 @@ export function capFlag(f: LayerResult): { lead: string; text: string } | null {
   };
 }
 
-/** What a fidelity check reads, as "your contract declares no ..." names it. */
-export const DECLARES_NO: Record<string, string> = {
+/** What each fidelity check reads, as the gaps flag names a group the run skipped. */
+export const SKIPPED_GROUP: Record<string, string> = {
   f01: 'mapped tokens',
   f02: 'colors',
-  f03: 'font sizes',
+  f03: 'type scale',
   f04: 'font families',
   f05: 'line heights',
   f06: 'font features',
-  f07: 'radius scale',
-  f08: 'spacing scale',
-  f09: 'text and background pairs',
+  f07: 'radius',
+  f08: 'spacing',
+  f09: 'contrast pairs',
   f10: 'primary action pair',
   f11: 'motion',
-  f12: 'interactive size',
+  f12: 'target size',
   f13: 'aliases',
-  f14: 'tokens',
+  f14: 'token use',
 };
 
-function noList(words: string[]): string {
-  if (words.length <= 1) return `no ${words.join('')}`;
-  return `${words.slice(0, -1).map((w) => `no ${w}`).join(', ')} and no ${words[words.length - 1]}`;
-}
-
-/** The gaps flag, from the fidelity checks' skip reasons (W6). A clause whose count is 0 is left out. */
+/** The gaps flag (W6, brand D81): each group the run skipped, in the words of its
+    SKIP label ("motion not declared", "motion does not apply"), then what ran. A
+    clause whose count is 0 is left out. */
 export function gapsFlag(fidelity: ResultCheck[], scored: number): { lead: string; text: string } | null {
   const notRun = fidelity.filter((c) => c.status === 'SKIP' && (c.skipReason === 'not_declared' || c.skipReason === 'not_applicable'));
   const thin = fidelity.filter((c) => c.status === 'SKIP' && c.skipReason === 'not_located');
   if (!notRun.length && !thin.length) return null;
-  const head = notRun.length
-    ? `Your contract declares ${noList(notRun.map((c) => DECLARES_NO[c.id] ?? c.id))}, so ${countWords(notRun.length, 'check', 'checks')} did not run${thin.length ? `, and ${thin.length} found too little on this page` : ''}.`
-    : `${countWords(thin.length, 'check', 'checks')} found too little on this page.`;
+  let head: string;
+  if (notRun.length) {
+    const groups = listWords(notRun.map((c) => `${SKIPPED_GROUP[c.id] ?? c.id} ${c.skipReason === 'not_applicable' ? 'does not apply' : 'not declared'}`));
+    head = `${groups.charAt(0).toUpperCase()}${groups.slice(1)}, so ${countWords(notRun.length, 'check', 'checks')} did not run${thin.length ? `, and ${thin.length} found too little on this page` : ''}.`;
+  } else {
+    head = `${countWords(thin.length, 'check', 'checks')} found too little on this page.`;
+  }
   return { lead: 'Measured with gaps.', text: `${head} Fidelity covers the ${scored} that ran.` };
 }
 
@@ -544,6 +545,8 @@ export const needWords = (need: number) => (Number.isInteger(need) ? String(need
 export type PairFinding = {
   name: string;
   detail: string;
+  /** The detail around the component's name, which the page sets as inline code. */
+  parts: [string, string, string];
   declared: { where: string; text: string; background: string; ratio: string };
   shipped: { where: string; text: string; background: string; ratio: string };
 };
@@ -562,9 +565,15 @@ export function pairFinding(c: ResultCheck, t: Thresholds): PairFinding | null {
   const r = fmtRatio(f.ratio, t);
   const r0 = fmtRatio(typeof f.declaredRatio === 'number' ? f.declaredRatio : f.ratio, t);
   const vars = [...(st.where ?? []), ...(sb.where ?? [])];
+  const parts: [string, string, string] = [
+    `The shipped ${where} on `,
+    name,
+    ` ${where === 'label and fill' ? 'take' : 'takes'} the pair to ${r} to 1. Your contract's own pair is ${r0} to 1. The check needs ${needWords(f.need)} to 1.`,
+  ];
   return {
     name,
-    detail: `The shipped ${where} on ${name} ${where === 'label and fill' ? 'take' : 'takes'} the pair to ${r} to 1. Your contract's own pair is ${r0} to 1. The check needs ${needWords(f.need)} to 1.`,
+    detail: parts.join(''),
+    parts,
     declared: { where: `${dt.path ?? ''} on ${db.path ?? ''}`, text: dt.value, background: db.value, ratio: r0 },
     shipped: { where: vars.length === 2 ? `${vars[0]} on ${vars[1]}` : 'shipped values', text: st.value, background: sb.value, ratio: r },
   };
@@ -704,7 +713,8 @@ export type ReceiptInput = {
   fidelity: LayerResult;
   baseline: LayerResult;
   coverage: Coverage | null;
-  failing: { id: string; title: string }[];
+  /** Failing checks in list order; value where the check has one ("1.2 to 1"). */
+  failing: { id: string; title: string; value?: string }[];
   engineVersion: string;
   contractVersion: string;
   linter: LinterTotals | null;
@@ -725,12 +735,26 @@ export function receiptText(r: ReceiptInput): string {
     layer('Baseline', r.baseline),
   ];
   if (r.coverage) lines.push(`Coverage: ${r.coverage.located} of ${r.coverage.declared} declared tokens located (${r.coverage.byValue} by value, ${r.coverage.byName + r.coverage.byMap} by name)`);
-  lines.push(`Failing: ${r.failing.length ? r.failing.map((c) => `${c.id} ${c.title}`).join('; ') : 'none'}`);
+  lines.push(failingLine(r.failing));
   if (r.verdictDigest) lines.push(`Verdict digest: ${shortDigest(r.verdictDigest)}`);
   lines.push(`Engine: ${r.engineVersion}, baseline rules ${r.contractVersion}${r.linter ? `, linter ${r.linter.package ?? '@google/design.md'} ${r.linter.version}` : ''}`);
   lines.push(`Read at: ${r.retrievedAt.replace(/\.\d{3}Z$/, 'Z')}`);
   return lines.join('\n');
 }
+
+/** "Failing: f10 {title}, 1.2 to 1; v03 {title}", or "Failing: none" (brand D81). */
+export function failingLine(failing: { id: string; title: string; value?: string }[]): string {
+  return `Failing: ${failing.length ? failing.map((c) => `${c.id} ${c.title}${c.value ? `, ${c.value}` : ''}`).join('; ') : 'none'}`;
+}
+
+/** The value a failing check carries into the receipt: a contrast pair's shipped ratio. */
+export function failingValue(c: ResultCheck, t: Thresholds): string | undefined {
+  const f = c.evidence?.findings?.[0] as { ratio?: number } | undefined;
+  return (c.id === 'f09' || c.id === 'f10') && f && typeof f.ratio === 'number' ? `${fmtRatio(f.ratio, t)} to 1` : undefined;
+}
+
+/** D82: one quiet line under a landed result that scored, to the human Review. */
+export const REVIEW_LINE = { lead: 'Want a person to walk your team through this?', link: 'The Review →', href: '/pricing/review' } as const;
 
 export const RECEIPT_NOTE = 'To verify, run the same page with the same contract and compare both digests. If the contract digest differs, the contract changed. If only the verdict digest differs, the page or the engine changed.';
 

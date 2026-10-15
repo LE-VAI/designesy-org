@@ -143,6 +143,12 @@
   z-index: 1;
 }
 
+/* D82: the Review line under a result that scored. The house quiet link, as
+   the aside above the instrument; its link keeps "The Review →" on one line. */
+.cf-review a {
+  white-space: nowrap;
+}
+
 /* The upload well: decoration around a real file button (WIREFRAMES W1). */
 .cf-drop {
   display: grid;
@@ -463,15 +469,10 @@
   }
 }
 
-/* The two exceptions the site's own fonts force (contract-readout.tsx,
-   ReadoutPair). Fraunces has no tabular figures, so a numeral's width follows
-   its digits ("80.0" is 100px and "100.0" 123px at a 320px viewport, where
-   the baseline column is 92.5px); the 26rem switch was measured on the
-   prototype's 70.0 and 74.0. The numeral keeps its full size (D79) and the
-   pair measures it instead: "row" sets "/100" and the chip under the numeral
-   where they do not fit beside it from 26rem; "stack" puts the two readouts
-   one above the other where a numeral is wider than its column side by side.
-   Neither applies the narrow label tracking, which stays a width rule. */
+/* From 26rem the chip may still not fit beside the numeral (D81): the pair
+   measures numeral, gap and chip (contract-readout.tsx, ReadoutPair) and sets
+   "/100" and the chip in the nowrap row under the numeral (data-fit="row").
+   It never applies the narrow label tracking, which stays a width rule. */
 .cf-pair[data-fit="row"] .cf-figure:not(.is-rest) {
   grid-template-columns: auto;
   gap: var(--space-6) 0;
@@ -495,24 +496,20 @@
   grid-row: auto;
 }
 
-.cf-pair[data-fit="stack"] {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: repeat(10, auto);
-}
-
-.cf-pair[data-fit="stack"] > .cf-readout + .cf-readout {
-  padding-top: var(--space-12);
-  padding-left: 0;
-  box-shadow: inset 0 1px 0 var(--line-faint);
-}
-
 .cf-num {
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
-  /* The house clamp, uncapped (D79): the numeral is the hero at full size at
-     every width. */
-  font-size: clamp(2.6rem, 1.6rem + 9cqi, 4.25rem);
+  /* D79 with D81: the house clamp (1.6rem + 9cqi, 2.6rem to 4.25rem), except
+     where the widest score, "100.0", would not fit its column beside the other
+     readout. Fraunces has no tabular figures, so the fit is taken from the
+     widest numeral's advance, "100.0" at 2.70em (measured 2.641em to 2.67em with the
+     -0.03em tracking, plus air), and every score at a width gets the same size:
+     the layout never jumps with the digits. The column is half the pair less
+     the gap and the second readout's inset (8px + 16px = 1.5rem), so the fit
+     is (50cqi - 1.5rem) / 2.70 = 18.519cqi - 0.556rem. The two readouts never
+     stack (D8). */
+  font-size: clamp(1.5rem, min(1.6rem + 9cqi, 18.519cqi - 0.556rem), 4.25rem);
   line-height: 0.92;
   letter-spacing: -0.03em;
   font-variant-numeric: lining-nums tabular-nums;
@@ -840,6 +837,11 @@
   line-height: 1.5;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.cf-start-detail code {
+  font: 500 var(--text-label)/1.4 var(--mono);
+  color: var(--ink);
 }
 
 .cf-specs {
