@@ -14,8 +14,7 @@
 //     week-old deployment answers 200 perfectly.
 //   • Engine readings get cached per-URL for 24h, so a stale domain plus a warm
 //     cache makes a shipped fix look like it never deployed. That misdiagnosis
-//     already cost real time on this lane (documented in the handoff: "this
-//     WILL fool you into thinking a deploy failed").
+//     is easy to make: a working deploy looks like a failed one.
 //
 // This endpoint makes the deployed revision observable so the smoke test can
 // ASSERT it rather than infer it from a 200.

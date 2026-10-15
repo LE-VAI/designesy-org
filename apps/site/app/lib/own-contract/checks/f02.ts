@@ -9,7 +9,7 @@ import { SHARE_PASS_AT } from '../formula';
 import { hex6, oklabDistance, sameRgb } from '../normalize';
 import { capList, result, shareStatus, skip, type Ctx, type CheckResultV2 } from './common';
 
-/** The collapsed line (brand D75, R3-07), built from the counts and the threshold. */
+/** The collapsed line, built from the counts and the threshold. */
 export function paletteLine(shipped: number, outside: string[], passAt = SHARE_PASS_AT): string {
   const inside = shipped - outside.length;
   const verb = inside === 1 ? 'is' : 'are';

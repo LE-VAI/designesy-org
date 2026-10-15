@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Flame flip gate: the Ctrl+I easter egg does what brand D69 says, and costs
+ * Flame flip gate: the Ctrl+I easter egg does what lib/flame-flip.tsx says, and costs
  * the page nothing until someone asks for it.
  *
  * WHY THIS EXISTS

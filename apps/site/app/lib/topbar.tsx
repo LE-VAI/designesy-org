@@ -248,8 +248,8 @@ export function Topbar({ scrolled = false }: { scrolled?: boolean }) {
             aria-current={pathname === '/' ? 'page' : undefined}
           >
             {/* The logotype (identity v1): the mark and the word as one
-                outlined lockup, the small master at the header's 24px
-                (D66). The artwork is decorative; the hidden text names the
+                outlined lockup, the small master at the header's 24px.
+                The artwork is decorative; the hidden text names the
                 link. */}
             <Lockup className="wordmark-lockup" small />
             <span className="sr-only">designesy</span>

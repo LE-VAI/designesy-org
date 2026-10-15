@@ -700,7 +700,7 @@ function ChecklistItem({ state, label, detail }: CheckRow) {
 // width. With a fixed 800-unit viewBox the labels rendered at 4.3px on a
 // phone and 14.75px at 1440, sized by the container instead of the scale.
 const CHART_FONT = 11;
-// The mono face (Atkinson Hyperlegible Mono, D65) advances 0.632em per glyph;
+// The mono face (Atkinson Hyperlegible Mono) advances 0.632em per glyph;
 // the label fit test uses it with a little slack, as it did for Geist Mono's
 // 0.6em (0.62).
 const CHAR_W = CHART_FONT * 0.65;

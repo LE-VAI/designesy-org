@@ -92,7 +92,7 @@ const FILES = [
   path.join('packages', 'cli', 'README.md'),
   path.join('packages', 'cli', 'package.json'),
   path.join('packages', 'vai-motion', 'README.md'),
-  // The PyPI summary carries the listing line (owner decision 2026-10-11).
+  // The PyPI summary carries the listing line.
   path.join('packages', 'designesy-mcp', 'pyproject.toml'),
 ];
 

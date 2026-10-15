@@ -3,12 +3,12 @@
    this to the / route only. Class names are un-hashed.
    The JSX keeps using className="hero" etc. unchanged. */
 
-/* --- Type scale (brand D68) ------------------------------------------------
+/* --- Type scale --------------------------------------------------------------
    The --text-* steps live on :root (globals.css) and in the contract
    (v0.4.5); this sheet reads them. Every size this page sets below the lead
    step reads one of them. The two role="img" instrument drawings (the verify
    console's face and the inspection window) are exempt from the floor as
-   images, like the D61 badge: their aria-labels carry what they show (D72). */
+   images, like the live badge: their aria-labels carry what they show. */
 
 .hero {
   position: relative;
@@ -443,7 +443,7 @@
    handoff is the same as every other. The chapter rule (.site-shell
    .section::before, globals.css) sits three quarters of a unit above the next
    heading: content, two units, the rule, 0.75 units, the heading (128 / 48 at
-   1440, 80 / 32 at 390). No head carries an eyebrow (D60), so that distance
+   1440, 80 / 32 at 390). No head carries an eyebrow, so that distance
    is measured to the same element everywhere: the chapter's title. The statement carries its
    weight in its type scale, not in extra air.
    On this page the rule runs crisp from content edge to content edge: the
@@ -638,7 +638,7 @@
   background: color-mix(in srgb, var(--signal) 8%, var(--surface));
 }
 
-/* Secondary text on a signal tint reaches 4.6:1 (D33): the featured card's
+/* Secondary text on a signal tint reaches 4.6:1: the featured card's
    status line and arrow take --muted in both themes. --muted-dim measured
    4.48:1 on the dark Azure tint (#0a151f) and 4.26:1 on the old light one. */
 .home .field-card.is-featured {
@@ -757,7 +757,7 @@
 }
 
 /* ==========================================================================
-   D60: the home page without the template (brand D60, D57, D62)
+   The home page without the template
    Each section keeps its heading and loses its uppercase eyebrow; lists
    without an order lose their numerals; the cards that were a wall become
    type; facts already true read as words, not empty boxes.
@@ -1012,7 +1012,7 @@
   color: var(--ink);
 }
 
-/* The site's quiet link (D72): no underline at rest, one on hover or focus.
+/* The site's quiet link: no underline at rest, one on hover or focus.
    A row whose proof is several pages links them in its evidence, set the
    same way. */
 .home .home-ledger-fact a,

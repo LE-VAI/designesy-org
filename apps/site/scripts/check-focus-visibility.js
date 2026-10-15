@@ -136,7 +136,7 @@ const EXTRA_PASSES = [
 // swept, however deep in the tab order they sit.
 const NAMED = [
   { route: '/docs', selector: '#start-here .docs-card-grid a.row', label: 'the first "Start here" card' },
-  // The homepage's system state ledger (D60): its fact links replaced the
+  // The homepage's system state ledger: its fact links replaced the
   // status marquee's pills, and unlike the pills they render at 390 too.
   { route: '/', selector: '.home-ledger-fact a', label: 'a system state ledger link' },
   { route: '/open', selector: '.listen-btn', label: 'a listen button' },

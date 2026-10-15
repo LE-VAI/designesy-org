@@ -217,8 +217,8 @@ export async function POST(req: Request) {
 
   // Resend delivers the signup; an optional webhook fans it out. There is no
   // third fallback: a sign-up that cannot be delivered gets the 503 below, which
-  // asks the person to email us, rather than going to another processor (owner
-  // decision 2026-10-11: the FormSubmit fallback was removed).
+  // asks the person to email us, rather than going to another processor
+  // (the FormSubmit fallback was removed).
   let delivered = false;
 
   if (RESEND_API_KEY) {

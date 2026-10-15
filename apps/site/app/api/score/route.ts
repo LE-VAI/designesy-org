@@ -5515,9 +5515,12 @@ function emitReview(url: string, result: ScoreResult): string {
     if (c.status === 'PASS' || c.status === 'SKIP' || c.status === 'MANUAL') continue;
     num++;
     const severity = c.status === 'FAIL' ? 'HIGH' : 'MEDIUM';
-    const before = c.detail.replace(/\|/g, '\\|').substring(0, 80);
-    const after = (c.remediation || '').replace(/\|/g, '\\|').substring(0, 80);
-    const why = `${c.item} (${c.category})`.replace(/\|/g, '\\|');
+    // A cell escapes its backslashes before its pipes: a detail carries text
+    // read from the scored page, where a backslash before a pipe would
+    // otherwise escape the escape and leave a live cell separator.
+    const before = c.detail.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const after = (c.remediation || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').substring(0, 80);
+    const why = `${c.item} (${c.category})`.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| ${num} | ${severity} | ${c.category} | ${url} | ${before} | ${after} | ${why} |`);
   }
   if (num === 0) {

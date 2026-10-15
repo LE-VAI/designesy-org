@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-// The flame flip (brand ledger D69): Ctrl+I, or the keycaps beside the footer
+// The flame flip: Ctrl+I, or the keycaps beside the footer
 // wordmark, opens a circle from the header logo's dot that inverts the page
 // beneath it. Azure #0A94FF and the flame #F56B00 are exact RGB inverses, so
 // the inverted page shows the activated brand exactly. It holds 1.5s, closes

@@ -1,6 +1,6 @@
 {
   "$comment": [
-    "The one list of retired brand colours (brand ledger D44). Every retired-literal gate reads this file:",
+    "The one list of retired brand colours. Every retired-literal gate reads this file:",
     "apps/site/scripts/check-retired-literals.js (the site), scripts/check-retired-literals-packages.js (every package),",
     "and designesy/score-action, which fetches it at a pinned commit. Edit the list here and nowhere else.",
     "It lives inside apps/site because the site gate runs in the Vercel build, which may upload only apps/site.",
@@ -11,26 +11,26 @@
     "drifted from this file's meaning fails instead of reading clean."
   ],
   "schema": 1,
-  "decision": "brand ledger D44",
+  "decision": "retired brand colours",
   "hex": [
-    { "hex": "0133cb", "why": "old signal blue (D19)" },
-    { "hex": "fecc34", "why": "old activation yellow (D4, retired)" },
-    { "hex": "fecc35", "why": "the share-card yellow asterisk (D24)" },
-    { "hex": "2c50ec", "why": "old indigo pass hue (D33)" },
-    { "hex": "5b7cff", "why": "old indigo pass hue (D33)" },
-    { "hex": "3a63f5", "why": "old indigo pass hue (D33)" },
-    { "hex": "8aa0ff", "why": "old indigo head hue (D33)" },
-    { "hex": "ea580c", "why": "old grade D orange, light (D5)" },
-    { "hex": "fb923c", "why": "old grade D orange, dark (D5)" },
-    { "hex": "f97316", "why": "old grade D glow (D5)" },
+    { "hex": "0133cb", "why": "old signal blue" },
+    { "hex": "fecc34", "why": "old activation yellow" },
+    { "hex": "fecc35", "why": "the share-card yellow asterisk" },
+    { "hex": "2c50ec", "why": "old indigo pass hue" },
+    { "hex": "5b7cff", "why": "old indigo pass hue" },
+    { "hex": "3a63f5", "why": "old indigo pass hue" },
+    { "hex": "8aa0ff", "why": "old indigo head hue" },
+    { "hex": "ea580c", "why": "old grade D orange, light; orange is the brand's colour, not a grade's" },
+    { "hex": "fb923c", "why": "old grade D orange, dark; orange is the brand's colour, not a grade's" },
+    { "hex": "f97316", "why": "old grade D glow; orange is the brand's colour, not a grade's" },
     {
       "hex": "3358e8",
-      "why": "old --signal-light blue (D19, D37); the light tint is now #36A7FF, and a grade never takes a brand colour"
+      "why": "old --signal-light blue; the light tint is now #36A7FF, and a grade never takes a brand colour"
     }
   ],
   "rgb": [
-    { "label": "rgb(1,51,203)", "rgb": [1, 51, 203], "why": "old signal blue, rgb form (D19)" },
-    { "label": "rgb(51,88,232)", "rgb": [51, 88, 232], "why": "old --signal-light blue, rgb form (D19, D37)" }
+    { "label": "rgb(1,51,203)", "rgb": [1, 51, 203], "why": "old signal blue, rgb form" },
+    { "label": "rgb(51,88,232)", "rgb": [51, 88, 232], "why": "old --signal-light blue, rgb form" }
   ],
   "selfTest": {
     "mustMatch": [

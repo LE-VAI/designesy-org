@@ -26,8 +26,8 @@ const c = driftContract;
 // drift from its source. If the sentence is reworded and no longer matches,
 // the cell prints the sentence instead.
 //   "OverlayQA: ~160 visual issues per AI-generated app (Jason Arbon, 1000+ checks)"
-// The taxonomy attribution and the drift-rate statistic were removed
-// (owner decision 2026-10-11): no source for either could be found.
+// The taxonomy attribution and the drift-rate statistic were removed:
+// no source for either could be found.
 const SCALE = /^(.+?):\s*(~?\d[\d,]*)\s+(.+?)\s*\((.+)\)$/.exec(c.source_authority.scale_signal);
 
 // The checks that detect each mode, and the limit the contract's own open

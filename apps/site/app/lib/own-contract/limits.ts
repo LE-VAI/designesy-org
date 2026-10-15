@@ -35,6 +35,6 @@ export const EVIDENCE_CAP = 20;
 /** The 16px root the engine assumes for rem (the existing engine's rule). */
 export const ROOT_PX = 16;
 
-/** The minimum scoreable contract (owner decision D2). */
+/** The minimum scoreable contract. */
 export const MIN_COLORS = 3;
 export const MIN_TYPE_STYLES = 1;

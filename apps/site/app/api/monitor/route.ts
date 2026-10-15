@@ -86,6 +86,18 @@ function emailOnCooldown(url: string, email: string, alerts: string[]): boolean 
   return false;
 }
 
+// ── Email address check ─────────────────────────────────────────────────────
+// The address comes from the request body, so its length is checked before the
+// pattern runs: the pattern backtracks on a long run of "x." segments with no
+// valid ending (2.3 s at 100,000 characters in Node 24), and no deliverable
+// address is longer than 254 characters (RFC 5321's 256-octet path, less the
+// angle brackets).
+const EMAIL_MAX_LENGTH = 254;
+
+function isEmailAddress(email: string): boolean {
+  return email.length <= EMAIL_MAX_LENGTH && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // ── Fetching (mirrors drift/score routes) ─────────────────────────────────────
 
 const BROWSER_HEADERS: Record<string, string> = {
@@ -475,7 +487,7 @@ async function sendAlertEmail(
   if (!apiKey) {
     return { attempted: false, delivered: false };
   }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!email || !isEmailAddress(email)) {
     return { attempted: false, delivered: false };
   }
 
@@ -708,7 +720,7 @@ export async function POST(request: Request) {
 
   // Validate email if provided
   const email = body.email?.trim();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !isEmailAddress(email)) {
     return NextResponse.json(
       { ok: false, error: 'Invalid email address.' },
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
