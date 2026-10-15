@@ -87,6 +87,16 @@ another rule, so a page moves up where its only sub-16px "field" was in a rule
 that styles no field, and down only where its 16px floor was read the same
 way (none in the cohort, below).
 
+### Fixed (contract formula 1.0.2)
+
+- **f02 counts the colors in your palette from every outside color.** With
+  more than 20 shipped colors outside the palette, the one-line result took
+  the count from the 20 it lists, so it said more colors were in the palette
+  than were (designesy.org against a three-color DESIGN.md read "14 of 34"
+  when 1 of 34 was). The status was already right; only the sentence moves.
+  No threshold, weight, status or verdict moves, and requests without a
+  contract are untouched.
+
 ### Fixed (engine 1.4.1)
 
 - **v27 reads a field keyword only in the rule it is scoring.** The literal
