@@ -733,6 +733,20 @@ const CHANGELOG: ChangelogEntry[] = [
       "A team's own design system is the contract its pages are meant to follow, and the Designesy score measures Designesy's. Fidelity answers how closely a page follows the team's own; the baseline keeps the universal checks every site is held to, without Designesy's own taste checks, slop or originality. Requests without a contract are unchanged: no legacy verdict, detail or score moves, measured on the calibration corpus and on every legacy request the gate replays.",
     source: 'engine 1.5.0 entry in CHANGELOG.md; W3C Design Tokens Format Module 2025.10; the DESIGN.md format (alpha); WCAG 2.2 SC 1.4.3 and 2.5.8',
   },
+
+  // ── v0.4.6 (engine 1.5.1): linear-time matching and capped reads ──
+  {
+    version: 'v0.4.6 · engine 1.5.1',
+    date: '2026-10-15',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.5.1: scoring time grows in step with the page',
+    description:
+      "The patterns that read a page's CSS and HTML now read each run of text once. Some retried from every place a match could start, so a long run of the right characters could hold a scoring request for many seconds. Each rewrite returns exactly what its pattern returned. v27 now finds the rule each font-size declaration sits in from one index of the sheet, where it read backwards once per declaration. The CSS rule parser reads at most 16 levels of nesting and closes at most 4 blocks left open at the end of a sheet, and the hosted engine reads at most 8 MiB of a page's HTML and 16 MiB of its stylesheets.",
+    rationale:
+      'A scoring request should take time in proportion to the page it reads. Re-scored on the same bytes before release, every leaderboard result is identical. The parser bounds sit well above the deepest nesting in the cohort, so only a malformed or hostile sheet reaches them. No check, weight or ceiling moved.',
+    source: 'engine 1.5.1 entry in CHANGELOG.md',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────
@@ -768,6 +782,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.5 · engine 1.3.1', date: '2026-10-12', checks: 44, title: 'Four checks read what renders', summary: 'v26 skips fallback faces, v27 reads var() font sizes, v38 reads kbd keycaps as hints and knows Get, Set and Try, v43 counts --destructive. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.4.1', date: '2026-10-13', checks: 45, title: 'v27 reads its own rule', summary: 'v27 stops carrying "select" from user-select into the next rule; v37 is named for the DESIGN.md format. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.5.0', date: '2026-10-14', checks: 45, title: 'Your own contract', summary: 'POST /api/score takes your own DESIGN.md or DTCG file and answers with contract fidelity and a baseline, never blended. Requests without a contract are unchanged. The contract is unchanged.' },
+  { version: 'v0.4.6 · engine 1.5.1', date: '2026-10-15', checks: 45, title: 'Linear-time matching', summary: 'Every pattern that read a page now reads each run once and returns what it returned, so scoring time grows in step with the page. The rule parser and the hosted reads are bounded. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

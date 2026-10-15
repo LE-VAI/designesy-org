@@ -457,13 +457,15 @@ import math
 import os
 import re
 import subprocess
+from bisect import bisect_left, bisect_right
 from decimal import Decimal, ROUND_HALF_UP
+from typing import Callable, NamedTuple
 from urllib.parse import urljoin, urlparse
 
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.5.0"
+OFFLINE_ENGINE_MIRRORS = "1.5.1"
 OFFLINE_CONTRACT_VERSION = "v0.4.6"
 
 # The live engine's checks that this engine does not run, in the live engine's
@@ -697,6 +699,767 @@ def _js_join(nums: list[float], sep: str = ",") -> str:
     return sep.join(_js_num(v) for v in nums)
 
 
+# ── Linear-time scanning (engine 1.5.1) ──────────────────────────────────────
+#
+# Engine 1.5.1 replaced the patterns that read page CSS and HTML by retrying
+# from every candidate start, or by trying every way to split a run between
+# two quantifiers, with helpers that read each run once. The TypeScript engine
+# made the same change; these are its helpers, ported. Each returns what the
+# pattern it replaced returned: the same matches at the same offsets with the
+# same groups, the same string after the same replace, or the same boolean.
+# The small patterns they still use are the replaced pattern's own pieces,
+# compiled through _js_re with the same flags, so case folding and the
+# whitespace set are unchanged. test/test_linear_scan.py runs every helper
+# against the pattern it replaced and times each on 100 KB.
+
+_INF = math.inf
+_JS_WS_SET = frozenset(_JS_WS_CHARS)
+_WS_RUN = _js_re(r"\s*")
+_NAME_RUN = _js_re(r"[\w-]*")
+
+
+class _Scan(NamedTuple):
+    """A match as the helpers report it: start offset, matched text, groups."""
+
+    index: int
+    text: str
+    groups: tuple
+
+
+def _ws_end(s: str, i: int) -> int:
+    """The index after the run of JavaScript whitespace that starts at `i`."""
+    return i if i >= len(s) else _WS_RUN.match(s, i).end()
+
+
+def _name_end(s: str, i: int) -> int:
+    """The index after the run of [\\w-] (ASCII) that starts at `i`."""
+    return i if i >= len(s) else _NAME_RUN.match(s, i).end()
+
+
+def _replace_spans(text: str, spans: list[tuple[int, int]], rep: str) -> str:
+    """`text` with each [start, end) span replaced by `rep`."""
+    if not spans:
+        return text
+    parts: list[str] = []
+    last = 0
+    for a, b in spans:
+        parts.append(text[last:a])
+        parts.append(rep)
+        last = b
+    parts.append(text[last:])
+    return "".join(parts)
+
+
+def _lazy_block_spans(text: str, open_re: "re.Pattern[str]", close_re: "re.Pattern[str]") -> list[tuple[int, int]]:
+    """Spans of OPEN[\\s\\S]*?CLOSE, global and leftmost. A closer is looked for
+    once per opener; when there is none after one opener there is none after
+    any later one, so the scan stops there."""
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    while True:
+        o = open_re.search(text, pos)
+        if o is None:
+            break
+        c = close_re.search(text, o.end())
+        if c is None:
+            break
+        spans.append((o.start(), c.end()))
+        pos = c.end()
+    return spans
+
+
+def _next_match_finder(text: str, pat: "re.Pattern[str]") -> Callable[[int], float]:
+    """The start of the first match at or after `from_`, remembered while later
+    queries fall before it (inf when there is none)."""
+    memo_from = -1
+    memo_at: float = -1
+
+    def at(from_: int) -> float:
+        nonlocal memo_from, memo_at
+        if not (memo_from >= 0 and memo_from <= from_ <= memo_at):
+            m = pat.search(text, from_)
+            memo_from = from_
+            memo_at = m.start() if m else _INF
+        return memo_at
+
+    return at
+
+
+def _next_char_finder(text: str, ch: str) -> Callable[[int], float]:
+    """_next_match_finder for one literal character."""
+    memo_from = -1
+    memo_at: float = -1
+
+    def at(from_: int) -> float:
+        nonlocal memo_from, memo_at
+        if not (memo_from >= 0 and memo_from <= from_ <= memo_at):
+            k = text.find(ch, from_)
+            memo_from = from_
+            memo_at = k if k >= 0 else _INF
+        return memo_at
+
+    return at
+
+
+def _match_starts(text: str, pat: "re.Pattern[str]") -> list[int]:
+    """Start offsets of every match of `pat`, ascending."""
+    return [m.start() for m in pat.finditer(text)]
+
+
+_Starts = Callable[[int, int], "tuple[int, int] | None"]
+
+
+def _rule_body_scan(css: str, next_: _Starts, lead: "re.Pattern[str]", body: "re.Pattern[str]", first: bool) -> list[_Scan]:
+    """Matches of START[^{]*\\{[^}]*BODY (global): after each start, the rule
+    body from the first `{` to the first `}` must hold BODY, and the match ends
+    where BODY last matches in it (the greedy [^}]*). `next_(from_, last_end)`
+    returns (start, brace) for the first start at or after `from_` whose
+    prelude reaches a `{` (brace -1 when no later start can), or None. `lead`
+    finds where BODY can begin and `body` is BODY, matched at a position.
+    Starts that share a body's `}` share its answer, so each body is read
+    once. `first` stops at one match."""
+    out: list[_Scan] = []
+    leads = _match_starts(css, lead)
+    n = len(css)
+    ptr = 0
+    pos = 0
+    last_end = 0
+    dead_until = -1
+    while True:
+        st = next_(pos, last_end)
+        if st is None or st[1] < 0:
+            break
+        index, b = st
+        if b < dead_until:
+            pos = b + 1
+            continue
+        c = css.find("}", b + 1)
+        if c < 0:
+            c = n
+        dead_until = c
+        ptr = bisect_right(leads, b, ptr)
+        end = bisect_right(leads, c, ptr)
+        hit = None
+        for k in range(end - 1, ptr - 1, -1):
+            hit = body.match(css, leads[k])
+            if hit:
+                break
+        ptr = end
+        if hit is None:
+            pos = b + 1
+            continue
+        stop = hit.end()
+        out.append(_Scan(index, css[index:stop], hit.groups()))
+        if first:
+            break
+        pos = stop
+        last_end = stop
+    return out
+
+
+def _braced_starts(css: str, start: "re.Pattern[str]") -> _Starts:
+    """next_ for _rule_body_scan when the start is a plain pattern followed by [^{]*\\{."""
+    brace = _next_char_finder(css, "{")
+
+    def nxt(from_: int, _last_end: int = 0) -> "tuple[int, int] | None":
+        m = start.search(css, from_)
+        if m is None:
+            return None
+        b = brace(m.end())
+        return (m.start(), -1 if b == _INF else int(b))
+
+    return nxt
+
+
+def _input_floor_starts(css: str) -> _Starts:
+    """next_ for v27's floor rule: input\\s*(?:,[^{]*)?\\{"""
+    start = _js_re("input", "gi")
+    brace = _next_char_finder(css, "{")
+    n = len(css)
+
+    def nxt(from_: int, _last_end: int = 0) -> "tuple[int, int] | None":
+        at = from_
+        while True:
+            m = start.search(css, at)
+            if m is None:
+                return None
+            p = _ws_end(css, m.end())
+            if p < n and css[p] == "{":
+                return (m.start(), p)
+            if p < n and css[p] == ",":
+                b = brace(p + 1)
+                return (m.start(), -1 if b == _INF else int(b))
+            at = m.start() + 1
+
+    return nxt
+
+
+def _breath_keyframe_starts(css: str) -> _Starts:
+    """next_ for v08's breath keyframes: @keyframes\\s+[^{]*breath[^{]*\\{"""
+    start = _js_re("@keyframes", "gi")
+    brace = _next_char_finder(css, "{")
+    breath = _next_match_finder(css, _js_re("breath", "gi"))
+    n = len(css)
+
+    def nxt(from_: int, _last_end: int = 0) -> "tuple[int, int] | None":
+        at = from_
+        while True:
+            m = start.search(css, at)
+            if m is None:
+                return None
+            after = m.end()
+            if not (after < n and css[after] in _JS_WS_SET):
+                at = m.start() + 1
+                continue
+            b = brace(after)
+            if b == _INF:
+                return (m.start(), -1)
+            if breath(after + 1) < b:
+                return (m.start(), int(b))
+            at = int(b) + 1
+
+    return nxt
+
+
+def _prelude_has(css: str, start: "re.Pattern[str]", x: "re.Pattern[str]") -> bool:
+    """START[^{]*X searched: X (holding no `{`) begins in the prelude between a
+    start and the first `{` after it. Only the first start of each prelude
+    needs reading; later ones see less of it."""
+    brace = _next_char_finder(css, "{")
+    found = _next_match_finder(css, x)
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            return False
+        after = m.end()
+        b = brace(after)
+        if found(after) < b:
+            return True
+        if b == _INF:
+            return False
+        pos = int(b) + 1
+
+
+def _prelude_matches(css: str, start: "re.Pattern[str]", lead: "re.Pattern[str]", x: "re.Pattern[str]") -> list[_Scan]:
+    """Matches of START[^{]*X[^{]*\\{ (global): X's last match in the prelude
+    before the first `{` after the start; the match runs to that `{`. `lead`
+    finds where X can begin, `x` is X, matched at a position."""
+    out: list[_Scan] = []
+    leads = _match_starts(css, lead)
+    ptr = 0
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        after = m.end()
+        b = css.find("{", after)
+        if b < 0:
+            break
+        ptr = bisect_left(leads, after, ptr)
+        end = bisect_left(leads, b, ptr)
+        hit = None
+        for k in range(end - 1, ptr - 1, -1):
+            hit = x.match(css, leads[k])
+            if hit:
+                break
+        ptr = end
+        if hit:
+            out.append(_Scan(m.start(), css[m.start():b + 1], hit.groups()))
+        pos = b + 1
+    return out
+
+
+def _closing_braces(code: str, opens: set[int]) -> dict[int, int]:
+    """For each `{` in `opens`, the index of the `}` that brings the depth back
+    to zero from it: what a depth-counting walk from that brace finds, for
+    every brace in one pass. A brace with no such `}` is absent."""
+    out: dict[int, int] = {}
+    if not opens:
+        return out
+    stack: list[int] = []
+    for m in re.finditer(r"[{}]", code):
+        k = m.start()
+        if code[k] == "{":
+            stack.append(k)
+        elif stack:
+            o = stack.pop()
+            if o in opens:
+                out[o] = k
+    return out
+
+
+# ── The call sites, one helper each, so the test runs exactly what they run ──
+
+
+def _without_scripts_and_styles(html: str) -> str:
+    """<script[\\s\\S]*?<\\/script> then <style[\\s\\S]*?<\\/style> removed (gi)."""
+    no_scripts = _replace_spans(html, _lazy_block_spans(html, _js_re("<script", "gi"), _js_re(r"<\/script>", "gi")), "")
+    return _replace_spans(no_scripts, _lazy_block_spans(no_scripts, _js_re("<style", "gi"), _js_re(r"<\/style>", "gi")), "")
+
+
+def _without_css_comments(css: str, rep: str) -> str:
+    """\\/\\*[\\s\\S]*?\\*\\/ (g) replaced by `rep`."""
+    return _replace_spans(css, _lazy_block_spans(css, _js_re(r"\/\*", "g"), _js_re(r"\*\/", "g")), rep)
+
+
+def _style_elements(html: str) -> list[_Scan]:
+    """Matches of <style[^>]*>([\\s\\S]*?)<\\/style> (gi): groups (content,)."""
+    open_re = _js_re("<style", "gi")
+    close_re = _js_re(r"<\/style>", "gi")
+    out: list[_Scan] = []
+    pos = 0
+    while True:
+        o = open_re.search(html, pos)
+        if o is None:
+            break
+        gt = html.find(">", o.end())
+        if gt < 0:
+            break
+        c = close_re.search(html, gt + 1)
+        if c is None:
+            break
+        out.append(_Scan(o.start(), html[o.start():c.end()], (html[gt + 1:c.start()],)))
+        pos = c.end()
+    return out
+
+
+def _stylesheet_link_matches(html: str) -> list[_Scan]:
+    """Matches of <link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']
+    (gi): group 1 is the last quoted href in the tag after its first
+    rel=stylesheet."""
+    start = _js_re("<link", "gi")
+    rel = _next_match_finder(html, _js_re("rel=[\"']?stylesheet", "gi"))
+    hrefs = _match_starts(html, _js_re("href=[\"']", "gi"))
+    gt = _next_char_finder(html, ">")
+    quote = _js_re("[\"']")
+    n = len(html)
+    last_quote = max(html.rfind('"'), html.rfind("'"))
+    out: list[_Scan] = []
+    ptr = 0
+    pos = 0
+    while True:
+        m = start.search(html, pos)
+        if m is None:
+            break
+        after = m.end()
+        g = int(min(gt(after), n))
+        ptr = bisect_left(hrefs, after, ptr)
+        end = bisect_left(hrefs, g, ptr)
+        # The last href=" in the tag whose value is non-empty and closes.
+        h = -1
+        for k in range(end - 1, ptr - 1, -1):
+            v = hrefs[k] + 6
+            if v < n and html[v] not in "\"'" and last_quote > v:
+                h = hrefs[k]
+                break
+        r = rel(after)
+        if h >= 0 and r < g and r + (15 if html[int(r) + 4] in "\"'" else 14) <= h:
+            q = quote.search(html, h + 7).start()
+            out.append(_Scan(m.start(), html[m.start():q + 1], (html[h + 6:q],)))
+            pos = q + 1
+            continue
+        # Every start before g sees less of the same tag.
+        if g >= n:
+            break
+        pos = g + 1
+    return out
+
+
+def _without_media_blocks(css: str) -> str:
+    """@media[^{]*\\{[^@]*?\\}\\s*\\} (gi) removed."""
+    start = _js_re("@media", "gi")
+    double_close = _js_re(r"\}\s*\}")
+    close = _next_match_finder(css, double_close)
+    at_sign = _next_char_finder(css, "@")
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        b = css.find("{", m.end())
+        if b < 0:
+            break
+        k = close(b + 1)
+        # The first `}` that whitespace and a second `}` follow, before any `@`.
+        if k >= at_sign(b + 1):
+            pos = b + 1
+            continue
+        end = double_close.match(css, int(k)).end()
+        spans.append((m.start(), end))
+        pos = end
+    return _replace_spans(css, spans, "")
+
+
+def _without_keyframes_blocks(css: str) -> str:
+    """@keyframes\\s+[^{]+\\{[^@]*?\\} (gi) removed."""
+    start = _js_re("@keyframes", "gi")
+    rbrace = _next_char_finder(css, "}")
+    at_sign = _next_char_finder(css, "@")
+    n = len(css)
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        after = m.end()
+        if not (after < n and css[after] in _JS_WS_SET):
+            pos = m.start() + 1
+            continue
+        b = css.find("{", after)
+        if b < 0:
+            break
+        if b < after + 2:
+            pos = m.start() + 1
+            continue
+        c = rbrace(b + 1)
+        if c >= at_sign(b + 1):
+            pos = b + 1
+            continue
+        spans.append((m.start(), int(c) + 1))
+        pos = int(c) + 1
+    return _replace_spans(css, spans, "")
+
+
+def _root_token_blocks(css: str) -> list[_Scan]:
+    """Matches of :root(?:\\s*,\\s*:host)?\\s*\\{([^}]*)\\} (g): groups (body,)."""
+    start = _js_re(":root", "g")
+    host = _js_re(r"\s*,\s*:host")
+    n = len(css)
+    out: list[_Scan] = []
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        p = m.end()
+        b = -1
+        h = host.match(css, p)
+        if h:
+            q = _ws_end(css, h.end())
+            if q < n and css[q] == "{":
+                b = q
+        if b < 0:
+            q = _ws_end(css, p)
+            if q < n and css[q] == "{":
+                b = q
+        if b < 0:
+            pos = m.start() + 1
+            continue
+        c = css.find("}", b + 1)
+        if c < 0:
+            break
+        out.append(_Scan(m.start(), css[m.start():c + 1], (css[b + 1:c],)))
+        pos = c + 1
+    return out
+
+
+def _custom_property_values(block: str) -> list[_Scan]:
+    """Matches of --([\\w-]+)\\s*:\\s*([^;]+?)(?:;|$) (g): groups (name, value)."""
+    out: list[_Scan] = []
+    n = len(block)
+    pos = 0
+    while True:
+        i = block.find("--", pos)
+        if i < 0:
+            break
+        r = _name_end(block, i + 2)
+        if r == i + 2:
+            pos = i + 1
+            continue
+        colon = _ws_end(block, r)
+        if not (colon < n and block[colon] == ":"):
+            # Every later `--` inside the same name ends at the same r.
+            pos = r
+            continue
+        v = _ws_end(block, colon + 1)
+        # ([^;]+?) needs one character: when the space runs up to a ';' or the
+        # end, the last space is that character.
+        if v >= n or block[v] == ";":
+            if v == colon + 1:
+                pos = r
+                continue
+            v -= 1
+        e = block.find(";", v + 1)
+        if e < 0:
+            e = n
+        stop = e + 1 if e < n else n
+        out.append(_Scan(i, block[i:stop], (block[i + 2:r], block[v:e])))
+        pos = stop
+    return out
+
+
+def _has_view_transition_navigation(body: str) -> bool:
+    """v05: @view-transition\\s*\\{[^}]*navigation\\s*:\\s*auto (i) found."""
+    start = _js_re("@view-transition", "gi")
+    found = _next_match_finder(body, _js_re(r"navigation\s*:\s*auto", "gi"))
+    close = _next_char_finder(body, "}")
+    n = len(body)
+    pos = 0
+    while True:
+        m = start.search(body, pos)
+        if m is None:
+            return False
+        b = _ws_end(body, m.end())
+        if not (b < n and body[b] == "{"):
+            pos = m.start() + 1
+            continue
+        c = close(b + 1)
+        if found(b + 1) < c:
+            return True
+        if c == _INF:
+            return False
+        # Every later start before c reads the same body, or less of it.
+        pos = int(c) + 1
+
+
+def _reduced_motion_queries(code: str) -> list[_Scan]:
+    """v05: matches of @media[^{]*prefers-reduced-motion\\s*:\\s*(reduce|no-preference)\\b[^{]*\\{ (gi)."""
+    return _prelude_matches(
+        code,
+        _js_re("@media", "gi"),
+        _js_re("prefers-reduced-motion", "gi"),
+        _js_re(r"prefers-reduced-motion\s*:\s*(reduce|no-preference)\b", "i"),
+    )
+
+
+def _has_title_text(html: str) -> bool:
+    """v07: <title\\b[^>]*>[^<]+<\\/title> (i) found."""
+    start = _js_re(r"<title\b", "gi")
+    close = _js_re(r"<\/title>", "i")
+    pos = 0
+    while True:
+        m = start.search(html, pos)
+        if m is None:
+            return False
+        g = html.find(">", m.end())
+        if g < 0:
+            return False
+        lt = html.find("<", g + 1)
+        if lt < 0:
+            return False
+        if lt > g + 1 and close.match(html, lt):
+            return True
+        # Every start before g reaches the same `>` and the same `<` after it.
+        pos = g + 1
+
+
+def _heading_line_heights(css: str) -> list[_Scan]:
+    """v17: (?:h1|h2|h3|h4|h5|h6|\\.h\\d|heading|title)[^{]*\\{[^}]*line-height\\s*:\\s*([0-9.]+) (gi)."""
+    return _rule_body_scan(
+        css, _braced_starts(css, _js_re(r"h1|h2|h3|h4|h5|h6|\.h\d|heading|title", "gi")),
+        _js_re("line-height", "gi"), _js_re(r"line-height\s*:\s*([0-9.]+)", "i"), False,
+    )
+
+
+def _body_line_heights(css: str) -> list[_Scan]:
+    """v17: (?:body|p|article|\\.body|\\.prose|\\.copy)[^{]*\\{[^}]*line-height\\s*:\\s*([0-9.]+) (gi)."""
+    return _rule_body_scan(
+        css, _braced_starts(css, _js_re(r"body|p|article|\.body|\.prose|\.copy", "gi")),
+        _js_re("line-height", "gi"), _js_re(r"line-height\s*:\s*([0-9.]+)", "i"), False,
+    )
+
+
+def _selection_rules(css: str) -> list[str]:
+    """v20: every match of ::selection\\s*\\{[^}]*\\} (gi)."""
+    start = _js_re("::selection", "gi")
+    n = len(css)
+    out: list[str] = []
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        b = _ws_end(css, m.end())
+        if not (b < n and css[b] == "{"):
+            pos = m.start() + 1
+            continue
+        c = css.find("}", b + 1)
+        if c < 0:
+            break
+        out.append(css[m.start():c + 1])
+        pos = c + 1
+    return out
+
+
+def _input_tags(html: str) -> list[str]:
+    """v27: every match of <input\\b[^>]*> (gi)."""
+    start = _js_re(r"<input\b", "gi")
+    out: list[str] = []
+    pos = 0
+    while True:
+        m = start.search(html, pos)
+        if m is None:
+            break
+        g = html.find(">", m.end())
+        if g < 0:
+            break
+        out.append(html[m.start():g + 1])
+        pos = g + 1
+    return out
+
+
+def _font_size_var_matches(css: str) -> list[_Scan]:
+    """v27: the matches (font-size\\s*:\\s*)(var\\([^;{}]*\\)) (gi) hands a
+    replacement: groups (lead, value)."""
+    start = _js_re("font-size", "gi")
+    var_at = _js_re(r"var\(", "i")
+    stop_at = _js_re("[;{}]")
+    n = len(css)
+    out: list[_Scan] = []
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            break
+        colon = _ws_end(css, m.end())
+        if not (colon < n and css[colon] == ":"):
+            pos = m.start() + 1
+            continue
+        v = _ws_end(css, colon + 1)
+        if not var_at.match(css, v):
+            pos = m.start() + 1
+            continue
+        s = stop_at.search(css, v + 4)
+        r = s.start() if s else n
+        close = css.rfind(")", v + 4, r)
+        if close >= 0:
+            out.append(_Scan(m.start(), css[m.start():close + 1], (css[m.start():v], css[v:close + 1])))
+        # Every later start before r ends at the same r and finds no ')' after this one.
+        pos = r
+    return out
+
+
+def _field_font_sizes(sheet: str) -> list[_Scan]:
+    """v27: (?:input|textarea|select|\\.input|\\.field)[^{]*\\{[^}]*font-size\\s*:\\s*(\\d+(?:\\.\\d+)?)(px|rem) (gi)."""
+    return _rule_body_scan(
+        sheet, _braced_starts(sheet, _js_re(r"input|textarea|select|\.input|\.field", "gi")),
+        _js_re("font-size", "gi"), _js_re(r"font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "i"), False,
+    )
+
+
+def _field_font_floors(sheet: str) -> list[_Scan]:
+    """v27: input\\s*(?:,[^{]*)?\\{[^}]*font-size\\s*:\\s*(?:1rem|16px|1\\.0(?:\\d+)?rem|[2-9]\\dpx) (gi)."""
+    return _rule_body_scan(
+        sheet, _input_floor_starts(sheet),
+        _js_re("font-size", "gi"), _js_re(r"font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)", "i"), False,
+    )
+
+
+def _media_query_has_hover_guard(css: str) -> bool:
+    """v08: @media[^{]*(?:hover\\s*:\\s*hover|pointer\\s*:\\s*fine) (i) found."""
+    return _prelude_has(css, _js_re("@media", "gi"), _js_re(r"hover\s*:\s*hover|pointer\s*:\s*fine", "gi"))
+
+
+def _has_breath_keyframes(css: str) -> bool:
+    """v08: @keyframes\\s+[^{]*breath[^{]*\\{[^}]*opacity\\s*: (i) found."""
+    return len(_rule_body_scan(css, _breath_keyframe_starts(css), _js_re("opacity", "gi"), _js_re(r"opacity\s*:", "i"), True)) > 0
+
+
+def _focus_strips_outline(css: str) -> bool:
+    """v09: :focus[^{]*\\{[^}]*outline\\s*:\\s*(none|0)\\s*[;}] (i) found."""
+    return len(_rule_body_scan(
+        css, _braced_starts(css, _js_re(":focus", "gi")),
+        _js_re("outline", "gi"), _js_re(r"outline\s*:\s*(none|0)\s*[;}]", "i"), True,
+    )) > 0
+
+
+def _focus_has_ring(css: str) -> bool:
+    """v09: :focus[^{]*\\{[^}]*(box-shadow|outline\\s*:\\s*[^n0]) (i) found."""
+    return len(_rule_body_scan(
+        css, _braced_starts(css, _js_re(":focus", "gi")),
+        _js_re("box-shadow|outline", "gi"), _js_re(r"(box-shadow|outline\s*:\s*[^n0])", "i"), True,
+    )) > 0
+
+
+def _has_transform_ease_transition(css: str) -> bool:
+    """v10: transition\\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\\([^)]*0[, ]) (i) found."""
+    start = _js_re(r"transition\s*:", "gi")
+    transform = _next_match_finder(css, _js_re("transform", "gi"))
+    ease = _next_match_finder(css, _js_re("ease-out", "gi"))
+    paren = _next_char_finder(css, ")")
+    beziers = _match_starts(css, _js_re(r"cubic-bezier\(", "gi"))
+    zeros = _match_starts(css, _js_re("0[, ]", "g"))
+    n = len(css)
+    pos = 0
+    while True:
+        m = start.search(css, pos)
+        if m is None:
+            return False
+        p = m.end()
+        r = css.find(";", p)
+        if r < 0:
+            r = n
+        t = transform(p)
+        if t < r:
+            from_ = int(t) + 9
+            if ease(from_) < r:
+                return True
+            # A cubic-bezier( that starts before r and holds a 0 followed by a
+            # comma or a space before its first ')'.
+            k = bisect_left(beziers, from_)
+            while k < len(beziers) and beziers[k] < r:
+                inner = beziers[k] + 13
+                z = bisect_left(zeros, inner)
+                if z < len(zeros) and zeros[z] + 1 < paren(inner):
+                    return True
+                k += 1
+        # Every later start before r reads the same declaration, or less of it.
+        if r >= n:
+            return False
+        pos = r + 1
+
+
+def _percent_after(p: str) -> tuple[str, str] | None:
+    """color-mix: ^([\\s\\S]*?)\\s+(\\d*\\.?\\d+)%$ on `p`: groups (colour, number)."""
+    n = len(p)
+    if n == 0 or p[-1] != "%":
+        return None
+    q = n - 1
+    while q > 0 and p[q - 1] in "0123456789.":
+        q -= 1
+    if not _js_re(r"^(?:\d+(?:\.\d+)?|\.\d+)$").search(p[q:n - 1]):
+        return None
+    if q == 0 or p[q - 1] not in _JS_WS_SET:
+        return None
+    w = q - 1
+    while w > 0 and p[w - 1] in _JS_WS_SET:
+        w -= 1
+    return (p[:w], p[q:n - 1])
+
+
+def _relative_color_match(args: str) -> tuple[str, str, str | None] | None:
+    """Relative colour syntax:
+    ^from\\s+([\\s\\S]+?)\\s+(r\\s+g\\s+b|h\\s+s\\s+l|l\\s+c\\s+h|l\\s+a\\s+b)\\s*(?:\\/\\s*([\\s\\S]+))?$
+    on `args`: groups (base, channels, alpha)."""
+    if not args.startswith("from") or len(args) < 5 or args[4] not in _JS_WS_SET:
+        return None
+    channels = _js_re(r"(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$")
+    start = _ws_end(args, 4)
+    # The base is lazy: it ends at the first run of space after its first
+    # character that the channel keywords and the rest of the value follow.
+    k = start + 1
+    while k < len(args):
+        if args[k] not in _JS_WS_SET:
+            k += 1
+            continue
+        w = _ws_end(args, k)
+        t = channels.match(args, w)
+        if t:
+            return (args[start:k], t.group(1), t.group(2))
+        k = w + 1
+    # With less of the leading space taken, the base can be one space whose
+    # following space leads straight to the keywords.
+    if start - 4 >= 3:
+        t = channels.match(args, start)
+        if t:
+            return (args[start - 2:start - 1], t.group(1), t.group(2))
+    return None
+
+
 # ── Page fetch ───────────────────────────────────────────────────────────────
 
 
@@ -706,11 +1469,10 @@ def _extract_css_parts(html: str, base_url: str) -> list[str]:
     The link pattern needs rel before href, as the live engine's does; a page
     that writes href first has that sheet ignored by both engines alike.
     """
-    parts = [m.group(1) for m in _js_re(r"<style[^>]*>([\s\S]*?)<\/style>", "gi").finditer(html)]
-    link_re = _js_re(r"<link[^>]*rel=[\"']?stylesheet[\"']?[^>]*href=[\"']([^\"']+)[\"']", "gi")
-    for m in link_re.finditer(html):
+    parts = [m.groups[0] for m in _style_elements(html)]
+    for m in _stylesheet_link_matches(html):
         try:
-            parts.append(urljoin(base_url, m.group(1)))
+            parts.append(urljoin(base_url, m.groups[0]))
         except ValueError:
             pass  # malformed href, ignored as the live engine does
     return parts
@@ -747,11 +1509,11 @@ def _extract_root_tokens(css: str) -> dict[str, str]:
     accessibility override does not replace the base token. `:root, :host`
     (the block Tailwind v4 writes its theme into) is read too, from 1.3.0.
     """
-    stripped = _js_re(r"@media[^{]*\{[^@]*?\}\s*\}", "gi").sub("", css)
+    stripped = _without_media_blocks(css)
     tokens: dict[str, str] = {}
-    for block in _js_re(r":root(?:\s*,\s*:host)?\s*\{([^}]*)\}", "g").finditer(stripped):
-        for prop in _js_re(r"--([\w-]+)\s*:\s*([^;]+?)(?:;|$)", "g").finditer(block.group(1)):
-            tokens[f"--{prop.group(1)}"] = _js_trim(prop.group(2))
+    for block in _root_token_blocks(stripped):
+        for prop in _custom_property_values(block.groups[0]):
+            tokens[f"--{prop.groups[0]}"] = _js_trim(prop.groups[1])
     return tokens
 
 
@@ -949,7 +1711,9 @@ def _css_number(token: str, percent_scale: float) -> float | None:
     t = _js_trim(token).lower()
     if t == "none":
         return 0
-    m = _js_re(r"^([+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$").search(t)
+    # Engine 1.5.1: \d+(?:\.\d*)? reads the integer part once (\d+\.?\d* tried
+    # every split of a digit run between its two quantifiers).
+    m = _js_re(r"^([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)(%|deg|turn|rad|grad)?$").search(t)
     if not m:
         return None
     x = _js_float(m.group(1))
@@ -1028,10 +1792,11 @@ def _parse_css_color(value: str, dark: bool, depth: int = 0) -> Rgba | None:
             return None
 
         def side(p: str) -> tuple[str, float | None]:
-            after = _js_re(r"^([\s\S]*?)\s+(\d*\.?\d+)%$").search(p)
-            before = _js_re(r"^(\d*\.?\d+)%\s+([\s\S]*)$").search(p)
+            after = _percent_after(p)
+            # The number without the ambiguous \d*\.?\d+ (engine 1.5.1).
+            before = _js_re(r"^(\d+(?:\.\d+)?|\.\d+)%\s+([\s\S]*)$").search(p)
             if after:
-                return after.group(1), _js_float(after.group(2)) / 100
+                return after[0], _js_float(after[1]) / 100
             if before:
                 return before.group(2), _js_float(before.group(1)) / 100
             return p, None
@@ -1085,12 +1850,12 @@ def _parse_css_color(value: str, dark: bool, depth: int = 0) -> Rgba | None:
             rgb = _oklab_to_srgb(lab)
         mult = _js_min(1, total)
         return (_js_round(rgb[0]), _js_round(rgb[1]), _js_round(rgb[2]), _js_round(alpha * mult * 255) / 255)
-    rel = _js_re(r"^from\s+([\s\S]+?)\s+(r\s+g\s+b|h\s+s\s+l|l\s+c\s+h|l\s+a\s+b)\s*(?:\/\s*([\s\S]+))?$").search(args)
+    rel = _relative_color_match(args)
     if rel:
-        base = _parse_css_color(rel.group(1), dark, depth + 1)
+        base = _parse_css_color(rel[0], dark, depth + 1)
         if not base:
             return None
-        a = base[3] if rel.group(3) is None else _css_alpha(rel.group(3))
+        a = base[3] if rel[2] is None else _css_alpha(rel[2])
         return None if a is None else (base[0], base[1], base[2], a)
     if name == "color":
         m = _js_re(r"^srgb\s+([\s\S]+)$").search(args)
@@ -1376,7 +2141,7 @@ def _opts_into_motion(body: str) -> bool:  # optsIntoMotion
     it stills motion for users with no preference and leaves it running for
     users who asked for less, so it does not count.
     """
-    if _js_re(r"@view-transition\s*\{[^}]*navigation\s*:\s*auto", "i").search(body):
+    if _has_view_transition_navigation(body):
         return True
     decl_re = _js_re(
         r"(?:^|[{;\s])(animation|animation-name|animation-duration|transition|transition-property"
@@ -1394,7 +2159,7 @@ def _opts_into_motion(body: str) -> bool:  # optsIntoMotion
             continue
         times = [
             _js_float(t.group(1)) * (1000 if t.group(2) == "s" else 1)
-            for t in _js_re(r"(?:^|[\s,(])(\d*\.?\d+)(ms|s)\b", "g").finditer(value)
+            for t in _js_re(r"(?:^|[\s,(])(\d+(?:\.\d+)?|\.\d+)(ms|s)\b", "g").finditer(value)
         ]
         if times and all(t <= 10 for t in times):
             continue
@@ -1410,28 +2175,27 @@ def _check_reduced_motion(css: str) -> dict[str, str]:  # checkReducedMotion
     commented-out query counts for nothing.
     """
     item = "prefers-reduced-motion disables entrance and wordmark breath"
-    code = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub("", css)
-    mq_re = _js_re(r"@media[^{]*prefers-reduced-motion\s*:\s*(reduce|no-preference)\b[^{]*\{", "gi")
+    code = _without_css_comments(css, "")
+    queries = _reduced_motion_queries(code)
     saw_reduce = saw_opt_in = saw_no_preference = False
-    for match in mq_re.finditer(code):
-        value = match.group(1).lower()
-        # Capture the block body by brace-matching from the opening brace.
-        open_at = match.end() - 1
-        depth = 0
-        close_at = -1
-        for brace in re.finditer(r"[{}]", code[open_at:]):
-            if brace.group(0) == "{":
-                depth += 1
-            else:
-                depth -= 1
-                if depth == 0:
-                    close_at = open_at + brace.start()
-                    break
+    # Each block body ends at the brace that brings the depth back to zero,
+    # found for every query in one pass (engine 1.5.1; a walk per query read
+    # nested queries' bodies over and over).
+    closes = _closing_braces(code, {q.index + len(q.text) - 1 for q in queries})
+    # A no-preference block inside one already read opts into motion only if
+    # that one does, so it is not read again.
+    read_until = -1
+    for match in queries:
+        value = match.groups[0].lower()
+        open_at = match.index + len(match.text) - 1
+        close_at = closes.get(open_at, -1)
         body = _js_trim(code[open_at + 1:close_at]) if close_at > open_at else ""
         if value == "no-preference":
             saw_no_preference = True
-            if _opts_into_motion(body):
-                saw_opt_in = True
+            if not saw_opt_in and close_at > read_until:
+                if _opts_into_motion(body):
+                    saw_opt_in = True
+                read_until = close_at
             continue
         if len(body) > 0:
             saw_reduce = True
@@ -1450,14 +2214,14 @@ def _check_reduced_motion(css: str) -> dict[str, str]:  # checkReducedMotion
 
 
 def _visible_html(html: str) -> str:
-    return _js_re(r"<style[\s\S]*?<\/style>", "gi").sub("", _js_re(r"<script[\s\S]*?<\/script>", "gi").sub("", html))
+    return _without_scripts_and_styles(html)
 
 
 def _check_semantic_html(html: str) -> dict[str, str]:  # checkSemanticHtmlFoundation
     item = "Semantic HTML foundation: single h1, title, meta description, landmark"
     visible = _visible_html(html)
     h1_count = len(_js_re(r"<h1\b", "gi").findall(visible))
-    has_title = bool(_js_re(r"<title\b[^>]*>[^<]+<\/title>", "i").search(html))
+    has_title = _has_title_text(html)
     has_meta_desc = bool(_js_re(r"<meta\s+name=[\"']description[\"']", "i").search(html))
     has_landmark = bool(_js_re(r"<(main|header|nav)\b", "i").search(visible))
     signals: list[str] = []
@@ -1479,7 +2243,7 @@ def _check_semantic_html(html: str) -> dict[str, str]:  # checkSemanticHtmlFound
 def _check_press_scale(css: str) -> dict[str, str]:  # checkPressScale
     item = "Press scale 0.96 on cells, 0.985 on cards/rows (both above the 0.95 floor)"
     # Keyframes are stripped: scale(0) in a ripple keyframe is a start state.
-    stripped = _js_re(r"@keyframes\s+[^{]+\{[^@]*?\}", "gi").sub("", css)
+    stripped = _without_keyframes_blocks(css)
     press_scales: list[float] = []
     decorative_below: list[str] = []
     active_below = False
@@ -1517,10 +2281,8 @@ def _check_press_scale(css: str) -> dict[str, str]:  # checkPressScale
 
 def _check_line_height_by_role(css: str) -> dict[str, str]:  # checkLineHeightByRole
     item = "Line-height by role: headings 1.08, body 1.55 confirmed"
-    heading_re = _js_re(r"(?:h1|h2|h3|h4|h5|h6|\.h\d|heading|title)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)", "gi")
-    body_re = _js_re(r"(?:body|p|article|\.body|\.prose|\.copy)[^{]*\{[^}]*line-height\s*:\s*([0-9.]+)", "gi")
-    heading = [_js_float(m.group(1)) for m in heading_re.finditer(css)]
-    body = [_js_float(m.group(1)) for m in body_re.finditer(css)]
+    heading = [_js_float(m.groups[0]) for m in _heading_line_heights(css)]
+    body = [_js_float(m.groups[0]) for m in _body_line_heights(css)]
     heading_ok = any(1.0 <= lh <= 1.15 for lh in heading)
     body_ok = any(1.4 <= lh <= 1.7 for lh in body)
     if heading_ok and body_ok:
@@ -1537,7 +2299,7 @@ def _check_line_height_by_role(css: str) -> dict[str, str]:  # checkLineHeightBy
 
 def _check_selection_styled(css: str) -> dict[str, str]:  # checkSelectionStyled
     item = "::selection styled with var(--signal) instead of the browser default"
-    rules = [m.group(0) for m in _js_re(r"::selection\s*\{[^}]*\}", "gi").finditer(css)]
+    rules = _selection_rules(css)
     if not rules:
         return _chk("v20", item, "cadence", "WARN", "no ::selection rule found: browser default will show")
     if any(_js_re(r"var\(\s*--signal", "i").search(r) for r in rules):
@@ -1595,8 +2357,8 @@ def _has_zoomable_field(html: str) -> bool:  # hasZoomableField
     visible = _visible_html(html)
     if _js_re(r"<(?:textarea|select)\b", "i").search(visible):
         return True
-    for tag in _js_re(r"<input\b[^>]*>", "gi").finditer(visible):
-        typ = _js_re(r"\stype\s*=\s*[\"']?([a-z-]+)", "i").search(tag.group(0))
+    for tag in _input_tags(visible):
+        typ = _js_re(r"\stype\s*=\s*[\"']?([a-z-]+)", "i").search(tag)
         if not typ or not _js_re(r"^(?:hidden|checkbox|radio|submit|button|reset|image|file|range|color)$", "i").search(typ.group(1)):
             return True
     return False
@@ -1606,7 +2368,7 @@ def _is_field_selector(selector: str) -> bool:  # isFieldSelector
     """v27 helper (engine 1.3.1): the subject of some selector in the list is an
     input, textarea or select element, or carries the exact class .input or
     .field, and is not a pseudo-element."""
-    clean = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub(" ", selector)
+    clean = _without_css_comments(selector, " ")
     for part in _split_css_top_level(clean, ","):
         compounds = _js_re(r"\s*[>+~]\s*|\s+").split(_js_trim(part))
         subject = compounds[-1] if compounds and compounds[-1] else ""
@@ -1619,31 +2381,70 @@ def _is_field_selector(selector: str) -> bool:  # isFieldSelector
     return False
 
 
-def _rule_selector_at(css: str, offset: int) -> str | None:  # ruleSelectorAt
-    """v27 helper (engine 1.4.1): the selector of the rule whose body holds the
-    declaration at `offset`, read back from that body's opening brace to the
-    previous closing brace, opening brace or semicolon. None when the offset is
-    not inside a rule body."""
-    # JS lastIndexOf(c, i) searches positions <= i; rfind(c, 0, i + 1) is the same.
-    open_ = css.rfind("{", 0, offset + 1)
-    if open_ < 0 or css.rfind("}", 0, offset + 1) > open_:
-        return None
-    start = max(css.rfind("}", 0, max(open_, 0)), css.rfind("{", 0, max(open_, 0)), css.rfind(";", 0, max(open_, 0))) + 1
-    return css[start:open_]
+_RULE_MARKS = re.compile(r"[{};]")
 
 
-def _in_field_rule(css: str, offset: int) -> bool:  # inFieldRule
-    """v27 helper (engine 1.4.1): the font-size declaration at `offset` sits in
-    a rule whose own selector names a field keyword (input, textarea, select,
-    .field). v27's literal regexes run `[^{]*` across a closing brace, so
-    "select" in `user-select: none` carried into the next rule; each candidate
-    is now judged by the selector of the rule it actually sits in. Class names
-    such as `.search-input` stay matched, as before."""
-    selector = _rule_selector_at(css, offset)
-    if selector is None:
-        return False
-    clean = _js_re(r"\/\*[\s\S]*?\*\/", "g").sub(" ", selector)
-    return bool(_js_re(r"input|textarea|select|\.field", "i").search(clean))
+def _rule_selector_finder(css: str) -> Callable[[int], tuple[int, int] | None]:  # ruleSelectorFinder
+    """v27 helper (engine 1.4.1): the rule whose body holds the declaration at
+    an offset in the sheet, its selector read back from that body's opening
+    brace to the previous closing brace, opening brace or semicolon. The finder
+    returns (start, open), the selector being css[start:open], or None when
+    the offset is not inside a rule body.
+
+    Engine 1.5.1: the finder lists the sheet's braces and semicolons once and
+    answers each offset by binary search. Before, each declaration ran three
+    rfind scans, each reading back to the last character of its kind, so a
+    sheet with no semicolons was read back to its start once per declaration
+    and cost the square of its length. Each answer is the one those scans
+    gave."""
+    opens: list[int] = []
+    closes: list[int] = []
+    marks: list[int] = []
+    for m in _RULE_MARKS.finditer(css):
+        k = m.start()
+        marks.append(k)
+        if css[k] == "{":
+            opens.append(k)
+        elif css[k] == "}":
+            closes.append(k)
+
+    def rule_at(offset: int) -> tuple[int, int] | None:
+        i = bisect_right(opens, offset)
+        if not i:
+            return None
+        open_ = opens[i - 1]
+        j = bisect_right(closes, offset)
+        if j and closes[j - 1] > open_:
+            return None
+        k = bisect_left(marks, open_)
+        return (marks[k - 1] + 1 if k else 0, open_)
+
+    return rule_at
+
+
+def _field_rule_finder(css: str) -> Callable[[int], bool]:  # fieldRuleFinder
+    """v27 helper (engine 1.4.1): for an offset, whether the font-size
+    declaration there sits in a rule whose own selector names a field keyword
+    (input, textarea, select, .field). v27's literal regexes run `[^{]*` across
+    a closing brace, so "select" in `user-select: none` carried into the next
+    rule; each candidate is now judged by the selector of the rule it actually
+    sits in. Class names such as `.search-input` stay matched, as before. The
+    declarations of one rule share its verdict (engine 1.5.1: each one read the
+    selector again)."""
+    rule_at = _rule_selector_finder(css)
+    field = _js_re(r"input|textarea|select|\.field", "i")
+    seen = [-1, False]
+
+    def in_field_rule(offset: int) -> bool:
+        rule = rule_at(offset)
+        if rule is None:
+            return False
+        if rule[1] != seen[0]:
+            seen[0] = rule[1]
+            seen[1] = bool(field.search(_without_css_comments(css[rule[0]:rule[1]], " ")))
+        return seen[1]
+
+    return in_field_rule
 
 
 def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolveFontSizeVars
@@ -1652,15 +2453,28 @@ def _resolve_font_size_vars(css: str, tokens: dict[str, str]) -> str:  # resolve
     does not resolve, and every other rule, is left as written."""
     if "var(" not in css:
         return css
-
-    def decl(m: "re.Match[str]") -> str:
-        selector = _rule_selector_at(css, m.start())
-        if selector is None or not _is_field_selector(selector):
-            return m.group(0)
-        sub = _substitute_css_vars(m.group(2), [tokens])
-        return m.group(0) if sub is None else m.group(1) + _js_trim(sub)
-
-    return _js_re(r"(font-size\s*:\s*)(var\([^;{}]*\))", "gi").sub(decl, css)
+    parts: list[str] = []
+    rule_at = _rule_selector_finder(css)
+    seen = -1
+    styled = False
+    last = 0
+    for m in _font_size_var_matches(css):
+        parts.append(css[last:m.index])
+        last = m.index + len(m.text)
+        rule = rule_at(m.index)
+        if rule is None:
+            parts.append(m.text)
+            continue
+        if rule[1] != seen:
+            seen = rule[1]
+            styled = _is_field_selector(css[rule[0]:rule[1]])
+        if not styled:
+            parts.append(m.text)
+            continue
+        sub = _substitute_css_vars(m.groups[1], [tokens])
+        parts.append(m.text if sub is None else m.groups[0] + _js_trim(sub))
+    parts.append(css[last:])
+    return "".join(parts)
 
 
 def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None = None) -> dict[str, str]:  # checkInputFontFloor
@@ -1673,23 +2487,22 @@ def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None =
     """
     item = "Input font-size ≥16px (prevents iOS Safari auto-zoom)"
     css = _resolve_font_size_vars(css, tokens or {})
-    input_re = _js_re(r"(?:input|textarea|select|\.input|\.field)[^{]*\{[^}]*font-size\s*:\s*(\d+(?:\.\d+)?)(px|rem)", "gi")
+    in_field_rule = _field_rule_finder(css)
     below: list[str] = []
-    for m in input_re.finditer(css):
+    for m in _field_font_sizes(css):
         # Engine 1.4.1: only a declaration whose own rule styles a field counts.
-        if not _in_field_rule(css, m.start() + m.group(0).rfind("font-size")):
+        if not in_field_rule(m.index + m.text.rfind("font-size")):
             continue
-        val = _js_float(m.group(1))
-        unit = m.group(2).lower()
+        val = _js_float(m.groups[0])
+        unit = m.groups[1].lower()
         px = val * 16 if unit == "rem" else val
         if px < 16:
             below.append(f"{_js_num(val)}{unit} ({_js_num(px)}px)")
     if not below:
-        floor = r"font-size\s*:\s*(?:1rem|16px|1\.0(?:\d+)?rem|[2-9]\dpx)"
         # Engine 1.4.1: the floor rule must itself style a field, as above.
         has_floor = any(
-            _in_field_rule(css, f.start() + f.group(0).rfind("font-size"))
-            for f in _js_re(r"input\s*(?:,[^{]*)?\{[^}]*" + floor, "gi").finditer(css)
+            in_field_rule(f.index + f.text.rfind("font-size"))
+            for f in _field_font_floors(css)
         )
         if has_floor:
             return _chk("v27", item, "accessibility", "PASS", "input font-size floor detected")
@@ -1701,13 +2514,13 @@ def _check_input_font_floor(css: str, html: str, tokens: dict[str, str] | None =
 
 def _check_poise_interaction_rules(css: str) -> dict[str, str]:  # checkPoiseInteractionRules
     item = "Poise interaction rules match live /labs/poise and contract.interaction"
-    rules = [
-        ("fine-pointer hover guard", r"@media[^{]*(?:hover\s*:\s*hover|pointer\s*:\s*fine)"),
-        ("press settle scale ~0.97", r"scale\s*\(\s*0?\.9[5-9]\s*\)"),
-        ("opacity-only mark breath", r"@keyframes\s+[^{]*breath[^{]*\{[^}]*opacity\s*:"),
+    rules: list[tuple[str, Callable[[str], bool]]] = [
+        ("fine-pointer hover guard", _media_query_has_hover_guard),
+        ("press settle scale ~0.97", lambda s: bool(_js_re(r"scale\s*\(\s*0?\.9[5-9]\s*\)", "i").search(s))),
+        ("opacity-only mark breath", _has_breath_keyframes),
     ]
-    found = [name for name, src in rules if _js_re(src, "i").search(css)]
-    missing = [name for name, src in rules if not _js_re(src, "i").search(css)]
+    found = [name for name, test in rules if test(css)]
+    missing = [name for name, test in rules if not test(css)]
     if len(found) >= 2:
         return _chk("v08", item, "poise", "PASS", f"static half verified: {', '.join(found)} (interaction-feel half requires browser)")
     return _chk("v08", item, "poise", "WARN", f"missing: {', '.join(missing)}")
@@ -1717,8 +2530,8 @@ def _check_poise_keyboard_path(css: str, html: str) -> dict[str, str]:  # checkP
     item = "Poise keyboard-path verification remains published and current"
     has_focus_visible = bool(_js_re(r":focus-visible", "i").search(css))
     has_focus = bool(_js_re(r":focus[^-]", "i").search(css))
-    strips_outline = bool(_js_re(r":focus[^{]*\{[^}]*outline\s*:\s*(none|0)\s*[;}]", "i").search(css))
-    has_focus_ring = bool(_js_re(r":focus[^{]*\{[^}]*(box-shadow|outline\s*:\s*[^n0])", "i").search(css))
+    strips_outline = _focus_strips_outline(css)
+    has_focus_ring = _focus_has_ring(css)
     has_tabindex = bool(_js_re(r"tabindex\s*=", "i").search(html))
     has_aria = bool(_js_re(r"aria-(label|labelledby|describedby|expanded|selected|pressed)", "i").search(html))
     signals = sum([has_focus_visible, has_focus, has_focus_ring, has_tabindex, has_aria])
@@ -1731,13 +2544,13 @@ def _check_poise_keyboard_path(css: str, html: str) -> dict[str, str]:  # checkP
 
 def _check_takt_feel_rules(css: str) -> dict[str, str]:  # checkTaktFeelRules
     item = "Takt interface-feel rules match live CSS and contract.takt"
-    rules = [
-        ("stagger enter animation-delay", r"animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)"),
-        ("soften exit transform ease-out", r"transition\s*:[^;]*transform[^;]*(ease-out|cubic-bezier\([^)]*0[, ])"),
-        ("concentric border-radius set", r"border-radius\s*:\s*\d+"),
+    rules: list[tuple[str, Callable[[str], bool]]] = [
+        ("stagger enter animation-delay", lambda s: bool(_js_re(r"animation-delay\s*:\s*(?:0?\.(?:0?[6-9]|1[0-2])\d*s|\d{2,3}ms)", "i").search(s))),
+        ("soften exit transform ease-out", _has_transform_ease_transition),
+        ("concentric border-radius set", lambda s: bool(_js_re(r"border-radius\s*:\s*\d+", "i").search(s))),
     ]
-    found = [name for name, src in rules if _js_re(src, "i").search(css)]
-    missing = [name for name, src in rules if not _js_re(src, "i").search(css)]
+    found = [name for name, test in rules if test(css)]
+    missing = [name for name, test in rules if not test(css)]
     if len(found) >= 2:
         return _chk("v10", item, "takt", "PASS", f"static half verified: {', '.join(found)} (press-behavior + hit-area require browser)")
     return _chk("v10", item, "takt", "WARN", f"missing: {', '.join(missing)}")
@@ -1985,7 +2798,7 @@ SCOPE_CONTRACT_HOSTS = ("designesy.org", "www.designesy.org")
 # letter, a UNC share, a POSIX home, temp or system root), file:// URLs and npm
 # cache segments are replaced; the clause that says what failed is kept, and so
 # is trailing punctuation. A path segment may hold spaces, the last one may not.
-_PATH_TAIL = re.compile(r"[.,;:!?)]+$")
+_PATH_TAIL_CHARS = frozenset(".,;:!?)")
 _FILE_URL = re.compile(r"\bfile://[^\s'\"<>`|]*", re.IGNORECASE)
 _UNC_PATH = re.compile(r"\\\\[^\\\s'\"<>`|]+\\(?:[^\\\r\n'\"<>`|*?]+\\)*[^\\\s'\"<>`|*?]*")
 _DRIVE_PATH = re.compile(r"(?<![\w\\/])[A-Za-z]:([\\/])(?:[^\\/\r\n'\"<>`|*?]+\1)*[^\\/\s'\"<>`|*?]*")
@@ -1993,12 +2806,46 @@ _POSIX_PATH = re.compile(
     r"(^|[\s'\"`(=,:\[])/(?:home|Users|root|tmp|var|private|opt|usr|srv|mnt|Volumes|Library|app|vercel"
     r"|workspace|workspaces|github|runner|nix|snap)(?:/[^/\r\n'\"<>`|]+(?=/))*/[^/\s'\"<>`|]+"
 )
-_NPM_CACHE = re.compile(r"[^\s'\"<>`|]*(?:npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/])[^\s'\"<>`|]*", re.IGNORECASE)
+# An npm cache segment is a run of characters other than space, quotes, angle
+# brackets, backtick and pipe that holds npm-cache, /_npx/ or /.npm/; the run is
+# replaced whole. Each run is read once (engine 1.5.1: the run pattern was
+# retried from every character in it).
+_NPM_RUN = re.compile(r"[^\s'\"<>`|]+", re.IGNORECASE)
+_NPM_MARKER = re.compile(r"npm-cache|[\\/]_npx[\\/]|[\\/]\.npm[\\/]", re.IGNORECASE)
+
+
+def _path_tail(matched: str) -> str:
+    """The trailing run of [.,;:!?)] that `[.,;:!?)]+$` finds, read back from
+    the end once (engine 1.5.1: the pattern was retried from every mark in a
+    run). Python's `$` also matches before a final newline, so that run counts
+    too, as it did."""
+    end = len(matched) - 1 if matched.endswith("\n") else len(matched)
+    k = end
+    while k > 0 and matched[k - 1] in _PATH_TAIL_CHARS:
+        k -= 1
+    return matched[k:end]
 
 
 def _path_label(label: str, matched: str) -> str:
-    tail = _PATH_TAIL.search(matched)
-    return label + (tail.group(0) if tail else "")
+    return label + _path_tail(matched)
+
+
+def _without_npm_cache(text: str) -> str:
+    """Each run holding an npm cache marker replaced by its label."""
+    parts: list[str] = []
+    last = 0
+    marker_at: float = -1
+    for run in _NPM_RUN.finditer(text):
+        a, b = run.span()
+        if marker_at < a:
+            found = _NPM_MARKER.search(text, a)
+            marker_at = found.start() if found else _INF
+        if marker_at < b:
+            parts.append(text[last:a])
+            parts.append(_path_label("the npm cache", text[a:b]))
+            last = b
+    parts.append(text[last:])
+    return "".join(parts)
 
 
 def _scrub_local_paths(text: str) -> str:
@@ -2007,7 +2854,7 @@ def _scrub_local_paths(text: str) -> str:
     text = _UNC_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
     text = _DRIVE_PATH.sub(lambda m: _path_label("a local path", m.group(0)), text)
     text = _POSIX_PATH.sub(lambda m: m.group(1) + _path_label("a local path", m.group(0)), text)
-    return _NPM_CACHE.sub(lambda m: _path_label("the npm cache", m.group(0)), text)
+    return _without_npm_cache(text)
 
 
 def _scrub_check_details(checks: list[dict[str, str]]) -> list[dict[str, str]]:

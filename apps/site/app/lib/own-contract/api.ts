@@ -35,7 +35,7 @@ export const CONTRACT_LIMITS = {
 export interface RouteDeps {
   /** fetchPageResilient: the page and its stylesheets, or why there is no page. */
   fetchPage: (url: string) => Promise<
-    | { ok: true; html: string; css: string; stylesheetsFetched: number; stylesheetsTotal: number; stylesheetsTruncated: boolean }
+    | { ok: true; html: string; css: string; stylesheetsFetched: number; stylesheetsTotal: number; stylesheetsTruncated: boolean; htmlTruncated?: boolean; stylesheetBytesTruncated?: boolean }
     | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number; attempted: string[] }
   >;
   /** The legacy checks the baseline layer reads, run on one page (any superset of the 18). */
@@ -252,7 +252,7 @@ export async function handleOwnContract(req: ContractRequest, deps: RouteDeps): 
   }
   const run = scoreOwnContract({
     contract,
-    page: { html: page.html, css: page.css, site: { stylesheetsFetched: page.stylesheetsFetched, stylesheetsTotal: page.stylesheetsTotal, stylesheetsTruncated: page.stylesheetsTruncated } },
+    page: { html: page.html, css: page.css, site: { stylesheetsFetched: page.stylesheetsFetched, stylesheetsTotal: page.stylesheetsTotal, stylesheetsTruncated: page.stylesheetsTruncated, bytesTruncated: Boolean(page.htmlTruncated || page.stylesheetBytesTruncated) } },
     baselineChecks: deps.legacyChecks({ html: page.html, css: page.css }),
   });
   const bytes = (s: string) => new TextEncoder().encode(s).length;
