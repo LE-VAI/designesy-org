@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**@designesy/cli 0.3.2** (npm), released on its own (`cli-v0.3.2`). It depends
+on `@designesy/score` ^0.9.2. 0.3.1 asked for ^0.5.0, which on a 0.x version
+means 0.5.x only, so `designesy score` kept running the 0.5 engine; it now runs
+engine 1.5.1. Installs also bring score's optional DESIGN.md linter
+(`@google/design.md`), as installing `@designesy/score` itself does.
+
 **Engine 1.5.1 and @designesy/score 0.9.2: linear-time matching and capped
 document reads** (the hosted API and npm `score-v0.9.2`; the PyPI server's
 offline engine carries the same change in its next release). Scoring time now
