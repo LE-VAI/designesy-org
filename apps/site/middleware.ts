@@ -65,7 +65,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { Ratelimit } from '@upstash/ratelimit';
-import { clientIp, getLimiter, type LimiterOutcome } from './app/lib/rate-limit';
+import { clientKey, getLimiter, type LimiterOutcome } from './app/lib/rate-limit';
 
 // ── Upstash rate limiters ───────────────────────────────────────────────────
 //
@@ -87,9 +87,6 @@ async function checkRateLimit(
   // 'inactive' — no limiter object at all (env vars missing / construction threw)
   if (!limiter) return { blocked: null, outcome: 'inactive' };
 
-  // The x-forwarded-for / x-real-ip rule (app/lib/rate-limit.ts).
-  const ip = clientIp(request.headers);
-
   // FAIL OPEN on any limiter error.
   //
   // This await was unguarded, and a rate limiter that throws takes the whole
@@ -105,7 +102,9 @@ async function checkRateLimit(
   // protection, never to refuse every caller. Logged so the outage is visible.
   let decision: { success: boolean; limit: number; remaining: number; reset: number };
   try {
-    decision = await limiter.limit(`${identifier}:${ip}`);
+    // The caller's key, a keyed hash of the IP (clientKey, app/lib/rate-limit.ts),
+    // is derived inside the try so a crypto failure also fails open.
+    decision = await limiter.limit(`${identifier}:${await clientKey(request.headers)}`);
   } catch (err) {
     console.error(
       `[middleware] rate limiter unavailable for "${identifier}" — failing open:`,
