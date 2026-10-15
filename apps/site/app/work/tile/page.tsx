@@ -18,7 +18,7 @@ export const metadata: Metadata = pageMeta({
   path: '/work/tile',
   ogTitle: 'Tile · case study',
   ogDescription:
-    'One story, many tiles, shared spine. Shipped, published, reviewed: 617 views on X, the breakout format.',
+    'One story, many tiles, shared spine. Shipped, published, reviewed: 617 views on X (24 h, 2026-07-13).',
   twitterDescription: 'Tile case study · designesy.org/work/tile',
   type: 'article',
 });
@@ -103,7 +103,7 @@ const FINDINGS = [
   'Zero-dependency deployment: single index.html, no framework, no CDN',
   'Human-language labels lead in place of grammar jargon',
   'Full documentation: BRIEF, STATUS, HOST, from intent through hosting',
-  'Publication format: one word + screen recording = 617 views (breakout)',
+  'Published on X: 617 views (24 h, 2026-07-13)',
   'Designesy graduation path documented and gated',
   'Built on the VAI surface; graduating to Designesy requires token reconciliation',
   'No machine export yet; tile.json would make the tool machine-consumable',
@@ -191,7 +191,7 @@ export default function TileCaseStudyPage() {
             <span className="status-badge">Pass with notes</span>
             <span className="lab-meta-item">Kit · Design Review</span>
             <span className="lab-meta-item">Artifact · le-vai.github.io/tile</span>
-            <span className="lab-meta-item">Date · 2026-07-13</span>
+            <span className="lab-meta-item">Reviewed · 2026-07-13</span>
           </div>
           <AgentActions mdPath="/work/tile.md" label="the tile case study" />
         </section>
