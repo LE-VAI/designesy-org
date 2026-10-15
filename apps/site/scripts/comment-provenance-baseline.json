@@ -2,11 +2,7 @@
  "_about": "Per-file match counts for check-comment-provenance.js. A file may not rise above its count and no new file may appear; lower the counts with --update after a cleanup.",
  "files": {
   ".github/workflows/ci.yml": 1,
-  ".github/workflows/rescore-leaderboard.yml": 2,
-  "apps/site/app/api/score/route.ts": 2,
   "apps/site/app/changelog/page.tsx": 3,
-  "apps/site/app/globals.css": 6,
-  "apps/site/app/hero-stats.ts": 1,
   "apps/site/app/lib/own-contract/api.ts": 5,
   "apps/site/app/lib/own-contract/baseline.ts": 1,
   "apps/site/app/lib/own-contract/bind.ts": 1,
@@ -43,10 +39,7 @@
   "apps/site/app/lib/own-contract/run.ts": 1,
   "apps/site/app/lib/own-contract/score.ts": 1,
   "apps/site/app/lib/own-contract/types.ts": 1,
-  "apps/site/app/score/contract/copy.ts": 1,
-  "apps/site/scripts/badge-renders.mjs": 1,
   "apps/site/scripts/check-extractor-brace-bound.js": 1,
-  "apps/site/scripts/check-own-contract.mjs": 18,
-  "packages/score/src/engine.ts": 2
+  "apps/site/scripts/check-own-contract.mjs": 18
  }
 }
