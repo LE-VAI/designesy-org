@@ -586,7 +586,7 @@
 .vc-grade {
   font-family: var(--display);
   font-weight: 700;
-  font-size: 3.4rem;
+  font-size: 3.052rem; /* one step above --text-h1 on the 1.25 type scale */
   line-height: 0.9;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -890,7 +890,6 @@ html[data-motion="paused"] .vc-glow {
     padding: 1rem var(--vc-face-x) 1.1rem;
   }
   .vc-state, .vc-tally, .vc-log { grid-column: 1; grid-row: auto; }
-  .vc-grade { font-size: 2.8rem; }
 }
 
 /* --- Cohort strip: the week's other results, one quiet line -------------
