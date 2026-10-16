@@ -115,19 +115,21 @@ export const FLUID_TYPE: Readonly<Record<string, { family: Stack; weight: number
   'wordmark-hero': { family: 'sans', weight: 800, leading: 'display', from: [BODY] },
 };
 
-/** Leadings no size entry carries, each with the family and size step of the
-    first rule that ships it (globals.css first, then the other stylesheets by
-    path), read the same way: `ship`, then each rule in `from`. */
-export const LEADING_TYPE: Readonly<Record<string, { family: Stack; step: Step; ship: string; from: readonly string[] }>> = {
-  step: { family: 'display', step: 'h3', ship: 'home-inspect.css .inspect-step-title', from: [] },
-  segment: { family: 'sans', step: 'body', ship: 'lib/engine/command-bar.css .eg-seg-opt', from: ['lib/engine/command-bar.css .eg-seg-opt'] },
-  tight: { family: 'sans', step: 'body', ship: 'globals.css .nav-drawer .nav-drawer-group-list a', from: [BODY] },
-  compact: { family: 'sans', step: 'label', ship: 'globals.css .cmdk-item-meta', from: [BODY] },
-  card: { family: 'sans', step: 'lead', ship: 'globals.css .principle-body h3', from: [] },
-  'cell-title': { family: 'sans', step: 'body', ship: 'globals.css .check-cell-title', from: [BODY] },
-  'cell-meta': { family: 'sans', step: 'label', ship: 'globals.css .check-cell-meta', from: [BODY] },
-  note: { family: 'sans', step: 'body', ship: 'globals.css .principle-body p', from: [BODY] },
-  reading: { family: 'sans', step: 'body', ship: 'brand/brand.css .brand-section p', from: [BODY] },
+/** Leadings no size entry carries, each with the family of the first rule
+    that ships it (globals.css first, then the other stylesheets by path),
+    read the same way: `ship`, then each rule in `from`. A leading entry has
+    no fontSize: a leading is a line height, and one token serves text of
+    several sizes, so no single size would be true of it. */
+export const LEADING_TYPE: Readonly<Record<string, { family: Stack; ship: string; from: readonly string[] }>> = {
+  step: { family: 'display', ship: 'home-inspect.css .inspect-step-title', from: [] },
+  segment: { family: 'sans', ship: 'lib/engine/command-bar.css .eg-seg-opt', from: ['lib/engine/command-bar.css .eg-seg-opt'] },
+  tight: { family: 'sans', ship: 'globals.css .nav-drawer .nav-drawer-group-list a', from: [BODY] },
+  compact: { family: 'sans', ship: 'globals.css .cmdk-item-meta', from: [BODY] },
+  card: { family: 'sans', ship: 'globals.css .principle-body h3', from: [] },
+  'cell-title': { family: 'sans', ship: 'globals.css .check-cell-title', from: [BODY] },
+  'cell-meta': { family: 'sans', ship: 'globals.css .check-cell-meta', from: [BODY] },
+  note: { family: 'sans', ship: 'globals.css .principle-body p', from: [BODY] },
+  reading: { family: 'sans', ship: 'brand/brand.css .brand-section p', from: [BODY] },
 };
 
 /** The format's required `primary` color, as a reference to the contract
@@ -277,8 +279,8 @@ export function frontMatterTokens(): FrontMatterTokens {
     const role = spec.token.replace(/^--leading-/, '');
     if (carried.has(role)) continue;
     const type = LEADING_TYPE[role];
-    if (!type) throw new Error(`LEADING_TYPE names no family or size for ${spec.token}`);
-    typography.push([`leading-${role}`, { fontFamily: stacks[type.family], fontSize: size(type.step), lineHeight: Number(spec.value) }]);
+    if (!type) throw new Error(`LEADING_TYPE names no family for ${spec.token}`);
+    typography.push([`leading-${role}`, { fontFamily: stacks[type.family], lineHeight: Number(spec.value) }]);
   }
 
   const rounded: Array<[string, string]> = Object.entries(c.rounded as Record<string, { token: string; value: string }>).map(([k, spec]) => [k, spec.value]);

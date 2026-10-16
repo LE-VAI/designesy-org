@@ -39,10 +39,19 @@
  *      way the generator's FLUID_TYPE says the element gets them: the first
  *      rule the contract names for the role, then each rule in `from`, with
  *      weight 400 where none sets one. Every rule that reads --text-<role>
- *      must be one the contract names. Each leading-<role> entry is read the
- *      same way from the first rule that ships --leading-<role> (globals.css
- *      first, then the other stylesheets by path). Every line height :root
- *      ships as a --leading-* token is some entry's lineHeight.
+ *      must be one the contract names. Each leading-<role> entry is a family
+ *      and a line height with no fontSize (one leading serves text of several
+ *      sizes), read the same way from the first rule that ships
+ *      --leading-<role> (globals.css first, then the other stylesheets by
+ *      path). Every line height :root ships as a --leading-* token is some
+ *      entry's lineHeight.
+ *      The first rule is not assumed to be the one that applies everywhere:
+ *      for each fluid role and each leading the gate records every rule that
+ *      reads the token, the media or container query around it (or none),
+ *      and every same-selector rule under another query that sets the family,
+ *      weight or line height to something else. It prints the roles read from
+ *      a rule inside a query and the ones whose rules disagree; --cascade
+ *      prints the whole record.
  *      Contract colors :root does not declare would be listed in NOT_ON_ROOT
  *      with a reason; there are none today. An entry must stay a contract
  *      color that :root does not declare, so the list cannot outlive the gap
@@ -56,10 +65,10 @@
  * Every run first feeds the comparison one-value mutants built from the real
  * inputs: a front matter color changed, a table value changed, a :root value
  * changed, a color-mix() percentage changed, a fluid role's rule weight
- * changed and a leading rule's size changed. Each must be reported; if any
+ * changed and a leading rule's family changed. Each must be reported; if any
  * passes, the gate fails.
  *
- * Usage (from apps/site):  node scripts/check-design-md.mjs
+ * Usage (from apps/site):  node scripts/check-design-md.mjs [--cascade]
  * Exits 1 on any disagreement.
  */
 
@@ -397,6 +406,29 @@ function compare({ text, vars, faces, rules }) {
   const usesText = (r, role) => [r.decls.get('font-size'), r.decls.get('font')].some((v) => v !== undefined && v.includes(`var(--text-${role})`));
   const usesLeading = (r, role) => [r.decls.get('line-height'), r.decls.get('font')].some((v) => v !== undefined && new RegExp(`var\\(--leading-${role}\\)`).test(v));
 
+  // The cascade record: every rule that reads a role's token, the query
+  // around it, and which of those rules, or of the read rule's same-selector
+  // rules under other queries, set a value other than the one the front
+  // matter states. A fluid entry states family, weight and line height; a
+  // leading entry only its family (every rule that ships a leading sets the
+  // same line height).
+  const cascade = [];
+  const where = (r) => (r.at.length ? r.at.join(' ') : 'no query');
+  const resolved = { family: (v) => familyOf(v), weight: (v) => weightOf(v), lineHeight: (v) => leadingOf(v) };
+  const record = (kind, role, read, readers, facts) => {
+    const keys = kind === 'fluid' ? ['family', 'weight', 'lineHeight'] : ['family'];
+    const differs = (r) => {
+      const own = typeFacts(r.decls);
+      return keys.filter((k) => own[k] !== undefined && resolved[k](own[k]) !== resolved[k](facts[k]));
+    };
+    const others = readers.filter((r) => r !== read).map((r) => ({ rule: r, at: where(r), differs: differs(r) }));
+    const variants = rules
+      .filter((r) => r !== read && r.file === read.file && r.text === read.text && where(r) !== where(read))
+      .map((r) => ({ rule: r, at: where(r), differs: differs(r) }))
+      .filter((v) => v.differs.length);
+    cascade.push({ kind, role, read, at: where(read), others, variants });
+  };
+
   const fluid = Object.values(contract.typography.fluid);
   const fluidRoles = new Set(fluid.map((spec) => spec.token.replace(/^--text-/, '')));
   for (const role of Object.keys(fm.FLUID_TYPE)) if (!fluidRoles.has(role)) bad(`FLUID_TYPE names ${role}, which is no contract fluid size: remove it`);
@@ -411,6 +443,7 @@ function compare({ text, vars, faces, rules }) {
     const type = fm.FLUID_TYPE[role];
     if (!type || !sized[0].rules.length) continue;
     const facts = chainFacts([{ ref: sized[0].ref, rules: [sized[0].rules[0]] }, ...type.from.map(named)], bad, `--text-${role}`);
+    record('fluid', role, sized[0].rules[0], rules.filter((x) => usesText(x, role)), facts);
     const clamp = vars.get(`--text-${role}`);
     const ends = clamp && /^clamp\((.+), (\S+)\)$/.exec(clamp);
     const lower = ends && /^([^,]+),/.exec(ends[1])?.[1];
@@ -439,9 +472,8 @@ function compare({ text, vars, faces, rules }) {
       continue;
     }
     const facts = chainFacts([{ ref: type.ship, rules: [first] }, ...type.from.map(named)], bad, `--leading-${role}`);
-    const stepOf = /^(?:var\(--text-([a-z0-9]+)\)|clamp\(var\(--text-([a-z0-9]+)\),)/.exec(norm(facts.size ?? ''));
-    const sizeVar = stepOf && vars.get(`--text-${stepOf[1] ?? stepOf[2]}`);
-    if (!sizeVar || norm(style.fontSize) !== sizeVar) bad(`typography.${step}.fontSize is ${style.fontSize}, its rules give ${facts.size ?? 'none'}`);
+    record('leading', role, first, rules.filter((r) => usesLeading(r, role)), facts);
+    if (style.fontSize !== undefined) bad(`typography.${step} has fontSize ${style.fontSize}: a leading entry is a family and a line height, since one leading serves several sizes`);
     sameFacts(`typography.${step}`, facts, style);
     if (style.lineHeight !== Number(vars.get(`--leading-${role}`))) bad(`typography.${step}.lineHeight is ${style.lineHeight}, :root ships --leading-${role}: ${vars.get(`--leading-${role}`)}`);
   }
@@ -467,7 +499,7 @@ function compare({ text, vars, faces, rules }) {
     if (String(value) !== vars.get(`--${name}`)) bad(`spacing.${name} is ${value}, :root ships --${name}: ${vars.get(`--${name}`)}`);
   }
   if (Object.keys(front.spacing ?? {}).length < 5 || Object.keys(front.rounded ?? {}).length < 3 || Object.keys(typo).length < 1) bad('the front matter is missing a token group');
-  return { problems, front };
+  return { problems, front, cascade };
 }
 
 // ── Canaries: each one-value mutant must be reported ─────────────────────────
@@ -498,7 +530,7 @@ const canaries = [
   ['a :root value changed', { text: served, vars: new Map([...vars, ['--radius-lg', '13px']]), faces, rules }],
   ['a color-mix() percentage changed', { text: served, vars: vars.has('--ok-chip') ? new Map([...vars, ['--ok-chip', vars.get('--ok-chip').replace(/ (\d+)%/, (_, p) => ` ${Number(p) - 10}%`)]]) : vars, faces, rules }],
   ['a fluid role\'s rule weight changed', { text: served, vars, faces, rules: withDecl('globals.css', '.surface-title', 'font-weight', '700', '600') }],
-  ['a leading rule\'s size changed', { text: served, vars, faces, rules: withDecl('globals.css', '.cmdk-item-meta', 'font-size', 'var(--text-label)', 'var(--text-body)') }],
+  ['a leading rule\'s family changed', { text: served, vars, faces, rules: withDecl('globals.css', '.principle-body h3', 'font-family', 'var(--sans)', 'var(--display)') }],
 ];
 for (const [what, input] of canaries) {
   if (input.text === served && input.vars === vars && input.rules === rules) failures.push(`canary "${what}" did not change its input`);
@@ -519,6 +551,22 @@ else {
   const want = { colors: Object.keys(f.colors).length, typography: Object.keys(f.typography).length, radii: Object.keys(f.rounded).length, spacing: Object.values(f.spacing).filter((v) => typeof v !== 'number').length };
   const got = { colors: read.parsed.colors.length, typography: read.parsed.typography.length, radii: read.parsed.radii.length, spacing: read.parsed.spacing.length };
   for (const k of Object.keys(want)) if (want[k] !== got[k]) failures.push(`the reader's model holds ${got[k]} ${k}, the front matter declares ${want[k]}`);
+}
+
+// The cascade record: the roles read from a rule inside a query, and the
+// ones whose other rules disagree with it; --cascade prints all of it.
+const at = (r) => `app/${r.file} \`${r.text}\``;
+const fluidRecs = clean.cascade.filter((c) => c.kind === 'fluid');
+const leadingRecs = clean.cascade.filter((c) => c.kind === 'leading');
+const inQuery = (recs) => recs.filter((c) => c.at !== 'no query');
+const disagree = clean.cascade.filter((c) => c.others.some((o) => o.differs.length) || c.variants.length);
+console.log(`[design-md] cascade: ${fluidRecs.length} fluid roles, ${inQuery(fluidRecs).length} read from a rule inside a query; ${leadingRecs.length} leadings, ${inQuery(leadingRecs).length} read from a rule inside a query; ${disagree.length} whose other rules set something else`);
+const full = process.argv.includes('--cascade');
+for (const c of clean.cascade) {
+  if (!full && c.at === 'no query' && !disagree.includes(c)) continue;
+  console.log(`  ${c.kind} ${c.role}: read from ${at(c.read)} (${c.at})`);
+  for (const o of c.others) if (full || o.differs.length) console.log(`      also ${at(o.rule)} (${o.at})${o.differs.length ? `, sets another ${o.differs.join(', ')}` : ''}`);
+  for (const v of c.variants) console.log(`      same selector under ${v.at} sets another ${v.differs.join(', ')}`);
 }
 
 if (failures.length) {
