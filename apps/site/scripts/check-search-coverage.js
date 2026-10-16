@@ -48,7 +48,8 @@
  *                  reached from a score result, and a bare Find row to it
  *                  would land on that error.
  *   /score/contract  built in parts and unlinked until its launch change,
- *                  which adds its Find entry and removes this exemption.
+ *                  which adds its Find entry, removes this exemption and
+ *                  drops the page's robots noindex.
  *
  * Reported, not gated: prerendered pages missing from the index. Pagefind drops
  * every page without data-pagefind-body once any page has one, so this list is
@@ -84,7 +85,7 @@ const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
 /** Public page routes Find does not have to reach, each with its reason. */
 const FIND_EXEMPT = {
   '/score/report': 'renders only with ?url= (errors without one); reached from a score result',
-  '/score/contract': 'built ahead of its launch and not linked anywhere yet; the launch change adds its Find entry and drops this line',
+  '/score/contract': 'built ahead of its launch and not linked anywhere yet; the launch change adds its Find entry, drops this line and drops the page\'s robots noindex',
 };
 
 const TRACE = /\.nft(?:\.json)?(?:\.html)?$/i;

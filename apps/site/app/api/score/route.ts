@@ -11,6 +11,19 @@ import { clientKey } from '../../lib/rate-limit';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// The platform ends a run of this route after maxDuration seconds; without the
+// export it took the platform default (300 s). Every read has its own abort:
+// the page 8 s per candidate URL (three at most, one after another), the
+// stylesheets 8 s (all at once), /DESIGN.md 5 s, a linked contract 8 s, and
+// url-guard's safeFetch holds each read to its signal across redirect hops and
+// DNS checks. So the reads end within 37 s, or 40 s with a linked contract
+// (scripts/check-score-read-bounds.mjs times them). The rest is scoring:
+// with every body at its byte cap and every read as slow as it can be and
+// still succeed, runs measured 73 to 75 s on a desktop CPU, most of it
+// linting a 16 MiB /DESIGN.md. 120 s is above that, with room for a slower
+// CPU.
+export const maxDuration = 120;
+
 // ── Scope system: contract vs universal ─────────────────────────────────────
 // The score engine has two scope modes that control how absence (a feature is
 // not present on the scored site) is treated:
