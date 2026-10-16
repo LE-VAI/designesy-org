@@ -37,7 +37,8 @@ function fixtureResponse(body, status = 200) {
  * @param {object} opts
  * @param {string} opts.app      apps/site directory whose code is loaded
  * @param {Record<string, unknown>} [opts.pages]  url -> body served by safeFetch and fetch
- * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not (return undefined for 404)
+ * @param {(url: string, init?: object) => unknown} [opts.api]  answers global fetch calls the pages do not (return undefined for 404,
+ *   a Response to answer with its own status, or throw for a request that fails at the network level)
  * @param {(hostname: string, options?: object) => Promise<Array<{ address: string, family: number }>>} [opts.lookup]
  *   answers node:dns/promises lookup() for the loaded modules (the URL guard's
  *   DNS check), so a gate can say what a name resolves to without live DNS.
@@ -74,7 +75,7 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: 
     calls.push({ url, method: (init && init.method) || 'GET' });
     if (Object.prototype.hasOwnProperty.call(pages, url)) return fixtureResponse(pages[url]);
     const answer = await api(url, init);
-    return fixtureResponse(answer);
+    return answer instanceof Response ? answer : fixtureResponse(answer);
   };
 
   // Bare-specifier stubs: the transport around the measurement.

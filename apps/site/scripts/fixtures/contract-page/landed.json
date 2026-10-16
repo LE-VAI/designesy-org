@@ -204,7 +204,7 @@
     "typography": {
      "declared": 2,
      "located": 1,
-     "shippedCompared": 37
+     "shippedCompared": 35
     },
     "radii": {
      "declared": 2,
@@ -266,7 +266,7 @@
   "site": {
    "requestedUrl": "https://www.designesy.org/",
    "htmlBytes": 393057,
-   "cssBytes": 489942,
+   "cssBytes": 489832,
    "stylesheetsFetched": 7,
    "stylesheetsTotal": 7,
    "stylesheetsTruncated": false
@@ -710,7 +710,7 @@
     "item": "Shipped font sizes are on your type scale",
     "category": "typography",
     "status": "FAIL",
-    "detail": "1 of 34 shipped sizes is on your scale. Off it: 12.8px in .motion-toggle-row-icon, 20px in .principle-body h3, 32px in .surface-title, 68px in .surface-title, 16.8px in .surface-lede",
+    "detail": "1 of 32 shipped sizes is on your scale. Off it: 12.8px in .motion-toggle-row-icon, 20px in .principle-body h3, 32px in .surface-title, 68px in .surface-title, 16.8px in .surface-lede",
     "layer": "fidelity",
     "reads": [
      "typography.*.fontSize"
@@ -731,7 +731,7 @@
        ".cmdk-kbd-mod,.cmdk-trigger-kbd",
        ".status-badge"
       ],
-      "uses": 189
+      "uses": 190
      },
      {
       "value": "20px",
@@ -798,10 +798,9 @@
      {
       "value": "44.8px",
       "where": [
-       ".demo-cell .poise-wordmark",
-       ".vc-grade"
+       ".demo-cell .poise-wordmark"
       ],
-      "uses": 3
+      "uses": 2
      },
      {
       "value": "17.6px",
@@ -864,16 +863,16 @@
       "uses": 1
      },
      {
-      "value": "15px",
+      "value": "40px",
       "where": [
-       ".principle-body p"
+       ".home .home-title--statement"
       ],
       "uses": 1
      },
      {
-      "value": "18.75px",
+      "value": "72px",
       "where": [
-       ".principle-body h3"
+       ".home .home-title--statement"
       ],
       "uses": 1
      }
@@ -882,7 +881,7 @@
      "findings": [
       {
        "value": "12.8px",
-       "uses": 189,
+       "uses": 190,
        "where": ".motion-toggle-row-icon, .cmdk-kbd-mod,.cmdk-trigger-kbd, .status-badge"
       },
       {
@@ -927,8 +926,8 @@
       },
       {
        "value": "44.8px",
-       "uses": 3,
-       "where": ".demo-cell .poise-wordmark, .vc-grade"
+       "uses": 2,
+       "where": ".demo-cell .poise-wordmark"
       },
       {
        "value": "17.6px",
@@ -971,17 +970,17 @@
        "where": ".hero-display"
       },
       {
-       "value": "15px",
+       "value": "40px",
        "uses": 1,
-       "where": ".principle-body p"
+       "where": ".home .home-title--statement"
       },
       {
-       "value": "18.75px",
+       "value": "72px",
        "uses": 1,
-       "where": ".principle-body h3"
+       "where": ".home .home-title--statement"
       }
      ],
-     "truncated": 13
+     "truncated": 11
     },
     "remediation": "Use a declared size, or add the size to your type scale."
    },
@@ -1054,7 +1053,7 @@
        ".status-note",
        ".lab-card-desc"
       ],
-      "uses": 23
+      "uses": 22
      },
      {
       "value": "1.08",
@@ -1114,9 +1113,9 @@
       "where": [
        ".doctrine-heading",
        ".copy-prompt-title",
-       ".principle-body h3"
+       ".home .home-principle-list>li"
       ],
-      "uses": 7
+      "uses": 6
      },
      {
       "value": "16px",
@@ -1209,7 +1208,7 @@
      "findings": [
       {
        "value": "1.55",
-       "uses": 23,
+       "uses": 22,
        "where": "body, .status-note, .lab-card-desc"
       },
       {
@@ -1244,8 +1243,8 @@
       },
       {
        "value": "1.3",
-       "uses": 7,
-       "where": ".doctrine-heading, .copy-prompt-title, .principle-body h3"
+       "uses": 6,
+       "where": ".doctrine-heading, .copy-prompt-title, .home .home-principle-list>li"
       },
       {
        "value": "16px",
@@ -1843,7 +1842,7 @@
     "item": "Styles use your contract's tokens",
     "category": "tokens",
     "status": "FAIL",
-    "detail": "40% of color, spacing, radius and type declarations use a token (1353 of 3397)",
+    "detail": "40% of color, spacing, radius and type declarations use a token (1353 of 3392)",
     "layer": "fidelity",
     "reads": [
      "all located tokens"
@@ -1854,9 +1853,9 @@
     "evidence": {
      "findings": [
       {
-       "declarations": 3397,
+       "declarations": 3392,
        "usingTokens": 1353,
-       "share": 0.398
+       "share": 0.399
       }
      ],
      "truncated": 0
@@ -2374,7 +2373,7 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://www.designesy.org/",
-   "retrieved_at": "2026-10-15T18:40:17.613Z",
+   "retrieved_at": "2026-10-15T19:21:48.509Z",
    "contract_version": "v0.4.6",
    "engine_version": "1.5.2",
    "scope": "own-contract",
