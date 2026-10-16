@@ -36,8 +36,8 @@
 }
 
 .hero-sub {
-  font-size: clamp(1rem, 1rem + 0.1vw, 1.1rem);
-  line-height: 1.45;
+  font-size: var(--text-sub);
+  line-height: var(--leading-meta);
   color: var(--muted);
   margin-bottom: var(--space-28);
   text-wrap: pretty;
@@ -46,10 +46,10 @@
 
 
 .section-title {
-  font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
+  font-size: var(--text-section);
   font-weight: 400;
   letter-spacing: -0.018em;
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   margin-bottom: var(--space-32);
   max-width: min(100%, 820px);
   text-wrap: balance;
@@ -94,10 +94,10 @@
 
 
 .section-title {
-  font-size: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);
+  font-size: var(--text-section);
   font-weight: 400;
   letter-spacing: -0.018em;
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   margin-bottom: var(--space-32);
   max-width: min(100%, 820px);
   text-wrap: balance;
@@ -152,13 +152,13 @@
   font-size: var(--text-body);
   font-weight: 500;
   color: var(--ink);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
 }
 
 .field-card-desc {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   max-width: 28rem;
 }
 
@@ -172,9 +172,9 @@
 
 
 .hero-display {
-  font-size: clamp(2.35rem, 2.35rem + 3.2vw, 4.9rem);
+  font-size: var(--text-hero);
   font-weight: 340;
-  line-height: 1.02;
+  line-height: var(--leading-title);
   letter-spacing: -0.03em;
   color: var(--ink);
   margin: 0 0 clamp(var(--space-20), 2.6vw, var(--space-32));
@@ -209,8 +209,8 @@
        cannot change the line count or block height, so there is no reflow
        during the 3.2s rotation. Desktop keeps its own two-line composition
        untouched: the contract's 4.9rem desktop step is already in range. */
-    font-size: clamp(1.75rem, 1.4rem + 2.4vw, 3.2rem);
-    line-height: 1.06;
+    font-size: var(--text-hero-phone);
+    line-height: var(--leading-display);
     letter-spacing: -0.02em;
   }
 
@@ -374,24 +374,24 @@
 }
 
 .home .home-title {
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   text-wrap: balance;
   margin: 0 0 var(--space-20);
   color: var(--ink);
 }
 
 .home .home-title--statement {
-  font-size: clamp(2.5rem, 1.5rem + 3.6vw, 4.5rem);
+  font-size: var(--text-statement);
   max-width: 16ch;
 }
 
 .home .home-title--section {
-  font-size: clamp(2rem, 1.45rem + 1.9vw, 3.1rem);
+  font-size: var(--text-home-section);
   max-width: 22ch;
 }
 
 .home .home-title--compact {
-  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);
+  font-size: var(--text-compact);
 }
 
 /* --- Hero ----------------------------------------------------------------- */
@@ -408,8 +408,8 @@
 
 @media (min-width: 721px) {
   .home .hero-display {
-    font-size: clamp(2.6rem, 1rem + 4.5vw, 4.9rem);
-    line-height: 1.08;
+    font-size: var(--text-home-hero);
+    line-height: var(--leading-heading);
   }
 }
 
@@ -420,8 +420,8 @@
 
 .home .hero-sub {
   max-width: 36rem;
-  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
-  line-height: 1.55;
+  font-size: var(--text-lede);
+  line-height: var(--leading-body);
   color: var(--muted);
 }
 
@@ -490,7 +490,7 @@
 .home .home-statement-lede {
   max-width: 44rem;
   font-size: var(--text-lead);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   margin-bottom: var(--space-48);
 }
@@ -625,8 +625,8 @@
 }
 
 .home .field-card.is-featured {
-  border-color: color-mix(in srgb, var(--signal-access) 45%, var(--line));
-  background: color-mix(in srgb, var(--signal) 8%, var(--surface));
+  border-color: var(--signal-rim);
+  background: var(--signal-wash);
 }
 
 /* Secondary text on a signal tint reaches 4.6:1: the featured card's
@@ -639,8 +639,8 @@
 .home .field-card.is-featured .field-card-title {
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);
-  line-height: 1.08;
+  font-size: var(--text-compact);
+  line-height: var(--leading-heading);
   letter-spacing: -0.02em;
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
 }
@@ -708,7 +708,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--text-h2);
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -798,7 +798,7 @@
   padding-block: var(--space-16) var(--space-20);
   border-top: 1px solid var(--line);
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -840,7 +840,7 @@
   font-family: var(--display);
   font-weight: 400;
   font-size: var(--text-lead);
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   font-variation-settings: 'opsz' 24, 'SOFT' 40;
   color: var(--ink);
   text-wrap: balance;
@@ -867,7 +867,7 @@
   margin: 0;
   font-size: var(--text-label);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 
@@ -907,7 +907,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--text-h3);
-  line-height: 1.1;
+  line-height: var(--leading-figure);
   letter-spacing: -0.02em;
   font-variation-settings: 'opsz' 72, 'SOFT' 40;
   color: var(--ink);
@@ -933,7 +933,7 @@
 .home-index-anchor .home-index-desc,
 .home-index-row .home-index-desc {
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -994,7 +994,7 @@
   padding-block: var(--space-12);
   border-top: 1px solid var(--line);
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
 }
 
 .home .home-ledger-fact {

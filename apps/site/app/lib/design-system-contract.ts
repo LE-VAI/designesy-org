@@ -1,5 +1,5 @@
 /**
- * Designesy design system contract v0.4.6: machine + human source.
+ * Designesy design system contract v0.4.7: machine + human source.
  * Values must match the live site token foundation in globals.css :root.
  * When CSS and this file disagree, the live styles win until revised.
  * v0.1.1 adopts Lab One · Poise interaction rules (adopted 2026-07-12).
@@ -34,6 +34,12 @@
  *   come from the scale the :root type tokens declare. Fluid clamp() type is
  *   accepted as written; static sizes between steps and sizes under the
  *   smallest token WARN. No weight or existing verdict changed.
+ * v0.4.7 declares what the site ships (2026-10-15): eleven color-mix() tints,
+ *   the xs and full radii, every fluid type size as a named clamp() and every
+ *   line height as a named leading join :root and this contract, and the
+ *   rules read them; --live, which nothing declared or read, is retired.
+ *   Some rules move: the copied button's edge onto --signal-rim, and five
+ *   3px corners onto --radius-sm. No check, weight or verdict changed.
  */
 
 import {
@@ -47,7 +53,7 @@ import {
 
 export const designSystemContract = {
   id: 'designesy.design-system',
-  version: '0.4.6',
+  version: '0.4.7',
   status: 'public',
   name: 'Designesy design system',
   public_url: 'https://www.designesy.org/contracts/design-system',
@@ -411,10 +417,60 @@ export const designSystemContract = {
       value: '#34d399',
       role: 'Emerald for positive signal points in score breakdown',
     },
-    live: {
-      token: '--live',
-      value: '#22c55e',
-      role: '"is-live" status dot indicator (same value as --grade-a)',
+    ok_chip: {
+      token: '--ok-chip',
+      value: 'color-mix(in srgb, var(--ok) 72%, var(--ink))',
+      role: 'Pass and hold chip text, held to 4.5:1 on the chip',
+    },
+    warn_chip: {
+      token: '--warn-chip',
+      value: 'color-mix(in srgb, var(--warn) 70%, var(--ink))',
+      role: 'Warn chip text',
+    },
+    error_chip: {
+      token: '--error-chip',
+      value: 'color-mix(in srgb, var(--error) 82%, var(--ink))',
+      role: 'Fail chip text',
+    },
+    ok_rim: {
+      token: '--ok-rim',
+      value: 'color-mix(in srgb, var(--ok) 28%, var(--line))',
+      role: 'Pass chip edge',
+    },
+    warn_rim: {
+      token: '--warn-rim',
+      value: 'color-mix(in srgb, var(--warn) 28%, var(--line))',
+      role: 'Warn chip edge',
+    },
+    error_rim: {
+      token: '--error-rim',
+      value: 'color-mix(in srgb, var(--error) 28%, var(--line))',
+      role: 'Fail chip edge',
+    },
+    signal_wash: {
+      token: '--signal-wash',
+      value: 'color-mix(in srgb, var(--signal) 8%, var(--surface))',
+      role: 'Featured surface: an Azure wash on --surface',
+    },
+    signal_wash_raised: {
+      token: '--signal-wash-raised',
+      value: 'color-mix(in srgb, var(--signal) 8%, var(--surface-raised))',
+      role: 'The same wash on a raised surface (the copied state)',
+    },
+    signal_rim: {
+      token: '--signal-rim',
+      value: 'color-mix(in srgb, var(--signal-access) 45%, var(--line))',
+      role: 'Featured and copied edge',
+    },
+    surface_selected: {
+      token: '--surface-selected',
+      value: 'color-mix(in srgb, var(--ink) 8%, var(--surface-lifted))',
+      role: 'The selected tile in a segmented control (dark)',
+    },
+    surface_raised_hover: {
+      token: '--surface-raised-hover',
+      value: 'color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover))',
+      role: 'Hover on a raised cell',
     },
     error_text: {
       token: '--error-text',
@@ -710,6 +766,11 @@ export const designSystemContract = {
     },
   },
   rounded: {
+    xs: {
+      token: '--radius-xs',
+      value: '2px',
+      role: 'Micro marks: legend swatches, track segments, the reticle',
+    },
     default: { token: '--radius', value: '6px', role: 'Default corner radius' },
     sm: {
       token: '--radius-sm',
@@ -736,6 +797,11 @@ export const designSystemContract = {
       token: '--radius-xl',
       value: '16px',
       role: 'Hero / modal / flagship surfaces',
+    },
+    full: {
+      token: '--radius-full',
+      value: '9999px',
+      role: 'Pills and fully round ends',
     },
   },
   layout: {
@@ -1068,7 +1134,7 @@ export const designSystemContract = {
     },
     body: '16px / 1.55, Schibsted Grotesk (system sans fallback for other scripts)',
     headings: 'Fraunces Variable, weight 700, line-height 1.08, letter-spacing -0.02em',
-    hero_wordmark: 'clamp(3.2rem, 9vw, 5.5rem), weight 800, tracking -0.04em',
+    hero_wordmark: 'clamp(3.2rem, 3.2rem + 2.5vw, 5.5rem) (--text-wordmark-hero), weight 800, tracking -0.04em',
     eyebrows:
       '--text-label (0.8rem), weight 600, uppercase, letter-spacing 0.18em, muted-dim',
     lede: '1.1 to 1.5rem, weight 500, ink: one clear claim',
@@ -1106,6 +1172,269 @@ export const designSystemContract = {
         value: '2.441rem',
         role: 'The in-content h1 floor (39px). Page titles use the display clamp, Fraunces 700.',
       },
+    },
+    // Fluid sizes as shipped (v0.4.7): each role's token holds the exact
+    // clamp() its rules use, with the two ends it reaches (narrow and wide,
+    // at a 16px root) and the rules that read it.
+    fluid: {
+      title: {
+        token: '--text-title',
+        value: 'clamp(2rem, 1.45rem + 2.9vw, 4.25rem)',
+        role: 'Page titles',
+        narrow: '32px',
+        wide: '68px',
+        selectors: ['globals.css .surface-title', 'engine.css .eg-title'],
+      },
+      lede: {
+        token: '--text-lede',
+        value: 'clamp(1.05rem, 1rem + 0.3vw, 1.2rem)',
+        role: 'Page ledes and the home hero\'s sub-line',
+        narrow: '16.8px',
+        wide: '19.2px',
+        selectors: ['globals.css .surface-lede', 'home.css .home .hero-sub'],
+      },
+      thesis: {
+        token: '--text-thesis',
+        value: 'clamp(1.06rem, 1rem + 0.35vw, 1.24rem)',
+        role: 'The engine page\'s thesis line',
+        narrow: '16.96px',
+        wide: '19.84px',
+        selectors: ['engine.css .eg-thesis'],
+      },
+      sub: {
+        token: '--text-sub',
+        value: 'clamp(1rem, 1rem + 0.1vw, 1.1rem)',
+        role: 'The hero sub-line',
+        narrow: '16px',
+        wide: '17.6px',
+        selectors: ['home.css .hero-sub'],
+      },
+      card_title: {
+        token: '--text-card-title',
+        value: 'clamp(1.3rem, 1.15rem + 0.75vw, 1.55rem)',
+        role: 'Lab card titles',
+        narrow: '20.8px',
+        wide: '24.8px',
+        selectors: ['globals.css .lab-card-title'],
+      },
+      run_title: {
+        token: '--text-run-title',
+        value: 'clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem)',
+        role: 'The empty-run title on the score page',
+        narrow: '20px',
+        wide: '24px',
+        selectors: ['globals.css .score-empty-run-title'],
+      },
+      section: {
+        token: '--text-section',
+        value: 'clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem)',
+        role: 'Section titles',
+        narrow: '30px',
+        wide: '44px',
+        selectors: ['home.css .section-title'],
+      },
+      home_section: {
+        token: '--text-home-section',
+        value: 'clamp(2rem, 1.45rem + 1.9vw, 3.1rem)',
+        role: 'Home section headings',
+        narrow: '32px',
+        wide: '49.6px',
+        selectors: ['home.css .home .home-title--section'],
+      },
+      statement: {
+        token: '--text-statement',
+        value: 'clamp(2.5rem, 1.5rem + 3.6vw, 4.5rem)',
+        role: 'The home statement heading',
+        narrow: '40px',
+        wide: '72px',
+        selectors: ['home.css .home .home-title--statement'],
+      },
+      compact: {
+        token: '--text-compact',
+        value: 'clamp(1.6rem, 1.3rem + 1vw, 2.1rem)',
+        role: 'Compact home headings and the featured card title',
+        narrow: '25.6px',
+        wide: '33.6px',
+        selectors: ['home.css .home .home-title--compact', 'home.css .home .field-card.is-featured .field-card-title'],
+      },
+      hero: {
+        token: '--text-hero',
+        value: 'clamp(2.35rem, 2.35rem + 3.2vw, 4.9rem)',
+        role: 'The hero display',
+        narrow: '37.6px',
+        wide: '78.4px',
+        selectors: ['home.css .hero-display'],
+      },
+      hero_phone: {
+        token: '--text-hero-phone',
+        value: 'clamp(1.75rem, 1.4rem + 2.4vw, 3.2rem)',
+        role: 'The hero display on phones',
+        narrow: '28px',
+        wide: '51.2px',
+        selectors: ['home.css .hero-display (phone media query)'],
+      },
+      home_hero: {
+        token: '--text-home-hero',
+        value: 'clamp(2.6rem, 1rem + 4.5vw, 4.9rem)',
+        role: 'The home hero display',
+        narrow: '41.6px',
+        wide: '78.4px',
+        selectors: ['home.css .home .hero-display'],
+      },
+      home_hero_phone: {
+        token: '--text-home-hero-phone',
+        value: 'clamp(1.85rem, 1.1rem + 3.4vw, 2.6rem)',
+        role: 'The home hero display at 560px and narrower',
+        narrow: '29.6px',
+        wide: '41.6px',
+        selectors: ['home-lvl.css .home .hero-display (max-width 560px)'],
+      },
+      panel_title: {
+        token: '--text-panel-title',
+        value: 'clamp(1.55rem, 1.3rem + 1vw, 2.1rem)',
+        role: 'Instrument panel headings',
+        narrow: '24.8px',
+        wide: '33.6px',
+        selectors: ['engine.css .eg-h2'],
+      },
+      metric: {
+        token: '--text-metric',
+        value: 'clamp(2rem, 2rem + 0.9vw, 2.75rem)',
+        role: 'Report hero values',
+        narrow: '32px',
+        wide: '44px',
+        selectors: ['globals.css .report-hero-value'],
+      },
+      report_grade: {
+        token: '--text-report-grade',
+        value: 'clamp(3.5rem, 3.5rem + 1.9vw, 5rem)',
+        role: 'The report hero grade',
+        narrow: '56px',
+        wide: '80px',
+        selectors: ['globals.css .report-hero-grade'],
+      },
+      readout: {
+        token: '--text-readout',
+        value: 'clamp(2.441rem, 1.5rem + 2.5vw, 3.25rem)',
+        role: 'The grade numeral on the readout scale',
+        narrow: '39.06px',
+        wide: '52px',
+        selectors: ['globals.css .rs-readout'],
+      },
+      console_grade: {
+        token: '--text-console-grade',
+        value: 'clamp(2.441rem, 1.25rem + 4.5vw, 3.4rem)',
+        role: 'The grade in the home verify console',
+        narrow: '39.06px',
+        wide: '54.4px',
+        selectors: ['home-lvl.css .vc-grade'],
+      },
+      engine_grade: {
+        token: '--text-engine-grade',
+        value: 'clamp(2.441rem, 2.8rem + 1.5vw, 3.6rem)',
+        role: 'The grade in the score instrument',
+        narrow: '39.06px',
+        wide: '57.6px',
+        selectors: ['engine.css .eg-grade'],
+      },
+      figure: {
+        token: '--text-figure',
+        value: 'clamp(2.5rem, 2.1rem + 0.6vw, 3rem)',
+        role: 'Key figures on contract pages',
+        narrow: '40px',
+        wide: '48px',
+        selectors: ['contracts.css .kv-figure-num'],
+      },
+      fidelity: {
+        token: '--text-fidelity',
+        value: 'clamp(1.5rem, min(1.6rem + 9cqi, 18.519cqi - 0.556rem), 4.25rem)',
+        role: 'The contract fidelity numeral, sized to its container',
+        narrow: '24px',
+        wide: '68px',
+        selectors: ['score/contract/contract.css .cf-num'],
+      },
+      fidelity_null: {
+        token: '--text-fidelity-null',
+        value: 'clamp(1.5rem, 1.2rem + 3cqi, 2.1rem)',
+        role: 'The contract readout when there is no score',
+        narrow: '24px',
+        wide: '33.6px',
+        selectors: ['score/contract/contract.css .cf-null'],
+      },
+      stat: {
+        token: '--text-stat',
+        value: 'clamp(0.9375rem, 4.6cqi, 1.625rem)',
+        role: 'Data stats, sized to their container',
+        narrow: '15px',
+        wide: '26px',
+        selectors: ['data.css .dx-stats dd'],
+      },
+      stat_solo: {
+        token: '--text-stat-solo',
+        value: 'clamp(1.5rem, 5vw, 1.625rem)',
+        role: 'A data stat with no unit line',
+        narrow: '24px',
+        wide: '26px',
+        selectors: ['data.css .dx-stats:not(:has(dd small)) dd', 'data.css .dx-stats-rail dd'],
+      },
+      orb_title: {
+        token: '--text-orb-title',
+        value: 'clamp(2.25rem, 2rem + 1.4vw, 3.5rem)',
+        role: 'The Orb lab\'s hero title',
+        narrow: '36px',
+        wide: '56px',
+        selectors: ['labs/poise/orb/orb.css .orb-hero-title'],
+      },
+      wordmark: {
+        token: '--text-wordmark',
+        value: 'clamp(2.4rem, 2.4rem + 1.8vw, 3.8rem)',
+        role: 'The Poise lab wordmark',
+        narrow: '38.4px',
+        wide: '60.8px',
+        selectors: ['labs/poise/poise.css .poise-wordmark'],
+      },
+      wordmark_demo: {
+        token: '--text-wordmark-demo',
+        value: 'clamp(1.8rem, 1.8rem + 1.3vw, 2.8rem)',
+        role: 'The Poise wordmark in a demo cell',
+        narrow: '28.8px',
+        wide: '44.8px',
+        selectors: ['globals.css .demo-cell .poise-wordmark'],
+      },
+      wordmark_hero: {
+        token: '--text-wordmark-hero',
+        value: 'clamp(3.2rem, 3.2rem + 2.5vw, 5.5rem)',
+        role: 'The Poise lab\'s hero wordmark',
+        narrow: '51.2px',
+        wide: '88px',
+        selectors: ['labs/poise/poise.css .wordmark-hero'],
+      },
+    },
+    // Line heights as shipped (v0.4.7): a bare ratio per role. heading and
+    // body are the values `headings` and `body` above state in prose.
+    leading: {
+      numeral: { token: '--leading-numeral', value: '0.9', role: 'Grade and score numerals, set solid' },
+      single: { token: '--leading-single', value: '1', role: 'Single-line interface text: triggers, icon glyphs, compact buttons' },
+      title: { token: '--leading-title', value: '1.02', role: 'Page titles and the hero display, set nearly solid' },
+      display: { token: '--leading-display', value: '1.06', role: 'The hero display on phones' },
+      heading: { token: '--leading-heading', value: '1.08', role: 'Headings' },
+      figure: { token: '--leading-figure', value: '1.1', role: 'Short display figures: index names and instrument tile grades' },
+      step: { token: '--leading-step', value: '1.12', role: 'Step titles in the home inspect sequence' },
+      segment: { token: '--leading-segment', value: '1.15', role: 'Options in a segmented control' },
+      tight: { token: '--leading-tight', value: '1.2', role: 'Navigation links, tallies and action buttons that can wrap' },
+      snug: { token: '--leading-snug', value: '1.25', role: 'Short titles on empty states' },
+      compact: { token: '--leading-compact', value: '1.3', role: 'Short headings in lists and prompt cards' },
+      card: { token: '--leading-card', value: '1.35', role: 'Card titles and small section headings' },
+      cell_title: { token: '--leading-cell-title', value: '1.38', role: 'Titles in result cells' },
+      lede: { token: '--leading-lede', value: '1.4', role: 'Ledes and keyboard hints' },
+      cell_meta: { token: '--leading-cell-meta', value: '1.42', role: 'Meta lines in result cells and the verdict line' },
+      meta: { token: '--leading-meta', value: '1.45', role: 'Secondary text: descriptions, row meta, side details' },
+      prose: { token: '--leading-prose', value: '1.5', role: 'Definitions and checklists' },
+      body: { token: '--leading-body', value: '1.55', role: 'Body text' },
+      note: { token: '--leading-note', value: '1.6', role: 'Supporting notes and principle paragraphs' },
+      reading: { token: '--leading-reading', value: '1.65', role: 'Long-form paragraphs on the brand, data and engine pages' },
+      figure_tight: { token: '--leading-figure-tight', value: '1.05', role: 'Prices, type specimens and the empty contract readout' },
+      fidelity: { token: '--leading-fidelity', value: '0.92', role: 'The contract fidelity numeral' },
     },
     cadence_adopted: 'v0.1.3: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance+pretty, tabular numbers, ::selection with --signal, user-select on UI chrome, 16px input floor',
     font_synthesis: 'none set on :root: prevents fake browser weights (fixed 2026-07-15)',
@@ -1497,6 +1826,16 @@ export const designSystemContract = {
       evidence: [
         'https://www.designesy.org/contracts/design-system.json',
         'https://www.designesy.org/methodology',
+      ],
+    },
+    {
+      version: '0.4.7',
+      date: '2026-10-15',
+      summary:
+        'The contract declares what the site ships. Eleven color-mix() tints of contract tokens join :root and the colors: the chip text (--ok-chip, --warn-chip, --error-chip), the chip edges (--ok-rim, --warn-rim, --error-rim), the Azure washes and their edge (--signal-wash, --signal-wash-raised, --signal-rim) and two surface states (--surface-selected, --surface-raised-hover). Each keeps the mix its rules wrote, so it follows its source tokens in both themes. The radius scale gains xs (2px) and full (9999px). Every fluid type size becomes a --text-<role> token holding the exact clamp() it ships (typography.fluid, 29 roles), and every line height a --leading-<role> ratio (typography.leading, 22 roles); the 16px line of the 12.8px label step stays a length, the same ratio as the 1.25 leading. The rules read the tokens, and nothing on screen moves but two: the copied button\'s edge reads --signal-rim (45% instead of 40%, and Deep Azure in the light theme), and the status badge, the score card category, the report check status, the mini cell mark and the matrix cell read --radius-sm (4px, were 3px). The hero_wordmark prose now states the clamp the site ships. --live is retired: no stylesheet declared or read it. No check, weight or verdict changed.',
+      evidence: [
+        'https://www.designesy.org/contracts/design-system.json',
+        'https://www.designesy.org/DESIGN.md',
       ],
     },
   ],

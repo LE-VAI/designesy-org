@@ -134,9 +134,7 @@ const DISPLAY = new Map([
 
 /** Local custom properties held at their size in the home sheets, each with
     its reason: lifting the size alone would break the text it sets. */
-const HELD = new Map([
-  ['--ix-log-fs', 'the inspector log, 10.88px (10.24px on a phone stage): at the label step its longest lines ellipsize on a phone, so the log needs its layout reworked with the lift'],
-]);
+const HELD = new Map([]);
 
 /** Specimens: text whose size is the content. The Cadence lab's rem-scale
     demo prints "0.75rem", "1rem", "1.5rem" and "2rem" beside four samples

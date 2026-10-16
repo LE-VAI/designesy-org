@@ -45,7 +45,7 @@
   grid-template-columns: var(--space-32) minmax(0, 1fr);
   align-items: baseline;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
   counter-increment: review-step;
@@ -69,7 +69,7 @@
    statement this card exists to make. */
 .review-disclosure {
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--ink);
 }
 

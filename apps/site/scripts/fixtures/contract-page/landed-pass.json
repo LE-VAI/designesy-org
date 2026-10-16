@@ -5,7 +5,7 @@
   "ok": true,
   "mode": "own-contract",
   "scope": "own-contract",
-  "contractVersion": "v0.4.6",
+  "contractVersion": "v0.4.7",
   "engineVersion": "1.5.2",
   "score": 100,
   "grade": "A",
@@ -190,11 +190,11 @@
   },
   "coverage": {
    "declared": 71,
-   "located": 69,
+   "located": 66,
    "byMap": 0,
    "byName": 0,
-   "byValue": 69,
-   "ratio": 0.972,
+   "byValue": 66,
+   "ratio": 0.93,
    "groups": {
     "colors": {
      "declared": 34,
@@ -203,8 +203,8 @@
     },
     "typography": {
      "declared": 37,
-     "located": 35,
-     "shippedCompared": 37
+     "located": 32,
+     "shippedCompared": 35
     },
     "radii": {
      "declared": 0,
@@ -275,7 +275,7 @@
   "site": {
    "requestedUrl": "https://designesy.org/",
    "htmlBytes": 393057,
-   "cssBytes": 489942,
+   "cssBytes": 489832,
    "stylesheetsFetched": 7,
    "stylesheetsTotal": 7,
    "stylesheetsTruncated": false
@@ -321,7 +321,7 @@
     "item": "Shipped font sizes are on your type scale",
     "category": "typography",
     "status": "PASS",
-    "detail": "34 of 34 shipped sizes are on your scale",
+    "detail": "30 of 32 shipped sizes are on your scale. Off it: 48.83px in .vc-grade, 39.06px in .ix-verdict-grade",
     "layer": "fidelity",
     "reads": [
      "typography.*.fontSize"
@@ -391,9 +391,35 @@
       "value": "32px"
      }
     ],
-    "shipped": [],
+    "shipped": [
+     {
+      "value": "48.83px",
+      "where": [
+       ".vc-grade"
+      ],
+      "uses": 1
+     },
+     {
+      "value": "39.06px",
+      "where": [
+       ".ix-verdict-grade"
+      ],
+      "uses": 1
+     }
+    ],
     "evidence": {
-     "findings": [],
+     "findings": [
+      {
+       "value": "48.83px",
+       "uses": 1,
+       "where": ".vc-grade"
+      },
+      {
+       "value": "39.06px",
+       "uses": 1,
+       "where": ".ix-verdict-grade"
+      }
+     ],
      "truncated": 0
     }
    },
@@ -1086,8 +1112,8 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://designesy.org/",
-   "retrieved_at": "2026-10-15T18:40:12.101Z",
-   "contract_version": "v0.4.6",
+   "retrieved_at": "2026-10-16T05:33:57.869Z",
+   "contract_version": "v0.4.7",
    "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": "0e8600610732e379ad2143efbf906f3c12e4a97d1fda74898c774f5c360aab06",

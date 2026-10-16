@@ -206,7 +206,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: clamp(var(--text-h3), 1.1rem + 1vw, var(--text-h2));
-  line-height: 1.12;
+  line-height: var(--leading-step);
   letter-spacing: -0.015em;
   text-wrap: balance;
   color: var(--muted);
@@ -216,7 +216,7 @@
   margin: 0;
   max-width: 30rem;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -413,7 +413,7 @@
 .inspect-caption {
   margin: 0.8rem 0 0;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
 }
 
@@ -503,7 +503,6 @@
   --ix-dock-b: calc(1.1 * var(--mp-fs));
   --ix-dock-g: calc(1.1 * var(--mp-fs));
   --ix-log-rows: 4;
-  --ix-log-fs: 0.68rem;
   --ix-log-lh: 1.25rem;
   --ix-log-pad: var(--space-8);
   --ix-log-h: 0px;
@@ -616,7 +615,7 @@
   max-width: 14em;
   font-size: 2.35em;
   font-weight: 700;
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   letter-spacing: -0.025em;
   /* Where it wraps (a phone's stage), no one-word widow ("trust."). */
   text-wrap: balance;
@@ -630,7 +629,7 @@
   margin: 0;
   margin-top: calc(var(--ix-tag-h) - 0.7 * var(--mp-fs));
   font-size: max(10px, 1.02em);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--mp-muted);
 }
 
@@ -673,7 +672,7 @@
   background: var(--mp-card);
   box-shadow: inset 0 0 0 1px var(--mp-line);
   font-size: max(10px, 0.78em);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--mp-muted);
 }
 
@@ -840,7 +839,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: var(--ix-tag-fs);
-  line-height: 1;
+  line-height: var(--leading-single);
   white-space: nowrap;
   transform: translateY(4px);
 }
@@ -945,7 +944,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: max(10px, 0.74em);
-  line-height: 1;
+  line-height: var(--leading-single);
   white-space: nowrap;
 }
 
@@ -974,7 +973,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: max(10px, 0.8em);
-  line-height: 1;
+  line-height: var(--leading-single);
   color: var(--ix-head);
   white-space: nowrap;
 }
@@ -997,7 +996,7 @@
   top: -0.22em;
   width: 0.44em;
   height: 0.44em;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   box-shadow: inset 0 0 0 1px var(--ix-head);
 }
 
@@ -1210,7 +1209,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--text-h1);
-  line-height: 0.9;
+  line-height: var(--leading-numeral);
   color: var(--ink);
 }
 
@@ -1224,7 +1223,7 @@
 .ix-verdict-tally {
   font-family: var(--mono);
   font-size: var(--text-label);
-  line-height: 1.2;
+  line-height: var(--leading-tight);
   color: var(--muted);
 }
 
@@ -1290,7 +1289,7 @@
   -webkit-backdrop-filter: var(--glass-filter-regular);
   backdrop-filter: var(--glass-filter-regular);
   box-shadow: var(--elev-3);
-  font: 500 var(--ix-log-fs) / var(--ix-log-lh) var(--mono);
+  font: 500 var(--text-label) / var(--ix-log-lh) var(--mono);
   color: var(--muted);
   transition: opacity 150ms var(--ease-out);
 }
@@ -1375,6 +1374,13 @@
   font-style: normal;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+/* A phrase that stays on one line where a phone's log wraps its values: a
+   line breaks only between phrases ("button ·" / "3 × article"), never
+   inside one ("15.8 :" / "1", ":focus-" / "visible"). */
+.ix-log-g {
+  white-space: nowrap;
 }
 
 .ix-log-rows,
@@ -2116,8 +2122,14 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
    Floating flags and the HUD covered the very text they reported (measured
    at 390px, 2026-10-03: the v06 flag over the paragraph's first line, the
    verdict over the card row). Here they stand down: the pins stay on the
-   elements, and the log, on two rows reserved at every step, carries the
-   findings at step three and the grade at step four. */
+   elements, and the log, on rows reserved at every step, carries the
+   findings at step three and the grade at step four. Its text is the label
+   step, as wide, so a line too long for the stage wraps between phrases
+   (.ix-log-g) instead of ending in an ellipsis: two rows hold every step
+   where the stage has room for each finding on one line, and four below
+   that (the query after this block). The log's side inset is 8px here, not
+   12px, which gives a 390px screen that room: four rows there made the
+   stage too tall to pin on a 390x844 screen. */
 @container (max-width: 520px) {
   .ix-flag,
   .ix-verdict {
@@ -2129,16 +2141,25 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .ix-verdict,
   .ix-log {
     --ix-log-rows: 2;
-    --ix-log-fs: 0.64rem;
     --ix-log-lh: 1.25rem;
     --ix-log-pad: var(--space-6);
   }
 
-  /* One step at a time, all in the same cell. */
+  .ix-log {
+    padding-inline: var(--space-8);
+  }
+
+  /* One step at a time, all in the same cell, centred in the reserved rows.
+     Only one line shows, so its key column is as wide as its own key, and
+     the value has the rest of the line to wrap in. The gap is 12px, not 8px:
+     without a fixed key column to align on, 8px (one mono character) ran
+     the key into its value ("read nav · h1"). */
   .ix-log-line {
     grid-row: 1 / -1;
     grid-column: 1;
-    grid-template-columns: 8ch minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-12);
+    white-space: normal;
   }
 
   .inspect:not([data-step="1"]) .ix-log-line[data-n="1"],
@@ -2170,7 +2191,7 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
   .ix-log-rows {
     display: grid;
     align-items: center;
-    grid-auto-rows: var(--ix-log-lh);
+    grid-auto-rows: minmax(var(--ix-log-lh), auto);
   }
 
   .ix-log-line[data-n="4"] .ix-log-k {
@@ -2182,12 +2203,27 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
     font-family: var(--display);
     font-weight: 700;
     font-size: var(--text-h2);
-    line-height: 1;
+    line-height: var(--leading-single);
     color: var(--ink);
   }
 
   .ix-log-bar {
     align-self: center;
+  }
+}
+
+/* A phone's stage up to 21.25rem (a screen under about 388px) has no room
+   for a finding on one line beside its key: each wraps to two, so step
+   three needs four lines, and the log reserves four rows at every step so
+   the pinned stage keeps one height. Above the switch the longest finding
+   (242px at the label step) has 2px to spare at a 388px screen and 4px at
+   390px. */
+@container (max-width: 21.25rem) {
+  .ix-clip,
+  .ix-scene,
+  .ix-verdict,
+  .ix-log {
+    --ix-log-rows: 4;
   }
 }
 

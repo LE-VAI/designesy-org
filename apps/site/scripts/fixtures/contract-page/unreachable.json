@@ -5,8 +5,8 @@
   "ok": true,
   "mode": "own-contract",
   "scope": "own-contract",
-  "contractVersion": "v0.4.6",
-  "engineVersion": "1.5.0",
+  "contractVersion": "v0.4.7",
+  "engineVersion": "1.5.2",
   "score": null,
   "grade": null,
   "fidelity": {
@@ -54,7 +54,7 @@
    "format": "design.md",
    "formatVersion": null,
    "source": "inline",
-   "bytes": 284,
+   "bytes": 263,
    "digest": "44e7118d545f4d764d3de6784b999d825a8ae9f5dc10aac3c6b39ac9c337aa78",
    "tokens": {
     "colors": 4,
@@ -99,9 +99,9 @@
   "tokensExtracted": 0,
   "receipt": {
    "subject": "https://unreachable.invalid/",
-   "retrieved_at": "2026-10-15T00:02:12.551Z",
-   "contract_version": "v0.4.6",
-   "engine_version": "1.5.0",
+   "retrieved_at": "2026-10-16T05:33:58.504Z",
+   "contract_version": "v0.4.7",
+   "engine_version": "1.5.2",
    "scope": "own-contract",
    "digest": null,
    "digest_absent_reason": "the target could not be read, so no checks ran and there is no verdict set to attest to",

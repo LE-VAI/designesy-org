@@ -191,6 +191,7 @@
      a full-start / split item ends. The element carrying it must have zero
      horizontal padding and no border (rings are drawn with box-shadow). */
   --track-split: calc((100% - 11 * var(--grid-gutter)) * 7 / 12 + 6 * var(--grid-gutter));
+  --radius-xs: 2px;          /* micro marks: legend swatches, track segments, the reticle */
   --radius: 6px;
   --radius-sm: 4px;
   /* --radius-md is an INTERMEDIATE tier, not part of the published 4-step
@@ -206,6 +207,9 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  /* Pills and fully round ends. Any radius past half the box draws the same
+     round end, so 9999px paints what the 999px it replaced painted. */
+  --radius-full: 9999px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --duration: 0.6s;
 
@@ -228,6 +232,26 @@
      and keeps text off the bare hues. */
   --ok-ink: var(--ok);
   --error-ink: var(--error);
+  /* Tints of the tokens above, named once (contract v0.4.7). Each keeps the
+     color-mix() its rules wrote inline, so it follows its source tokens into
+     the light theme, where the same mixes resolve against the light values.
+     Chip text is the status hue pulled toward --ink, which holds it at 4.5:1
+     on the chip; a rim is the hue at 28% over --line. */
+  --ok-chip: color-mix(in srgb, var(--ok) 72%, var(--ink));
+  --warn-chip: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  --error-chip: color-mix(in srgb, var(--error) 82%, var(--ink));
+  --ok-rim: color-mix(in srgb, var(--ok) 28%, var(--line));
+  --warn-rim: color-mix(in srgb, var(--warn) 28%, var(--line));
+  --error-rim: color-mix(in srgb, var(--error) 28%, var(--line));
+  /* An Azure wash on a surface (the featured card), the same wash on a
+     raised surface (the copied state), and the edge both share. */
+  --signal-wash: color-mix(in srgb, var(--signal) 8%, var(--surface));
+  --signal-wash-raised: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
+  --signal-rim: color-mix(in srgb, var(--signal-access) 45%, var(--line));
+  /* The selected tile of a segmented control (the light theme paints
+     --surface instead, in command-bar.css), and hover on a raised cell. */
+  --surface-selected: color-mix(in srgb, var(--ink) 8%, var(--surface-lifted));
+  --surface-raised-hover: color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover));
 
   /* Grade scale colors — five-band semantics for score/badge/constellation.
      A=green, B=lime, C=yellow, D=orange, F=red.
@@ -299,6 +323,68 @@
   --text-h3: 1.563rem;     /* 25px */
   --text-h2: 1.953rem;     /* 31.25px */
   --text-h1: 2.441rem;     /* 39px    the in-content h1 floor; page titles use the display clamp */
+
+  /* Fluid type, declared as shipped (contract typography.fluid, v0.4.7):
+     each token holds the exact clamp() its rules wrote inline, so nothing on
+     screen moves. The ends are in the comments (narrow to wide). A custom
+     property is substituted where it is read, so the viewport and container
+     units resolve on the element, as they did inline. */
+  --text-title: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);          /* 32 to 68px */
+  --text-lede: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);            /* 16.8 to 19.2px */
+  --text-thesis: clamp(1.06rem, 1rem + 0.35vw, 1.24rem);        /* 16.96 to 19.84px */
+  --text-sub: clamp(1rem, 1rem + 0.1vw, 1.1rem);                /* 16 to 17.6px */
+  --text-card-title: clamp(1.3rem, 1.15rem + 0.75vw, 1.55rem);  /* 20.8 to 24.8px */
+  --text-run-title: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);    /* 20 to 24px */
+  --text-section: clamp(1.875rem, 1.875rem + 1.1vw, 2.75rem);   /* 30 to 44px */
+  --text-home-section: clamp(2rem, 1.45rem + 1.9vw, 3.1rem);    /* 32 to 49.6px */
+  --text-statement: clamp(2.5rem, 1.5rem + 3.6vw, 4.5rem);      /* 40 to 72px */
+  --text-compact: clamp(1.6rem, 1.3rem + 1vw, 2.1rem);          /* 25.6 to 33.6px */
+  --text-hero: clamp(2.35rem, 2.35rem + 3.2vw, 4.9rem);         /* 37.6 to 78.4px */
+  --text-hero-phone: clamp(1.75rem, 1.4rem + 2.4vw, 3.2rem);    /* 28 to 51.2px */
+  --text-home-hero: clamp(2.6rem, 1rem + 4.5vw, 4.9rem);        /* 41.6 to 78.4px */
+  --text-home-hero-phone: clamp(1.85rem, 1.1rem + 3.4vw, 2.6rem); /* 29.6 to 41.6px */
+  --text-panel-title: clamp(1.55rem, 1.3rem + 1vw, 2.1rem);     /* 24.8 to 33.6px */
+  --text-metric: clamp(2rem, 2rem + 0.9vw, 2.75rem);            /* 32 to 44px */
+  --text-report-grade: clamp(3.5rem, 3.5rem + 1.9vw, 5rem);     /* 56 to 80px */
+  --text-readout: clamp(2.441rem, 1.5rem + 2.5vw, 3.25rem);     /* 39.06 to 52px */
+  --text-console-grade: clamp(2.441rem, 1.25rem + 4.5vw, 3.4rem); /* 39.06 to 54.4px */
+  --text-engine-grade: clamp(2.441rem, 2.8rem + 1.5vw, 3.6rem); /* 39.06 to 57.6px */
+  --text-figure: clamp(2.5rem, 2.1rem + 0.6vw, 3rem);           /* 40 to 48px */
+  --text-fidelity: clamp(1.5rem, min(1.6rem + 9cqi, 18.519cqi - 0.556rem), 4.25rem); /* 24 to 68px */
+  --text-fidelity-null: clamp(1.5rem, 1.2rem + 3cqi, 2.1rem);   /* 24 to 33.6px */
+  --text-stat: clamp(0.9375rem, 4.6cqi, 1.625rem);              /* 15 to 26px */
+  --text-stat-solo: clamp(1.5rem, 5vw, 1.625rem);               /* 24 to 26px */
+  --text-orb-title: clamp(2.25rem, 2rem + 1.4vw, 3.5rem);       /* 36 to 56px */
+  --text-wordmark: clamp(2.4rem, 2.4rem + 1.8vw, 3.8rem);       /* 38.4 to 60.8px */
+  --text-wordmark-demo: clamp(1.8rem, 1.8rem + 1.3vw, 2.8rem);  /* 28.8 to 44.8px */
+  --text-wordmark-hero: clamp(3.2rem, 3.2rem + 2.5vw, 5.5rem);  /* 51.2 to 88px */
+
+  /* Line heights, declared as shipped (contract typography.leading, v0.4.7):
+     each is the bare ratio its rules wrote, so it inherits as a ratio, as
+     before. --leading-heading is the h1 to h4 rule's, --leading-body the
+     body rule's. */
+  --leading-numeral: 0.9;
+  --leading-single: 1;
+  --leading-title: 1.02;
+  --leading-display: 1.06;
+  --leading-heading: 1.08;
+  --leading-figure: 1.1;
+  --leading-step: 1.12;
+  --leading-segment: 1.15;
+  --leading-tight: 1.2;
+  --leading-snug: 1.25;
+  --leading-compact: 1.3;
+  --leading-card: 1.35;
+  --leading-cell-title: 1.38;
+  --leading-lede: 1.4;
+  --leading-cell-meta: 1.42;
+  --leading-meta: 1.45;
+  --leading-prose: 1.5;
+  --leading-body: 1.55;
+  --leading-note: 1.6;
+  --leading-reading: 1.65;
+  --leading-figure-tight: 1.05;
+  --leading-fidelity: 0.92;
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
@@ -788,7 +874,7 @@ body {
   font-family: var(--sans);
   font-optical-sizing: auto;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   letter-spacing: -0.003em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -895,7 +981,7 @@ h2,
 h3,
 h4 {
   font-family: var(--display);
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   letter-spacing: -0.02em;
   font-weight: 700;
   text-wrap: balance;
@@ -1362,7 +1448,7 @@ html[data-motion="paused"] :is(
 }
 
 .cmdk-trigger-label {
-  line-height: 1;
+  line-height: var(--leading-single);
 }
 
 .cmdk-trigger-kbd {
@@ -1376,7 +1462,7 @@ html[data-motion="paused"] :is(
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-4);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
 }
 
 .cmdk-kbd-mod {
@@ -1575,7 +1661,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-5);
-  line-height: 1;
+  line-height: var(--leading-single);
   flex-shrink: 0;
 }
 
@@ -1607,7 +1693,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 }
 .cmdk-list::-webkit-scrollbar-thumb {
   background: var(--line-strong);
-  border-radius: 3px;
+  border-radius: var(--radius-full);
 }
 .cmdk-list::-webkit-scrollbar-track {
   background: transparent;
@@ -1679,7 +1765,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 .cmdk-item-meta {
   font-size: var(--text-label);
   color: var(--muted-dim);
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -1741,7 +1827,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-5);
-  line-height: 1;
+  line-height: var(--leading-single);
   opacity: 0;
   transition: opacity 100ms var(--ease);
 }
@@ -1808,7 +1894,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   color: var(--muted-dim);
   font-size: var(--text-label);
   margin: 0;
-  line-height: 1.45;
+  line-height: var(--leading-meta);
 }
 
 /* --- footer hints --- */
@@ -1828,7 +1914,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   gap: var(--space-fine-35);
   font-size: var(--text-label);
   color: var(--muted-dim);
-  line-height: 1;
+  line-height: var(--leading-single);
 }
 
 .cmdk-footer-hint kbd {
@@ -1837,7 +1923,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-5);
-  line-height: 1;
+  line-height: var(--leading-single);
   background: var(--surface);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 10%, transparent);
 }
@@ -1969,7 +2055,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
 
 .sense-toggle-icon {
   font-size: var(--text-body);
-  line-height: 1;
+  line-height: var(--leading-single);
 }
 
 .haptics-toggle .sense-toggle-icon {
@@ -2908,7 +2994,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   font-family: var(--sans);
   font-size: var(--text-lead);
   font-weight: 650;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   letter-spacing: -0.005em;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
@@ -2924,7 +3010,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   text-wrap: pretty;
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   max-width: 100%;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -3209,7 +3295,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   color: var(--signal-access);
   padding: var(--space-4) var(--space-fine-60);
   border: 1px solid var(--signal-dim);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   /* No --signal-dim background fill: color-mix(in srgb, var(--signal) 14%, transparent) over surfaces produces
      a dark ~#01081e where the text needs 4.5:1 minimum. Transparent fill keeps
      the badge readable from the border + light text alone. */
@@ -3461,7 +3547,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 .footer-dock-clip::-webkit-scrollbar-thumb {
   background: var(--line);
-  border-radius: 3px;
+  border-radius: var(--radius-full);
 }
 .footer-dock:hover .footer-dock-clip {
   cursor: grab;
@@ -3712,19 +3798,19 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
      tracking and optical size (.eg-title, engine.css), so a document page and
      an engine page open on the same title. It was 400 at up to 56px, a second
      H1 system on 55 routes. */
-  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
+  font-size: var(--text-title);
   font-weight: 700;
   letter-spacing: -0.025em;
-  line-height: 1.02;
+  line-height: var(--leading-title);
   margin-bottom: var(--space-16);
   text-wrap: balance;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
 }
 
 .surface-lede {
-  font-size: clamp(1.05rem, 1rem + 0.3vw, 1.2rem);
+  font-size: var(--text-lede);
   color: var(--ink);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   margin-bottom: var(--space-16);
   text-wrap: pretty;
 }
@@ -3732,7 +3818,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 .surface-note {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   max-width: min(100%, 580px);
   text-wrap: pretty;
 }
@@ -3759,7 +3845,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   font-family: var(--sans);
   font-size: var(--text-lead);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   letter-spacing: -0.01em;
   color: var(--ink);
   margin-bottom: var(--space-16);
@@ -3940,7 +4026,7 @@ html[data-motion="paused"] :is(.definition, .principle, .text-cell, .lab-card, .
 .definition p {
   font-size: var(--text-body);
   color: var(--ink);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   text-wrap: pretty;
   /* A definition clips what overflows it (its accent bar needs overflow:
      hidden), so a long URL or a line of JSON has to break instead: on a phone
@@ -4096,7 +4182,7 @@ dl.definition-side {
 
 .definition-side p {
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
 }
 
@@ -4115,7 +4201,7 @@ dl.definition-side {
   margin-block: calc((1rem - (0.6875rem * 1.2 + 2 * var(--space-fine-12) + 2px)) / 2);
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font: 650 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4134,20 +4220,20 @@ dl.definition-side {
 
 .definition-side .row-side-chip[data-state="pass"] {
   --row-chip-hue: var(--ok);
-  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
-  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+  color: var(--ok-chip);
+  border-color: var(--ok-rim);
 }
 
 .definition-side .row-side-chip[data-state="warn"] {
   --row-chip-hue: var(--warn);
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
-  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+  color: var(--warn-chip);
+  border-color: var(--warn-rim);
 }
 
 .definition-side .row-side-chip[data-state="fail"] {
   --row-chip-hue: var(--error);
-  color: color-mix(in srgb, var(--error) 82%, var(--ink));
-  border-color: color-mix(in srgb, var(--error) 28%, var(--line));
+  color: var(--error-chip);
+  border-color: var(--error-rim);
 }
 
 @media (forced-colors: active) {
@@ -4240,7 +4326,7 @@ dl.definition-side {
   padding-left: var(--space-28);
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   min-width: 0;
 }
 
@@ -4260,7 +4346,7 @@ dl.definition-side {
   width: 1.25rem;
   color: var(--signal-text);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: var(--leading-prose);
 }
 
 /* Two-column layout for larger content blocks, on the shell module: twelve
@@ -4545,7 +4631,7 @@ dl.definition-side {
   gap: var(--space-fine-35);
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font: 650 var(--text-label)/1.2 var(--sans);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4564,20 +4650,20 @@ dl.definition-side {
 
 .row-side-chip[data-state="pass"] {
   --row-chip-hue: var(--ok);
-  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
-  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+  color: var(--ok-chip);
+  border-color: var(--ok-rim);
 }
 
 .row-side-chip[data-state="warn"] {
   --row-chip-hue: var(--warn);
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
-  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+  color: var(--warn-chip);
+  border-color: var(--warn-rim);
 }
 
 .row-side-chip[data-state="fail"] {
   --row-chip-hue: var(--error);
-  color: color-mix(in srgb, var(--error) 82%, var(--ink));
-  border-color: color-mix(in srgb, var(--error) 28%, var(--line));
+  color: var(--error-chip);
+  border-color: var(--error-rim);
 }
 
 @media (forced-colors: active) {
@@ -4927,7 +5013,7 @@ button.row:active {
   min-width: 0;
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
 }
 
 /* A static title is a line of text. The 44px box was a touch-target rule on
@@ -4981,7 +5067,7 @@ button.row {
   margin-top: var(--space-fine-15);
   color: var(--muted-dim);
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   overflow-wrap: break-word;
   text-wrap: pretty;
 }
@@ -5813,7 +5899,7 @@ button.check-cell {
 .check-cell-arrow {
   font-size: var(--text-label);
   color: var(--muted-dim);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   transition: transform 160ms var(--ease-out), color 160ms var(--ease);
 }
 
@@ -5911,7 +5997,7 @@ button.check-cell {
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;
   color: var(--signal-text);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   padding-top: var(--space-fine-12);
   user-select: none;
 }
@@ -5935,7 +6021,7 @@ button.check-cell {
   font-weight: 650;
   letter-spacing: -0.012em;
   color: var(--ink);
-  line-height: 1.38;
+  line-height: var(--leading-cell-title);
   text-wrap: pretty;
   overflow-wrap: break-word;
   hyphens: manual;
@@ -5944,7 +6030,7 @@ button.check-cell {
 .check-cell-meta {
   font-size: var(--text-label);
   color: var(--muted-dim);
-  line-height: 1.42;
+  line-height: var(--leading-cell-meta);
   text-wrap: pretty;
   overflow-wrap: break-word;
   hyphens: manual;
@@ -5982,7 +6068,7 @@ button.check-cell {
 
 @media (hover: hover) {
   .check-cell.is-avoid:hover {
-    background: color-mix(in srgb, var(--surface-raised) 70%, var(--surface-hover));
+    background: var(--surface-raised-hover);
   }
 }
 
@@ -5993,7 +6079,7 @@ button.check-cell {
   margin-top: var(--space-fine-15);
   padding: var(--space-fine-12) var(--space-fine-42);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: var(--text-label);
   font-weight: 650;
   letter-spacing: 0.04em;
@@ -6009,8 +6095,8 @@ button.check-cell {
    Brand blue stays for interaction only. */
 .check-cell-status.is-hold {
   --check-status-hue: var(--ok);
-  color: color-mix(in srgb, var(--ok) 72%, var(--ink));
-  border-color: color-mix(in srgb, var(--ok) 28%, var(--line));
+  color: var(--ok-chip);
+  border-color: var(--ok-rim);
 }
 
 /* FAIL, WARN and HOLD read first: the state hue as text (pulled 18-30% toward
@@ -6035,14 +6121,14 @@ button.check-cell {
 
 .check-cell-status.is-fail {
   --check-status-hue: var(--error);
-  color: color-mix(in srgb, var(--error) 82%, var(--ink));
-  border-color: color-mix(in srgb, var(--error) 28%, var(--line));
+  color: var(--error-chip);
+  border-color: var(--error-rim);
 }
 
 .check-cell-status.is-warn {
   --check-status-hue: var(--warn);
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
-  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+  color: var(--warn-chip);
+  border-color: var(--warn-rim);
 }
 
 /* Forced colours would flatten the LED into Canvas; it keeps a system ink. */
@@ -6357,7 +6443,7 @@ button.check-cell {
   }
   .nav-drawer-close-icon {
     font-size: var(--text-body);
-    line-height: 1;
+    line-height: var(--leading-single);
   }
   .nav-drawer-close-label {
     font-size: var(--text-label);
@@ -6490,7 +6576,7 @@ button.check-cell {
     margin: 0;
     padding: var(--space-6) var(--space-12);
     font-size: var(--text-body);
-    line-height: 1.2;
+    line-height: var(--leading-tight);
   }
 }
 
@@ -6557,7 +6643,7 @@ button.check-cell {
   box-shadow: var(--elev-1);
   font-size: var(--text-label);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   text-wrap: pretty;
 }
 
@@ -6806,7 +6892,7 @@ html[data-motion="paused"] .lab-card:active {
 }
 
 .lab-card-title {
-  font-size: clamp(1.3rem, 1.15rem + 0.75vw, 1.55rem);
+  font-size: var(--text-card-title);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
@@ -6817,14 +6903,14 @@ html[data-motion="paused"] .lab-card:active {
   font-size: var(--text-lead);
   font-weight: 500;
   color: var(--ink);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   text-wrap: pretty;
 }
 
 .lab-card-desc {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   max-width: min(100%, 420px);
   text-wrap: pretty;
 }
@@ -6954,7 +7040,7 @@ html[data-motion="paused"] .lab-card:active {
 
 /* --- Poise demo cell adjustments --- */
 .demo-cell .poise-wordmark {
-  font-size: clamp(1.8rem, 1.8rem + 1.3vw, 2.8rem);
+  font-size: var(--text-wordmark-demo);
   margin-bottom: 0;
 }
 .demo-cell .poise-actions {
@@ -7119,7 +7205,7 @@ html[data-motion="paused"] .lab-card:active {
 .demo-cell-label {
   font-size: var(--text-label);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted-dim);
@@ -7140,7 +7226,7 @@ html[data-motion="paused"] .lab-card:active {
 .demo-cell-note {
   font-size: var(--text-label);
   color: var(--muted-dim);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   border-top: 1px solid var(--line-faint);
   padding-top: var(--space-12);
 }
@@ -7768,8 +7854,8 @@ a.field-card:active {
    (round-3 judges, 2026-10-04). Now the hero badge speaks the state's own
    colour, pulled toward ink like the side chip. */
 .status-badge--warn {
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
-  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+  color: var(--warn-chip);
+  border-color: var(--warn-rim);
   background: transparent;
 }
 
@@ -7836,7 +7922,7 @@ a.field-card:active {
   font-family: var(--sans);
   font-size: var(--text-label);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -7854,7 +7940,7 @@ a.field-card:active {
   color: var(--muted);
   font-family: var(--mono);
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   white-space: pre-wrap;
   overflow-wrap: break-word;
   overflow-x: auto;
@@ -7930,7 +8016,7 @@ a.field-card:active {
   font-family: var(--sans);
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1;
+  line-height: var(--leading-single);
   letter-spacing: 0.03em;
   cursor: pointer;
   transition: border-color 0.2s var(--ease), color 0.2s var(--ease),
@@ -7958,9 +8044,9 @@ a.field-card:active {
   outline-offset: 1px;
 }
 .copy-prompt-btn.is-copied {
-  border-color: color-mix(in srgb, var(--signal) 40%, var(--line));
+  border-color: var(--signal-rim);
   color: var(--signal-text);
-  background: color-mix(in srgb, var(--signal) 8%, var(--surface-raised));
+  background: var(--signal-wash-raised);
 }
 
 /* More contrast: the rim is a solid strong line. Forced colours: Canvas with
@@ -8477,7 +8563,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .effect-desc {
   font-size: var(--text-body);
   color: var(--muted-dim);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   z-index: 2;
   transition: color 200ms var(--ease);
 }
@@ -9067,7 +9153,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-output-side dd {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--ink);
 }
 
@@ -9108,9 +9194,9 @@ a.lab-card:focus-visible .lab-card-arrow {
 
 .score-empty-run-title {
   margin: 0;
-  font-size: clamp(1.25rem, 1.15rem + 0.4vw, 1.5rem);
+  font-size: var(--text-run-title);
   font-weight: 650;
-  line-height: 1.25;
+  line-height: var(--leading-snug);
   letter-spacing: -0.015em;
   color: var(--ink);
 }
@@ -9119,7 +9205,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   margin: 0;
   max-width: 66ch;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
   overflow-wrap: anywhere;
@@ -9262,7 +9348,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-hint {
   font-size: var(--text-label);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   margin: 0;
 }
 
@@ -9471,7 +9557,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-metric-val {
   font-size: var(--text-lead);
   font-weight: 700;
-  line-height: 1;
+  line-height: var(--leading-single);
   font-variant-numeric: tabular-nums;
 }
 
@@ -9821,7 +9907,7 @@ a.lab-card:focus-visible .lab-card-arrow {
 .score-engine-tile-grade {
   font-size: var(--text-lead);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: var(--leading-figure);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
@@ -10007,7 +10093,7 @@ html[data-motion="paused"] .score-check-group::after {
   font-size: var(--text-label);
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -10087,7 +10173,7 @@ html[data-motion="paused"] .score-check-group::after {
 
 .score-note {
   color: var(--muted);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
   max-width: 66ch;
 }
@@ -10223,7 +10309,7 @@ html[data-motion="paused"] .score-check-group::after {
   font-size: var(--text-label);
   font-weight: 700;
   padding: var(--space-1) var(--space-7);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--signal-pos) 14%, transparent);
   color: var(--signals-pos-text);
   font-variant-numeric: tabular-nums;
@@ -10316,7 +10402,7 @@ html[data-motion="paused"] .score-check-group::after {
 .score-signal-evidence {
   font-size: var(--text-label);
   color: var(--muted);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   word-break: break-word;
 }
 
@@ -10589,7 +10675,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-tab-count {
   font-size: var(--text-label);
   padding: var(--space-1) var(--space-5);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--ink) 10%, transparent);
   color: var(--muted);
 }
@@ -10702,7 +10788,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-category-chip {
   height: 1.85rem;
   padding: 0 var(--space-fine-70);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-soft);
   border: 1px solid var(--line);
   color: var(--muted);
@@ -10905,7 +10991,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   color: var(--muted);
   background: var(--surface-soft);
   padding: var(--space-1) var(--space-5);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .score-card-title {
@@ -10913,7 +10999,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   font-weight: 600;
   color: var(--ink);
   margin: 0;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   /* Pretty, not the heading default of balance: balanced, a two-line title
      broke at about 245px of a 358px card on a phone and left a 100px gutter
      on every card's right. */
@@ -11003,7 +11089,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
 .score-drawer-detail {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   margin: 0;
 }
 
@@ -11543,7 +11629,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-size: var(--text-label);
   color: var(--muted);
   margin: 0;
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   /* 66ch, matching the site's prose measure. Measured 91-92 characters. */
   max-width: 66ch;
 }
@@ -11778,7 +11864,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-family: var(--sans);
   font-size: inherit;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   letter-spacing: normal;
 }
 
@@ -11806,9 +11892,9 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-grade {
-  font-size: clamp(3.5rem, 3.5rem + 1.9vw, 5rem);
+  font-size: var(--text-report-grade);
   font-weight: 800;
-  line-height: 1;
+  line-height: var(--leading-single);
   letter-spacing: -0.04em;
 }
 
@@ -11819,7 +11905,7 @@ html[data-motion="paused"] .pricing-card::after {
 }
 
 .report-hero-value {
-  font-size: clamp(2rem, 2rem + 0.9vw, 2.75rem);
+  font-size: var(--text-metric);
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: proportional-nums;
@@ -11861,7 +11947,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-size: var(--text-label);
   font-weight: 600;
   padding: var(--space-4) var(--space-fine-65);
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   font-variant-numeric: tabular-nums;
 }
 
@@ -11959,7 +12045,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-not-measured p {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.6;
+  line-height: var(--leading-note);
 }
 
 /* --- Report sections --- */
@@ -12046,7 +12132,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .report-check-status--pass { color: var(--ok-ink); background: color-mix(in srgb, var(--ok) 10%, transparent); }
@@ -12085,7 +12171,7 @@ html[data-motion="paused"] .pricing-card::after {
   border-top: 1px solid var(--line-faint);
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   background: var(--surface);
 }
 
@@ -12109,7 +12195,7 @@ html[data-motion="paused"] .pricing-card::after {
   color: var(--error-ink);
   font-size: var(--text-body);
   font-weight: 500;
-  line-height: 1.5;
+  line-height: var(--leading-prose);
 }
 
 .report-hard-fail strong {
@@ -12368,7 +12454,7 @@ html[data-motion="paused"] .pricing-card::after {
   border-radius: var(--radius);
   background: var(--mat-reading);
   box-shadow: var(--elev-1);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   margin-bottom: var(--space-16);
 }
 
@@ -12552,7 +12638,7 @@ select {
   font-size: var(--text-body);
   font-weight: 500;
   letter-spacing: -0.006em;
-  line-height: 1.42;
+  line-height: var(--leading-cell-meta);
   color: var(--ink);
   margin: 0;
   max-width: 40ch;
@@ -12562,7 +12648,7 @@ select {
 .score-note {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
 }
 
@@ -12592,7 +12678,7 @@ select {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   padding: var(--space-2) var(--space-7);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   letter-spacing: 0.01em;
 }
 
@@ -12701,7 +12787,7 @@ select {
   flex-wrap: wrap;
   align-items: baseline;
   column-gap: var(--space-12);
-  font: 700 clamp(2.441rem, 1.5rem + 2.5vw, 3.25rem)/1 var(--display);
+  font: 700 var(--text-readout)/1 var(--display);
   letter-spacing: -0.02em;
 }
 .rs-grade {
@@ -12739,7 +12825,7 @@ select {
   height: var(--space-6);
 }
 .rs-track > span {
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--tone) 22%, transparent);
 }
 .rs-track > span.is-here {
@@ -12801,7 +12887,7 @@ select {
   display: inline-block;
   width: var(--space-8);
   height: var(--space-8);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   margin-right: var(--space-4);
   background: var(--tone);
 }
@@ -12871,7 +12957,7 @@ button.rs-row:focus-visible {
 }
 .rs-bar {
   height: var(--space-6);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--line-faint);
   overflow: hidden;
 }
@@ -12966,7 +13052,7 @@ button.rs-row:focus-visible {
 .score-rubric-formula {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   font-family: var(--mono);
   background: var(--surface);
@@ -13005,7 +13091,7 @@ button.rs-row:focus-visible {
   flex: 1 1 auto;
   height: 4px;
   background: var(--surface);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
 }
 
@@ -13013,7 +13099,7 @@ button.rs-row:focus-visible {
   display: block;
   height: 100%;
   background: var(--signal);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .score-rubric-weight-num {
@@ -13644,13 +13730,13 @@ button.rs-row:focus-visible {
   /* -- Card body and title on the type scale: both at --text-body (16px). -- */
   .principle-body p {
     font-size: var(--text-body); /* 15px */
-    line-height: 1.55;
+    line-height: var(--leading-body);
   }
   /* The card title stays at 16px: weight and ink rank it over the muted body,
      and 18.75px crowded the 20px section heading (1.07). */
   .principle-body h3 {
     font-size: var(--text-body);
-    line-height: 1.35;
+    line-height: var(--leading-card);
   }
 
   /* -- Caps micro-labels at the label step, 12.8px: the floor for all text,
@@ -13755,7 +13841,7 @@ button.rs-row:focus-visible {
   border-radius: var(--radius);
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   position: relative;
   max-width: min(100%, 440px);
 }
@@ -13813,7 +13899,7 @@ button.rs-row:focus-visible {
   border: none;
   color: var(--muted-dim);
   font-size: var(--text-body);
-  line-height: 1;
+  line-height: var(--leading-single);
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: color var(--duration-quick, 150ms) var(--ease, cubic-bezier(0.22, 0.61, 0.36, 1)),
@@ -14203,7 +14289,7 @@ button.rs-row:focus-visible {
   width: 44px;
   height: 44px;
   padding: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--line);
   background: transparent;
   color: var(--muted);
@@ -14349,7 +14435,7 @@ button.rs-row:focus-visible {
   border-left: 2px solid var(--line-faint);
   color: var(--muted);
   text-decoration: none;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   transition: border-color var(--duration-fast, 180ms) var(--ease, ease),
               color var(--duration-fast, 180ms) var(--ease, ease);
 }
@@ -15009,7 +15095,7 @@ html[data-motion="paused"] .senses-panel {
 
 .senses-row-hint {
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 
@@ -15242,7 +15328,7 @@ html[data-motion="paused"] .senses-panel {
      float; nothing stands). --muted on regular glass reads 5.23:1 dark /
      6.27:1 light with full-ink content directly behind, no blur credit. */
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background:
     linear-gradient(var(--glass-regular), var(--glass-regular)) padding-box,
     var(--rim) border-box;
@@ -15484,7 +15570,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
     translate: 0 -50%;
     padding: var(--space-6) var(--space-10);
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     /* Opaque float material, not glass: the pill's own backdrop-filter makes
        it the backdrop root, so a glass tag inside it would blur nothing. */
     background:
@@ -15760,7 +15846,7 @@ html[data-motion="paused"] :is(.back-button, .director-dock) {
     padding-block: var(--space-6);
     white-space: normal;
     text-wrap: balance;
-    line-height: 1.2;
+    line-height: var(--leading-tight);
   }
   .score-hero-actions .score-audit-btn,
   .score-hero-actions .score-tokens-badge {

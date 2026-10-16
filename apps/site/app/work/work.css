@@ -753,7 +753,7 @@
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
   font-size: 3.6rem;
-  line-height: 1.25;
+  line-height: var(--leading-snug);
   letter-spacing: -0.02em;
   color: var(--ink);
 }
@@ -821,7 +821,7 @@
 .cs-face-note {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1158,7 +1158,7 @@
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
   font-size: var(--text-h1);
-  line-height: 1.1;
+  line-height: var(--leading-figure);
   letter-spacing: -0.02em;
   color: var(--ink);
 }

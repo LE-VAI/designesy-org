@@ -280,7 +280,7 @@
 .mcp-tools .row-meta {
   color: var(--muted);
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
 }
 
 /* A client's name over its config: a sub-heading in the sans, as every h3
