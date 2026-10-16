@@ -47,8 +47,11 @@ function fixtureResponse(body, status = 200) {
  *   for the defaults below (a gate that needs a caching unstable_cache, say)
  * @param {Record<string, (real: object) => object>} [opts.overrides]  more app-relative
  *   module overrides, applied after the defaults (a fake limiter module, say)
+ * @param {boolean} [opts.realSafeFetch]  keep the URL guard's own safeFetch instead of
+ *   the fixture table, so a gate can time the real transport (its aborts and its
+ *   redirect loop) against a local server reached through `stubs` for node:http(s)
  */
-function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: extraStubs = {}, overrides: extraOverrides = {} }) {
+function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: extraStubs = {}, overrides: extraOverrides = {}, realSafeFetch = false }) {
   // Packages resolve from the loaded app first, then from this checkout, so a
   // bare source snapshot (git archive of another commit) runs without its own
   // node_modules.
@@ -100,7 +103,7 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: 
 
   // App-relative path stubs, applied after the real module loads.
   const overrides = {
-    'app/lib/url-guard.ts': (real) => ({ ...real, safeFetch: serve }),
+    'app/lib/url-guard.ts': (real) => (realSafeFetch ? real : { ...real, safeFetch: serve }),
     'app/lib/usage.ts': (real) => ({ ...real, recordUsage: async () => {}, toolCallNames: () => [] }),
   };
   for (const [file, fn] of Object.entries(extraOverrides)) {

@@ -38,6 +38,7 @@
     "const:STYLESHEET_DEADLINE_MS",
     "const:dynamic",
     "const:hits",
+    "const:maxDuration",
     "const:runtime",
     "const:scoreUrl",
     "fn:POST",

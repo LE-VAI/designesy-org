@@ -601,7 +601,7 @@
 
 .vc-score small {
   margin-left: 0.1em;
-  font-size: 0.6em;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 
