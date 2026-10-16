@@ -102,7 +102,7 @@
 .demo-easing-track {
   flex: 1;
   height: 1.5rem;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--surface);
   border: 1px solid var(--line-faint);
   position: relative;

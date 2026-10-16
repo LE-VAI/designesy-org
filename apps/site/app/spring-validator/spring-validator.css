@@ -675,7 +675,7 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-metric-hint[data-tone="warn"] {
   font-weight: 600;
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  color: var(--warn-chip);
 }
 
 .sv-metric-hint[data-tone="fail"] {
@@ -752,7 +752,7 @@ html[data-motion="paused"] .sv-answer-glow {
   box-shadow: inset 0 0 0 1px currentColor;
   font-size: var(--text-label);
   font-weight: 700;
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
+  color: var(--warn-chip);
 }
 
 .sv-check-item[data-state="pass"] .sv-check-mark {

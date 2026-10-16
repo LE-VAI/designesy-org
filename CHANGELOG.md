@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
 heights that the stylesheets wrote inline become named `:root` tokens and
-contract entries, and the rules read them. Only two things on screen change,
-both marked below. No check is added, and no weight, ceiling or verdict
+contract entries, and the rules read them. The only things that change on
+screen are marked below. No check is added, and no weight, ceiling or verdict
 moves. The engine stays 1.5.2.
 
 ### Added (contract v0.4.7)
@@ -27,9 +27,12 @@ moves. The engine stays 1.5.2.
   The pass, warn and fail chips (`.row-side-chip`, `.definition-side
   .row-side-chip`, `.check-cell-status`), the featured home card, the copied
   button, the segmented control's selected tile and the hover on an avoided
-  check cell all read them.
+  check cell all read them. So do `.status-badge--warn` (text and edge) and
+  the two warn hints on the spring validator, which wrote the same mix
+  inline.
 - **Two radii.** `--radius-xs` is 2px: the legend swatches, the track
-  segments and the reticle use it. `--radius-full` is 9999px: the 18 `999px`
+  segments and the reticle use it, and so do the seven 2px corners on the
+  contracts, Orb, Poise and Takt pages. `--radius-full` is 9999px: the 18 `999px`
   pills, `.report-count`'s `99px` and the two 3px scrollbar thumbs use it.
   Any radius past half the box draws the same round end, so none of these
   changes on screen.
@@ -38,11 +41,17 @@ moves. The engine stays 1.5.2.
   that read it. The 33 declarations that wrote those clamps inline now read
   the tokens. A custom property is substituted where it is read, so the
   viewport and container units still resolve on the element.
-- **`typography.leading`, 19 roles.** Each `--leading-<role>` token holds a
-  bare ratio, from `--leading-numeral` (0.9) to `--leading-note` (1.6), with
-  `--leading-heading` (1.08) and `--leading-body` (1.55) among them. The 223
-  plain `line-height` declarations that wrote one of those ratios now read
-  the tokens.
+- **`typography.leading`, 22 roles.** Each `--leading-<role>` token holds a
+  bare ratio, from `--leading-fidelity` (0.92) to `--leading-reading`
+  (1.65), with `--leading-heading` (1.08) and `--leading-body` (1.55) among
+  them. `--leading-reading` sets the long prose on the brand, data and
+  engine pages, `--leading-figure-tight` (1.05) the prices, the type
+  specimen and the empty contract readout, and `--leading-fidelity` the
+  contract fidelity numeral. The 230 plain `line-height` declarations that
+  wrote one of those ratios now read the tokens.
+- **Role text and a role field on every fluid size.** Each leading role and
+  each of the 29 fluid roles says what it sets; the rules that read a fluid
+  size stay in their own `selectors` field.
 
 ### Changed (contract v0.4.7)
 
@@ -52,8 +61,18 @@ These change pixels:
   `--signal-rim`, the same edge as the featured card. In the dark theme that
   is 45% Azure instead of 40%, which is not visible. In the light theme it is
   Deep Azure (`--signal-access`) instead of Azure, a stronger non-text edge.
-- **The status badge's corner** (`.status-badge`) reads `--radius-sm`: 4px,
-  where it was 3px.
+- **Five 3px corners read `--radius-sm` (4px):** `.status-badge`,
+  `.score-card-cat`, `.report-check-status`, `.eg-minicell::before` and
+  `.mt-cell`. Where the box's short side is 6px or less, both radii are past
+  half the box and the shape does not change; on a larger box the corner is
+  1px rounder.
+
+This changes text only:
+
+- **`typography.hero_wordmark` states the clamp the site ships**,
+  `clamp(3.2rem, 3.2rem + 2.5vw, 5.5rem)`, and names `--text-wordmark-hero`.
+  It said `clamp(3.2rem, 9vw, 5.5rem)`, which the site has not shipped
+  (brand decision D76).
 
 ### Removed (contract v0.4.7)
 
@@ -74,8 +93,11 @@ These change pixels:
   1/64px it loses moves the text below it by a device pixel on some pages.
   The own-contract check f05 already counts each one as the declared 1.25,
   since it reads a length over its own rule's font size.
-- Line heights that are no declared role stay literal: 1.65 (three prose
-  rules), 1.05, 0.92 and 0.
+- `line-height: 0` stays literal; it is no declared role.
+- Three spring validator mixes stay inline, because no token holds them
+  byte for byte: the two ok hints write `var(--ok) 70%` over ink, where
+  `--ok-chip` is 72%, and the error hint writes `var(--error) 70%`, where
+  `--error-chip` is 82%.
 
 ### Gates (contract v0.4.7)
 
@@ -94,28 +116,36 @@ These change pixels:
 
 ### Measured (contract v0.4.7)
 
-- **Computed styles, main against this branch.** The run covered 36 pages in
-  both themes at 1440 and 390px: 11,440 rendered elements and their first 25
-  descendants, 387,240 property readings, and each element's box to
-  0.001px. Three things differ:
-  - the two marked changes;
+- **Computed styles, main against this branch.** The run covered 40 pages in
+  both themes at 1440 and 390px: 13,272 rendered elements and their first 25
+  descendants, 440,776 property readings, and each element's box to
+  0.001px. Only these differ:
+  - the marked changes: the copied button's edge and the 3px corners now at
+    4px;
   - the `999px` and `99px` radii, which now read `9999px` (every element
     involved is under 1998px on its short side, so the used radius is the
     same);
   - the width of the home card line that prints the contract version.
 
-  Every new token, set in a probe element, computes the same value as the
-  inline expression it replaced, in both themes and at both widths.
+  The 2px corners, the three new leadings and the warn tints read the same
+  computed values and boxes as before. Every new token, set in a probe
+  element, computes the same value as the inline expression it replaced, in
+  both themes and at both widths. Each 3px corner was measured on its own:
+  every rendered instance has a short side over 6px (6.72px to 24.6px), so
+  its used radius grows, to 4px, or to 3.36px on the 6.72px maturity legend
+  cell, whose pixels do not change.
 - **Own-contract score of /DESIGN.md against the home page.** The DESIGN.md
   is the one built by the pending front-matter change, with that change's
   generator extended for these tokens. Engine 1.5.2:
   - 43.6 F with the v0.4.6 contract on production CSS;
-  - 90.7 A with this contract on production CSS;
-  - 94.1 A with this contract on this branch's CSS.
+  - 90.7 A with this contract on main's CSS;
+  - 100 A with this contract on this branch's CSS.
 
-  The baseline is 100 A throughout. On this branch's CSS: f02 33 of 33,
-  f03 32 of 32, f05 20 of 20, f07 7 of 8 (`.score-card-cat`, 3px) and f14
-  0.803.
+  The baseline is 100 A throughout. On this branch's CSS every check that
+  runs passes: f01 142 of 142, f02 33 of 33, f03 32 of 32, f04 3 of 3
+  families, f05 20 of 20, f07 7 of 7 (no 3px radius ships any more), f08 49
+  of 52, f13 11 of 11 and f14 0.804. f06, f09, f10, f11 and f12 skip, as
+  before.
 
 **Engine 1.5.2 and @designesy/score 0.9.3: v46 reads the `font` shorthand**
 (the hosted API and npm `score-v0.9.3`). No check is added, no

@@ -56,7 +56,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-fine-15);
-  line-height: 1.05;
+  line-height: var(--leading-figure-tight);
 }
 
 .pricing-card-price-value {

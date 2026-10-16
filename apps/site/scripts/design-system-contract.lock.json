@@ -3,7 +3,7 @@
   "contract": "designesy.design-system",
   "version": "0.4.7",
   "scheme": 1,
-  "sha256": "6d2f7bd167add0f85c0543ab87e9341efb2a1b3b7f599fd5ea073ffe39c3e634",
+  "sha256": "c9f2456ae5618511ab84a1e99c95cbf8b7a66cb40da7375df3f808e738264998",
   "excluded": [
     "adoption_history",
     "full_contract_url",
@@ -38,7 +38,7 @@
     "shadows": "01a207e1c05273eeaaa398cd40d6dace57ddba38c554b5431022eaff5e4f082a",
     "surfaces_and_lines": "11863c511139a93acc43f14033ea8ef8dc5e8ccbeceba3020f609942b46a1aa0",
     "takt": "e702451a494afc7d249ced6e931ded4bc3d854b8b9aa69c646284418a2609e7f",
-    "typography": "48a7406a95c56dceb1560d2477fd8722b606606bd90d161e0e97293df9a45cbe",
+    "typography": "d6de7cab2f22f79ae3877e961d0df2aac7b3fb846e6dee039c89566abf7878e7",
     "verification": "9cc3ff5cc6606601619bc9f8b4734be36adc8e9a86d6c975fc7b3864ae702659"
   }
 }

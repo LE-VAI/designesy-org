@@ -1554,7 +1554,7 @@
   max-width: 40rem;
   margin: 0 0 var(--space-16);
   font-size: var(--text-body);
-  line-height: 1.65;
+  line-height: var(--leading-reading);
   color: var(--muted);
   text-wrap: pretty;
 }

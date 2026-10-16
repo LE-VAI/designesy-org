@@ -382,6 +382,9 @@
   --leading-prose: 1.5;
   --leading-body: 1.55;
   --leading-note: 1.6;
+  --leading-reading: 1.65;
+  --leading-figure-tight: 1.05;
+  --leading-fidelity: 0.92;
 
   /* Surface depth vocabulary (Kimi K3 Stage 2 — 2026 frontier dark register).
      Gradients replace the flat opacity ladder on card interiors; token
@@ -7851,8 +7854,8 @@ a.field-card:active {
    (round-3 judges, 2026-10-04). Now the hero badge speaks the state's own
    colour, pulled toward ink like the side chip. */
 .status-badge--warn {
-  color: color-mix(in srgb, var(--warn) 70%, var(--ink));
-  border-color: color-mix(in srgb, var(--warn) 28%, var(--line));
+  color: var(--warn-chip);
+  border-color: var(--warn-rim);
   background: transparent;
 }
 
@@ -10988,7 +10991,7 @@ html[data-motion="paused"] .score-signal-raw > summary::before {
   color: var(--muted);
   background: var(--surface-soft);
   padding: var(--space-1) var(--space-5);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .score-card-title {
@@ -12129,7 +12132,7 @@ html[data-motion="paused"] .pricing-card::after {
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: var(--space-fine-15) var(--space-fine-40);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 .report-check-status--pass { color: var(--ok-ink); background: color-mix(in srgb, var(--ok) 10%, transparent); }

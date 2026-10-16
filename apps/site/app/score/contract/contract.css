@@ -509,7 +509,7 @@
      is (50cqi - 1.5rem) / 2.70 = 18.519cqi - 0.556rem. The two readouts never
      stack (D8). */
   font-size: var(--text-fidelity);
-  line-height: 0.92;
+  line-height: var(--leading-fidelity);
   letter-spacing: -0.03em;
   font-variant-numeric: lining-nums tabular-nums;
   color: var(--ink);
@@ -555,7 +555,7 @@
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
   font-size: var(--text-fidelity-null);
-  line-height: 1.05;
+  line-height: var(--leading-figure-tight);
   letter-spacing: -0.015em;
   color: var(--ink);
 }

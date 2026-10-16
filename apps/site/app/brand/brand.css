@@ -152,7 +152,7 @@
 
 .brand-section p {
   font-size: var(--text-body);
-  line-height: 1.65;
+  line-height: var(--leading-reading);
   max-width: 66ch;
 }
 
@@ -348,7 +348,7 @@
   font-family: var(--display);
   font-size: var(--text-h1);
   font-weight: 700;
-  line-height: 1.05;
+  line-height: var(--leading-figure-tight);
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
