@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { ENGINE_CHECK_COUNT } from './check-definitions';
 import { DigitStrip, stripValues } from './digit-strip';
 
@@ -136,6 +136,11 @@ const LABEL = `Demo on a generic page, inspected in four steps. v03 fails becaus
 /** A numbered pin, as drawn on the page and repeated in the log. */
 function Pin({ n, tone, inLog }: { n: number; tone: 'warn' | 'fail'; inLog?: boolean }) {
   return <span className={`${inLog ? 'ix-log-pin' : 'ix-pin'} is-${tone}`}>{n}</span>;
+}
+
+/** A phrase kept on one line where a phone's log wraps a value. */
+function G({ children }: { children: ReactNode }) {
+  return <span className="ix-log-g">{children}</span>;
 }
 
 /** A log row not yet reached: its step, queued. */
@@ -879,12 +884,16 @@ export function InspectSequence() {
             <div className="ix-log">
               <span className="ix-log-line" data-n="1">
                 <b className="ix-log-k">read</b>
-                <span className="ix-log-v">nav · h1 · p · button · 3 × article</span>
+                <span className="ix-log-v">
+                  <G>nav ·</G> <G>h1 ·</G> <G>p ·</G> <G>button ·</G> <G>3 × article</G>
+                </span>
               </span>
               <span className="ix-log-line" data-n="2">
                 <Queued k="measure" />
                 <b className="ix-log-k">measured</b>
-                <span className="ix-log-v">62 ch · 44 px · 15.8 : 1</span>
+                <span className="ix-log-v">
+                  <G>62 ch ·</G> <G>44 px ·</G> <G>15.8 : 1</G>
+                </span>
               </span>
               <span className="ix-log-line" data-n="3">
                 <Queued k="find" />
@@ -894,10 +903,19 @@ export function InspectSequence() {
                 </span>
                 <span className="ix-log-v ix-log-rows">
                   <span>
-                    <Pin n={1} tone="warn" inLog /> v06 muted text 3.8 : 1 <em>warn</em>
+                    <G>
+                      <Pin n={1} tone="warn" inLog /> v06
+                    </G>{' '}
+                    <G>muted text</G>{' '}
+                    <G>
+                      3.8 : 1 <em>warn</em>
+                    </G>
                   </span>
                   <span>
-                    <Pin n={2} tone="fail" inLog /> v03 no :focus-visible <em>fail</em>
+                    <G>
+                      <Pin n={2} tone="fail" inLog /> v03
+                    </G>{' '}
+                    no <G>:focus-visible</G> <em>fail</em>
                   </span>
                 </span>
               </span>
@@ -907,7 +925,9 @@ export function InspectSequence() {
                 <b className="ix-log-grade">B</b>
                 <span className="ix-log-v ix-log-wide">B · {TALLY}</span>
                 <span className="ix-log-v ix-log-rows">
-                  <span>{TALLY}</span>
+                  <span>
+                    <G>{PASS} pass ·</G> <G>{WARN} warn ·</G> <G>{FAIL} fail</G>
+                  </span>
                   <TallyBar className="ix-log-bar" />
                 </span>
               </span>

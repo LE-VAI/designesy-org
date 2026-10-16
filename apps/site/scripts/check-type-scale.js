@@ -40,10 +40,17 @@
  * home-page rules that the home rebuild owns. Sheets outside COVERED are
  * legacy until they are moved, so the gate does not fail on pages nobody has
  * touched yet.
- * 3. In the home page's two sheets (SHORTHAND_ONLY, not covered: see there
- *    for why), every static rem or px size inside a font shorthand is a
- *    token: a literal under 0.8rem is under the floor, and any other literal
- *    is off the scale (with the floor alone, only the first fails).
+ * 3. In the home page's three sheets (HOME_SHEETS, not covered: see there
+ *    for why), every static size is a token, in font-size or in a font
+ *    shorthand. A size is static when it is a rem or px literal, a local
+ *    custom property whose value is one, or an em of the rule's parent rule
+ *    in the same sheet (`.x small` under `.x`) whose own size resolves. A
+ *    literal under 0.8rem is under the floor, and any other literal, or an
+ *    em that lands between two steps, is off the scale (with the floor
+ *    alone, only the first fails). Fluid and relative sizes (clamp(), max(),
+ *    calc(), an em with no parent rule) are not static, and stay with the
+ *    sheet's own rules. A size listed in HELD keeps its value, each with its
+ *    reason.
  *
  * A gate that cannot fail proves nothing: every run first feeds the parser
  * known-good and known-bad CSS and fails if it misjudges either.
@@ -102,16 +109,18 @@ const COVERED = [
   'app/work/work.css',
 ];
 
-/** The home page's two sheets, held to the scale only where a font shorthand
-    writes a static size. They are not in COVERED because most of their sizes
-    are not running text on the site's scale: the inspector's demo page sets
-    its type in em of its own fluid specimen size, with its own 10px floor
-    (those sizes are the demo's content), and the console and inspector set
-    their grade letters as display numerals. Covering the sheets would move
-    those. A size in a shorthand is still a size, though, and a static one
-    there is the site's own text: the title bar, the log's pins, the
-    console's progress line and score. */
-const SHORTHAND_ONLY = [
+/** The home page's three sheets, held to the scale wherever a size is
+    static. They are not in COVERED because most of their sizes are not
+    running text on the site's scale: the inspector's demo page sets its
+    type in em of its own fluid specimen size, with its own 10px floor
+    (those sizes are the demo's content), and the display titles keep their
+    fluid clamps, one of them inside a min(). Covering the sheets would move
+    those. A static size there is the site's own text: the title bar, the
+    log, the console, the verdicts. A size set through a local custom
+    property, or as an em of its parent rule, is still a static size, so
+    both are resolved before they are judged. */
+const HOME_SHEETS = [
+  'app/home.css',
   'app/home-inspect.css',
   'app/home-lvl.css',
 ];
@@ -119,10 +128,13 @@ const SHORTHAND_ONLY = [
 /** Display numerals: a readout set as one large figure, not running text.
     They keep their size, as display titles keep their clamps. */
 const DISPLAY = new Map([
-  ['.eg-grade', 'the engine verdict letter'],
   ['.cs-glyph', 'the case study grade glyph'],
   ['.cs-big', 'the case study headline figure'],
 ]);
+
+/** Local custom properties held at their size in the home sheets, each with
+    its reason: lifting the size alone would break the text it sets. */
+const HELD = new Map([]);
 
 /** Specimens: text whose size is the content. The Cadence lab's rem-scale
     demo prints "0.75rem", "1rem", "1.5rem" and "2rem" beside four samples
@@ -236,20 +248,103 @@ function check(file, css) {
   return bad;
 }
 
-/** Static rem or px sizes in font shorthands (SHORTHAND_ONLY sheets). A var(),
-    max(), clamp() or em size there is not static, and font-size is outside
-    this judge: both stay with the sheet's own rules until it is covered. */
-function checkShorthand(file, css) {
-  const bad = [];
+/* --- The home sheets' judge (HOME_SHEETS) --------------------------------- */
+
+const STEP_REM = new Map(LADDER.map(([t, v]) => [t, parseFloat(v)]));
+const onLadder = (rem) => LADDER.some(([, v]) => Math.abs(parseFloat(v) - rem) < 5e-4);
+
+/** Every size a rule body declares, with the property that declares it. */
+function homeSizes(body) {
+  const found = [];
+  for (const m of body.matchAll(/(?<![-\w])font-size\s*:\s*([^;]+)/g)) found.push({ prop: 'font-size', value: m[1].replace(/!important/, '').trim() });
+  for (const m of body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)) {
+    const v = m[1].trim();
+    if (/^(var\(|inherit|initial|unset)/.test(v)) continue;
+    const s = (' ' + v).match(SIZE_IN_FONT);
+    if (s) found.push({ prop: 'font', value: s[1] });
+  }
+  return found;
+}
+
+/** Each local custom property a sheet declares: every value, with its line. */
+function homeLocals(css) {
+  const map = new Map();
   for (const r of rules(css)) {
+    for (const m of r.body.matchAll(/(?<![-\w])(--[\w-]+)\s*:\s*([^;]+)/g)) {
+      if (!map.has(m[1])) map.set(m[1], []);
+      map.get(m[1]).push({ value: m[2].trim(), line: r.line + r.body.slice(0, m.index).split('\n').length - 1 });
+    }
+  }
+  return map;
+}
+
+/** A size resolved through local custom properties: one entry per value it
+    can take ({ token } or { rem, literal }, or { held }), or null when no
+    value is static (fluid, relative, or set from outside the sheet). */
+function resolveHome(value, local, depth = 0, via = []) {
+  const v = value.trim();
+  const ref = v.match(/^var\(\s*(--[\w-]+)\s*(?:,\s*(.+))?\)$/);
+  if (ref) {
+    const [, name, fallback] = ref;
+    if (TOKENS.has(name)) return [{ token: name, rem: STEP_REM.get(name), via }];
+    if (HELD.has(name)) return [{ held: name, via }];
+    const given = local.get(name);
+    if (!given || depth > 3) return fallback !== undefined ? resolveHome(fallback, local, depth + 1, via) : null;
+    const out = [];
+    for (const g of given) {
+      const r = resolveHome(g.value, local, depth + 1, [...via, `${name}: ${g.value} at line ${g.line}`]);
+      if (r) out.push(...r);
+    }
+    return out.length ? out : null;
+  }
+  const lit = v.match(/^([\d.]+)(rem|px)$/);
+  if (lit) return [{ rem: parseFloat(lit[1]) / (lit[2] === 'px' ? 16 : 1), literal: v, via }];
+  return null;
+}
+
+/** The parent rule's selector: the selector less its last compound, when
+    that compound is a descendant or child of the rest. */
+function parentOf(selector) {
+  if (selector.includes(',')) return null;
+  const m = selector.trim().match(/^(.+?)\s*(?:>\s*|\s+)([^\s>+~]+)$/);
+  return m ? m[1].trim() : null;
+}
+
+/** Static sizes in a home sheet: tokens pass, literals fail (under the floor,
+    or off the scale with the ladder on), and an em of a parent rule passes
+    only where it lands on a step. */
+function checkHome(file, css, stats = { sizes: 0, held: new Set() }) {
+  const bad = [];
+  const local = homeLocals(css);
+  const all = rules(css);
+  for (const r of all) {
     if (exempt(r.selector)) continue;
-    for (const m of r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)) {
-      const s = (' ' + m[1].trim()).match(SIZE_IN_FONT);
-      const lit = s && s[1].match(/^([\d.]+)(rem|px)$/);
-      if (!lit) continue;
-      const rem = parseFloat(lit[1]) / (lit[2] === 'px' ? 16 : 1);
-      if (rem < 0.8) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is under the 0.8rem floor`);
-      else if (ENFORCE_LADDER) bad.push(`${file}:${r.line} ${r.selector.slice(0, 80)}  font shorthand size ${s[1]} is off the scale`);
+    for (const { prop, value } of homeSizes(r.body)) {
+      stats.sizes++;
+      let resolved = resolveHome(value, local);
+      if (!resolved) {
+        const em = value.match(/^([\d.]+)em$/);
+        const parent = em && parentOf(r.selector);
+        if (!parent) continue;
+        const of = all.filter((p) => p.selector === parent)
+          .flatMap((p) => homeSizes(p.body).map((s) => ({ s, res: resolveHome(s.value, local) })))
+          .flatMap(({ s, res }) => (res || []).filter((x) => x.rem !== undefined).map((x) => ({ ...x, written: s.value })));
+        if (!of.length) continue;
+        resolved = of.map((x) => {
+          const rem = Math.round(parseFloat(em[1]) * x.rem * 1e4) / 1e4;
+          return { rem, em: true, via: [`${em[1]}em of ${parent} at ${x.written}, ${rem}rem`] };
+        });
+      }
+      for (const x of resolved) {
+        if (x.held) {
+          stats.held.add(x.held);
+          continue;
+        }
+        if (x.token) continue;
+        const at = `${file}:${r.line} ${r.selector.slice(0, 80)}  ${prop === 'font' ? 'font shorthand size' : 'font size'} ${value}${x.via.length ? ` (${x.via.join('; ')})` : ''}`;
+        if (x.rem < 0.8 - 1e-9) bad.push(`${at} is under the 0.8rem floor`);
+        else if (ENFORCE_LADDER && !(x.em && onLadder(x.rem))) bad.push(`${at} is off the scale`);
+      }
     }
   }
   return bad;
@@ -266,28 +361,40 @@ const CANARIES = [
   ['.a { font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem); } .b { font: inherit; }', 0, 0],
   ['/* .a { font-size: 9px; } */ .b { font-size: var(--text-lead); }', 0, 0],
   ['.a code { font-size: max(0.8rem, 0.88em); }', 1, 0],
-  ['.eg-grade { font-size: 3.6rem; }', 0, 0],
+  ['.cs-glyph { font-size: 3.6rem; }', 0, 0],
+  ['.eg-grade { font-size: 3.6rem; }', 1, 0],
+  ['.eg-grade { font-size: clamp(2.441rem, 2.8rem + 1.5vw, 3.6rem); }', 0, 0],
   ['.a { --a-size: 0.98rem; font-size: var(--a-size); }', 1, 0],
   ['.a { --a-size: var(--text-body); font-size: var(--a-size, var(--text-body)); }', 0, 0],
   ['.a { --a-size: var(--text-body); font-size: var(--a-size, 0.98rem); }', 1, 0],
   ['.a { font-size: var(--undeclared-size); }', 1, 1],
 ];
-// The shorthand judge's canaries, in the same form.
-const SHORTHAND_CANARIES = [
+// The home sheets' judge's canaries, in the same form.
+const HOME_CANARIES = [
   ['.a { font: 500 0.72rem/1 var(--mono); }', 1, 1],
   ['.a { font: 700 10px/1 var(--mono); }', 1, 1],
   ['.a { font: 500 1.2rem/1.25 var(--sans); }', 1, 0],
   ['@media (min-width: 40rem) { .a { font: 500 1.5rem/1 var(--mono); } }', 1, 0],
   ['.a { font: 500 var(--text-lead)/1.25 var(--sans); } .b { font: 500 var(--text-label)/1 var(--mono); }', 0, 0],
-  ['.a { font-size: 3.4rem; } .b { font: 700 max(10px, 0.6em) / 1 var(--mono); } .c { font: 500 var(--x-fs) / 1 var(--mono); }', 0, 0],
+  ['.a { font-size: 0.78rem; } .b { font-size: 3.4rem; }', 2, 1],
+  ['.a { font-size: 0.8rem; }', 1, 0],
+  ['.b { font: 700 max(10px, 0.6em) / 1 var(--mono); } .c { font: 500 var(--x-fs) / 1 var(--mono); } .d { font-size: 2.35em; }', 0, 0],
+  ['.a { font-size: clamp(2.441rem, 1.25rem + 4.5vw, 3.4rem); } .b { font-size: calc(clamp(8.5px, 2.45cqi, 22px) * var(--fit, 1)); }', 0, 0],
   ['/* .a { font: 500 0.72rem/1 var(--mono); } */ .b { font: inherit; }', 0, 0],
+  ['.a { --a-fs: 0.68rem; font: 500 var(--a-fs) / 1.25rem var(--mono); }', 1, 1],
+  ['.a { --a-fs: 0.68rem; } @container (max-width: 520px) { .a { --a-fs: 0.64rem; } } .b { font: 500 var(--a-fs)/1 var(--mono); }', 2, 2],
+  ['.a { --a-fs: var(--text-label); font: 500 var(--a-fs) / 1.25rem var(--mono); }', 0, 0],
+  ['.a { --a-fs: calc(0.74 * var(--b)); font-size: var(--a-fs); }', 0, 0],
+  ['.a { font: 500 var(--text-h3)/1 var(--mono); } .a small { font-size: 0.6em; }', 1, 0],
+  ['.a { font: 500 var(--text-body)/1 var(--mono); } .a small { font-size: 0.8em; }', 0, 0],
+  ['.a { font-size: 0.7rem; } .a > b { font-size: 0.5em; }', 2, 2],
 ];
 const misjudged = [
   ...CANARIES.filter(([css, ladder, floor]) => {
     LOCAL = locals([css]);
     return check('canary', css).length !== (ENFORCE_LADDER ? ladder : floor);
   }),
-  ...SHORTHAND_CANARIES.filter(([css, ladder, floor]) => checkShorthand('canary', css).length !== (ENFORCE_LADDER ? ladder : floor)),
+  ...HOME_CANARIES.filter(([css, ladder, floor]) => checkHome('canary', css).length !== (ENFORCE_LADDER ? ladder : floor)),
 ];
 if (misjudged.length) {
   console.error('[check-type-scale] the parser misjudged its canaries:');
@@ -330,17 +437,19 @@ for (const [file, css] of sheets) {
   failures.push(...check(file, css));
 }
 
-// 3. The static sizes in the home sheets' font shorthands.
-let shorthands = 0;
-for (const file of SHORTHAND_ONLY) {
+// 3. The static sizes in the home sheets, through local custom properties
+// and parent ems.
+const home = { sizes: 0, held: new Set() };
+for (const file of HOME_SHEETS) {
   const p = path.join(SITE, file);
   if (!fs.existsSync(p)) {
-    failures.push(`${file}: listed in SHORTHAND_ONLY but missing`);
+    failures.push(`${file}: listed in HOME_SHEETS but missing`);
     continue;
   }
-  const css = fs.readFileSync(p, 'utf8');
-  for (const r of rules(css)) shorthands += [...r.body.matchAll(/(?<![-\w])font\s*:\s*([^;]+)/g)].length;
-  failures.push(...checkShorthand(file, css));
+  failures.push(...checkHome(file, fs.readFileSync(p, 'utf8'), home));
+}
+for (const name of HELD.keys()) {
+  if (!home.held.has(name)) failures.push(`${name} is listed in HELD but no home sheet sets a size with it: take it out of HELD`);
 }
 
 if (failures.length) {
@@ -349,4 +458,4 @@ if (failures.length) {
   for (const f of failures) console.error('  ' + f);
   process.exit(1);
 }
-console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'}; ${shorthands} font shorthands in ${SHORTHAND_ONLY.length} home sheets with no static size ${ENFORCE_LADDER ? 'off the tokens' : 'under the floor'} (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, each with its reason).`);
+console.log(`[check-type-scale] OK: the six --text-* tokens on :root, a Major Third apart; ${declarations} sizes in ${COVERED.length} sheets ${ENFORCE_LADDER ? 'on the scale tokens' : 'at or above the 0.8rem floor'}; ${home.sizes} sizes in ${HOME_SHEETS.length} home sheets with no static size ${ENFORCE_LADDER ? 'off the tokens' : 'under the floor'}, local custom properties and parent ems resolved (${DISPLAY.size} display numerals, ${SPECIMEN.size} specimen and ${HOME.size} home rules exempt, ${HELD.size} held, each with its reason).`);
