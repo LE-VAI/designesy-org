@@ -206,7 +206,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: clamp(var(--text-h3), 1.1rem + 1vw, var(--text-h2));
-  line-height: 1.12;
+  line-height: var(--leading-step);
   letter-spacing: -0.015em;
   text-wrap: balance;
   color: var(--muted);
@@ -216,7 +216,7 @@
   margin: 0;
   max-width: 30rem;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -413,7 +413,7 @@
 .inspect-caption {
   margin: 0.8rem 0 0;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
 }
 
@@ -616,7 +616,7 @@
   max-width: 14em;
   font-size: 2.35em;
   font-weight: 700;
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   letter-spacing: -0.025em;
   /* Where it wraps (a phone's stage), no one-word widow ("trust."). */
   text-wrap: balance;
@@ -630,7 +630,7 @@
   margin: 0;
   margin-top: calc(var(--ix-tag-h) - 0.7 * var(--mp-fs));
   font-size: max(10px, 1.02em);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--mp-muted);
 }
 
@@ -673,7 +673,7 @@
   background: var(--mp-card);
   box-shadow: inset 0 0 0 1px var(--mp-line);
   font-size: max(10px, 0.78em);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--mp-muted);
 }
 
@@ -840,7 +840,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: var(--ix-tag-fs);
-  line-height: 1;
+  line-height: var(--leading-single);
   white-space: nowrap;
   transform: translateY(4px);
 }
@@ -945,7 +945,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: max(10px, 0.74em);
-  line-height: 1;
+  line-height: var(--leading-single);
   white-space: nowrap;
 }
 
@@ -974,7 +974,7 @@
   font-family: var(--mono);
   font-weight: 500;
   font-size: max(10px, 0.8em);
-  line-height: 1;
+  line-height: var(--leading-single);
   color: var(--ix-head);
   white-space: nowrap;
 }
@@ -997,7 +997,7 @@
   top: -0.22em;
   width: 0.44em;
   height: 0.44em;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   box-shadow: inset 0 0 0 1px var(--ix-head);
 }
 
@@ -1210,7 +1210,7 @@
   font-family: var(--display);
   font-weight: 700;
   font-size: var(--text-h1);
-  line-height: 0.9;
+  line-height: var(--leading-numeral);
   color: var(--ink);
 }
 
@@ -1224,7 +1224,7 @@
 .ix-verdict-tally {
   font-family: var(--mono);
   font-size: var(--text-label);
-  line-height: 1.2;
+  line-height: var(--leading-tight);
   color: var(--muted);
 }
 
@@ -2182,7 +2182,7 @@ html[data-motion="paused"] .inspect[data-ix-auto] .ix-verdict::after {
     font-family: var(--display);
     font-weight: 700;
     font-size: var(--text-h2);
-    line-height: 1;
+    line-height: var(--leading-single);
     color: var(--ink);
   }
 

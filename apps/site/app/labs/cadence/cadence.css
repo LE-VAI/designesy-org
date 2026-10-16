@@ -27,7 +27,7 @@
 .demo-scale-row > .demo-scale-spec {
   color: var(--ink);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: var(--leading-figure);
 }
 
 .demo-scale-spec.s1 { font-size: 0.75rem; }
@@ -95,14 +95,14 @@
 .demo-heading-lh {
   font-size: var(--text-body);
   font-weight: 700;
-  line-height: 1.08;
+  line-height: var(--leading-heading);
   color: var(--ink);
   margin: 0;
 }
 
 .demo-body-lh {
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   margin: 0;
 }
@@ -165,7 +165,7 @@
 .demo-select {
   font-size: var(--text-body);
   color: var(--ink);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   user-select: text;
   cursor: text;
   padding: var(--space-8) 0;

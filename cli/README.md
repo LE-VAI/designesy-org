@@ -65,7 +65,7 @@ design-system contract score, score the URL itself.
 
 ## What it scores
 
-The Designesy v0.4.6 design-system contract, with 45 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
+The Designesy v0.4.7 design-system contract, with 45 deterministic checks across 14 weighted categories: tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
 See the [full methodology](https://www.designesy.org/methodology). The upgrade notes from 0.4.2 to 1.0.0 are in the [migration guide](../MIGRATION.md).
 

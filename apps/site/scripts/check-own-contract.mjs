@@ -1707,12 +1707,22 @@ section('19. Requests without a contract are unchanged (contract-mode spec §15.
 
 const SNAPSHOT = path.join(FIX, 'legacy-snapshot.json');
 const STRIP_TIME = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;
+// The contract version the snapshot was recorded under. A contract bump moves
+// it by design, as an engine release moves the engine version, so the live
+// version is written back as the recorded one before hashing: the snapshot
+// keeps proving the verdicts, details and scores did not move, and a bump
+// alone cannot fail it. Any other change to a response still does.
+const LEGACY_CONTRACT_VERSION = (() => {
+  try { return JSON.parse(fs.readFileSync(SNAPSHOT, 'utf8')).contractVersion ?? null; } catch { return null; }
+})();
+const LIVE_CONTRACT_VERSION = h.load('app/lib/design-system-contract.ts').CONTRACT_VERSION;
+const asRecordedContract = (s) => (LEGACY_CONTRACT_VERSION ? s.split(LIVE_CONTRACT_VERSION).join(LEGACY_CONTRACT_VERSION) : s);
 /** A response with the timestamps and the engine version taken out (both move by design). */
 function canonicalLegacy(body) {
-  if (typeof body === 'string') return body.replace(STRIP_TIME, '<time>').replace(/\b1\.[45]\.\d\b/g, '<engine>');
+  if (typeof body === 'string') return asRecordedContract(body.replace(STRIP_TIME, '<time>').replace(/\b1\.[45]\.\d\b/g, '<engine>'));
   const walk = (v, key) => {
     if (key === 'engine_version' || key === 'engineVersion') return '<engine>';
-    if (typeof v === 'string') return v.replace(STRIP_TIME, '<time>');
+    if (typeof v === 'string') return asRecordedContract(v.replace(STRIP_TIME, '<time>'));
     if (Array.isArray(v)) return v.map((x) => walk(x));
     if (v && typeof v === 'object') return Object.fromEntries(Object.keys(v).map((k) => [k, walk(v[k], k)]));
     return v;
@@ -1756,7 +1766,8 @@ const RECORD = process.argv.indexOf('--record-legacy');
 if (RECORD > 0) {
   const app = path.resolve(process.argv[RECORD + 1]);
   const snap = await legacyResponses(app);
-  fs.writeFileSync(SNAPSHOT, `${JSON.stringify({ $comment: 'Legacy /api/score responses (no contract) recorded from engine 1.4.1 (the checkout given to --record-legacy), timestamps and engine version taken out. scripts/check-own-contract.mjs section 19 asserts every later engine answers the same.', recordedFrom: path.basename(path.dirname(app)), runs: snap }, null, 2)}\n`);
+  const recordedContract = 'v' + /\n\s*version:\s*'([^']+)'/.exec(fs.readFileSync(path.join(app, 'app', 'lib', 'design-system-contract.ts'), 'utf8'))[1];
+  fs.writeFileSync(SNAPSHOT, `${JSON.stringify({ $comment: 'Legacy /api/score responses (no contract) recorded from engine 1.4.1 (the checkout given to --record-legacy), timestamps and engine version taken out. scripts/check-own-contract.mjs section 19 asserts every later engine answers the same.', recordedFrom: path.basename(path.dirname(app)), contractVersion: recordedContract, runs: snap }, null, 2)}\n`);
   console.log(`recorded ${Object.keys(snap).length} legacy runs to ${path.relative(APP, SNAPSHOT)}`);
   process.exit(0);
 }

@@ -309,7 +309,7 @@ html[data-motion="paused"] .continuity-ladder-action:hover::after {
   position: relative;
   padding-inline-start: var(--space-32);
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
   counter-increment: continuity-next;

@@ -142,8 +142,8 @@
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: clamp(2rem, 1.45rem + 2.9vw, 4.25rem);
-  line-height: 1.02;
+  font-size: var(--text-title);
+  line-height: var(--leading-title);
   letter-spacing: -0.025em;
   color: var(--ink);
   text-wrap: balance;
@@ -152,8 +152,8 @@
 .eg-thesis {
   margin: var(--space-16) 0 0;
   max-width: 40rem;
-  font-size: clamp(1.06rem, 1rem + 0.35vw, 1.24rem);
-  line-height: 1.5;
+  font-size: var(--text-thesis);
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -587,7 +587,7 @@
 .eg-group-hint {
   margin: 0 0 var(--space-12);
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -604,7 +604,7 @@
 .eg-group-note {
   margin: var(--space-10) 0 0;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -737,7 +737,7 @@
   align-self: end;
   font-size: var(--text-label);
   font-weight: 500;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   color: var(--ink);
   text-wrap: balance;
 }
@@ -892,7 +892,7 @@
 .eg-side-note {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -916,8 +916,8 @@
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: clamp(2.441rem, 2.8rem + 1.5vw, 3.6rem);
-  line-height: 0.9;
+  font-size: var(--text-engine-grade);
+  line-height: var(--leading-numeral);
   letter-spacing: -0.02em;
   color: var(--ink);
 }
@@ -946,7 +946,7 @@
 .eg-verdict-note {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 
@@ -993,7 +993,7 @@
 
 .eg-verdict-row.is-rest .eg-grade {
   font-size: var(--text-h3);
-  line-height: 1;
+  line-height: var(--leading-single);
 }
 
 .eg-verdict-row.is-rest .eg-grade::before,
@@ -1159,7 +1159,7 @@
   gap: var(--space-8);
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
 }
 
 .eg-start-title .eg-lamp {
@@ -1172,7 +1172,7 @@
      three- or five-line clamp cut its last clause ("(0 runtime tokens
      excluded)"). */
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -1333,7 +1333,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--ink);
 }
 
@@ -1408,14 +1408,14 @@
   gap: var(--space-12);
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   color: var(--ink);
 }
 
 .eg-ref dd {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
 }
 
@@ -1441,7 +1441,7 @@
 .eg-ref-note {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -1464,7 +1464,7 @@
   margin: 0;
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   color: var(--ink);
   text-wrap: balance;
 }
@@ -1485,7 +1485,7 @@
 .eg-probe dd {
   margin: 0 0 var(--space-6);
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -1905,7 +1905,7 @@
   padding-top: var(--space-6);
   border-top: 1px solid var(--line-faint);
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -2047,7 +2047,7 @@
 .eg-weight-name {
   font-size: var(--text-label);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
   color: var(--ink);
 }
 
@@ -2141,7 +2141,7 @@
   grid-column: 3;
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -2392,7 +2392,7 @@
 .mt-axis-desc {
   margin: var(--space-8) 0 0;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -2569,7 +2569,7 @@ button.mt-row {
   min-width: 0;
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-compact);
 }
 
 .mt-row-name small {
@@ -2663,8 +2663,8 @@ button.mt-row {
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(1.55rem, 1.3rem + 1vw, 2.1rem);
-  line-height: 1.1;
+  font-size: var(--text-panel-title);
+  line-height: var(--leading-figure);
   letter-spacing: -0.02em;
   color: var(--ink);
   text-wrap: balance;
@@ -2759,12 +2759,12 @@ button.mt-row {
 .eg-row-title {
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-card);
 }
 
 .eg-row-detail {
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -2799,7 +2799,7 @@ button.mt-row {
   gap: var(--space-4);
   padding: 0 var(--space-16) var(--space-16) calc(var(--space-16) + 1.4rem + 3rem + 2 * var(--space-12));
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -2852,7 +2852,7 @@ button.mt-row {
 .eg-error p {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -2921,14 +2921,14 @@ button.mt-row {
   margin: var(--space-6) 0 0;
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   color: var(--ink);
 }
 
 .eg-step p {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -3144,7 +3144,7 @@ button.mt-row {
 
 .m3-pipe span {
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -3174,7 +3174,7 @@ button.mt-row {
 .m3-map dd {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted-dim);
   text-wrap: pretty;
 }
@@ -3301,7 +3301,7 @@ button.mt-row {
 
 .eg-go-desc {
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
 }
 

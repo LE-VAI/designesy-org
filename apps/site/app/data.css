@@ -123,7 +123,7 @@
   max-width: 40rem;
   margin: 0 0 var(--space-24);
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -269,7 +269,7 @@
    value like "44.9 to 93.0" keeps to one line in it. */
 .dx-stats dd {
   margin: 0;
-  font: 600 clamp(0.9375rem, 4.6cqi, 1.625rem)/1.1 var(--sans);
+  font: 600 var(--text-stat)/1.1 var(--sans);
   letter-spacing: -0.01em;
   color: var(--ink);
 }
@@ -283,7 +283,7 @@
 @container dxstats (width < 64rem) {
   .dx-stats-rail dd,
   .dx-stats:not(:has(dd small)) dd {
-    font-size: clamp(1.5rem, 5vw, 1.625rem);
+    font-size: var(--text-stat-solo);
   }
 }
 
@@ -683,7 +683,7 @@
 .dx-req {
   display: inline-block;
   padding: 1px var(--space-6);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   box-shadow: inset 0 0 0 1px var(--line-strong);
   font: 600 var(--text-label)/1.4 var(--mono);
   letter-spacing: 0.06em;
@@ -1395,7 +1395,7 @@
   max-width: 36rem;
   margin: var(--space-6) 0 0;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1666,7 +1666,7 @@
 .dx-bands dd {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1701,7 +1701,7 @@
   max-width: 40rem;
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--ink);
   text-wrap: pretty;
 }
@@ -1739,7 +1739,7 @@
 .dx-check-how {
   max-width: 40rem;
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1837,7 +1837,7 @@
   max-width: 38rem;
   margin: 0 0 var(--space-8);
   font-size: var(--text-body);
-  line-height: 1.6;
+  line-height: var(--leading-note);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1873,7 +1873,7 @@
 }
 
 .dx-checks-cols code {
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   white-space: nowrap;
 }
 

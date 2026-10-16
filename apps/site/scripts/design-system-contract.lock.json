@@ -1,9 +1,9 @@
 {
   "$comment": "Written by `npm run update-contract-lock` in apps/site. Do not edit by hand: scripts/check-contract-lock.js says what the hash covers and excludes. A new hash goes with a new version.",
   "contract": "designesy.design-system",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "scheme": 1,
-  "sha256": "4b8a4c00e709c5c1cd8cae81d4d8a5623ec371c5ee3e5fa0d581611cb35ed582",
+  "sha256": "6d2f7bd167add0f85c0543ab87e9341efb2a1b3b7f599fd5ea073ffe39c3e634",
   "excluded": [
     "adoption_history",
     "full_contract_url",
@@ -24,7 +24,7 @@
     "acoustic": "ba4d6f3a6f2dd5093fb1491b97c23da69713cfed8b83f8dc727c239d0c00884b",
     "anti_patterns": "ee6473030d14bb0ed06311f737b55d60317b8f0d961a671cb319796319c06a3a",
     "cadence": "fc9f6e98f6f73ae4a455903b55f00a07062f71fb50f86df1a9dddd9ba54be76d",
-    "colors": "ac124f785a0a6bf48917ce27c5cb520249405fe0b8a3d0149aef7b60adb0049c",
+    "colors": "75c05abd894c8dc6ecafd6982e812f783a49af9f5a99f818f350272c3cf0d3d6",
     "components": "2bc979d1d17dac93ef3bd71a964cbdb894cafe193771e4f30a8f577cc622cba1",
     "copywriting": "038245754edd6a9977a50e7d9d1dbf3afae6684bfa95973ac2a60fa3479a2253",
     "implementation": "38b471e9f4c68b99a22d7a5c590c32a650c11e59d446247457cdde13b462ae74",
@@ -33,12 +33,12 @@
     "materials": "24f63d8a926ac17acd7b9381da88a0abfebaa48cf6ad186bf46eea8ff8aa34fe",
     "motion": "484739773a68baeab771059a39829ac1ee8f1be3a09a72d31214b67dbaf151a8",
     "open_tensions": "fd5d1e98eb7b6af128fb28ce971b93a3e9a49016167603569ef226513ed35b4e",
-    "rounded": "b2c8778e9e2199b6472710700ae6d41d1257bedc521876b34e9c36d56bf5de04",
+    "rounded": "981f97d7c807abaefe2ef1a832f6ad748b90928b5c463e725f64c2db01405e5e",
     "semantic": "e4c32ff8a9cf6120995ec00ca3048a2a2e9e6842307c5309b70a80795dc47d64",
     "shadows": "01a207e1c05273eeaaa398cd40d6dace57ddba38c554b5431022eaff5e4f082a",
     "surfaces_and_lines": "11863c511139a93acc43f14033ea8ef8dc5e8ccbeceba3020f609942b46a1aa0",
     "takt": "e702451a494afc7d249ced6e931ded4bc3d854b8b9aa69c646284418a2609e7f",
-    "typography": "dd21aead917b1ac30f0d409af92ea0e17742630e2011d50fcca3b6a0ba64f72e",
+    "typography": "48a7406a95c56dceb1560d2477fd8722b606606bd90d161e0e97293df9a45cbe",
     "verification": "9cc3ff5cc6606601619bc9f8b4734be36adc8e9a86d6c975fc7b3864ae702659"
   }
 }
