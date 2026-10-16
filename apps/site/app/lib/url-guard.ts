@@ -360,6 +360,14 @@ type LookupAddress = { address: string; family: number };
  */
 function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
   return new Promise((resolve, reject) => {
+    const signal = init?.signal ?? undefined;
+    // A signal that fired before this hop started (during the previous hop or
+    // the DNS check) adds no listener that could ever run: refuse it here, or
+    // the request below would go out with no timeout at all.
+    if (signal?.aborted) {
+      reject(abortedError());
+      return;
+    }
     let parsed: URL;
     try {
       parsed = new URL(url);
@@ -412,21 +420,57 @@ function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string
       req.destroy(new Error('SSRF guard: fetch timeout'));
     });
     req.on('error', (e) => reject(e as Error));
-    // Honor AbortSignal (route handlers pass controller.signal).
-    if (init?.signal && typeof (init.signal as AbortSignal).addEventListener === 'function') {
-      const onAbort = () => req.destroy(new Error('aborted'));
-      (init.signal as AbortSignal).addEventListener('abort', onAbort, { once: true });
+    // Honor AbortSignal (route handlers pass controller.signal). The abort
+    // settles the promise itself: destroying the request mid-body does not
+    // reliably surface as an 'error' on the response stream, and a caller
+    // awaiting this must not outlive its own deadline.
+    if (signal && typeof signal.addEventListener === 'function') {
+      const onAbort = () => {
+        const err = abortedError();
+        req.destroy(err);
+        reject(err);
+      };
+      // Left registered once the call settles: the signal belongs to this one
+      // read, and a late abort then only destroys a finished request.
+      signal.addEventListener('abort', onAbort, { once: true });
     }
     req.end();
   });
 }
 
+/** The error an aborted read rejects with; callers classify it by /abort/i. */
+function abortedError(): Error {
+  const err = new Error('aborted');
+  err.name = 'AbortError';
+  return err;
+}
+
+/** `work`, or a rejection as soon as `signal` fires, whichever comes first. */
+function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefined): Promise<T> {
+  if (!signal) return work;
+  if (signal.aborted) return Promise.reject(abortedError());
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortedError());
+    signal.addEventListener('abort', onAbort, { once: true });
+    work.then(
+      (v) => { signal.removeEventListener('abort', onAbort); resolve(v); },
+      (e) => { signal.removeEventListener('abort', onAbort); reject(e); },
+    );
+  });
+}
+
+// The caller's signal bounds the whole call: every hop, every DNS check and
+// every body. A DNS answer that arrives after the signal fired is not followed
+// by a request, so a redirect to a host with a slow resolver cannot carry a
+// read past the caller's deadline.
 export async function safeFetch(
   url: string,
   init?: RequestInit & { headers?: Record<string, string> },
 ): Promise<Response> {
+  const signal = init?.signal ?? undefined;
   let currentUrl = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (signal?.aborted) throw abortedError();
     // Validate URL structure (scheme, hostname string, encoded IPs).
     if (!isValidUrl(currentUrl)) {
       throw new Error(`SSRF guard: blocked URL ${currentUrl}`);
@@ -434,7 +478,7 @@ export async function safeFetch(
 
     // DNS resolution guard: resolve the hostname and validate the resolved IP.
     const parsed = new URL(currentUrl);
-    const dnsOk = await resolveAndValidateHost(parsed.hostname);
+    const dnsOk = await untilAborted(resolveAndValidateHost(parsed.hostname), signal);
     if (!dnsOk) {
       throw new Error(`SSRF guard: blocked DNS resolution for ${parsed.hostname} (resolves to private/internal IP)`);
     }

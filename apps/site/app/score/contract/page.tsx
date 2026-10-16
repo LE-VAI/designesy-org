@@ -19,15 +19,20 @@ import type { CheckDef } from './contract-findings';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const metadata: Metadata = pageMeta({
-  title: 'Your contract, verified',
-  description:
-    'Score a live page against your own DESIGN.md or DTCG design tokens: how closely the page follows your contract, and how it does on web standards every site is held to. Free, and nothing is stored.',
-  path: '/score/contract',
-  ogTitle: 'Your contract, verified · Designesy',
-  ogDescription: 'Score a live page against your own DESIGN.md or design tokens. Two numbers, never blended.',
-  twitterDescription: 'Designesy · score a page against your own contract',
-});
+export const metadata: Metadata = {
+  ...pageMeta({
+    title: 'Your contract, verified',
+    description:
+      'Score a live page against your own DESIGN.md or DTCG design tokens: how closely the page follows your contract, and how it does on web standards every site is held to. Free, and nothing is stored.',
+    path: '/score/contract',
+    ogTitle: 'Your contract, verified · Designesy',
+    ogDescription: 'Score a live page against your own DESIGN.md or design tokens. Two numbers, never blended.',
+    twitterDescription: 'Designesy · score a page against your own contract',
+  }),
+  // Unlinked until its launch, so kept out of search results until then. The
+  // launch change drops this with the page's Find exemption.
+  robots: { index: false, follow: true },
+};
 
 /** A deep link names a linked contract only: an https address, never contract text. */
 function contractUrlParam(v: unknown): string {

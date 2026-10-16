@@ -108,6 +108,18 @@
  *   where a landing inside the smooth scroll ended with the verdict above
  *   the screen.
  *
+ * AN ENGINE VERSION BUMP
+ *   Check 8 fails every landed record made at another engine or contract
+ *   version ("the record was made at ..."). Re-record them with this
+ *   checkout's route, offline:
+ *     node scripts/fixtures/contract-page/record.mjs --local --pinned
+ *   --pinned scores designesy.org, www.designesy.org and the unreachable
+ *   address from the committed snapshot (sites/snapshot.json), so a bump
+ *   needs neither the network nor its own deploy; --live would answer with
+ *   the deployed engine's version, the old one until the bump deploys. Then
+ *   run this gate and check-ignition.js (it reads landed.json). The whole
+ *   procedure is in record.mjs's header.
+ *
  * Usage:
  *   node scripts/check-contract-page.js --base http://127.0.0.1:3422 [--channel chrome]
  *   ... --themes dark --widths 1440 --states rejected-multi
@@ -430,7 +442,7 @@ async function checkResult(page, st, reply, fail) {
   const rc = got.receipt;
   if (b.receipt.digest && !(rc['Verdict digest'] || '').startsWith(groups8(b.receipt.digest))) fail('the verdict digest is not the recorded one in 8-character groups');
   if (!(rc['Your contract'] || '').startsWith(groups8(b.ownContract.digest))) fail('the contract digest is not the recorded one in 8-character groups');
-  if (b.engineVersion !== ENGINE_VERSION || b.contractVersion !== CONTRACT_VERSION) fail(`the record was made at ${b.engineVersion}/${b.contractVersion}, this checkout is ${ENGINE_VERSION}/${CONTRACT_VERSION}`);
+  if (b.engineVersion !== ENGINE_VERSION || b.contractVersion !== CONTRACT_VERSION) fail(`the record was made at ${b.engineVersion}/${b.contractVersion}, this checkout is ${ENGINE_VERSION}/${CONTRACT_VERSION} (re-record: record.mjs --local --pinned)`);
   if (rc.Engine !== `${ENGINE_VERSION} · baseline rules ${CONTRACT_VERSION}`) fail(`receipt engine row "${rc.Engine}", wanted "${ENGINE_VERSION} · baseline rules ${CONTRACT_VERSION}"`);
 }
 
