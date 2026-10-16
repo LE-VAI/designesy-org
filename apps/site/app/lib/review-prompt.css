@@ -7,7 +7,7 @@
   margin: var(--space-16) 0 0;
   max-width: 66ch;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }

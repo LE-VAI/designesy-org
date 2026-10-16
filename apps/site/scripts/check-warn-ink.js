@@ -83,6 +83,10 @@ const HUES = ['ok', 'warn', 'error', 'grade-a', 'grade-b', 'grade-c', 'grade-d',
 // roles whose light values point at an ink token.
 const INK = ['warn-ink', 'ok-ink', 'error-ink', 'grade-a-ink', 'grade-b-ink', 'grade-c-ink', 'grade-d-ink', 'grade-f-ink', 'activation-ink'];
 const TEXT_ROLES = ['grade-b-light', 'error-text', 'amber-notice'];
+// Chip text (contract v0.4.7): each status hue pulled toward --ink, declared
+// once on :root as the color-mix() the chip rules used to write inline, so
+// the gate measures the token where it used to measure each inline mix.
+const CHIP_TEXT = ['ok-chip', 'warn-chip', 'error-chip'];
 // The signal used as text, links and focus in both themes (identity v1).
 const LINK = ['signal-access'];
 // Mark colours: arcs, fills and emblems, held to 3:1 (WCAG 1.4.11).
@@ -375,9 +379,9 @@ for (const theme of ['dark', 'light']) {
     failures.push(`globals.css: no ${theme} token block found`);
     continue;
   }
-  for (const name of [...INK, ...TEXT_ROLES, ...LINK, 'muted-dim']) {
+  for (const name of [...INK, ...TEXT_ROLES, ...CHIP_TEXT, ...LINK, 'muted-dim']) {
     const own = decl(themes[theme], name);
-    if (!own && (INK.includes(name) || LINK.includes(name))) {
+    if (!own && (INK.includes(name) || LINK.includes(name) || (CHIP_TEXT.includes(name) && theme === 'dark'))) {
       failures.push(`globals.css: --${name} is not declared in the ${theme} block`);
       continue;
     }
@@ -507,4 +511,4 @@ if (failures.length) {
   for (const f of failures) console.error(`  - ${f}`);
   process.exit(1);
 }
-console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, --signal-access, --muted-dim, ${MARKS.length} grade marks at ${MARK_MIN}:1, ${inlineMixes.length} inline ink mixes, ${aliasTextValues.length} followed alias values (${FOLLOW.map((n) => `--${n}`).join(', ')}) and ${appReadings} report-app tokens are at least ${MIN}:1 on every surface in both themes.`);
+console.log(`Ink gate passed: no text in a bare or alpha-reduced status or grade hue; ${INK.length} ink tokens, ${TEXT_ROLES.length} text roles, ${CHIP_TEXT.length} chip text tokens, --signal-access, --muted-dim, ${MARKS.length} grade marks at ${MARK_MIN}:1, ${inlineMixes.length} inline ink mixes, ${aliasTextValues.length} followed alias values (${FOLLOW.map((n) => `--${n}`).join(', ')}) and ${appReadings} report-app tokens are at least ${MIN}:1 on every surface in both themes.`);

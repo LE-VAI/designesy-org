@@ -51,7 +51,7 @@
 .badge-variant-desc {
   font-size: var(--text-label);
   color: var(--muted);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
 }
 
 .badge-variant-dim {
@@ -231,7 +231,7 @@
      line box to 26px around 12.5px type. */
   font-family: var(--mono);
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--ink);
 }
 
@@ -333,7 +333,7 @@
   position: relative;
   padding-left: var(--space-32);
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   counter-increment: badge-step;
 }
@@ -374,7 +374,7 @@
 .badge-grade-letter {
   font-size: var(--text-lead);
   font-weight: 800;
-  line-height: 1;
+  line-height: var(--leading-single);
   text-align: center;
 }
 
@@ -388,7 +388,7 @@
 .definition .definition-note {
   margin-top: var(--space-12);
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 

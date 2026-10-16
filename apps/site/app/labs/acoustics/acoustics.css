@@ -15,7 +15,7 @@
 
 .cue-pref-note {
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -230,7 +230,7 @@ html[data-audio="on"] .cue-rack-off {
 
 .cue-cell-role {
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 

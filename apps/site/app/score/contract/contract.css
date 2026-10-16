@@ -122,7 +122,7 @@
   margin: 0;
   padding-inline: var(--space-4);
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -160,7 +160,7 @@
   box-shadow: inset 0 0 0 1px var(--lv-well-line);
   color: var(--muted);
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
 }
 
 .cf-drop[data-drag] {
@@ -206,7 +206,7 @@
 
 .cf-run-contract {
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 
@@ -228,7 +228,7 @@
 .cf-bench > .score-verdict-line {
   display: block;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   max-inline-size: 72ch;
   padding-block: var(--space-2);
 }
@@ -295,7 +295,7 @@
   margin: 0;
   min-width: 0;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--ink);
   overflow-wrap: anywhere;
 }
@@ -508,8 +508,8 @@
      the gap and the second readout's inset (8px + 16px = 1.5rem), so the fit
      is (50cqi - 1.5rem) / 2.70 = 18.519cqi - 0.556rem. The two readouts never
      stack (D8). */
-  font-size: clamp(1.5rem, min(1.6rem + 9cqi, 18.519cqi - 0.556rem), 4.25rem);
-  line-height: 0.92;
+  font-size: var(--text-fidelity);
+  line-height: var(--leading-fidelity);
   letter-spacing: -0.03em;
   font-variant-numeric: lining-nums tabular-nums;
   color: var(--ink);
@@ -554,8 +554,8 @@
   font-family: var(--display);
   font-weight: 700;
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
-  font-size: clamp(1.5rem, 1.2rem + 3cqi, 2.1rem);
-  line-height: 1.05;
+  font-size: var(--text-fidelity-null);
+  line-height: var(--leading-figure-tight);
   letter-spacing: -0.015em;
   color: var(--ink);
 }
@@ -563,7 +563,7 @@
 .cf-readout-line {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -625,7 +625,7 @@
   gap: var(--space-10);
   align-items: start;
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -648,7 +648,7 @@
 .cf-calc p {
   margin: var(--space-4) 0 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -699,7 +699,7 @@
 .cf .score-empty-run-contract {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--ink);
 }
 
@@ -714,7 +714,7 @@
   margin: 0;
   padding-left: var(--space-16);
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -816,7 +816,7 @@
   margin: 0;
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-card);
   color: var(--ink);
 }
 
@@ -833,7 +833,7 @@
 .cf-start-detail {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -998,7 +998,7 @@
 .cf-start-foot p {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -1023,7 +1023,7 @@
 .cf-why li {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
 }
 
@@ -1050,7 +1050,7 @@
   gap: var(--space-4) var(--space-6);
   align-items: baseline;
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 
@@ -1123,7 +1123,7 @@
     padding: var(--space-4) var(--space-6);
     white-space: normal;
     text-wrap: balance;
-    line-height: 1.15;
+    line-height: var(--leading-segment);
     text-overflow: clip;
   }
 }
@@ -1188,7 +1188,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
 }
 
 .cf-table caption {
@@ -1337,7 +1337,7 @@
 .cf-lint-receipt {
   margin: 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -1361,7 +1361,7 @@
 .cf-prev > .score-verdict-line {
   display: block;
   font-size: var(--text-body);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   max-inline-size: 72ch;
   padding-block: var(--space-2);
 }
@@ -1430,7 +1430,7 @@ html[data-motion="paused"] .cf-bench > .cf-receipt-section {
   margin: 0;
   max-inline-size: 70ch;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
   text-wrap: pretty;
 }
@@ -1465,7 +1465,7 @@ html[data-motion="paused"] .cf-bench > .cf-receipt-section {
   margin: 0;
   padding-inline-start: var(--space-20);
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -1532,7 +1532,7 @@ html[data-motion="paused"] .cf-bench > .cf-receipt-section {
 .cf-problem-list p {
   margin: 0;
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--ink);
   overflow-wrap: anywhere;
 }
@@ -1563,7 +1563,7 @@ html[data-motion="paused"] .cf-bench > .cf-receipt-section {
   padding: var(--space-10) 0;
   border-bottom: 1px solid var(--line-faint);
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--ink);
 }
 
@@ -1646,7 +1646,7 @@ html[data-motion="paused"] .cf-bench > .cf-receipt-section {
   margin: 0;
   padding-inline: var(--space-4);
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 

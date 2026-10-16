@@ -102,7 +102,7 @@
 .demo-easing-track {
   flex: 1;
   height: 1.5rem;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--surface);
   border: 1px solid var(--line-faint);
   position: relative;
@@ -324,7 +324,7 @@
 .kv-cell > dd {
   min-width: 0;
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--ink);
   overflow-wrap: break-word;
   text-wrap: pretty;
@@ -354,7 +354,7 @@
 .kv-cell > dd.kv-mono {
   font-family: var(--mono);
   font-size: var(--text-label);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   overflow-wrap: anywhere;
 }
 
@@ -375,7 +375,7 @@
 
 .kv-cell > dd.kv-note {
   font-size: var(--text-label);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   color: var(--muted);
 }
 
@@ -396,9 +396,9 @@
 
 .kv-figure-num {
   font-family: var(--sans);
-  font-size: clamp(2.5rem, 2.1rem + 0.6vw, 3rem);
+  font-size: var(--text-figure);
   font-weight: 600;
-  line-height: 1;
+  line-height: var(--leading-single);
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -407,7 +407,7 @@
 .kv-figure-cap {
   max-width: 14rem;
   font-size: var(--text-label);
-  line-height: 1.35;
+  line-height: var(--leading-card);
   color: var(--muted);
 }
 
@@ -579,7 +579,7 @@
   font-family: var(--sans);
   font-size: var(--text-h2);
   font-weight: 600;
-  line-height: 1;
+  line-height: var(--leading-single);
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -621,7 +621,7 @@
 
 .open-questions > li {
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
   text-wrap: pretty;
 }
