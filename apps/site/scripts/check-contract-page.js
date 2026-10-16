@@ -71,8 +71,14 @@
  *  13. Fast runs (state "fast-run"): a run started from the top of the page
  *      whose answer comes back while the page is still scrolling toward the
  *      instrument. Each answer delay (--fast-delays, default 0,100,314 ms) at
- *      1920x1080, 1440x900, 1080x1080 and 390x844, with motion on, with
- *      reduced motion and with the site's motion paused: 1.5 s after the
+ *      1920x1080, 1440x900, 1080x1080 and 390x844 (--fast-views), from the
+ *      top and from 376px down (--fast-starts), with motion on, motion on
+ *      with a stray scrollend (another scroll's, arriving 16 ms after the
+ *      run's smooth scroll starts), reduced motion and the site's motion
+ *      paused (--fast-motion). The landing races the scroll, so each case
+ *      runs --fast-repeat times (default 5), each in a fresh context, a few
+ *      at once (--fast-jobs, default 4), and must pass every time: a lucky
+ *      pass cannot hide a race. 1.5 s after the
  *      landing the page has stopped, the verdict line sits under the sticky
  *      bar and inside the viewport, both readouts are inside the viewport,
  *      and focus is on the verdict line. The landed-state renders above run
@@ -106,6 +112,7 @@
  *   node scripts/check-contract-page.js --base http://127.0.0.1:3422 [--channel chrome]
  *   ... --themes dark --widths 1440 --states rejected-multi
  *   ... --states fast-run --fast-delays 0,50,314   only the fast-run case
+ *   ... --states fast-run --fast-views 1440x900 --fast-motion on,stray --fast-repeat 20
  *   ... --shots <dir>     write a full-page screenshot of every state (crops)
  * Exit 1 on any failure, 2 on a fatal error.
  */
@@ -308,8 +315,11 @@ const onlyStates = opt('--states', null);
 const states = onlyStates ? STATES.filter((s) => onlyStates.split(',').includes(s.id)) : STATES;
 const FAST_RUNS = !onlyStates || onlyStates.split(',').includes('fast-run');
 const FAST_DELAYS = opt('--fast-delays', '0,100,314').split(',').map(Number);
-const FAST_VIEWS = [[1920, 1080], [1440, 900], [1080, 1080], [390, 844]];
-const FAST_MOTION = ['on', 'reduce', 'paused'];
+const FAST_VIEWS = opt('--fast-views', '1920x1080,1440x900,1080x1080,390x844').split(',').map((v) => v.split('x').map(Number));
+const FAST_MOTION = opt('--fast-motion', 'on,stray,reduce,paused').split(',');
+const FAST_STARTS = opt('--fast-starts', '0,376').split(',').map(Number);
+const FAST_REPEAT = Math.max(1, Number(opt('--fast-repeat', '5')) || 5);
+const FAST_JOBS = Math.max(1, Number(opt('--fast-jobs', '4')) || 4);
 
 /** 8. The result as drawn, against the recorded answer. */
 async function checkResult(page, st, reply, fail) {
@@ -589,75 +599,113 @@ async function sweepReadouts(page, fail) {
 }
 
 /** 13. A fast run lands while the page is still scrolling toward the
-    instrument; once it settles, the verdict and both readouts are on screen. */
-async function checkFastRuns(browser, failures) {
-  let n = 0;
-  for (const [w, h] of FAST_VIEWS) for (const motion of FAST_MOTION) for (const delay of FAST_DELAYS) {
-    n++;
-    const tag = `fast-run ${w}x${h} motion ${motion} ${delay}ms`;
-    const fail = (m) => failures.push(`${tag}: ${m}`);
-    const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: 'dark', reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference' });
-    if (motion === 'paused') {
-      await ctx.addInitScript(() => {
-        try { localStorage.setItem('motion', 'paused'); } catch {}
-      });
-    }
-    await ctx.route('**/api/score', async (route) => {
-      if (delay) await new Promise((r) => setTimeout(r, delay));
-      return route.fulfill({ status: RESP.warn.status, contentType: 'application/json', body: JSON.stringify(RESP.warn.body) });
+    instrument; once it settles, the verdict and both readouts are on screen.
+    The landing races the scroll, so one pass proves little: each case runs
+    FAST_REPEAT times in a fresh context and must pass every time. */
+async function fastRunOnce(browser, w, h, motion, delay, start) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: 'dark', reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference' });
+  if (motion === 'paused') {
+    await ctx.addInitScript(() => {
+      try { localStorage.setItem('motion', 'paused'); } catch {}
     });
-    await ctx.route(/\/_vercel\//, (route) => route.fulfill({ status: 204, body: '' }));
-    const page = await ctx.newPage();
-    try {
-      await page.goto(`${BASE}/score/contract`, { waitUntil: 'load', timeout: 60000 });
-      await page.evaluate(() => document.fonts.ready);
-      await page.waitForTimeout(300);
-      await page.fill('.cf-bar .eg-bar-line input', 'studio.example.com');
-      await page.fill('.cf-bar textarea.m3-textarea', text('contracts/studio-warn.md'));
-      await page.waitForTimeout(250);
-      // Start from the top of the page with the key focused, as a visitor
-      // who filled the form and pressed Enter there.
-      await page.evaluate(() => {
-        document.querySelector('.cf-bar .eg-bar-go').focus({ preventScroll: true });
-        window.scrollTo({ top: 0, behavior: 'instant' });
-      });
-      await page.waitForTimeout(100);
-      await page.keyboard.press('Enter');
-      await page.waitForSelector('.cf-bench .score-verdict-line', { timeout: 15000 });
-      await page.waitForTimeout(1500);
-      const p = await page.evaluate(async () => {
-        const y0 = window.scrollY;
-        await new Promise((r) => setTimeout(r, 200));
-        const clear = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-        const box = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
-        const v = document.querySelector('.cf-bench .score-verdict-line');
-        const a = document.activeElement;
-        return {
-          moving: Math.abs(window.scrollY - y0) > 1,
-          y: Math.round(window.scrollY),
-          vh: window.innerHeight,
-          clear: Math.round(clear),
-          verdict: box(v),
-          readouts: [...document.querySelectorAll('.cf-bench .cf-readout')].map(box),
-          focused: a === v,
-          focus: a === document.body ? 'body' : `${a.tagName.toLowerCase()}.${String(a.className).trim().split(/\s+/).join('.')}`,
-          paused: document.documentElement.dataset.motion === 'paused',
-        };
-      });
-      if (motion === 'paused' && !p.paused) fail('the site motion pause did not apply (html[data-motion] is not "paused")');
-      if (p.moving) fail(`the page is still scrolling 1.5 s after the landing (scrollY ${p.y})`);
-      if (p.verdict.top < p.clear - 1 || p.verdict.bottom > p.vh) fail(`the verdict line ends at ${p.verdict.top}..${p.verdict.bottom}px at scrollY ${p.y}, outside ${p.clear}..${p.vh}px (under the bar and inside the viewport)`);
-      if (p.readouts.length !== 2) fail(`${p.readouts.length} readouts, wanted 2`);
-      else if (p.readouts.some((r) => r.top < 0 || r.bottom > p.vh)) fail(`a readout ends outside the viewport: ${p.readouts.map((r) => `${r.top}..${r.bottom}`).join(', ')}px of ${p.vh}`);
-      if (!p.focused) fail(`focus is on ${p.focus}, wanted the verdict line`);
-      console.log(`  ${failures.some((f) => f.startsWith(tag + ':')) ? 'FAIL' : 'ok  '}  ${tag} (scrollY ${p.y}, verdict ${p.verdict.top}..${p.verdict.bottom})`);
-    } catch (e) {
-      failures.push(`${tag}: ${e.message.split('\n')[0]}`);
-      console.log(`  FAIL  ${tag}`);
-    }
-    await ctx.close();
   }
-  return n;
+  // "stray": motion on, and a scrollend from some other scroll (a reset, a
+  // wheel turn just before the run) reaches the page 16 ms after the run's
+  // smooth scroll starts. That event says nothing about the run's scroll, so
+  // the result must land in view all the same. It pins down the interleaving
+  // that real timing only hits now and then.
+  if (motion === 'stray') {
+    await ctx.addInitScript(() => {
+      const scrollTo = window.scrollTo.bind(window);
+      let sent = false;
+      window.scrollTo = (...a) => {
+        scrollTo(...a);
+        if (!sent && a[0] && typeof a[0] === 'object' && a[0].behavior === 'smooth') {
+          sent = true;
+          setTimeout(() => document.dispatchEvent(new Event('scrollend')), 16);
+        }
+      };
+    });
+  }
+  await ctx.route('**/api/score', async (route) => {
+    if (delay) await new Promise((r) => setTimeout(r, delay));
+    return route.fulfill({ status: RESP.warn.status, contentType: 'application/json', body: JSON.stringify(RESP.warn.body) });
+  });
+  await ctx.route(/\/_vercel\//, (route) => route.fulfill({ status: 204, body: '' }));
+  const page = await ctx.newPage();
+  const problems = [];
+  let p = null;
+  try {
+    await page.goto(`${BASE}/score/contract`, { waitUntil: 'load', timeout: 60000 });
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    await page.fill('.cf-bar .eg-bar-line input', 'studio.example.com');
+    await page.fill('.cf-bar textarea.m3-textarea', text('contracts/studio-warn.md'));
+    await page.waitForTimeout(250);
+    // Start from a set scroll (the top, or part-way down) with the key
+    // focused, as a visitor who filled the form and pressed Enter there.
+    await page.evaluate((y) => {
+      document.querySelector('.cf-bar .eg-bar-go').focus({ preventScroll: true });
+      window.scrollTo({ top: y, behavior: 'instant' });
+    }, start);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.cf-bench .score-verdict-line', { timeout: 15000 });
+    await page.waitForTimeout(1500);
+    p = await page.evaluate(async () => {
+      const y0 = window.scrollY;
+      await new Promise((r) => setTimeout(r, 200));
+      const clear = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const box = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
+      const v = document.querySelector('.cf-bench .score-verdict-line');
+      const a = document.activeElement;
+      return {
+        moving: Math.abs(window.scrollY - y0) > 1,
+        y: Math.round(window.scrollY),
+        vh: window.innerHeight,
+        clear: Math.round(clear),
+        verdict: box(v),
+        readouts: [...document.querySelectorAll('.cf-bench .cf-readout')].map(box),
+        focused: a === v,
+        focus: a === document.body ? 'body' : `${a.tagName.toLowerCase()}.${String(a.className).trim().split(/\s+/).join('.')}`,
+        paused: document.documentElement.dataset.motion === 'paused',
+      };
+    });
+    if (motion === 'paused' && !p.paused) problems.push('the site motion pause did not apply (html[data-motion] is not "paused")');
+    if (p.moving) problems.push(`the page is still scrolling 1.5 s after the landing (scrollY ${p.y})`);
+    if (p.verdict.top < p.clear - 1 || p.verdict.bottom > p.vh) problems.push(`the verdict line ends at ${p.verdict.top}..${p.verdict.bottom}px at scrollY ${p.y}, outside ${p.clear}..${p.vh}px (under the bar and inside the viewport)`);
+    if (p.readouts.length !== 2) problems.push(`${p.readouts.length} readouts, wanted 2`);
+    else if (p.readouts.some((r) => r.top < 0 || r.bottom > p.vh)) problems.push(`a readout ends outside the viewport: ${p.readouts.map((r) => `${r.top}..${r.bottom}`).join(', ')}px of ${p.vh}`);
+    if (!p.focused) problems.push(`focus is on ${p.focus}, wanted the verdict line`);
+  } catch (e) {
+    problems.push(e.message.split('\n')[0]);
+  }
+  await ctx.close();
+  return { problems, y: p ? p.y : null };
+}
+
+async function checkFastRuns(browser, failures) {
+  const cases = [];
+  for (const [w, h] of FAST_VIEWS) for (const start of FAST_STARTS) for (const motion of FAST_MOTION) for (const delay of FAST_DELAYS) {
+    cases.push({ w, h, start, motion, delay, tag: `fast-run ${w}x${h} from ${start} motion ${motion} ${delay}ms`, ends: [], passed: 0 });
+  }
+  // Every repetition is its own page in its own context; a few run at once,
+  // which also adds the load under which the race used to show.
+  const jobs = [];
+  for (const c of cases) for (let r = 1; r <= FAST_REPEAT; r++) jobs.push({ c, r });
+  let next = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const { c, r } = jobs[next++];
+      const { problems, y } = await fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start);
+      c.ends[r - 1] = y === null ? '?' : y;
+      if (problems.length) for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
+      else c.passed++;
+    }
+  };
+  await Promise.all(Array.from({ length: FAST_JOBS }, worker));
+  for (const c of cases) console.log(`  ${c.passed === FAST_REPEAT ? 'ok  ' : 'FAIL'}  ${c.tag}: ${c.passed}/${FAST_REPEAT} (end scrollY ${c.ends.join(', ')})`);
+  return jobs.length;
 }
 
 async function main() {
@@ -838,7 +886,7 @@ async function main() {
     process.exit(1);
   }
   if (sweeps.readouts) console.log(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
-  console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record${FAST_RUNS ? `, fast runs (${FAST_DELAYS.join(', ')} ms) end with the verdict and both readouts on screen` : ''}`);
+  console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record${FAST_RUNS ? `, fast runs (${FAST_DELAYS.join(', ')} ms, from ${FAST_STARTS.join(' and ')}, each ${FAST_REPEAT}x) end with the verdict and both readouts on screen` : ''}`);
 }
 
 main().catch((e) => {

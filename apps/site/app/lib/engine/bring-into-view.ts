@@ -19,8 +19,15 @@
  * a few milliseconds later, and the verdict that now sits higher reads as "on
  * screen" while the page is still moving. Left alone, the old scroll finished
  * at the instrument's old position, below the verdict and both numbers. So
- * while a scroll started here is still moving, a block is judged where that
- * scroll will leave it, and the scroll is retargeted when that is off screen.
+ * while a scroll started here is still moving, the next call retargets it to
+ * its own block, whatever that block's position reads mid-scroll.
+ *
+ * "Still moving" is not taken from scrollend: that event also arrives for
+ * other scrolls (a reset to the top, a wheel turn just before the run), and
+ * one arriving late cleared the record of a scroll still under way, so the
+ * landing saw a still page and let the old scroll finish. The record holds
+ * until the page reaches the target, the visitor scrolls by wheel, touch or
+ * key, or 1.5 s pass (no smooth scroll here runs that long).
  *
  * userJustActed separates a run the visitor started from one a shared link
  * started on load: only the first should move the page.
@@ -50,33 +57,46 @@ export function userJustActed(withinMs = 2500): boolean {
   return Date.now() - lastInput < withinMs;
 }
 
-/** Where the smooth scroll this module last started will stop, while it is
-    still moving; null once it has ended. */
-let moving: number | null = null;
-let movingTimer = 0;
+/** The smooth scroll this module last started: its target and start time. */
+let moving: { to: number; at: number } | null = null;
 
-function settle() {
-  moving = null;
-  window.clearTimeout(movingTimer);
+/** Keys that scroll the page when focus is not in a field. */
+const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' ']);
+
+if (typeof window !== 'undefined') {
+  // The visitor taking the scroll over ends it: the page is theirs again.
+  const takeOver = () => {
+    moving = null;
+  };
+  window.addEventListener('wheel', takeOver, { capture: true, passive: true });
+  window.addEventListener('touchstart', takeOver, { capture: true, passive: true });
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      const t = e.target as HTMLElement | null;
+      if (SCROLL_KEYS.has(e.key) && !t?.closest?.('input, textarea, select, [contenteditable="true"]')) takeOver();
+    },
+    { capture: true, passive: true },
+  );
 }
 
-if (typeof document !== 'undefined') {
-  // A scroll the visitor takes over also ends here, which is what we want:
-  // the page is theirs again.
-  document.addEventListener('scrollend', settle, { passive: true });
+function stillMoving(): boolean {
+  if (!moving) return false;
+  if (performance.now() - moving.at > 1500 || Math.abs(window.scrollY - moving.to) <= 1) moving = null;
+  return moving !== null;
 }
 
 export function bringIntoView(el: HTMLElement | null): void {
   if (!el) return;
   // html's scroll-padding-top is the sticky bar's clearance.
   const clear = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
-  const r = el.getBoundingClientRect();
-  const onScreen = (y: number) => y >= clear - 1 && y <= window.innerHeight * 0.6;
-  // Where the block will be drawn once the page stops: here and now, or at
-  // the end of a smooth scroll still under way (clamped to the page's end,
-  // which a fold may have just moved up).
-  const end = moving === null ? window.scrollY : Math.min(moving, document.documentElement.scrollHeight - window.innerHeight);
-  if (onScreen(r.top + window.scrollY - end)) return;
+  // With the page still, a block whose start is already on screen, in the
+  // upper part, stays put. With a scroll from here still under way, where the
+  // block is drawn now says nothing about where it will end: retarget.
+  if (!stillMoving()) {
+    const y = el.getBoundingClientRect().top;
+    if (y >= clear - 1 && y <= window.innerHeight * 0.6) return;
+  }
   // Aim at the block's layout position, not where it is drawn: a block that
   // is still in its entrance (a translate) would otherwise land short, under
   // the bar.
@@ -85,11 +105,7 @@ export function bringIntoView(el: HTMLElement | null): void {
   const calm =
     window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'paused';
   const to = Math.max(0, top - clear);
-  settle();
   // A new scrollTo replaces one still in flight, so this also retargets it.
   window.scrollTo({ top: to, behavior: calm ? 'instant' : 'smooth' });
-  if (calm || Math.abs(to - window.scrollY) < 1) return;
-  moving = to;
-  // Browsers without scrollend: no smooth scroll here runs past a second.
-  movingTimer = window.setTimeout(settle, 1000);
+  moving = calm || Math.abs(to - window.scrollY) <= 1 ? null : { to, at: performance.now() };
 }
