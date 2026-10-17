@@ -6,23 +6,23 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.7",
-  "engineVersion": "1.5.2",
+  "engineVersion": "1.5.3",
   "score": 70,
   "grade": "C",
   "fidelity": {
    "scored": 9,
    "total": 14,
-   "pass": 6,
-   "warn": 1,
+   "pass": 7,
+   "warn": 0,
    "fail": 2,
    "skip": 5,
    "manual": 0,
    "categoryScores": {
     "tokens": {
-     "score": 25,
+     "score": 50,
      "weight": 14,
-     "pass": 0,
-     "warn": 1,
+     "pass": 1,
+     "warn": 0,
      "fail": 1,
      "skip": 1,
      "manual": 0
@@ -95,7 +95,7 @@
    "grade": "C",
    "ceilingApplied": true,
    "ceilingReason": "Your primary action pair is 1.2 to 1 on shipped values, under 3 to 1.",
-   "uncappedScore": 76.7,
+   "uncappedScore": 80.7,
    "nullReason": null
   },
   "baseline": {
@@ -1102,8 +1102,8 @@
     "id": "f14",
     "item": "Styles use your contract's tokens",
     "category": "tokens",
-    "status": "WARN",
-    "detail": "76% of color, spacing, radius and type declarations use a token (2573 of 3392)",
+    "status": "PASS",
+    "detail": "82% of color, spacing, radius and type declarations use a token (2769 of 3392)",
     "layer": "fidelity",
     "reads": [
      "all located tokens"
@@ -1115,13 +1115,12 @@
      "findings": [
       {
        "declarations": 3392,
-       "usingTokens": 2573,
-       "share": 0.759
+       "usingTokens": 2769,
+       "share": 0.816
       }
      ],
      "truncated": 0
-    },
-    "remediation": "Replace raw values with var() references to your tokens."
+    }
    },
    {
     "id": "v02",
@@ -1624,8 +1623,8 @@
     "layer": "baseline"
    }
   ],
-  "pass": 22,
-  "warn": 1,
+  "pass": 23,
+  "warn": 0,
   "fail": 2,
   "skip": 5,
   "manual": 2,
@@ -1634,11 +1633,11 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://designesy.org/",
-   "retrieved_at": "2026-10-16T05:33:58.125Z",
+   "retrieved_at": "2026-10-17T15:16:58.459Z",
    "contract_version": "v0.4.7",
-   "engine_version": "1.5.2",
+   "engine_version": "1.5.3",
    "scope": "own-contract",
-   "digest": "927ef2329650c7eb8cb317e1ee4b749fb0d2ca2204ac70ce98eac792a13b746c",
+   "digest": "abe9546b7e0c92b6165514da1efb8cc05a699f7f5437721267356a06777a0ea5",
    "verify": {
     "method": "re-run",
     "endpoint": "/api/score",
