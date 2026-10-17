@@ -55,7 +55,7 @@
     "check-link-targets": "node scripts/check-link-targets.js"
   },
   "dependencies": {
-    "@designesy/read-along": "^0.2.1",
+    "@designesy/read-along": "^0.3.0",
     "@google/design.md": "0.4.0",
     "@modelcontextprotocol/server": "^2.2.0",
     "@sparticuz/chromium": "^149.0.0",
