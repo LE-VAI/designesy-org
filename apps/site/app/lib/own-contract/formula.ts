@@ -14,13 +14,16 @@ import { MAX_ALIAS_HOPS, MAX_BODY_BYTES, MAX_CONTRACT_BYTES, MAX_DEPTH, MAX_RESO
 import { ERROR_CODES, WARNING_CODES } from './problems';
 import { DROP_REASONS } from './types';
 
+// 1.0.2 (2026-10-17): f14 counts a var() by the value it resolves to, through var
+// chains, and counts a unitless line-height that equals a contract ratio. A measurement
+// fix: no threshold, weight, title or verdict rule moved, but the f14 share can move.
 // 1.0.1 (2026-10-14): problems carry the linter's sentence whole as
 // linterMessage, and `value` is the offending value (it held the linter's
 // sentence cut to 80 characters); a rejected DESIGN.md carries the linter's
 // own totals (linter) and marks the problems that absorbed a linter finding
 // (linterFinding). No threshold, weight or verdict moved.
-export const FORMULA_VERSION = '1.0.1';
-export const FORMULA_DATE = '2026-10-14';
+export const FORMULA_VERSION = '1.0.2';
+export const FORMULA_DATE = '2026-10-17';
 
 /** Share thresholds (contract-mode spec §6.2; calibration defaults, lesser decision L6). */
 export const SHARE_PASS_AT = 0.9;

@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.7",
-  "engineVersion": "1.5.2",
+  "engineVersion": "1.5.3",
   "score": null,
   "grade": null,
   "fidelity": {
@@ -674,9 +674,9 @@
   "tokensExtracted": 0,
   "receipt": {
    "subject": "https://notes.studio.example.com/",
-   "retrieved_at": "2026-10-16T05:33:58.887Z",
+   "retrieved_at": "2026-10-17T15:16:59.254Z",
    "contract_version": "v0.4.7",
-   "engine_version": "1.5.2",
+   "engine_version": "1.5.3",
    "scope": "own-contract",
    "digest": "cc728b0a030247708ca0485855b0443eef3e75a6e7750674f91ddaf234446a4a",
    "verify": {
