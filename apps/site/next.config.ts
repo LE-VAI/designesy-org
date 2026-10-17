@@ -16,7 +16,9 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' blob: https://va.vercel-scripts.com",
+      // unsafe-eval only in development (React refresh and debug stacks use eval).
+      // Fail closed: production and any unset NODE_ENV drop it.
+      `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''} blob: https://va.vercel-scripts.com`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self'",
