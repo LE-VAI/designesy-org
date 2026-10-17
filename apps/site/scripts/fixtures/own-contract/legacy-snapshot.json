@@ -1,6 +1,7 @@
 {
   "$comment": "Legacy /api/score responses (no contract) recorded from engine 1.4.1 (the checkout given to --record-legacy), timestamps and engine version taken out. scripts/check-own-contract.mjs section 19 asserts every later engine answers the same.",
   "recordedFrom": "engine 1.4.1: apps/site of designesy-org main at 207843d (git archive), run through scripts/lib/route-harness.js",
+  "contractVersion": "v0.4.6",
   "runs": {
     "corpus/good-baseline|designesy|universal": {
       "status": 200,

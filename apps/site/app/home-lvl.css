@@ -150,7 +150,7 @@
   right: 0.02em;
   bottom: -0.17em;
   height: max(3px, 0.05em);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   pointer-events: none;
 }
@@ -169,7 +169,7 @@
   max-width: 46rem;
   margin: 0 0 1.75rem;
   font-size: var(--text-lead);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   color: var(--muted);
 }
 
@@ -587,8 +587,8 @@
   font-family: var(--display);
   font-weight: 700;
   /* Fluid: --text-h1 on phones, rising to 3.4rem from about 765px wide. */
-  font-size: clamp(2.441rem, 1.25rem + 4.5vw, 3.4rem);
-  line-height: 0.9;
+  font-size: var(--text-console-grade);
+  line-height: var(--leading-numeral);
   letter-spacing: -0.02em;
   color: var(--ink);
 }
@@ -1197,7 +1197,7 @@ html[data-motion="paused"] .vc-glow {
 .home-health-note {
   margin: var(--space-16) 0 0;
   font-size: var(--text-label);
-  line-height: 1.5;
+  line-height: var(--leading-prose);
   color: var(--muted);
 }
 
@@ -1257,8 +1257,8 @@ html[data-motion="paused"] .vc-glow {
 
 @media (max-width: 560px) {
   .home .hero-display {
-    font-size: clamp(1.85rem, 1.1rem + 3.4vw, 2.6rem);
-    line-height: 1.08;
+    font-size: var(--text-home-hero-phone);
+    line-height: var(--leading-heading);
   }
   .home .hero-display-line {
     text-wrap: balance;

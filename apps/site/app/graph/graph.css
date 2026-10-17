@@ -286,7 +286,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 .chain-cell-definition {
   font-size: var(--text-body);
   color: var(--muted);
-  line-height: 1.55;
+  line-height: var(--leading-body);
   margin-bottom: var(--space-fine-65);
   max-width: 66ch;
 }
@@ -303,7 +303,7 @@ html[data-motion="paused"] .chain-cell-main::after {
 .chain-cell-examples li {
   font-size: var(--text-body);
   color: var(--muted-dim);
-  line-height: 1.45;
+  line-height: var(--leading-meta);
   padding-left: var(--space-16);
   position: relative;
 }
@@ -403,7 +403,7 @@ html[data-motion="paused"] .chain-cell-route:hover .chain-cell-route-arrow {
 .chain-cell-next {
   font-size: var(--text-body);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--ink);
 }
 

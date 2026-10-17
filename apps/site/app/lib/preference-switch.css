@@ -90,7 +90,7 @@
 .pref-switch-name {
   font-size: var(--text-body);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: var(--leading-tight);
 }
 
 /* Fixed width, so On and Off never shift what follows. */
@@ -138,7 +138,7 @@
   align-items: center;
   gap: var(--space-8);
   font-size: var(--text-label);
-  line-height: 1.4;
+  line-height: var(--leading-lede);
   color: var(--muted);
 }
 

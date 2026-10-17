@@ -1,6 +1,6 @@
 {
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-  "$description": "Designesy design system contract v0.4.6: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.",
+  "$description": "Designesy design system contract v0.4.7: W3C DTCG 2025.10 format. Springs, sound cues and other Designesy data without a DTCG type are in $extensions.designesy.",
   "color": {
     "text": {
       "primary": {
@@ -293,6 +293,14 @@
     }
   },
   "radius": {
+    "xs": {
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$type": "dimension",
+      "$description": "Micro marks: legend swatches, track segments, the reticle"
+    },
     "default": {
       "$value": {
         "value": 6,
@@ -332,6 +340,14 @@
       },
       "$type": "dimension",
       "$description": "Hero / modal / flagship surfaces"
+    },
+    "full": {
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      },
+      "$type": "dimension",
+      "$description": "Pills and fully round ends"
     }
   },
   "shadow": {
@@ -626,7 +642,7 @@
   },
   "$extensions": {
     "designesy": {
-      "version": "0.4.6",
+      "version": "0.4.7",
       "typography": {
         "source_lab": "Cadence",
         "adopted_in": "0.1.3",

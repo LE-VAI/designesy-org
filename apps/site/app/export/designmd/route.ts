@@ -7,6 +7,7 @@ import {
 } from '../../lib/check-definitions';
 import {
   designSystemContract } from '../../lib/design-system-contract';
+import { frontMatterYaml, TYPE_RULES } from '../../lib/design-md-front-matter';
 
 export const dynamic = 'force-static';
 
@@ -33,7 +34,11 @@ function checkIdRanges(ids: readonly string[]): string {
 }
 
 // /export/designmd — Google Labs DESIGN.md format
-// YAML frontmatter + markdown sections. The 8 canonical sections (Overview,
+// YAML frontmatter + markdown sections. The front matter carries the tokens
+// (colors, typography, rounded, spacing) in the format's schema,
+// built by lib/design-md-front-matter.ts; the tables below repeat the colors
+// for people, and scripts/check-design-md.mjs holds the two equal to each
+// other and to the :root tokens the site ships. The 8 canonical sections (Overview,
 // Tokens, Typography, Motion, Acoustic, Takt, Verification, Provenance) plus
 // Designesy-specific extensions. This is the contract-as-code export for
 // AI coding assistants (Claude/Cursor/Replit) and AI app platforms
@@ -58,6 +63,7 @@ standards:
   - APCA
   - DTCG 2025.10
   - EU AI Act Article 50
+${frontMatterYaml()}
 ---
 
 # Designesy Design System
@@ -70,6 +76,8 @@ Organization-first design system with deterministic verification. The contract i
 
 ### Colors
 
+The front matter at the top of this file holds these colors, the type scale, the radii and the spacing scale as tokens, with the default (dark) theme's values. This table repeats the colors for people, with the light theme's values in the roles. A build check holds the two equal. The front matter's \`primary\` is the name the format requires for the brand accent: it points at \`signal\`.
+
 | Token | Value | Role |
 |---|---|---|
 ${colorRows}
@@ -77,8 +85,8 @@ ${colorRows}
 ## Typography
 
 - **Root font size:** 16px (never lower: iOS Safari auto-zooms inputs below 16px)
-- **Heading line-height:** 1.08 (tight, deliberate)
-- **Body line-height:** 1.55 (relaxed, confident)
+- **Heading line-height:** ${TYPE_RULES.heading.lineHeight} (tight, deliberate)
+- **Body line-height:** ${TYPE_RULES.body.lineHeight} (relaxed, confident)
 - **Font smoothing:** antialiased + grayscale (prevents subpixel artifacts on dark backgrounds)
 - **Font synthesis:** none (prevents browser from synthesizing missing weights)
 - **Text wrap:** balance (headings) + pretty (body)
