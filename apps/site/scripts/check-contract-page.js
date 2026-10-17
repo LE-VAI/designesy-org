@@ -136,8 +136,13 @@
  *   ... --states fast-run --fast-delays 0,50,314   only the fast-run case
  *   ... --states fast-run --fast-views 1440x900 --fast-motion on,stray --fast-repeat 20
  *   ... --states fast-run --fast-throttle 1,4,6   unthrottled, 4x and 6x CPU
+ *   ... --skip-fast-runs   the states only; CI runs the fast runs in their own job
+ *   ... --states fast-run --break fatal   negative control: a fast run that fails at once
+ *   ... --states fast-run --break hang --run-timeout 10000   negative control: a run that never settles
  *   ... --shots <dir>     write a full-page screenshot of every state (crops)
- * Exit 1 on any failure, 2 on a fatal error.
+ * Exit 1 on any failure, 2 on a fatal error. A fast run that passes
+ * --run-timeout ms (default 180000) without settling is a fatal error, so a
+ * stalled run ends the job in minutes instead of holding it to its time limit.
  */
 
 const fs = require('fs');
@@ -336,13 +341,14 @@ const STATES = [
 
 const onlyStates = opt('--states', null);
 const states = onlyStates ? STATES.filter((s) => onlyStates.split(',').includes(s.id)) : STATES;
-const FAST_RUNS = !onlyStates || onlyStates.split(',').includes('fast-run');
+const FAST_RUNS = !args.includes('--skip-fast-runs') && (!onlyStates || onlyStates.split(',').includes('fast-run'));
 const FAST_DELAYS = opt('--fast-delays', '0,100,314').split(',').map(Number);
 const FAST_VIEWS = opt('--fast-views', '1920x1080,1440x900,1080x1080,390x844').split(',').map((v) => v.split('x').map(Number));
 const FAST_MOTION = opt('--fast-motion', 'on,stray,slow,reduce,paused').split(',');
 const FAST_STARTS = opt('--fast-starts', '0,376').split(',').map(Number);
 const FAST_REPEAT = Math.max(1, Number(opt('--fast-repeat', '5')) || 5);
 const FAST_JOBS = Math.max(1, Number(opt('--fast-jobs', '4')) || 4);
+const RUN_TIMEOUT_MS = Math.max(10000, Number(opt('--run-timeout', '180000')) || 180000);
 // Each case runs unthrottled and under CDP CPU throttling (Emulation.
 // setCPUThrottlingRate): a slow main thread moves the landing against the
 // smooth scroll, which is where the race lived.
@@ -630,6 +636,8 @@ async function sweepReadouts(page, fail) {
     The landing races the scroll, so one pass proves little: each case runs
     FAST_REPEAT times in a fresh context and must pass every time. */
 async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
+  if (BREAK.includes('fatal')) throw new Error('--break fatal: a fast run fails before its page loads');
+  if (BREAK.includes('hang')) await new Promise(() => {});
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: 'dark', reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference' });
   if (motion === 'paused') {
     await ctx.addInitScript(() => {
@@ -810,6 +818,15 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
   return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null };
 }
 
+/** Rejects if a run passes RUN_TIMEOUT_MS without settling: a stall is a fatal error, never a pass. */
+function withRunLimit(run, label) {
+  let timer;
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`a fast run passed --run-timeout (${RUN_TIMEOUT_MS} ms) without finishing: ${label}`)), RUN_TIMEOUT_MS);
+  });
+  return Promise.race([run, limit]).finally(() => clearTimeout(timer));
+}
+
 async function checkFastRuns(browser, failures) {
   const cases = [];
   for (const rate of FAST_THROTTLE) for (const [w, h] of FAST_VIEWS) for (const start of FAST_STARTS) for (const motion of FAST_MOTION) for (const delay of FAST_DELAYS) {
@@ -823,7 +840,10 @@ async function checkFastRuns(browser, failures) {
   const worker = async () => {
     while (next < jobs.length) {
       const { c, r } = jobs[next++];
-      const { problems, y, bounce } = await fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate);
+      const { problems, y, bounce } = await withRunLimit(
+        fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate),
+        `${c.tag} (run ${r} of ${FAST_REPEAT})`,
+      );
       c.ends[r - 1] = y === null ? '?' : y;
       if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
       if (problems.length) for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
@@ -841,6 +861,8 @@ async function checkFastRuns(browser, failures) {
   return jobs.length;
 }
 
+let liveBrowser = null;
+
 async function main() {
   let chromium;
   try {
@@ -853,6 +875,7 @@ async function main() {
   let browser;
   try {
     browser = await chromium.launch({ channel: CHANNEL, headless: true });
+    liveBrowser = browser;
   } catch (e) {
     console.error(`[contract-page] cannot launch ${CHANNEL}: ${e.message}`);
     process.exit(2);
@@ -1022,7 +1045,9 @@ async function main() {
   console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record${FAST_RUNS ? `, fast runs (${FAST_DELAYS.join(', ')} ms, from ${FAST_STARTS.join(' and ')}, CPU ${FAST_THROTTLE.map((r) => `${r}x`).join(' and ')}, each ${FAST_REPEAT}x) end with the verdict and both readouts on screen` : ''}`);
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error(`[contract-page] fatal: ${e.stack || e.message}`);
+  // A crashed renderer can leave close() waiting, so the wait is bounded.
+  if (liveBrowser) await Promise.race([liveBrowser.close().catch(() => {}), new Promise((r) => setTimeout(r, 10000))]);
   process.exit(2);
 });
