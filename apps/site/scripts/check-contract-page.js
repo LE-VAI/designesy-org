@@ -704,6 +704,34 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
       };
     }, delay);
   }
+  // Diagnostics for a failing run, and nothing else: each scroll the page is
+  // asked for and each scroll position it reports, from the Enter that starts
+  // the run. It is printed only when the run fails and judges nothing.
+  await ctx.addInitScript(() => {
+    window.__scrollTrace = [];
+    let lastY = null;
+    const rec = (kind, extra) => {
+      if (window.__enterAt === undefined || window.__scrollTrace.length >= 400) return;
+      window.__scrollTrace.push({ t: Math.round(performance.now() - window.__enterAt), kind, y: Math.round(window.scrollY), ...extra });
+    };
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      window.__enterAt = performance.now();
+      window.__scrollTrace = [];
+      lastY = null;
+    }, { capture: true });
+    const scrollTo = window.scrollTo.bind(window);
+    window.scrollTo = (...a) => {
+      const o = a[0] && typeof a[0] === 'object' ? a[0] : null;
+      rec('scrollTo', { top: o ? Math.round(o.top) : null, behavior: o ? o.behavior : null });
+      return scrollTo(...a);
+    };
+    window.addEventListener('scroll', () => {
+      if (window.scrollY === lastY) return;
+      lastY = window.scrollY;
+      rec('scroll', {});
+    }, { passive: true });
+  });
   // Where the verdict line sits on screen, every frame from the moment it
   // exists: its layout start less scrollY, so neither scroll anchoring nor
   // its entrance translate reads as movement.
@@ -803,6 +831,7 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
         focused: a === v,
         focus: a === document.body ? 'body' : `${a.tagName.toLowerCase()}.${String(a.className).trim().split(/\s+/).join('.')}`,
         paused: document.documentElement.dataset.motion === 'paused',
+        trace: window.__scrollTrace || [],
       };
     }, limit);
     if (motion === 'paused' && !p.paused) problems.push('the site motion pause did not apply (html[data-motion] is not "paused")');
@@ -811,11 +840,12 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
     if (p.readouts.length !== 2) problems.push(`${p.readouts.length} readouts, wanted 2`);
     else if (p.readouts.some((r) => r.top < 0 || r.bottom > p.vh)) problems.push(`a readout ends outside the viewport: ${p.readouts.map((r) => `${r.top}..${r.bottom}`).join(', ')}px of ${p.vh}`);
     if (!p.focused) problems.push(`focus is on ${p.focus}, wanted the verdict line`);
+    if (BREAK.includes('trace')) problems.push('--break trace: a deliberate failure, to show the scroll trace');
   } catch (e) {
     problems.push(e.message.split('\n')[0]);
   }
   await ctx.close();
-  return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null };
+  return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null, trace: p ? p.trace : null };
 }
 
 /** Rejects if a run passes RUN_TIMEOUT_MS without settling: a stall is a fatal error, never a pass. */
@@ -840,13 +870,16 @@ async function checkFastRuns(browser, failures) {
   const worker = async () => {
     while (next < jobs.length) {
       const { c, r } = jobs[next++];
-      const { problems, y, bounce } = await withRunLimit(
+      const { problems, y, bounce, trace } = await withRunLimit(
         fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate),
         `${c.tag} (run ${r} of ${FAST_REPEAT})`,
       );
       c.ends[r - 1] = y === null ? '?' : y;
       if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
-      if (problems.length) for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
+      if (problems.length) {
+        for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
+        if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
+      }
       else c.passed++;
     }
   };
