@@ -1,4 +1,4 @@
-// f02 Shipped colors are in your palette (contract-mode spec §6.3; derived from d03, d05).
+// f02 Shipped colors are in your palette (engine spec 6.3; derived from d03, d05).
 // Distinct base colors the usage CSS paints (color, backgrounds, borders,
 // outline, fill, stroke, caret, accent, text decoration); a color is in the
 // palette when its RGB is within 1 per channel of a declared color (alpha is
@@ -9,9 +9,11 @@ import { SHARE_PASS_AT } from '../formula';
 import { hex6, oklabDistance, sameRgb } from '../normalize';
 import { capList, result, shareStatus, skip, type Ctx, type CheckResultV2 } from './common';
 
-/** The collapsed line, built from the counts and the threshold. */
-export function paletteLine(shipped: number, outside: string[], passAt = SHARE_PASS_AT): string {
-  const inside = shipped - outside.length;
+/** The collapsed line, built from the counts and the threshold.
+    `outside` is the list the line names (at most the evidence cap); `outsideTotal`
+    is every shipped colour outside the palette, which the count is taken from. */
+export function paletteLine(shipped: number, outside: string[], passAt = SHARE_PASS_AT, outsideTotal = outside.length): string {
+  const inside = shipped - outsideTotal;
   const verb = inside === 1 ? 'is' : 'are';
   const head = `${inside} of ${shipped} shipped colors ${verb} in your palette (${Math.round(passAt * 100)}% needed to pass).`;
   return outside.length ? `${head} Outside it: ${outside.join(', ')}` : head;
@@ -37,7 +39,7 @@ export function f02(ctx: Ctx): CheckResultV2 {
   });
   const capped = capList(findings);
   const outsideList = capped.items.map((f) => f.value as string);
-  return result('f02', ctx, status, paletteLine(shipped.length, outsideList) + (capped.truncated ? ` and ${capped.truncated} more` : ''), {
+  return result('f02', ctx, status, paletteLine(shipped.length, outsideList, SHARE_PASS_AT, outside.length) + (capped.truncated ? ` and ${capped.truncated} more` : ''), {
     shipped: outside.map((s) => ({ value: hex6(s.rgba), where: s.where, uses: s.uses })),
     evidence: { findings: capped.items, truncated: capped.truncated },
   });

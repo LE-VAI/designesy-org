@@ -19,7 +19,10 @@ import { DROP_REASONS } from './types';
 // sentence cut to 80 characters); a rejected DESIGN.md carries the linter's
 // own totals (linter) and marks the problems that absorbed a linter finding
 // (linterFinding). No threshold, weight or verdict moved.
-export const FORMULA_VERSION = '1.0.1';
+// 1.0.2 (2026-10-14): f02's line counts the colours in the palette from every
+// outside colour, not the 20 it lists. No threshold, weight, status or verdict
+// moved.
+export const FORMULA_VERSION = '1.0.2';
 export const FORMULA_DATE = '2026-10-14';
 
 /** Share thresholds (contract-mode spec §6.2; calibration defaults, lesser decision L6). */
