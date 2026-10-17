@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.7",
-  "engineVersion": "1.5.2",
+  "engineVersion": "1.5.3",
   "score": 0,
   "grade": "F",
   "fidelity": {
@@ -1842,7 +1842,7 @@
     "item": "Styles use your contract's tokens",
     "category": "tokens",
     "status": "FAIL",
-    "detail": "40% of color, spacing, radius and type declarations use a token (1353 of 3392)",
+    "detail": "41% of color, spacing, radius and type declarations use a token (1376 of 3392)",
     "layer": "fidelity",
     "reads": [
      "all located tokens"
@@ -1854,8 +1854,8 @@
      "findings": [
       {
        "declarations": 3392,
-       "usingTokens": 1353,
-       "share": 0.399
+       "usingTokens": 1376,
+       "share": 0.406
       }
      ],
      "truncated": 0
@@ -2373,9 +2373,9 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://www.designesy.org/",
-   "retrieved_at": "2026-10-16T05:33:58.395Z",
+   "retrieved_at": "2026-10-17T15:16:58.728Z",
    "contract_version": "v0.4.7",
-   "engine_version": "1.5.2",
+   "engine_version": "1.5.3",
    "scope": "own-contract",
    "digest": "8cdd84d7bedf2cdce29e764fdba1bfcd84323aced18cf175c283fd6c38ee07b9",
    "verify": {

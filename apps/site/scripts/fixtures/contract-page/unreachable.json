@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.7",
-  "engineVersion": "1.5.2",
+  "engineVersion": "1.5.3",
   "score": null,
   "grade": null,
   "fidelity": {
@@ -99,9 +99,9 @@
   "tokensExtracted": 0,
   "receipt": {
    "subject": "https://unreachable.invalid/",
-   "retrieved_at": "2026-10-16T05:33:58.504Z",
+   "retrieved_at": "2026-10-17T15:16:58.850Z",
    "contract_version": "v0.4.7",
-   "engine_version": "1.5.2",
+   "engine_version": "1.5.3",
    "scope": "own-contract",
    "digest": null,
    "digest_absent_reason": "the target could not be read, so no checks ran and there is no verdict set to attest to",
