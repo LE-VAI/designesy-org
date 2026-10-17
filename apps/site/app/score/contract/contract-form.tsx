@@ -59,6 +59,7 @@ import {
   readAt,
   receiptText,
   requestError,
+  RUNNING_NOTE,
   seconds,
   siteKey,
   steps as stepList,
@@ -944,7 +945,7 @@ export function ContractForm({
           <div className="eg-running">
             <p className="eg-running-line">Scoring {runSite} against your contract</p>
           </div>
-          {restPair('Both numbers land here when the run ends, usually within 3 to 8 seconds.')}
+          {restPair(RUNNING_NOTE)}
         </>
       ),
       error: (

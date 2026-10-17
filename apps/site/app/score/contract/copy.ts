@@ -19,6 +19,10 @@ export const SOURCE_HINT: Record<Source, string> = {
   link: 'A public URL. A linked contract can be shared, because anyone with the link can run the same score again.',
 };
 
+/** Under the resting readouts while a run is in flight. Production runs take
+    about a second, so the note promises no fixed range. */
+export const RUNNING_NOTE = 'Both numbers land here when the run ends, usually within a few seconds.';
+
 export const PRIVACY_NOTE = 'Your contract is read for this run and then discarded. Designesy keeps only anonymous usage counts.';
 
 /** The example in the paste well. It meets the minimum it sits above (3 colors, 1 text style). */
