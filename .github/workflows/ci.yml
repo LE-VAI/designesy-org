@@ -715,8 +715,9 @@ jobs:
   #   part 2  focus visibility 187, a11y sweep 101 (the full set), and
   #           a11y modes 59 (added later; its first run, 38099424155)
   #   part 3  dock clearance 443 (304-443 across that day's green runs)
-  #   part 4  the fast runs of /score/contract (1,200 runs, 30 to 60 minutes on the runner), run
-  #           on their own so part 2 keeps its time limit for the states
+  #   part 4  the fast runs of /score/contract (1,200 runs, 27 minutes or more
+  #           on the runner), as two jobs by CPU rate (1x, 4x), run on their
+  #           own so part 2 keeps its time limit for the states
   # Dock clearance is the longest single gate, so it runs alone and sets the
   # wall time. Every part must pass. A new runtime gate goes in the part with
   # the most room; scripts/check-gate-parity.js fails if a CI-only gate is no
@@ -880,15 +881,21 @@ jobs:
           } >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
 
   visual-gates-4:
-    name: 'Visual gates (part 4: fast runs)'
+    name: 'Visual gates (part 4: fast runs, ${{ matrix.throttle }}x CPU)'
     runs-on: ubuntu-latest
     # The fast runs drive /score/contract from the top and from 376px down
     # with the answer landing against the smooth scroll: 240 cases, each run
-    # --fast-repeat times (5), unthrottled and under 4x CPU: 1,200 runs. On the
-    # runner the 1x half took about 12 minutes and the 4x half had not finished
-    # at 30 minutes, when the job was cancelled, so the limit is 60 minutes.
-    # They run in their own job so part 2's 25-minute limit covers the states.
-    timeout-minutes: 60
+    # --fast-repeat times (5), unthrottled and under 4x CPU: 1,200 runs. As one
+    # job they took 27 minutes on one runner and did not finish in 30 on
+    # another, so each CPU rate runs as its own job, 600 runs, side by side:
+    # the wall time stays near part 3's. They run apart from part 2 so its
+    # 25-minute limit covers the states. fail-fast is off so one rate's failure
+    # never cancels the other's verdict.
+    strategy:
+      fail-fast: false
+      matrix:
+        throttle: [1, 4]
+    timeout-minutes: 45
     needs: build-site
     if: always() && needs.build-site.result == 'success'
     defaults:
@@ -934,10 +941,10 @@ jobs:
 
       # The landing races the scroll, so a run that passes once can fail
       # under another timing: each case runs --fast-repeat times, in a fresh
-      # context, unthrottled and at 4x CPU. A run that never settles fails the
+      # context, at this job's CPU rate. A run that never settles fails the
       # job at --run-timeout (3 minutes) instead of holding it to the limit.
       - name: Fast runs
-        run: node scripts/check-contract-page.js --base http://127.0.0.1:3422 --channel chrome --states fast-run
+        run: node scripts/check-contract-page.js --base http://127.0.0.1:3422 --channel chrome --states fast-run --fast-throttle ${{ matrix.throttle }}
 
   visual-gates-2:
     name: 'Visual gates (part 2: focus visibility, a11y modes, a11y sweep)'

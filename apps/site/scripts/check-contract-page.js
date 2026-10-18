@@ -707,18 +707,28 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
   // Diagnostics for a failing run, and nothing else: each scroll the page is
   // asked for and each scroll position it reports, from the Enter that starts
   // the run. It is printed only when the run fails and judges nothing.
+  // Each record also carries the animation frames drawn since the Enter: the
+  // landing advances only on frames, so a gap in time with no frames reads
+  // differently from a page at rest.
   await ctx.addInitScript(() => {
     window.__scrollTrace = [];
     let lastY = null;
+    let frames = 0;
+    const count = () => {
+      frames++;
+      requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
     const rec = (kind, extra) => {
       if (window.__enterAt === undefined || window.__scrollTrace.length >= 400) return;
-      window.__scrollTrace.push({ t: Math.round(performance.now() - window.__enterAt), kind, y: Math.round(window.scrollY), ...extra });
+      window.__scrollTrace.push({ t: Math.round(performance.now() - window.__enterAt), f: frames, kind, y: Math.round(window.scrollY), ...extra });
     };
     window.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter') return;
       window.__enterAt = performance.now();
       window.__scrollTrace = [];
       lastY = null;
+      frames = 0;
     }, { capture: true });
     const scrollTo = window.scrollTo.bind(window);
     window.scrollTo = (...a) => {
@@ -885,7 +895,7 @@ async function checkFastRuns(browser, failures) {
         // Printed as each run finishes, not only in the summary: a job cancelled by its
         // time limit must still leave the reasons and the trace in its log.
         console.log(`    FAIL ${c.tag} (run ${r} of ${FAST_REPEAT}): ${problems.join('; ')}`);
-        if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
+        if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms f${e.f} ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
       }
       else c.passed++;
       if (done % 100 === 0) console.log(`  fast runs: ${done}/${jobs.length} done, ${failedRuns} with a problem so far`);
