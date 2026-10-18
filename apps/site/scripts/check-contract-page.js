@@ -68,6 +68,30 @@
  *  11. The previous run (Edit inputs): the result stays below the reopened
  *      form, labelled, with no duplicate ids; a new run draws the live
  *      instrument above it and no skeleton.
+ *  13. Fast runs (state "fast-run"): a run started from the top of the page
+ *      whose answer comes back while the page is still scrolling toward the
+ *      instrument. Each answer delay (--fast-delays, default 0,100,314 ms) at
+ *      1920x1080, 1440x900, 1080x1080 and 390x844 (--fast-views), from the
+ *      top and from 376px down (--fast-starts), with motion on, motion on
+ *      with a stray scrollend (another scroll's, arriving 16 ms after the
+ *      run's smooth scroll starts), motion on with a slow scroll (the run's
+ *      smooth scroll still moving 1.5 s after it began, as on a busy device,
+ *      with the answer landing inside it), reduced motion and the site's
+ *      motion paused (--fast-motion). Every case runs unthrottled and under
+ *      CDP CPU throttling at 4x (--fast-throttle, default 1,4). The landing
+ *      races the scroll, so each case runs --fast-repeat times (default 5),
+ *      each in a fresh context, a few at once (--fast-jobs, default 4), and
+ *      must pass every time: a lucky pass cannot hide a race. Typing waits
+ *      until React has claimed both fields and checks the values held. By
+ *      1.5 s after the landing (times the throttle rate) the page has come to
+ *      rest (scrollY unchanged for 500 ms), the verdict line sits under the
+ *      sticky bar and inside the viewport, both readouts are inside the
+ *      viewport, and focus is on the verdict line. How far the verdict line
+ *      travels back out on screen after coming closer to where it ends is
+ *      measured every frame and reported per case ("bounce"), not judged.
+ *      The landed-state renders above run
+ *      with reduced motion, which scrolls at once, so they never see a
+ *      smooth scroll the landing overtakes.
  *
  * PROVING IT CAN FAIL
  *   --break live    removes the live region before the checks (2 fails)
@@ -88,6 +112,11 @@
  *   --break tracking tracks the labels at 0.08em under 26rem
  *   --break balance removes text-wrap: balance from the labels
  *   --break         live and focus. Each must exit 1.
+ *   The fast-run case is proven against the scroll code before its fix,
+ *   where a landing inside the smooth scroll ended with the verdict above
+ *   the screen, and against the second fix (a scroll counted as moving for
+ *   at most 1.5 s), which the "slow" motion fails at the instrument's old
+ *   position, throttled or not.
  *
  * AN ENGINE VERSION BUMP
  *   Check 8 fails every landed record made at another engine or contract
@@ -104,8 +133,16 @@
  * Usage:
  *   node scripts/check-contract-page.js --base http://127.0.0.1:3422 [--channel chrome]
  *   ... --themes dark --widths 1440 --states rejected-multi
+ *   ... --states fast-run --fast-delays 0,50,314   only the fast-run case
+ *   ... --states fast-run --fast-views 1440x900 --fast-motion on,stray --fast-repeat 20
+ *   ... --states fast-run --fast-throttle 1,4,6   unthrottled, 4x and 6x CPU
+ *   ... --skip-fast-runs   the states only; CI runs the fast runs in their own job
+ *   ... --states fast-run --break fatal   negative control: a fast run that fails at once
+ *   ... --states fast-run --break hang --run-timeout 10000   negative control: a run that never settles
  *   ... --shots <dir>     write a full-page screenshot of every state (crops)
- * Exit 1 on any failure, 2 on a fatal error.
+ * Exit 1 on any failure, 2 on a fatal error. A fast run that passes
+ * --run-timeout ms (default 180000) without settling is a fatal error, so a
+ * stalled run ends the job in minutes instead of holding it to its time limit.
  */
 
 const fs = require('fs');
@@ -304,6 +341,18 @@ const STATES = [
 
 const onlyStates = opt('--states', null);
 const states = onlyStates ? STATES.filter((s) => onlyStates.split(',').includes(s.id)) : STATES;
+const FAST_RUNS = !args.includes('--skip-fast-runs') && (!onlyStates || onlyStates.split(',').includes('fast-run'));
+const FAST_DELAYS = opt('--fast-delays', '0,100,314').split(',').map(Number);
+const FAST_VIEWS = opt('--fast-views', '1920x1080,1440x900,1080x1080,390x844').split(',').map((v) => v.split('x').map(Number));
+const FAST_MOTION = opt('--fast-motion', 'on,stray,slow,reduce,paused').split(',');
+const FAST_STARTS = opt('--fast-starts', '0,376').split(',').map(Number);
+const FAST_REPEAT = Math.max(1, Number(opt('--fast-repeat', '5')) || 5);
+const FAST_JOBS = Math.max(1, Number(opt('--fast-jobs', '4')) || 4);
+const RUN_TIMEOUT_MS = Math.max(10000, Number(opt('--run-timeout', '180000')) || 180000);
+// Each case runs unthrottled and under CDP CPU throttling (Emulation.
+// setCPUThrottlingRate): a slow main thread moves the landing against the
+// smooth scroll, which is where the race lived.
+const FAST_THROTTLE = opt('--fast-throttle', '1,4').split(',').map(Number).filter((n) => n >= 1);
 
 /** 8. The result as drawn, against the recorded answer. */
 async function checkResult(page, st, reply, fail) {
@@ -582,6 +631,298 @@ async function sweepReadouts(page, fail) {
   return { readouts, bad, modes };
 }
 
+/** 13. A fast run lands while the page is still scrolling toward the
+    instrument; once it settles, the verdict and both readouts are on screen.
+    The landing races the scroll, so one pass proves little: each case runs
+    FAST_REPEAT times in a fresh context and must pass every time. */
+async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
+  if (BREAK.includes('fatal')) throw new Error('--break fatal: a fast run fails before its page loads');
+  if (BREAK.includes('hang')) await new Promise(() => {});
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: 'dark', reducedMotion: motion === 'reduce' ? 'reduce' : 'no-preference' });
+  if (motion === 'paused') {
+    await ctx.addInitScript(() => {
+      try { localStorage.setItem('motion', 'paused'); } catch {}
+    });
+  }
+  // "stray": motion on, and a scrollend from some other scroll (a reset, a
+  // wheel turn just before the run) reaches the page 16 ms after the run's
+  // smooth scroll starts. That event says nothing about the run's scroll, so
+  // the result must land in view all the same. It pins down the interleaving
+  // that real timing only hits now and then.
+  if (motion === 'stray') {
+    await ctx.addInitScript(() => {
+      const scrollTo = window.scrollTo.bind(window);
+      let sent = false;
+      window.scrollTo = (...a) => {
+        scrollTo(...a);
+        if (!sent && a[0] && typeof a[0] === 'object' && a[0].behavior === 'smooth') {
+          sent = true;
+          setTimeout(() => document.dispatchEvent(new Event('scrollend')), 16);
+        }
+      };
+    });
+  }
+  // "slow": motion on, on a device too busy to keep up. The run's smooth
+  // scroll toward the instrument is still moving 1.5 s after it began (here it
+  // takes 2.4 s), and the answer lands inside it, 1.6 s in plus the case's
+  // delay. A busy main thread delays the start of a smooth scroll and starves
+  // its frames; this pins that interleaving, which CPU throttling alone only
+  // reaches now and then. Any later scrollTo replaces the slow scroll, as a
+  // new scrollTo replaces one in flight. A run that starts no smooth scroll
+  // (a wide screen) gets its answer after the case's delay.
+  if (motion === 'slow') {
+    await ctx.addInitScript((delay) => {
+      const native = window.scrollTo.bind(window);
+      let raf = 0;
+      let began = null;
+      window.scrollTo = (...a) => {
+        cancelAnimationFrame(raf);
+        const o = a[0];
+        if (began === null && o && typeof o === 'object' && o.behavior === 'smooth') {
+          const from = window.scrollY;
+          const to = o.top;
+          const t0 = (began = performance.now());
+          const tick = () => {
+            const k = Math.min(1, (performance.now() - t0) / 2400);
+            native({ top: from + (to - from) * (1 - (1 - k) ** 2), behavior: 'instant' });
+            if (k < 1) raf = requestAnimationFrame(tick);
+          };
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        native(...a);
+      };
+      const fetch = window.fetch.bind(window);
+      window.fetch = (u, opts) => {
+        if (!String(u && u.url ? u.url : u).includes('/api/score')) return fetch(u, opts);
+        const asked = performance.now();
+        return fetch(u, opts).then((res) => new Promise((done) => {
+          const ready = () => (began !== null ? performance.now() - began >= 1600 + delay : performance.now() - asked >= 300 + delay);
+          const wait = () => (ready() ? done(res) : setTimeout(wait, 10));
+          wait();
+        }));
+      };
+    }, delay);
+  }
+  // Diagnostics for a failing run, and nothing else: each scroll the page is
+  // asked for and each scroll position it reports, from the Enter that starts
+  // the run. It is printed only when the run fails and judges nothing.
+  // Each record also carries the animation frames drawn since the Enter: the
+  // landing advances only on frames, so a gap in time with no frames reads
+  // differently from a page at rest.
+  await ctx.addInitScript(() => {
+    window.__scrollTrace = [];
+    let lastY = null;
+    let frames = 0;
+    const count = () => {
+      frames++;
+      requestAnimationFrame(count);
+    };
+    requestAnimationFrame(count);
+    const rec = (kind, extra) => {
+      if (window.__enterAt === undefined || window.__scrollTrace.length >= 400) return;
+      window.__scrollTrace.push({ t: Math.round(performance.now() - window.__enterAt), f: frames, kind, y: Math.round(window.scrollY), ...extra });
+    };
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      window.__enterAt = performance.now();
+      window.__scrollTrace = [];
+      lastY = null;
+      frames = 0;
+    }, { capture: true });
+    const scrollTo = window.scrollTo.bind(window);
+    window.scrollTo = (...a) => {
+      const o = a[0] && typeof a[0] === 'object' ? a[0] : null;
+      rec('scrollTo', { top: o ? Math.round(o.top) : null, behavior: o ? o.behavior : null });
+      return scrollTo(...a);
+    };
+    window.addEventListener('scroll', () => {
+      if (window.scrollY === lastY) return;
+      lastY = window.scrollY;
+      rec('scroll', {});
+    }, { passive: true });
+  });
+  // Where the verdict line sits on screen, every frame from the moment it
+  // exists: its layout start less scrollY, so neither scroll anchoring nor
+  // its entrance translate reads as movement.
+  await ctx.addInitScript(() => {
+    const seen = (window.__fastSeen = []);
+    const tick = () => {
+      const v = document.querySelector('.cf-bench .score-verdict-line');
+      if (v) {
+        let top = 0;
+        for (let e = v; e; e = e.offsetParent) top += e.offsetTop;
+        seen.push(top - window.scrollY);
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await ctx.route('**/api/score', async (route) => {
+    if (delay && motion !== 'slow') await new Promise((r) => setTimeout(r, delay));
+    return route.fulfill({ status: RESP.warn.status, contentType: 'application/json', body: JSON.stringify(RESP.warn.body) });
+  });
+  await ctx.route(/\/_vercel\//, (route) => route.fulfill({ status: 204, body: '' }));
+  const page = await ctx.newPage();
+  const problems = [];
+  let p = null;
+  const limit = 1500 * rate;
+  try {
+    if (rate > 1) {
+      const cdp = await ctx.newCDPSession(page);
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate });
+    }
+    await page.goto(`${BASE}/score/contract`, { waitUntil: 'load', timeout: 90000 });
+    await page.evaluate(() => document.fonts.ready);
+    // Under load the page can still be hydrating at "load": typing into a
+    // field React has not claimed yet is lost, or times out. Wait until both
+    // fields carry React's props, then type, and check that the values held.
+    await page.waitForFunction(() => {
+      const claimed = (el) => !!el && !el.disabled && Object.keys(el).some((k) => k.startsWith('__reactProps'));
+      return claimed(document.querySelector('.cf-bar .eg-bar-line input')) && claimed(document.querySelector('.cf-bar textarea.m3-textarea'));
+    }, null, { timeout: 60000 });
+    await page.waitForTimeout(300);
+    const contract = text('contracts/studio-warn.md');
+    for (let tries = 0; ; tries++) {
+      await page.fill('.cf-bar .eg-bar-line input', 'studio.example.com', { timeout: 60000 });
+      await page.fill('.cf-bar textarea.m3-textarea', contract, { timeout: 60000 });
+      await page.waitForTimeout(250);
+      const held = await page.evaluate((c) => document.querySelector('.cf-bar .eg-bar-line input').value === 'studio.example.com' && document.querySelector('.cf-bar textarea.m3-textarea').value === c.replace(/\r\n?/g, '\n'), contract);
+      if (held) break;
+      if (tries === 2) throw new Error('the form fields did not keep the typed values');
+    }
+    // Start from a set scroll (the top, or part-way down) with the key
+    // focused, as a visitor who filled the form and pressed Enter there.
+    await page.evaluate((y) => {
+      document.querySelector('.cf-bar .eg-bar-go').focus({ preventScroll: true });
+      window.scrollTo({ top: y, behavior: 'instant' });
+    }, start);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.cf-bench .score-verdict-line', { timeout: 30000 });
+    // The page must come to rest by 1.5 s after the landing (scaled by the
+    // CPU throttle, which slows the page's own work, not the clock): scrollY
+    // unchanged for 500 ms, sampled every frame and timer tick. Watching for
+    // rest instead of one fixed pause also catches a late bounce. How far the
+    // verdict line travels back out on screen after coming closer to where it
+    // ends is measured and reported per case (a visible bounce), not judged.
+    p = await page.evaluate(async (limit) => {
+      const t0 = performance.now();
+      let y0 = window.scrollY;
+      let still = t0;
+      while (performance.now() - t0 < limit + 500) {
+        await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
+        if (Math.abs(window.scrollY - y0) > 1) { y0 = window.scrollY; still = performance.now(); }
+        else if (performance.now() - still >= 500) break;
+      }
+      const restAt = Math.round(still - t0);
+      const seen = window.__fastSeen;
+      const end = seen[seen.length - 1];
+      let nearest = Infinity;
+      let bounce = 0;
+      for (const v of seen) {
+        const d = Math.abs(v - end);
+        nearest = Math.min(nearest, d);
+        bounce = Math.max(bounce, d - nearest);
+      }
+      const clear = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+      const box = (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), bottom: Math.round(r.bottom) }; };
+      const v = document.querySelector('.cf-bench .score-verdict-line');
+      const a = document.activeElement;
+      return {
+        moving: performance.now() - still < 500 || restAt > limit,
+        restAt,
+        bounce: Math.round(bounce),
+        y: Math.round(window.scrollY),
+        vh: window.innerHeight,
+        clear: Math.round(clear),
+        verdict: box(v),
+        readouts: [...document.querySelectorAll('.cf-bench .cf-readout')].map(box),
+        focused: a === v,
+        focus: a === document.body ? 'body' : `${a.tagName.toLowerCase()}.${String(a.className).trim().split(/\s+/).join('.')}`,
+        paused: document.documentElement.dataset.motion === 'paused',
+        trace: window.__scrollTrace || [],
+      };
+    }, limit);
+    if (motion === 'paused' && !p.paused) problems.push('the site motion pause did not apply (html[data-motion] is not "paused")');
+    if (p.moving) problems.push(`the page is not at rest ${limit / 1000} s after the landing (last moved at ${p.restAt} ms, scrollY ${p.y})`);
+    if (p.verdict.top < p.clear - 1 || p.verdict.bottom > p.vh) problems.push(`the verdict line ends at ${p.verdict.top}..${p.verdict.bottom}px at scrollY ${p.y}, outside ${p.clear}..${p.vh}px (under the bar and inside the viewport)`);
+    if (p.readouts.length !== 2) problems.push(`${p.readouts.length} readouts, wanted 2`);
+    else if (p.readouts.some((r) => r.top < 0 || r.bottom > p.vh)) problems.push(`a readout ends outside the viewport: ${p.readouts.map((r) => `${r.top}..${r.bottom}`).join(', ')}px of ${p.vh}`);
+    if (!p.focused) problems.push(`focus is on ${p.focus}, wanted the verdict line`);
+    if (BREAK.includes('trace')) problems.push('--break trace: a deliberate failure, to show the scroll trace');
+  } catch (e) {
+    problems.push(e.message.split('\n')[0]);
+  }
+  await ctx.close();
+  return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null, trace: p ? p.trace : null };
+}
+
+/** Rejects if a run passes RUN_TIMEOUT_MS without settling: a stall is a fatal error, never a pass. */
+function withRunLimit(run, label) {
+  let timer;
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`a fast run passed --run-timeout (${RUN_TIMEOUT_MS} ms) without finishing: ${label}`)), RUN_TIMEOUT_MS);
+  });
+  return Promise.race([run, limit]).finally(() => clearTimeout(timer));
+}
+
+async function checkFastRuns(browser, failures) {
+  const cases = [];
+  for (const rate of FAST_THROTTLE) for (const [w, h] of FAST_VIEWS) for (const start of FAST_STARTS) for (const motion of FAST_MOTION) for (const delay of FAST_DELAYS) {
+    cases.push({ w, h, start, motion, delay, rate, tag: `fast-run cpu ${rate}x ${w}x${h} from ${start} motion ${motion} ${delay}ms`, ends: [], bounce: 0, passed: 0 });
+  }
+  // Every repetition is its own page in its own context; a few run at once,
+  // which also adds the load under which the race used to show.
+  const jobs = [];
+  for (const c of cases) for (let r = 1; r <= FAST_REPEAT; r++) jobs.push({ c, r });
+  let next = 0;
+  let done = 0;
+  let failedRuns = 0;
+  const worker = async () => {
+    while (next < jobs.length) {
+      const { c, r } = jobs[next++];
+      const { problems, y, bounce, trace } = await withRunLimit(
+        fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate),
+        `${c.tag} (run ${r} of ${FAST_REPEAT})`,
+      );
+      done++;
+      c.ends[r - 1] = y === null ? '?' : y;
+      if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
+      if (problems.length) {
+        failedRuns++;
+        for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
+        // Printed as each run finishes, not only in the summary: a job cancelled by its
+        // time limit must still leave the reasons and the trace in its log.
+        console.log(`    FAIL ${c.tag} (run ${r} of ${FAST_REPEAT}): ${problems.join('; ')}`);
+        if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms f${e.f} ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
+      }
+      else c.passed++;
+      if (done % 100 === 0) console.log(`  fast runs: ${done}/${jobs.length} done, ${failedRuns} with a problem so far`);
+    }
+  };
+  await Promise.all(Array.from({ length: FAST_JOBS }, worker));
+  for (const c of cases) console.log(`  ${c.passed === FAST_REPEAT ? 'ok  ' : 'FAIL'}  ${c.tag}: ${c.passed}/${FAST_REPEAT} (end scrollY ${c.ends.join(', ')}; bounce at most ${c.bounce}px)`);
+  for (const rate of FAST_THROTTLE) {
+    const mine = cases.filter((c) => c.rate === rate);
+    const ran = mine.reduce((n, c) => n + c.passed, 0);
+    const bounced = mine.filter((c) => c.bounce > 48);
+    console.log(`  fast-run cpu ${rate}x: ${mine.filter((c) => c.passed === FAST_REPEAT).length}/${mine.length} cases, ${ran}/${mine.length * FAST_REPEAT} runs; ${bounced.length} case(s) with a bounce over 48px${bounced.length ? ` (${bounced.map((c) => `${c.w}x${c.h} from ${c.start} ${c.motion} ${c.delay}ms ${c.bounce}px`).join('; ')})` : ''}`);
+  }
+  return jobs.length;
+}
+
+let liveBrowser = null;
+
+/** Closes the browser within 10 s. A renderer that outlives its page can leave
+    close() waiting forever, which would hold the job to its time limit after
+    the verdict is known; --break close-hang shows the bound. */
+async function closeBrowser(browser) {
+  const closing = BREAK.includes('close-hang') ? new Promise(() => {}) : browser.close().catch(() => {});
+  const closed = await Promise.race([closing.then(() => true), new Promise((r) => setTimeout(() => r(false), 10000))]);
+  if (!closed) console.error('[contract-page] the browser did not close within 10 s; exiting without it');
+}
+
 async function main() {
   let chromium;
   try {
@@ -594,6 +935,7 @@ async function main() {
   let browser;
   try {
     browser = await chromium.launch({ channel: CHANNEL, headless: true });
+    liveBrowser = browser;
   } catch (e) {
     console.error(`[contract-page] cannot launch ${CHANNEL}: ${e.message}`);
     process.exit(2);
@@ -750,7 +1092,8 @@ async function main() {
     }
     await ctx.close();
   }
-  await browser.close();
+  if (FAST_RUNS) runs += await checkFastRuns(browser, failures);
+  await closeBrowser(browser);
   for (const [W, set] of sizes) if (set.size > 1) failures.push(`readout sweep at ${W}px: numerals at ${[...set].join(', ')}px; D81 sets one size per width for every score`);
   if (failures.length) {
     if (sweeps.readouts) console.error(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
@@ -759,10 +1102,13 @@ async function main() {
     process.exit(1);
   }
   if (sweeps.readouts) console.log(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
-  console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record`);
+  console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record${FAST_RUNS ? `, fast runs (${FAST_DELAYS.join(', ')} ms, from ${FAST_STARTS.join(' and ')}, CPU ${FAST_THROTTLE.map((r) => `${r}x`).join(' and ')}, each ${FAST_REPEAT}x) end with the verdict and both readouts on screen` : ''}`);
+  // A browser left open past its bounded close would keep the process alive.
+  process.exit(0);
 }
 
-main().catch((e) => {
+main().catch(async (e) => {
   console.error(`[contract-page] fatal: ${e.stack || e.message}`);
+  if (liveBrowser) await closeBrowser(liveBrowser);
   process.exit(2);
 });
