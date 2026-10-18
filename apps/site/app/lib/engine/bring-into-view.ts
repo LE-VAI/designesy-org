@@ -31,7 +31,15 @@
  *  - Once this module moves the page, the page is its own until the visitor
  *    next acts (a key, a pointer, a wheel, a touch). The next call in that
  *    span (the landing after the running state's scroll) aims at its block
- *    without asking whether the block looks on screen, finished or not.
+ *    without asking whether the block looks on screen, finished or not. A
+ *    call whose predecessor never reached its first frame has not been
+ *    moved by it, so that call still asks.
+ *  - A call that takes over a scroll this module is still steering (the
+ *    landing inside the running state's scroll) sets the page at once. A
+ *    smooth reversal waits on the device's frames: on a busy one it had not
+ *    begun half a second later, and the page sat at the old scroll's target
+ *    (check-contract-page's "slow" fast runs on CI: 14 of 17 failures). A
+ *    call that finds the page where the visitor left it still glides.
  *  - Nothing is read inside the commit that calls this (a scroll read there
  *    can be a passing value while the fold lays out): the first animation
  *    frame after the call decides, and aims.
@@ -53,6 +61,8 @@ type Aim = {
   el: HTMLElement;
   /** Whether this call may leave the page still (it did not find the page moving or placed here). */
   mayStay: boolean;
+  /** Set the page at once: this call took over a scroll this module started and was still steering. */
+  snap: boolean;
   /** The scroll aimed at; null until the first frame reads the layout. */
   to: number | null;
   lastY: number;
@@ -160,7 +170,7 @@ function issue(a: Aim, to: number): void {
   // already there, an instant one to the same place still stops another
   // scroll under way (Chrome aborts it), without moving the page.
   const near = Math.abs(to - window.scrollY) <= 1;
-  window.scrollTo({ top: to, behavior: near || calm() ? 'instant' : 'smooth' });
+  window.scrollTo({ top: to, behavior: near || a.snap || calm() ? 'instant' : 'smooth' });
 }
 
 let looping = false;
@@ -214,9 +224,12 @@ export function bringIntoView(el: HTMLElement | null): void {
   if (!el) return;
   // With the page moved here and not touched since (a scroll from here under
   // way, or finished with no input after it), where the block reads now says
-  // nothing about where the move ends: aim at it. Otherwise the first frame
-  // decides whether it needs to move at all.
-  aim = { el, mayStay: !aim && !placed, to: null, lastY: window.scrollY, still: 0, held: false, moved: false, sinceIssue: 0, frames: 0 };
+  // nothing about where the move ends: aim at it, and with that scroll still
+  // being steered, take it over at once. An aim that has not issued yet has
+  // moved nothing. Otherwise the first frame decides whether it needs to move
+  // at all.
+  const steering = aim !== null && aim.to !== null;
+  aim = { el, mayStay: !steering && !placed, snap: steering, to: null, lastY: window.scrollY, still: 0, held: false, moved: false, sinceIssue: 0, frames: 0 };
   if (!looping) {
     looping = true;
     requestAnimationFrame(step);
