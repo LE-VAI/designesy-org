@@ -715,7 +715,7 @@ jobs:
   #   part 2  focus visibility 187, a11y sweep 101 (the full set), and
   #           a11y modes 59 (added later; its first run, 38099424155)
   #   part 3  dock clearance 443 (304-443 across that day's green runs)
-  #   part 4  the fast runs of /score/contract (about 20 minutes: 1,200 runs), run
+  #   part 4  the fast runs of /score/contract (1,200 runs, 30 to 60 minutes on the runner), run
   #           on their own so part 2 keeps its time limit for the states
   # Dock clearance is the longest single gate, so it runs alone and sets the
   # wall time. Every part must pass. A new runtime gate goes in the part with
@@ -884,10 +884,11 @@ jobs:
     runs-on: ubuntu-latest
     # The fast runs drive /score/contract from the top and from 376px down
     # with the answer landing against the smooth scroll: 240 cases, each run
-    # --fast-repeat times (5), unthrottled and under 4x CPU. Measured locally:
-    # about 4 minutes per repetition, so about 20 minutes for the whole set.
+    # --fast-repeat times (5), unthrottled and under 4x CPU: 1,200 runs. On the
+    # runner the 1x half took about 12 minutes and the 4x half had not finished
+    # at 30 minutes, when the job was cancelled, so the limit is 60 minutes.
     # They run in their own job so part 2's 25-minute limit covers the states.
-    timeout-minutes: 30
+    timeout-minutes: 60
     needs: build-site
     if: always() && needs.build-site.result == 'success'
     defaults:

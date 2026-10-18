@@ -867,6 +867,8 @@ async function checkFastRuns(browser, failures) {
   const jobs = [];
   for (const c of cases) for (let r = 1; r <= FAST_REPEAT; r++) jobs.push({ c, r });
   let next = 0;
+  let done = 0;
+  let failedRuns = 0;
   const worker = async () => {
     while (next < jobs.length) {
       const { c, r } = jobs[next++];
@@ -874,13 +876,19 @@ async function checkFastRuns(browser, failures) {
         fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate),
         `${c.tag} (run ${r} of ${FAST_REPEAT})`,
       );
+      done++;
       c.ends[r - 1] = y === null ? '?' : y;
       if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
       if (problems.length) {
+        failedRuns++;
         for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
+        // Printed as each run finishes, not only in the summary: a job cancelled by its
+        // time limit must still leave the reasons and the trace in its log.
+        console.log(`    FAIL ${c.tag} (run ${r} of ${FAST_REPEAT}): ${problems.join('; ')}`);
         if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
       }
       else c.passed++;
+      if (done % 100 === 0) console.log(`  fast runs: ${done}/${jobs.length} done, ${failedRuns} with a problem so far`);
     }
   };
   await Promise.all(Array.from({ length: FAST_JOBS }, worker));
