@@ -914,6 +914,15 @@ async function checkFastRuns(browser, failures) {
 
 let liveBrowser = null;
 
+/** Closes the browser within 10 s. A renderer that outlives its page can leave
+    close() waiting forever, which would hold the job to its time limit after
+    the verdict is known; --break close-hang shows the bound. */
+async function closeBrowser(browser) {
+  const closing = BREAK.includes('close-hang') ? new Promise(() => {}) : browser.close().catch(() => {});
+  const closed = await Promise.race([closing.then(() => true), new Promise((r) => setTimeout(() => r(false), 10000))]);
+  if (!closed) console.error('[contract-page] the browser did not close within 10 s; exiting without it');
+}
+
 async function main() {
   let chromium;
   try {
@@ -1084,7 +1093,7 @@ async function main() {
     await ctx.close();
   }
   if (FAST_RUNS) runs += await checkFastRuns(browser, failures);
-  await browser.close();
+  await closeBrowser(browser);
   for (const [W, set] of sizes) if (set.size > 1) failures.push(`readout sweep at ${W}px: numerals at ${[...set].join(', ')}px; D81 sets one size per width for every score`);
   if (failures.length) {
     if (sweeps.readouts) console.error(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
@@ -1094,11 +1103,12 @@ async function main() {
   }
   if (sweeps.readouts) console.log(`[contract-page] readout sweep: ${sweeps.readouts} readouts from 320 to 1600px, ${sweeps.bad} past their column or off the D79 rules; placement ${JSON.stringify(sweeps.modes)}`);
   console.log(`[contract-page] OK: ${runs} state renders; axe 0, one live region from first paint, focus per state, no text under 12.8px, no sideways overflow, verdicts from the counts, readouts, lists and receipts from the record${FAST_RUNS ? `, fast runs (${FAST_DELAYS.join(', ')} ms, from ${FAST_STARTS.join(' and ')}, CPU ${FAST_THROTTLE.map((r) => `${r}x`).join(' and ')}, each ${FAST_REPEAT}x) end with the verdict and both readouts on screen` : ''}`);
+  // A browser left open past its bounded close would keep the process alive.
+  process.exit(0);
 }
 
 main().catch(async (e) => {
   console.error(`[contract-page] fatal: ${e.stack || e.message}`);
-  // A crashed renderer can leave close() waiting, so the wait is bounded.
-  if (liveBrowser) await Promise.race([liveBrowser.close().catch(() => {}), new Promise((r) => setTimeout(r, 10000))]);
+  if (liveBrowser) await closeBrowser(liveBrowser);
   process.exit(2);
 });
