@@ -10,11 +10,11 @@ import type { CategoryBreakdown } from './seed';
 
 /** The day the batch below was run: the date every per-category figure on the
     data pages carries, beside the composite's weekly re-score date. */
-export const BATCH_RUN_DATE = '2026-10-12';
+export const BATCH_RUN_DATE = '2026-10-19';
 
 export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakdown>> = {
   "https://linear.app": {
-    "cadence": { score: 88.9, weight: 18, pass: 7, fail: 0, warn: 2, skip: 3 },
+    "cadence": { score: 85, weight: 18, pass: 7, fail: 0, warn: 3, skip: 3 },
     "accessibility": { score: 40, weight: 15, pass: 0, fail: 1, warn: 4, skip: 2 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -27,7 +27,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://vercel.com": {
-    "cadence": { score: 83.3, weight: 18, pass: 7, fail: 1, warn: 1, skip: 3 },
+    "cadence": { score: 80, weight: 18, pass: 7, fail: 1, warn: 2, skip: 3 },
     "accessibility": { score: 62.5, weight: 15, pass: 2, fail: 1, warn: 1, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
@@ -40,7 +40,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://stripe.com": {
-    "cadence": { score: 87.5, weight: 18, pass: 6, fail: 0, warn: 2, skip: 4 },
+    "cadence": { score: 87.5, weight: 18, pass: 6, fail: 0, warn: 2, skip: 5 },
     "accessibility": { score: 50, weight: 15, pass: 1, fail: 1, warn: 3, skip: 2 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -53,7 +53,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://apple.com": {
-    "cadence": { score: 70, weight: 18, pass: 3, fail: 1, warn: 1, skip: 7 },
+    "cadence": { score: 70, weight: 18, pass: 3, fail: 1, warn: 1, skip: 8 },
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 33.3, weight: 10, pass: 0, fail: 1, warn: 2, skip: 2 },
@@ -79,7 +79,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://mozaika.design": {
-    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 9 },
+    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 10 },
     "accessibility": { score: 50, weight: 15, pass: 0, fail: 0, warn: 3, skip: 4 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -92,8 +92,8 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://www.designesy.org": {
-    "cadence": { score: 95.8, weight: 18, pass: 11, fail: 0, warn: 1, skip: 0 },
-    "accessibility": { score: 92.9, weight: 15, pass: 6, fail: 0, warn: 1, skip: 0 },
+    "cadence": { score: 88.5, weight: 18, pass: 10, fail: 0, warn: 3, skip: 0 },
+    "accessibility": { score: 100, weight: 15, pass: 7, fail: 0, warn: 0, skip: 0 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 5, fail: 0, warn: 0, skip: 0 },
     "tokens": { score: 100, weight: 9, pass: 2, fail: 0, warn: 0, skip: 0 },
@@ -105,7 +105,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://designesy.ai.studio": {
-    "cadence": { score: 75, weight: 18, pass: 2, fail: 0, warn: 2, skip: 8 },
+    "cadence": { score: 70, weight: 18, pass: 2, fail: 0, warn: 3, skip: 8 },
     "accessibility": { score: 75, weight: 15, pass: 3, fail: 0, warn: 3, skip: 1 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 87.5, weight: 10, pass: 3, fail: 0, warn: 1, skip: 1 },
@@ -131,7 +131,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://stitch.withgoogle.com": {
-    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 9 },
+    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 10 },
     "accessibility": { score: 66.7, weight: 15, pass: 1, fail: 0, warn: 2, skip: 4 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -144,7 +144,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://zeroheight.com": {
-    "cadence": { score: 81.3, weight: 18, pass: 6, fail: 1, warn: 1, skip: 4 },
+    "cadence": { score: 77.8, weight: 18, pass: 6, fail: 1, warn: 2, skip: 4 },
     "accessibility": { score: 50, weight: 15, pass: 1, fail: 1, warn: 3, skip: 2 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 3, fail: 0, warn: 0, skip: 2 },
@@ -157,7 +157,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://roastbyai.com": {
-    "cadence": { score: 100, weight: 18, pass: 5, fail: 0, warn: 0, skip: 7 },
+    "cadence": { score: 100, weight: 18, pass: 5, fail: 0, warn: 0, skip: 8 },
     "accessibility": { score: 62.5, weight: 15, pass: 1, fail: 0, warn: 3, skip: 3 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 66.7, weight: 10, pass: 2, fail: 1, warn: 0, skip: 2 },
@@ -170,11 +170,11 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://atlassian.design": {
-    "cadence": { score: 87.5, weight: 18, pass: 3, fail: 0, warn: 1, skip: 8 },
+    "cadence": { score: 87.5, weight: 18, pass: 3, fail: 0, warn: 1, skip: 9 },
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 3 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
-    "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
+    "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
     "takt": { score: 100, weight: 8, pass: 2, fail: 0, warn: 0, skip: 0 },
     "poise": { score: 100, weight: 7, pass: 1, fail: 0, warn: 0, skip: 1 },
     "identity": { score: 75, weight: 6, pass: 1, fail: 0, warn: 1, skip: 0 },
@@ -183,7 +183,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://primer.style": {
-    "cadence": { score: 90, weight: 18, pass: 8, fail: 0, warn: 2, skip: 2 },
+    "cadence": { score: 86.4, weight: 18, pass: 8, fail: 0, warn: 3, skip: 2 },
     "accessibility": { score: 87.5, weight: 15, pass: 3, fail: 0, warn: 1, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 1, skip: 1 },
     "motion": { score: 66.7, weight: 10, pass: 2, fail: 1, warn: 0, skip: 2 },
@@ -196,8 +196,8 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://carbondesignsystem.com": {
-    "cadence": { score: 80, weight: 18, pass: 4, fail: 1, warn: 0, skip: 7 },
-    "accessibility": { score: 78.6, weight: 15, pass: 4, fail: 0, warn: 3, skip: 0 },
+    "cadence": { score: 75, weight: 18, pass: 4, fail: 1, warn: 1, skip: 7 },
+    "accessibility": { score: 71.4, weight: 15, pass: 4, fail: 1, warn: 2, skip: 0 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
     "tokens": { score: 100, weight: 9, pass: 2, fail: 0, warn: 0, skip: 0 },
@@ -209,7 +209,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://spectrum.adobe.com": {
-    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 9 },
+    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 10 },
     "accessibility": { score: 50, weight: 15, pass: 0, fail: 0, warn: 3, skip: 4 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -222,7 +222,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://m3.material.io": {
-    "cadence": { score: 33.3, weight: 18, pass: 0, fail: 1, warn: 2, skip: 9 },
+    "cadence": { score: 33.3, weight: 18, pass: 0, fail: 1, warn: 2, skip: 10 },
     "accessibility": { score: 50, weight: 15, pass: 0, fail: 0, warn: 4, skip: 3 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -235,7 +235,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://radix-ui.com": {
-    "cadence": { score: 66.7, weight: 18, pass: 3, fail: 1, warn: 2, skip: 6 },
+    "cadence": { score: 66.7, weight: 18, pass: 3, fail: 1, warn: 2, skip: 7 },
     "accessibility": { score: 40, weight: 15, pass: 0, fail: 1, warn: 4, skip: 2 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
@@ -248,7 +248,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://geist.dev": {
-    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 9 },
+    "cadence": { score: 66.7, weight: 18, pass: 1, fail: 0, warn: 2, skip: 10 },
     "accessibility": { score: 66.7, weight: 15, pass: 1, fail: 0, warn: 2, skip: 4 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -261,7 +261,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://plex.ibm.com": {
-    "cadence": { score: 33.3, weight: 18, pass: 0, fail: 1, warn: 2, skip: 9 },
+    "cadence": { score: 33.3, weight: 18, pass: 0, fail: 1, warn: 2, skip: 10 },
     "accessibility": { score: 50, weight: 15, pass: 0, fail: 0, warn: 4, skip: 3 },
     "semantic": { score: null, weight: 12, pass: 0, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -274,7 +274,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://awwwards.com": {
-    "cadence": { score: 87.5, weight: 18, pass: 3, fail: 0, warn: 1, skip: 8 },
+    "cadence": { score: 80, weight: 18, pass: 3, fail: 0, warn: 2, skip: 8 },
     "accessibility": { score: 64.3, weight: 15, pass: 3, fail: 1, warn: 3, skip: 0 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 33.3, weight: 10, pass: 0, fail: 1, warn: 2, skip: 2 },
@@ -287,7 +287,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://fwa.org": {
-    "cadence": { score: 60, weight: 18, pass: 2, fail: 1, warn: 2, skip: 7 },
+    "cadence": { score: 60, weight: 18, pass: 2, fail: 1, warn: 2, skip: 8 },
     "accessibility": { score: 37.5, weight: 15, pass: 0, fail: 1, warn: 3, skip: 3 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 83.3, weight: 10, pass: 2, fail: 0, warn: 1, skip: 2 },
@@ -313,7 +313,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://pentagram.com": {
-    "cadence": { score: 60, weight: 18, pass: 2, fail: 1, warn: 2, skip: 7 },
+    "cadence": { score: 60, weight: 18, pass: 2, fail: 1, warn: 2, skip: 8 },
     "accessibility": { score: 62.5, weight: 15, pass: 1, fail: 0, warn: 3, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
@@ -326,7 +326,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://vam.ac.uk": {
-    "cadence": { score: 62.5, weight: 18, pass: 2, fail: 1, warn: 1, skip: 8 },
+    "cadence": { score: 62.5, weight: 18, pass: 2, fail: 1, warn: 1, skip: 9 },
     "accessibility": { score: 50, weight: 15, pass: 1, fail: 1, warn: 2, skip: 3 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
@@ -339,7 +339,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://github.com": {
-    "cadence": { score: 81.8, weight: 18, pass: 8, fail: 1, warn: 2, skip: 1 },
+    "cadence": { score: 79.2, weight: 18, pass: 8, fail: 1, warn: 3, skip: 1 },
     "accessibility": { score: 50, weight: 15, pass: 2, fail: 2, warn: 1, skip: 2 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 1, skip: 1 },
     "motion": { score: 66.7, weight: 10, pass: 2, fail: 1, warn: 0, skip: 2 },
@@ -352,8 +352,8 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://notion.so": {
-    "cadence": { score: 71.4, weight: 18, pass: 4, fail: 1, warn: 2, skip: 5 },
-    "accessibility": { score: 50, weight: 15, pass: 1, fail: 1, warn: 3, skip: 2 },
+    "cadence": { score: 75, weight: 18, pass: 5, fail: 1, warn: 2, skip: 5 },
+    "accessibility": { score: 70, weight: 15, pass: 2, fail: 0, warn: 3, skip: 2 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
     "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
@@ -365,7 +365,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://figma.com": {
-    "cadence": { score: 87.5, weight: 18, pass: 3, fail: 0, warn: 1, skip: 8 },
+    "cadence": { score: 87.5, weight: 18, pass: 3, fail: 0, warn: 1, skip: 9 },
     "accessibility": { score: 66.7, weight: 15, pass: 1, fail: 0, warn: 2, skip: 4 },
     "semantic": { score: 75, weight: 12, pass: 1, fail: 0, warn: 1, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
@@ -378,11 +378,11 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://x.com": {
-    "cadence": { score: 81.3, weight: 18, pass: 5, fail: 0, warn: 3, skip: 4 },
+    "cadence": { score: 78.6, weight: 18, pass: 4, fail: 0, warn: 3, skip: 6 },
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 3, fail: 0, warn: 0, skip: 2 },
-    "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
+    "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
     "takt": { score: null, weight: 8, pass: 0, fail: 0, warn: 0, skip: 0 },
     "poise": { score: 100, weight: 7, pass: 2, fail: 0, warn: 0, skip: 0 },
     "identity": { score: 75, weight: 6, pass: 1, fail: 0, warn: 1, skip: 0 },
@@ -391,7 +391,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "responsive": { score: null, weight: 3, pass: 0, fail: 0, warn: 0, skip: 0 },
   },
   "https://wikipedia.org": {
-    "cadence": { score: 83.3, weight: 18, pass: 2, fail: 0, warn: 1, skip: 9 },
+    "cadence": { score: 75, weight: 18, pass: 2, fail: 0, warn: 2, skip: 9 },
     "accessibility": { score: 80, weight: 15, pass: 3, fail: 0, warn: 2, skip: 2 },
     "semantic": { score: 100, weight: 12, pass: 2, fail: 0, warn: 0, skip: 0 },
     "motion": { score: 50, weight: 10, pass: 1, fail: 1, warn: 1, skip: 2 },
