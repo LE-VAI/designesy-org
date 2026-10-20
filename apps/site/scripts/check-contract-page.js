@@ -89,7 +89,9 @@
  *      so a page that has drawn none since has not been seen to land), the
  *      verdict line sits under the sticky bar and inside the viewport, both
  *      readouts are inside the viewport, and focus is on the verdict line.
- *      A page that draws fewer than two frames by then fails ("no frame
+ *      A page at rest by then whose frames are slow to come is watched up to
+ *      3 s longer for them (the deadline itself does not move: moving in that
+ *      time fails); one that still draws fewer than two fails ("no frame
  *      drawn"): the gate does not judge a layout it never saw drawn. How far
  *      the verdict line travels back out on screen after coming closer to
  *      where it ends is measured every frame and reported per case
@@ -386,6 +388,12 @@ const FAST_STALL = Math.max(0, Number(opt('--fast-stall', BREAK.includes('landin
 // Two, not one: the gate's own frame callback can run before the landing's
 // in the same frame; by the second frame the first frame's landing has run.
 const REST_FRAMES = 2;
+// How long past the rest bound (1.5 s x rate + 500 ms) the gate waits for
+// those frames on a page that came to rest in time. CI runners draw slowly:
+// on 2026-10-19 the slowest 1x run was judged 1,995 ms after the gate saw
+// the verdict line, 5 ms inside the bound, and the sparsest runs had drawn
+// only the two frames required. The deadline to come to rest does not move.
+const REST_FRAME_WAIT_MS = 3000;
 
 /** 8. The result as drawn, against the recorded answer. */
 async function checkResult(page, st, reply, fail) {
@@ -894,12 +902,15 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
     // REST_FRAMES animation frames drawn since it last changed. The timer tick
     // keeps the clock running when no frame comes; without the frame count,
     // ten ticks on a page that drew nothing read as rest, and on CI the gate
-    // judged a layout the landing's next frame would have set right. Watching
-    // for rest instead of one fixed pause also catches a late bounce. How far
-    // the verdict line travels back out on screen after coming closer to
-    // where it ends is measured and reported per case (a visible bounce), not
-    // judged.
-    p = await page.evaluate(async ({ limit, restFrames }) => {
+    // judged a layout the landing's next frame would have set right. A page
+    // already still by the deadline whose frames are slow to come is watched
+    // up to REST_FRAME_WAIT_MS longer for them: the deadline does not move,
+    // so a page that moves in that time has come to rest too late and fails.
+    // Watching for rest instead of one fixed pause also catches a late
+    // bounce. How far the verdict line travels back out on screen after
+    // coming closer to where it ends is measured and reported per case (a
+    // visible bounce), not judged.
+    p = await page.evaluate(async ({ limit, restFrames, frameWait }) => {
       const t0 = performance.now();
       let y0 = window.scrollY;
       let still = t0;
@@ -910,10 +921,12 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
         requestAnimationFrame(count);
       };
       requestAnimationFrame(count);
-      while (performance.now() - t0 < limit + 500) {
+      while (performance.now() - t0 < limit + 500 + frameWait) {
         await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
         if (Math.abs(window.scrollY - y0) > 1) { y0 = window.scrollY; still = performance.now(); framesAtStill = frames; }
         else if (performance.now() - still >= 500 && frames - framesAtStill >= restFrames) break;
+        // Past the rest bound only a page that came to rest in time waits on, for its frames.
+        if (performance.now() - t0 >= limit + 500 && (performance.now() - still < 500 || still - t0 > limit)) break;
       }
       const judgedAt = Math.round(performance.now() - t0);
       const drawn = frames - framesAtStill;
@@ -947,7 +960,7 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
         paused: document.documentElement.dataset.motion === 'paused',
         trace: window.__scrollTrace || [],
       };
-    }, { limit, restFrames: REST_FRAMES });
+    }, { limit, restFrames: REST_FRAMES, frameWait: REST_FRAME_WAIT_MS });
     if (motion === 'paused' && !p.paused) problems.push('the site motion pause did not apply (html[data-motion] is not "paused")');
     if (p.moving) problems.push(`the page is not at rest ${limit / 1000} s after the landing (last moved at ${p.restAt} ms, scrollY ${p.y})`);
     if (p.drawn < REST_FRAMES) problems.push(`no frame drawn: ${p.drawn} animation frame(s) since scrollY last changed (at ${p.restAt} ms, scrollY ${p.y}) by ${p.judgedAt} ms, wanted ${REST_FRAMES}; the landing has not been seen`);
@@ -996,7 +1009,9 @@ async function checkFastRuns(browser, failures) {
       if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
       if (rest) {
         c.judgedAt = Math.max(c.judgedAt || 0, rest.judgedAt);
+        c.restAt = Math.max(c.restAt || 0, rest.at);
         c.drawn = Math.min(c.drawn === undefined ? Infinity : c.drawn, rest.drawn);
+        if (rest.judgedAt > 1500 * c.rate + 500) c.waited = (c.waited || 0) + 1;
       }
       if (problems.length) {
         failedRuns++;
@@ -1020,7 +1035,7 @@ async function checkFastRuns(browser, failures) {
     // How close the rest check came to its bound, and to too few frames:
     // reported, not judged, so a slower runner shows up before it fails.
     const judged = mine.filter((c) => c.judgedAt !== undefined);
-    if (judged.length) console.log(`  fast-run cpu ${rate}x rest: judged at most ${Math.max(...judged.map((c) => c.judgedAt))} ms after the gate saw the verdict line (bound ${1500 * rate + 500} ms); fewest frames drawn at rest ${Math.min(...judged.map((c) => c.drawn))}`);
+    if (judged.length) console.log(`  fast-run cpu ${rate}x rest: still from at most ${Math.max(...judged.map((c) => c.restAt))} ms after the gate saw the verdict line (deadline ${1500 * rate} ms), judged at most ${Math.max(...judged.map((c) => c.judgedAt))} ms (bound ${1500 * rate + 500} ms, ${judged.reduce((n, c) => n + (c.waited || 0), 0)} run(s) waited past it for frames); fewest frames drawn at rest ${Math.min(...judged.map((c) => c.drawn))}`);
   }
   return jobs.length;
 }
