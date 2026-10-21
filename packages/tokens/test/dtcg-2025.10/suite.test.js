@@ -16,12 +16,38 @@
  * by running every fixture through this build:
  *   positiveRejected  positive fixtures it rejects
  *   negativeAccepted  negative fixtures it accepts
- * This file fails when
- *   - a fixture that is not listed gets the wrong verdict (a regression),
- *   - a listed fixture now gets the right verdict (delete its id, so the
- *     lists only shrink), or
- *   - a listed id is not a manifest id of that kind (a typo would excuse
- *     nothing and go unnoticed).
+ * Each list must equal the measured set exactly, in manifest order. This file
+ * fails when
+ *   - a fixture that is not listed gets the wrong verdict,
+ *   - a listed fixture now gets the right verdict (delete its id),
+ *   - a listed id is not a manifest id of that kind, or is listed twice (a
+ *     typo would excuse nothing and go unnoticed), or
+ *   - a list is not in manifest order.
+ * This does not stop the lists from growing: a change that breaks a fixture
+ * passes if it also adds that id to known-gaps.json. It does make every new gap
+ * an explicit edit to known-gaps.json that shows up in review, and it keeps the
+ * file equal to what the validator does. Manifest order makes the file a
+ * function of the measurement alone, so a re-measured file differs from the old
+ * one only where a verdict changed.
+ *
+ * VERDICTS, NOT REASONS
+ * Only the verdict is compared, not the checks that produced it, and some
+ * negative fixtures are rejected for a reason unrelated to what they test. t06
+ * reports every token-level $ref as dangling: resolveRef() splits a reference
+ * on '.', so it looks up a JSON Pointer such as "#/colors/blue/$value" as one
+ * key. As measured when this file was written, 15 negative fixtures fail t06
+ * and nothing else (14 references/json-pointer-*.json and
+ * references/ref-and-value-both-present.json), and 6 more json-pointer-*
+ * fixtures fail t06 and t14 (t14 checks the token's own $value, which a $ref
+ * token does not have). The positive reference-json-pointer-basic and
+ * reference-json-pointer-subproperty fail the same way, which is why they are
+ * in positiveRejected.
+ * Failing check ids are not recorded per fixture. An id cannot tell a pointer
+ * t06 cannot read from one that points nowhere (reference-json-pointer-basic
+ * and reference-json-pointer-nonexistent both fail t06 alone), and matching the
+ * detail text would break on any rewording. If pointer resolution changes, the
+ * fixtures whose verdict changes fail here; the ones still rejected are not
+ * re-examined.
  *
  * UPDATING THE SUITE
  * Replace format/ with the same directory from a newer upstream commit, update
@@ -87,6 +113,15 @@ for (const side of SIDES) {
       assert.deepEqual(unknown, [], `${side.gapsKey} names ids that are not ${side.type} ids in format/manifest.json: ${unknown.join(', ')}`);
     });
 
+    it(`known-gaps.json ${side.gapsKey} is in manifest order`, () => {
+      const inOrder = sideRuns.map((r) => r.test.id).filter((id) => gapSet.has(id));
+      assert.deepEqual(
+        [...gapSet].filter((id) => byId.has(id)),
+        inOrder,
+        `list ${side.gapsKey} in format/manifest.json order:\n${JSON.stringify(inOrder, null, 2)}`,
+      );
+    });
+
     it(`every fixture not in ${side.gapsKey} is ${side.verdict}`, () => {
       const regressions = sideRuns.filter((r) => r.result.valid !== side.valid && !gapSet.has(r.test.id));
       assert.deepEqual(
@@ -96,7 +131,7 @@ for (const side of SIDES) {
       );
     });
 
-    it(`all ${gaps.length} ids in ${side.gapsKey} are still ${side.wrong} (the list only shrinks)`, () => {
+    it(`all ${gaps.length} ids in ${side.gapsKey} are still ${side.wrong}`, () => {
       const fixed = gaps.filter((id) => byId.has(id) && byId.get(id).result.valid === side.valid);
       assert.deepEqual(
         fixed,
