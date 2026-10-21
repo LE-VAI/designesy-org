@@ -3647,8 +3647,9 @@ TOOLS = [
             "Candidate Recommendation and considered stable). Returns 10 "
             "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct: $type (direct or inherited) and $value "
-            "present, structured colors (colorSpace + components rather "
+            "structurally correct: $type (direct or inherited) present, one "
+            "$value or $ref per token (a JSON Pointer $ref must resolve), "
+            "structured colors (colorSpace + components rather "
             "than bare hex), dimensions in the 2025.10 { value, unit } "
             "form, and a $schema pointer to designtokens.org (a Designesy "
             "policy: DTCG does not require $schema). With 84% of teams now using design "
@@ -4197,7 +4198,9 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 # of the token it references, else the closest group $type above it, a
 # group's $extends included (only a $type on the token counted, so a file that
 # typed its groups FAILed t03 and t06); a {$type, $ref} token is a token and a
-# JSON Pointer $ref is no deprecated pattern (a $ref that is not one is); the
+# JSON Pointer $ref is no deprecated pattern (a $ref that is not one is), while
+# t04 FAILs a token with both $value and $ref, or a JSON Pointer that names no
+# location in the file or loops (7.5.1, 7.2.3); the
 # whole file is walked (a top-level group named tokens or $tokens was scored
 # alone); a missing $schema WARNs as Designesy policy (it FAILed, and the
 # detail said DTCG requires it); and t08 expects {value, unit} in px or rem,
@@ -4217,7 +4220,7 @@ TOKENS_CHECK_NAMES = {
     "t01": "$schema declaration",
     "t02": "Token groups present",
     "t03": "$type on all tokens",
-    "t04": "$value on all tokens",
+    "t04": "One $value or $ref on every token",
     "t05": "Structured color format",
     "t06": "Standard type names",
     "t07": "Custom type extension",
@@ -4313,10 +4316,10 @@ def _node_at(root: dict[str, Any], path: list[str]) -> Any:
 
 class _TokenFile:
     """The file being scored, and what is worked out once for it: the type each
-    group takes through its $extends, the type of each token, and what each
-    alias resolves to (TokenFile in tokens-score.ts). Every chain of aliases,
-    pointers or $extends is followed in a loop and each answer kept, so a chain
-    of n references costs n steps in all. Following it again from every token
+    group takes through its $extends, the type of each token, what each alias
+    resolves to and where each $ref leads (TokenFile in tokens-score.ts). Every
+    chain of aliases, pointers or $extends is followed in a loop and each
+    answer kept, so a chain of n references costs n steps in all. Following it again from every token
     on it cost n * n, and the recursion ran out of stack on a chain of 1,200.
     Keys are id() of nodes the file holds, which live as long as it does."""
 
@@ -4325,6 +4328,12 @@ class _TokenFile:
         self.group_types: dict[int, str | None] = {}
         self.token_types: dict[int, Any] = {}
         self.aliases: dict[str, tuple[Any, str | None] | None] = {}
+        # Where each $ref leads: ("at", node), "unresolved" or "loop" (RefEnd).
+        self.refs: dict[int, Any] = {}
+
+
+# An array index in a JSON Pointer (RFC 6901): 0, or digits with no leading 0.
+_ARRAY_INDEX = re.compile(r"0|[1-9][0-9]*")
 
 
 def _extended_type(group: dict[str, Any], file: _TokenFile) -> str | None:
@@ -4457,6 +4466,65 @@ def _resolve_alias(alias: str, file: _TokenFile) -> tuple[Any, str | None] | Non
     return resolved
 
 
+def _ref_end(token: dict[str, Any], file: _TokenFile) -> Any:
+    """Where a token's JSON Pointer $ref leads (7.4): ("at", node), object
+    members by name, array items by index. Where the pointer reads the $value
+    of a token that holds a $ref instead, it follows that $ref, as tools follow
+    each reference (7.2.2). "unresolved" when a segment names nothing, so the
+    token has no value (tools MUST validate reference targets, 7.5.1); "loop"
+    when the pointer comes back to a token on its own chain (7.2.3). Each
+    token's end is kept, so a chain of n $ref tokens costs n steps in all."""
+    if id(token) in file.refs:
+        return file.refs[id(token)]
+    frames: list[list[Any]] = []  # [token, path, i]
+    on_stack: set[int] = set()
+
+    def push(t: dict[str, Any], path: list[str]) -> None:
+        frames.append([t, path, 0])
+        on_stack.add(id(t))
+
+    def settle(end: Any) -> Any:
+        for f in frames:
+            file.refs[id(f[0])] = end
+        return end
+
+    push(token, _ref_path(token["$ref"]) or [])
+    node: Any = file.root
+    while True:
+        f = frames[-1]
+        if f[2] == len(f[1]):
+            # The pointer names a token on its own chain, such as itself (#/a from a).
+            if isinstance(node, dict) and id(node) in on_stack:
+                return settle("loop")
+            frames.pop()
+            on_stack.discard(id(f[0]))
+            file.refs[id(f[0])] = ("at", node)
+            if not frames:
+                return ("at", node)
+            frames[-1][2] += 1  # past the $value now read
+            continue
+        part = f[1][f[2]]
+        if part == "$value" and isinstance(node, dict) and "$value" not in node and _is_pointer(node.get("$ref")):
+            # A $ref token's value is where its own $ref leads.
+            if id(node) in on_stack:
+                return settle("loop")
+            end = file.refs.get(id(node))
+            if end is None:
+                push(node, _ref_path(node["$ref"]) or [])
+                node = file.root
+                continue
+            if isinstance(end, str):
+                return settle(end)
+            node = end[1]
+        elif isinstance(node, list) and _ARRAY_INDEX.fullmatch(part) and int(part) < len(node):
+            node = node[int(part)]
+        elif isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            return settle("unresolved")
+        f[2] += 1
+
+
 def _js_typeof(v: Any) -> str:
     """JavaScript's typeof for a JSON value (null and arrays are 'object')."""
     if isinstance(v, bool):
@@ -4535,6 +4603,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     dimension_values: list[tuple[str, str, str]] = []  # (path, value, form)
     deprecated: list[str] = []
     file = _TokenFile(tokens)
+    value_issues: list[str] = []
 
     def walk(obj: dict[str, Any], path: str, inherited: str | None) -> None:
         for key in _js_keys(obj):
@@ -4555,7 +4624,18 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                 counts["type"] += 1
                 if isinstance(t, str) and t not in all_types:
                     all_types.append(t)
-            counts["value"] += 1
+            # t04: one value, a $value or a $ref (not both: the 2025.10 token schema
+            # allows one), and a JSON Pointer $ref must lead somewhere. A $ref that
+            # is not a JSON Pointer is t10's.
+            end = _ref_end(val, file) if "$ref" in val and "$value" not in val and _is_pointer(val["$ref"]) else None
+            if "$ref" in val and "$value" in val:
+                value_issues.append(f"Token '{current}' has both $value and $ref (a token takes one)")
+            elif end == "unresolved":
+                value_issues.append(f"Token '{current}' has a $ref that names no location in the file: '{val['$ref']}'")
+            elif end == "loop":
+                value_issues.append(f"Token '{current}' has a $ref that loops: '{val['$ref']}'")
+            else:
+                counts["value"] += 1
             if t == "color":
                 if isinstance(v, dict) and "colorSpace" in v:
                     counts["structured"] += 1
@@ -4600,9 +4680,10 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
         add("t03", "PASS" if typed == total else ("WARN" if typed > 0 else "FAIL"),
             f"{typed}/{total} tokens have $type (direct or inherited)")
 
-    # t04: $value (or a $ref) on all tokens
+    # t04: one value on every token, a $value or a $ref that leads somewhere
+    issues = f": {'; '.join(value_issues[:3])}{'...' if len(value_issues) > 3 else ''}" if value_issues else ""
     add("t04", "PASS" if total > 0 and counts["value"] == total else "FAIL",
-        f"{counts['value']}/{total} tokens have $value or $ref")
+        f"{counts['value']}/{total} tokens have one $value or $ref{issues}")
 
     # t05: structured color format (colorSpace + components)
     structured, bare_hex = counts["structured"], counts["bare_hex"]

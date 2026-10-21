@@ -33,9 +33,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "8/8 tokens have $value or $ref"
+        "detail": "8/8 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -111,9 +111,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "9/9 tokens have $value or $ref"
+        "detail": "9/9 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -161,10 +161,10 @@
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 1,
-    "score": 81,
-    "grade": "B",
-    "pass_count": 6,
-    "fail_count": 1,
+    "score": 69,
+    "grade": "D",
+    "pass_count": 5,
+    "fail_count": 2,
     "warn_count": 1,
     "skip_count": 2,
     "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
@@ -189,9 +189,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
-        "status": "PASS",
-        "detail": "1/1 tokens have $value or $ref"
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
+        "status": "FAIL",
+        "detail": "0/1 tokens have one $value or $ref: Token 'color.primary' has both $value and $ref (a token takes one)"
       },
       {
         "id": "t05",
@@ -267,9 +267,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -345,9 +345,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -423,9 +423,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "23/23 tokens have $value or $ref"
+        "detail": "23/23 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -501,9 +501,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "4/4 tokens have $value or $ref"
+        "detail": "4/4 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -551,10 +551,10 @@
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 12,
-    "score": 65,
-    "grade": "D",
-    "pass_count": 3,
-    "fail_count": 0,
+    "score": 55,
+    "grade": "F",
+    "pass_count": 2,
+    "fail_count": 1,
     "warn_count": 7,
     "skip_count": 0,
     "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
@@ -579,9 +579,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
-        "status": "PASS",
-        "detail": "12/12 tokens have $value or $ref"
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
+        "status": "FAIL",
+        "detail": "11/12 tokens have one $value or $ref: Token 'beta.ref' has both $value and $ref (a token takes one)"
       },
       {
         "id": "t05",
@@ -657,9 +657,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "5/5 tokens have $value or $ref"
+        "detail": "5/5 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -735,9 +735,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "4/4 tokens have $value or $ref"
+        "detail": "4/4 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -813,9 +813,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "2/2 tokens have $value or $ref"
+        "detail": "2/2 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -891,9 +891,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -969,9 +969,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1047,9 +1047,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1125,9 +1125,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "FAIL",
-        "detail": "0/0 tokens have $value or $ref"
+        "detail": "0/0 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1203,9 +1203,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "53/53 tokens have $value or $ref"
+        "detail": "53/53 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1281,9 +1281,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "2/2 tokens have $value or $ref"
+        "detail": "2/2 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1359,9 +1359,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "9/9 tokens have $value or $ref"
+        "detail": "9/9 tokens have one $value or $ref"
       },
       {
         "id": "t05",
@@ -1437,9 +1437,9 @@
       },
       {
         "id": "t04",
-        "name": "Every token has $value",
+        "name": "Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file",
         "status": "PASS",
-        "detail": "6/6 tokens have $value or $ref"
+        "detail": "6/6 tokens have one $value or $ref"
       },
       {
         "id": "t05",

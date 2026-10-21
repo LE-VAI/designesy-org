@@ -63,7 +63,7 @@ export const tokensContract = {
       { id: 't01', item: '$schema declaration present and pointing at designtokens.org (a Designesy policy: DTCG does not require $schema)', pass: 'Present, designtokens.org', warn: 'Missing (no editor validation), or present but non-canonical', fail: 'n/a' },
       { id: 't02', item: 'Token groups present (top-level non-$ keys)', pass: 'Groups found', fail: 'No token groups' },
       { id: 't03', item: 'Every token has $type (direct or inherited)', pass: 'All tokens typed', warn: 'Partial typing', fail: 'Any token missing type' },
-      { id: 't04', item: 'Every token has $value', pass: 'All valued', fail: 'Any missing value' },
+      { id: 't04', item: 'Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file', pass: 'All valued', fail: 'A token with no value, with both $value and $ref, or with a $ref that names nothing or loops' },
       { id: 't05', item: 'Color tokens use structured {colorSpace, components} format instead of bare hex', pass: 'No bare hex', warn: 'Mixed structured and bare hex', fail: 'All bare hex' },
       { id: 't06', item: '$type values are DTCG 2025.10 standard types', pass: 'All standard', warn: 'Non-standard types present (custom (see t07))', fail: 'No tokens typed' },
       { id: 't07', item: 'Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)', pass: 'All namespaced', warn: 'Bare custom type names', fail: 'n/a' },
@@ -71,7 +71,7 @@ export const tokensContract = {
       { id: 't09', item: 'Token naming hierarchy: tokens organized into nested groups', pass: 'Groups with hierarchy', warn: 'Flat token set', fail: 'No tokens' },
       { id: 't10', item: 'No deprecated pre-2025.10 patterns (bare hex colors, string or bare number dimensions, a $ref that is not a JSON Pointer)', pass: 'Clean', warn: 'Deprecated patterns found', fail: 'n/a' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = ((PASS + 0.5 × WARN) / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90; until v0.1.2 a WARN counted 0, where the motion contract, the score engine and the npm validator count it half). A {group.token} alias is a reference: t08 checks the dimension it resolves to, and a $root token is checked like any other. Since v0.1.3 the type of a token is its own $type, else the type of the token it references, else the closest group $type above it ($extends included), and a token written { $type, $ref } is counted. A≥90, B≥80, C≥70, D≥60, F<60.',
+    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = ((PASS + 0.5 × WARN) / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90; until v0.1.2 a WARN counted 0, where the motion contract, the score engine and the npm validator count it half). A {group.token} alias is a reference: t08 checks the dimension it resolves to, and a $root token is checked like any other. Since v0.1.3 the type of a token is its own $type, else the type of the token it references, else the closest group $type above it ($extends included), and a token written { $type, $ref } is counted, with t04 checking that its JSON Pointer names a location in the file. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
       primary: '@terrazzo/parser 2.4.0: tz check [file]',
       secondary: 'ajv 8.20.0 + ajv-formats 3.0.1 against DTCG JSON Schema URL',
@@ -82,7 +82,7 @@ export const tokensContract = {
       checks: [
         'Semantic tokens have $description: recommended, required on semantic tokens; custom validator needed',
         'Color tokens use OKLCH or Display-P3 (mandatory for new semantic tokens): color-space check not wired',
-        'Aliases resolve to valid typed tokens: t03 gives an untyped alias the type of its target (v0.1.3) and t08 resolves aliases on dimension tokens (v0.1.2); checking that a typed alias names a token of its own type is not wired',
+        'References resolve to valid typed tokens: t04 checks that a JSON Pointer $ref names a location in the file (v0.1.3), t03 gives an untyped alias the type of its target (v0.1.3) and t08 resolves aliases on dimension tokens (v0.1.2); an {alias} on a token of another type that names nothing, and a reference to a value of another type, are not reported',
         'Full DTCG 2025.10 JSON Schema validation via @terrazzo/parser (tz check): external, not wired',
         'No type drift between themes: multi-theme comparison not wired',
       ],

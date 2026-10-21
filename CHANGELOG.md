@@ -31,7 +31,14 @@ keep a top-level group named `tokens`, or write dimensions as strings.
   were not counted, and a `$ref` beside a `$value` was reported in t10 as
   "deprecated $ref syntax". Tools must support JSON Pointer `$ref` (7.1.2).
   t10 now reports a `$ref` that is not a pointer (`#/...`), such as a dot
-  path, and t04 counts tokens that have `$value` or `$ref`.
+  path.
+- **t04 checks that each token has one value.** It counts a token with one
+  `$value` or `$ref`. It FAILs a token that has both, which the 2025.10 token
+  schema does not allow, and a JSON Pointer that names no location in the
+  file or loops back: tools must validate reference targets and detect loops
+  (7.5.1, 7.2.3). A pointer reads array items by index, and where it reads
+  the `$value` of a `$ref` token it follows that `$ref` (7.2.2). Until now
+  t04 failed only a file with no tokens.
 - **The whole file is scored.** A file with a top-level group named `tokens`
   (or a `$tokens` key) was scored on that group alone, and every other group
   was ignored. Neither name means anything in DTCG: `tokens` is now a group
@@ -58,8 +65,8 @@ keep a top-level group named `tokens`, or write dimensions as strings.
 
 ### Changed (tokens contract 0.1.3)
 
-- Tokens contract 0.1.2 to 0.1.3. t01, t08 and t10 are named for what they
-  check, and t01 has no FAIL; `schema_property` and the open item on aliases
+- Tokens contract 0.1.2 to 0.1.3. t01, t04, t08 and t10 are named for what
+  they check, and t01 has no FAIL; `schema_property` and the open item on aliases
   are rewritten, and the scoring note says how a type is found. Every result
   carries the new check names.
 
@@ -71,16 +78,18 @@ Measured with both servers on the shared fixtures in
 | File | Before | After | Why |
 |---|---|---|---|
 | `type-inheritance.json` (new) | 71 C | 100 A | group types, `$extends` and untyped aliases |
-| `json-pointer-ref.json` (new) | 71 C | 94 A | three `$ref` tokens counted; t10 WARNs on a dot-path `$ref` |
+| `json-pointer-ref.json` (new) | 71 C | 94 A | four `$ref` tokens counted; t10 WARNs on a dot-path `$ref` |
 | `legacy-dimensions.json` (new) | 71 C | 88 B | group-typed; t08 and t10 WARN on `"16px"` |
 | `tokens-group.json` (new) | 100 A | 83 B | the ignored group's bare-number dimension is now read |
 | `empty-group.json` (new) | 50 F | 60 D | t03 SKIP with no tokens |
 | `guardrails-emitted.json` | 100 A | 89 B | five string dimensions (`"4px"`, `"1rem"`) WARN in t08 and t10 |
+| `bare-hex-ref.json` | 81 B | 69 D | its one token has both `$value` and `$ref`: t04 FAIL |
+| `js-key-order.json` | 65 D | 55 F | one token has both `$value` and `$ref`: t04 FAIL |
 | `empty.json`, `schema-host-apex.json` | 33 F | 40 F | t03 SKIP with no tokens |
 | the three other `schema-host-*.json` | 25 F | 30 F | t03 SKIP with no tokens |
 
 `site-export.json` (the site's `/export/dtcg`) stays at 100, and the other
-seven fixtures keep their scores.
+five fixtures keep their scores.
 
 - `designesy_guardrails` still writes dimensions as strings, so the token
   file it emits now scores 89 with no FAIL. The emitter is not changed here.

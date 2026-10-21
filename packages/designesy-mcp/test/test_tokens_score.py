@@ -282,7 +282,7 @@ class TestFormatModuleReading:
                                 }})
         assert result["total_tokens"] == 4, result
         assert _check(result, "t03")["status"] == "PASS", _check(result, "t03")
-        assert _check(result, "t04")["detail"] == "4/4 tokens have $value or $ref"
+        assert _check(result, "t04")["detail"] == "4/4 tokens have one $value or $ref"
         # A JSON Pointer $ref is what the format asks tools to support.
         assert _check(result, "t10")["status"] == "PASS", _check(result, "t10")
 
@@ -339,6 +339,59 @@ class TestFormatModuleReading:
             statuses = {c["id"]: c["status"] for c in golden[name]["checks"]}
             assert statuses["t03"] != "FAIL" and statuses["t06"] != "FAIL", (name, statuses)
         assert golden["type-inheritance.json"]["score"] == 100
+
+
+class TestRefTargets:
+    """t04: a token has one value, a $value or a $ref, and a JSON Pointer $ref
+    names a location in the file (7.5.1) without looping (7.2.3).
+
+    Old verdict (contract 0.1.3 as first written): every case below that
+    FAILs t04 passed it, and t10 too. Main read a $ref-only token as a group,
+    so it was not counted at all.
+    """
+
+    def _doc(self, group: dict) -> dict:
+        return {"$schema": SCHEMA, "c": {"$type": "color", "blue": {"$value": BLUE}, **group}}
+
+    def _t04(self, group: dict) -> dict:
+        return _check(_score_inline(self._doc(group)), "t04")
+
+    def test_a_pointer_that_names_nothing_fails(self):
+        t04 = self._t04({"x": {"$ref": "#/does/not/exist"}})
+        assert t04["status"] == "FAIL", t04
+        assert t04["detail"] == ("1/2 tokens have one $value or $ref: Token 'c.x' has a $ref "
+                                 "that names no location in the file: '#/does/not/exist'")
+
+    def test_a_pointer_to_itself_loops(self):
+        for ref in ("#/c/x", "#/c/x/$value"):
+            t04 = self._t04({"x": {"$ref": ref}})
+            assert t04["status"] == "FAIL" and f"Token 'c.x' has a $ref that loops: '{ref}'" in t04["detail"], t04
+
+    def test_a_pointer_loop_through_two_tokens(self):
+        t04 = self._t04({"x": {"$ref": "#/c/y/$value"}, "y": {"$ref": "#/c/x/$value"}})
+        assert t04["detail"].startswith("1/3 tokens have one $value or $ref: "), t04
+
+    def test_a_pointer_reads_arrays_escapes_and_ref_tokens(self):
+        """Array items by index; ~1 is / and ~0 is ~ (RFC 6901); a pointer
+        through a $ref token's $value follows that $ref (7.2.2)."""
+        t04 = self._t04({
+            "a/b": {"$value": BLUE},
+            "m~n": {"$value": BLUE},
+            "hue": {"$type": "number", "$ref": "#/c/blue/$value/components/2"},
+            "slash": {"$ref": "#/c/a~1b/$value"},
+            "tilde": {"$ref": "#/c/m~0n/$value"},
+            "chained": {"$ref": "#/c/slash/$value"},
+            "chained-part": {"$type": "number", "$ref": "#/c/chained/$value/components/0"},
+        })
+        assert t04["status"] == "PASS", t04
+        for ref in ("#/c/blue/$value/components/3", "#/c/blue/$value/components/01", "#/c/blue/$value/"):
+            t04 = self._t04({"x": {"$type": "number", "$ref": ref}})
+            assert t04["status"] == "FAIL", (ref, t04)
+
+    def test_a_ref_that_is_not_a_pointer_is_reported_once_in_t10(self):
+        result = _score_inline(self._doc({"x": {"$ref": "c.blue"}}))
+        assert _check(result, "t04")["status"] == "PASS", _check(result, "t04")
+        assert "has a $ref that is not a JSON Pointer: 'c.blue'" in _check(result, "t10")["detail"]
 
 
 def _long_chain(kind: str, n: int) -> dict:

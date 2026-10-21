@@ -241,6 +241,32 @@ class TestTokenValidation:
         assert "Token 'color.legacy' has a $ref that is not a JSON Pointer: 'color.primary'" in t10["detail"]
         assert "color.brand" not in t10["detail"]
 
+    @patch("designesy_mcp_server._fetch")
+    def test_t04_fails_a_token_with_both_value_and_ref(self, mock_fetch):
+        """The 2025.10 token schema allows a $value or a $ref, not both.
+
+        This token was test_t10's until tokens contract 0.1.3, where t10
+        called its $ref deprecated.
+        """
+        mock_fetch.return_value = {
+            "id": "test", "version": "1.0", "status": "active",
+            "checks": [{"item": f"check {i}"} for i in range(10)],
+        }
+        token_file = json.dumps({
+            "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+            "color": {
+                "primary": {
+                    "$type": "color",
+                    "$value": "#ff0000",
+                    "$ref": "#/color/primary",
+                },
+            },
+        })
+        result = mcp._tokens_score_impl(dtcg_file=token_file)
+        t04 = {c["id"]: c for c in result["checks"]}["t04"]
+        assert t04["status"] == "FAIL"
+        assert "Token 'color.primary' has both $value and $ref (a token takes one)" in t04["detail"]
+
 
 # ── 3b. t06 type list: the 13 types DTCG 2025.10 defines ─────────────────────
 #
