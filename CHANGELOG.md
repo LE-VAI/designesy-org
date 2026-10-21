@@ -6,6 +6,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
+registry; not yet published, tag `v1.13.10`). Nothing changes in the hosted
+`/api/mcp` except the version it reports. It is the first designesy-mcp
+release since 1.13.9, so it also ships the offline engine merged since then:
+it mirrors engine 1.5.3 and contract v0.4.7 (1.13.9 mirrored 1.4.0 and
+v0.4.6).
+
+### Fixed (designesy-mcp 1.13.10)
+
+- **Every certificate is verified.** `_fetch` and `_post_api` retried with
+  `CERT_NONE` after a failed verification, after any raw `ssl.SSLError`, and
+  after any error whose text said "certificate" (an HTTP 495 reply
+  included). That covered the POSTs to designesy.org's engines, the monitor
+  email among them. A failed verification is now a tool error that names the
+  reason. To read a site with a bad certificate anyway, set
+  `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
+  designesy.org) whose verification fails is then read without it, and the
+  result carries `tls_verified: false`.
+- **An engine error is not scored offline.** `designesy_score` fell back to
+  the offline engine whenever the engine returned no score, so a URL the
+  engine refused (HTTP 400 for `http://100.100.100.200/` and
+  `http://[fec0::1]/`, both of which the server's own URL check lets
+  through) was fetched from the user's machine instead. It now falls back
+  only when the engine cannot be reached at all. An HTTP error (a refused
+  URL, a rate limit, a page the engine could not reach), `ok: false`, or a
+  reply that is not a JSON object is returned as an error.
+- **No browser unless the operator names one.** The offline engine opened
+  the URL in a new tab of any Chrome answering on `127.0.0.1:9222` to measure
+  v02 and v21. It now does so only when `DESIGNESY_CDP_URL` names a Chrome
+  DevTools endpoint, and both Node probes connect to that endpoint;
+  otherwise both checks read MANUAL. The `designesy_score` description says
+  so.
+- **No line ends the session.** An array, a bare string, a number, or
+  `params: null` raised AttributeError and stopped the server. A line that
+  is not JSON now gets -32700, a message that is not an object gets -32600
+  (the 2024-11-05 revision has no batches), and a handler that raises gets
+  -32603; the server reads on.
+- **Notifications get no reply.** `notifications/cancelled` got a -32601
+  error frame back.
+- **Error codes follow the 2024-11-05 revision.** An unknown tool is -32602
+  and an unknown resource -32002 (both were -32601). `params` or `arguments`
+  of null read as `{}`, and any other non-object is -32602. A tool that runs
+  and fails (a fetch error, a blocked URL) returns an `isError` result with
+  the same text, instead of a JSON-RPC -32000 error.
+
+### Not changed (designesy-mcp 1.13.10)
+
+- The tool list, the schemas, the titles and the annotations:
+  `designesy_score` stays `readOnlyHint: true`. The offline engine's checks
+  and verdicts.
+- The hosted endpoint, which has no offline engine or browser probe.
+
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
 heights that the stylesheets wrote inline become named `:root` tokens and
