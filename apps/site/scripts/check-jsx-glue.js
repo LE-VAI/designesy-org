@@ -23,7 +23,22 @@
  * strong, em, code, CountUp...) separated only by whitespace that contains a
  * line break, where the characters on both sides are ones a space normally
  * sits between: a word or closing punctuation before, a letter or digit after.
- * The fix is an explicit {' '} at the boundary.
+ *
+ * THE FIX
+ * Wrap the line one word earlier, so the word and its neighbour share a line
+ * and the space sits inside the text run:
+ *
+ *     ...the same run                       ...scored once, by the
+ *     your <Link>/score</Link> report       same {COUNT} checks the score page
+ *
+ * or let the neighbouring string carry the space ({` ${value}`}). Not {' '}
+ * beside text: React's server render puts a <!-- --> marker between two
+ * adjacent text children, and Chrome leaves a whitespace-only text node next
+ * to that marker out of the accessible name. In a link or button showing
+ * "Label: 45", Label:{' '}{value} is named "Label:45", and one showing
+ * "Fixes 12", Fixes{' '}<span>12</span> is named "Fixes12" (Chrome 155,
+ * react-dom 19.3 server markup). {' '} between two elements has no text
+ * beside it, gets no marker and is read as a space.
  *
  * WHAT IT DOES NOT FLAG
  *   - {' '}, {' · Lab'} and any string that brings its own leading space;
@@ -175,6 +190,10 @@ if (process.argv.includes('--json')) {
   for (const f of findings) {
     console.log(`  FAIL ${f.file}:${f.line}  ${JSON.stringify(f.before)} + ${JSON.stringify(f.after)}`);
   }
-  console.log(`[jsx-glue] ${findings.length} boundary(ies) where a line break removes the space: add {' '}`);
+  console.log(
+    `[jsx-glue] ${findings.length} boundary(ies) where a line break removes the space: wrap one word earlier so the ` +
+      "space stays inside the text, or put it in the neighbouring string ({` ${value}`}). A {' '} beside text is left " +
+      "out of a link's or button's accessible name in Chrome; between two elements it is fine.",
+  );
 }
 process.exit(findings.length ? 1 : 0);

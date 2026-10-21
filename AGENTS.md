@@ -45,7 +45,9 @@ sources → principles → contracts → tools → systems → better designed w
 - The build holds the line: `scripts/check-voice.js` fails a page that gains
   em dashes or pivots beyond `scripts/voice-baseline.json`, and
   `scripts/check-jsx-glue.js` fails a sentence that wraps so JSX glues two
-  words together (add `{' '}` at the boundary).
+  words together. Wrap one word earlier so the space stays inside the text,
+  or put it in the neighbouring string: a `{' '}` beside text is left out of
+  a link's or button's accessible name in Chrome.
 
 ## Contract Versions
 
