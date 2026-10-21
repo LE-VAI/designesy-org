@@ -111,8 +111,7 @@ five fixtures keep their scores.
   main, and the token fixtures in `test/test_server.py` follow the format.
 - The three token fixtures of `scripts/check-mcp-accuracy.js` write
   dimensions as `{ value, unit }`, so each still tests the rule it names.
-- The sibling contract lock records tokens 0.1.3, and refreshes components
-  0.1.1, whose value had moved with an import (the gate's note on main).
+- The sibling contract lock records tokens 0.1.3.
 
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
