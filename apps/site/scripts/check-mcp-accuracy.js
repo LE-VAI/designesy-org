@@ -36,9 +36,11 @@
  *      and the 5 radii were "6px" strings, not { value, unit } objects.
  * And a tenth:
  *  10. designesy_guardrails wrote dimensions and shadow lengths as strings
- *      ("4px", "0px"), which the 2025.10 format's JSON Schema rejects and the
- *      tokens validator (contract 0.1.3) WARNs on in t08 and t10: the fixture
- *      site's file scored 89.
+ *      ("4px", "0px"), which the 2025.10 format's JSON Schema rejects. The
+ *      tokens validator (contract 0.1.3) WARNs on the dimension tokens in t08
+ *      and t10, so the fixture site's file scored 89; it does not read a
+ *      shadow's lengths, so here only guardrails-dtcg's shadow-length check
+ *      fails those.
  *
  * WHAT IT DOES
  * scripts/lib/route-harness.js loads the real route modules under Node with the
@@ -156,6 +158,11 @@ function dtcgTokens(doc) {
   };
   walk(doc, []);
   return out;
+}
+
+/** A DTCG alias: a $value that is one {group.token} reference. */
+function isAlias(v) {
+  return typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
 }
 
 /** A DTCG 2025.10 dimension value: exactly { value: number, unit: 'px' | 'rem' }. */
@@ -317,8 +324,7 @@ async function exportDtcg() {
   const push = (id, why) => findings.push({ id: `export-dtcg:${id}`, why });
   const tokens = dtcgTokens(doc);
   const byPath = new Map(tokens.map((t) => [t.path, t.token]));
-  const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
-  const isColor = (v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
+  const isColor =(v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
 
   const withVar = tokens.filter((t) => JSON.stringify(t.token.$value).includes('var('));
   if (withVar.length) push('var', `${withVar.length} $value(s) hold a CSS var(), e.g. ${withVar.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
@@ -381,7 +387,6 @@ async function guardrailsDtcg() {
     if (!target) push(`alias-dangles:${t.path}`, `${t.path} aliases ${v}, which is not a token in the file.`);
     else if (target.$type !== t.token.$type) push(`alias-type:${t.path}`, `${t.path} is typed ${t.token.$type} but aliases ${v}, typed ${target.$type}.`);
   }
-  const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
   const dims = tokens.filter((t) => t.token.$type === 'dimension' && !isAlias(t.token.$value));
   const badDims = dims.filter((t) => !isDimension(t.token.$value));
   if (badDims.length) push('dimension', `${badDims.length}/${dims.length} dimension token(s) are not { value, unit: px | rem }, e.g. ${badDims.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
@@ -395,11 +400,16 @@ async function guardrailsDtcg() {
   const kept = tokens.length + Object.keys(unconverted).length;
   if (kept !== g.body.tokensExtracted) push('lost', `${g.body.tokensExtracted} :root properties were extracted, but the file keeps ${tokens.length} token(s) and ${Object.keys(unconverted).length} unconverted value(s).`);
 
-  // The fixture site has no unitless 0 and no length in another unit, so the
-  // converter is also given those directly: a 0 on a length name is 0px, and
-  // a length in em, %, vw or pt (alone or in a shadow) has no 2025.10 form and
-  // is kept as CSS.
-  const units = h.load('app/lib/dtcg.ts').cssTokensToDtcg(
+  // The fixture site's unitless 0s are all shadow offsets, and its one length
+  // in a unit other than px or rem (4vw) is inside --gutter's clamp(), which
+  // stays CSS for the clamp(). So the converter is also given a 0 on a length
+  // name, which is { value: 0, unit: 'px' }, and lengths in em, %, vw and pt,
+  // alone and in a shadow, which have no 2025.10 form and stay CSS. Those
+  // stop at the converter's own patterns (DIMENSION alone, SHADOW in a
+  // shadow) before parseDimension runs, so parseDimension, which
+  // /export/dtcg also calls, is given each of them and a unitless 1 itself.
+  const dtcg = h.load('app/lib/dtcg.ts');
+  const units = dtcg.cssTokensToDtcg(
     { '--space-0': '0', '--inset': '2em', '--size-half': '50%', '--width-wide': '10vw', '--size-print': '12pt', '--shadow-em': '0 1em 2px #000' },
     { source: FIXTURES.site.url, generator: 'mcp-accuracy', extracted: '' },
   );
@@ -410,6 +420,8 @@ async function guardrailsDtcg() {
   const keptAsCss = Object.keys(((units.$extensions || {}).designesy || {}).css || {});
   const typed = ['--inset', '--size-half', '--width-wide', '--size-print', '--shadow-em'].filter((n) => !keptAsCss.includes(n));
   if (typed.length) push('other-units', `${typed.join(', ')} left $extensions.designesy.css; a length in a unit other than px or rem has no 2025.10 dimension form.`);
+  const parsed = ['2em', '50%', '10vw', '12pt', '1'].filter((s) => dtcg.parseDimension(s) !== null);
+  if (parsed.length) push('parse-dimension', `parseDimension types ${parsed.map((s) => `${JSON.stringify(s)} as ${JSON.stringify(dtcg.parseDimension(s))}`).join(', ')}; a 2025.10 dimension is px or rem, and only a unitless 0 is read as px.`);
 
   const v = await h.callTool('designesy_tokens_score', { dtcg_file: JSON.stringify(doc) });
   const flagged = (v.payload.checks || []).filter((c) => c.status === 'WARN' || c.status === 'FAIL');
