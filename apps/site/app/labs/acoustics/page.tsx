@@ -151,13 +151,16 @@ export default function AcousticsLabPage() {
                 data-cuelume-press="press"
                 tabIndex={0}
                 role="button"
-                aria-label={`${token.token} · ${token.interaction_role}`}
+                // Named by what it shows (WCAG 2.5.3, Label in Name): an
+                // aria-label of the token and role left out the number and
+                // the cue, and axe-core 4.14 fails that. The {' '} keep the
+                // words apart in the name; the flex row draws no whitespace.
               >
                 <span className="cue-cell-num">
                   {String(i + 1).padStart(2, '0')}
-                </span>
-                <code className="cue-cell-token">{token.token}</code>
-                <span className="cue-cell-cue">{token.cuelume_cue}</span>
+                </span>{' '}
+                <code className="cue-cell-token">{token.token}</code>{' '}
+                <span className="cue-cell-cue">{token.cuelume_cue}</span>{' '}
                 <span className="cue-cell-role">{token.interaction_role}</span>
               </div>
             ))}

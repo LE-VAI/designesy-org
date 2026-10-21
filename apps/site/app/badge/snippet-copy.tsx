@@ -42,10 +42,16 @@ export function SnippetCopy({ text, label }: { text: string; label: string }) {
         type="button"
         className={`badge-snippet-copy${copied ? ' is-copied' : ''}`}
         onClick={copy}
-        aria-label={`Copy ${label}`}
         data-cuelume-press="tick"
       >
-        {copied ? 'Copied' : 'Copy'}
+        {/* The name stays "Copy <label>" (WCAG 2.5.3, Label in Name: the
+            visible "Copy" opens it) and the status line below says it was
+            copied, once. An aria-label that read "Copy" while the button
+            showed "Copied" failed axe-core 4.14, and one that changed with
+            it was spoken twice. "Copied" is what happened, not a label, so
+            it is hidden from the name. */}
+        <span aria-hidden="true">{copied ? 'Copied' : 'Copy'}</span>
+        <span className="sr-only">{`Copy ${label}`}</span>
       </button>
       <span className="sr-only" role="status" aria-live="polite">
         {copied ? `${label} copied` : ''}

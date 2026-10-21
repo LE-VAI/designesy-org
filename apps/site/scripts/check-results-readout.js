@@ -24,14 +24,20 @@
  *       run" broke onto three lines in a 105px tab, and ran into the next
  *       tab at 390, before the tabs took their labels' width);
  *   R3. no visible text in the result (.rs) or the engine tiles is set below
- *       12px.
+ *       12px;
+ *   R4. every control in the landed result is named with the words it shows
+ *       (axe-core's label-content-name-mismatch, WCAG 2.5.3 Label in Name).
+ *       The a11y sweep loads each route at rest, so this is the one gate that
+ *       sees the engine tiles: their names once read "grade D, 67.9 out of
+ *       100" beside a tile that shows "D 67.9/100".
  *
  * PROVING IT CAN FAIL
  * Against the build before the B′ readout, R1 fails (no letter set in the
  * numeral's voice) and R3 fails on the tiles. --break injects three later
  * regressions into a fixed build, one per check, and the gate must exit 1:
  * the letter set smaller than the numeral, the count line squeezed to 8ch,
- * and the scale's ticks set at 11px.
+ * and the scale's ticks set at 11px; and it names the first engine tile or
+ * result button "Result", which R4 must catch.
  *
  * Usage:
  *   node scripts/check-results-readout.js --base http://127.0.0.1:3422 --channel chrome
@@ -54,6 +60,8 @@ if (!BASE) {
   console.error('usage: node scripts/check-results-readout.js --base http://127.0.0.1:3422 [--channel chrome | --cdp URL] [--break] [--json]');
   process.exit(2);
 }
+
+const AXE = require('node:fs').readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 let chromium;
 try {
@@ -310,6 +318,15 @@ async function probe(browser, surface, vp) {
     const small = new Map();
     for (const s of m.small) small.set(`${s.cls}|${s.size}`, s);
     for (const s of small.values()) failures.push(`R3 ${s.size}px text: "${s.text}" (${s.cls})`);
+    // R4. Run by name: axe-core before 4.14 marks the rule experimental, and a
+    // tag run would skip it.
+    if (BREAK) await page.evaluate(() => document.querySelector('.score-engine-tile, .rs button')?.setAttribute('aria-label', 'Result'));
+    await page.addScriptTag({ content: AXE });
+    const unnamed = await page.evaluate(async () => {
+      const r = await window.axe.run(document, { runOnly: { type: 'rule', values: ['label-content-name-mismatch'] } });
+      return r.violations.flatMap((v) => v.nodes.map((n) => n.target.join(' ')));
+    });
+    for (const t of unnamed) failures.push(`R4 the name leaves out words the control shows: ${t}`);
     return { surface: label, failures, lines: m.lines.length, readout: m.readout };
   } catch (e) {
     return { surface: label, failures: [`fatal: ${e.message.split('\n')[0]}`], fatal: true };
