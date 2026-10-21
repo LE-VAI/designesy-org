@@ -16,13 +16,23 @@
 //
 // The converter below emits the export's conventions: its $schema, colors as
 // { colorSpace, components, alpha }, durations as { value, unit }, easings as
-// four-number arrays, px/rem dimensions as strings, and vendor data in
-// $extensions.designesy. A property that is also a group (--surface beside
-// --surface-raised) becomes the group's $root token, the 2025.10 mechanism for
-// it, and an alias to it is {surface.$root}. A value the format cannot type
-// (calc(), clamp(), gradients, color-mix(), a var() with a fallback, ...) is
-// kept verbatim in $extensions.designesy.css under its property name, so no
-// declaration is lost.
+// four-number arrays, dimensions (shadow lengths included) as { value, unit }
+// in px or rem, and vendor data in $extensions.designesy. A property that is
+// also a group (--surface beside --surface-raised) becomes the group's $root
+// token, the 2025.10 mechanism for it, and an alias to it is {surface.$root}.
+// A value the format cannot type (calc(), clamp(), gradients, color-mix(), a
+// var() with a fallback, ...) is kept verbatim in $extensions.designesy.css
+// under its property name, so no declaration is lost.
+//
+// Dimensions and a shadow's four lengths used to be strings ("4px", "0px").
+// A 2025.10 dimension is an object whose unit is px or rem (Format Module
+// 8.2, 8.2.1), so the format's JSON Schema rejected those tokens and the
+// tokens validator WARNed on them in t08 and t10. A length in any other unit
+// (em, %, vw, ch, pt, ...) is not converted: a relative unit's size depends on
+// an element, a font or a viewport the token file does not describe, so any
+// number would be invented, and an absolute one is kept as written rather
+// than rounded into px. Such a value, or a shadow holding one, stays in
+// $extensions.designesy.css.
 //
 // PURE AND IMPORT-FREE: scripts/check-mcp-accuracy.js runs the guardrails
 // route that calls this, and the module stays loadable on its own.
@@ -33,6 +43,9 @@ export type DtcgColor = { colorSpace: 'srgb'; components: number[]; alpha: numbe
 
 /** A DTCG 2025.10 dimension: a number and a unit, px or rem. */
 export type DtcgDimension = { value: number; unit: 'px' | 'rem' };
+
+/** A DTCG 2025.10 shadow layer: a color and four dimensions. */
+export type DtcgShadow = { color: DtcgColor; offsetX: DtcgDimension; offsetY: DtcgDimension; blur: DtcgDimension; spread: DtcgDimension };
 
 const NUM = String.raw`(-?(?:\d+\.?\d*|\.\d+))`;
 const HEX = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
@@ -116,14 +129,6 @@ const WEIGHT_NAME = /weight/i;
 const FONT_NAME = /font|family|sans|serif|mono|display|typeface/i;
 const SHADOW_NAME = /shadow|elev|glow/i;
 
-/** A length in a shadow: px/rem kept as written, a unitless 0 written 0px. */
-function shadowLength(s: string): string | null {
-  const m = s.match(LENGTH);
-  if (!m) return null;
-  if (m[2]) return s;
-  return parseFloat(m[1]) === 0 ? '0px' : null;
-}
-
 /** Split on commas that are not inside parentheses or quotes. */
 export function splitTopLevel(value: string): string[] {
   const out: string[] = [];
@@ -166,14 +171,15 @@ export function parseDimension(raw: string): DtcgDimension | null {
 
 /**
  * One shadow ("0 1px 3px rgba(0,0,0,.4)") as a DTCG shadow object, or null.
- * Lengths stay strings ("1px"), the form designesy_guardrails emits;
- * /export/dtcg turns them into dimension objects with parseDimension.
+ * Its four lengths are dimension objects (a unitless 0 is { value: 0, unit:
+ * 'px' }); a missing spread is 0, the CSS default. A length in another unit,
+ * or a color parseCssColor does not read, makes it null.
  */
-export function parseShadow(s: string): Record<string, unknown> | null {
+export function parseShadow(s: string): DtcgShadow | null {
   const m = s.trim().match(SHADOW);
   if (!m) return null;
-  const [offsetX, offsetY, blur] = [m[1], m[2], m[3]].map(shadowLength);
-  const spread = m[4] === undefined ? '0px' : shadowLength(m[4]);
+  const [offsetX, offsetY, blur] = [m[1], m[2], m[3]].map(parseDimension);
+  const spread = m[4] === undefined ? { value: 0, unit: 'px' as const } : parseDimension(m[4]);
   const color = parseCssColor(m[5]);
   if (!offsetX || !offsetY || !blur || !spread || !color) return null;
   return { color, offsetX, offsetY, blur, spread };
@@ -201,10 +207,10 @@ function convertLiteral(name: string, raw: string): Converted | null {
   if (EASING_NAME.test(name) && NAMED_EASINGS[value.toLowerCase()]) {
     return { $type: 'cubicBezier', $value: [...NAMED_EASINGS[value.toLowerCase()]] };
   }
-  if (DIMENSION.test(value)) return { $type: 'dimension', $value: value };
+  if (DIMENSION.test(value)) return { $type: 'dimension', $value: parseDimension(value) };
   if (NUMBER.test(value)) {
     const n = Number(value);
-    if (n === 0 && LENGTH_NAME.test(name)) return { $type: 'dimension', $value: '0px' };
+    if (n === 0 && LENGTH_NAME.test(name)) return { $type: 'dimension', $value: { value: 0, unit: 'px' } };
     if (WEIGHT_NAME.test(name) && Number.isInteger(n) && n >= 1 && n <= 1000) return { $type: 'fontWeight', $value: n };
     return { $type: 'number', $value: n };
   }
