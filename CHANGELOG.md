@@ -6,6 +6,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
+DTCG 2025.10 Format Module does** (the hosted `/api/mcp`; the PyPI server
+carries the same change in its next release). Scores move for files that
+type their groups, reference with a JSON Pointer `$ref`, leave out `$schema`,
+keep a top-level group named `tokens`, or write dimensions as strings.
+
+### Fixed (tokens contract 0.1.3)
+
+- **A token takes the type of its group.** Both servers counted only a
+  `$type` written on the token. The Format Module gives a token with no
+  `$type` the type of the token it references, else the closest `$type` on
+  the groups above it (5.2.2), and a group that `$extends` another takes that
+  group's type (6.7.3). So a conformant file that typed its groups failed t03
+  and t06, and t05 and t08 never saw its colours and dimensions. Of the 93
+  valid (positive) files in the DTCG 2025.10 test suite, 13 failed t03 and 12
+  failed t06, scoring 50 to 71; `group/type-inheritance.json` scored 71 (C) on
+  both servers. Now none fails t03 or t06: 92 score 100, and the 93rd, a file
+  holding only an empty group, scores 60. With no tokens t03 is SKIP, as t06
+  already was.
+- **A `{ $type, $ref }` token is a token, and a JSON Pointer `$ref` is not a
+  deprecated pattern.** An object with a `$ref` and no `$value` was read as a
+  group, so the two `$ref` tokens in the format's own JSON Pointer example
+  were not counted, and a `$ref` beside a `$value` was reported in t10 as
+  "deprecated $ref syntax". Tools must support JSON Pointer `$ref` (7.1.2).
+  t10 now reports a `$ref` that is not a pointer (`#/...`), such as a dot
+  path, and t04 counts tokens that have `$value` or `$ref`.
+- **The whole file is scored.** A file with a top-level group named `tokens`
+  (or a `$tokens` key) was scored on that group alone, and every other group
+  was ignored. Neither name means anything in DTCG: `tokens` is now a group
+  like any other, and `$tokens`, like every `$` key, holds no tokens.
+- **A missing `$schema` is a WARN, named as Designesy policy.** t01 failed a
+  file without `$schema` and said "DTCG 2025.10 requires $schema". The
+  Format Module does not define `$schema`, and the official 2025.10 JSON
+  Schema notes that it is not part of the specification. The contract's
+  `schema_property`, which said DTCG marks it SHOULD, now says so.
+- **t08 expects the 2025.10 dimension form.** A dimension is
+  `{ value, unit }` with `px` or `rem` (8.2). t08 passed any string ending in a
+  CSS unit (`"16px"`, `"2em"`) and the object form with any CSS unit. It now
+  passes `{ value, unit }` in px or rem, reports a string with a CSS unit as
+  the legacy form (a WARN, also listed in t10), and FAILs only when no
+  dimension value is usable.
+- **The tool description no longer says `$description` is checked.** No
+  check reads it. Both servers' descriptions now name what the checks read.
+
+### Changed (tokens contract 0.1.3)
+
+- Tokens contract 0.1.2 to 0.1.3. t01, t08 and t10 are named for what they
+  check, and t01 has no FAIL; `schema_property` and the open item on aliases
+  are rewritten, and the scoring note says how a type is found. Every result
+  carries the new check names.
+
+### Scores that move (tokens contract 0.1.3)
+
+Measured with both servers on the shared fixtures in
+`packages/designesy-mcp/test/fixtures/tokens/` (the two agree on every file):
+
+| File | Before | After | Why |
+|---|---|---|---|
+| `type-inheritance.json` (new) | 71 C | 100 A | group types, `$extends` and untyped aliases |
+| `json-pointer-ref.json` (new) | 71 C | 94 A | three `$ref` tokens counted; t10 WARNs on a dot-path `$ref` |
+| `legacy-dimensions.json` (new) | 71 C | 88 B | group-typed; t08 and t10 WARN on `"16px"` |
+| `tokens-group.json` (new) | 100 A | 83 B | the ignored group's bare-number dimension is now read |
+| `empty-group.json` (new) | 50 F | 60 D | t03 SKIP with no tokens |
+| `guardrails-emitted.json` | 100 A | 89 B | five string dimensions (`"4px"`, `"1rem"`) WARN in t08 and t10 |
+| `empty.json`, `schema-host-apex.json` | 33 F | 40 F | t03 SKIP with no tokens |
+| the three other `schema-host-*.json` | 25 F | 30 F | t03 SKIP with no tokens |
+
+`site-export.json` (the site's `/export/dtcg`) stays at 100, and the other
+seven fixtures keep their scores.
+
+- `designesy_guardrails` still writes dimensions as strings, so the token
+  file it emits now scores 89 with no FAIL. The emitter is not changed here.
+- On the 127 invalid (negative) files of the same suite, one score drops
+  (`dimensions/dimension-wrong-unit.json`, 100 to 88, now caught by t08) and
+  11 rise.
+
+### Gates (tokens contract 0.1.3)
+
+- The shared golden gains the five new fixtures. `valid.json`, `invalid.json`
+  and `bare-hex-ref.json` lose their `$tokens` wrapper, which only the removed
+  shortcut read; `valid.json`, `nine-pass-one-skip.json` and `aliases.json`
+  write dimensions as `{ value, unit }`; `contract.json` is regenerated from
+  the site.
+- `test/test_tokens_score.py` adds ten tests, each failing on the previous
+  main, and the token fixtures in `test/test_server.py` follow the format.
+- The three token fixtures of `scripts/check-mcp-accuracy.js` write
+  dimensions as `{ value, unit }`, so each still tests the rule it names.
+- The sibling contract lock records tokens 0.1.3, and refreshes components
+  0.1.1, whose value had moved with an import (the gate's note on main).
+
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
 heights that the stylesheets wrote inline become named `:root` tokens and

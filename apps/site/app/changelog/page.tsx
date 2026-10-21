@@ -762,6 +762,20 @@ const CHANGELOG: ChangelogEntry[] = [
       "This site's own hero console was sized through the shorthand, down to 8.8px under a 12.8px floor, and v46 never saw it: measuring the rendered page found the gap. Re-scored on the leaderboard cohort on the same bytes, no score or grade moves (v46 WARNs, it never FAILs); v46 measures more sizes on three sites, this one included, fewer on none, and finds new sub-floor or off-scale sizes on two.",
     source: 'engine 1.5.2 entry in CHANGELOG.md; CSS Fonts 4 (the font shorthand); the design-system contract type scale (12.8px floor)',
   },
+
+  // ── Tokens contract v0.1.3: types as the format assigns them ──
+  {
+    version: 'tokens v0.1.3',
+    date: '2026-10-21',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.3: a token takes the type of its group, and $schema is Designesy policy',
+    description:
+      'A token with no $type of its own takes the type of the token it references, else the closest $type on the groups above it, a group\'s $extends included, as the 2025.10 Format Module assigns it. Until 0.1.3 only a $type written on the token counted, so 13 of the 93 valid files in the DTCG 2025.10 test suite failed t03 and scored 50 to 71; none of the 93 now fails t03 or t06. A token written { $type, $ref } is counted, and a $ref that is a JSON Pointer is no longer a deprecated pattern; t10 reports a $ref that is not one. The whole file is read, where a top-level group named tokens was scored alone. A missing $schema is a t01 WARN named as Designesy policy, where it was a FAIL that said DTCG requires it. t08 expects { value, unit } in px or rem and reports a string such as "16px" as the legacy form, which t10 also lists. With no tokens, t03 is N/A.',
+    rationale:
+      'Rules changed: how a token\'s type is found, what counts as a token, the t01 verdict on a missing $schema, the dimension form t08 accepts and the $ref that t10 reports. The checks misread valid DTCG files and stated requirements the format does not make.',
+    source: 'tokens contract 0.1.3 entry in CHANGELOG.md; Design Tokens Format Module 2025.10, sections 5.2.2, 6.7.3, 7.1.2 and 8.2',
+  },
 ];
 
 // ── Sorted by date descending ───────────────────────────────────────────────

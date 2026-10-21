@@ -21,7 +21,7 @@
     {
       "id": "designesy.components",
       "version": "0.1.1",
-      "value": "b2ab7dc5bf5ba4fe7fcaf9c1fc041c7d01fab76595c8e29587968499c2744878",
+      "value": "791a6dcc68123a07a68ca700eea1272b4fdf34114bd8221a95ee3711011853a1",
       "source": "f0fa57e107452aba87c51788c659563351c125266ce938407fd521cc8ce130a5"
     },
     {
@@ -62,9 +62,9 @@
     },
     {
       "id": "designesy.tokens",
-      "version": "0.1.2",
-      "value": "07bcada2135a79e224044abc874e5b6bebc3b5d4227fee0875c064cb95353780",
-      "source": "5dbf12f3cbc2a0e8e69cb28e78e0e3da9609cbd869465dcea8262f095e4b051b"
+      "version": "0.1.3",
+      "value": "b8669bdbd0d8c857737e0d713a5621741d2671f1877f5a0d49bf383773499991",
+      "source": "648b9617dc2c204d1418d211bc773b4c4b44c13e919ec3ef97a6119ca7a54a06"
     }
   ]
 }

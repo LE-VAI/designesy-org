@@ -24,36 +24,34 @@ import designesy_mcp_server as mcp
 
 VALID_TOKEN_FILE = json.dumps({
     "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-    "$tokens": {
-        "color": {
-            "primary": {
-                "$type": "color",
-                "$value": {"colorSpace": "srgb", "components": [0.2, 0.4, 0.9]},
-            },
-            "muted": {
-                "$type": "color",
-                "$value": {"colorSpace": "srgb", "components": [0.5, 0.5, 0.5]},
-            },
+    "color": {
+        "primary": {
+            "$type": "color",
+            "$value": {"colorSpace": "srgb", "components": [0.2, 0.4, 0.9]},
         },
-        "spacing": {
-            "md": {
-                "$type": "dimension",
-                "$value": "16px",
-            },
-            "lg": {
-                "$type": "dimension",
-                "$value": "2rem",
-            },
+        "muted": {
+            "$type": "color",
+            "$value": {"colorSpace": "srgb", "components": [0.5, 0.5, 0.5]},
         },
-        "font": {
-            "family": {
-                "$type": "fontFamily",
-                "$value": ["Inter", "sans-serif"],
-            },
-            "weight": {
-                "$type": "fontWeight",
-                "$value": 600,
-            },
+    },
+    "spacing": {
+        "md": {
+            "$type": "dimension",
+            "$value": {"value": 16, "unit": "px"},
+        },
+        "lg": {
+            "$type": "dimension",
+            "$value": {"value": 2, "unit": "rem"},
+        },
+    },
+    "font": {
+        "family": {
+            "$type": "fontFamily",
+            "$value": ["Inter", "sans-serif"],
+        },
+        "weight": {
+            "$type": "fontWeight",
+            "$value": 600,
         },
     },
 })
@@ -61,25 +59,23 @@ VALID_TOKEN_FILE = json.dumps({
 
 INVALID_TOKEN_FILE = json.dumps({
     "$schema": "https://wrong-schema.com/schema.json",
-    "$tokens": {
-        "colors": {
-            "primary": {
-                "$type": "myCustomGlow",
-                "$value": "#3b82f6",
-            },
-            "secondary": {
-                "$value": "#ff0000",
-            },
+    "colors": {
+        "primary": {
+            "$type": "myCustomGlow",
+            "$value": "#3b82f6",
         },
-        "spacing": {
-            "md": {
-                "$type": "dimension",
-                "$value": 16,
-            },
-            "lg": {
-                "$type": "dimension",
-                "$value": "2parsangs",
-            },
+        "secondary": {
+            "$value": "#ff0000",
+        },
+    },
+    "spacing": {
+        "md": {
+            "$type": "dimension",
+            "$value": 16,
+        },
+        "lg": {
+            "$type": "dimension",
+            "$value": "2parsangs",
         },
     },
 })
@@ -217,28 +213,33 @@ class TestTokenValidation:
         assert checks["t08"]["status"] == "SKIP"
 
     @patch("designesy_mcp_server._fetch")
-    def test_t10_detects_bare_hex_and_ref(self, mock_fetch):
-        """t10 should flag deprecated patterns: bare hex colors, $ref syntax."""
+    def test_t10_detects_bare_hex_and_a_ref_that_is_not_a_pointer(self, mock_fetch):
+        """t10 flags bare hex colors and a $ref that is not a JSON Pointer.
+
+        A JSON Pointer $ref (#/...) is the reference form DTCG 2025.10 says
+        tools MUST support, so it is not flagged; a dot path is.
+        """
         mock_fetch.return_value = {
             "id": "test", "version": "1.0", "status": "active",
             "checks": [{"item": f"check {i}"} for i in range(10)],
         }
         token_file = json.dumps({
             "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-            "$tokens": {
-                "color": {
-                    "primary": {
-                        "$type": "color",
-                        "$value": "#ff0000",
-                        "$ref": "#/color/primary",
-                    },
+            "color": {
+                "primary": {
+                    "$type": "color",
+                    "$value": "#ff0000",
                 },
+                "brand": {"$type": "color", "$ref": "#/color/primary/$value"},
+                "legacy": {"$type": "color", "$ref": "color.primary"},
             },
         })
         result = mcp._tokens_score_impl(dtcg_file=token_file)
         t10 = {c["id"]: c for c in result["checks"]}["t10"]
         assert t10["status"] == "WARN"
-        assert "bare hex" in t10["detail"].lower() or "$ref" in t10["detail"].lower()
+        assert "bare hex" in t10["detail"].lower()
+        assert "Token 'color.legacy' has a $ref that is not a JSON Pointer: 'color.primary'" in t10["detail"]
+        assert "color.brand" not in t10["detail"]
 
 
 # ── 3b. t06 type list: the 13 types DTCG 2025.10 defines ─────────────────────
@@ -266,7 +267,7 @@ _CONTRACT_STUB = {
 def _one_token_file(type_name, value):
     return json.dumps({
         "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-        "$tokens": {"group": {"token": {"$type": type_name, "$value": value}}},
+        "group": {"token": {"$type": type_name, "$value": value}},
     })
 
 

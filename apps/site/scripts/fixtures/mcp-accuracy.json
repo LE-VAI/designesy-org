@@ -54,7 +54,10 @@
       "space": {
         "md": {
           "$type": "dimension",
-          "$value": "16px"
+          "$value": {
+            "value": 16,
+            "unit": "px"
+          }
         }
       }
     },
@@ -81,7 +84,10 @@
       "space": {
         "md": {
           "$type": "dimension",
-          "$value": "16px"
+          "$value": {
+            "value": 16,
+            "unit": "px"
+          }
         }
       }
     },
@@ -101,7 +107,10 @@
         },
         "16": {
           "$type": "dimension",
-          "$value": "16px"
+          "$value": {
+            "value": 16,
+            "unit": "px"
+          }
         },
         "md": {
           "$type": "dimension",

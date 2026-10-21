@@ -16,6 +16,16 @@ is checked like any other (it was skipped); and the 2025.10 dimension form
 {value, unit} is read by t08 (it was not). The site's /export/dtcg is held to
 DTCG values: no var(), dimensions as {value, unit}, font stacks as arrays.
 
+Tokens contract 0.1.3: a token's type is its own $type, else the type of the
+token it references, else the closest group $type above it, a group's $extends
+included (only a $type on the token counted, so a conformant file that typed
+its groups FAILed t03 and t06); a {$type, $ref} token is counted and a JSON
+Pointer $ref is not a deprecated pattern; the whole file is walked (a
+top-level group named tokens or $tokens was scored alone); a missing $schema
+WARNs as Designesy policy (it FAILed); t08 expects {value, unit} in px or rem
+and reports a string such as "16px" as the legacy form; and with no tokens t03
+SKIPs, as t06 does.
+
 The ten checks now live in one module on each server: apps/site/app/lib/
 tokens-score.ts (the hosted endpoint) and _tokens_score here, a line-for-line
 port. Both run on the token files in fixtures/tokens/ and must produce
@@ -62,7 +72,7 @@ def _contract() -> dict:
 NINE_PASS_ONE_SKIP = {
     "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
     "color": {"ink": {"$type": "color", "$value": {"colorSpace": "srgb", "components": [0.96, 0.96, 0.97], "alpha": 1}}},
-    "space": {"md": {"$type": "dimension", "$value": "16px"}},
+    "space": {"md": {"$type": "dimension", "$value": {"value": 16, "unit": "px"}}},
 }
 
 # The tokens contract as the site serves it, cut to what the tool reads.
@@ -154,7 +164,7 @@ class TestAliases:
     def test_a_dimension_alias_is_checked_by_its_target(self):
         """Old verdict: t08 WARN and t10 WARN ('{space.16}' has no unit)."""
         result = _score_inline(self._doc({
-            "16": {"$type": "dimension", "$value": "16px"},
+            "16": {"$type": "dimension", "$value": {"value": 16, "unit": "px"}},
             "md": {"$type": "dimension", "$value": "{space.16}"},
         }))
         assert _check(result, "t08")["status"] == "PASS", _check(result, "t08")
@@ -163,7 +173,7 @@ class TestAliases:
 
     def test_an_alias_chain_resolves(self):
         result = _score_inline(self._doc({
-            "base": {"$type": "dimension", "$value": "4px"},
+            "base": {"$type": "dimension", "$value": {"value": 4, "unit": "px"}},
             "md": {"$type": "dimension", "$value": "{space.base}"},
             "gutter": {"$type": "dimension", "$value": "{space.md}"},
         }))
@@ -171,7 +181,7 @@ class TestAliases:
 
     def test_an_unresolved_alias_is_named_as_such(self):
         result = _score_inline(self._doc({
-            "sm": {"$type": "dimension", "$value": "8px"},
+            "sm": {"$type": "dimension", "$value": {"value": 8, "unit": "px"}},
             "md": {"$type": "dimension", "$value": "{space.missing}"},
         }))
         t08 = _check(result, "t08")
@@ -216,6 +226,118 @@ class TestAliases:
         }))
         assert result["total_tokens"] == 2
         assert _check(result, "t08")["status"] == "PASS", _check(result, "t08")
+
+
+SCHEMA = "https://www.designtokens.org/schemas/2025.10/format.json"
+BLUE = {"colorSpace": "srgb", "components": [0, 0.4, 0.8], "alpha": 1}
+PX = {"value": 8, "unit": "px"}
+
+
+def _dim(value) -> dict:
+    return {"$type": "dimension", "$value": value}
+
+
+class TestFormatModuleReading:
+    """Tokens contract 0.1.3: the checks read a file as DTCG 2025.10 does."""
+
+    def test_a_group_type_is_inherited(self):
+        """Old verdict: t03 FAIL (0/2), t06 FAIL, t05 SKIP; score 71."""
+        result = _score_inline({"$schema": SCHEMA, "color": {
+            "$type": "color",
+            "ink": {"$value": BLUE},
+            "deep": {"nested": {"accent": {"$value": BLUE}}},
+        }})
+        assert _check(result, "t03")["status"] == "PASS", _check(result, "t03")
+        assert _check(result, "t03")["detail"] == "2/2 tokens have $type (direct or inherited)"
+        assert _check(result, "t06")["status"] == "PASS", _check(result, "t06")
+        # t05 runs on inherited colours.
+        assert _check(result, "t05")["detail"].startswith("2 structured, 0 bare hex"), _check(result, "t05")
+        assert result["score"] == 100
+
+    def test_extends_gives_a_group_the_extended_groups_type(self):
+        """Old verdict: t03 FAIL, 0/3 (every type here comes from a group)."""
+        result = _score_inline({"$schema": SCHEMA,
+                                "base": {"$type": "color", "a": {"$value": BLUE}},
+                                "curly": {"$extends": "{base}", "b": {"$value": BLUE}},
+                                "pointer": {"$extends": "#/base", "c": {"$value": BLUE}}})
+        assert _check(result, "t03")["detail"] == "3/3 tokens have $type (direct or inherited)", _check(result, "t03")
+
+    def test_an_untyped_alias_takes_its_targets_type(self):
+        """Old verdict: t03 FAIL; semantic.gutter was not checked by t08."""
+        result = _score_inline({"$schema": SCHEMA,
+                                "space": {"$type": "dimension", "md": {"$value": PX}},
+                                "semantic": {"gutter": {"$value": "{space.md}"}}})
+        assert _check(result, "t03")["status"] == "PASS", _check(result, "t03")
+        assert _check(result, "t08")["detail"].startswith("All 2 dimension token(s)"), _check(result, "t08")
+
+    def test_a_json_pointer_ref_token_is_a_token(self):
+        """Old verdict: total_tokens 1 (each {$type, $ref} token was read as a group)."""
+        result = _score_inline({"$schema": SCHEMA,
+                                "color": {"$type": "color", "blue": {"$value": BLUE}},
+                                "semantic": {
+                                    "primary": {"$type": "color", "$ref": "#/color/blue/$value"},
+                                    "accent": {"$ref": "#/color/blue/$value"},
+                                    "hue": {"$type": "number", "$ref": "#/color/blue/$value/components/0"},
+                                }})
+        assert result["total_tokens"] == 4, result
+        assert _check(result, "t03")["status"] == "PASS", _check(result, "t03")
+        assert _check(result, "t04")["detail"] == "4/4 tokens have $value or $ref"
+        # A JSON Pointer $ref is what the format asks tools to support.
+        assert _check(result, "t10")["status"] == "PASS", _check(result, "t10")
+
+    def test_the_whole_file_is_walked(self):
+        """Old verdict: only the top-level group named tokens was scored (1 token)."""
+        result = _score_inline({"$schema": SCHEMA,
+                                "tokens": {"ink": {"$type": "color", "$value": BLUE}},
+                                "space": {"md": {"$type": "dimension", "$value": 16}}})
+        assert result["total_tokens"] == 2, result
+        assert _check(result, "t02")["detail"] == "2 token groups found: tokens, space"
+        assert _check(result, "t08")["status"] == "FAIL", _check(result, "t08")
+        # $tokens is a property, not a group: a file wrapped in it has no tokens.
+        wrapped = _score_inline({"$schema": SCHEMA, "$tokens": {"color": {"ink": {"$type": "color", "$value": BLUE}}}})
+        assert wrapped["total_tokens"] == 0
+
+    def test_a_missing_schema_warns_as_designesy_policy(self):
+        """Old verdict: t01 FAIL, "DTCG 2025.10 requires $schema"."""
+        doc = {k: v for k, v in NINE_PASS_ONE_SKIP.items() if k != "$schema"}
+        t01 = _check(_score_inline(doc), "t01")
+        assert t01["status"] == "WARN", t01
+        assert "Designesy policy, not a DTCG requirement" in t01["detail"]
+        assert "requires" not in t01["detail"]
+
+    def test_t08_expects_the_object_form_in_px_or_rem(self):
+        """Old verdict: "16px" and {value: 2, unit: em} passed t08."""
+        result = _score_inline({"$schema": SCHEMA, "space": {
+            "sm": _dim(PX),
+            "md": _dim("16px"),
+            "gutter": _dim("{space.md}"),
+            "wide": _dim({"value": 2, "unit": "em"}),
+        }})
+        t08 = _check(result, "t08")
+        assert t08["status"] == "WARN", t08
+        assert t08["detail"] == (
+            "3/4 dimension token(s) are not { value, unit } in px or rem: "
+            "space.md='16px' (legacy string), space.gutter='{space.md} -> 16px' (legacy string), "
+            "space.wide='{value: 2, unit: em}'"
+        )
+        assert "uses the pre-2025.10 string form: '16px'" in _check(result, "t10")["detail"]
+
+    def test_t08_legacy_strings_alone_warn(self):
+        """Old verdict: t08 PASS. A legacy string is a WARN, never a FAIL."""
+        result = _score_inline({"$schema": SCHEMA, "space": {"md": _dim("16px")}})
+        assert _check(result, "t08")["status"] == "WARN", _check(result, "t08")
+
+    def test_t03_skips_a_file_with_no_tokens(self):
+        """Old verdict: t03 FAIL, "0/0 tokens have $type" (an empty group is valid DTCG)."""
+        result = _score_inline({"$schema": SCHEMA, "empty": {}})
+        assert _check(result, "t03") == {"id": "t03", "name": "contract name 3", "status": "SKIP", "detail": "No tokens found"}
+
+    def test_the_dtcg_fixtures_have_no_type_failure(self):
+        golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+        for name in ("type-inheritance.json", "json-pointer-ref.json", "empty-group.json"):
+            statuses = {c["id"]: c["status"] for c in golden[name]["checks"]}
+            assert statuses["t03"] != "FAIL" and statuses["t06"] != "FAIL", (name, statuses)
+        assert golden["type-inheritance.json"]["score"] == 100
 
 
 class TestSiteExport:

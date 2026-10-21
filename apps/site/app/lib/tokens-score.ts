@@ -30,6 +30,24 @@
 //   The 2025.10 dimension form, { value, unit }, was not read at all (only
 //   strings and bare numbers were), so it is now checked in t08 too.
 //
+// Since tokens contract 0.1.3, the checks read a file the way the 2025.10
+// Format Module does:
+//   - A token's type is its own $type, else the type of the token its value
+//     references, else the closest $type on the groups above it, a group's
+//     $extends included (5.2.2, 6.7.3). Only a $type written on the token was
+//     counted, so a conformant file that typed its groups FAILed t03 and t06,
+//     and t05 and t08 never saw its colours and dimensions. With no tokens,
+//     t03 SKIPs, as t06 does.
+//   - A token written { $type, $ref } is a token: $ref is the JSON Pointer
+//     reference tools MUST support (7.1.2), not a deprecated pattern. A $ref
+//     that is not a JSON Pointer (#/...) is reported in t10.
+//   - The whole file is walked. A top-level group named tokens (or $tokens)
+//     was scored alone and every other group ignored.
+//   - A missing $schema WARNs as Designesy policy: the Format Module does not
+//     define $schema, and the detail said DTCG requires it.
+//   - t08 expects a dimension's 2025.10 form, { value, unit } in px or rem
+//     (8.2). A string such as "16px" is reported as the legacy form.
+//
 // The PyPI server (packages/designesy-mcp, _tokens_score) ports this module line
 // for line. Both run on the token files in
 // packages/designesy-mcp/test/fixtures/tokens/ and must produce expected.json
@@ -87,11 +105,15 @@ export const TOKENS_CHECK_NAMES: Readonly<Record<string, string>> = {
 export const TOKENS_SCORING =
   'PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.';
 
+// CSS length units, which a legacy string dimension ("16px") may end in.
 const VALID_DIMENSION_UNITS = [
   'px', 'rem', 'em', '%', 'vw', 'vh', 'vmin', 'vmax',
   'ch', 'ex', 'svh', 'lvh', 'dvh', 'svw', 'lvw', 'dvw',
   'cm', 'mm', 'in', 'pt', 'pc', 'fr',
 ].sort((a, b) => b.length - a.length); // longest first for suffix matching
+
+// The units the 2025.10 dimension form allows (8.2.1).
+const DTCG_DIMENSION_UNITS = ['px', 'rem'];
 
 function isObj(x: Json): x is Obj {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
@@ -122,9 +144,90 @@ function isAlias(v: Json): v is string {
  */
 const DTCG_SCHEMA_HOST = /^https?:\/\/(?:[a-z0-9-]+\.)*designtokens\.org(?::[0-9]+)?(?:[/?#]|$)/i;
 
+/** A JSON Pointer reference (RFC 6901), the form a $ref takes: #/path/to/target. */
+function isPointer(v: Json): v is string {
+  return typeof v === 'string' && v.startsWith('#/');
+}
+
+/** The path segments a {group.token} alias or a #/ JSON Pointer names. */
+function refPath(ref: Json): string[] | undefined {
+  if (isAlias(ref)) return ref.slice(1, -1).split('.');
+  if (isPointer(ref)) return ref.slice(2).split('/').map((s) => s.replace(/~1/g, '/').replace(/~0/g, '~'));
+  return undefined;
+}
+
+/** A token holds a $value or a $ref; any other object is a group. */
+function isToken(node: Obj): boolean {
+  return node.$value !== undefined || '$ref' in node;
+}
+
+/** The node at a path from the root, or undefined when a segment is missing. */
+function nodeAt(root: Obj, path: string[]): Json {
+  let node: Json = root;
+  for (const part of path) {
+    node = isObj(node) && Object.prototype.hasOwnProperty.call(node, part) ? node[part] : undefined;
+  }
+  return node;
+}
+
+/**
+ * The $type a group gives the tokens in it: its own, else the one the group
+ * its $extends names gives (the group's type after extension, 6.7.3), else
+ * the type it inherits from the groups above it.
+ */
+function groupType(group: Obj, inherited: string | null, root: Obj): string | null {
+  const seen = new Set<Obj>();
+  let node: Json = group;
+  while (isObj(node) && !isToken(node) && !seen.has(node)) {
+    seen.add(node);
+    if (typeof node.$type === 'string' && node.$type) return node.$type;
+    const path = refPath(node.$extends);
+    node = path ? nodeAt(root, path) : undefined;
+  }
+  return inherited;
+}
+
+/** The node at a path, with the type the groups above it give it. */
+function locate(root: Obj, path: string[]): { node: Json; inherited: string | null } {
+  let node: Json = root;
+  let inherited: string | null = null;
+  for (const part of path) {
+    if (!isObj(node) || !Object.prototype.hasOwnProperty.call(node, part)) return { node: undefined, inherited };
+    inherited = groupType(node, inherited, root);
+    node = node[part];
+  }
+  return { node, inherited };
+}
+
+/**
+ * A token's type (5.2.2): its own $type, else the type of the token its
+ * {alias} value or #/path/$value pointer references, else the type the groups
+ * above it give it (null when none does). A pointer into part of a value
+ * names no token, so its token takes the groups' type.
+ */
+function tokenType(token: Obj, inherited: string | null, root: Obj, seen: Set<Obj> = new Set()): Json {
+  if (token.$type) return token.$type;
+  let path: string[] | undefined;
+  if (isAlias(token.$value)) {
+    path = refPath(token.$value);
+  } else if (token.$value === undefined && isPointer(token.$ref)) {
+    path = refPath(token.$ref);
+    if (path && path[path.length - 1] === '$value') path = path.slice(0, -1);
+  }
+  if (path && !seen.has(token)) {
+    seen.add(token);
+    const target = locate(root, path);
+    if (isObj(target.node) && isToken(target.node)) {
+      const type = tokenType(target.node, target.inherited, root, seen);
+      if (type) return type;
+    }
+  }
+  return inherited;
+}
+
 /**
  * Follow an alias to the literal value it names, through any chain of aliases,
- * with the $type of the token that holds it (null when that token has none).
+ * with the type of the token that holds it (null when it has none).
  * Path segments are group and token names, $root included. Returns undefined
  * when a segment is missing, the target is not a token, or the chain loops.
  */
@@ -134,26 +237,26 @@ function resolveAlias(alias: string, root: Obj): { value: Json; type: string | n
   while (isAlias(ref)) {
     if (seen.has(ref)) return undefined;
     seen.add(ref);
-    let node: Json = root;
-    for (const part of ref.slice(1, -1).split('.')) {
-      node = isObj(node) && Object.prototype.hasOwnProperty.call(node, part) ? node[part] : undefined;
-    }
+    const { node, inherited } = locate(root, ref.slice(1, -1).split('.'));
     if (!isObj(node) || node.$value === undefined) return undefined;
-    if (!isAlias(node.$value)) return { value: node.$value, type: typeof node.$type === 'string' ? node.$type : null };
+    if (!isAlias(node.$value)) {
+      const type = tokenType(node, inherited, root);
+      return { value: node.$value, type: typeof type === 'string' ? type : null };
+    }
     ref = node.$value;
   }
   return undefined;
 }
 
 /**
- * The unit of a dimension value, or '' when it has none the checks accept: a
- * string ending in a CSS length unit, or the 2025.10 object form
- * { value: number, unit }.
+ * How t08 reads a dimension value: 'ok' for the 2025.10 form { value: number,
+ * unit } in px or rem, 'legacy' for a string ending in a CSS length unit
+ * ("16px"), 'bad' for anything else.
  */
-function dimensionUnit(v: Json): string {
-  if (typeof v === 'string') return extractUnit(v);
-  if (isObj(v) && typeof v.value === 'number' && typeof v.unit === 'string' && VALID_DIMENSION_UNITS.includes(v.unit)) return v.unit;
-  return '';
+function dimensionForm(v: Json): 'ok' | 'legacy' | 'bad' {
+  if (typeof v === 'string') return extractUnit(v) ? 'legacy' : 'bad';
+  if (isObj(v) && typeof v.value === 'number' && typeof v.unit === 'string' && DTCG_DIMENSION_UNITS.includes(v.unit)) return 'ok';
+  return 'bad';
 }
 
 /** How a dimension value prints in a detail line. */
@@ -188,17 +291,16 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   const names = checkNames(contract);
   const results: TokensCheck[] = [];
   const add = (id: string, status: TokensStatus, detail: string) => results.push({ id, name: names[id], status, detail });
-  const picked = tokens.$tokens || tokens.tokens || tokens;
-  const tokenGroups: Obj = isObj(picked) ? picked : {};
 
-  // t01: $schema present and points to designtokens.org
+  // t01: $schema present and points to designtokens.org. Designesy policy: the
+  // Format Module does not define $schema, so a file without one WARNs.
   const hasSchema = typeof tokens.$schema === 'string' && tokens.$schema !== '';
   const schemaValid = hasSchema && DTCG_SCHEMA_HOST.test(tokens.$schema as string);
-  add('t01', schemaValid ? 'PASS' : hasSchema ? 'WARN' : 'FAIL',
-    hasSchema ? `Schema: ${tokens.$schema as string}` : 'No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json');
+  add('t01', schemaValid ? 'PASS' : 'WARN',
+    hasSchema ? `Schema: ${tokens.$schema as string}` : 'No $schema found. Designesy policy, not a DTCG requirement: point $schema at https://www.designtokens.org/schemas/2025.10/format.json so editors can validate the file.');
 
   // t02: token groups exist
-  const groupKeys = Object.keys(tokenGroups).filter((k) => !k.startsWith('$'));
+  const groupKeys = Object.keys(tokens).filter((k) => !k.startsWith('$'));
   add('t02', groupKeys.length > 0 ? 'PASS' : 'FAIL',
     `${groupKeys.length} token groups found: ${groupKeys.slice(0, 5).join(', ')}${groupKeys.length > 5 ? '...' : ''}`);
 
@@ -209,26 +311,27 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   let colorBareHexCount = 0;
   let totalTokens = 0;
   const allTypes = new Set<string>();
-  const dimensionValues: Array<{ path: string; value: string; ok: boolean }> = [];
+  const dimensionValues: Array<{ path: string; value: string; form: 'ok' | 'legacy' | 'bad' }> = [];
   const deprecatedPatterns: string[] = [];
 
-  const walk = (obj: Obj, path: string): void => {
+  const walk = (obj: Obj, path: string, inherited: string | null): void => {
     for (const [key, val] of Object.entries(obj)) {
       // $root is a token (a group's own value), not a property of the group.
       if (key.startsWith('$') && key !== '$root') continue;
       const currentPath = path ? `${path}.${key}` : key;
       if (!isObj(val)) continue;
-      if (val.$value === undefined) {
-        walk(val, currentPath);
+      if (!isToken(val)) {
+        walk(val, currentPath, groupType(val, inherited, tokens));
         continue;
       }
       totalTokens++;
-      if (val.$type) {
+      const type = tokenType(val, inherited, tokens);
+      if (type) {
         typePassCount++;
-        if (typeof val.$type === 'string') allTypes.add(val.$type);
+        if (typeof type === 'string') allTypes.add(type);
       }
       valuePassCount++;
-      if (val.$type === 'color') {
+      if (type === 'color') {
         if (isObj(val.$value) && 'colorSpace' in val.$value) {
           colorStructureCount++;
         } else if (typeof val.$value === 'string' && val.$value.startsWith('#')) {
@@ -236,44 +339,47 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
           deprecatedPatterns.push(`Color token '${currentPath}' uses bare hex (pre-2025.10 pattern)`);
         }
       }
-      if (val.$type === 'dimension') {
+      if (type === 'dimension') {
         if (isAlias(val.$value)) {
-          // A reference: its unit is the unit of the value it resolves to, and
+          // A reference: its form is the form of the value it resolves to, and
           // the target, if it is a dimension token, answers t10 for itself. A
           // target of another type is named as such.
-          const target = resolveAlias(val.$value, tokenGroups);
+          const target = resolveAlias(val.$value, tokens);
           const otherType = target && target.type !== null && target.type !== 'dimension';
           dimensionValues.push(!target
-            ? { path: currentPath, value: `${val.$value} (unresolved alias)`, ok: false }
+            ? { path: currentPath, value: `${val.$value} (unresolved alias)`, form: 'bad' }
             : otherType
-              ? { path: currentPath, value: `${val.$value} -> a ${target.type} token`, ok: false }
-              : { path: currentPath, value: `${val.$value} -> ${dimensionText(target.value)}`, ok: !!dimensionUnit(target.value) });
+              ? { path: currentPath, value: `${val.$value} -> a ${target.type} token`, form: 'bad' }
+              : { path: currentPath, value: `${val.$value} -> ${dimensionText(target.value)}`, form: dimensionForm(target.value) });
         } else if (typeof val.$value === 'string') {
-          dimensionValues.push({ path: currentPath, value: val.$value, ok: !!extractUnit(val.$value) });
-          if (!extractUnit(val.$value)) {
-            deprecatedPatterns.push(`Dimension token '${currentPath}' has unrecognized or missing unit: '${val.$value}'`);
-          }
+          dimensionValues.push({ path: currentPath, value: val.$value, form: dimensionForm(val.$value) });
+          deprecatedPatterns.push(extractUnit(val.$value)
+            ? `Dimension token '${currentPath}' uses the pre-2025.10 string form: '${val.$value}' (write { value, unit })`
+            : `Dimension token '${currentPath}' has unrecognized or missing unit: '${val.$value}'`);
         } else if (typeof val.$value === 'number') {
-          dimensionValues.push({ path: currentPath, value: String(val.$value), ok: false });
+          dimensionValues.push({ path: currentPath, value: String(val.$value), form: 'bad' });
           deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (should include unit string)`);
         } else if (isObj(val.$value)) {
-          dimensionValues.push({ path: currentPath, value: dimensionText(val.$value), ok: !!dimensionUnit(val.$value) });
+          dimensionValues.push({ path: currentPath, value: dimensionText(val.$value), form: dimensionForm(val.$value) });
         }
       }
-      if ('$ref' in val) {
-        deprecatedPatterns.push(`Token '${currentPath}' uses deprecated $ref syntax (use {path} in $value)`);
+      // A $ref is a JSON Pointer (#/path/to/target); a dot path is not one.
+      if ('$ref' in val && !isPointer(val.$ref)) {
+        const ref = typeof val.$ref === 'string' ? `'${val.$ref}'` : `a value of type ${typeOf(val.$ref)}`;
+        deprecatedPatterns.push(`Token '${currentPath}' has a $ref that is not a JSON Pointer: ${ref} (write #/path/to/token/$value)`);
       }
     }
   };
-  walk(tokenGroups, '');
+  walk(tokens, '', groupType(tokens, null, tokens));
 
-  // t03: $type on all tokens
-  add('t03', totalTokens > 0 && typePassCount === totalTokens ? 'PASS' : typePassCount > 0 ? 'WARN' : 'FAIL',
-    `${typePassCount}/${totalTokens} tokens have $type`);
+  // t03: $type on all tokens, their own or inherited
+  if (totalTokens === 0) add('t03', 'SKIP', 'No tokens found');
+  else add('t03', typePassCount === totalTokens ? 'PASS' : typePassCount > 0 ? 'WARN' : 'FAIL',
+    `${typePassCount}/${totalTokens} tokens have $type (direct or inherited)`);
 
-  // t04: $value on all tokens
+  // t04: $value (or a $ref) on all tokens
   add('t04', totalTokens > 0 && valuePassCount === totalTokens ? 'PASS' : 'FAIL',
-    `${valuePassCount}/${totalTokens} tokens have $value`);
+    `${valuePassCount}/${totalTokens} tokens have $value or $ref`);
 
   // t05: structured color format (colorSpace + components)
   if (colorStructureCount + colorBareHexCount > 0) {
@@ -300,16 +406,19 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
     else add('t07', 'WARN', `Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): ${bareCustoms.join(', ')}`);
   }
 
-  // t08: dimension tokens have valid CSS length units
+  // t08: dimension tokens use the 2025.10 form, { value, unit } in px or rem.
+  // A legacy string ("16px") WARNs; t08 FAILs only when no value is usable.
   if (dimensionValues.length === 0) {
     add('t08', 'SKIP', 'No dimension tokens found');
   } else {
-    const badUnits = dimensionValues.filter((d) => !d.ok).map((d) => `${d.path}='${d.value}'`);
-    if (badUnits.length === 0) {
-      add('t08', 'PASS', `All ${dimensionValues.length} dimension token(s) use valid units (px, rem, em, %, etc.)`);
+    const others = dimensionValues.filter((d) => d.form !== 'ok')
+      .map((d) => `${d.path}='${d.value}'${d.form === 'legacy' ? ' (legacy string)' : ''}`);
+    const bad = dimensionValues.filter((d) => d.form === 'bad').length;
+    if (others.length === 0) {
+      add('t08', 'PASS', `All ${dimensionValues.length} dimension token(s) use the 2025.10 form { value, unit } in px or rem`);
     } else {
-      add('t08', badUnits.length < dimensionValues.length ? 'WARN' : 'FAIL',
-        `${badUnits.length}/${dimensionValues.length} dimension token(s) have missing/unrecognized units: ${badUnits.slice(0, 5).join(', ')}`);
+      add('t08', bad < dimensionValues.length ? 'WARN' : 'FAIL',
+        `${others.length}/${dimensionValues.length} dimension token(s) are not { value, unit } in px or rem: ${others.slice(0, 5).join(', ')}`);
     }
   }
 
@@ -320,7 +429,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
 
   // t10: no pre-2025.10 patterns
   if (deprecatedPatterns.length === 0) {
-    add('t10', 'PASS', 'No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)');
+    add('t10', 'PASS', 'No deprecated DTCG patterns detected (no bare hex colors, no string or bare number dimensions, no $ref that is not a JSON Pointer)');
   } else {
     add('t10', 'WARN', `${deprecatedPatterns.length} deprecated pattern(s) found: ${deprecatedPatterns.slice(0, 3).join('; ')}${deprecatedPatterns.length > 3 ? '...' : ''}`);
   }
