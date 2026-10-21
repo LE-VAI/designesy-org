@@ -26,13 +26,18 @@
 //
 // Dimensions and a shadow's four lengths used to be strings ("4px", "0px").
 // A 2025.10 dimension is an object whose unit is px or rem (Format Module
-// 8.2, 8.2.1), so the format's JSON Schema rejected those tokens and the
-// tokens validator WARNed on them in t08 and t10. A length in any other unit
-// (em, %, vw, ch, pt, ...) is not converted: a relative unit's size depends on
-// an element, a font or a viewport the token file does not describe, so any
-// number would be invented, and an absolute one is kept as written rather
-// than rounded into px. Such a value, or a shadow holding one, stays in
-// $extensions.designesy.css.
+// 8.2, 8.2.1), so the format's JSON Schema rejected both. The tokens
+// validator WARNed on the dimension tokens in t08 and t10; it does not read a
+// shadow's lengths, so strings there did not lower its score.
+//
+// A length in any other unit (em, %, vw, ch, pt, ...) is not converted. A
+// relative unit's size depends on an element, a font or a viewport the token
+// file does not describe, so any number would be invented. Absolute units
+// have fixed ratios to px: in (96px) and pc (16px) convert exactly, but pt,
+// cm, mm and Q mostly do not (1pt is 1.333...px, 1cm 37.795...px). All of
+// them are kept as written, so one rule holds: px and rem are typed, and
+// every other unit stays as the author wrote it. Such a value, or a shadow
+// holding one, stays in $extensions.designesy.css.
 //
 // PURE AND IMPORT-FREE: scripts/check-mcp-accuracy.js runs the guardrails
 // route that calls this, and the module stays loadable on its own.
