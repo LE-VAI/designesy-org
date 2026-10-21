@@ -9,8 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
 DTCG 2025.10 Format Module does** (the hosted `/api/mcp`; the PyPI server
 carries the same change in its next release). Scores move for files that
-type their groups, reference with a JSON Pointer `$ref`, leave out `$schema`,
-keep a top-level group named `tokens`, or write dimensions as strings.
+type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
+leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
+write dimensions as strings.
+
+Until that release, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+but names them from the contract it fetches from this site, so its results
+say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
+A file with no `$schema` FAILs t01 under a name that calls `$schema` a
+Designesy policy, and t08 passes `"4px"` under a name that asks for
+`{ value, unit }`. Publishing the PyPI server with this change closes the
+gap.
 
 ### Fixed (tokens contract 0.1.3)
 
@@ -61,17 +70,18 @@ keep a top-level group named `tokens`, or write dimensions as strings.
   each dimension alias, so 5,000 chained aliases took 5 seconds to score in
   the hosted port and 15 in the PyPI port. Each chain of aliases, JSON
   Pointers or `$extends` is now followed once per file, in a loop: the same
-  file scores in under 60 ms in both, and so does a 5,000-long chain of each
-  kind.
+  file scores in 14 ms in the hosted port and 48 ms in the PyPI port, and
+  every 5,000-long chain of aliases, pointers, dimension aliases or
+  `$extends` in under 100 ms.
 - **The tool description no longer says `$description` is checked.** No
   check reads it. Both servers' descriptions now name what the checks read.
 
 ### Changed (tokens contract 0.1.3)
 
 - Tokens contract 0.1.2 to 0.1.3. t01, t04, t08 and t10 are named for what
-  they check, and t01 has no FAIL; `schema_property` and the open item on aliases
-  are rewritten, and the scoring note says how a type is found. Every result
-  carries the new check names.
+  they check, and t01 has no FAIL; `schema_property` and the open item on
+  references are rewritten, and the scoring note says how a type is found.
+  Every result carries the new check names.
 
 ### Scores that move (tokens contract 0.1.3)
 
@@ -96,9 +106,14 @@ five fixtures keep their scores.
 
 - `designesy_guardrails` still writes dimensions as strings, so the token
   file it emits now scores 89 with no FAIL. The emitter is not changed here.
-- On the 127 invalid (negative) files of the same suite, one score drops
-  (`dimensions/dimension-wrong-unit.json`, 100 to 88, now caught by t08) and
-  11 rise.
+- On the 127 invalid (negative) files of the same suite, 7 scores drop and
+  10 rise. The drops are files now caught: `dimension-wrong-unit.json` by t08
+  (100 to 88), and by t04 a token with both `$value` and `$ref` (94 to 88)
+  and five pointers that name nothing (100 to 86 or 88). Main scored nine of
+  the rises 50, having read each `$ref` token as a group: they now score 86
+  or 93, with t04 or t10 naming the `$ref`. The tenth, whose only token has
+  a name that starts with `$`, scores 60 (t03 SKIP with no tokens). None
+  reaches 100.
 
 ### Gates (tokens contract 0.1.3)
 
@@ -107,8 +122,11 @@ five fixtures keep their scores.
   shortcut read; `valid.json`, `nine-pass-one-skip.json` and `aliases.json`
   write dimensions as `{ value, unit }`; `contract.json` is regenerated from
   the site.
-- `test/test_tokens_score.py` adds ten tests, each failing on the previous
-  main, and the token fixtures in `test/test_server.py` follow the format.
+- `test/test_tokens_score.py` and `test/test_server.py` add or rename 29
+  tests (the five new golden rows among them); 28 fail against the previous
+  main's server module, and the 29th guards that an `$extends` loop ends,
+  which main's also does. The token fixtures in `test/test_server.py` follow
+  the format.
 - The three token fixtures of `scripts/check-mcp-accuracy.js` write
   dimensions as `{ value, unit }`, so each still tests the rule it names.
 - The sibling contract lock records tokens 0.1.3.
