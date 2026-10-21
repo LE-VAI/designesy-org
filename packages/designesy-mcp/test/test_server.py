@@ -816,11 +816,14 @@ class TestScoreFormatScope:
 # urlopen and subprocess.run are mocked here, so nothing reaches a network or
 # a browser.
 
+import http.client  # noqa: E402
 import io  # noqa: E402
+import re  # noqa: E402
 import shutil  # noqa: E402
 import socket  # noqa: E402
 import ssl  # noqa: E402
 import subprocess  # noqa: E402
+import threading  # noqa: E402
 
 PACKAGE = Path(__file__).resolve().parent.parent
 
@@ -1065,17 +1068,27 @@ class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
 # params null raised AttributeError and ended the process; a notification got
 # an error frame; an unknown tool or resource got -32601; and a tool that
 # failed (a blocked URL, a fetch error) came back as JSON-RPC -32000 rather
-# than an isError result. main() runs here on in-memory stdin and stdout.
+# than an isError result. stdin was decoded with the locale's codec: under a
+# strict UTF-8 one a byte that is not UTF-8 ended the process, and on Windows a
+# UTF-8 request was read as cp1252. main() runs here on in-memory stdin and
+# stdout, and twice on the real process.
 
 INIT = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
     "protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "t", "version": "0"}}})
 PING = '{"jsonrpc":"2.0","id":99,"method":"ping"}'
+NOT_UTF8 = b'{"jsonrpc":"2.0","id":2,"method":"ping","params":{"x":"\xff"}}'
+SERVER = str(Path(__file__).resolve().parent.parent / "designesy_mcp_server.py")
 
 
-def _session(*lines: str) -> list[dict]:
-    """Run main() over the lines; return every reply it wrote, in order."""
+def _session(*lines: str | bytes, stdin_encoding: str = "utf-8") -> list[dict]:
+    """Run main() over the lines (bytes go as they are); return every reply it wrote, in order.
+
+    stdin is a strict text stream in stdin_encoding over those bytes, as
+    sys.stdin is; main() reads its buffer.
+    """
+    data = b"".join((line if isinstance(line, bytes) else line.encode("utf-8")) + b"\n" for line in lines)
     out = io.StringIO()
-    with patch.object(mcp.sys, "stdin", io.StringIO("".join(f"{line}\n" for line in lines))), \
+    with patch.object(mcp.sys, "stdin", io.TextIOWrapper(io.BytesIO(data), encoding=stdin_encoding, errors="strict")), \
             patch.object(mcp.sys, "stdout", out):
         mcp.main()
     return [json.loads(line) for line in out.getvalue().splitlines()]
@@ -1114,6 +1127,49 @@ class TestJsonRpcSession(_FreshState):
     def test_a_line_that_is_not_json_is_a_parse_error(self, line):
         replies = _session(line, PING)
         assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(None, -32700), (99, None)]
+
+    @pytest.mark.parametrize("stdin_encoding", ["utf-8", "cp1252"])
+    def test_a_line_that_is_not_utf8_is_a_parse_error(self, stdin_encoding):
+        # The ping before it, read in the same chunk, is answered too.
+        replies = _session(PING.replace("99", "1"), NOT_UTF8, PING, stdin_encoding=stdin_encoding)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(1, None), (None, -32700), (99, None)]
+        assert replies[1]["error"]["message"] == "Parse error: the line is not valid UTF-8"
+
+    @pytest.mark.parametrize("stdin_encoding", ["utf-8", "cp1252"])
+    def test_a_request_is_read_as_utf8_whatever_the_stdin_codec(self, stdin_encoding):
+        # Read as cp1252, the UTF-8 bytes of "café" were "cafÃ©".
+        line = '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"café","arguments":{}}}'
+        assert _session(line, stdin_encoding=stdin_encoding)[0]["error"] == {
+            "code": -32602, "message": "Unknown tool: café"}
+
+    def test_the_server_process_reads_on_past_a_line_that_is_not_utf8(self):
+        # The real process, its stdin forced to the strict UTF-8 decoding
+        # CPython gives sys.stdin by default on a UTF-8 Linux locale. Until
+        # 1.13.10 it exited 1 here, before answering either ping.
+        proc = subprocess.run(
+            [sys.executable, SERVER], input=b"\n".join([PING.replace("99", "1").encode(), NOT_UTF8, PING.encode(), b""]),
+            capture_output=True, timeout=60, env={**os.environ, "PYTHONIOENCODING": "utf-8:strict"},
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stderr == b""
+        assert [json.loads(line)["id"] for line in proc.stdout.splitlines()] == [1, None, 99]
+
+    def test_the_server_process_answers_each_line_before_the_next_arrives(self):
+        # stdin is read as bytes now; a reply must not wait for more input.
+        proc = subprocess.Popen([sys.executable, SERVER], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        guard = threading.Timer(30, proc.kill)
+        guard.start()
+        try:
+            for req_id in (1, 2, 3):
+                proc.stdin.write(PING.replace("99", str(req_id)).encode() + b"\n")
+                proc.stdin.flush()
+                assert json.loads(proc.stdout.readline())["id"] == req_id
+            proc.stdin.close()
+            assert proc.wait(timeout=30) == 0
+        finally:
+            guard.cancel()
+            proc.kill()
+            proc.stdout.close()
 
     def test_a_method_that_is_not_a_string_is_an_invalid_request(self):
         replies = _session('{"jsonrpc":"2.0","method":1,"params":"bar"}', PING)

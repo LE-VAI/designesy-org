@@ -39,10 +39,14 @@ v0.4.6).
   otherwise both checks read MANUAL. The `designesy_score` description says
   so.
 - **No line ends the session.** An array, a bare string, a number, or
-  `params: null` raised AttributeError and stopped the server. A line that
-  is not JSON now gets -32700, a message that is not an object gets -32600
-  (the 2024-11-05 revision has no batches), and a handler that raises gets
-  -32603; the server reads on.
+  `params: null` raised AttributeError and stopped the server, and so did a
+  byte that is not UTF-8 wherever stdin was decoded strictly (CPython's
+  default on a UTF-8 Linux locale). Each line is now decoded as UTF-8,
+  whatever the locale. A line that is not UTF-8 or not JSON gets -32700, a
+  message that is not an object gets -32600 (the 2024-11-05 revision has no
+  batches), and a handler that raises gets -32603; the server reads on.
+  On Windows, where stdin was read as cp1252, a non-ASCII request now
+  arrives intact (a tool name `café` arrived as `cafÃ©`).
 - **Notifications get no reply.** `notifications/cancelled` got a -32601
   error frame back.
 - **Error codes follow the 2024-11-05 revision.** An unknown tool is -32602

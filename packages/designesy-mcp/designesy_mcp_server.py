@@ -5368,10 +5368,16 @@ def _tool_error(req_id: Any, text: str) -> dict[str, Any]:
 # JSON-RPC 2.0 and the 2024-11-05 revision this server negotiates. Until
 # 1.13.10, an array, a bare string or a null params raised AttributeError and
 # ended the session, and a notification such as notifications/cancelled got an
-# error frame back.
-#   - A line that is not JSON gets -32700, and a message that is not an object
-#     gets -32600, both with id null. 2024-11-05 has no batches (2025-03-26
-#     added them, 2025-06-18 removed them), so an array is answered the same.
+# error frame back. stdin was decoded by sys.stdin, with the locale's codec
+# and error handler: on Windows a pipe read UTF-8 as cp1252 (a tool name café
+# arrived as cafÃ©), and under the strict handler, CPython's default on a
+# UTF-8 Linux locale, one byte that is not UTF-8 ended the session.
+#   - Each line is decoded as UTF-8, the encoding JSON text between systems
+#     must use (RFC 8259, section 8.1), whatever the locale.
+#   - A line that is not UTF-8 or not JSON gets -32700, and a message that is
+#     not an object gets -32600, all with id null. 2024-11-05 has no batches
+#     (2025-03-26 added them, 2025-06-18 removed them), so an array is
+#     answered the same.
 #   - A message with no id is a notification and gets no reply.
 #   - params or arguments null reads as {}; any other non-object is -32602.
 #   - An unknown tool is -32602 and an unknown resource -32002, the codes the
@@ -5453,11 +5459,17 @@ def _handle(msg: Any) -> dict[str, Any] | None:
 def main() -> None:
     """Read JSON-RPC messages from stdin, one per line.
 
-    No line ends the session: one that is not JSON gets -32700, and a request
-    whose handler raises gets -32603 while the loop reads on.
+    No line ends the session: one that is not UTF-8 or not JSON gets -32700,
+    and a request whose handler raises gets -32603 while the loop reads on.
+    Lines are read as bytes and decoded here, one at a time, so neither the
+    locale's codec nor its error handler applies.
     """
-    for line in sys.stdin:
-        line = line.strip()
+    for raw in sys.stdin.buffer:
+        try:
+            line = raw.decode("utf-8").strip()
+        except UnicodeDecodeError:
+            _send(_error(None, -32700, "Parse error: the line is not valid UTF-8"))
+            continue
         if not line:
             continue
         try:
