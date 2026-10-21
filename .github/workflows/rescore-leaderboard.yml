@@ -63,13 +63,15 @@ on:
         required: false
         default: ''
 
-permissions:
-  contents: write            # needed to push the leaderboard branch
-  issues: write              # needed to open the landing issue and its labels
+# Nothing by default; the one job below asks for what it uses.
+permissions: {}
 
 jobs:
   rescore:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # needed to push the leaderboard branch
+      issues: write            # needed to open the landing issue and its labels
     # Re-scoring 30 sites against the live engine takes ~7 min. The run no
     # longer waits for CI (v4), so 20 minutes leaves room for slow fetches.
     timeout-minutes: 20
@@ -78,6 +80,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0      # full history so the date command works
+          # The re-score runs code over pages fetched from 30 outside sites, so
+          # the write token is not left in .git/config for it. Only the push
+          # step below authenticates.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -107,9 +113,11 @@ jobs:
       - name: Push the branch and open the landing issue (only if leaderboard changed)
         if: steps.changes.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # The checkout kept no credential (above); git authenticates through gh.
+          gh auth setup-git
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
           # A second run on the same UTC day (a manual dispatch, then the
