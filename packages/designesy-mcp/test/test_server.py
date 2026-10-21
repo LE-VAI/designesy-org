@@ -962,6 +962,21 @@ class TestTlsIsVerified(_FreshState):
         assert result["tls_verified"] is False
         assert site.contexts(page) == [mcp._SSL_CONTEXT]
 
+    def test_the_opt_in_flags_a_motion_score_read_unverified(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/motion.json"
+        lottie_url = "https://expired.example/intro.json"
+        motion = PACKAGE / "test" / "fixtures" / "motion"
+        site = _Site({
+            contract_url: (motion / "contract.json").read_text(encoding="utf-8"),
+            lottie_url: (motion / "conformant.json").read_text(encoding="utf-8"),
+        }, {lottie_url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._motion_score_impl(url=lottie_url)
+        assert result["tls_verified"] is False
+        assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
+        assert site.contexts(lottie_url)[1].verify_mode == ssl.CERT_NONE
+
 
 class TestEngineErrorIsTheResult(_FreshState):
     REFUSED = "http://100.100.100.200/"
@@ -992,12 +1007,12 @@ class TestEngineErrorIsTheResult(_FreshState):
         assert payload["url"] == self.REFUSED
         assert f"HTTP {status}: {error}" in payload["error"]
 
-    @pytest.mark.parametrize("reply", [
-        '{"ok": false, "error": "Could not reach the page"}',
-        "<html>gateway error</html>",
-        "[]",
+    @pytest.mark.parametrize("reply, reason", [
+        ('{"ok": false, "error": "Could not reach the page"}', "Could not reach the page"),
+        ("<html>gateway error</html>", "the reply was not a JSON object"),
+        ("[]", "the reply was not a JSON object"),
     ], ids=["ok-false", "not-json", "not-an-object"])
-    def test_a_reply_without_a_score_is_returned_and_nothing_runs_locally(self, env, reply):
+    def test_a_reply_without_a_score_is_returned_and_nothing_runs_locally(self, env, reply, reason):
         def urlopen(req, timeout=None, context=None):
             return _reply(reply)
         with patch.object(mcp.urllib.request, "urlopen", urlopen), \
@@ -1007,7 +1022,62 @@ class TestEngineErrorIsTheResult(_FreshState):
         fetch.assert_not_called()
         cdp.assert_not_called()
         assert result["isError"] is True
-        assert "did not score http://100.100.100.200/" in json.loads(result["content"][0]["text"])["error"]
+        assert f"did not score http://100.100.100.200/ ({reason})." in json.loads(result["content"][0]["text"])["error"]
+
+    @pytest.mark.parametrize("error", [
+        http.client.RemoteDisconnected("Remote end closed connection without response"),
+        ConnectionResetError(104, "Connection reset by peer"),
+        TimeoutError("The read operation timed out"),
+        socket.timeout("timed out"),
+        http.client.IncompleteRead(b"{", 10),
+    ], ids=["remote-disconnected", "connection-reset", "read-timeout", "socket-timeout", "incomplete-read"])
+    def test_a_failure_after_the_request_was_sent_is_returned_and_nothing_runs_locally(self, env, error):
+        # urllib raises these as they are, from getresponse() or read(): the
+        # request had gone out. The engine can spend longer on a page than
+        # this call waits, so a page that answers it slowly can cause the
+        # timeout; a fallback would then fetch that page from this machine.
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=error)), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        text = json.loads(result["content"][0]["text"])["error"]
+        assert f"(the call failed after the request was sent: {type(error).__name__}: " in text
+        assert "the offline engine runs only when the network fails before the request is sent" in text
+
+    @pytest.mark.parametrize("reason", [
+        socket.gaierror(11001, "getaddrinfo failed"),
+        ConnectionRefusedError(111, "Connection refused"),
+        TimeoutError("timed out"),
+    ], ids=["dns", "refused", "connect-timeout"])
+    def test_a_network_failure_before_the_request_is_sent_still_falls_back(self, env, reason):
+        # What urllib wraps in a URLError failed before the request was sent.
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=urllib.error.URLError(reason))), \
+                patch.object(mcp, "_score_local_impl", return_value={"note": "local"}) as local:
+            result = _call({"url": "https://example.com/"})
+        local.assert_called_once_with("https://example.com/", None)
+        assert result["isError"] is False
+
+    @pytest.mark.parametrize("opt_in", [False, True])
+    def test_an_engine_certificate_that_fails_verification_is_returned(self, env, opt_in):
+        # The opt-in covers a caller's URL only, and the offline engine does
+        # not stand in for an engine whose certificate failed.
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        engine = _Engine(error=_cert_error())
+        with patch.object(mcp.urllib.request, "urlopen", engine), \
+                patch.object(mcp, "_score_local_impl") as local, \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            result = _call({"url": "https://example.com/"})
+        local.assert_not_called()
+        unverified.assert_not_called()
+        assert len(engine.requests) == 1
+        assert result["isError"] is True
+        text = json.loads(result["content"][0]["text"])["error"]
+        assert f"(the certificate of {mcp.BASE_URL} failed verification: " in text
+        assert "certificate has expired" in text
 
 
 class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):

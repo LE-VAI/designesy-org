@@ -20,8 +20,10 @@ v0.4.6).
   after any error whose text said "certificate" (an HTTP error with such a
   reason phrase included). That covered the POSTs to designesy.org's
   engines, the monitor email among them. A failed verification is now a tool
-  error that names the reason. To read a site with a bad certificate anyway,
-  set `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
+  error that names the reason, and `designesy_score` no longer scores offline
+  when the engine's own certificate fails (1.13.9 did, without saying why).
+  To read a site with a bad certificate anyway, set
+  `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
   designesy.org) whose verification fails is then read without it, and the
   result carries `tls_verified: false`.
 - **An engine error is not scored offline.** `designesy_score` fell back to
@@ -29,9 +31,14 @@ v0.4.6).
   engine refused (HTTP 400 for `http://100.100.100.200/` and
   `http://[fec0::1]/`, both of which the server's own URL check lets
   through) was fetched from the user's machine instead. It now falls back
-  only when the engine cannot be reached at all. An HTTP error (a refused
-  URL, a rate limit, a page the engine could not reach), `ok: false`, or a
-  reply that is not a JSON object is returned as an error.
+  only when the network fails before the request is sent (no DNS, no route,
+  a refused connection). An HTTP error (a refused URL, a rate limit, a page
+  the engine could not reach), `ok: false`, a reply that is not a JSON
+  object, a failure after the request was sent (a reset, a read timeout),
+  or a certificate that fails verification is returned as an error. 1.13.9
+  scored the read timeout offline too, and the engine can spend longer on a
+  page than the call waits, so a page that answered the engine slowly could
+  have itself fetched from the user's machine.
 - **No browser unless the operator names one.** The offline engine opened
   the URL in a new tab of any Chrome answering on `127.0.0.1:9222` to measure
   v02 and v21. It now does so only when `DESIGNESY_CDP_URL` names a Chrome

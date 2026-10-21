@@ -3118,26 +3118,42 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     The site API is the single source of truth for the contract it serves
     (45 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
-    Returns the normalized response; None when the API cannot be reached at
-    all (a URLError with no HTTP status), and the caller falls back to the
-    local engine; or an error result when the engine answered without a
-    score: an HTTP error status (a refused URL, a rate limit, a page it could
-    not reach), ok false, or a reply that is not JSON. Until 1.13.10 those
-    fell back too, so a URL the engine refused, such as
+    Returns the normalized response, or None when the network failed before
+    the request was sent, and the caller falls back to the local engine.
+    urllib raises a URLError with no HTTP status only for a failure before
+    the request is sent (no DNS, no route, a refused connection, the TLS
+    handshake); one after it (a reset, a read timeout) is raised as it is.
+
+    Anything else is an error result, and nothing is scored locally: an HTTP
+    error status (a refused URL, a rate limit, a page the engine could not
+    reach), ok false, a reply that is not a JSON object, a failure after the
+    request was sent, or a certificate that fails verification. The engine
+    can spend longer reading a page than this call waits, so a page that
+    answers the engine slowly can time the call out; a fallback then would
+    let any page have itself fetched from this machine. Until 1.13.10 all of
+    these fell back, so a URL the engine refused, such as
     http://100.100.100.200/, was fetched from this machine instead, through
     _validate_url, which lets that address through.
     """
     try:
-        data = json.loads(_post_score_api(url, "designesy", scope))
+        body = _post_score_api(url, "designesy", scope)
     except urllib.error.HTTPError as exc:
         return _score_declined(url, _score_api_failure(exc))
-    except urllib.error.URLError:
-        return None
+    except urllib.error.URLError as exc:
+        if not _is_cert_failure(exc):
+            return None
+        return _score_declined(url, _scrub_local_paths(
+            f"the certificate of {BASE_URL} failed verification: {exc.reason}"))
     except Exception as exc:
-        return _score_declined(url, _score_api_failure(exc))
-    if not isinstance(data, dict) or not data.get("ok"):
-        error = data.get("error") if isinstance(data, dict) else None
-        return _score_declined(url, _scrub_local_paths(str(error or "the reply was not ok")))
+        return _score_declined(url, f"the call failed after the request was sent: {_score_api_failure(exc)}")
+    try:
+        data = json.loads(body)
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return _score_declined(url, "the reply was not a JSON object")
+    if not data.get("ok"):
+        return _score_declined(url, _scrub_local_paths(str(data.get("error") or "the reply was not ok")))
 
     checks = data.get("checks", [])
     summary = {
@@ -3198,13 +3214,14 @@ def _score_api_failure(exc: Exception) -> str:
 
 
 def _score_declined(url: str, reason: str) -> dict[str, Any]:
-    """The designesy_score error for an engine that answered without a score."""
+    """The designesy_score error for an engine call that returned no score."""
     return {
         "success": False,
         "error": (
             f"The scoring engine at {BASE_URL}/api/score did not score {url} "
-            f"({reason}). The offline engine runs only when the engine "
-            "cannot be reached, so nothing was scored locally."
+            f"({reason}). Nothing was scored locally: the offline engine runs "
+            "only when the network fails before the request is sent (no DNS, "
+            "no route, a refused connection)."
         ),
         "url": url,
     }
@@ -3222,9 +3239,9 @@ def _score_impl(
 
     format designesy (the default) reshapes the engine's native JSON into
     this tool's long-standing shape, and falls back to the offline engine
-    (_score_local_impl) when the API is unreachable, so the tool still works
-    offline. An engine that answers with an error is not unreachable: its
-    error is the result (see _score_remote). The offline engine runs a
+    (_score_local_impl) when the network fails before the request is sent,
+    so the tool still works offline; any other failure is the result (see
+    _score_remote), an engine's error among them. The offline engine runs a
     subset of the live engine's checks, mirrors live engine
     OFFLINE_ENGINE_MIRRORS for each one, and applies the same scope: the one
     requested, or the one auto-detected from the URL.
@@ -3682,8 +3699,9 @@ TOOLS = [
             "engine's @google/design.md-compatible JSON unchanged. "
             "scope sets the scoring scope: contract or universal. Omit it "
             "and the engine auto-detects: contract for designesy.org, "
-            "universal for every other site. If the engine is "
-            "unreachable, format designesy falls back to the offline "
+            "universal for every other site. If the network fails before "
+            "the request reaches the engine (no DNS, no route, a refused "
+            "connection), format designesy falls back to the offline "
             "engine: 27 of the 45 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
@@ -3691,11 +3709,13 @@ TOOLS = [
             "Offline, overflow (v02) and Core Web Vitals (v21) are measured "
             "only when the server sets DESIGNESY_CDP_URL to a Chrome "
             "DevTools endpoint, where the page opens in a new tab; otherwise "
-            "both read MANUAL. An engine that answers with an error (a "
-            "refused URL, a rate limit, a page it could not reach) returns "
-            "that error, and nothing is scored offline. The other three "
-            "formats return an error, because only the live engine produces "
-            "them."
+            "both read MANUAL. Any other failure returns an error, and "
+            "nothing is scored offline: an engine that answers with an "
+            "error (a refused URL, a rate limit, a page it could not "
+            "reach), a call that fails after the request was sent (a "
+            "reset, a timeout), or a designesy.org certificate that fails "
+            "verification. The other three formats return an error, because "
+            "only the live engine produces them."
         ),
         "inputSchema": {
             "type": "object",
