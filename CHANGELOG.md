@@ -31,9 +31,9 @@ contract 0.1.3 WARNs on them in t08 and t10.
   allows and the schema's reference pattern rejects
   ([design-tokens/community-group#448](https://github.com/design-tokens/community-group/issues/448)).
 - On the pages www.designesy.org served on 2026-10-21 the emitted file
-  scores 100, where it scored 89: t08 reported 89 of 89 dimension tokens (one
-  alias among them) in the legacy string form. The full result, as the tool
-  returns it, grows from 122,763 to 133,479 characters.
+  scores 100, where it scored 89: t08 reported 89 of 89 dimension tokens in
+  the legacy string form. The full result, as the tool returns it, grows from
+  122,763 to 133,479 characters.
 - `/export/dtcg` takes the shadow objects from the shared parser
   (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
   byte.
@@ -44,7 +44,8 @@ contract 0.1.3 WARNs on them in t08 and t10.
   shadow length that is not `{ value, unit }` in px or rem, on a unitless 0
   that does not become 0px, on a length in another unit that is typed rather
   than kept as CSS, and on any WARN from the tokens validator, where it failed
-  only on a FAIL. Run against the previous emitter it reports 7 findings.
+  only on a FAIL. Run against the previous emitter, guardrails-dtcg reports
+  6 findings.
 - `guardrails-emitted.json` and its golden row are regenerated, and
   `test/test_tokens_score.py` scores that file itself and expects no WARN and
   no FAIL, where it read the golden for no FAIL.
