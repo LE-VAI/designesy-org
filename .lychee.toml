@@ -101,6 +101,12 @@ exclude = [
   # awwwards.com — consistently times out under lychee's bot user-agent
   # (Cloudflare bot protection). It's a reference link, not our content.
   '^https://awwwards\.com',
+  # fwa.org — a leaderboard entry, behind Cloudflare, which answered GitHub's
+  # runners with 403 on two of eleven runs (2026-10-19 and 2026-10-21) while
+  # the same URL redirected to a 200 from outside CI. The 403 is bot
+  # detection on the runner's address, not a broken link.
+  '^https://fwa\.org',
+  '^https://www\.fwa\.org',
   # npmjs.com package pages — return 403 to lychee's bot user-agent.
   # Verified manually; these are our own published packages.
   '^https://www\.npmjs\.com/package/',
