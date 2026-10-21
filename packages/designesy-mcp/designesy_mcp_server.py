@@ -3131,8 +3131,8 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     can spend longer reading a page than this call waits, so a page that
     answers the engine slowly can time the call out; a fallback then would
     let any page have itself fetched from this machine. Until 1.13.10 all of
-    these fell back, so a URL the engine refused, such as
-    http://100.100.100.200/, was fetched from this machine instead, through
+    these fell back, so a URL the engine refused, such as one on the host
+    100.100.100.200, was fetched from this machine instead, through
     _validate_url, which lets that address through.
     """
     try:
