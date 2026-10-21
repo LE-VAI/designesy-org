@@ -84,14 +84,30 @@
  *      must pass every time: a lucky pass cannot hide a race. Typing waits
  *      until React has claimed both fields and checks the values held. By
  *      1.5 s after the landing (times the throttle rate) the page has come to
- *      rest (scrollY unchanged for 500 ms), the verdict line sits under the
- *      sticky bar and inside the viewport, both readouts are inside the
- *      viewport, and focus is on the verdict line. How far the verdict line
- *      travels back out on screen after coming closer to where it ends is
- *      measured every frame and reported per case ("bounce"), not judged.
- *      The landed-state renders above run
- *      with reduced motion, which scrolls at once, so they never see a
- *      smooth scroll the landing overtakes.
+ *      rest (scrollY unchanged for 500 ms, and at least two animation frames
+ *      drawn since it last moved: the landing moves the page only on a frame,
+ *      so a page that has drawn none since has not been seen to land), the
+ *      verdict line sits under the sticky bar and inside the viewport, both
+ *      readouts are inside the viewport, and focus is on the verdict line.
+ *      A page at rest by then whose frames are slow to come is watched up to
+ *      3 s longer for them (the deadline itself does not move: moving in that
+ *      time fails); one that still draws fewer than two fails ("no frame
+ *      drawn"): the gate does not judge a layout it never saw drawn. How far
+ *      the verdict line travels back out on screen after coming closer to
+ *      where it ends is measured every frame and reported per case
+ *      ("bounce"), not judged. The landed-state renders above run with
+ *      reduced motion, which scrolls at once, so they never see a smooth
+ *      scroll the landing overtakes.
+ *      --fast-stall N runs every fast run the way two CI runs went on
+ *      2026-10-19: the page's animation-frame callbacks are held from the
+ *      Enter, one round runs when the verdict line first exists (between the
+ *      answer's two commits, so the instrument aims below the verdict it has
+ *      just inserted), and none more for N ms. The fold's scroll anchoring
+ *      then leaves the verdict under the bar until the landing's next frame
+ *      sets it right. Only the callbacks are held: the browser still renders
+ *      and still sends scroll events, which on CI it did not, so a stalled
+ *      run's trace shows scroll records CI's lacked. Off by default; each
+ *      run must still pass.
  *
  * PROVING IT CAN FAIL
  *   --break live    removes the live region before the checks (2 fails)
@@ -111,12 +127,21 @@
  *   --break digits  sizes the numeral by its digits in one state (D81: one size per width)
  *   --break tracking tracks the labels at 0.08em under 26rem
  *   --break balance removes text-wrap: balance from the labels
+ *   --break unframed stops the page's animation frames once the verdict line
+ *                   exists, so the page never draws its landing: the fast
+ *                   runs fail "no frame drawn" instead of being judged
+ *   --break landing drops every scrollTo after the fold, under a stall
+ *                   (--fast-stall, 800 ms unless given): the verdict stays
+ *                   under the bar once frames resume
  *   --break         live and focus. Each must exit 1.
  *   The fast-run case is proven against the scroll code before its fix,
  *   where a landing inside the smooth scroll ended with the verdict above
  *   the screen, and against the second fix (a scroll counted as moving for
  *   at most 1.5 s), which the "slow" motion fails at the instrument's old
- *   position, throttled or not.
+ *   position, throttled or not. Its rest check is proven against the rule
+ *   before frames were counted: under --fast-stall that rule judged the
+ *   verdict under the bar after 500 ms of timer ticks and no frame, as on
+ *   CI, while the page had not yet drawn the landing that sets it right.
  *
  * AN ENGINE VERSION BUMP
  *   Check 8 fails every landed record made at another engine or contract
@@ -139,6 +164,9 @@
  *   ... --skip-fast-runs   the states only; CI runs the fast runs in their own job
  *   ... --states fast-run --break fatal   negative control: a fast run that fails at once
  *   ... --states fast-run --break hang --run-timeout 10000   negative control: a run that never settles
+ *   ... --states fast-run --fast-views 1920x1080 --fast-motion reduce,paused --fast-stall 800   the CI stall, which must pass
+ *   ... --states fast-run --fast-views 1920x1080 --fast-motion reduce,paused --break unframed   must exit 1 (no frame drawn)
+ *   ... --states fast-run --fast-views 1920x1080 --fast-motion reduce,paused --break landing    must exit 1 (verdict under the bar)
  *   ... --shots <dir>     write a full-page screenshot of every state (crops)
  * Exit 1 on any failure, 2 on a fatal error. A fast run that passes
  * --run-timeout ms (default 180000) without settling is a fatal error, so a
@@ -353,6 +381,19 @@ const RUN_TIMEOUT_MS = Math.max(10000, Number(opt('--run-timeout', '180000')) ||
 // setCPUThrottlingRate): a slow main thread moves the landing against the
 // smooth scroll, which is where the race lived.
 const FAST_THROTTLE = opt('--fast-throttle', '1,4').split(',').map(Number).filter((n) => n >= 1);
+// The CI stall (header, 13): no frames for this many ms after a late first
+// frame. --break landing needs it to bite, so it brings 800 ms when unset.
+const FAST_STALL = Math.max(0, Number(opt('--fast-stall', BREAK.includes('landing') ? '800' : '0')) || 0);
+// Rest needs this many animation frames drawn since scrollY last changed.
+// Two, not one: the gate's own frame callback can run before the landing's
+// in the same frame; by the second frame the first frame's landing has run.
+const REST_FRAMES = 2;
+// How long past the rest bound (1.5 s x rate + 500 ms) the gate waits for
+// those frames on a page that came to rest in time. CI runners draw slowly:
+// on 2026-10-19 the slowest 1x run was judged 1,995 ms after the gate saw
+// the verdict line, 5 ms inside the bound, and the sparsest runs had drawn
+// only the two frames required. The deadline to come to rest does not move.
+const REST_FRAME_WAIT_MS = 3000;
 
 /** 8. The result as drawn, against the recorded answer. */
 async function checkResult(page, st, reply, fail) {
@@ -704,6 +745,61 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
       };
     }, delay);
   }
+  // The CI stall (--fast-stall) and its breaks, at the page's animation
+  // frames: a held callback waits until frames resume, as it would on a
+  // device that draws nothing. Timers keep running, as they did on CI.
+  // Cancelling a held frame takes it out of the queue.
+  if (FAST_STALL || BREAK.includes('unframed')) {
+    await ctx.addInitScript(({ stall, unframed, landing }) => {
+      const native = window.requestAnimationFrame.bind(window);
+      const nativeCancel = window.cancelAnimationFrame.bind(window);
+      let holding = false;
+      let held = [];
+      let nextId = -1;
+      const passed = new Map();
+      window.requestAnimationFrame = (cb) => {
+        if (!holding) return native(cb);
+        const id = nextId--;
+        held.push({ id, cb });
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => {
+        if (id >= 0) return nativeCancel(id);
+        held = held.filter((h) => h.id !== id);
+        if (passed.has(id)) nativeCancel(passed.get(id));
+      };
+      const release = () => {
+        holding = false;
+        for (const h of held.splice(0)) passed.set(h.id, native(h.cb));
+      };
+      let seen = false;
+      const watch = new MutationObserver(() => {
+        if (seen || !document.querySelector('.cf-bench .score-verdict-line')) return;
+        seen = true;
+        // --break unframed: from here on the page draws nothing.
+        if (unframed) {
+          holding = true;
+          return;
+        }
+        // A late first frame, between the answer's two commits: the
+        // instrument reads a layout with the verdict inserted and not yet
+        // folded. Then nothing for `stall` ms.
+        const now = performance.now();
+        for (const h of held.splice(0)) h.cb(now);
+        setTimeout(release, stall);
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' || seen) return;
+        if (!unframed) holding = true;
+        watch.observe(document, { subtree: true, childList: true });
+      }, { capture: true });
+      // --break landing: no scroll reaches the page after the fold.
+      if (landing) {
+        const scrollTo = window.scrollTo.bind(window);
+        window.scrollTo = (...a) => (document.querySelector('.cf-run') ? undefined : scrollTo(...a));
+      }
+    }, { stall: FAST_STALL, unframed: BREAK.includes('unframed'), landing: BREAK.includes('landing') });
+  }
   // Diagnostics for a failing run, and nothing else: each scroll the page is
   // asked for and each scroll position it reports, from the Enter that starts
   // the run. It is printed only when the run fails and judges nothing.
@@ -802,19 +898,38 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
     await page.waitForSelector('.cf-bench .score-verdict-line', { timeout: 30000 });
     // The page must come to rest by 1.5 s after the landing (scaled by the
     // CPU throttle, which slows the page's own work, not the clock): scrollY
-    // unchanged for 500 ms, sampled every frame and timer tick. Watching for
-    // rest instead of one fixed pause also catches a late bounce. How far the
-    // verdict line travels back out on screen after coming closer to where it
-    // ends is measured and reported per case (a visible bounce), not judged.
-    p = await page.evaluate(async (limit) => {
+    // unchanged for 500 ms, sampled every frame and timer tick, with at least
+    // REST_FRAMES animation frames drawn since it last changed. The timer tick
+    // keeps the clock running when no frame comes; without the frame count,
+    // ten ticks on a page that drew nothing read as rest, and on CI the gate
+    // judged a layout the landing's next frame would have set right. A page
+    // already still by the deadline whose frames are slow to come is watched
+    // up to REST_FRAME_WAIT_MS longer for them: the deadline does not move,
+    // so a page that moves in that time has come to rest too late and fails.
+    // Watching for rest instead of one fixed pause also catches a late
+    // bounce. How far the verdict line travels back out on screen after
+    // coming closer to where it ends is measured and reported per case (a
+    // visible bounce), not judged.
+    p = await page.evaluate(async ({ limit, restFrames, frameWait }) => {
       const t0 = performance.now();
       let y0 = window.scrollY;
       let still = t0;
-      while (performance.now() - t0 < limit + 500) {
+      let frames = 0;
+      let framesAtStill = 0;
+      const count = () => {
+        frames++;
+        requestAnimationFrame(count);
+      };
+      requestAnimationFrame(count);
+      while (performance.now() - t0 < limit + 500 + frameWait) {
         await new Promise((r) => { requestAnimationFrame(() => r()); setTimeout(r, 50); });
-        if (Math.abs(window.scrollY - y0) > 1) { y0 = window.scrollY; still = performance.now(); }
-        else if (performance.now() - still >= 500) break;
+        if (Math.abs(window.scrollY - y0) > 1) { y0 = window.scrollY; still = performance.now(); framesAtStill = frames; }
+        else if (performance.now() - still >= 500 && frames - framesAtStill >= restFrames) break;
+        // Past the rest bound only a page that came to rest in time waits on, for its frames.
+        if (performance.now() - t0 >= limit + 500 && (performance.now() - still < 500 || still - t0 > limit)) break;
       }
+      const judgedAt = Math.round(performance.now() - t0);
+      const drawn = frames - framesAtStill;
       const restAt = Math.round(still - t0);
       const seen = window.__fastSeen;
       const end = seen[seen.length - 1];
@@ -832,6 +947,8 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
       return {
         moving: performance.now() - still < 500 || restAt > limit,
         restAt,
+        judgedAt,
+        drawn,
         bounce: Math.round(bounce),
         y: Math.round(window.scrollY),
         vh: window.innerHeight,
@@ -843,9 +960,10 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
         paused: document.documentElement.dataset.motion === 'paused',
         trace: window.__scrollTrace || [],
       };
-    }, limit);
+    }, { limit, restFrames: REST_FRAMES, frameWait: REST_FRAME_WAIT_MS });
     if (motion === 'paused' && !p.paused) problems.push('the site motion pause did not apply (html[data-motion] is not "paused")');
     if (p.moving) problems.push(`the page is not at rest ${limit / 1000} s after the landing (last moved at ${p.restAt} ms, scrollY ${p.y})`);
+    if (p.drawn < REST_FRAMES) problems.push(`no frame drawn: ${p.drawn} animation frame(s) since scrollY last changed (at ${p.restAt} ms, scrollY ${p.y}) by ${p.judgedAt} ms, wanted ${REST_FRAMES}; the landing has not been seen`);
     if (p.verdict.top < p.clear - 1 || p.verdict.bottom > p.vh) problems.push(`the verdict line ends at ${p.verdict.top}..${p.verdict.bottom}px at scrollY ${p.y}, outside ${p.clear}..${p.vh}px (under the bar and inside the viewport)`);
     if (p.readouts.length !== 2) problems.push(`${p.readouts.length} readouts, wanted 2`);
     else if (p.readouts.some((r) => r.top < 0 || r.bottom > p.vh)) problems.push(`a readout ends outside the viewport: ${p.readouts.map((r) => `${r.top}..${r.bottom}`).join(', ')}px of ${p.vh}`);
@@ -855,7 +973,7 @@ async function fastRunOnce(browser, w, h, motion, delay, start, rate) {
     problems.push(e.message.split('\n')[0]);
   }
   await ctx.close();
-  return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null, trace: p ? p.trace : null };
+  return { problems, y: p ? p.y : null, bounce: p ? p.bounce : null, trace: p ? p.trace : null, rest: p ? { at: p.restAt, judgedAt: p.judgedAt, drawn: p.drawn } : null };
 }
 
 /** Rejects if a run passes RUN_TIMEOUT_MS without settling: a stall is a fatal error, never a pass. */
@@ -882,20 +1000,26 @@ async function checkFastRuns(browser, failures) {
   const worker = async () => {
     while (next < jobs.length) {
       const { c, r } = jobs[next++];
-      const { problems, y, bounce, trace } = await withRunLimit(
+      const { problems, y, bounce, trace, rest } = await withRunLimit(
         fastRunOnce(browser, c.w, c.h, c.motion, c.delay, c.start, c.rate),
         `${c.tag} (run ${r} of ${FAST_REPEAT})`,
       );
       done++;
       c.ends[r - 1] = y === null ? '?' : y;
       if (bounce !== null) c.bounce = Math.max(c.bounce, bounce);
+      if (rest) {
+        c.judgedAt = Math.max(c.judgedAt || 0, rest.judgedAt);
+        c.restAt = Math.max(c.restAt || 0, rest.at);
+        c.drawn = Math.min(c.drawn === undefined ? Infinity : c.drawn, rest.drawn);
+        if (rest.judgedAt > 1500 * c.rate + 500) c.waited = (c.waited || 0) + 1;
+      }
       if (problems.length) {
         failedRuns++;
         for (const m of problems) failures.push(`${c.tag} (run ${r} of ${FAST_REPEAT}): ${m}`);
         // Printed as each run finishes, not only in the summary: a job cancelled by its
         // time limit must still leave the reasons and the trace in its log.
         console.log(`    FAIL ${c.tag} (run ${r} of ${FAST_REPEAT}): ${problems.join('; ')}`);
-        if (trace) console.log(`    trace ${c.tag} (run ${r}): ${trace.map((e) => `${e.t}ms f${e.f} ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
+        if (trace) console.log(`    trace ${c.tag} (run ${r}${rest ? `; still from ${rest.at} ms, ${rest.drawn} frame(s) drawn since, judged at ${rest.judgedAt} ms` : ''}): ${trace.map((e) => `${e.t}ms f${e.f} ${e.kind}${e.kind === 'scrollTo' ? ` ${e.top} ${e.behavior}` : ''} y=${e.y}`).join(' | ')}`);
       }
       else c.passed++;
       if (done % 100 === 0) console.log(`  fast runs: ${done}/${jobs.length} done, ${failedRuns} with a problem so far`);
@@ -908,6 +1032,10 @@ async function checkFastRuns(browser, failures) {
     const ran = mine.reduce((n, c) => n + c.passed, 0);
     const bounced = mine.filter((c) => c.bounce > 48);
     console.log(`  fast-run cpu ${rate}x: ${mine.filter((c) => c.passed === FAST_REPEAT).length}/${mine.length} cases, ${ran}/${mine.length * FAST_REPEAT} runs; ${bounced.length} case(s) with a bounce over 48px${bounced.length ? ` (${bounced.map((c) => `${c.w}x${c.h} from ${c.start} ${c.motion} ${c.delay}ms ${c.bounce}px`).join('; ')})` : ''}`);
+    // How close the rest check came to its bound, and to too few frames:
+    // reported, not judged, so a slower runner shows up before it fails.
+    const judged = mine.filter((c) => c.judgedAt !== undefined);
+    if (judged.length) console.log(`  fast-run cpu ${rate}x rest: still from at most ${Math.max(...judged.map((c) => c.restAt))} ms after the gate saw the verdict line (deadline ${1500 * rate} ms), judged at most ${Math.max(...judged.map((c) => c.judgedAt))} ms (bound ${1500 * rate + 500} ms, ${judged.reduce((n, c) => n + (c.waited || 0), 0)} run(s) waited past it for frames); fewest frames drawn at rest ${Math.min(...judged.map((c) => c.drawn))}`);
   }
   return jobs.length;
 }
