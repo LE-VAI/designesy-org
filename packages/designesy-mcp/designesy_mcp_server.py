@@ -4201,7 +4201,9 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 # whole file is walked (a top-level group named tokens or $tokens was scored
 # alone); a missing $schema WARNs as Designesy policy (it FAILed, and the
 # detail said DTCG requires it); and t08 expects {value, unit} in px or rem,
-# reporting a string such as "16px" as the legacy form.
+# reporting a string such as "16px" as the legacy form. Each chain of aliases,
+# pointers or $extends is followed once per file (_TokenFile): t08 walked each
+# dimension alias's whole chain, so 5,000 chained aliases took seconds.
 # Check names are the contract's own, looked up by id. Both
 # implementations run on test/fixtures/tokens/ and must produce expected.json
 # there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
@@ -4309,43 +4311,72 @@ def _node_at(root: dict[str, Any], path: list[str]) -> Any:
     return node
 
 
-def _group_type(group: dict[str, Any], inherited: str | None, root: dict[str, Any]) -> str | None:
+class _TokenFile:
+    """The file being scored, and what is worked out once for it: the type each
+    group takes through its $extends, the type of each token, and what each
+    alias resolves to (TokenFile in tokens-score.ts). Every chain of aliases,
+    pointers or $extends is followed in a loop and each answer kept, so a chain
+    of n references costs n steps in all. Following it again from every token
+    on it cost n * n, and the recursion ran out of stack on a chain of 1,200.
+    Keys are id() of nodes the file holds, which live as long as it does."""
+
+    def __init__(self, root: dict[str, Any]) -> None:
+        self.root = root
+        self.group_types: dict[int, str | None] = {}
+        self.token_types: dict[int, Any] = {}
+        self.aliases: dict[str, tuple[Any, str | None] | None] = {}
+
+
+def _extended_type(group: dict[str, Any], file: _TokenFile) -> str | None:
+    """A group's own $type, else the one the group its $extends names gives,
+    through any chain of $extends (6.7.3); None when none has one or the chain
+    loops."""
+    chain: list[dict[str, Any]] = []
+    on_chain: set[int] = set()
+    node: Any = group
+    t: str | None = None
+    while isinstance(node, dict) and not _is_token(node) and id(node) not in on_chain:
+        if id(node) in file.group_types:
+            t = file.group_types[id(node)]
+            break
+        chain.append(node)
+        on_chain.add(id(node))
+        own = node.get("$type")
+        if isinstance(own, str) and own:
+            t = own
+            break
+        path = _ref_path(node.get("$extends"))
+        node = _node_at(file.root, path) if path is not None else None
+    for g in chain:
+        file.group_types[id(g)] = t
+    return t
+
+
+def _group_type(group: dict[str, Any], inherited: str | None, file: _TokenFile) -> str | None:
     """The $type a group gives the tokens in it: its own, else the one the group
     its $extends names gives (the group's type after extension, 6.7.3), else
     the type it inherits from the groups above it."""
-    seen: set[int] = set()
-    node: Any = group
-    while isinstance(node, dict) and not _is_token(node) and id(node) not in seen:
-        seen.add(id(node))
-        t = node.get("$type")
-        if isinstance(t, str) and t:
-            return t
-        path = _ref_path(node.get("$extends"))
-        node = _node_at(root, path) if path is not None else None
-    return inherited
+    t = _extended_type(group, file)
+    return t if t is not None else inherited
 
 
-def _locate(root: dict[str, Any], path: list[str]) -> tuple[Any, str | None]:
+def _locate(file: _TokenFile, path: list[str]) -> tuple[Any, str | None]:
     """(node, inherited): the node at a path, with the type the groups above it
     give it."""
-    node: Any = root
+    node: Any = file.root
     inherited: str | None = None
     for part in path:
         if not isinstance(node, dict) or part not in node:
             return None, inherited
-        inherited = _group_type(node, inherited, root)
+        inherited = _group_type(node, inherited, file)
         node = node[part]
     return node, inherited
 
 
-def _token_type(token: dict[str, Any], inherited: str | None, root: dict[str, Any], seen: set[int] | None = None) -> Any:
-    """A token's type (5.2.2): its own $type, else the type of the token its
-    {alias} value or #/path/$value pointer references, else the type the groups
-    above it give it (None when none does). A pointer into part of a value
-    names no token, so its token takes the groups' type."""
-    if _js_truthy(token.get("$type")):
-        return token["$type"]
-    seen = set() if seen is None else seen
+def _referenced_token(token: dict[str, Any], file: _TokenFile) -> tuple[dict[str, Any], str | None] | None:
+    """(node, inherited): the token a token's {alias} value or #/path/$value
+    pointer names, with the type its groups give it; None when it names none.
+    A pointer into part of a value names no token."""
     path: list[str] | None = None
     if _is_alias(token.get("$value")):
         path = _ref_path(token["$value"])
@@ -4353,35 +4384,77 @@ def _token_type(token: dict[str, Any], inherited: str | None, root: dict[str, An
         path = _ref_path(token["$ref"])
         if path and path[-1] == "$value":
             path = path[:-1]
-    if path is not None and id(token) not in seen:
-        seen.add(id(token))
-        node, node_inherited = _locate(root, path)
-        if isinstance(node, dict) and _is_token(node):
-            t = _token_type(node, node_inherited, root, seen)
-            if _js_truthy(t):
-                return t
-    return inherited
+    if path is None:
+        return None
+    node, inherited = _locate(file, path)
+    return (node, inherited) if isinstance(node, dict) and _is_token(node) else None
 
 
-def _resolve_alias(alias: str, root: dict[str, Any]) -> tuple[Any, str | None] | None:
+def _token_type(token: dict[str, Any], inherited: str | None, file: _TokenFile) -> Any:
+    """A token's type (5.2.2): its own $type, else the type of the token its
+    {alias} value or #/path/$value pointer references, else the type the groups
+    above it give it (None when none does). A pointer into part of a value
+    names no token, so its token takes the groups' type. The tokens on a loop
+    of references take their groups' type: the value of every token on a loop
+    is unknown (7.2.3)."""
+    chain: list[tuple[dict[str, Any], str | None]] = []
+    on_chain: dict[int, int] = {}
+    node, node_inherited = token, inherited
+    t: Any = None
+    while True:
+        if id(node) in file.token_types:
+            t = file.token_types[id(node)]
+            break
+        if _js_truthy(node.get("$type")):
+            t = node["$type"]
+            break
+        at = on_chain.get(id(node))
+        if at is not None:
+            for tok, tok_inherited in chain[at:]:
+                file.token_types[id(tok)] = tok_inherited
+            del chain[at:]
+            t = node_inherited
+            break
+        on_chain[id(node)] = len(chain)
+        chain.append((node, node_inherited))
+        target = _referenced_token(node, file)
+        if target is None:
+            break
+        node, node_inherited = target
+    # Each token before the end takes the type found past it, else its groups'.
+    for tok, tok_inherited in reversed(chain):
+        if not _js_truthy(t):
+            t = tok_inherited
+        file.token_types[id(tok)] = t
+    return t
+
+
+def _resolve_alias(alias: str, file: _TokenFile) -> tuple[Any, str | None] | None:
     """(value, type): the literal value an alias names, through any chain of
     aliases, with the type of the token that holds it (None when it has none);
     None when a segment is missing, the target is not a token, or the chain
     loops. Path segments are group and token names, $root included."""
-    seen: set[str] = set()
+    chain: list[str] = []
+    on_chain: set[str] = set()
     ref = alias
-    while _is_alias(ref):
-        if ref in seen:
-            return None
-        seen.add(ref)
-        node, inherited = _locate(root, ref[1:-1].split("."))
+    resolved: tuple[Any, str | None] | None = None
+    while _is_alias(ref) and ref not in on_chain:
+        if ref in file.aliases:
+            resolved = file.aliases[ref]
+            break
+        chain.append(ref)
+        on_chain.add(ref)
+        node, inherited = _locate(file, ref[1:-1].split("."))
         if not isinstance(node, dict) or "$value" not in node:
-            return None
+            break
         if not _is_alias(node["$value"]):
-            t = _token_type(node, inherited, root)
-            return (node["$value"], t if isinstance(t, str) else None)
+            t = _token_type(node, inherited, file)
+            resolved = (node["$value"], t if isinstance(t, str) else None)
+            break
         ref = node["$value"]
-    return None
+    for r in chain:
+        file.aliases[r] = resolved
+    return resolved
 
 
 def _js_typeof(v: Any) -> str:
@@ -4461,6 +4534,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     all_types: list[str] = []  # insertion-ordered, as a JS Set
     dimension_values: list[tuple[str, str, str]] = []  # (path, value, form)
     deprecated: list[str] = []
+    file = _TokenFile(tokens)
 
     def walk(obj: dict[str, Any], path: str, inherited: str | None) -> None:
         for key in _js_keys(obj):
@@ -4472,10 +4546,10 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
             if not isinstance(val, dict):
                 continue
             if not _is_token(val):
-                walk(val, current, _group_type(val, inherited, tokens))
+                walk(val, current, _group_type(val, inherited, file))
                 continue
             counts["total"] += 1
-            t = _token_type(val, inherited, tokens)
+            t = _token_type(val, inherited, file)
             v = val.get("$value")
             if _js_truthy(t):
                 counts["type"] += 1
@@ -4493,7 +4567,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                     # A reference: its form is the form of the value it resolves
                     # to, and the target, if it is a dimension token, answers t10
                     # for itself. A target of another type is named as such.
-                    target = _resolve_alias(v, tokens)
+                    target = _resolve_alias(v, file)
                     if target is None:
                         dimension_values.append((current, f"{v} (unresolved alias)", "bad"))
                     elif target[1] is not None and target[1] != "dimension":
@@ -4516,7 +4590,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                 ref = f"'{val['$ref']}'" if isinstance(val["$ref"], str) else f"a value of type {_js_typeof(val['$ref'])}"
                 deprecated.append(f"Token '{current}' has a $ref that is not a JSON Pointer: {ref} (write #/path/to/token/$value)")
 
-    walk(tokens, "", _group_type(tokens, None, tokens))
+    walk(tokens, "", _group_type(tokens, None, file))
     total, typed = counts["total"], counts["type"]
 
     # t03: $type on all tokens, their own or inherited

@@ -45,6 +45,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from unittest.mock import patch
 
@@ -338,6 +339,64 @@ class TestFormatModuleReading:
             statuses = {c["id"]: c["status"] for c in golden[name]["checks"]}
             assert statuses["t03"] != "FAIL" and statuses["t06"] != "FAIL", (name, statuses)
         assert golden["type-inheritance.json"]["score"] == 100
+
+
+def _long_chain(kind: str, n: int) -> dict:
+    """A file whose n tokens (or n groups) each reference the one before."""
+    if kind == "extends":
+        doc = {"$schema": SCHEMA, "g0": {"$type": "color", "t": {"$value": BLUE}}}
+        for i in range(1, n):
+            doc[f"g{i}"] = {"$extends": "{g%d}" % (i - 1), "t": {"$value": BLUE}}
+        return doc
+    if kind == "dimension":
+        group = {"$type": "dimension", "t0": {"$value": PX}}
+        for i in range(1, n):
+            group[f"t{i}"] = {"$value": "{g.t%d}" % (i - 1)}
+        return {"$schema": SCHEMA, "g": group}
+    group = {"$type": "color", "t0": {"$value": BLUE}}
+    for i in range(1, n):
+        group[f"t{i}"] = {"$value": "{g.t%d}" % (i - 1)} if kind == "alias" else {"$ref": "#/g/t%d/$value" % (i - 1)}
+    return {"$schema": SCHEMA, "g": group}
+
+
+class TestLongChains:
+    """A chain of references is followed once, in a loop.
+
+    Old verdict (contract 0.1.3 as first written): the type of each token was
+    found by following its chain again, by recursion, so 1,200 chained aliases
+    raised RecursionError here (the tool call failed), and a 5,000-token chain
+    took about 10 to 20 seconds in the hosted port or ran out of stack.
+    Chained references are valid DTCG (7.2.2).
+    """
+
+    N = 5000
+    BUDGET_MS = 1000.0
+
+    @pytest.mark.parametrize("kind", ["alias", "pointer", "dimension", "extends"])
+    def test_a_long_chain_scores_in_one_pass(self, kind):
+        doc = _long_chain(kind, self.N)
+        best = float("inf")
+        for _ in range(3):
+            t0 = time.perf_counter()
+            result = mcp._tokens_score(doc, CONTRACT_STUB, INLINE)
+            best = min(best, (time.perf_counter() - t0) * 1000)
+        assert result["total_tokens"] == self.N, result
+        assert result["score"] == 100, result["checks"]
+        assert best < self.BUDGET_MS, f"{kind}: {best:.0f} ms for {self.N} chained references"
+
+    def test_a_reference_loop_gives_its_tokens_their_groups_type(self):
+        """The value of every token on a loop is unknown (7.2.3), so no type
+        comes round it: a.x, in an untyped group, stays untyped."""
+        result = _score_inline({"$schema": SCHEMA,
+                                "a": {"x": {"$value": "{b.y}"}},
+                                "b": {"$type": "color", "y": {"$value": "{a.x}"}}})
+        assert _check(result, "t03")["detail"] == "1/2 tokens have $type (direct or inherited)", _check(result, "t03")
+
+    def test_an_extends_loop_ends(self):
+        result = _score_inline({"$schema": SCHEMA,
+                                "a": {"$extends": "{b}", "x": {"$value": BLUE}},
+                                "b": {"$extends": "{a}", "y": {"$value": BLUE}}})
+        assert _check(result, "t03")["status"] == "FAIL", _check(result, "t03")
 
 
 class TestSiteExport:

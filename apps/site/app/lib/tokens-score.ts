@@ -47,6 +47,9 @@
 //     define $schema, and the detail said DTCG requires it.
 //   - t08 expects a dimension's 2025.10 form, { value, unit } in px or rem
 //     (8.2). A string such as "16px" is reported as the legacy form.
+//   - Each chain of aliases, pointers or $extends is followed once per file
+//     (TokenFile below). t08 walked each dimension alias's whole chain, so
+//     5,000 chained aliases took seconds.
 //
 // The PyPI server (packages/designesy-mcp, _tokens_score) ports this module line
 // for line. Both run on the token files in
@@ -170,43 +173,81 @@ function nodeAt(root: Obj, path: string[]): Json {
   return node;
 }
 
+/** The literal value an alias resolves to, with the type of the token that holds it. */
+type Resolved = { value: Json; type: string | null };
+
+/**
+ * The file being scored, and what is worked out once for it: the type each
+ * group takes through its $extends, the type of each token, and what each
+ * alias resolves to. Every chain of aliases, pointers or $extends is followed
+ * in a loop and each answer kept, so a chain of n references costs n steps in
+ * all. Following it again from every token on it cost n * n, and the recursion
+ * ran out of stack on a chain of 5,000 untyped aliases (the PyPI port's, on
+ * one of 1,200).
+ */
+type TokenFile = {
+  root: Obj;
+  groupTypes: Map<Obj, string | null>;
+  tokenTypes: Map<Obj, Json>;
+  aliases: Map<string, Resolved | undefined>;
+};
+
+/**
+ * A group's own $type, else the one the group its $extends names gives,
+ * through any chain of $extends (6.7.3); null when none has one or the chain
+ * loops.
+ */
+function extendedType(group: Obj, file: TokenFile): string | null {
+  const chain: Obj[] = [];
+  const onChain = new Set<Obj>();
+  let node: Json = group;
+  let type: string | null = null;
+  while (isObj(node) && !isToken(node) && !onChain.has(node)) {
+    const known = file.groupTypes.get(node);
+    if (known !== undefined) {
+      type = known;
+      break;
+    }
+    chain.push(node);
+    onChain.add(node);
+    if (typeof node.$type === 'string' && node.$type) {
+      type = node.$type;
+      break;
+    }
+    const path = refPath(node.$extends);
+    node = path ? nodeAt(file.root, path) : undefined;
+  }
+  for (const g of chain) file.groupTypes.set(g, type);
+  return type;
+}
+
 /**
  * The $type a group gives the tokens in it: its own, else the one the group
  * its $extends names gives (the group's type after extension, 6.7.3), else
  * the type it inherits from the groups above it.
  */
-function groupType(group: Obj, inherited: string | null, root: Obj): string | null {
-  const seen = new Set<Obj>();
-  let node: Json = group;
-  while (isObj(node) && !isToken(node) && !seen.has(node)) {
-    seen.add(node);
-    if (typeof node.$type === 'string' && node.$type) return node.$type;
-    const path = refPath(node.$extends);
-    node = path ? nodeAt(root, path) : undefined;
-  }
-  return inherited;
+function groupType(group: Obj, inherited: string | null, file: TokenFile): string | null {
+  return extendedType(group, file) ?? inherited;
 }
 
 /** The node at a path, with the type the groups above it give it. */
-function locate(root: Obj, path: string[]): { node: Json; inherited: string | null } {
-  let node: Json = root;
+function locate(file: TokenFile, path: string[]): { node: Json; inherited: string | null } {
+  let node: Json = file.root;
   let inherited: string | null = null;
   for (const part of path) {
     if (!isObj(node) || !Object.prototype.hasOwnProperty.call(node, part)) return { node: undefined, inherited };
-    inherited = groupType(node, inherited, root);
+    inherited = groupType(node, inherited, file);
     node = node[part];
   }
   return { node, inherited };
 }
 
 /**
- * A token's type (5.2.2): its own $type, else the type of the token its
- * {alias} value or #/path/$value pointer references, else the type the groups
- * above it give it (null when none does). A pointer into part of a value
- * names no token, so its token takes the groups' type.
+ * The token a token's {alias} value or #/path/$value pointer names, with the
+ * type its groups give it; undefined when it names none. A pointer into part
+ * of a value names no token.
  */
-function tokenType(token: Obj, inherited: string | null, root: Obj, seen: Set<Obj> = new Set()): Json {
-  if (token.$type) return token.$type;
+function referencedToken(token: Obj, file: TokenFile): { node: Obj; inherited: string | null } | undefined {
   let path: string[] | undefined;
   if (isAlias(token.$value)) {
     path = refPath(token.$value);
@@ -214,15 +255,53 @@ function tokenType(token: Obj, inherited: string | null, root: Obj, seen: Set<Ob
     path = refPath(token.$ref);
     if (path && path[path.length - 1] === '$value') path = path.slice(0, -1);
   }
-  if (path && !seen.has(token)) {
-    seen.add(token);
-    const target = locate(root, path);
-    if (isObj(target.node) && isToken(target.node)) {
-      const type = tokenType(target.node, target.inherited, root, seen);
-      if (type) return type;
+  if (!path) return undefined;
+  const target = locate(file, path);
+  return isObj(target.node) && isToken(target.node) ? { node: target.node, inherited: target.inherited } : undefined;
+}
+
+/**
+ * A token's type (5.2.2): its own $type, else the type of the token its
+ * {alias} value or #/path/$value pointer references, else the type the groups
+ * above it give it (null when none does). A pointer into part of a value
+ * names no token, so its token takes the groups' type. The tokens on a loop
+ * of references take their groups' type: the value of every token on a loop
+ * is unknown (7.2.3).
+ */
+function tokenType(token: Obj, inherited: string | null, file: TokenFile): Json {
+  const chain: Array<{ token: Obj; inherited: string | null }> = [];
+  const onChain = new Map<Obj, number>();
+  let node = token;
+  let nodeInherited = inherited;
+  let type: Json = null;
+  for (;;) {
+    if (file.tokenTypes.has(node)) {
+      type = file.tokenTypes.get(node);
+      break;
     }
+    if (node.$type) {
+      type = node.$type;
+      break;
+    }
+    const at = onChain.get(node);
+    if (at !== undefined) {
+      for (const c of chain.splice(at)) file.tokenTypes.set(c.token, c.inherited);
+      type = nodeInherited;
+      break;
+    }
+    onChain.set(node, chain.length);
+    chain.push({ token: node, inherited: nodeInherited });
+    const target = referencedToken(node, file);
+    if (!target) break;
+    node = target.node;
+    nodeInherited = target.inherited;
   }
-  return inherited;
+  // Each token before the end takes the type found past it, else its groups'.
+  for (let i = chain.length - 1; i >= 0; i--) {
+    type = type || chain[i].inherited;
+    file.tokenTypes.set(chain[i].token, type);
+  }
+  return type;
 }
 
 /**
@@ -231,21 +310,29 @@ function tokenType(token: Obj, inherited: string | null, root: Obj, seen: Set<Ob
  * Path segments are group and token names, $root included. Returns undefined
  * when a segment is missing, the target is not a token, or the chain loops.
  */
-function resolveAlias(alias: string, root: Obj): { value: Json; type: string | null } | undefined {
-  const seen = new Set<string>();
+function resolveAlias(alias: string, file: TokenFile): Resolved | undefined {
+  const chain: string[] = [];
+  const onChain = new Set<string>();
   let ref = alias;
-  while (isAlias(ref)) {
-    if (seen.has(ref)) return undefined;
-    seen.add(ref);
-    const { node, inherited } = locate(root, ref.slice(1, -1).split('.'));
-    if (!isObj(node) || node.$value === undefined) return undefined;
+  let resolved: Resolved | undefined;
+  while (isAlias(ref) && !onChain.has(ref)) {
+    if (file.aliases.has(ref)) {
+      resolved = file.aliases.get(ref);
+      break;
+    }
+    chain.push(ref);
+    onChain.add(ref);
+    const { node, inherited } = locate(file, ref.slice(1, -1).split('.'));
+    if (!isObj(node) || node.$value === undefined) break;
     if (!isAlias(node.$value)) {
-      const type = tokenType(node, inherited, root);
-      return { value: node.$value, type: typeof type === 'string' ? type : null };
+      const type = tokenType(node, inherited, file);
+      resolved = { value: node.$value, type: typeof type === 'string' ? type : null };
+      break;
     }
     ref = node.$value;
   }
-  return undefined;
+  for (const r of chain) file.aliases.set(r, resolved);
+  return resolved;
 }
 
 /**
@@ -313,6 +400,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
   const allTypes = new Set<string>();
   const dimensionValues: Array<{ path: string; value: string; form: 'ok' | 'legacy' | 'bad' }> = [];
   const deprecatedPatterns: string[] = [];
+  const file: TokenFile = { root: tokens, groupTypes: new Map(), tokenTypes: new Map(), aliases: new Map() };
 
   const walk = (obj: Obj, path: string, inherited: string | null): void => {
     for (const [key, val] of Object.entries(obj)) {
@@ -321,11 +409,11 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
       const currentPath = path ? `${path}.${key}` : key;
       if (!isObj(val)) continue;
       if (!isToken(val)) {
-        walk(val, currentPath, groupType(val, inherited, tokens));
+        walk(val, currentPath, groupType(val, inherited, file));
         continue;
       }
       totalTokens++;
-      const type = tokenType(val, inherited, tokens);
+      const type = tokenType(val, inherited, file);
       if (type) {
         typePassCount++;
         if (typeof type === 'string') allTypes.add(type);
@@ -344,7 +432,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
           // A reference: its form is the form of the value it resolves to, and
           // the target, if it is a dimension token, answers t10 for itself. A
           // target of another type is named as such.
-          const target = resolveAlias(val.$value, tokens);
+          const target = resolveAlias(val.$value, file);
           const otherType = target && target.type !== null && target.type !== 'dimension';
           dimensionValues.push(!target
             ? { path: currentPath, value: `${val.$value} (unresolved alias)`, form: 'bad' }
@@ -370,7 +458,7 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
       }
     }
   };
-  walk(tokens, '', groupType(tokens, null, tokens));
+  walk(tokens, '', groupType(tokens, null, file));
 
   // t03: $type on all tokens, their own or inherited
   if (totalTokens === 0) add('t03', 'SKIP', 'No tokens found');

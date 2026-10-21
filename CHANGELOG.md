@@ -47,6 +47,12 @@ keep a top-level group named `tokens`, or write dimensions as strings.
   passes `{ value, unit }` in px or rem, reports a string with a CSS unit as
   the legacy form (a WARN, also listed in t10), and FAILs only when no
   dimension value is usable.
+- **A chain of references is followed once.** t08 walked the whole chain of
+  each dimension alias, so 5,000 chained aliases took 5 seconds to score in
+  the hosted port and 15 in the PyPI port. Each chain of aliases, JSON
+  Pointers or `$extends` is now followed once per file, in a loop: the same
+  file scores in under 60 ms in both, and so does a 5,000-long chain of each
+  kind.
 - **The tool description no longer says `$description` is checked.** No
   check reads it. Both servers' descriptions now name what the checks read.
 
