@@ -194,7 +194,7 @@ MIT
 - [Homepage](https://www.designesy.org)
 - [Agent Install](https://pypi.org/project/designesy-mcp/#quick-start-one-command) — one-command `uvx designesy-mcp`
 - [Repository](https://github.com/LE-VAI/designesy-org)
-- [MCP Registry entry](https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.LE-VAI%2Fdesignesy-org)
+- [MCP Registry entry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.LE-VAI%2Fdesignesy-org/versions/latest)
 - [Changelog](https://github.com/LE-VAI/designesy-org/releases)
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
 - [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score
