@@ -4173,9 +4173,10 @@ TOOLS = [
 #   returned script and never fetches it. Closed world.
 # - designesy_tokens_score and designesy_motion_score fetch the caller's url.
 #   designesy_score posts to the designesy.org engine, which fetches the url;
-#   when the engine is unreachable, its offline fallback fetches the page here
-#   and, only when DESIGNESY_CDP_URL names a DevTools endpoint that answers,
-#   opens a tab there to measure and then closes it. That probe leaves nothing
+#   when the network fails before the request reaches the engine, its offline
+#   fallback fetches the page here and, only when DESIGNESY_CDP_URL names a
+#   DevTools endpoint that answers, opens a new tab there to measure and then
+#   closes it; neither probe uses a tab it did not open. That leaves nothing
 #   behind, so the tool stays read-only. The other scoring tools post to the
 #   designesy.org engines, which fetch the url. Open world.
 # - designesy_monitor_score posts to /api/monitor, which sends a drift-alert

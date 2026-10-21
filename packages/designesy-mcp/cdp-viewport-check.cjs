@@ -25,16 +25,6 @@ const CDP = new URL(CDP_ARG ? CDP_ARG.slice('--cdp='.length) : 'http://127.0.0.1
 const CDP_HOST = CDP.hostname.replace(/^\[|\]$/g, '');
 const CDP_PORT = Number(CDP.port) || 80;
 
-function getTargets() {
-  return new Promise((resolve, reject) => {
-    http.get({ host: CDP_HOST, port: CDP_PORT, path: '/json/list' }, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(JSON.parse(data)));
-    }).on('error', reject);
-  });
-}
-
 function createTab(url) {
   return new Promise((resolve, reject) => {
     const req = http.request({ host: CDP_HOST, port: CDP_PORT, path: `/json/new?${encodeURIComponent(url)}`, method: 'PUT' }, (res) => {
@@ -188,13 +178,10 @@ async function settleInSession(session, settleMs = 500, maxWaitMs = 3000) {
 async function checkViewportOverflow(url) {
   console.log(`Opening ${url}...`);
   const tab = await createTab(url);
-  if (!tab.webSocketDebuggerUrl) {
-    const targets = await getTargets();
-    const pageTab = targets.find(t => t.type === 'page' && t.url.includes(url.split('/')[2]));
-    if (!pageTab) throw new Error('Could not create or find tab');
-    tab.webSocketDebuggerUrl = pageTab.webSocketDebuggerUrl;
-    tab.id = pageTab.id;
-  }
+  // Only a tab this run opened is measured and closed. Until 1.13.10 a failed
+  // /json/new fell back to a page tab already open on the same host, measured
+  // the four widths in it, and closed it: one of the browser owner's tabs.
+  if (!tab.webSocketDebuggerUrl) throw new Error('Could not create tab');
 
   const wsUrl = tab.webSocketDebuggerUrl;
   console.log(`Tab created: ${tab.id}`);

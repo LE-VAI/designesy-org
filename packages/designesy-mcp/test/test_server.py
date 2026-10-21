@@ -1104,7 +1104,8 @@ class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
     def test_set_passes_the_endpoint_to_both_probes(self, env):
         env.setenv("DESIGNESY_CDP_URL", "http://127.0.0.1:59222/")
         failed = MagicMock(returncode=1, stdout="", stderr="no browser")
-        with patch.object(mcp, "_cdp_available", return_value=True),                 patch.object(mcp.subprocess, "run", return_value=failed) as run:
+        with patch.object(mcp, "_cdp_available", return_value=True), \
+                patch.object(mcp.subprocess, "run", return_value=failed) as run:
             mcp._check_viewport_overflow_cdp("https://example.com/")
             mcp._check_cwv_cdp("https://example.com/")
         assert [c.args[0][2:] for c in run.call_args_list] == [
@@ -1129,7 +1130,62 @@ class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
         )
         assert proc.returncode == 1
         assert f"127.0.0.1:{port}" in proc.stderr
-        assert "9222" not in proc.stdout + proc.stderr
+        # Every port the output names is the one given. A bare "9222" check
+        # would fail whenever the free port was 39222, 49222 or 59222.
+        assert set(re.findall(r":(\d+)\b", proc.stdout + proc.stderr)) == {str(port)}
+
+    # Stands in for a DevTools endpoint inside the node process: http and
+    # WebSocket are replaced before the script loads, so nothing opens a socket.
+    # /json/new answers per NEW_TAB, which the test prepends; /json/list holds a
+    # tab the browser's owner already had open on the same host.
+    DEVTOOLS_STUB = r"""
+const http = require('http');
+const { EventEmitter } = require('events');
+const log = (m) => process.stderr.write(`STUB ${m}\n`);
+const tab = (id, url) => ({ type: 'page', id, url, webSocketDebuggerUrl: `ws://127.0.0.1:1/devtools/page/${id}` });
+function answer(path) {
+  if (path.startsWith('/json/new')) return NEW_TAB === 'opens' ? JSON.stringify(tab('NEW-TAB', 'https://example.com/')) : 'not json';
+  if (path.startsWith('/json/list')) return JSON.stringify([tab('OWNER-TAB', 'https://example.com/inbox')]);
+  return '{}';
+}
+function fake(path, cb) {
+  log(`http ${path.split('?')[0]}`);
+  const req = new EventEmitter();
+  req.end = () => {
+    const res = new EventEmitter();
+    if (cb) cb(res);
+    process.nextTick(() => { res.emit('data', answer(path)); res.emit('end'); });
+  };
+  return req;
+}
+http.request = (opts, cb) => fake(opts.path, cb);
+http.get = (opts, cb) => { const req = fake(typeof opts === 'string' ? new URL(opts).pathname : opts.path, cb); req.end(); return req; };
+globalThis.WebSocket = class {
+  constructor(url) { log(`websocket ${url.split('/').pop()}`); setTimeout(() => this.onopen && this.onopen(), 0); }
+  send(data) { const { id } = JSON.parse(data); setTimeout(() => this.onmessage && this.onmessage({ data: JSON.stringify({ id, result: {} }) }), 0); }
+  close() {}
+};
+"""
+
+    @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+    @pytest.mark.parametrize("script", ["cdp-viewport-check.cjs", "cdp-cwv-expr.cjs"])
+    @pytest.mark.parametrize("new_tab, steps, code", [
+        ("fails", ["http /json/new"], 1),
+        ("opens", ["http /json/new", "websocket NEW-TAB", "http /json/close/NEW-TAB"], 0),
+    ], ids=["new-tab-fails", "new-tab-opens"])
+    def test_the_node_scripts_measure_and_close_only_a_tab_they_opened(self, tmp_path, script, new_tab, steps, code):
+        # Until 1.13.10 the viewport probe, when /json/new failed, measured in
+        # OWNER-TAB and then closed it.
+        stub = tmp_path / "devtools-stub.cjs"
+        stub.write_text(f"const NEW_TAB = {json.dumps(new_tab)};" + self.DEVTOOLS_STUB, encoding="utf-8")
+        proc = subprocess.run(
+            ["node", "-r", str(stub), str(PACKAGE / script), "https://example.com/", "--cdp=http://127.0.0.1:1"],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert [line[5:] for line in proc.stderr.splitlines() if line.startswith("STUB ")] == steps
+        assert proc.returncode == code
+        if code:
+            assert "Error: Could not create tab" in proc.stderr
 
 
 # ── 10. JSON-RPC: no line ends the session ────────────────────────────────────

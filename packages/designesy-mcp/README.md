@@ -174,7 +174,7 @@ All responses are cached with a 5-minute TTL. The server only fetches public, ma
 
 **Certificates are verified.** A site whose TLS certificate fails verification, designesy.org included, returns a tool error that names the reason. To read such a site anyway, set `DESIGNESY_INSECURE_TLS=1` in the server's environment: a URL you pass (never one on designesy.org) whose certificate fails verification is then read without it, and the result carries `tls_verified: false`.
 
-**No browser unless you name one.** `designesy_score`'s offline engine measures overflow (v02) and Core Web Vitals (v21) by opening the page in a new tab of a Chrome DevTools endpoint, and closing it after. It does so only when `DESIGNESY_CDP_URL` names that endpoint (for example `http://127.0.0.1:9222`); otherwise both checks read MANUAL.
+**No browser unless you name one.** `designesy_score`'s offline engine measures overflow (v02) and Core Web Vitals (v21) by opening the page in a new tab of a Chrome DevTools endpoint, and closing it after; it never uses a tab it did not open. It does so only when `DESIGNESY_CDP_URL` names that endpoint (for example `http://127.0.0.1:9222`); otherwise both checks read MANUAL.
 
 Every tool declares a `title` and the MCP annotation hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), matching the hosted endpoint at `https://www.designesy.org/api/mcp`. `designesy_monitor_score` is the one tool marked `readOnlyHint: false`.
 

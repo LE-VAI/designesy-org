@@ -44,7 +44,9 @@ v0.4.6).
   v02 and v21. It now does so only when `DESIGNESY_CDP_URL` names a Chrome
   DevTools endpoint, and both Node probes connect to that endpoint;
   otherwise both checks read MANUAL. The `designesy_score` description says
-  so.
+  so. Neither probe uses a tab it did not open: when `/json/new` failed, the
+  viewport probe measured in a tab already open on the same host and then
+  closed it.
 - **No line ends the session.** An array, a bare string, a number, or
   `params: null` raised AttributeError and stopped the server, and so did a
   byte that is not UTF-8 wherever stdin was decoded strictly (CPython's
