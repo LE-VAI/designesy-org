@@ -539,7 +539,7 @@
         "id": "t10",
         "name": "No deprecated pre-2025.10 patterns (bare hex colors, string or bare number dimensions, a $ref that is not a JSON Pointer)",
         "status": "WARN",
-        "detail": "2 deprecated pattern(s) found: Dimension token 'spacing.md' uses bare number (should include unit string); Dimension token 'spacing.lg' has unrecognized or missing unit: '2parsangs'"
+        "detail": "2 deprecated pattern(s) found: Dimension token 'spacing.md' uses bare number (write { value, unit } in px or rem); Dimension token 'spacing.lg' has unrecognized or missing unit: '2parsangs'"
       }
     ],
     "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
@@ -1319,7 +1319,7 @@
         "id": "t10",
         "name": "No deprecated pre-2025.10 patterns (bare hex colors, string or bare number dimensions, a $ref that is not a JSON Pointer)",
         "status": "WARN",
-        "detail": "1 deprecated pattern(s) found: Dimension token 'space.md' uses bare number (should include unit string)"
+        "detail": "1 deprecated pattern(s) found: Dimension token 'space.md' uses bare number (write { value, unit } in px or rem)"
       }
     ],
     "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",

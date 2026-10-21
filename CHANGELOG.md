@@ -53,7 +53,10 @@ keep a top-level group named `tokens`, or write dimensions as strings.
   CSS unit (`"16px"`, `"2em"`) and the object form with any CSS unit. It now
   passes `{ value, unit }` in px or rem, reports a string with a CSS unit as
   the legacy form (a WARN, also listed in t10), and FAILs only when no
-  dimension value is usable.
+  dimension value is usable. t10's advice leads to a t08 PASS: a `px` or
+  `rem` string is told to write `{ value, unit }`, a string in another unit
+  that a 2025.10 dimension takes px or rem, and a bare number, which was told
+  to include a unit string, to write `{ value, unit }` in px or rem.
 - **A chain of references is followed once.** t08 walked the whole chain of
   each dimension alias, so 5,000 chained aliases took 5 seconds to score in
   the hosted port and 15 in the PyPI port. Each chain of aliases, JSON

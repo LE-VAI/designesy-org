@@ -4655,14 +4655,18 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                     else:
                         dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", _dimension_form(target[0])))
                 elif isinstance(v, str):
+                    # The advice leads to a t08 PASS: {value, unit} takes px or rem
+                    # only, so a string in another unit is told so.
+                    unit = _dimension_unit(v)
+                    advice = "write { value, unit }" if unit in _DTCG_DIMENSION_UNITS else "a 2025.10 dimension takes px or rem"
                     dimension_values.append((current, v, _dimension_form(v)))
                     deprecated.append(
-                        f"Dimension token '{current}' uses the pre-2025.10 string form: '{v}' (write {{ value, unit }})"
-                        if _dimension_unit(v) else
+                        f"Dimension token '{current}' uses the pre-2025.10 string form: '{v}' ({advice})"
+                        if unit else
                         f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
                 elif _is_js_number(v):
                     dimension_values.append((current, _js_num(v), "bad"))
-                    deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+                    deprecated.append(f"Dimension token '{current}' uses bare number (write {{ value, unit }} in px or rem)")
                 elif isinstance(v, dict):
                     dimension_values.append((current, _dimension_text(v), _dimension_form(v)))
             # A $ref is a JSON Pointer (#/path/to/target); a dot path is not one.

@@ -323,6 +323,16 @@ class TestFormatModuleReading:
         )
         assert "uses the pre-2025.10 string form: '16px'" in _check(result, "t10")["detail"]
 
+    def test_t10_advice_leads_to_a_t08_pass(self):
+        """Old verdict: "2em" was told to write { value, unit }, which FAILs t08
+        in em, and a bare number to "include unit string", the legacy form
+        that t08 and t10 report."""
+        result = _score_inline({"$schema": SCHEMA, "space": {"md": _dim("16px"), "em": _dim("2em"), "n": _dim(4)}})
+        t10 = _check(result, "t10")["detail"]
+        assert "'16px' (write { value, unit })" in t10, t10
+        assert "'2em' (a 2025.10 dimension takes px or rem)" in t10, t10
+        assert "'space.n' uses bare number (write { value, unit } in px or rem)" in t10, t10
+
     def test_t08_legacy_strings_alone_warn(self):
         """Old verdict: t08 PASS. A legacy string is a WARN, never a FAIL."""
         result = _score_inline({"$schema": SCHEMA, "space": {"md": _dim("16px")}})

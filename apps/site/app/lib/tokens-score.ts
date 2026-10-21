@@ -521,13 +521,17 @@ export function scoreTokens(tokens: Obj, contract: TokensContractLike, url: stri
               ? { path: currentPath, value: `${val.$value} -> a ${target.type} token`, form: 'bad' }
               : { path: currentPath, value: `${val.$value} -> ${dimensionText(target.value)}`, form: dimensionForm(target.value) });
         } else if (typeof val.$value === 'string') {
+          // The advice leads to a t08 PASS: { value, unit } takes px or rem
+          // only, so a string in another unit is told so.
+          const unit = extractUnit(val.$value);
+          const advice = DTCG_DIMENSION_UNITS.includes(unit) ? 'write { value, unit }' : 'a 2025.10 dimension takes px or rem';
           dimensionValues.push({ path: currentPath, value: val.$value, form: dimensionForm(val.$value) });
-          deprecatedPatterns.push(extractUnit(val.$value)
-            ? `Dimension token '${currentPath}' uses the pre-2025.10 string form: '${val.$value}' (write { value, unit })`
+          deprecatedPatterns.push(unit
+            ? `Dimension token '${currentPath}' uses the pre-2025.10 string form: '${val.$value}' (${advice})`
             : `Dimension token '${currentPath}' has unrecognized or missing unit: '${val.$value}'`);
         } else if (typeof val.$value === 'number') {
           dimensionValues.push({ path: currentPath, value: String(val.$value), form: 'bad' });
-          deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (should include unit string)`);
+          deprecatedPatterns.push(`Dimension token '${currentPath}' uses bare number (write { value, unit } in px or rem)`);
         } else if (isObj(val.$value)) {
           dimensionValues.push({ path: currentPath, value: dimensionText(val.$value), form: dimensionForm(val.$value) });
         }
