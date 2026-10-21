@@ -34,6 +34,11 @@
  *   9. The site's own /export/dtcg held CSS, not DTCG: 7 $values were var()
  *      (interaction.focus_ring = var(--signal-light), the four font stacks),
  *      and the 5 radii were "6px" strings, not { value, unit } objects.
+ * And a tenth:
+ *  10. designesy_guardrails wrote dimensions and shadow lengths as strings
+ *      ("4px", "0px"), which the 2025.10 format's JSON Schema rejects and the
+ *      tokens validator (contract 0.1.3) WARNs on in t08 and t10: the fixture
+ *      site's file scored 89.
  *
  * WHAT IT DOES
  * scripts/lib/route-harness.js loads the real route modules under Node with the
@@ -50,8 +55,11 @@
  *                        and the contract both say so
  *   guardrails-dtcg      the emitted token file uses the export's $schema, DTCG
  *                        {group.token} aliases that resolve, structured colors,
- *                        only DTCG types, loses no declaration, and passes the
- *                        server's own tokens validator with zero FAIL
+ *                        only DTCG types, dimensions and shadow lengths as
+ *                        { value, unit } in px or rem (a unitless 0 as 0px, a
+ *                        length in another unit kept as CSS), loses no
+ *                        declaration, and the server's own tokens validator
+ *                        gives it 0 WARN and 0 FAIL
  *   tokens-warn-half     a WARN counts half, and the result, the tool
  *                        description and the contract all state it, as the
  *                        motion tool does
@@ -148,6 +156,12 @@ function dtcgTokens(doc) {
   };
   walk(doc, []);
   return out;
+}
+
+/** A DTCG 2025.10 dimension value: exactly { value: number, unit: 'px' | 'rem' }. */
+function isDimension(v) {
+  return !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).sort().join(',') === 'unit,value'
+    && typeof v.value === 'number' && (v.unit === 'px' || v.unit === 'rem');
 }
 
 /** The leading count in a d02 detail ("3 undeclared ...") or 0 for a PASS. */
@@ -304,8 +318,6 @@ async function exportDtcg() {
   const tokens = dtcgTokens(doc);
   const byPath = new Map(tokens.map((t) => [t.path, t.token]));
   const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
-  const isDimension = (v) => !!v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).sort().join(',') === 'unit,value'
-    && typeof v.value === 'number' && (v.unit === 'px' || v.unit === 'rem');
   const isColor = (v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
 
   const withVar = tokens.filter((t) => JSON.stringify(t.token.$value).includes('var('));
@@ -369,14 +381,40 @@ async function guardrailsDtcg() {
     if (!target) push(`alias-dangles:${t.path}`, `${t.path} aliases ${v}, which is not a token in the file.`);
     else if (target.$type !== t.token.$type) push(`alias-type:${t.path}`, `${t.path} is typed ${t.token.$type} but aliases ${v}, typed ${target.$type}.`);
   }
+  const isAlias = (v) => typeof v === 'string' && /^\{[^{}]+\}$/.test(v);
+  const dims = tokens.filter((t) => t.token.$type === 'dimension' && !isAlias(t.token.$value));
+  const badDims = dims.filter((t) => !isDimension(t.token.$value));
+  if (badDims.length) push('dimension', `${badDims.length}/${dims.length} dimension token(s) are not { value, unit: px | rem }, e.g. ${badDims.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
+  for (const t of tokens.filter((x) => x.token.$type === 'shadow' && !isAlias(x.token.$value))) {
+    for (const layer of [].concat(t.token.$value)) {
+      const bad = ['offsetX', 'offsetY', 'blur', 'spread'].filter((f) => !isDimension(layer && layer[f]));
+      if (bad.length) push(`shadow-length:${t.path}`, `${t.path} has ${bad.map((f) => `${f}=${JSON.stringify(layer && layer[f])}`).join(', ')}, not { value, unit }.`);
+    }
+  }
   const unconverted = ((doc.$extensions || {}).designesy || {}).css || {};
   const kept = tokens.length + Object.keys(unconverted).length;
   if (kept !== g.body.tokensExtracted) push('lost', `${g.body.tokensExtracted} :root properties were extracted, but the file keeps ${tokens.length} token(s) and ${Object.keys(unconverted).length} unconverted value(s).`);
 
+  // The fixture site has no unitless 0 and no length in another unit, so the
+  // converter is also given those directly: a 0 on a length name is 0px, and
+  // a length in em, %, vw or pt (alone or in a shadow) has no 2025.10 form and
+  // is kept as CSS.
+  const units = h.load('app/lib/dtcg.ts').cssTokensToDtcg(
+    { '--space-0': '0', '--inset': '2em', '--size-half': '50%', '--width-wide': '10vw', '--size-print': '12pt', '--shadow-em': '0 1em 2px #000' },
+    { source: FIXTURES.site.url, generator: 'mcp-accuracy', extracted: '' },
+  );
+  const zero = units.space && units.space['0'];
+  if (!zero || zero.$type !== 'dimension' || JSON.stringify(zero.$value) !== '{"value":0,"unit":"px"}') {
+    push('zero', `--space-0: 0 converts to ${JSON.stringify(zero)}; a unitless 0 on a length name is { value: 0, unit: 'px' }.`);
+  }
+  const keptAsCss = Object.keys(((units.$extensions || {}).designesy || {}).css || {});
+  const typed = ['--inset', '--size-half', '--width-wide', '--size-print', '--shadow-em'].filter((n) => !keptAsCss.includes(n));
+  if (typed.length) push('other-units', `${typed.join(', ')} left $extensions.designesy.css; a length in a unit other than px or rem has no 2025.10 dimension form.`);
+
   const v = await h.callTool('designesy_tokens_score', { dtcg_file: JSON.stringify(doc) });
-  const failed = (v.payload.checks || []).filter((c) => c.status === 'FAIL');
-  if (failed.length) push('validator', `The server's own tokens validator FAILs the emitted file on ${failed.map((c) => `${c.id} (${c.detail})`).join('; ')}.`);
-  return { findings, measured: `${tokens.length} tokens, ${Object.keys(unconverted).length} unconverted, validator ${v.payload.score} (${v.payload.fail_count} FAIL)` };
+  const flagged = (v.payload.checks || []).filter((c) => c.status === 'WARN' || c.status === 'FAIL');
+  if (flagged.length) push('validator', `The server's own tokens validator flags the emitted file: ${flagged.map((c) => `${c.id} ${c.status} (${c.detail})`).join('; ')}.`);
+  return { findings, measured: `${tokens.length} tokens, ${badDims.length} non-object dimension(s), ${Object.keys(unconverted).length} unconverted, validator ${v.payload.score} (${v.payload.warn_count} WARN, ${v.payload.fail_count} FAIL)` };
 }
 
 async function monitorM09() {
