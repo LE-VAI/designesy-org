@@ -48,16 +48,17 @@ function Row({
       type="button"
       className={`senses-row senses-row--${name}`}
       aria-pressed={on}
-      aria-labelledby={`${id}-l`}
       aria-describedby={`${id}-h`}
       onClick={onToggle}
       data-cuelume-hover="whisper"
     >
+      {/* Named by its content, the label; the hint is its description. An
+          aria-labelledby of the label alone failed axe-core 4.14's Label in
+          Name check, which reads the hint as part of the visible text. Hidden
+          from the name, the hint is still read through aria-describedby. */}
       <span className="senses-row-text">
-        <span className="senses-row-label" id={`${id}-l`}>
-          {label}
-        </span>
-        <span className="senses-row-hint" id={`${id}-h`}>
+        <span className="senses-row-label">{label}</span>{' '}
+        <span className="senses-row-hint" id={`${id}-h`} aria-hidden="true">
           {hint}
         </span>
       </span>

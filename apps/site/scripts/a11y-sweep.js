@@ -146,6 +146,10 @@ const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const PROBE = async (tags) => {
   const axeRes = await axe.run(document, {
     runOnly: { type: 'tag', values: tags },
+    // Label in Name (WCAG 2.5.3) carries the wcag21a tag, but axe-core before
+    // 4.14 marks it experimental and a tag run skips it. Named here, it runs
+    // on every axe version this checkout may pin.
+    rules: { 'label-content-name-mismatch': { enabled: true } },
   });
   const rulesRun = axeRes.passes.length + axeRes.violations.length +
     axeRes.incomplete.length + axeRes.inapplicable.length;

@@ -462,37 +462,33 @@ export default function DocsPage() {
             {hasReceipt && selfReport && scoreEngine && driftEngine && readinessEngine ? (
               <>
                 <p>
-                  The combined score is{' '}
-                  <strong>
+                  The combined score is <strong>
                     {compositeGrade} ({fmtScore(selfReport.composite as number)} /100)
                   </strong>
                   , a weighted synthesis of the design-score engine (
                   {scoreEngine.score}/100, {scoreEngine.grade}), the drift engine
                   ({driftEngine.score}/100, {driftEngine.grade}), and
-                  AI-readiness ({readinessEngine.score}/100,{' '}
-                  {readinessEngine.grade}). Of the {driftEngine.checks} drift
-                  checks, {driftEngine.pass} PASS, {driftEngine.fail} FAIL, and{' '}
-                  {driftEngine.warn} WARN.
+                  AI-readiness ({readinessEngine.score}/100, {readinessEngine.grade}). Of
+                  the {driftEngine.checks} drift checks, {driftEngine.pass} PASS, {driftEngine.fail} FAIL,
+                  and {driftEngine.warn} WARN.
                   {driftNotes.length > 0 ? ' The non-PASS entries are:' : ''}
                 </p>
                 {driftNotes.map((n) => (
                   <p key={n.id} style={{ marginTop: '0.75rem' }}>
-                    <strong>{n.id} ({n.status}):</strong> {n.detail}.
+                    <strong>{n.id} ({n.status}):</strong>{` ${n.detail}.`}
                   </p>
                 ))}
                 <p style={{ marginTop: '0.75rem' }}>
-                  The {driftEngine.pass} PASSes are the substance:{' '}
-                  {selfReport.tokenCount ?? 'the'} custom properties registered
-                  at :root resolve end to end, spacing clusters on a small set of
+                  The {driftEngine.pass} PASSes are the substance: {selfReport.tokenCount ?? 'the'} custom
+                  properties registered at :root resolve end to end, spacing clusters on a small set of
                   values, and z-index stays within 0 to 200. The drift engine grew
                   up alongside the site; where it counts aggressively, this
                   section says so rather than smoothing it over.
                 </p>
                 {readinessNotes.length > 0 && (
                   <p style={{ marginTop: '0.75rem' }}>
-                    AI-readiness shows {readinessEngine.pass} PASS and{' '}
-                    {readinessEngine.warn} WARN:{' '}
-                    {readinessNotes.map((n) => `${n.id} (${n.detail})`).join('; ')}.
+                    AI-readiness shows {readinessEngine.pass} PASS and {readinessEngine.warn} WARN:
+                    {` ${readinessNotes.map((n) => `${n.id} (${n.detail})`).join('; ')}.`}
                   </p>
                 )}
               </>
