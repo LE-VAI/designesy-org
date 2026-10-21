@@ -5357,10 +5357,41 @@ def _error(req_id: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
 
 
-def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
+def _tool_error(req_id: Any, text: str) -> dict[str, Any]:
+    """A tool that ran and failed: an isError result the model can read and act on."""
+    return _result(req_id, {"content": [{"type": "text", "text": text}], "isError": True})
+
+
+# ── Message rules ───────────────────────────────────────────────────────────
+#
+# JSON-RPC 2.0 and the 2024-11-05 revision this server negotiates. Until
+# 1.13.10, an array, a bare string or a null params raised AttributeError and
+# ended the session, and a notification such as notifications/cancelled got an
+# error frame back.
+#   - A line that is not JSON gets -32700, and a message that is not an object
+#     gets -32600, both with id null. 2024-11-05 has no batches (2025-03-26
+#     added them, 2025-06-18 removed them), so an array is not an object either.
+#   - A message with no id is a notification and gets no reply.
+#   - params or arguments null reads as {}; any other non-object is -32602.
+#   - An unknown tool is -32602 and an unknown resource -32002, the codes the
+#     2024-11-05 tools and resources pages give. A tool that runs and fails
+#     (a fetch error, a blocked URL, an engine error) is an isError result.
+
+
+def _handle(msg: Any) -> dict[str, Any] | None:
+    if not isinstance(msg, dict):
+        return _error(None, -32600, "Invalid Request: a message must be a JSON object; batches are not supported")
     method = msg.get("method")
     req_id = msg.get("id")
-    params = msg.get("params", {})
+    if not isinstance(method, str):
+        return _error(req_id, -32600, "Invalid Request: method must be a string")
+    if "id" not in msg:
+        return None
+    params = msg.get("params")
+    if params is None:
+        params = {}
+    elif not isinstance(params, dict):
+        return _error(req_id, -32602, "Invalid params: params must be an object")
 
     if method == "initialize":
         return _result(req_id, {
@@ -5374,15 +5405,19 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         return _result(req_id, {"tools": TOOLS})
     elif method == "tools/call":
         name = params.get("name", "")
-        args = params.get("arguments", {})
-        if name not in TOOL_MAP:
-            return _error(req_id, -32601, f"Unknown tool: {name}")
+        args = params.get("arguments")
+        if args is None:
+            args = {}
+        if not isinstance(name, str) or name not in TOOL_MAP:
+            return _error(req_id, -32602, f"Unknown tool: {name}")
+        if not isinstance(args, dict):
+            return _error(req_id, -32602, "Invalid params: arguments must be an object")
         try:
             res = _dispatch(name, args)
         except urllib.error.URLError as e:
-            return _error(req_id, -32000, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
+            return _tool_error(req_id, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
         except Exception as e:
-            return _error(req_id, -32000, f"Tool execution failed: {_scrub_local_paths(str(e))}")
+            return _tool_error(req_id, f"Tool execution failed: {_scrub_local_paths(str(e))}")
         # A str result (designesy_score format=review) is already the text
         # the tool returns, so it is sent as written; JSON-encoding it would
         # wrap the markdown in quotes and escape every newline.
@@ -5395,8 +5430,8 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         return _result(req_id, {"resources": RESOURCES})
     elif method == "resources/read":
         uri = params.get("uri", "")
-        if uri not in _RESOURCE_FETCHERS:
-            return _error(req_id, -32601, f"Unknown resource: {uri}")
+        if not isinstance(uri, str) or uri not in _RESOURCE_FETCHERS:
+            return _error(req_id, -32002, f"Unknown resource: {uri}")
         try:
             content = _RESOURCE_FETCHERS[uri]()
         except Exception as e:
@@ -5415,16 +5450,26 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def main() -> None:
-    """Read JSON-RPC messages from stdin, one per line."""
+    """Read JSON-RPC messages from stdin, one per line.
+
+    No line ends the session: one that is not JSON gets -32700, and a request
+    whose handler raises gets -32603 while the loop reads on.
+    """
     for line in sys.stdin:
         line = line.strip()
         if not line:
             continue
         try:
             msg = json.loads(line)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):
+            _send(_error(None, -32700, "Parse error: the line is not valid JSON"))
             continue
-        response = _handle(msg)
+        try:
+            response = _handle(msg)
+        except Exception as e:
+            if not (isinstance(msg, dict) and "id" in msg):
+                continue
+            response = _error(msg.get("id"), -32603, f"Internal error: {_scrub_local_paths(str(e))}")
         if response is not None:
             _send(response)
 

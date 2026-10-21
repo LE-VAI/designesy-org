@@ -1045,3 +1045,145 @@ class TestBrowserProbeNeedsDesignesyCdpUrl:
         assert proc.returncode == 1
         assert f"127.0.0.1:{port}" in proc.stderr
         assert "9222" not in proc.stdout + proc.stderr
+
+
+# ── 10. JSON-RPC: no line ends the session ────────────────────────────────────
+#
+# Measured on 1.13.9 with a stdio probe: an array, a bare string, a number, or
+# params null raised AttributeError and ended the process; a notification got
+# an error frame; an unknown tool or resource got -32601; and a tool that
+# failed (a blocked URL, a fetch error) came back as JSON-RPC -32000 rather
+# than an isError result. main() runs here on in-memory stdin and stdout.
+
+INIT = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+    "protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "t", "version": "0"}}})
+PING = '{"jsonrpc":"2.0","id":99,"method":"ping"}'
+
+
+def _session(*lines: str) -> list[dict]:
+    """Run main() over the lines; return every reply it wrote, in order."""
+    out = io.StringIO()
+    with patch.object(mcp.sys, "stdin", io.StringIO("".join(f"{line}\n" for line in lines))), \
+            patch.object(mcp.sys, "stdout", out):
+        mcp.main()
+    return [json.loads(line) for line in out.getvalue().splitlines()]
+
+
+def _request(method: str, params=None, req_id=5) -> str:
+    msg = {"jsonrpc": "2.0", "id": req_id, "method": method}
+    if params is not None:
+        msg["params"] = params
+    return json.dumps(msg)
+
+
+class TestJsonRpcSession:
+    def test_the_probe_gets_four_replies_and_the_session_ends_at_eof(self):
+        replies = _session(
+            INIT, "[1]", '"hello"',
+            '{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":1}}',
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}',
+        )
+        assert len(replies) == 4
+        assert replies[0]["id"] == 1 and replies[0]["result"]["protocolVersion"] == "2024-11-05"
+        assert [(r["id"], r["error"]["code"]) for r in replies[1:3]] == [(None, -32600), (None, -32600)]
+        assert replies[3]["id"] == 2 and len(replies[3]["result"]["tools"]) == 17
+
+    @pytest.mark.parametrize("line", ["[]", "[1]", '[{"jsonrpc":"2.0","id":3,"method":"ping"}]',
+                                      '"hello"', "42", "null", "true"])
+    def test_a_message_that_is_not_an_object_is_an_invalid_request(self, line):
+        replies = _session(line, PING)
+        assert replies[0] == {"jsonrpc": "2.0", "id": None, "error": {
+            "code": -32600,
+            "message": "Invalid Request: a message must be a JSON object; batches are not supported"}}
+        assert replies[1] == {"jsonrpc": "2.0", "id": 99, "result": {}}
+
+    @pytest.mark.parametrize("line", ["{not json", '{"jsonrpc":"2.0","id":3', "[" * 100000],
+                             ids=["not-json", "truncated", "nested-100000-deep"])
+    def test_a_line_that_is_not_json_is_a_parse_error(self, line):
+        replies = _session(line, PING)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(None, -32700), (99, None)]
+
+    def test_a_method_that_is_not_a_string_is_an_invalid_request(self):
+        replies = _session('{"jsonrpc":"2.0","method":1,"params":"bar"}', PING)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(None, -32600), (99, None)]
+
+    @pytest.mark.parametrize("line", [
+        '{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":1,"reason":"x"}}',
+        '{"jsonrpc":"2.0","method":"notifications/initialized"}',
+        '{"jsonrpc":"2.0","method":"notifications/unknown","params":null}',
+        '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"designesy_catalog"}}',
+    ], ids=["cancelled", "initialized", "unknown", "tools-call-without-id"])
+    def test_a_notification_gets_no_reply_and_runs_nothing(self, line):
+        with patch.object(mcp, "_dispatch") as dispatch:
+            replies = _session(line, PING)
+        dispatch.assert_not_called()
+        assert replies == [{"jsonrpc": "2.0", "id": 99, "result": {}}]
+
+    def test_params_null_reads_as_an_empty_object(self):
+        tools = mcp._handle({"jsonrpc": "2.0", "id": 4, "method": "tools/list", "params": None})
+        assert len(tools["result"]["tools"]) == 17
+        unknown_tool = mcp._handle({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": None})
+        assert unknown_tool["error"]["code"] == -32602
+        unknown_resource = mcp._handle({"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": None})
+        assert unknown_resource["error"]["code"] == -32002
+
+    @pytest.mark.parametrize("params", [[1], "x", 3])
+    def test_params_that_are_not_an_object_are_invalid_params(self, params):
+        reply = mcp._handle({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": params})
+        assert reply == {"jsonrpc": "2.0", "id": 5, "error": {
+            "code": -32602, "message": "Invalid params: params must be an object"}}
+
+    def test_arguments_null_reads_as_an_empty_object(self):
+        with patch.object(mcp, "_dispatch", return_value={"ok": True}) as dispatch:
+            reply = mcp._handle(json.loads(_request("tools/call", {"name": "designesy_catalog", "arguments": None})))
+        dispatch.assert_called_once_with("designesy_catalog", {})
+        assert reply["result"]["isError"] is False
+
+    @pytest.mark.parametrize("arguments", [[1], "x", 3])
+    def test_arguments_that_are_not_an_object_are_invalid_params(self, arguments):
+        with patch.object(mcp, "_dispatch") as dispatch:
+            reply = mcp._handle(json.loads(_request("tools/call", {"name": "designesy_score", "arguments": arguments})))
+        dispatch.assert_not_called()
+        assert reply["error"] == {"code": -32602, "message": "Invalid params: arguments must be an object"}
+
+    @pytest.mark.parametrize("name", ["nope", ["designesy_score"], 7])
+    def test_an_unknown_tool_is_invalid_params(self, name):
+        reply = mcp._handle(json.loads(_request("tools/call", {"name": name, "arguments": {}})))
+        assert reply["error"]["code"] == -32602
+        assert reply["error"]["message"] == f"Unknown tool: {name}"
+
+    @pytest.mark.parametrize("uri", ["designesy://nope", ["designesy://open"], 7])
+    def test_an_unknown_resource_is_not_found(self, uri):
+        reply = mcp._handle(json.loads(_request("resources/read", {"uri": uri})))
+        assert reply["error"] == {"code": -32002, "message": f"Unknown resource: {uri}"}
+
+    def test_an_unknown_method_is_still_method_not_found(self):
+        assert mcp._handle(json.loads(_request("foo/bar")))["error"]["code"] == -32601
+
+    def test_a_blocked_url_is_an_is_error_result(self, env):
+        def fetch(url, as_json=True):
+            mcp._validate_url(url)
+            return {}
+        with patch.object(mcp, "_fetch", fetch):
+            reply = mcp._handle(json.loads(_request(
+                "tools/call", {"name": "designesy_tokens_score", "arguments": {"url": "http://127.0.0.1/t.json"}})))
+        assert reply["result"] == {"content": [{"type": "text", "text": (
+            "Tool execution failed: Blocked: internal host '127.0.0.1'")}], "isError": True}
+
+    def test_a_fetch_error_is_an_is_error_result(self, env):
+        url = "https://expired.example/t.json"
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        site = _Site({contract_url: contract}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            reply = mcp._handle(json.loads(_request(
+                "tools/call", {"name": "designesy_tokens_score", "arguments": {"url": url}})))
+        assert reply["result"]["isError"] is True
+        text = reply["result"]["content"][0]["text"]
+        assert text.startswith("Failed to fetch URL: ") and "certificate has expired" in text
+
+    def test_a_handler_that_raises_answers_minus_32603_and_the_session_reads_on(self):
+        with patch.object(mcp, "_result", side_effect=RuntimeError("boom")):
+            replies = _session(PING, "[1]")
+        assert replies[0] == {"jsonrpc": "2.0", "id": 99, "error": {"code": -32603, "message": "Internal error: boom"}}
+        assert replies[1]["error"]["code"] == -32600
