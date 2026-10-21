@@ -344,11 +344,13 @@ class TestFormatModuleReading:
         assert _check(result, "t03") == {"id": "t03", "name": "contract name 3", "status": "SKIP", "detail": "No tokens found"}
 
     def test_the_dtcg_fixtures_have_no_type_failure(self):
-        golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+        """Scored here, not read from the golden, so the scorer is what is tested."""
         for name in ("type-inheritance.json", "json-pointer-ref.json", "empty-group.json"):
-            statuses = {c["id"]: c["status"] for c in golden[name]["checks"]}
+            result = mcp._tokens_score(json.loads((FIXTURES / name).read_text(encoding="utf-8")), _contract(), INLINE)
+            statuses = {c["id"]: c["status"] for c in result["checks"]}
             assert statuses["t03"] != "FAIL" and statuses["t06"] != "FAIL", (name, statuses)
-        assert golden["type-inheritance.json"]["score"] == 100
+            if name == "type-inheritance.json":
+                assert result["score"] == 100
 
 
 class TestRefTargets:
