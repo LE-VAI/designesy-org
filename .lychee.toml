@@ -107,6 +107,13 @@ exclude = [
   # detection on the runner's address, not a broken link.
   '^https://fwa\.org',
   '^https://www\.fwa\.org',
+  # registry.modelcontextprotocol.io — the MCP registry's API. From GitHub's
+  # runners it timed out (20 s, 3 retries) in 13 of the 40 link-check runs
+  # from 2026-10-17 to 2026-10-21, on the search URL and on the server's own
+  # /versions/latest record alike, while the same record answered 200 in
+  # under 2 s from outside CI. A timeout says nothing about the link, and a
+  # check that fails one run in three gets ignored.
+  '^https://registry\.modelcontextprotocol\.io/',
   # npmjs.com package pages — return 403 to lychee's bot user-agent.
   # Verified manually; these are our own published packages.
   '^https://www\.npmjs\.com/package/',
