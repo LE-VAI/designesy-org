@@ -807,7 +807,8 @@ class TestScoreFormatScope:
 #
 # Measured on 1.13.9: _fetch and _post_api retried with CERT_NONE after a
 # failed certificate verification, after any raw ssl.SSLError and after any
-# error whose text said "certificate" (an HTTP 495 reply included).
+# error whose text said "certificate" (an HTTP error with such a reason
+# phrase included).
 # designesy_score scored a URL locally whenever the engine did not return a
 # score, so http://100.100.100.200/, which the engine refuses with HTTP 400 and
 # _validate_url lets through, was fetched from this machine, and the offline

@@ -17,11 +17,11 @@ v0.4.6).
 
 - **Every certificate is verified.** `_fetch` and `_post_api` retried with
   `CERT_NONE` after a failed verification, after any raw `ssl.SSLError`, and
-  after any error whose text said "certificate" (an HTTP 495 reply
-  included). That covered the POSTs to designesy.org's engines, the monitor
-  email among them. A failed verification is now a tool error that names the
-  reason. To read a site with a bad certificate anyway, set
-  `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
+  after any error whose text said "certificate" (an HTTP error with such a
+  reason phrase included). That covered the POSTs to designesy.org's
+  engines, the monitor email among them. A failed verification is now a tool
+  error that names the reason. To read a site with a bad certificate anyway,
+  set `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
   designesy.org) whose verification fails is then read without it, and the
   result carries `tls_verified: false`.
 - **An engine error is not scored offline.** `designesy_score` fell back to

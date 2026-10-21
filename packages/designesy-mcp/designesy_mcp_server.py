@@ -98,12 +98,13 @@ _BROWSER_HEADERS = {
 
 # Certificates are always verified. Until 1.13.10, _fetch and _post_api
 # retried with CERT_NONE after a failed verification, a raw ssl.SSLError of
-# any kind, or any error whose text said "certificate" (an HTTP 495 reply
-# included), so a POST to designesy.org's engines, monitor email and all,
-# could go out unverified. A failed verification is now the result. An operator who has to read a site with a
-# bad certificate can set DESIGNESY_INSECURE_TLS=1: a caller's URL (never
-# designesy.org's) whose certificate fails verification is then read without
-# it, and the tool's result says tls_verified: false.
+# any kind, or any error whose text said "certificate" (an HTTP error with
+# such a reason phrase included), so a POST to designesy.org's engines,
+# monitor email and all, could go out unverified. A failed verification is
+# now the result. An operator who has to read a site with a bad certificate
+# can set DESIGNESY_INSECURE_TLS=1: a caller's URL (never designesy.org's)
+# whose certificate fails verification is then read without it, and the
+# tool's result says tls_verified: false.
 _SSL_CONTEXT = ssl.create_default_context()
 
 # Caller URLs whose cached body was read without certificate verification.
@@ -5370,7 +5371,7 @@ def _tool_error(req_id: Any, text: str) -> dict[str, Any]:
 # error frame back.
 #   - A line that is not JSON gets -32700, and a message that is not an object
 #     gets -32600, both with id null. 2024-11-05 has no batches (2025-03-26
-#     added them, 2025-06-18 removed them), so an array is not an object either.
+#     added them, 2025-06-18 removed them), so an array is answered the same.
 #   - A message with no id is a notification and gets no reply.
 #   - params or arguments null reads as {}; any other non-object is -32602.
 #   - An unknown tool is -32602 and an unknown resource -32002, the codes the
