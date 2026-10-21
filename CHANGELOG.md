@@ -6,6 +6,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**`designesy_guardrails` writes dimensions in the DTCG 2025.10 form** (the
+hosted `/api/guardrails`, which the hosted and the PyPI `designesy_guardrails`
+both call; no engine, npm or PyPI release). The token file it emits wrote
+each dimension, and each shadow's four lengths, as a string (`"4px"`,
+`"0px"`). A 2025.10 dimension is `{ value, unit }` with `px` or `rem` (Format
+Module 8.2), so the format's JSON Schema rejected those tokens and tokens
+contract 0.1.3 WARNs on them in t08 and t10.
+
+### Fixed (guardrails)
+
+- **Dimensions and shadow lengths are `{ value, unit }`.** `"4px"` is now
+  `{ "value": 4, "unit": "px" }`, a unitless `0` on a length name is
+  `{ "value": 0, "unit": "px" }`, and a shadow's `offsetX`, `offsetY`, `blur`
+  and `spread` take the same form. A length in any other unit (`em`, `%`,
+  `vw`, `pt`) is not converted and stays verbatim in
+  `$extensions.designesy.css`, as before: a relative unit's size depends on an
+  element, a font or a viewport the file does not describe, and an absolute
+  one would be rounded into px.
+- On the test site in `apps/site/scripts/fixtures/mcp-accuracy.json` the
+  emitted file scores 100 (A) on both servers, where it scored 89 (B). Checked
+  against the official 2025.10 JSON Schema, 1 of its 23 tokens fails, where 8
+  did: `{muted.$root}`, an alias to a group's `$root` token, which the format
+  allows and the schema's reference pattern rejects
+  ([design-tokens/community-group#448](https://github.com/design-tokens/community-group/issues/448)).
+- On the pages www.designesy.org served on 2026-10-21 the emitted file
+  scores 100, where it scored 89: t08 reported 89 of 89 dimension tokens (one
+  alias among them) in the legacy string form. The full result, as the tool
+  returns it, grows from 122,763 to 133,479 characters.
+- `/export/dtcg` takes the shadow objects from the shared parser
+  (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
+  byte.
+
+### Gates (guardrails)
+
+- `scripts/check-mcp-accuracy.js` (guardrails-dtcg) fails on a dimension or a
+  shadow length that is not `{ value, unit }` in px or rem, on a unitless 0
+  that does not become 0px, on a length in another unit that is typed rather
+  than kept as CSS, and on any WARN from the tokens validator, where it failed
+  only on a FAIL. Run against the previous emitter it reports 7 findings.
+- `guardrails-emitted.json` and its golden row are regenerated, and
+  `test/test_tokens_score.py` scores that file itself and expects no WARN and
+  no FAIL, where it read the golden for no FAIL.
+
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
 DTCG 2025.10 Format Module does** (the hosted `/api/mcp`; the PyPI server
 carries the same change in its next release). Scores move for files that
@@ -104,8 +147,9 @@ Measured with both servers on the shared fixtures in
 `site-export.json` (the site's `/export/dtcg`) stays at 100, and the other
 five fixtures keep their scores.
 
-- `designesy_guardrails` still writes dimensions as strings, so the token
-  file it emits now scores 89 with no FAIL. The emitter is not changed here.
+- `designesy_guardrails` wrote dimensions as strings, so under 0.1.3 the
+  token file it emitted scored 89 with no FAIL. It now writes
+  `{ value, unit }` and scores 100 (the guardrails entry above).
 - On the 127 invalid (negative) files of the same suite, 7 scores drop and
   10 rise. The drops are files now caught: `dimension-wrong-unit.json` by t08
   (100 to 88), and by t04 a token with both `$value` and `$ref` (94 to 88)
