@@ -48,6 +48,17 @@ jobs:
   link-check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # The globs are quoted so that lychee expands `**` itself, at every
+      # depth. The action's entrypoint.sh runs `eval lychee ... ${ARGS}`
+      # in bash without globstar, where an unquoted ./**/*.md means
+      # ./*/*.md: on 2026-10-21 it matched 3 of the 68 tracked Markdown
+      # files, and README.md, CHANGELOG.md and the package READMEs were never
+      # checked. lychee's glob skips hidden directories, so the issue
+      # templates are listed on their own. The workflows stay out: the URLs
+      # they build from variables ($VERSION, ${VERCEL_ORG_ID}) would be
+      # checked as written. .lychee.toml exclude_path filters the rest.
+      LINK_CHECK_ARGS: --config .lychee.toml --cache --verbose './**/*.md' './**/*.json' './**/*.yml' './**/*.yaml' './**/*.toml' './**/*.py' './.github/ISSUE_TEMPLATE/*.yml'
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -59,20 +70,30 @@ jobs:
           key: lychee-cache-${{ github.run_id }}
           restore-keys: lychee-cache-
 
+      # An unquoted glob does not fail the check; it shrinks it. bash expands
+      # it before lychee sees it and lychee checks whatever is left: from
+      # 2026-08-07 to 2026-10-21 that left only the Markdown files one
+      # directory down. This runs the action's `eval` with a stand-in lychee,
+      # with and without filename expansion, and fails if bash would change
+      # what lychee receives.
+      - name: Check that the globs reach lychee unexpanded
+        shell: bash
+        run: |
+          lychee() { printf '%s\n' "$@"; }
+          written=$(set -f; eval lychee $LINK_CHECK_ARGS)
+          received=$(eval lychee $LINK_CHECK_ARGS)
+          if [ "$received" != "$written" ]; then
+            echo "::error::bash expands a glob in LINK_CHECK_ARGS before lychee sees it; quote it."
+            echo "lychee would receive:"
+            echo "$received"
+            exit 1
+          fi
+
       - name: Run lychee link checker
         id: lychee
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          # The globs are quoted so that lychee expands `**` itself, at every
-          # depth. The action's entrypoint.sh runs `eval lychee ... ${ARGS}`
-          # in bash without globstar, where an unquoted ./**/*.md means
-          # ./*/*.md: on 2026-10-21 it matched 3 of the 59 Markdown files, and
-          # README.md, CHANGELOG.md and the package READMEs were never checked.
-          # lychee's glob skips hidden directories, so the issue templates are
-          # listed on their own. The workflows stay out: the URLs they build
-          # from variables ($VERSION, ${VERCEL_ORG_ID}) would be checked as
-          # written. .lychee.toml exclude_path filters the rest.
-          args: --config .lychee.toml --cache --verbose './**/*.md' './**/*.json' './**/*.yml' './**/*.yaml' './**/*.toml' './**/*.py' './.github/ISSUE_TEMPLATE/*.yml'
+          args: ${{ env.LINK_CHECK_ARGS }}
           fail: true
           format: markdown
           output: lychee/out.md
