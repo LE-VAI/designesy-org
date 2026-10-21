@@ -12,18 +12,21 @@
  *     light pages, more reliable on SPAs.
  *
  * Usage: node cdp-viewport-check.cjs <url>
- * Requires Chrome running with --remote-debugging-port=9222
+ * Requires Chrome running with --remote-debugging-port, at the endpoint
+ * DESIGNESY_CDP_URL names (http://127.0.0.1:9222 when it is unset; the MCP
+ * server runs this script only when it is set).
  */
 const http = require('http');
 // Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
 // No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 
-const CDP_HOST = '127.0.0.1';
-const CDP_PORT = 9222;
+const CDP = new URL(process.env.DESIGNESY_CDP_URL || 'http://127.0.0.1:9222');
+const CDP_HOST = CDP.hostname.replace(/^\[|\]$/g, '');
+const CDP_PORT = Number(CDP.port) || 80;
 
 function getTargets() {
   return new Promise((resolve, reject) => {
-    http.get(`http://${CDP_HOST}:${CDP_PORT}/json/list`, (res) => {
+    http.get({ host: CDP_HOST, port: CDP_PORT, path: '/json/list' }, (res) => {
       let data = '';
       res.on('data', c => data += c);
       res.on('end', () => resolve(JSON.parse(data)));

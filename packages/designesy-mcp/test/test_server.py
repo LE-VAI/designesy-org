@@ -781,13 +781,16 @@ class TestScoreFormatScope:
         local.assert_called_once_with("https://example.com/", None)
         assert result == local_result
 
-    def test_default_format_falls_back_when_the_engine_reply_is_not_ok(self):
+    def test_default_format_returns_the_error_when_the_engine_reply_is_not_ok(self):
+        # Until 1.13.10 this fell back to the local engine (see section 9).
         def urlopen(req, timeout=None, context=None):
             return _reply('{"ok": false, "error": "Could not reach https://example.com/"}')
         with patch.object(mcp.urllib.request, "urlopen", urlopen), \
-                patch.object(mcp, "_score_local_impl", return_value={"note": "local"}) as local:
-            assert mcp._score_impl(url="https://example.com/") == {"note": "local"}
-        local.assert_called_once()
+                patch.object(mcp, "_score_local_impl") as local:
+            result = mcp._score_impl(url="https://example.com/")
+        local.assert_not_called()
+        assert result["success"] is False
+        assert "Could not reach https://example.com/" in result["error"]
 
     def test_fallback_applies_the_requested_scope(self):
         # The offline engine has scope modes since it mirrors engine 1.1.0, so
@@ -798,3 +801,247 @@ class TestScoreFormatScope:
         assert engine.bodies == [{"url": "https://example.com/", "format": "designesy", "scope": "contract"}]
         local.assert_called_once_with("https://example.com/", "contract")
         assert result == {"note": "local"}
+
+
+# ── 9. Fails closed: TLS, engine refusals, the browser probe ──────────────────
+#
+# Measured on 1.13.9: _fetch and _post_api retried with CERT_NONE after a
+# failed certificate verification, after any raw ssl.SSLError and after any
+# error whose text said "certificate" (an HTTP 495 reply included).
+# designesy_score scored a URL locally whenever the engine did not return a
+# score, so http://100.100.100.200/, which the engine refuses with HTTP 400 and
+# _validate_url lets through, was fetched from this machine, and the offline
+# engine then opened it in whatever Chrome answered on 127.0.0.1:9222.
+# urlopen and subprocess.run are mocked here, so nothing reaches a network or
+# a browser.
+
+import io  # noqa: E402
+import shutil  # noqa: E402
+import socket  # noqa: E402
+import ssl  # noqa: E402
+import subprocess  # noqa: E402
+
+PACKAGE = Path(__file__).resolve().parent.parent
+
+
+def _cert_error() -> urllib.error.URLError:
+    """What urlopen raises for an expired certificate."""
+    err = ssl.SSLCertVerificationError(
+        1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired"
+    )
+    err.verify_message = "certificate has expired"
+    return urllib.error.URLError(err)
+
+
+@pytest.fixture
+def env(monkeypatch):
+    """No opt-in set, and an empty cache, before and after each test."""
+    monkeypatch.delenv("DESIGNESY_INSECURE_TLS", raising=False)
+    monkeypatch.delenv("DESIGNESY_CDP_URL", raising=False)
+    mcp._cache.clear()
+    mcp._TLS_UNVERIFIED.clear()
+    yield monkeypatch
+    mcp._cache.clear()
+    mcp._TLS_UNVERIFIED.clear()
+
+
+class _Site:
+    """Stands in for urlopen: a body per URL, or that URL's error on its first call."""
+
+    def __init__(self, bodies: dict, fail_first: dict | None = None):
+        self.bodies = bodies
+        self.fail_first = dict(fail_first or {})
+        self.calls = []
+
+    def __call__(self, req, timeout=None, context=None):
+        self.calls.append((req.full_url, context))
+        if req.full_url in self.fail_first:
+            raise self.fail_first.pop(req.full_url)
+        return _reply(self.bodies[req.full_url])
+
+    def contexts(self, url: str) -> list:
+        return [c for u, c in self.calls if u == url]
+
+
+def _not_a_verification_failure(kind: str) -> Exception:
+    if kind == "raw-ssl-error":
+        return ssl.SSLError(1, "[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC] decryption failed or bad record mac")
+    if kind == "bad-certificate-alert":
+        return urllib.error.URLError(ssl.SSLError(1, "[SSL: TLSV1_ALERT_BAD_CERTIFICATE] tlsv1 alert bad certificate"))
+    return urllib.error.HTTPError("https://example.com/t.json", 495, "SSL Certificate Error", {}, io.BytesIO(b""))
+
+
+class TestTlsIsVerified:
+    @pytest.mark.parametrize("opt_in", [False, True])
+    def test_post_api_never_builds_the_unverified_context(self, env, opt_in):
+        # designesy.org's own API: no opt-out, whatever the environment says.
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = f"{mcp.BASE_URL}/api/monitor"
+        site = _Site({}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError, match="certificate has expired"):
+                mcp._post_api("monitor", {"url": "https://example.com/", "email": "owner@example.com"})
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    def test_a_failed_verification_is_raised_with_its_reason(self, env):
+        url = "https://expired.example/t.json"
+        site = _Site({url: "{}"}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError, match="certificate has expired"):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    @pytest.mark.parametrize("opt_in", [False, True])
+    @pytest.mark.parametrize("kind", ["raw-ssl-error", "bad-certificate-alert", "http-495"])
+    def test_an_error_that_only_mentions_certificates_is_never_retried(self, env, opt_in, kind):
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = "https://example.com/t.json"
+        error = _not_a_verification_failure(kind)
+        site = _Site({url: "{}"}, {url: error})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(type(error)):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    def test_the_opt_in_never_covers_designesy_org(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = f"{mcp.BASE_URL}/open.json"
+        site = _Site({url: "{}"}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+
+    def test_the_opt_in_reads_a_callers_url_unverified_and_the_result_says_so(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        tokens_url = "https://expired.example/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        tokens = json.dumps({"ink": {"$type": "color", "$value": {"colorSpace": "srgb", "components": [0, 0, 0]}}})
+        site = _Site({contract_url: contract, tokens_url: tokens}, {tokens_url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._tokens_score_impl(url=tokens_url)
+        assert result["tls_verified"] is False
+        assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
+        first, retry = site.contexts(tokens_url)
+        assert first is mcp._SSL_CONTEXT
+        assert retry.verify_mode == ssl.CERT_NONE and retry.check_hostname is False
+
+    def test_a_verified_result_carries_no_tls_flag(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        tokens_url = "https://example.com/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        site = _Site({contract_url: contract, tokens_url: '{"ink": {"$type": "color", "$value": "#000"}}'})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._tokens_score_impl(url=tokens_url)
+        assert "tls_verified" not in result
+
+    def test_offline_score_says_when_a_stylesheet_was_read_unverified(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        page, sheet = "https://example.com/", "https://cdn.example.com/a.css"
+        html = f'<html><head><link rel="stylesheet" href="{sheet}"></head><body><main>x</main></body></html>'
+        site = _Site({page: html, sheet: ":root{--paper:#fff}"}, {sheet: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._score_local_impl(page)
+        assert result["tls_verified"] is False
+        assert site.contexts(page) == [mcp._SSL_CONTEXT]
+
+
+class TestEngineErrorIsTheResult:
+    REFUSED = "http://100.100.100.200/"
+
+    def test_the_local_guard_lets_the_refused_url_through(self):
+        # Why the fallback mattered: the engine refuses this address with
+        # HTTP 400, and _validate_url does not.
+        mcp._validate_url(self.REFUSED)
+        mcp._validate_url("http://[fec0::1]/")
+
+    @pytest.mark.parametrize("status, error", [
+        (400, "Invalid URL. Enter a valid domain like designesy.org or nike.com."),
+        (429, "Rate limit exceeded. Maximum 100 scores per hour."),
+        (502, "Could not reach http://100.100.100.200/: fetch failed"),
+    ])
+    def test_an_http_error_is_returned_and_nothing_runs_locally(self, env, status, error):
+        body = json.dumps({"ok": False, "error": error}).encode("utf-8")
+        refusal = urllib.error.HTTPError(f"{mcp.BASE_URL}/api/score", status, "refused", {}, io.BytesIO(body))
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=refusal)), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        payload = json.loads(result["content"][0]["text"])
+        assert payload["success"] is False
+        assert payload["url"] == self.REFUSED
+        assert f"HTTP {status}: {error}" in payload["error"]
+
+    @pytest.mark.parametrize("reply", [
+        '{"ok": false, "error": "Could not reach the page"}',
+        "<html>gateway error</html>",
+        "[]",
+    ], ids=["ok-false", "not-json", "not-an-object"])
+    def test_a_reply_without_a_score_is_returned_and_nothing_runs_locally(self, env, reply):
+        def urlopen(req, timeout=None, context=None):
+            return _reply(reply)
+        with patch.object(mcp.urllib.request, "urlopen", urlopen), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        assert "did not score http://100.100.100.200/" in json.loads(result["content"][0]["text"])["error"]
+
+
+class TestBrowserProbeNeedsDesignesyCdpUrl:
+    def test_unset_means_no_connection_and_no_probe(self, env):
+        with patch.object(mcp.urllib.request, "urlopen") as urlopen, \
+                patch.object(mcp.subprocess, "run") as run:
+            assert mcp._cdp_available() is False
+            assert mcp._check_viewport_overflow_cdp("https://example.com/") == ("MANUAL", mcp._V02_MANUAL)
+            assert mcp._check_cwv_cdp("https://example.com/") == ("MANUAL", mcp._V21_MANUAL)
+        urlopen.assert_not_called()
+        run.assert_not_called()
+
+    def test_set_names_the_endpoint_that_is_checked(self, env):
+        env.setenv("DESIGNESY_CDP_URL", "http://127.0.0.1:59222/")
+        seen = []
+
+        def urlopen(url, timeout=None):
+            seen.append(url)
+            return MagicMock()
+        with patch.object(mcp.urllib.request, "urlopen", urlopen):
+            assert mcp._cdp_available() is True
+        assert seen == ["http://127.0.0.1:59222/json/version"]
+
+    def test_the_description_says_so(self):
+        desc = mcp.TOOL_MAP["designesy_score"]["description"]
+        assert "DESIGNESY_CDP_URL" in desc and "both read MANUAL" in desc
+        assert "nothing is scored offline" in desc
+
+    @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+    @pytest.mark.parametrize("script", ["cdp-viewport-check.cjs", "cdp-cwv-expr.cjs"])
+    def test_the_node_scripts_use_the_named_endpoint(self, script):
+        # A port with nothing listening: the script must try it, and no other.
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+        proc = subprocess.run(
+            ["node", str(PACKAGE / script), "https://example.com/"],
+            capture_output=True, text=True, timeout=60,
+            env={**os.environ, "DESIGNESY_CDP_URL": f"http://127.0.0.1:{port}"},
+        )
+        assert proc.returncode == 1
+        assert f"127.0.0.1:{port}" in proc.stderr
+        assert "9222" not in proc.stdout + proc.stderr

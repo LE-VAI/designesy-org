@@ -40,11 +40,14 @@ SAFETY:
     fetch designesy.org exports, and the scoring tools fetch the URLs the
     caller supplies, directly or through designesy.org's engines. The server
     writes no local files and reads no credentials. TOOL_ANNOTATIONS records
-    each tool's hints.
+    each tool's hints. Every certificate is verified unless the operator sets
+    DESIGNESY_INSECURE_TLS=1, which covers a caller's URL only, and no
+    browser is used unless the operator sets DESIGNESY_CDP_URL.
 """
 from __future__ import annotations
 
 import json
+import os
 import re
 import ssl
 import sys
@@ -93,14 +96,50 @@ _BROWSER_HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-# Some surfaces (e.g. framer.com) serve expired/rotated certs.  As a last
-# resort we fall back to a lenient context so the stress log can still
-# capture the surface rather than dying on TLS.  The primary fetch stays
-# strict; this only activates on SSLCertVerificationError.
+# Certificates are always verified. Until 1.13.10, _fetch and _post_api
+# retried with CERT_NONE after a failed verification, a raw ssl.SSLError of
+# any kind, or any error whose text said "certificate" (an HTTP 495 reply
+# included), so a POST to designesy.org's engines, monitor email and all,
+# could go out unverified. A failed verification is now the result. An operator who has to read a site with a
+# bad certificate can set DESIGNESY_INSECURE_TLS=1: a caller's URL (never
+# designesy.org's) whose certificate fails verification is then read without
+# it, and the tool's result says tls_verified: false.
 _SSL_CONTEXT = ssl.create_default_context()
-_SSL_CONTEXT_LENIENT = ssl.create_default_context()
-_SSL_CONTEXT_LENIENT.check_hostname = False
-_SSL_CONTEXT_LENIENT.verify_mode = ssl.CERT_NONE
+
+# Caller URLs whose cached body was read without certificate verification.
+_TLS_UNVERIFIED: set[str] = set()
+
+
+def _unverified_ssl_context() -> ssl.SSLContext:
+    """A context that checks neither the certificate nor the host name."""
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def _insecure_tls_allowed(url: str) -> bool:
+    """True when DESIGNESY_INSECURE_TLS=1 and url is not on designesy.org."""
+    from urllib.parse import urlparse
+
+    if os.environ.get("DESIGNESY_INSECURE_TLS") != "1":
+        return False
+    host = (urlparse(url).hostname or "").lower()
+    return host != "designesy.org" and not host.endswith(".designesy.org")
+
+
+def _is_cert_failure(exc: BaseException) -> bool:
+    """True for a failed certificate verification, raised or wrapped in a URLError."""
+    return isinstance(exc, ssl.SSLCertVerificationError) or isinstance(
+        getattr(exc, "reason", None), ssl.SSLCertVerificationError
+    )
+
+
+def _tls_flagged(result: Any, *urls: str) -> Any:
+    """The result, with tls_verified False if any of urls was read unverified."""
+    if isinstance(result, dict) and any(u in _TLS_UNVERIFIED for u in urls):
+        result["tls_verified"] = False
+    return result
 
 # ── SSRF protection ──────────────────────────────────────────────────────────
 # Block URLs that could reach internal services when a user supplies an
@@ -154,15 +193,15 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         headers["Accept"] = "application/json, text/plain, */*"
 
     req = urllib.request.Request(url, headers=headers)
+    verified = True
     try:
         opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT)
     except Exception as exc:
-        # SSLCertVerificationError often wraps inside URLError — catch broadly.
-        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
-            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
-            opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT_LENIENT)
-        else:
+        if not (_is_cert_failure(exc) and _insecure_tls_allowed(url)):
             raise
+        sys.stderr.write(f"WARNING: certificate verification failed for {url}, reading it unverified (DESIGNESY_INSECURE_TLS=1): {exc}\n")
+        opener = urllib.request.urlopen(req, timeout=15, context=_unverified_ssl_context())
+        verified = False
     with opener as resp:
         body = resp.read().decode("utf-8")
 
@@ -172,6 +211,10 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         data = body
 
     _cache[url] = (now, data)
+    if verified:
+        _TLS_UNVERIFIED.discard(url)
+    else:
+        _TLS_UNVERIFIED.add(url)
     return data
 
 
@@ -1478,14 +1521,16 @@ def _extract_css_parts(html: str, base_url: str) -> list[str]:
     return parts
 
 
-def _fetch_page_parts(url: str) -> tuple[str, str]:
+def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     """Fetch a page and its CSS the way route.ts fetchPageResilient assembles it.
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal.
+    fails to load is dropped, not fatal. The third item lists the URLs read:
+    the page, then each sheet that loaded.
     """
     html = _fetch(url, as_json=False)
+    read = [url]
     parts = _extract_css_parts(html, url)
     css_parts = [p for p in parts if not p.startswith("http")]
     external = list(dict.fromkeys(p for p in parts if p.startswith("http")))
@@ -1494,9 +1539,10 @@ def _fetch_page_parts(url: str) -> tuple[str, str]:
             text = _fetch(href, as_json=False)
         except Exception:
             continue
+        read.append(href)
         if text:
             css_parts.append(text)
-    return html, "\n".join(css_parts)
+    return html, "\n".join(css_parts), read
 
 
 # ── Tokens ───────────────────────────────────────────────────────────────────
@@ -2578,8 +2624,11 @@ def _check_rem_scale(css: str) -> dict[str, str]:  # checkRemScale
 #
 # The live engine reports these MANUAL: they need a browser, and the full
 # audit (/api/score/audit) resolves them. This engine reports the same MANUAL,
-# except that v02 and v21 are measured when a Chrome DevTools endpoint is
-# running on 127.0.0.1:9222 (the Node scripts beside this file drive it). A
+# except that v02 and v21 are measured when the operator sets
+# DESIGNESY_CDP_URL to a Chrome DevTools endpoint that answers (the Node
+# scripts beside this file open a tab there, measure, and close it). Until
+# 1.13.10 any endpoint answering on 127.0.0.1:9222 was used unasked, so a
+# score call could open the caller's URL in the operator's own browser. A
 # probe that cannot run or measure leaves the check MANUAL, never PASS.
 #
 # .cjs extension is required: this package sits inside a "type": "module"
@@ -2597,11 +2646,19 @@ _CDP_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-viewport-check.cjs")
 _CDP_CWV_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-cwv-expr.cjs")
 
 
+def _cdp_url() -> str | None:
+    """The DevTools endpoint DESIGNESY_CDP_URL names, or None when it is unset."""
+    return os.environ.get("DESIGNESY_CDP_URL", "").strip().rstrip("/") or None
+
+
 def _cdp_available() -> bool:
-    """Check if Chrome CDP is reachable on port 9222."""
+    """Check that DESIGNESY_CDP_URL is set and its DevTools endpoint answers."""
+    base = _cdp_url()
+    if base is None:
+        return False
     try:
         import urllib.request as ur
-        ur.urlopen("http://127.0.0.1:9222/json/version", timeout=2).read()
+        ur.urlopen(f"{base}/json/version", timeout=2).read()
         return True
     except Exception:
         return False
@@ -3059,15 +3116,26 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     The site API is the single source of truth for the contract it serves
     (45 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
-    Returns the normalized response, or None if the API is unreachable
-    (caller falls back to the local engine).
+    Returns the normalized response; None when the API cannot be reached at
+    all (a URLError with no HTTP status), and the caller falls back to the
+    local engine; or an error result when the engine answered without a
+    score: an HTTP error status (a refused URL, a rate limit, a page it could
+    not reach), ok false, or a reply that is not JSON. Until 1.13.10 those
+    fell back too, so a URL the engine refused, such as
+    http://100.100.100.200/, was fetched from this machine instead, through
+    _validate_url, which lets that address through.
     """
     try:
         data = json.loads(_post_score_api(url, "designesy", scope))
-    except Exception:
+    except urllib.error.HTTPError as exc:
+        return _score_declined(url, _score_api_failure(exc))
+    except urllib.error.URLError:
         return None
-    if not data.get("ok"):
-        return None
+    except Exception as exc:
+        return _score_declined(url, _score_api_failure(exc))
+    if not isinstance(data, dict) or not data.get("ok"):
+        error = data.get("error") if isinstance(data, dict) else None
+        return _score_declined(url, _scrub_local_paths(str(error or "the reply was not ok")))
 
     checks = data.get("checks", [])
     summary = {
@@ -3127,6 +3195,19 @@ def _score_api_failure(exc: Exception) -> str:
     return _scrub_local_paths(f"{type(exc).__name__}: {exc}")
 
 
+def _score_declined(url: str, reason: str) -> dict[str, Any]:
+    """The designesy_score error for an engine that answered without a score."""
+    return {
+        "success": False,
+        "error": (
+            f"The scoring engine at {BASE_URL}/api/score did not score {url} "
+            f"({reason}). The offline engine runs only when the engine "
+            "cannot be reached, so nothing was scored locally."
+        ),
+        "url": url,
+    }
+
+
 def _score_impl(
     url: str | None = None,
     format: str | None = None,
@@ -3140,9 +3221,11 @@ def _score_impl(
     format designesy (the default) reshapes the engine's native JSON into
     this tool's long-standing shape, and falls back to the offline engine
     (_score_local_impl) when the API is unreachable, so the tool still works
-    offline. The offline engine runs a subset of the live engine's checks,
-    mirrors live engine OFFLINE_ENGINE_MIRRORS for each one, and applies the
-    same scope: the one requested, or the one auto-detected from the URL.
+    offline. An engine that answers with an error is not unreachable: its
+    error is the result (see _score_remote). The offline engine runs a
+    subset of the live engine's checks, mirrors live engine
+    OFFLINE_ENGINE_MIRRORS for each one, and applies the same scope: the one
+    requested, or the one auto-detected from the URL.
 
     format canonical and google return the engine's JSON unchanged, and
     format review returns its markdown unchanged (a str, which the
@@ -3200,13 +3283,14 @@ def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
 
     Fetches the page and its CSS the way the live engine assembles them, then
     runs the offline checks (_offline_checks) under the requested scope, or
-    the one auto-detected from the URL. v02 and v21 are measured when a Chrome
-    DevTools endpoint is running on 127.0.0.1:9222, and read MANUAL otherwise.
-    It fetches only the page and its stylesheets; the contract JSON from
-    designesy.org, which the previous engine's v01 needed, is not fetched.
+    the one auto-detected from the URL. v02 and v21 are measured when
+    DESIGNESY_CDP_URL names a Chrome DevTools endpoint that answers, and read
+    MANUAL otherwise. It fetches only the page and its stylesheets; the
+    contract JSON from designesy.org, which the previous engine's v01 needed,
+    is not fetched.
     """
-    html, css = _fetch_page_parts(url)
-    return _offline_result(url, html, css, scope, browser_probes=True)
+    html, css, read = _fetch_page_parts(url)
+    return _tls_flagged(_offline_result(url, html, css, scope, browser_probes=True), *read)
 
 
 # The live engine's cap on a page with any FAIL (scoreArithmetic, engine
@@ -3601,9 +3685,15 @@ TOOLS = [
             "engine: 27 of the 45 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
-            "checks it did not run) and scope, and its note says so. The "
-            "other three formats return an error, because only the live "
-            "engine produces them."
+            "checks it did not run) and scope, and its note says so. "
+            "Offline, overflow (v02) and Core Web Vitals (v21) are measured "
+            "only when the server sets DESIGNESY_CDP_URL to a Chrome "
+            "DevTools endpoint, where the page opens in a new tab; otherwise "
+            "both read MANUAL. An engine that answers with an error (a "
+            "refused URL, a rate limit, a page it could not reach) returns "
+            "that error, and nothing is scored offline. The other three "
+            "formats return an error, because only the live engine produces "
+            "them."
         ),
         "inputSchema": {
             "type": "object",
@@ -4062,10 +4152,11 @@ TOOLS = [
 # - designesy_tokens_score and designesy_motion_score fetch the caller's url.
 #   designesy_score posts to the designesy.org engine, which fetches the url;
 #   when the engine is unreachable, its offline fallback fetches the page here
-#   and, only when a Chrome DevTools endpoint answers on 127.0.0.1:9222, opens
-#   a tab there to measure and then closes it. That probe leaves nothing
-#   behind, so the tool stays read-only. The other scoring tools post to the
-#   designesy.org engines, which fetch the url. Open world.
+#   and, only when the operator sets DESIGNESY_CDP_URL to a Chrome DevTools
+#   endpoint that answers, opens a tab there to measure and then closes it.
+#   That probe leaves nothing behind, so the tool stays read-only. The other
+#   scoring tools post to the designesy.org engines, which fetch the url.
+#   Open world.
 # - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
 #   email through Resend when the caller passes `email`, an alert fires (one
 #   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
@@ -4177,7 +4268,8 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 
     if not isinstance(token_data, dict):
         return {"success": False, "error": "Token file is not a JSON object"}
-    return _tokens_score(token_data, contract, url or "(inline dtcg_file)")
+    result = _tokens_score(token_data, contract, url or "(inline dtcg_file)")
+    return result if dtcg_file else _tls_flagged(result, url)
 
 
 # ── designesy_tokens_score: the tokens contract's ten checks ─────────────────
@@ -4638,7 +4730,8 @@ def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -
 
     if not isinstance(lottie_data, dict):
         return {"success": False, "error": "Lottie file is not a JSON object"}
-    return _motion_score(lottie_data, contract, url or "(inline lottie_file)")
+    result = _motion_score(lottie_data, contract, url or "(inline lottie_file)")
+    return result if lottie_file else _tls_flagged(result, url)
 
 
 # ── designesy_motion_score: the motion contract's ten checks ─────────────────
@@ -5003,7 +5096,11 @@ def _motion_score(lottie: dict[str, Any], contract: dict[str, Any], url: str) ->
 
 
 def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
-    """POST to a designesy.org API endpoint and return the JSON result."""
+    """POST to a designesy.org API endpoint and return the JSON result.
+
+    The certificate is always verified: DESIGNESY_INSECURE_TLS covers a
+    caller's URL only, and this body can carry a monitor email address.
+    """
     url = f"{BASE_URL}/api/{endpoint}"
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
@@ -5016,15 +5113,7 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
         },
         method="POST",
     )
-    try:
-        opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
-    except Exception as exc:
-        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
-            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
-            opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
-        else:
-            raise
-    with opener as resp:
+    with urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
