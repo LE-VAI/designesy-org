@@ -833,16 +833,18 @@ def _cert_error() -> urllib.error.URLError:
     return urllib.error.URLError(err)
 
 
-@pytest.fixture
-def env(monkeypatch):
-    """No opt-in set, and an empty cache, before and after each test."""
-    monkeypatch.delenv("DESIGNESY_INSECURE_TLS", raising=False)
-    monkeypatch.delenv("DESIGNESY_CDP_URL", raising=False)
-    mcp._cache.clear()
-    mcp._TLS_UNVERIFIED.clear()
-    yield monkeypatch
-    mcp._cache.clear()
-    mcp._TLS_UNVERIFIED.clear()
+class _FreshState:
+    """Gives each test an env fixture: no opt-in set, and an empty cache."""
+
+    @pytest.fixture
+    def env(self, monkeypatch):
+        monkeypatch.delenv("DESIGNESY_INSECURE_TLS", raising=False)
+        monkeypatch.delenv("DESIGNESY_CDP_URL", raising=False)
+        mcp._cache.clear()
+        mcp._TLS_UNVERIFIED.clear()
+        yield monkeypatch
+        mcp._cache.clear()
+        mcp._TLS_UNVERIFIED.clear()
 
 
 class _Site:
@@ -871,7 +873,7 @@ def _not_a_verification_failure(kind: str) -> Exception:
     return urllib.error.HTTPError("https://example.com/t.json", 495, "SSL Certificate Error", {}, io.BytesIO(b""))
 
 
-class TestTlsIsVerified:
+class TestTlsIsVerified(_FreshState):
     @pytest.mark.parametrize("opt_in", [False, True])
     def test_post_api_never_builds_the_unverified_context(self, env, opt_in):
         # designesy.org's own API: no opt-out, whatever the environment says.
@@ -882,7 +884,7 @@ class TestTlsIsVerified:
         with patch.object(mcp.urllib.request, "urlopen", site), \
                 patch.object(mcp, "_unverified_ssl_context") as unverified:
             with pytest.raises(urllib.error.URLError, match="certificate has expired"):
-                mcp._post_api("monitor", {"url": "https://example.com/", "email": "owner@example.com"})
+                mcp._post_api("monitor", {"url": "https://example.com/"})
         unverified.assert_not_called()
         assert site.contexts(url) == [mcp._SSL_CONTEXT]
 
@@ -957,7 +959,7 @@ class TestTlsIsVerified:
         assert site.contexts(page) == [mcp._SSL_CONTEXT]
 
 
-class TestEngineErrorIsTheResult:
+class TestEngineErrorIsTheResult(_FreshState):
     REFUSED = "http://100.100.100.200/"
 
     def test_the_local_guard_lets_the_refused_url_through(self):
@@ -1004,7 +1006,7 @@ class TestEngineErrorIsTheResult:
         assert "did not score http://100.100.100.200/" in json.loads(result["content"][0]["text"])["error"]
 
 
-class TestBrowserProbeNeedsDesignesyCdpUrl:
+class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
     def test_unset_means_no_connection_and_no_probe(self, env):
         with patch.object(mcp.urllib.request, "urlopen") as urlopen, \
                 patch.object(mcp.subprocess, "run") as run:
@@ -1025,6 +1027,16 @@ class TestBrowserProbeNeedsDesignesyCdpUrl:
             assert mcp._cdp_available() is True
         assert seen == ["http://127.0.0.1:59222/json/version"]
 
+    def test_set_passes_the_endpoint_to_both_probes(self, env):
+        env.setenv("DESIGNESY_CDP_URL", "http://127.0.0.1:59222/")
+        failed = MagicMock(returncode=1, stdout="", stderr="no browser")
+        with patch.object(mcp, "_cdp_available", return_value=True),                 patch.object(mcp.subprocess, "run", return_value=failed) as run:
+            mcp._check_viewport_overflow_cdp("https://example.com/")
+            mcp._check_cwv_cdp("https://example.com/")
+        assert [c.args[0][2:] for c in run.call_args_list] == [
+            ["https://example.com/", "--cdp=http://127.0.0.1:59222"],
+        ] * 2
+
     def test_the_description_says_so(self):
         desc = mcp.TOOL_MAP["designesy_score"]["description"]
         assert "DESIGNESY_CDP_URL" in desc and "both read MANUAL" in desc
@@ -1032,15 +1044,14 @@ class TestBrowserProbeNeedsDesignesyCdpUrl:
 
     @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
     @pytest.mark.parametrize("script", ["cdp-viewport-check.cjs", "cdp-cwv-expr.cjs"])
-    def test_the_node_scripts_use_the_named_endpoint(self, script):
+    def test_the_node_scripts_use_the_endpoint_they_are_given(self, script):
         # A port with nothing listening: the script must try it, and no other.
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
         proc = subprocess.run(
-            ["node", str(PACKAGE / script), "https://example.com/"],
+            ["node", str(PACKAGE / script), "https://example.com/", f"--cdp=http://127.0.0.1:{port}"],
             capture_output=True, text=True, timeout=60,
-            env={**os.environ, "DESIGNESY_CDP_URL": f"http://127.0.0.1:{port}"},
         )
         assert proc.returncode == 1
         assert f"127.0.0.1:{port}" in proc.stderr
@@ -1076,7 +1087,7 @@ def _request(method: str, params=None, req_id=5) -> str:
     return json.dumps(msg)
 
 
-class TestJsonRpcSession:
+class TestJsonRpcSession(_FreshState):
     def test_the_probe_gets_four_replies_and_the_session_ends_at_eof(self):
         replies = _session(
             INIT, "[1]", '"hello"',

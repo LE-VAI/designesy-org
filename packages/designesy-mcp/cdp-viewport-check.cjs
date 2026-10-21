@@ -11,16 +11,17 @@
  *     per-width waits with settle-based waits (MutationObserver). Faster on
  *     light pages, more reliable on SPAs.
  *
- * Usage: node cdp-viewport-check.cjs <url>
- * Requires Chrome running with --remote-debugging-port, at the endpoint
- * DESIGNESY_CDP_URL names (http://127.0.0.1:9222 when it is unset; the MCP
- * server runs this script only when it is set).
+ * Usage: node cdp-viewport-check.cjs <url> [--cdp=<DevTools URL>]
+ * Requires Chrome running with --remote-debugging-port, at the --cdp endpoint
+ * (http://127.0.0.1:9222 without it). The MCP server runs this script only
+ * when DESIGNESY_CDP_URL is set, and passes it as --cdp.
  */
 const http = require('http');
 // Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
 // No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 
-const CDP = new URL(process.env.DESIGNESY_CDP_URL || 'http://127.0.0.1:9222');
+const CDP_ARG = process.argv.slice(3).find(a => a.startsWith('--cdp='));
+const CDP = new URL(CDP_ARG ? CDP_ARG.slice('--cdp='.length) : 'http://127.0.0.1:9222');
 const CDP_HOST = CDP.hostname.replace(/^\[|\]$/g, '');
 const CDP_PORT = Number(CDP.port) || 80;
 
@@ -242,7 +243,7 @@ async function checkViewportOverflow(url) {
 }
 
 const url = process.argv[2];
-if (!url) { console.error('Usage: node cdp-viewport-check.cjs <url>'); process.exit(1); }
+if (!url) { console.error('Usage: node cdp-viewport-check.cjs <url> [--cdp=<DevTools URL>]'); process.exit(1); }
 checkViewportOverflow(url)
   .then(result => { console.log('\n' + JSON.stringify(result, null, 2)); process.exit(0); })
   .catch(err => { console.error('Error:', err.message); process.exit(1); });

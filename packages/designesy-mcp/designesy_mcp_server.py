@@ -2626,10 +2626,11 @@ def _check_rem_scale(css: str) -> dict[str, str]:  # checkRemScale
 # audit (/api/score/audit) resolves them. This engine reports the same MANUAL,
 # except that v02 and v21 are measured when the operator sets
 # DESIGNESY_CDP_URL to a Chrome DevTools endpoint that answers (the Node
-# scripts beside this file open a tab there, measure, and close it). Until
-# 1.13.10 any endpoint answering on 127.0.0.1:9222 was used unasked, so a
-# score call could open the caller's URL in the operator's own browser. A
-# probe that cannot run or measure leaves the check MANUAL, never PASS.
+# scripts beside this file, given it as --cdp, open a tab there, measure, and
+# close it). Until 1.13.10 any endpoint answering on 127.0.0.1:9222 was used
+# unasked, so a score call could open the caller's URL in the operator's own
+# browser. A probe that cannot run or measure leaves the check MANUAL, never
+# PASS.
 #
 # .cjs extension is required: this package sits inside a "type": "module"
 # monorepo, so a bare .js file is parsed as ESM and `require` throws
@@ -2709,7 +2710,7 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
 
     try:
         result = subprocess.run(
-            ["node", _CDP_SCRIPT, url],
+            ["node", _CDP_SCRIPT, url, f"--cdp={_cdp_url()}"],
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_SCRIPT),
         )
@@ -2768,7 +2769,7 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
 
     try:
         result = subprocess.run(
-            ["node", _CDP_CWV_SCRIPT, url],
+            ["node", _CDP_CWV_SCRIPT, url, f"--cdp={_cdp_url()}"],
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_CWV_SCRIPT),
         )
@@ -4152,11 +4153,10 @@ TOOLS = [
 # - designesy_tokens_score and designesy_motion_score fetch the caller's url.
 #   designesy_score posts to the designesy.org engine, which fetches the url;
 #   when the engine is unreachable, its offline fallback fetches the page here
-#   and, only when the operator sets DESIGNESY_CDP_URL to a Chrome DevTools
-#   endpoint that answers, opens a tab there to measure and then closes it.
-#   That probe leaves nothing behind, so the tool stays read-only. The other
-#   scoring tools post to the designesy.org engines, which fetch the url.
-#   Open world.
+#   and, only when DESIGNESY_CDP_URL names a DevTools endpoint that answers,
+#   opens a tab there to measure and then closes it. That probe leaves nothing
+#   behind, so the tool stays read-only. The other scoring tools post to the
+#   designesy.org engines, which fetch the url. Open world.
 # - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
 #   email through Resend when the caller passes `email`, an alert fires (one
 #   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
