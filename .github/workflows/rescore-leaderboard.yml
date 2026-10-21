@@ -1,9 +1,10 @@
 name: Rescore Leaderboard
 
 # Weekly re-score of all leaderboard seed sites against the live designesy.org
-# /api/score engine. Computes delta-since-last-week badges and opens a PR
-# against main with the updated seed.ts + snapshot.json. The PR is landed by a
-# person after its full CI passes (v4, below); this workflow does not merge.
+# /api/score engine. Computes delta-since-last-week badges, pushes a branch
+# with the updated seed.ts + snapshot.json and opens a landing issue. A person
+# opens the PR and lands it after its full CI passes (v5, below); this
+# workflow opens no PR and does not merge.
 #
 # History: prior to 2026-08-25 this workflow pushed directly to main. After
 # main was locked down with branch protection (PR-only + required CI
@@ -43,6 +44,8 @@ name: Rescore Leaderboard
 # command to open it. A person opens the PR, so its CI runs without the
 # approval step bot-opened PRs needed. A newer week's issue closes an older
 # unlanded one, whose data it replaces.
+# The setting stays off, and no personal or App token takes its place: a token
+# that can push this branch and open its pull request could also merge it.
 #
 # The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
 # scores as a JSON response — it can't write to the repo. This workflow IS
