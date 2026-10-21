@@ -5,8 +5,9 @@
 # badge 500) — all silently broken until a manual audit caught them.
 #
 # Uses lychee (https://github.com/lycheeverse/lychee) with config in
-# .lychee.toml at the repo root. Scans all .md/.json/.yml/.py/.toml files
-# excluding node_modules and install_tmp.
+# .lychee.toml at the repo root. Scans every .md/.json/.yml/.yaml/.toml/.py
+# file in the repo, plus the issue templates under .github/. exclude_path in
+# .lychee.toml drops node_modules, install_tmp, test fixtures and vendored code.
 #
 # Editor install deeplinks (cursor://, vscode.dev/redirect) are excluded
 # in .lychee.toml because they use native URI schemes that HTTP checkers
@@ -62,11 +63,16 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          # Scan all md/json/yml/toml in the repo. The entrypoint.sh uses
-          # `eval`, so bash expands globs before lychee — patterns that
-          # match files are passed as literal file paths, not globs.
-          # .lychee.toml exclude_path filters node_modules/install_tmp.
-          args: --config .lychee.toml --cache --verbose ./**/*.md ./**/*.json ./**/*.yml ./**/*.toml ./**/*.py
+          # The globs are quoted so that lychee expands `**` itself, at every
+          # depth. The action's entrypoint.sh runs `eval lychee ... ${ARGS}`
+          # in bash without globstar, where an unquoted ./**/*.md means
+          # ./*/*.md: on 2026-10-21 it matched 3 of the 59 Markdown files, and
+          # README.md, CHANGELOG.md and the package READMEs were never checked.
+          # lychee's glob skips hidden directories, so the issue templates are
+          # listed on their own. The workflows stay out: the URLs they build
+          # from variables ($VERSION, ${VERCEL_ORG_ID}) would be checked as
+          # written. .lychee.toml exclude_path filters the rest.
+          args: --config .lychee.toml --cache --verbose './**/*.md' './**/*.json' './**/*.yml' './**/*.yaml' './**/*.toml' './**/*.py' './.github/ISSUE_TEMPLATE/*.yml'
           fail: true
           format: markdown
           output: lychee/out.md
