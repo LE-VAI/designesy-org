@@ -5,11 +5,11 @@
  * (Requires `npm run build` first; the pretest hook does it.)
  *
  * format/ is the Design Tokens Community Group's conformance suite, copied
- * unmodified from design-tokens/community-group at commit 882ebd6 (source and
- * licence in ./LICENSE.md). format/manifest.json lists PositiveEvaluationTest
- * fixtures, which a conforming validator accepts, and NegativeEvaluationTest
- * fixtures, which it rejects. Here "accepts" means validateTokens() returns
- * valid: true, that is, no check FAILs.
+ * unmodified from design-tokens/community-group at the commit SUITE_COMMIT
+ * names below (source and licence in ./LICENSE.md). format/manifest.json lists
+ * PositiveEvaluationTest fixtures, which a conforming validator accepts, and
+ * NegativeEvaluationTest fixtures, which it rejects. Here "accepts" means
+ * validateTokens() returns valid: true, that is, no check FAILs.
  *
  * KNOWN GAPS
  * known-gaps.json lists the fixtures the validator gets wrong today, measured
@@ -50,9 +50,11 @@
  * re-examined.
  *
  * UPDATING THE SUITE
- * Replace format/ with the same directory from a newer upstream commit, update
- * the commit in LICENSE.md and the counts below, run npm test, and edit
- * known-gaps.json until it names exactly the ids the failures print.
+ * Replace format/ with the same directory from a newer upstream commit. Set
+ * SUITE_COMMIT and the counts in SIDES below, and the two mentions of the
+ * commit in LICENSE.md (a test checks that LICENSE.md names SUITE_COMMIT). Run
+ * npm test, edit known-gaps.json until it names exactly the ids the failures
+ * print, and recount the fixtures named under VERDICTS, NOT REASONS.
  */
 
 import { describe, it } from 'node:test';
@@ -72,8 +74,11 @@ const runs = manifest.tests.map((test) => ({
   result: validateTokens(readJson(`./format/${test.input}`), test.input),
 }));
 
-// Counts in format/manifest.json at 882ebd6. Pinned so a fixture lost while
-// copying or updating the suite fails here instead of shrinking the test.
+// The upstream commit format/ was copied from.
+const SUITE_COMMIT = '882ebd6716abef9a46d8ef5fb12e82009d6cee2e';
+
+// Counts in format/manifest.json at SUITE_COMMIT. Pinned so a fixture lost
+// while copying or updating the suite fails here instead of shrinking the test.
 const SIDES = [
   { type: 'PositiveEvaluationTest', count: 93, gapsKey: 'positiveRejected', valid: true, verdict: 'accepted', wrong: 'rejected' },
   { type: 'NegativeEvaluationTest', count: 127, gapsKey: 'negativeAccepted', valid: false, verdict: 'rejected', wrong: 'accepted' },
@@ -85,10 +90,26 @@ function explain({ test, result }) {
   return `  ${test.id} (${test.input})\n    purpose: ${test.purpose}\n    validator: ${why}`;
 }
 
-describe('DTCG 2025.10 format suite manifest', () => {
+describe(`DTCG 2025.10 format suite manifest at ${SUITE_COMMIT.slice(0, 7)}`, () => {
   it('every test id is unique', () => {
     const ids = manifest.tests.map((t) => t.id);
     assert.equal(new Set(ids).size, ids.length);
+  });
+
+  const total = SIDES.reduce((n, s) => n + s.count, 0);
+  it(`every test is a ${SIDES.map((s) => s.type).join(' or ')}, ${total} in all`, () => {
+    const other = manifest.tests.filter((t) => !SIDES.some((s) => s.type === t.type));
+    assert.deepEqual(
+      other.map((t) => `${t.id}: ${t.type}`),
+      [],
+      'tests of a type this file does not run (add it to SIDES or say why it is skipped)',
+    );
+    assert.equal(manifest.tests.length, total);
+  });
+
+  it('LICENSE.md names SUITE_COMMIT', () => {
+    const licence = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8');
+    assert.ok(licence.includes(SUITE_COMMIT), `LICENSE.md does not name ${SUITE_COMMIT}`);
   });
 
   it('known-gaps.json has exactly the two lists', () => {
