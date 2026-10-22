@@ -10,7 +10,7 @@ import type { CategoryBreakdown } from './seed';
 
 /** The day the batch below was run: the date every per-category figure on the
     data pages carries, beside the composite's weekly re-score date. */
-export const BATCH_RUN_DATE = '2026-10-19';
+export const BATCH_RUN_DATE = '2026-10-22';
 
 export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakdown>> = {
   "https://linear.app": {
@@ -188,7 +188,7 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 1, skip: 1 },
     "motion": { score: 66.7, weight: 10, pass: 2, fail: 1, warn: 0, skip: 2 },
     "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
-    "takt": { score: 50, weight: 8, pass: 1, fail: 1, warn: 0, skip: 0 },
+    "takt": { score: 100, weight: 8, pass: 2, fail: 0, warn: 0, skip: 0 },
     "poise": { score: 100, weight: 7, pass: 2, fail: 0, warn: 0, skip: 0 },
     "identity": { score: 100, weight: 6, pass: 2, fail: 0, warn: 0, skip: 0 },
     "interaction": { score: 100, weight: 6, pass: 1, fail: 0, warn: 0, skip: 0 },
@@ -382,8 +382,8 @@ export const BATCH_CATEGORY_SCORES: Record<string, Record<string, CategoryBreakd
     "accessibility": { score: 75, weight: 15, pass: 2, fail: 0, warn: 2, skip: 3 },
     "semantic": { score: 50, weight: 12, pass: 0, fail: 0, warn: 2, skip: 0 },
     "motion": { score: 100, weight: 10, pass: 3, fail: 0, warn: 0, skip: 2 },
-    "tokens": { score: null, weight: 9, pass: 0, fail: 0, warn: 0, skip: 0 },
-    "takt": { score: null, weight: 8, pass: 0, fail: 0, warn: 0, skip: 0 },
+    "tokens": { score: 100, weight: 9, pass: 1, fail: 0, warn: 0, skip: 1 },
+    "takt": { score: 100, weight: 8, pass: 1, fail: 0, warn: 0, skip: 1 },
     "poise": { score: 100, weight: 7, pass: 2, fail: 0, warn: 0, skip: 0 },
     "identity": { score: 75, weight: 6, pass: 1, fail: 0, warn: 1, skip: 0 },
     "interaction": { score: 100, weight: 6, pass: 1, fail: 0, warn: 0, skip: 0 },

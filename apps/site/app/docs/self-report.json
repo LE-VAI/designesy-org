@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19",
+  "generatedAt": "2026-10-22",
   "formula": "score * 0.5 + drift * 0.3 + readiness * 0.2",
   "engines": {
     "score": {
