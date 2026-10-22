@@ -14,6 +14,10 @@
  *                                        route)
  *   apps/site/public/*                -> FULL (assets render wherever they are
  *                                        referenced)
+ *   apps/site/package.json, its lockfile and vendor/*
+ *                                     -> FULL (a dependency bump changes what
+ *                                        every route renders, or the instrument
+ *                                        itself: axe-core, playwright-core)
  *   .github/workflows/ci.yml, the sweep and this mapper -> FULL (instrument
  *                                        changes re-measure everything: a
  *                                        sweep whose own PR never runs it
@@ -82,6 +86,18 @@ for (const f of files) {
   // Shared surface outside app/: next.config.ts rewrites/redirects serve
   // every route, and public/* assets render on any page that references them.
   if (f === 'apps/site/next.config.ts' || f.startsWith('apps/site/public/')) {
+    full = true;
+    continue;
+  }
+  // Dependencies: next and react render every route, and axe-core and
+  // playwright-core are the sweep's own instrument. Dependabot's axe-core
+  // 4.14 bump touched only these two files, so this mapping gave the sweep no
+  // route, and the 574 controls the new rule flags on 67 routes went unseen.
+  if (
+    f === 'apps/site/package.json' ||
+    f === 'apps/site/package-lock.json' ||
+    f.startsWith('apps/site/vendor/')
+  ) {
     full = true;
     continue;
   }

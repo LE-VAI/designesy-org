@@ -7,19 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
-DTCG 2025.10 Format Module does** (the hosted `/api/mcp`; the PyPI server
-carries the same change in its next release). Scores move for files that
+DTCG 2025.10 Format Module does** (the hosted `/api/mcp`, and the PyPI server
+from designesy-mcp 1.13.10, below). Scores move for files that
 type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
 leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
 write dimensions as strings.
 
-Until that release, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+Until 1.13.10 is published, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
 but names them from the contract it fetches from this site, so its results
 say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
 A file with no `$schema` FAILs t01 under a name that calls `$schema` a
 Designesy policy, and t08 passes `"4px"` under a name that asks for
-`{ value, unit }`. Publishing the PyPI server with this change closes the
-gap.
+`{ value, unit }`. Publishing 1.13.10 closes the gap.
 
 ### Fixed (tokens contract 0.1.3)
 
@@ -67,10 +66,12 @@ gap.
   that a 2025.10 dimension takes px or rem, and a bare number, which was told
   to include a unit string, to write `{ value, unit }` in px or rem.
 - **A chain of references is followed once.** t08 walked the whole chain of
-  each dimension alias, so 5,000 chained aliases took 5 seconds to score in
-  the hosted port and 15 in the PyPI port. Each chain of aliases, JSON
+  each dimension alias, so 5,000 chained aliases took 3.7 to 5.4 seconds to
+  score in the hosted port and 12 to 16 in the PyPI port (several runs, one
+  machine). Each chain of aliases, JSON
   Pointers or `$extends` is now followed once per file, in a loop: the same
-  file scores in 14 ms in the hosted port and 48 ms in the PyPI port, and
+  file scores in 10 to 14 ms in the hosted port and 34 to 48 ms in the PyPI
+  port, and
   every 5,000-long chain of aliases, pointers, dimension aliases or
   `$extends` in under 100 ms.
 - **The tool description no longer says `$description` is checked.** No
@@ -130,6 +131,72 @@ five fixtures keep their scores.
 - The three token fixtures of `scripts/check-mcp-accuracy.js` write
   dimensions as `{ value, unit }`, so each still tests the rule it names.
 - The sibling contract lock records tokens 0.1.3.
+
+**designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
+registry; not yet published, tag `v1.13.10`). Apart from the tokens scoring
+above, nothing changes in the hosted `/api/mcp` except the version it
+reports. It is the first designesy-mcp release since 1.13.9, so it also
+ships the offline engine merged since then: it mirrors engine 1.5.3 and
+contract v0.4.7 (1.13.9 mirrored 1.4.0 and v0.4.6), and it scores tokens
+files by contract 0.1.3, above.
+
+### Fixed (designesy-mcp 1.13.10)
+
+- **Every certificate is verified.** `_fetch` and `_post_api` retried with
+  `CERT_NONE` after a failed verification, after any raw `ssl.SSLError`, and
+  after any error whose text said "certificate" (an HTTP error with such a
+  reason phrase included). That covered the POSTs to designesy.org's
+  engines, the monitor email among them. A failed verification is now a tool
+  error that names the reason, and `designesy_score` no longer scores offline
+  when the engine's own certificate fails (1.13.9 did, without saying why).
+  To read a site with a bad certificate anyway, set
+  `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
+  designesy.org) whose verification fails is then read without it, and the
+  result carries `tls_verified: false`.
+- **An engine error is not scored offline.** `designesy_score` fell back to
+  the offline engine whenever the engine returned no score, so a URL the
+  engine refused (HTTP 400 for `http://100.100.100.200/` and
+  `http://[fec0::1]/`, both of which the server's own URL check lets
+  through) was fetched from the user's machine instead. It now falls back
+  only when the network fails before the request is sent (no DNS, no route,
+  a refused connection). An HTTP error (a refused URL, a rate limit, a page
+  the engine could not reach), `ok: false`, a reply that is not a JSON
+  object, a failure after the request was sent (a reset, a read timeout),
+  or a certificate that fails verification is returned as an error. 1.13.9
+  scored the read timeout offline too, and the engine can spend longer on a
+  page than the call waits, so a page that answered the engine slowly could
+  have itself fetched from the user's machine.
+- **No browser unless the operator names one.** The offline engine opened
+  the URL in a new tab of any Chrome answering on `127.0.0.1:9222` to measure
+  v02 and v21. It now does so only when `DESIGNESY_CDP_URL` names a Chrome
+  DevTools endpoint, and both Node probes connect to that endpoint;
+  otherwise both checks read MANUAL. The `designesy_score` description says
+  so. Neither probe uses a tab it did not open: when `/json/new` failed, the
+  viewport probe measured in a tab already open on the same host and then
+  closed it.
+- **No line ends the session.** An array, a bare string, a number, or
+  `params: null` raised AttributeError and stopped the server, and so did a
+  byte that is not UTF-8 wherever stdin was decoded strictly (CPython's
+  default on a UTF-8 Linux locale). Each line is now decoded as UTF-8,
+  whatever the locale. A line that is not UTF-8 or not JSON gets -32700, a
+  message that is not an object gets -32600 (the 2024-11-05 revision has no
+  batches), and a handler that raises gets -32603; the server reads on.
+  On Windows, where stdin was read as cp1252, a non-ASCII request now
+  arrives intact (a tool name `café` arrived as `cafÃ©`).
+- **Notifications get no reply.** `notifications/cancelled` got a -32601
+  error frame back.
+- **Error codes follow the 2024-11-05 revision.** An unknown tool is -32602
+  and an unknown resource -32002 (both were -32601). `params` or `arguments`
+  of null read as `{}`, and any other non-object is -32602. A tool that runs
+  and fails (a fetch error, a blocked URL) returns an `isError` result with
+  the same text, instead of a JSON-RPC -32000 error.
+
+### Not changed (designesy-mcp 1.13.10)
+
+- The tool list, the schemas, the titles and the annotations:
+  `designesy_score` stays `readOnlyHint: true`. The offline engine's checks
+  and verdicts. The tokens checks change as described above.
+- The hosted endpoint, which has no offline engine or browser probe.
 
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
@@ -1865,6 +1932,6 @@ ships in the npm CLI's bundled engine; the PyPI `designesy_score` tool passes
 [1.0.4]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.4
 [1.0.3]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.3
 [1.0.2]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.2
-[1.0.1]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.1
+[1.0.1]: https://github.com/LE-VAI/designesy-org/compare/designesy-score%401.0.0...1adacfb8c1ff92173104161e5a18ebc2732ee106
 [1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.0
 [0.4.2]: https://github.com/LE-VAI/designesy-org/compare/v0.4.0...designesy-score%401.0.0

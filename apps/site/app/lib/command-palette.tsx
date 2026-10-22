@@ -984,11 +984,15 @@ export function CommandPalette() {
         ref={triggerRef}
         type="button"
         className="cmdk-trigger"
-        // The accessible name is the visible label (WCAG 2.5.3, Label in
-        // Name): "Open search (Ctrl+K)" did not contain "Find", so a voice
-        // user saying what they see missed it. Kept as aria-label because the
-        // label is hidden below 1024px; the shortcut lives in aria-keyshortcuts.
-        aria-label="Find"
+        // The accessible name comes from the visible label, "Find" (WCAG 2.5.3,
+        // Label in Name): "Open search (Ctrl+K)" did not contain "Find", so a
+        // voice user saying what they see missed it. It is not an aria-label:
+        // the Ctrl K keycap is visible text too, and axe's
+        // label-content-name-mismatch (on by default from axe-core 4.14) fails
+        // an aria-label of "Find" beside it. Named from content, the icon and
+        // the aria-hidden keycap drop out and the name is "Find" at every
+        // width; below 1024px the label is visually hidden, not removed
+        // (globals.css). The shortcut lives in aria-keyshortcuts.
         aria-keyshortcuts="Control+K Meta+K"
         onClick={openPalette}
         data-cuelume-hover="tick"

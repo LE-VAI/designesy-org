@@ -107,10 +107,23 @@ export function ShareButton({
       className={`score-action-btn score-share-btn${className ? ` ${className}` : ''}`}
       data-cuelume-press="tick"
       title={canWebShare ? label : 'Copy link to clipboard'}
-      aria-label={canWebShare ? label : 'Copy link'}
+      aria-label={canWebShare ? label : undefined}
     >
       <BrandIcon name="share" size={14} />
-      {canWebShare ? 'Share' : linkCopied ? 'Link copied!' : 'Copy link'}
+      {/* Without Web Share the name is "Copy link", from the button's own
+          words (WCAG 2.5.3, Label in Name), and the status line below says it
+          was copied, once, as SnippetCopy does. An aria-label of "Copy link"
+          beside a visible "Link copied!" failed axe-core 4.14. */}
+      {canWebShare ? (
+        'Share'
+      ) : linkCopied ? (
+        <>
+          <span aria-hidden="true">Link copied!</span>
+          <span className="sr-only">Copy link</span>
+        </>
+      ) : (
+        'Copy link'
+      )}
     </button>
   );
 
@@ -123,6 +136,11 @@ export function ShareButton({
   return (
     <>
       {triggerBtn}
+      {!canWebShare && (
+        <span className="sr-only" role="status">
+          {linkCopied ? 'Link copied' : ''}
+        </span>
+      )}
       {shareUrl && (
         <>
           <a

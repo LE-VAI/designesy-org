@@ -270,8 +270,7 @@ export default function McpDocsPage() {
           <div className="definition">
             <p className="definition-label">Registry</p>
             <p>
-              <code>io.github.LE-VAI/designesy-org</code> on{' '}
-              <code>registry.modelcontextprotocol.io</code>
+              <code>io.github.LE-VAI/designesy-org</code> on <code>registry.modelcontextprotocol.io</code>
             </p>
           </div>
         </section>
