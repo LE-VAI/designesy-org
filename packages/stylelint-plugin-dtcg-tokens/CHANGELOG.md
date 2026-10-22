@@ -17,6 +17,10 @@ this project adheres to [Semantic Versioning](https://semver.org/).
   2025.10 files, so `150ms` did not map to a duration token from such a file
   either. String values (`"16px"`, `"150ms"`) are read as before, and one
   file may mix the two forms.
+- An object reads with its number in the shortest form:
+  `{ "value": 1.5, "unit": "rem" }` is `1.5rem`. A CSS value maps to a token
+  by its text, so `1.50rem` in a stylesheet does not map to that token; a
+  string token, as before, maps only the spelling it holds.
 - 68 tests (up from 62): flattening, `resolveToken`, and the PostCSS and
   stylelint fixes on a token file in the object form
   (`test/fixtures/tokens-dimension-objects.json`).

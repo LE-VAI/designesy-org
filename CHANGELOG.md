@@ -22,6 +22,15 @@ but neither fixes it nor names a token. The plugin's source in this
 repository now reads the object form (its CHANGELOG, Unreleased); npm
 users get that from the first plugin release after 0.2.2.
 
+Caveat: the plugin matches a CSS length to a token by its text, and this
+token file writes each number in its shortest form. Where a site's `:root`
+and its rules both write `1.50rem`, `4.0px` or `010px`, the plugin mapped
+those spellings with the string form; with this file and the plugin's
+source here it maps `1.5rem`, `4px` and `10px` instead (and `0.75rem` to a
+token written `.75rem`). All 88 dimension strings the previous emitter
+wrote for the pages www.designesy.org served on 2026-10-21 were already in
+the shortest form.
+
 ### Fixed (guardrails)
 
 - **Dimensions and shadow lengths are `{ value, unit }`.** `"4px"` is now
