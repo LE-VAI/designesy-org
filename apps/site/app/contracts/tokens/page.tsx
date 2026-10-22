@@ -67,8 +67,8 @@ export default function TokensContractPage() {
           <div className="definition">
             <p className="definition-label">Required token properties</p>
             <p>
-              <strong>$value</strong> (required) · <strong>$type</strong> (required, direct or inherited) ·{' '}
-              <strong>$description</strong> (recommended on semantic) · <strong>$extensions</strong> (optional, namespaced)
+              <strong>$value</strong> (required) · <strong>$type</strong> (required, direct or
+              inherited) · <strong>$description</strong> (recommended on semantic) · <strong>$extensions</strong> (optional, namespaced)
             </p>
           </div>
           <div className="definition">
@@ -78,8 +78,8 @@ export default function TokensContractPage() {
           <div className="definition">
             <p className="definition-label">Custom Designesy types</p>
             <p>
-              <strong>spring</strong> (via $extensions.designesy.spring) ·{' '}
-              <strong>sound</strong> (via $extensions.designesy.sound)
+              <strong>spring</strong> (via $extensions.designesy.spring) · <strong>sound</strong> (via
+              $extensions.designesy.sound)
             </p>
           </div>
           <div className="definition">

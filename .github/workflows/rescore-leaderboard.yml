@@ -1,9 +1,10 @@
 name: Rescore Leaderboard
 
 # Weekly re-score of all leaderboard seed sites against the live designesy.org
-# /api/score engine. Computes delta-since-last-week badges and opens a PR
-# against main with the updated seed.ts + snapshot.json. The PR is landed by a
-# person after its full CI passes (v4, below); this workflow does not merge.
+# /api/score engine. Computes delta-since-last-week badges, pushes a branch
+# with the updated seed.ts + snapshot.json and opens a landing issue. A person
+# opens the PR and lands it after its full CI passes (v5, below); this
+# workflow opens no PR and does not merge.
 #
 # History: prior to 2026-08-25 this workflow pushed directly to main. After
 # main was locked down with branch protection (PR-only + required CI
@@ -33,10 +34,23 @@ name: Rescore Leaderboard
 # GitHub reports CLEAN. leaderboard-freshness.yml
 # independently alarms if the public data is more than 8 days old.
 #
+# v5 (2026-10-21): since 2026-10-15 the repository does not let Actions
+# create or approve pull requests, on purpose. The 2026-10-19 run re-scored
+# every site and pushed its branch, then `gh pr create` failed with "GitHub
+# Actions is not permitted to create or approve pull requests", so no PR
+# existed, the site kept the 2026-10-12 data, and the freshness check went red
+# that Wednesday. This workflow now pushes the branch and opens a landing issue,
+# assigned to the maintainer, with a link that opens the PR and the exact
+# command to open it. A person opens the PR, so its CI runs without the
+# approval step bot-opened PRs needed. A newer week's issue closes an older
+# unlanded one, whose data it replaces.
+# The setting stays off, and no personal or App token takes its place: a token
+# that can push this branch and open its pull request could also merge it.
+#
 # The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
 # scores as a JSON response — it can't write to the repo. This workflow IS
 # the write path. It runs the re-score, generates the updated TypeScript,
-# commits to a branch, and opens a PR.
+# commits to a branch, and opens the landing issue for its PR.
 #
 # Schedule: Mondays 10:00 UTC (one hour after the Vercel Cron fires, so the
 # Vercel /api/score cache is warm from the cron's probe — the Action's fetches
@@ -52,13 +66,15 @@ on:
         required: false
         default: ''
 
-permissions:
-  contents: write            # needed to push the leaderboard branch
-  pull-requests: write       # needed to open the PR
+# Nothing by default; the one job below asks for what it uses.
+permissions: {}
 
 jobs:
   rescore:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write          # needed to push the leaderboard branch
+      issues: write            # needed to open the landing issue and its labels
     # Re-scoring 30 sites against the live engine takes ~7 min. The run no
     # longer waits for CI (v4), so 20 minutes leaves room for slow fetches.
     timeout-minutes: 20
@@ -67,6 +83,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0      # full history so the date command works
+          # The re-score runs code over pages fetched from 30 outside sites, so
+          # the write token is not left in .git/config for it. Only the push
+          # step below authenticates.
+          persist-credentials: false
 
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -93,11 +113,14 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Open PR (only if leaderboard changed)
+      - name: Push the branch and open the landing issue (only if leaderboard changed)
         if: steps.changes.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          # The checkout kept no credential (above); git authenticates through gh.
+          gh auth setup-git
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
           # A second run on the same UTC day (a manual dispatch, then the
@@ -118,37 +141,45 @@ jobs:
           /api/score engine. Delta badges computed from the previous week's
           snapshot. Triggered by .github/workflows/rescore-leaderboard.yml."
           git push -u origin "${BRANCH}"
-          # Later steps read the branch from here. A value under `env:` is a
-          # literal: `$(date ...)` there is never run.
-          echo "BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-          # Labels must exist before gh pr create can attach them — the
-          # 2026-08-30 run failed with "could not add label: 'leaderboard'
-          # not found" AFTER pushing the branch, leaving scored data stranded
-          # with no PR. Creating them here is idempotent (|| true on the
-          # already-exists case).
+          # Labels must exist before they can be attached — the 2026-08-30 run
+          # failed with "could not add label: 'leaderboard' not found" AFTER
+          # pushing the branch, leaving scored data stranded. Creating them
+          # here is idempotent (|| true on the already-exists case).
           gh label create leaderboard --description "Leaderboard data refresh" --color 0E8A16 || true
           gh label create automated --description "Automated workflow output" --color D4C5F9 || true
 
-          # Open a PR. Branch protection on main requires the five build and
-          # test jobs; the landing also waits for the three Visual gates parts.
-          gh pr create \
-            --base main \
-            --head "${BRANCH}" \
-            --title "chore(leaderboard): weekly re-score ${DATE_STAMP}" \
-            --body "Automated weekly re-score of the leaderboard cohort. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Diff is expected to be small score deltas + the prevScore field on each row.
-
-          This is the canonical write path for the public leaderboard. Its CI waits for approval because github-actions[bot] opened it. Landing: start the held CI runs, check the data, and merge only when every check, the three Visual gates parts included, has passed and the PR is CLEAN." \
+          # Actions may not open the PR (v5, above), so a person does. The
+          # issue carries what they need. The PR body closes the issue on
+          # merge, so the issue's number goes in after it exists.
+          TITLE="chore(leaderboard): weekly re-score ${DATE_STAMP}"
+          SERVER_REPO="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
+          ISSUE_URL=$(gh issue create \
+            --title "Leaderboard re-score ${DATE_STAMP} is ready to land" \
+            --body "Writing the landing steps." \
             --label "leaderboard,automated" \
-            --assignee LE-VAI
+            --assignee LE-VAI)
+          ISSUE="${ISSUE_URL##*/}"
+          PR_BODY="Weekly re-score of the leaderboard cohort from ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID}. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Closes #${ISSUE}."
+          {
+            echo "The weekly re-score finished and pushed \`${BRANCH}\` (run: ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID})."
+            echo "Actions may not open pull requests in this repository, so the PR is opened by hand. Until it merges, the public leaderboard keeps last week's data, and the freshness check fails once that data is more than 8 days old."
+            echo ""
+            echo "**Open the PR**: ${SERVER_REPO}/compare/main...${BRANCH}?expand=1, or:"
+            echo ""
+            echo '```sh'
+            echo "gh pr create --repo ${GITHUB_REPOSITORY} --base main --head ${BRANCH} --title \"${TITLE}\" --body \"${PR_BODY}\" --label leaderboard --label automated"
+            echo '```'
+            echo ""
+            echo "**Land it**: check the data (small score deltas, prevScore and scoredAt on each row), bring the branch up to date with main, and merge only when every check, the Visual gates parts included, has passed. A person opened the PR, so its CI runs without an approval step."
+          } > "${RUNNER_TEMP}/landing-issue.md"
+          gh issue edit "${ISSUE}" --body-file "${RUNNER_TEMP}/landing-issue.md"
 
-      - name: Leave the PR for the Monday landing
-        if: steps.changes.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # The PR's CI waits for approval because github-actions[bot] opened
-          # it. The landing (start the held runs, check the data, merge when
-          # every check has passed and the PR is CLEAN) is a person's step.
-          PR_URL=$(gh pr view "${BRANCH}" --json url --jq '.url')
-          echo "Opened ${PR_URL}; its CI waits for approval and it is merged by hand." | tee -a "$GITHUB_STEP_SUMMARY"
+          # An older landing issue still open means that week never landed.
+          # This branch carries newer data, so the older one is closed.
+          for OLD in $(gh issue list --state open --label leaderboard --json number,title \
+              --jq ".[] | select(.title | endswith(\"is ready to land\")) | select(.number != ${ISSUE}) | .number"); do
+            gh issue close "${OLD}" --comment "Superseded by #${ISSUE}: its branch carries newer data."
+          done
+
+          echo "Pushed \`${BRANCH}\` and opened ${ISSUE_URL} to land it." | tee -a "$GITHUB_STEP_SUMMARY"

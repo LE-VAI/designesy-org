@@ -15,13 +15,21 @@ no_progress = true
 exclude_path = [
   "node_modules",
   "install_tmp",
-  "\\.git",
+  # The .git directory only. Unanchored, "\\.git" also matched .github/ (and
+  # every .gitignore), which dropped the issue templates.
+  "(^|/)\\.git(/|$)",
   # The MCP server's tests feed made-up and private addresses to the URL
   # guard on purpose; they are inputs under test, not links.
   "packages/designesy-mcp/test/",
   # package-lock.json contains transitive dep funding URLs (patreon,
   # opencollective, tidelift) that 403 bots — not our content to fix.
   "package-lock\\.json",
+  # apps/site/vendor/web-haptics is a vendored copy of an npm package (a
+  # file: dependency). Its README and package.json are upstream's text, not
+  # ours to fix, and the README links x.com profiles: x.com answered GitHub's
+  # runners with 403 for a profile URL on 2026-09-25, while it works for a
+  # person.
+  "apps/site/vendor/",
   # Recorded test fixtures. These are verbatim captures of a live page's HTML
   # and CSS, kept so packages/score/test/parity.test.mjs can compare the two
   # 45-check engine implementations OFFLINE (CI has no network). Every URL
@@ -107,6 +115,14 @@ exclude = [
   # detection on the runner's address, not a broken link.
   '^https://fwa\.org',
   '^https://www\.fwa\.org',
+  # registry.modelcontextprotocol.io — the MCP registry's API. From GitHub's
+  # runners it timed out (20 s, 3 retries) in 13 of the 47 link-check runs
+  # from 2026-10-17 to 2026-10-21, on the search URL and on the server's own
+  # /versions/latest record alike. It is slow from outside CI too: the search
+  # URL timed out at 30 s on 2026-10-21, and the record took 5 to 8 s cold
+  # when #374 measured it. A timeout says nothing about the link, and a
+  # check that fails one run in four gets ignored.
+  '^https://registry\.modelcontextprotocol\.io/',
   # npmjs.com package pages — return 403 to lychee's bot user-agent.
   # Verified manually; these are our own published packages.
   '^https://www\.npmjs\.com/package/',

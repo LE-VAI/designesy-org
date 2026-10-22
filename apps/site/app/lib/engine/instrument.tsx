@@ -9,7 +9,7 @@
 // Pointer or keyboard focus on a check shows that check's contract criterion
 // and result in the side column; activating it opens the matching finding.
 
-import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { bringIntoView, userJustActed } from './bring-into-view';
 import type { Outcomes, Phase, RegistryCheck, RegistryView, Status, VerdictData } from './types';
 import { display } from './types';
@@ -194,7 +194,6 @@ export function Instrument(props: Props) {
   const { name, registry, face, phase, target, outcomes = {}, verdict, error, scoring, restNote, onOpen } = props;
   const [inspect, setInspect] = useState<string | null>(null);
   const leave = useRef<number | null>(null);
-  const uid = useId();
   const { live: elapsed, took } = useElapsed(phase);
   const lampDot = useRef<HTMLElement | null>(null);
   const lampHalo = useRef<HTMLElement | null>(null);
@@ -246,10 +245,23 @@ export function Instrument(props: Props) {
     if (started && before !== 'running' && userJustActed()) bringIntoView(root.current);
   }, [phase]);
 
+  // A cell, a diff row and a path row are named by what they show, plus the
+  // verdict once the run is done, which the lamp shows only as a colour
+  // (WCAG 2.5.3, Label in Name). An aria-label built beside the markup
+  // drifted from it: axe-core 4.14 reads "d01" and "Token registry declared"
+  // in two spans as "d01Token", the diff's values were never in the label,
+  // and a file cell's meta changes once the run is done. The {' '} between
+  // spans keep words apart in the name; a grid or flex row draws no
+  // whitespace between its items. A {' '} goes only between two elements:
+  // beside text, the server render puts it between comment markers and
+  // Chrome leaves it out of the name, so text pairs are one string.
+  const heard = (id: string) => {
+    const o = outcomes[id];
+    return phase === 'done' && o ? <span className="sr-only">{`, ${STATUS_WORD[o.status]}`}</span> : null;
+  };
+
   const cellProps = (c: RegistryCheck) => {
     const o = outcomes[c.id];
-    // A file cell shows the file's name first, so its name says it too.
-    const named = face === 'files' && c.file ? `${c.file}, ${c.label}` : c.label;
     return {
       'data-status': phase === 'done' ? o?.status : undefined,
       'data-inspect': inspect === c.id ? 'true' : undefined,
@@ -257,8 +269,6 @@ export function Instrument(props: Props) {
       onMouseEnter: () => enter(c.id),
       onFocus: () => enter(c.id),
       onClick: () => onOpen?.(c.id),
-      'aria-label': `${c.id} ${named}${phase === 'done' && o ? `, ${STATUS_WORD[o.status]}` : ''}`,
-      'aria-describedby': props.fileWhere?.[c.id] ? `${uid}-where-${c.id}` : undefined,
       'aria-pressed': props.selected !== undefined && phase === 'done' ? props.selected === c.id : undefined,
       'aria-controls': props.controls,
       type: 'button' as const,
@@ -303,12 +313,22 @@ export function Instrument(props: Props) {
                   {...cellProps(first)}
                   className="eg-path-row"
                   data-status={phase === 'done' ? worst : undefined}
-                  aria-label={`${r.path}: ${r.checks.map((c) => `${c.id} ${c.label}${phase === 'done' && outcomes[c.id] ? `, ${STATUS_WORD[outcomes[c.id].status]}` : ''}`).join('; ')}`}
                 >
                   <span className="eg-path-branch" aria-hidden="true" />
                   <span className="eg-path-main">
-                    <span className="eg-path-url">{r.path}</span>
-                    <span className="eg-path-checks">{r.checks.map((c) => `${c.id} ${c.label}`).join(' · ')}</span>
+                    <span className="eg-path-url">{r.path}</span>{' '}
+                    <span className="eg-path-checks">
+                      {r.checks.map((c, k) => (
+                        <Fragment key={c.id}>
+                          {/* One string: a space rendered as its own text
+                              node sits between React's server-render markers,
+                              and Chrome leaves it out of the name ("r01Token
+                              file"). */}
+                          {`${k > 0 ? ' · ' : ''}${c.id} ${c.label}`}
+                          {heard(c.id)}
+                        </Fragment>
+                      ))}
+                    </span>
                   </span>
                   <span className="eg-path-lamps" aria-hidden="true">
                     {r.checks.map((c, k) => (
@@ -345,13 +365,14 @@ export function Instrument(props: Props) {
               return (
                 <li key={c.id}>
                   <button {...cellProps(c)} className="eg-diff-row">
-                    <span className="eg-diff-a">{v?.a}</span>
+                    <span className="eg-diff-a">{v?.a}</span>{' '}
                     <span className="eg-diff-mid">
                       <Lamp />
-                      <span className="eg-cell-id">{c.id}</span>
+                      <span className="eg-cell-id">{c.id}</span>{' '}
                       <span className="eg-diff-label">{c.label}</span>
-                    </span>
+                    </span>{' '}
                     <span className="eg-diff-b">{v?.b}</span>
+                    {heard(c.id)}
                   </button>
                 </li>
               );
@@ -432,22 +453,24 @@ export function Instrument(props: Props) {
                 <span className="eg-cell-top">
                   <span className="eg-cell-id">{c.id}</span>
                   <Lamp />
-                </span>
+                </span>{' '}
                 {face === 'files' ? (
                   <>
-                    <span className="eg-cell-label">{c.file}</span>
+                    <span className="eg-cell-label">{c.file}</span>{' '}
                     <span className="eg-file-meta">
                       {phase === 'done' && props.fileMeta?.[c.id] ? props.fileMeta[c.id] : c.label}
                     </span>
                     {props.fileWhere?.[c.id] && (
-                      <span className="eg-file-where" id={`${uid}-where-${c.id}`}>
-                        {props.fileWhere[c.id]}
-                      </span>
+                      <>
+                        {' '}
+                        <span className="eg-file-where">{props.fileWhere[c.id]}</span>
+                      </>
                     )}
                   </>
                 ) : (
                   <span className="eg-cell-label">{c.label}</span>
                 )}
+                {heard(c.id)}
               </button>
             </li>
           ))}

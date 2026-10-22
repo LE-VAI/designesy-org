@@ -1471,15 +1471,27 @@ html[data-motion="paused"] :is(
 
 /* Icon-only search below 1024px. It was icon-only only below 720, so between
    721 and ~770 the label and Ctrl K hint took the ~86px the primary links
-   needed and "Docs" sat clipped behind an overflowing row. The button keeps
-   its accessible name (aria-label "Find", the visible label). It stays
+   needed and "Docs" sat clipped behind an overflowing row. It stays
    icon-only at every scroll position: the scrolled "search-expanded" pill
    animated width and padding and said nothing about search (removed
    2026-10-03). */
 @media (max-width: 1023px) {
-  .cmdk-trigger-kbd,
-  .cmdk-trigger-label {
+  .cmdk-trigger-kbd {
     display: none;
+  }
+  /* The button's accessible name comes from this label ("Find"), so it leaves
+     the layout but stays in the accessibility tree (the .sr-only pattern):
+     display: none would leave an unnamed icon button. */
+  .cmdk-trigger-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   .cmdk-trigger {
     /* A square target, like its neighbours: with the label gone and no width

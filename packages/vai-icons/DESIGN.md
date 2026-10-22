@@ -6,8 +6,8 @@ status: active
 role: Contract surface for @vai/icons — animated icon library on authored principles
 source_package: packages/vai-icons
 peer_package: packages/vai-motion
-contract: https://www.designesy.org/contract
-design_tokens: https://www.designesy.org/contract#tokens
+contract: https://www.designesy.org/contracts/design-system
+design_tokens: https://www.designesy.org/contracts/tokens
 governs: every icon published from this package
 ---
 
