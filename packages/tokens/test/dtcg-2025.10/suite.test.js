@@ -35,9 +35,12 @@
  * negative fixtures are rejected for a reason unrelated to what they test. t06
  * reports every token-level $ref as dangling: resolveRef() splits a reference
  * on '.', so it looks up a JSON Pointer such as "#/colors/blue/$value" as one
- * key. As measured when this file was written, 15 negative fixtures fail t06
- * and nothing else (14 references/json-pointer-*.json and
- * references/ref-and-value-both-present.json), and 6 more json-pointer-*
+ * key. As measured when this file was written, 18 negative fixtures fail t06
+ * and nothing else. 15 of them have a token-level $ref (14
+ * references/json-pointer-*.json and references/ref-and-value-both-present.json)
+ * and are rejected whatever the pointer says. The other 3 use curly-brace
+ * references that resolve to no token (reference-nonexistent,
+ * reference-to-wrong-subvalue, reference-with-spaces). 6 more json-pointer-*
  * fixtures fail t06 and t14 (t14 checks the token's own $value, which a $ref
  * token does not have). The positive reference-json-pointer-basic and
  * reference-json-pointer-subproperty fail the same way, which is why they are
@@ -52,7 +55,7 @@
  * UPDATING THE SUITE
  * Replace format/ with the same directory from a newer upstream commit. Set
  * SUITE_COMMIT and the counts in SIDES below, and the two mentions of the
- * commit in LICENSE.md (a test checks that LICENSE.md names SUITE_COMMIT). Run
+ * commit in LICENSE.md (a test checks that it names SUITE_COMMIT twice). Run
  * npm test, edit known-gaps.json until it names exactly the ids the failures
  * print, and recount the fixtures named under VERDICTS, NOT REASONS.
  */
@@ -107,9 +110,14 @@ describe(`DTCG 2025.10 format suite manifest at ${SUITE_COMMIT.slice(0, 7)}`, ()
     assert.equal(manifest.tests.length, total);
   });
 
-  it('LICENSE.md names SUITE_COMMIT', () => {
+  it('LICENSE.md names SUITE_COMMIT twice (the pinned commit and the tree URL)', () => {
     const licence = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8');
-    assert.ok(licence.includes(SUITE_COMMIT), `LICENSE.md does not name ${SUITE_COMMIT}`);
+    const mentions = licence.split(SUITE_COMMIT).length - 1;
+    assert.equal(
+      mentions,
+      2,
+      `LICENSE.md names ${SUITE_COMMIT} ${mentions} time(s); it belongs in the pinned-commit line and in the tree URL`,
+    );
   });
 
   it('known-gaps.json has exactly the two lists', () => {
@@ -128,7 +136,7 @@ for (const side of SIDES) {
       assert.equal(sideRuns.length, side.count);
     });
 
-    it(`known-gaps.json ${side.gapsKey}: ${gaps.length} distinct ids, each a ${side.type}`, () => {
+    it(`known-gaps.json ${side.gapsKey}: ${gapSet.size} distinct ids, none listed twice, each a ${side.type}`, () => {
       assert.equal(gapSet.size, gaps.length, `${side.gapsKey} lists an id twice`);
       const unknown = gaps.filter((id) => !byId.has(id));
       assert.deepEqual(unknown, [], `${side.gapsKey} names ids that are not ${side.type} ids in format/manifest.json: ${unknown.join(', ')}`);
