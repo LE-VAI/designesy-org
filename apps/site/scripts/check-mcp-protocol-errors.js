@@ -35,10 +35,12 @@
  *                          2026-07-28 has no initialize (one selects the negotiated
  *                          legacy revision, 2025-11-25 here)
  *   invalid-params         tools/list, resources/list and resources/read with bad
- *                          params, initialize with no params or a clientInfo without
- *                          a version, tools/call without a name or with arguments
- *                          that are not an object, in both framings: -32602, one
- *                          line, the method and the field named, no issue list
+ *                          params, initialize with no params, a clientInfo without
+ *                          a version or a capability key holding a newline,
+ *                          tools/call without a name or with arguments that are not
+ *                          an object, in both framings: -32602, one line with no
+ *                          control character, the method and the field named, no
+ *                          issue list
  *   tool-arguments         a tools/call whose arguments fail the tool's input schema
  *                          is still a tool result with isError: true naming the
  *                          argument (the tools page lists "Input validation errors"
@@ -71,8 +73,9 @@
  *                          as a result check's; an empty list; a list with an
  *                          issue outside params)
  *   message-text           the -32602 message names the method only when the
- *                          request's method looks like one, and cuts each issue to
- *                          160 characters, never inside a character
+ *                          request's method looks like one, writes each control
+ *                          character as an escape, and cuts each issue to 160
+ *                          characters, never inside a character or an escape
  *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
  *                          (2,000 issues; the check prints the answer's size with
  *                          and without the rewrite) is answered -32602; a failed
@@ -203,6 +206,15 @@ function messages(answer) {
 
 const short = (s) => (s.length > 160 ? `${s.slice(0, 160)}...` : s);
 
+/** The first control character (C0, DEL, C1) or line or paragraph separator in a string, as U+XXXX, or null. */
+function controlIn(s) {
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029) return `U+${c.toString(16).toUpperCase().padStart(4, '0')}`;
+  }
+  return null;
+}
+
 /** What is wrong with an answer that should be -32602 for `method` naming `field`. */
 function invalidParamsProblems(answer, method, field) {
   let msgs;
@@ -216,11 +228,13 @@ function invalidParamsProblems(answer, method, field) {
   const problems = [];
   if (error.code !== -32602) problems.push(`code ${error.code}, not -32602 Invalid params`);
   const m = String(error.message);
-  if (/\n|"path"|"code"/.test(m)) problems.push(`the message is the raw issue list: ${JSON.stringify(short(m))}`);
+  if (/"path"|"code"/.test(m)) problems.push(`the message is the raw issue list: ${JSON.stringify(short(m))}`);
   else {
     if (!m.startsWith(`Invalid params for ${method}: `)) problems.push(`the message does not start "Invalid params for ${method}: ": ${JSON.stringify(m)}`);
     if (!m.includes(field)) problems.push(`the message does not name ${field}: ${JSON.stringify(m)}`);
     if (m.length > MAX_MESSAGE) problems.push(`the message runs to ${m.length} characters`);
+    const control = controlIn(m);
+    if (control) problems.push(`the message holds ${control}, so it may not stay on one line: ${JSON.stringify(m)}`);
   }
   return problems;
 }
@@ -262,6 +276,12 @@ async function invalidParams() {
       name: 'initialize-clientInfo-version',
       field: 'params.clientInfo.version',
       request: legacy(2, 'initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: CLIENT.name } }),
+    },
+    // The key is the client's: its newline is written as an escape.
+    {
+      name: 'initialize-key-newline',
+      field: 'params.capabilities.experimental.a\\u000ab',
+      request: legacy(11, 'initialize', { protocolVersion: '2025-11-25', capabilities: { experimental: { 'a\nb': 5 } }, clientInfo: CLIENT }),
     },
     { name: 'tools-list-cursor', field: 'params.cursor', request: legacy(3, 'tools/list', { cursor: 5 }) },
     { name: 'resources-list-cursor', field: 'params.cursor', request: legacy(4, 'resources/list', { cursor: 5 }) },
@@ -637,6 +657,13 @@ async function messageText() {
   const { lib, finding } = rewriteModule('message-text');
   if (!lib) return { findings: [finding] };
   const findings = [];
+  // Control characters a key can hold, each written as \u and four hex digits,
+  // between characters that are kept as they are (space, ~, no-break space).
+  const controls = [0x00, 0x1f, 0x7f, 0x85, 0x9f, 0x2028, 0x2029, 0x0a];
+  const plainChars = [0x20, 0x7e, 0xa0];
+  const escaped = (c) => `\\u${c.toString(16).padStart(4, '0')}`;
+  const keyWith = [...controls, ...plainChars].map((c) => String.fromCharCode(c)).join('');
+  const keyShown = [...controls.map(escaped), ...plainChars.map((c) => String.fromCharCode(c))].join('');
   const cases = [
     // The client writes the method, so it is named only when it looks like one.
     {
@@ -645,6 +672,8 @@ async function messageText() {
       requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list: params.cursor is fine', params: { cursor: 5 } }),
       want: 'Invalid params: params.cursor: expected string, received number',
     },
+    // Each control character in a key is written as an escape: the message stays on one line.
+    { name: 'control-characters', list: issueList([[['params', `a${keyWith}b`]]]), want: `Invalid params for tools/list: params.a${keyShown}b: expected string, received number` },
     // A path can carry a key the client chose: each issue is cut to 160
     // characters, the ellipsis included.
     { name: 'issue-cut', list: issueList([[['params', 'k'.repeat(200)]]]), want: `Invalid params for tools/list: params.${'k'.repeat(152)}…` },
@@ -652,6 +681,11 @@ async function messageText() {
     // one a cut keeps, is the first of the two that make up U+1F39B, so the
     // whole character goes.
     { name: 'issue-cut-surrogate', list: issueList([[['params', `${'k'.repeat(151)}\u{1F39B}${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(151)}…` },
+    // Nor inside an escape: here the six units of a newline's escape are the
+    // 155th to 160th, so the cut would keep five of them and the escape goes;
+    // one unit earlier, they end at the 159th and the escape is kept whole.
+    { name: 'issue-cut-escape', list: issueList([[['params', `${'k'.repeat(147)}\n${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(147)}…` },
+    { name: 'issue-cut-escape-whole', list: issueList([[['params', `${'k'.repeat(146)}\n${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(146)}${escaped(0x0a)}…` },
   ];
   for (const c of cases) {
     const frame = errorFrame(-32603, c.list);
@@ -662,7 +696,10 @@ async function messageText() {
     }
   }
   const answers = cases.length * 2;
-  return { findings, measured: `${answers - findings.length}/${answers} messages as expected: the method named only when it looks like one, each issue cut to 160 characters, never inside a character` };
+  return {
+    findings,
+    measured: `${answers - findings.length}/${answers} messages as expected: the method named only when it looks like one, control characters escaped, each issue cut to 160 characters, never inside a character or an escape`,
+  };
 }
 
 // Built on first use: the route with its rewrite switched off.

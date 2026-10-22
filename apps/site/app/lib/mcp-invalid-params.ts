@@ -18,9 +18,12 @@
 // "Invalid tools/call request: ".
 //
 // answerInvalidParams rewrites those answers to code -32602 and one short line
-// that names each field, for example "Invalid params for initialize:
-// params.clientInfo is missing (expected object)". A JSON-RPC message is
-// rewritten only when all of these hold:
+// that names up to three fields and counts the rest, for example "Invalid
+// params for initialize: params.clientInfo is missing (expected object)". A
+// field's path can carry a key the client chose, so each field's text is cut to
+// 160 characters, and a control character in it is written as an escape
+// (\u000a for a newline). A JSON-RPC message is rewritten only when all of
+// these hold:
 //   1. it is an error: it has a top-level "error" member;
 //   2. its code is -32603 or -32602;
 //   3. its message is such an issue list, bare or behind "Invalid <method>
@@ -95,9 +98,12 @@ const MAX_ISSUES = 3;
 
 /**
  * An issue's text is cut to at most this length, ellipsis included, and never
- * inside a character: a path can carry a key the client chose.
+ * inside a character or an escape: a path can carry a key the client chose.
  */
 const MAX_ISSUE_CHARS = 160;
+
+/** The length of the escape a control character is written as: \u000a for a newline. */
+const ESCAPE_CHARS = 6;
 
 const NEWLINE = 0x0a;
 const CARRIAGE_RETURN = 0x0d;
@@ -191,7 +197,28 @@ function issueList(message: unknown): Issue[] | null {
   return underParams ? (list as Issue[]) : null;
 }
 
-/** "params.clientInfo is missing (expected object)": one issue in a few words. */
+/**
+ * Whether a UTF-16 unit is a control character (C0, DEL or C1) or the line or
+ * paragraph separator, U+2028 or U+2029: each of them can break a line.
+ */
+function isControl(c: number): boolean {
+  return c <= 0x1f || (c >= 0x7f && c <= 0x9f) || c === 0x2028 || c === 0x2029;
+}
+
+/** The text with each control character written as an escape, \u000a for a newline, so it stays on one line. */
+function visible(text: string): string {
+  let out = '';
+  let from = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (!isControl(c)) continue;
+    out += `${text.slice(from, i)}\\u${c.toString(16).padStart(4, '0')}`;
+    from = i + 1;
+  }
+  return out + text.slice(from);
+}
+
+/** "params.clientInfo is missing (expected object)": one issue in a few words, on one line. */
 function issueText(issue: Issue): string {
   let where = '';
   for (const p of issue.path) where += typeof p === 'number' ? `[${p}]` : `${where ? '.' : ''}${String(p)}`;
@@ -205,10 +232,15 @@ function issueText(issue: Issue): string {
   } else {
     text = `${where}: ${plain(issue.message.replace(/^Invalid input: /, ''))}`;
   }
+  text = visible(text);
   if (text.length <= MAX_ISSUE_CHARS) return text;
+  let cut = MAX_ISSUE_CHARS - 1;
+  // An escape the cut would split is dropped whole. (A "\u" the client wrote
+  // itself is treated the same way; the text is then only shorter.)
+  const escape = text.lastIndexOf('\\u', cut - 1);
+  if (escape >= 0 && escape + ESCAPE_CHARS > cut) cut = escape;
   // A character outside the Basic Multilingual Plane is two UTF-16 units: when
   // the last unit kept would be the first of a pair, the pair is dropped whole.
-  let cut = MAX_ISSUE_CHARS - 1;
   const last = text.charCodeAt(cut - 1);
   if (last >= 0xd800 && last <= 0xdbff) cut--;
   return `${text.slice(0, cut)}…`;
