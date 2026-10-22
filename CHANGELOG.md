@@ -1740,6 +1740,6 @@ ships in the npm CLI's bundled engine; the PyPI `designesy_score` tool passes
 [1.0.4]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.4
 [1.0.3]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.3
 [1.0.2]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.2
-[1.0.1]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.1
+[1.0.1]: https://github.com/LE-VAI/designesy-org/compare/designesy-score%401.0.0...1adacfb8c1ff92173104161e5a18ebc2732ee106
 [1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.0
 [0.4.2]: https://github.com/LE-VAI/designesy-org/compare/v0.4.0...designesy-score%401.0.0
