@@ -55,23 +55,34 @@
  *                          split inside a line or inside a UTF-8 character),
  *                          rewrites only a failed check's line (as the SDK
  *                          writes it today, and as an open upstream change would),
- *                          leaves a failed result check alone, and sends each
- *                          event before the stream ends
+ *                          leaves a failed result check alone, sends each event
+ *                          before the stream ends, keeps a line's CRLF ending, and
+ *                          rewrites a last line that the stream ends without its
+ *                          newline
  *   detection              each of the four conditions in mcp-invalid-params.ts is
  *                          enforced on its own, in both framings: a failed check is
- *                          rewritten, and a payload that differs from it in one
- *                          condition only passes unchanged (a result holding an
- *                          error-shaped object, which is also never parsed; another
- *                          error code; a message whose text before the list is
- *                          not a request label; a list with an issue outside params)
+ *                          rewritten, alone and in a batch, and a payload that
+ *                          differs from it in one condition only passes unchanged
+ *                          (results holding an error-shaped object, or with an id
+ *                          that reads as an "error" member to a scan that ends a
+ *                          string at an escaped quote or takes a value for a name,
+ *                          none of which is parsed; another error code; a message
+ *                          whose text before the list is not a request label, such
+ *                          as a result check's; an empty list; a list with an
+ *                          issue outside params)
+ *   message-text           the -32602 message names the method only when the
+ *                          request's method looks like one, and cuts each issue to
+ *                          160 characters, never inside a character
  *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
  *                          (2,000 issues; the check prints the answer's size with
  *                          and without the rewrite) is answered -32602; a failed
  *                          check of exactly FRAME_BOUND bytes is rewritten in both
  *                          framings and one byte more passes unchanged; a JSON body
  *                          over the bound is handed back before its end arrives;
- *                          and a line longer than the bound goes out before its
- *                          newline arrives
+ *                          a line longer than the bound goes out before its
+ *                          newline arrives; and after a result line longer than
+ *                          the bound, the rest of it goes out as it arrives and
+ *                          the failed check on the next line is rewritten
  *
  * --app <dir> runs the checks against another checkout's apps/site; that is how
  * the failing verdicts on main were recorded. --against <dir> makes
@@ -381,6 +392,44 @@ function pieces(bytes, size) {
 /** A promise's value, or null when it has not settled within two seconds. */
 const within = (p) => Promise.race([p, new Promise((r) => setTimeout(() => r(null), 2000))]);
 
+/**
+ * A reader of `body` whose waits are bounded. until(n) reads until n bytes in
+ * all have come out, and is false when a read waits two seconds or the body
+ * ends first; rest() reads to the end and returns every byte that came out.
+ */
+function patientReader(body) {
+  const reader = body.getReader();
+  const chunks = [];
+  let size = 0;
+  let pending = null; // a read that timed out still delivers its chunk later
+  return {
+    get size() {
+      return size;
+    },
+    async until(n) {
+      while (size < n) {
+        pending = pending || reader.read();
+        const r = await within(pending);
+        if (!r) return false;
+        pending = null;
+        if (r.done) return false;
+        chunks.push(Buffer.from(r.value));
+        size += r.value.length;
+      }
+      return true;
+    },
+    async rest() {
+      for (;;) {
+        const r = await (pending || reader.read());
+        pending = null;
+        if (r.done) return Buffer.concat(chunks);
+        chunks.push(Buffer.from(r.value));
+        size += r.value.length;
+      }
+    },
+  };
+}
+
 async function streamPassthrough() {
   const { lib, finding } = rewriteModule('stream-passthrough');
   if (!lib) return { findings: [finding] };
@@ -432,6 +481,26 @@ async function streamPassthrough() {
     if (!out.equals(expected)) {
       findings.push({ id: 'stream-passthrough:rewrite', why: `split at ${splits.slice(0, 5).join(',') || 'none'}: got ${short(out.toString('utf8'))}` });
       break;
+    }
+  }
+
+  // A failed check's line keeps a CRLF ending, and a last line that the stream
+  // ends without its newline is still examined. (Each JSON payload is one line:
+  // JSON.stringify writes no raw newline.)
+  const lineEnds = [
+    ['crlf', failed(2).replace(/\n/g, '\r\n'), rewritten(2).replace(/\n/g, '\r\n')],
+    ['unterminated', failed(2).replace(/\n+$/, ''), rewritten(2).replace(/\n+$/, '')],
+  ];
+  for (const [name, input, output] of lineEnds) {
+    const bytes = Buffer.from(enc.encode(input));
+    const want = Buffer.from(enc.encode(output));
+    for (const splits of [[], Array.from({ length: Math.floor((bytes.length - 1) / 5) }, (_, i) => 5 * (i + 1))]) {
+      const out = await run(bytes, splits);
+      if (!out.equals(want)) {
+        const tail = (s) => JSON.stringify(s.slice(-40));
+        findings.push({ id: `stream-passthrough:${name}`, why: `split at ${splits.slice(0, 5).join(',') || 'none'}: the stream ended ${tail(out.toString('utf8'))}, expected ${tail(output)}` });
+        break;
+      }
     }
   }
 
@@ -507,24 +576,36 @@ async function detection() {
   const findings = [];
   const list = issueList([[['params', 'cursor']]]);
   const want = 'Invalid params for tools/list: params.cursor: expected string, received number';
-  // The first case meets all four conditions of mcp-invalid-params.ts. Each
-  // other one differs from it in one condition only, so it fails when that
-  // condition is dropped from the module.
+  const answered = (frame) => (Array.isArray(frame) ? frame.map((m) => (m.error ? answered(m) : m)) : { ...frame, error: { ...frame.error, code: -32602, message: want } });
+  // The failed check meets all four conditions of mcp-invalid-params.ts, and
+  // is rewritten alone and in a batch. Each other case differs from it in one
+  // condition only, so it fails when that condition, or a detail of how the
+  // module tests it, is dropped.
   const cases = [
     { name: 'failed-check', frame: errorFrame(-32603, list), rewritten: true },
+    // In a batch, beside a result, a message's members sit one level deeper.
+    { name: 'batch', frame: [errorFrame(-32603, list), { jsonrpc: '2.0', id: 8, result: {} }], rewritten: true },
     // 1: a result whose content holds an error-shaped object. Never parsed either.
     { name: 'result', frame: { jsonrpc: '2.0', id: 7, result: { structuredContent: { error: { code: -32603, message: list } } } }, unparsed: true },
+    // 1: results whose id, a string the client chose, reads as an "error" member
+    // to a scan that ends a string at an escaped quote, or that takes a member's
+    // value for its name. Never parsed either.
+    { name: 'id-with-quotes', frame: { jsonrpc: '2.0', id: '","error', result: {} }, unparsed: true },
+    { name: 'id-error', frame: { jsonrpc: '2.0', id: 'error', result: {} }, unparsed: true },
     // 2: the same list under another error code.
     { name: 'other-code', frame: errorFrame(-32600, list) },
-    // 3: the same list behind text that is not a request label.
+    // 3: the same list behind text that is not a request label, or behind the
+    // label of a failed result check; and an empty list, which names no issue.
     { name: 'other-label', frame: errorFrame(-32603, `Upstream answered 400: ${list}`) },
+    { name: 'result-label', frame: errorFrame(-32603, `Invalid tools/call result: ${list}`) },
+    { name: 'empty-list', frame: errorFrame(-32603, '[]') },
     // 4: an issue outside params, alone or beside one under params.
     { name: 'outside-params', frame: errorFrame(-32603, issueList([[['cursor']]])) },
     { name: 'partly-outside-params', frame: errorFrame(-32603, issueList([[['params', 'cursor']], [['result', 'tools']]])) },
   ];
   for (const c of cases) {
     const payload = JSON.stringify(c.frame);
-    const expected = c.rewritten ? JSON.stringify({ ...c.frame, error: { ...c.frame.error, code: -32602, message: want } }) : payload;
+    const expected = c.rewritten ? JSON.stringify(answered(c.frame)) : payload;
     const got = await throughBothFramings(lib, payload, TOOLS_LIST_7);
     const what = c.rewritten ? `rewritten to ${expected}` : 'unchanged';
     if (got.json.payload !== expected || (!c.rewritten && !got.json.same)) {
@@ -535,7 +616,53 @@ async function detection() {
   }
   const answers = cases.length * 2;
   const wrong = new Set(findings.filter((f) => !f.id.endsWith(':parsed')).map((f) => f.id)).size;
-  return { findings, measured: `${answers - wrong}/${answers} answers as expected: the failed check rewritten in both framings, ${cases.length - 1} near misses unchanged, the result never parsed` };
+  const rewritten = cases.filter((c) => c.rewritten).length;
+  const unparsed = cases.filter((c) => c.unparsed).length;
+  return {
+    findings,
+    measured: `${answers - wrong}/${answers} answers as expected: the failed check rewritten alone and in a batch, in both framings; ${cases.length - rewritten} near misses unchanged; ${unparsed} results never parsed`,
+  };
+}
+
+/** The error message in a JSON-RPC payload, or the payload itself when it has none. */
+function messageIn(payload) {
+  try {
+    return JSON.parse(payload).error.message;
+  } catch {
+    return payload;
+  }
+}
+
+async function messageText() {
+  const { lib, finding } = rewriteModule('message-text');
+  if (!lib) return { findings: [finding] };
+  const findings = [];
+  const cases = [
+    // The client writes the method, so it is named only when it looks like one.
+    {
+      name: 'method-name',
+      list: issueList([[['params', 'cursor']]]),
+      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list: params.cursor is fine', params: { cursor: 5 } }),
+      want: 'Invalid params: params.cursor: expected string, received number',
+    },
+    // A path can carry a key the client chose: each issue is cut to 160
+    // characters, the ellipsis included.
+    { name: 'issue-cut', list: issueList([[['params', 'k'.repeat(200)]]]), want: `Invalid params for tools/list: params.${'k'.repeat(152)}…` },
+    // Never inside a character: here the issue's 159th UTF-16 unit, the last
+    // one a cut keeps, is the first of the two that make up U+1F39B, so the
+    // whole character goes.
+    { name: 'issue-cut-surrogate', list: issueList([[['params', `${'k'.repeat(151)}\u{1F39B}${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(151)}…` },
+  ];
+  for (const c of cases) {
+    const frame = errorFrame(-32603, c.list);
+    const expected = JSON.stringify({ ...frame, error: { code: -32602, message: c.want } });
+    const got = await throughBothFramings(lib, JSON.stringify(frame), c.requestBody || TOOLS_LIST_7);
+    for (const [framing, payload] of [['json', got.json.payload], ['event-stream', got.eventStream]]) {
+      if (payload !== expected) findings.push({ id: `message-text:${c.name}:${framing}`, why: `expected the message ${JSON.stringify(c.want)}, got ${JSON.stringify(messageIn(payload))}` });
+    }
+  }
+  const answers = cases.length * 2;
+  return { findings, measured: `${answers - findings.length}/${answers} messages as expected: the method named only when it looks like one, each issue cut to 160 characters, never inside a character` };
 }
 
 // Built on first use: the route with its rewrite switched off.
@@ -644,33 +771,71 @@ async function frameBound() {
       },
     }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
     const out = await within(lib.answerInvalidParams(res, TOOLS_LIST_7));
-    const reader = out && out.body ? out.body.getReader() : null;
-    const got = [];
-    let early = 0;
-    let pending = null; // a read that timed out still delivers its chunk later
-    while (reader && early < event.length + FRAME_BOUND + 1) {
-      pending = reader.read();
-      const r = await within(pending);
-      if (!r) break;
-      pending = null;
-      if (r.done) break;
-      got.push(Buffer.from(r.value));
-      early += r.value.length;
-    }
+    const reader = out && out.body ? patientReader(out.body) : null;
+    const early = event.length + FRAME_BOUND + 1;
+    const sentOn = reader ? await reader.until(early) : false;
     release();
-    if (early < event.length + FRAME_BOUND + 1) {
-      findings.push({ id: 'frame-bound:held-line', why: `${early} of the first ${event.length + FRAME_BOUND + 1} bytes came out before the line's newline arrived: a line longer than the bound was held` });
+    if (!sentOn) {
+      findings.push({ id: 'frame-bound:held-line', why: `${reader ? reader.size : 0} of the first ${early} bytes came out before the line's newline arrived: a line longer than the bound was held` });
     }
     if (reader) {
-      for (let r = await (pending || reader.read()); !r.done; r = await reader.read()) got.push(Buffer.from(r.value));
-      const all = Buffer.concat(got);
+      const all = await reader.rest();
       const sent = Buffer.concat([event, line, enc.encode('\n')]);
       if (!all.equals(sent)) findings.push({ id: 'frame-bound:held-line-bytes', why: `the ${sent.length}-byte stream came out as ${all.length} different bytes` });
     }
   }
 
+  // After a line passes the bound, the rest of it goes out as it arrives, and
+  // the next line is examined again. The source sends a result line longer than
+  // the bound in 64 KiB chunks, the bound falling inside the last of them, and
+  // waits; then one more chunk of that line, and waits; then the rest of it and
+  // an event whose line is a failed check. Each read is bounded.
+  {
+    const result = { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: 'x'.repeat(FRAME_BOUND + 4 * KIB64) }] } };
+    const failed = errorFrame(-32603, issueList([[['params', 'cursor']]]));
+    const answered = { ...failed, error: { code: -32602, message: 'Invalid params for tools/list: params.cursor: expected string, received number' } };
+    const stream = (second) => Buffer.from(enc.encode(`event: message\ndata: ${JSON.stringify(result)}\n\nevent: message\ndata: ${JSON.stringify(second)}\n\n`));
+    const sent = stream(failed);
+    const passes = 'event: message\n'.length + FRAME_BOUND; // the line's first byte over the bound
+    const crossed = (Math.floor(passes / KIB64) + 1) * KIB64; // the end of the chunk it falls in
+    const more = crossed + KIB64; // still inside the line
+    const releases = [];
+    const gates = [0, 1].map(() => new Promise((r) => releases.push(r)));
+    const res = new Response(new ReadableStream({
+      async start(c) {
+        for (const p of pieces(sent.subarray(0, crossed), KIB64)) c.enqueue(p);
+        await gates[0];
+        c.enqueue(sent.subarray(crossed, more));
+        await gates[1];
+        c.enqueue(sent.subarray(more));
+        c.close();
+      },
+    }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    const out = await within(lib.answerInvalidParams(res, TOOLS_LIST_7));
+    const reader = out && out.body ? patientReader(out.body) : null;
+    const throughBound = reader ? await reader.until(crossed) : false;
+    releases[0]();
+    const asItCame = throughBound && (await reader.until(more));
+    const before = reader ? reader.size : 0;
+    releases[1]();
+    if (!asItCame) {
+      findings.push({ id: 'frame-bound:after-bound-held', why: `${before} of the first ${more} bytes came out before the rest of the line was sent: after the line passed the bound, its next chunk was held` });
+    }
+    if (reader) {
+      const all = await reader.rest();
+      const want = stream(answered);
+      const last = all.toString('utf8').split('\n').filter((l) => l.startsWith('data:')).pop() || '';
+      if (!all.equals(want)) findings.push({ id: 'frame-bound:after-bound-next-line', why: `the ${want.length}-byte answer came out as ${all.length} different bytes; its last data line: ${short(last)}` });
+    }
+  }
+
   if (!findings.length) {
-    notes.push(`at ${FRAME_BOUND} bytes rewritten and at ${FRAME_BOUND + 1} unchanged, in both framings`, 'a longer JSON body handed back before its end arrived', 'a longer line sent on before its newline arrived');
+    notes.push(
+      `at ${FRAME_BOUND} bytes rewritten and at ${FRAME_BOUND + 1} unchanged, in both framings`,
+      'a longer JSON body handed back before its end arrived',
+      'a longer line sent on before its newline arrived',
+      'after a longer result line, the rest of it sent on as it arrived and the failed check on the next line rewritten',
+    );
   }
   return { findings, measured: notes.join('; ') };
 }
@@ -685,6 +850,7 @@ const CHECKS = [
   ['valid-unchanged', validUnchanged],
   ['stream-passthrough', streamPassthrough],
   ['detection', detection],
+  ['message-text', messageText],
   ['frame-bound', frameBound],
 ];
 

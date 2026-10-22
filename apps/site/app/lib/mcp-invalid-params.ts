@@ -57,8 +57,9 @@
 //
 // scripts/check-mcp-protocol-errors.js drives the real route through the real
 // SDK and holds this behaviour: the rewrite and what it leaves alone, each of
-// the four conditions on its own, the 2,000-issue answer, and the bound (a
-// payload of exactly MAX_FRAME_BYTES is rewritten, one byte more is not).
+// the four conditions on its own, the message's text, the 2,000-issue answer,
+// and the bound (a payload of exactly MAX_FRAME_BYTES is rewritten, one byte
+// more is not, and the line after a longer one is examined again).
 //
 // IMPORT-FREE, so a gate can load it on its own.
 
