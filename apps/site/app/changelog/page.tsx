@@ -858,7 +858,7 @@ export default function ChangelogPage() {
               if (count === 0 && dim !== 'all') return null;
               return (
                 <a key={dim} href={`#dim-${dim}`} className="changelog-tab" data-dimension={dim}>
-                  {DIMENSION_LABELS[dim]}{' '}
+                  {`${DIMENSION_LABELS[dim]} `}
                   <span className="changelog-tab-count">{count}</span>
                 </a>
               );

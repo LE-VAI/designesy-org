@@ -71,7 +71,7 @@ export default function FrameworksIndexPage() {
             {GROUPS.map((g) => (
               <li key={g.name}>
                 <a href={`#${idOf(g.name)}`}>
-                  {g.name} <span className="dx-num">{g.sites.length}</span>
+                  {`${g.name} `}<span className="dx-num">{g.sites.length}</span>
                 </a>
               </li>
             ))}

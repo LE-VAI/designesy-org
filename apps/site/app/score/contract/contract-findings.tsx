@@ -103,10 +103,7 @@ function Row({
           </span>
           {fid && c.reads?.length ? (
             <span className="cf-reads">
-              Reads{' '}
-              {c.reads.map((r) => (
-                <code key={r}>{r}</code>
-              ))}
+              Reads {c.reads.map((r) => <code key={r}>{r}</code>)}
             </span>
           ) : null}
           <span className="eg-row-detail">{display(rowDetail(c, coverage, thresholds))}</span>

@@ -332,8 +332,7 @@ function EngineTile({
           <span className="score-engine-tile-grade">
             {grade}
             <span className="score-engine-tile-score">
-              {' '}
-              {fmtScore(score)}
+              {` ${fmtScore(score)}`}
               <small>/100</small>
             </span>
           </span>
@@ -1248,10 +1247,7 @@ export function VerifyForm({
                 onClick={() => setFilterStatus('ALL')}
                 aria-pressed={filterStatus === 'ALL'}
               >
-                All{' '}
-                <span className="score-tab-count">
-                  {activeChecks.length}
-                </span>
+                All <span className="score-tab-count">{activeChecks.length}</span>
               </button>
               <button
                 type="button"
@@ -1259,7 +1255,7 @@ export function VerifyForm({
                 onClick={() => setFilterStatus('PASS')}
                 aria-pressed={filterStatus === 'PASS'}
               >
-                {STATUS_LABEL.PASS}{' '}
+                {`${STATUS_LABEL.PASS} `}
                 <span className="score-tab-count">
                   {activeChecks.filter((c) => c.status === 'PASS').length}
                 </span>
@@ -1271,7 +1267,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('FAIL')}
                   aria-pressed={filterStatus === 'FAIL'}
                 >
-                  {STATUS_LABEL.FAIL}{' '}
+                  {`${STATUS_LABEL.FAIL} `}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'FAIL').length}
                   </span>
@@ -1284,7 +1280,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('WARN')}
                   aria-pressed={filterStatus === 'WARN'}
                 >
-                  {STATUS_LABEL.WARN}{' '}
+                  {`${STATUS_LABEL.WARN} `}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'WARN').length}
                   </span>
@@ -1297,7 +1293,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('MANUAL')}
                   aria-pressed={filterStatus === 'MANUAL'}
                 >
-                  {STATUS_LABEL.MANUAL}{' '}
+                  {`${STATUS_LABEL.MANUAL} `}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'MANUAL').length}
                   </span>
@@ -1310,7 +1306,7 @@ export function VerifyForm({
                   onClick={() => setFilterStatus('SKIP')}
                   aria-pressed={filterStatus === 'SKIP'}
                 >
-                  {STATUS_LABEL.SKIP}{' '}
+                  {`${STATUS_LABEL.SKIP} `}
                   <span className="score-tab-count">
                     {activeChecks.filter((c) => c.status === 'SKIP').length}
                   </span>

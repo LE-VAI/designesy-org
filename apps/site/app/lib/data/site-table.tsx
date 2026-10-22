@@ -58,7 +58,7 @@ export function SiteTable({
               <th scope="row" className="dx-rank-site">
                 {s.slug === current ? (
                   <span className="dx-rank-here">
-                    {s.name} <span className="dx-tag">this page</span>
+                    {`${s.name} `}<span className="dx-tag">this page</span>
                   </span>
                 ) : (
                   <Link href={`/frameworks/${s.slug}`}>{s.name}</Link>
