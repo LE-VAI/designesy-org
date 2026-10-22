@@ -58,10 +58,11 @@
  *   guardrails-dtcg      the emitted token file uses the export's $schema, DTCG
  *                        {group.token} aliases that resolve, structured colors,
  *                        only DTCG types, dimensions and shadow lengths as
- *                        { value, unit } in px or rem (a unitless 0 as 0px, a
- *                        length in another unit kept as CSS), loses no
- *                        declaration, and the server's own tokens validator
- *                        gives it 0 WARN and 0 FAIL
+ *                        { value, unit } in px or rem (a unitless 0 as 0px;
+ *                        em, %, vw and pt lengths, and a shadow with an em
+ *                        length, kept as CSS), loses no declaration, and the
+ *                        server's own tokens validator gives it 0 WARN and
+ *                        0 FAIL
  *   tokens-warn-half     a WARN counts half, and the result, the tool
  *                        description and the contract all state it, as the
  *                        motion tool does
@@ -403,11 +404,13 @@ async function guardrailsDtcg() {
   // The fixture site's unitless 0s are all shadow offsets, and its one length
   // in a unit other than px or rem (4vw) is inside --gutter's clamp(), which
   // stays CSS for the clamp(). So the converter is also given a 0 on a length
-  // name, which is { value: 0, unit: 'px' }, and lengths in em, %, vw and pt,
-  // alone and in a shadow, which have no 2025.10 form and stay CSS. Those
+  // name, which is { value: 0, unit: 'px' }, and values with no 2025.10 form,
+  // which stay CSS: lengths in em, %, vw and pt on their own, and one shadow
+  // with an em length (em is the only unit tried inside a shadow). Those
   // stop at the converter's own patterns (DIMENSION alone, SHADOW in a
   // shadow) before parseDimension runs, so parseDimension, which
-  // /export/dtcg also calls, is given each of them and a unitless 1 itself.
+  // /export/dtcg also calls, is given 2em, 50%, 10vw, 12pt and a unitless 1
+  // itself.
   const dtcg = h.load('app/lib/dtcg.ts');
   const units = dtcg.cssTokensToDtcg(
     { '--space-0': '0', '--inset': '2em', '--size-half': '50%', '--width-wide': '10vw', '--size-print': '12pt', '--shadow-em': '0 1em 2px #000' },
