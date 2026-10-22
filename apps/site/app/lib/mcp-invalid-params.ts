@@ -33,18 +33,20 @@
 // The unit examined is one payload: a JSON body, or one event-stream line with
 // its newline. A payload is parsed only when condition 1 holds for a message in
 // it, which holdsError decides by stepping over the text's strings and nested
-// values without parsing them, so a payload with no error in it is never
-// parsed, whatever it holds. A payload is held and examined only while it is at
-// most MAX_FRAME_BYTES (4 MiB). A longer one passes on unchanged, failed check
-// or not, and is never held whole: of a JSON body, reading stops at the chunk
-// that passes the bound; of a line, what has arrived goes out as soon as it
-// passes the bound, and the rest follows as it arrives. A failed check's answer
-// grows with its issues, each one a pretty-printed object. With the versions
-// above and zod 4.6.5, an initialize whose clientInfo.icons holds 2,000
-// numbers fails with 2,000 issues in a 482,977-byte answer, which is
-// rewritten; at 17,305 numbers the line is 4,194,076 bytes and still
-// rewritten; at 17,306 it is 4,194,319 bytes, over the bound, and that answer
-// passes unchanged, still -32603.
+// values without parsing them. A payload with no error in it is therefore never
+// parsed, whatever it holds, unless a top-level member name holds a backslash
+// escape (no name the SDK writes does): that payload is parsed to be sure.
+//
+// A payload is held and examined only while it is at most MAX_FRAME_BYTES
+// (4 MiB). A longer one passes on unchanged, failed check or not, and is never
+// held whole: of a JSON body, reading stops at the chunk that passes the bound;
+// of a line, what has arrived goes out as soon as it passes the bound, and the
+// rest follows as it arrives. A failed check's answer grows with its issues,
+// each one a pretty-printed object. With the versions above and zod 4.6.5, an
+// initialize whose clientInfo.icons holds 2,000 numbers fails with 2,000
+// issues in a 482,977-byte answer, which is rewritten; at 17,305 numbers the
+// line is 4,194,076 bytes and still rewritten; at 17,306 it is 4,194,319
+// bytes, over the bound, and that answer passes unchanged, still -32603.
 //
 // NOT REWRITTEN: a tools/call whose arguments fail a tool's input schema. The
 // SDK answers it with a tool result, isError: true ("Input validation error:
@@ -90,7 +92,10 @@ const MAX_FRAME_BYTES = 4 * 1024 * 1024;
 /** At most this many issues are named; the rest are counted. */
 const MAX_ISSUES = 3;
 
-/** An issue's text is cut to this length: a path can carry a key the client chose. */
+/**
+ * An issue's text is cut to at most this length, ellipsis included, and never
+ * inside a character: a path can carry a key the client chose.
+ */
 const MAX_ISSUE_CHARS = 160;
 
 const NEWLINE = 0x0a;
@@ -199,7 +204,13 @@ function issueText(issue: Issue): string {
   } else {
     text = `${where}: ${plain(issue.message.replace(/^Invalid input: /, ''))}`;
   }
-  return text.length > MAX_ISSUE_CHARS ? `${text.slice(0, MAX_ISSUE_CHARS - 1)}…` : text;
+  if (text.length <= MAX_ISSUE_CHARS) return text;
+  // A character outside the Basic Multilingual Plane is two UTF-16 units: when
+  // the last unit kept would be the first of a pair, the pair is dropped whole.
+  let cut = MAX_ISSUE_CHARS - 1;
+  const last = text.charCodeAt(cut - 1);
+  if (last >= 0xd800 && last <= 0xdbff) cut--;
+  return `${text.slice(0, cut)}…`;
 }
 
 /** The -32602 message for a request whose params failed the schema. */
