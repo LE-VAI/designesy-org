@@ -171,19 +171,24 @@ describe(`DTCG 2025.10 format suite manifest at ${SUITE_COMMIT.slice(0, 7)}`, ()
 
   it('LICENSE.md names SUITE_COMMIT, and no other commit, in the pinned-commit line and in the tree URL line', () => {
     const lines = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8').split(/\r?\n/);
-    // A commit is any run of 7 or more hex digits, so a short hash counts too.
-    const commits = (line) => line.match(/\b[0-9a-f]{7,}\b/gi) ?? [];
-    const treeUrl = 'github.com/design-tokens/community-group/tree/';
+    // A commit is any run of 7 or more hex digits that no other hex digit
+    // borders. A short hash counts, and so does a hash right after a letter or
+    // an underscore, such as the g0000000 in a git describe name.
+    const commits = (line) => line.match(/(?<![0-9a-f])[0-9a-f]{7,}(?![0-9a-f])/gi) ?? [];
+    // Both places are found ignoring case, so a second "Pinned at commit" line,
+    // or a second tree URL spelled GitHub.com, counts as a second place.
+    const pinned = /pinned\s+at\s+commit/i;
+    const treeUrl = /github\.com\/design-tokens\/community-group\/tree\//i;
     // Each place must be one line that names SUITE_COMMIT once, in the
     // backticks or as the URL's commit segment, and names no other commit. A
     // place that is missing, repeated or names another commit fails, wherever
     // else the file names SUITE_COMMIT.
     const places = {
       pinnedCommitLine: lines
-        .filter((l) => l.includes('pinned at commit'))
-        .map((l) => ({ backticked: l.match(/pinned at commit\s+`([^`]*)`/)?.[1] ?? null, commits: commits(l) })),
+        .filter((l) => pinned.test(l))
+        .map((l) => ({ backticked: l.match(/pinned\s+at\s+commit\s+`([^`]*)`/i)?.[1] ?? null, commits: commits(l) })),
       treeUrlLine: lines
-        .filter((l) => l.includes(treeUrl))
+        .filter((l) => treeUrl.test(l))
         .map((l) => ({ urlCommits: l.split(treeUrl).slice(1).map((s) => s.split(/[/\s]/)[0]), commits: commits(l) })),
     };
     assert.deepEqual(
