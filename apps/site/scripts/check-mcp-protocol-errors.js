@@ -55,6 +55,13 @@
  *                          writes it today, and as an open upstream change would),
  *                          leaves a failed result check alone, and sends each
  *                          event before the stream ends
+ *   detection              each of the four conditions in mcp-invalid-params.ts is
+ *                          enforced on its own, in both framings: a failed check is
+ *                          rewritten, and a payload that differs from it in one
+ *                          condition only passes unchanged (a result holding an
+ *                          error-shaped object; another error code; a message
+ *                          whose text before the list is not a request label; a
+ *                          list with an issue outside params)
  *
  * --app <dir> runs the checks against another checkout's apps/site; that is how
  * the failing verdicts on main were recorded. --against <dir> makes
@@ -67,6 +74,7 @@
 
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const { createHarness } = require('./lib/route-harness');
@@ -324,13 +332,33 @@ async function validUnchanged() {
   return { findings, measured: `${cases.length - findings.length}/${cases.length} answers identical to ${ref}, ${bytes} bytes` };
 }
 
-async function streamPassthrough() {
-  let lib;
+/** The rewrite module of the tree under test, or a finding for `check` when it is not there. */
+function rewriteModule(check) {
+  // Checked first: the harness caches a module whose file is missing as empty.
+  if (!fs.existsSync(path.join(APP, LIB))) return { finding: { id: `${check}:module`, why: `${LIB} is not in this tree` } };
   try {
-    lib = harness.load(LIB);
+    return { lib: harness.load(LIB) };
   } catch (e) {
-    return { findings: [{ id: 'stream-passthrough:module', why: `${LIB} did not load: ${e && e.message ? e.message : e}` }] };
+    return { finding: { id: `${check}:module`, why: `${LIB} did not load: ${e && e.message ? e.message : e}` } };
   }
+}
+
+/** A Response whose body is these chunks, in order. */
+function chunked(chunks, type) {
+  return new Response(new ReadableStream({
+    start(c) {
+      for (const ch of chunks) c.enqueue(ch);
+      c.close();
+    },
+  }), { status: 200, headers: { 'content-type': type } });
+}
+
+/** A promise's value, or null when it has not settled within two seconds. */
+const within = (p) => Promise.race([p, new Promise((r) => setTimeout(() => r(null), 2000))]);
+
+async function streamPassthrough() {
+  const { lib, finding } = rewriteModule('stream-passthrough');
+  if (!lib) return { findings: [finding] };
   const findings = [];
   const issues = (path, expected) => JSON.stringify([{ expected, code: 'invalid_type', path, message: `Invalid input: expected ${expected}, received undefined` }], null, 2);
   const result = 'event: message\ndata: {"result":{"content":[{"type":"text","text":"Grüße, 日本語, ✓ and an emoji 🎛"}]},"jsonrpc":"2.0","id":1}\n\n';
@@ -347,12 +375,6 @@ async function streamPassthrough() {
     { jsonrpc: '2.0', id: 5, method: 'initialize', params: {} },
   ]);
   const enc = new TextEncoder();
-  const sse = (chunks) => new Response(new ReadableStream({
-    start(c) {
-      for (const ch of chunks) c.enqueue(ch);
-      c.close();
-    },
-  }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
   const run = async (bytes, splits) => {
     const chunks = [];
     let at = 0;
@@ -360,7 +382,7 @@ async function streamPassthrough() {
       chunks.push(bytes.slice(at, s));
       at = s;
     }
-    const out = await lib.answerInvalidParams(sse(chunks), requestBody);
+    const out = await lib.answerInvalidParams(chunked(chunks, 'text/event-stream'), requestBody);
     return Buffer.from(await out.arrayBuffer());
   };
 
@@ -403,7 +425,6 @@ async function streamPassthrough() {
       c.close();
     },
   }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
-  const within = (p) => Promise.race([p, new Promise((r) => setTimeout(() => r(null), 2000))]);
   const answered = await within(lib.answerInvalidParams(held, requestBody));
   const reader = answered && answered.body ? answered.body.getReader() : null;
   const first = reader ? await within(reader.read()) : null;
@@ -422,6 +443,64 @@ async function streamPassthrough() {
   return { findings, measured: `${cleanRuns} chunkings of a ${clean.length}-byte stream` };
 }
 
+/** An issue list as the SDK writes one into a message: pretty-printed JSON. */
+function issueList(issues) {
+  return JSON.stringify(issues.map(([path, message = 'Invalid input: expected string, received number']) => ({ expected: 'string', code: 'invalid_type', path, message })), null, 2);
+}
+
+/** A JSON-RPC error answering request 7. */
+const errorFrame = (code, message) => ({ jsonrpc: '2.0', id: 7, error: { code, message } });
+
+/** The request body the module-level cases answer: request 7 is a tools/list. */
+const TOOLS_LIST_7 = JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list', params: { cursor: 5 } });
+
+/** One payload through answerInvalidParams in each framing: the payload it answers with in each. */
+async function throughBothFramings(lib, payload, requestBody) {
+  const enc = new TextEncoder();
+  const res = new Response(payload, { status: 200, headers: { 'content-type': 'application/json' } });
+  const out = await lib.answerInvalidParams(res, requestBody);
+  const json = out === res ? { same: true, payload } : { same: false, payload: await out.text() };
+  const stream = await lib.answerInvalidParams(chunked([enc.encode(`event: message\ndata: ${payload}\n\n`)], 'text/event-stream'), requestBody);
+  const text = Buffer.from(await stream.arrayBuffer()).toString('utf8');
+  const line = /^event: message\ndata: (.*)\n\n$/s.exec(text);
+  return { json, eventStream: line ? line[1] : `(not one event: ${short(text)})` };
+}
+
+async function detection() {
+  const { lib, finding } = rewriteModule('detection');
+  if (!lib) return { findings: [finding] };
+  const findings = [];
+  const list = issueList([[['params', 'cursor']]]);
+  const want = 'Invalid params for tools/list: params.cursor: expected string, received number';
+  // The first case meets all four conditions of mcp-invalid-params.ts. Each
+  // other one differs from it in one condition only, so it fails when that
+  // condition is dropped from the module.
+  const cases = [
+    { name: 'failed-check', frame: errorFrame(-32603, list), rewritten: true },
+    // 1: a result whose content holds an error-shaped object.
+    { name: 'result', frame: { jsonrpc: '2.0', id: 7, result: { structuredContent: { error: { code: -32603, message: list } } } } },
+    // 2: the same list under another error code.
+    { name: 'other-code', frame: errorFrame(-32600, list) },
+    // 3: the same list behind text that is not a request label.
+    { name: 'other-label', frame: errorFrame(-32603, `Upstream answered 400: ${list}`) },
+    // 4: an issue outside params, alone or beside one under params.
+    { name: 'outside-params', frame: errorFrame(-32603, issueList([[['cursor']]])) },
+    { name: 'partly-outside-params', frame: errorFrame(-32603, issueList([[['params', 'cursor']], [['result', 'tools']]])) },
+  ];
+  for (const c of cases) {
+    const payload = JSON.stringify(c.frame);
+    const expected = c.rewritten ? JSON.stringify({ ...c.frame, error: { ...c.frame.error, code: -32602, message: want } }) : payload;
+    const got = await throughBothFramings(lib, payload, TOOLS_LIST_7);
+    const what = c.rewritten ? `rewritten to ${expected}` : 'unchanged';
+    if (got.json.payload !== expected || (!c.rewritten && !got.json.same)) {
+      findings.push({ id: `detection:${c.name}:json`, why: `expected ${what}${c.rewritten ? '' : ' (the same Response)'}, got ${short(got.json.payload)}` });
+    }
+    if (got.eventStream !== expected) findings.push({ id: `detection:${c.name}:event-stream`, why: `expected ${what}, got ${short(got.eventStream)}` });
+  }
+  const answers = cases.length * 2;
+  return { findings, measured: `${answers - findings.length}/${answers} answers as expected: the failed check rewritten in both framings, ${cases.length - 1} near misses unchanged` };
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const CHECKS = [
@@ -431,6 +510,7 @@ const CHECKS = [
   ['modern-clientInfo-optional', modernClientInfoOptional],
   ['valid-unchanged', validUnchanged],
   ['stream-passthrough', streamPassthrough],
+  ['detection', detection],
 ];
 
 async function main() {
