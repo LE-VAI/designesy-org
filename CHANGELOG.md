@@ -15,14 +15,6 @@ Module 8.2), so the format's JSON Schema rejected those tokens. Tokens
 contract 0.1.3 WARNs on the dimension tokens in t08 and t10; it does not read
 a shadow's lengths, so strings there did not lower the score.
 
-Caveat: the hosted route caches each URL's result for 24 hours
-(`unstable_cache`, `revalidate: 86400`, tag `guardrails`), and
-`/api/admin/purge` clears the `score` tag only. A URL whose result was
-cached before the deploy can keep returning the string form until that
-entry is 24 hours old, and after that every request that reads the stale
-entry still gets the string form until a refreshed result has been
-written (the refresh runs in the background).
-
 Caveat: `@designesy/stylelint-plugin-dtcg-tokens` 0.2.2, the version on
 npm, reads a `{ value, unit }` dimension as no CSS value, so with this
 token file its `no-magic-number` rule still flags a length such as `8px`
@@ -56,6 +48,16 @@ users get that from the first plugin release after 0.2.2.
 - `/export/dtcg` takes the shadow objects from the shared parser
   (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
   byte.
+- **A result cached before the deploy is not served.** The hosted route keeps
+  each URL's result for 24 hours (`unstable_cache`, `revalidate: 86400`). Its
+  cache key now has a second part naming the result's format,
+  `dtcg-objects-1`, so the first request for each URL after the deploy
+  computes a new result. The rest of the key, the name
+  `designesy-guardrails` and the cached function's source text, need not
+  change when only the token file does, and `/api/admin/purge` clears the
+  `score` tag only; without the new part, a result cached in the string form
+  could have been served until it was 24 hours old, and after that until a
+  background refresh replaced it.
 
 ### Gates (guardrails)
 
