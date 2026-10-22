@@ -6,12 +6,139 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
+DTCG 2025.10 Format Module does** (the hosted `/api/mcp`, and the PyPI server
+from designesy-mcp 1.13.10, below). Scores move for files that
+type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
+leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
+write dimensions as strings.
+
+Until 1.13.10 is published, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+but names them from the contract it fetches from this site, so its results
+say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
+A file with no `$schema` FAILs t01 under a name that calls `$schema` a
+Designesy policy, and t08 passes `"4px"` under a name that asks for
+`{ value, unit }`. Publishing 1.13.10 closes the gap.
+
+### Fixed (tokens contract 0.1.3)
+
+- **A token takes the type of its group.** Both servers counted only a
+  `$type` written on the token. The Format Module gives a token with no
+  `$type` the type of the token it references, else the closest `$type` on
+  the groups above it (5.2.2), and a group that `$extends` another takes that
+  group's type (6.7.3). So a conformant file that typed its groups failed t03
+  and t06, and t05 and t08 never saw its colours and dimensions. Of the 93
+  valid (positive) files in the DTCG 2025.10 test suite, 13 failed t03 and 12
+  failed t06, scoring 50 to 71; `group/type-inheritance.json` scored 71 (C) on
+  both servers. Now none fails t03 or t06: 92 score 100, and the 93rd, a file
+  holding only an empty group, scores 60. With no tokens t03 is SKIP, as t06
+  already was.
+- **A `{ $type, $ref }` token is a token, and a JSON Pointer `$ref` is not a
+  deprecated pattern.** An object with a `$ref` and no `$value` was read as a
+  group, so the two `$ref` tokens in the format's own JSON Pointer example
+  were not counted, and a `$ref` beside a `$value` was reported in t10 as
+  "deprecated $ref syntax". Tools must support JSON Pointer `$ref` (7.1.2).
+  t10 now reports a `$ref` that is not a pointer (`#/...`), such as a dot
+  path.
+- **t04 checks that each token has one value.** It counts a token with one
+  `$value` or `$ref`. It FAILs a token that has both, which the 2025.10 token
+  schema does not allow, and a JSON Pointer that names no location in the
+  file or loops back: tools must validate reference targets and detect loops
+  (7.5.1, 7.2.3). A pointer reads array items by index, and where it reads
+  the `$value` of a `$ref` token it follows that `$ref` (7.2.2). Until now
+  t04 failed only a file with no tokens.
+- **The whole file is scored.** A file with a top-level group named `tokens`
+  (or a `$tokens` key) was scored on that group alone, and every other group
+  was ignored. Neither name means anything in DTCG: `tokens` is now a group
+  like any other, and `$tokens`, like every `$` key, holds no tokens.
+- **A missing `$schema` is a WARN, named as Designesy policy.** t01 failed a
+  file without `$schema` and said "DTCG 2025.10 requires $schema". The
+  Format Module does not define `$schema`, and the official 2025.10 JSON
+  Schema notes that it is not part of the specification. The contract's
+  `schema_property`, which said DTCG marks it SHOULD, now says so.
+- **t08 expects the 2025.10 dimension form.** A dimension is
+  `{ value, unit }` with `px` or `rem` (8.2). t08 passed any string ending in a
+  CSS unit (`"16px"`, `"2em"`) and the object form with any CSS unit. It now
+  passes `{ value, unit }` in px or rem, reports a string with a CSS unit as
+  the legacy form (a WARN, also listed in t10), and FAILs only when no
+  dimension value is usable. t10's advice leads to a t08 PASS: a `px` or
+  `rem` string is told to write `{ value, unit }`, a string in another unit
+  that a 2025.10 dimension takes px or rem, and a bare number, which was told
+  to include a unit string, to write `{ value, unit }` in px or rem.
+- **A chain of references is followed once.** t08 walked the whole chain of
+  each dimension alias, so 5,000 chained aliases took 3.7 to 5.4 seconds to
+  score in the hosted port and 12 to 16 in the PyPI port (several runs, one
+  machine). Each chain of aliases, JSON
+  Pointers or `$extends` is now followed once per file, in a loop: the same
+  file scores in 10 to 14 ms in the hosted port and 34 to 48 ms in the PyPI
+  port, and
+  every 5,000-long chain of aliases, pointers, dimension aliases or
+  `$extends` in under 100 ms.
+- **The tool description no longer says `$description` is checked.** No
+  check reads it. Both servers' descriptions now name what the checks read.
+
+### Changed (tokens contract 0.1.3)
+
+- Tokens contract 0.1.2 to 0.1.3. t01, t04, t08 and t10 are named for what
+  they check, and t01 has no FAIL; `schema_property` and the open item on
+  references are rewritten, and the scoring note says how a type is found.
+  Every result carries the new check names.
+
+### Scores that move (tokens contract 0.1.3)
+
+Measured with both servers on the shared fixtures in
+`packages/designesy-mcp/test/fixtures/tokens/` (the two agree on every file):
+
+| File | Before | After | Why |
+|---|---|---|---|
+| `type-inheritance.json` (new) | 71 C | 100 A | group types, `$extends` and untyped aliases |
+| `json-pointer-ref.json` (new) | 71 C | 94 A | four `$ref` tokens counted; t10 WARNs on a dot-path `$ref` |
+| `legacy-dimensions.json` (new) | 71 C | 88 B | group-typed; t08 and t10 WARN on `"16px"` |
+| `tokens-group.json` (new) | 100 A | 83 B | the ignored group's bare-number dimension is now read |
+| `empty-group.json` (new) | 50 F | 60 D | t03 SKIP with no tokens |
+| `guardrails-emitted.json` | 100 A | 89 B | five string dimensions (`"4px"`, `"1rem"`) WARN in t08 and t10 |
+| `bare-hex-ref.json` | 81 B | 69 D | its one token has both `$value` and `$ref`: t04 FAIL |
+| `js-key-order.json` | 65 D | 55 F | one token has both `$value` and `$ref`: t04 FAIL |
+| `empty.json`, `schema-host-apex.json` | 33 F | 40 F | t03 SKIP with no tokens |
+| the three other `schema-host-*.json` | 25 F | 30 F | t03 SKIP with no tokens |
+
+`site-export.json` (the site's `/export/dtcg`) stays at 100, and the other
+five fixtures keep their scores.
+
+- `designesy_guardrails` still writes dimensions as strings, so the token
+  file it emits now scores 89 with no FAIL. The emitter is not changed here.
+- On the 127 invalid (negative) files of the same suite, 7 scores drop and
+  10 rise. The drops are files now caught: `dimension-wrong-unit.json` by t08
+  (100 to 88), and by t04 a token with both `$value` and `$ref` (94 to 88)
+  and five pointers that name nothing (100 to 86 or 88). Main scored nine of
+  the rises 50, having read each `$ref` token as a group: they now score 86
+  or 93, with t04 or t10 naming the `$ref`. The tenth, whose only token has
+  a name that starts with `$`, scores 60 (t03 SKIP with no tokens). None
+  reaches 100.
+
+### Gates (tokens contract 0.1.3)
+
+- The shared golden gains the five new fixtures. `valid.json`, `invalid.json`
+  and `bare-hex-ref.json` lose their `$tokens` wrapper, which only the removed
+  shortcut read; `valid.json`, `nine-pass-one-skip.json` and `aliases.json`
+  write dimensions as `{ value, unit }`; `contract.json` is regenerated from
+  the site.
+- `test/test_tokens_score.py` and `test/test_server.py` add or rename 29
+  tests (the five new golden rows among them); 28 fail against the previous
+  main's server module, and the 29th guards that an `$extends` loop ends,
+  which main's also does. The token fixtures in `test/test_server.py` follow
+  the format.
+- The three token fixtures of `scripts/check-mcp-accuracy.js` write
+  dimensions as `{ value, unit }`, so each still tests the rule it names.
+- The sibling contract lock records tokens 0.1.3.
+
 **designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
-registry; not yet published, tag `v1.13.10`). Nothing changes in the hosted
-`/api/mcp` except the version it reports. It is the first designesy-mcp
-release since 1.13.9, so it also ships the offline engine merged since then:
-it mirrors engine 1.5.3 and contract v0.4.7 (1.13.9 mirrored 1.4.0 and
-v0.4.6).
+registry; not yet published, tag `v1.13.10`). Apart from the tokens scoring
+above, nothing changes in the hosted `/api/mcp` except the version it
+reports. It is the first designesy-mcp release since 1.13.9, so it also
+ships the offline engine merged since then: it mirrors engine 1.5.3 and
+contract v0.4.7 (1.13.9 mirrored 1.4.0 and v0.4.6), and it scores tokens
+files by contract 0.1.3, above.
 
 ### Fixed (designesy-mcp 1.13.10)
 
@@ -68,7 +195,7 @@ v0.4.6).
 
 - The tool list, the schemas, the titles and the annotations:
   `designesy_score` stays `readOnlyHint: true`. The offline engine's checks
-  and verdicts.
+  and verdicts. The tokens checks change as described above.
 - The hosted endpoint, which has no offline engine or browser probe.
 
 **Contract v0.4.7: the contract declares what the site ships** (the site;

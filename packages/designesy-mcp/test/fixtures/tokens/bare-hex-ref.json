@@ -1,12 +1,10 @@
 {
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-  "$tokens": {
-    "color": {
-      "primary": {
-        "$type": "color",
-        "$value": "#ff0000",
-        "$ref": "#/color/primary"
-      }
+  "color": {
+    "primary": {
+      "$type": "color",
+      "$value": "#ff0000",
+      "$ref": "#/color/primary"
     }
   }
 }

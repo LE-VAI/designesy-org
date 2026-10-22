@@ -1,52 +1,56 @@
 {
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
-  "$tokens": {
-    "color": {
-      "primary": {
-        "$type": "color",
-        "$value": {
-          "colorSpace": "srgb",
-          "components": [
-            0.2,
-            0.4,
-            0.9
-          ]
-        }
-      },
-      "muted": {
-        "$type": "color",
-        "$value": {
-          "colorSpace": "srgb",
-          "components": [
-            0.5,
-            0.5,
-            0.5
-          ]
-        }
-      }
-    },
-    "spacing": {
-      "md": {
-        "$type": "dimension",
-        "$value": "16px"
-      },
-      "lg": {
-        "$type": "dimension",
-        "$value": "2rem"
-      }
-    },
-    "font": {
-      "family": {
-        "$type": "fontFamily",
-        "$value": [
-          "Inter",
-          "sans-serif"
+  "color": {
+    "primary": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.2,
+          0.4,
+          0.9
         ]
-      },
-      "weight": {
-        "$type": "fontWeight",
-        "$value": 600
       }
+    },
+    "muted": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "srgb",
+        "components": [
+          0.5,
+          0.5,
+          0.5
+        ]
+      }
+    }
+  },
+  "spacing": {
+    "md": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "rem"
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$value": [
+        "Inter",
+        "sans-serif"
+      ]
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "$value": 600
     }
   }
 }

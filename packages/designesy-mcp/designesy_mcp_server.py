@@ -3759,10 +3759,12 @@ TOOLS = [
             "Candidate Recommendation and considered stable). Returns 10 "
             "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct: $type/$value/$description present, "
-            "structured colors (colorSpace + components rather than bare "
-            "hex), a valid $schema pointer to designtokens.org, and "
-            "correct dimension units. With 84% of teams now using design "
+            "structurally correct: $type (direct or inherited) present, one "
+            "$value or $ref per token (a JSON Pointer $ref must resolve), "
+            "structured colors (colorSpace + components rather "
+            "than bare hex), dimensions in the 2025.10 { value, unit } "
+            "form, and a $schema pointer to designtokens.org (a Designesy "
+            "policy: DTCG does not require $schema). With 84% of teams now using design "
             "tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, "
             "every adopting team needs a validator. When NOT to use: for "
             "scoring a whole live site (not just its token file), use "
@@ -4306,6 +4308,19 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 # literal with no unit, a spurious WARN in t08 and t10); a $root token (a
 # group's own value) is checked like any other (it was skipped); and the
 # 2025.10 dimension form {value, unit} is checked in t08 (it was not read).
+# Since tokens contract 0.1.3 a token's type is its own $type, else the type
+# of the token it references, else the closest group $type above it, a
+# group's $extends included (only a $type on the token counted, so a file that
+# typed its groups FAILed t03 and t06); a {$type, $ref} token is a token and a
+# JSON Pointer $ref is no deprecated pattern (a $ref that is not one is), while
+# t04 FAILs a token with both $value and $ref, or a JSON Pointer that names no
+# location in the file or loops (7.5.1, 7.2.3); the
+# whole file is walked (a top-level group named tokens or $tokens was scored
+# alone); a missing $schema WARNs as Designesy policy (it FAILed, and the
+# detail said DTCG requires it); and t08 expects {value, unit} in px or rem,
+# reporting a string such as "16px" as the legacy form. Each chain of aliases,
+# pointers or $extends is followed once per file (_TokenFile): t08 walked each
+# dimension alias's whole chain, so 5,000 chained aliases took seconds.
 # Check names are the contract's own, looked up by id. Both
 # implementations run on test/fixtures/tokens/ and must produce expected.json
 # there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
@@ -4319,7 +4334,7 @@ TOKENS_CHECK_NAMES = {
     "t01": "$schema declaration",
     "t02": "Token groups present",
     "t03": "$type on all tokens",
-    "t04": "$value on all tokens",
+    "t04": "One $value or $ref on every token",
     "t05": "Structured color format",
     "t06": "Standard type names",
     "t07": "Custom type extension",
@@ -4333,12 +4348,16 @@ TOKENS_SCORING = (
     "A>=90, B>=80, C>=70, D>=60, F<60."
 )
 
+# CSS length units, which a legacy string dimension ("16px") may end in.
 _DIMENSION_UNITS = sorted(
     ["px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
      "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
      "cm", "mm", "in", "pt", "pc", "fr"],
     key=len, reverse=True,
 )
+
+# The units the 2025.10 dimension form allows (8.2.1).
+_DTCG_DIMENSION_UNITS = ["px", "rem"]
 
 
 def _js_truthy(x: Any) -> bool:
@@ -4382,27 +4401,242 @@ _DTCG_SCHEMA_HOST = re.compile(
 )
 
 
-def _resolve_alias(alias: str, root: dict[str, Any]) -> tuple[Any, str | None] | None:
-    """(value, $type): the literal value an alias names, through any chain of
-    aliases, with the $type of the token that holds it (None when it has none);
+def _is_pointer(v: Any) -> bool:
+    """A JSON Pointer reference (RFC 6901), the form a $ref takes: #/path/to/target."""
+    return isinstance(v, str) and v.startswith("#/")
+
+
+def _ref_path(ref: Any) -> list[str] | None:
+    """The path segments a {group.token} alias or a #/ JSON Pointer names."""
+    if _is_alias(ref):
+        return ref[1:-1].split(".")
+    if _is_pointer(ref):
+        return [s.replace("~1", "/").replace("~0", "~") for s in ref[2:].split("/")]
+    return None
+
+
+def _is_token(node: dict[str, Any]) -> bool:
+    """A token holds a $value or a $ref; any other object is a group."""
+    return "$value" in node or "$ref" in node
+
+
+def _node_at(root: dict[str, Any], path: list[str]) -> Any:
+    """The node at a path from the root, or None when a segment is missing."""
+    node: Any = root
+    for part in path:
+        node = node.get(part) if isinstance(node, dict) else None
+    return node
+
+
+class _TokenFile:
+    """The file being scored, and what is worked out once for it: the type each
+    group takes through its $extends, the type of each token, what each alias
+    resolves to and where each $ref leads (TokenFile in tokens-score.ts). Every
+    chain of aliases, pointers or $extends is followed in a loop and each
+    answer kept, so a chain of n references costs n steps in all. Following it again from every token
+    on it cost n * n, and the recursion ran out of stack on a chain of 1,200.
+    Keys are id() of nodes the file holds, which live as long as it does."""
+
+    def __init__(self, root: dict[str, Any]) -> None:
+        self.root = root
+        self.group_types: dict[int, str | None] = {}
+        self.token_types: dict[int, Any] = {}
+        self.aliases: dict[str, tuple[Any, str | None] | None] = {}
+        # Where each $ref leads: ("at", node), "unresolved" or "loop" (RefEnd).
+        self.refs: dict[int, Any] = {}
+
+
+# An array index in a JSON Pointer (RFC 6901): 0, or digits with no leading 0.
+_ARRAY_INDEX = re.compile(r"0|[1-9][0-9]*")
+
+
+def _extended_type(group: dict[str, Any], file: _TokenFile) -> str | None:
+    """A group's own $type, else the one the group its $extends names gives,
+    through any chain of $extends (6.7.3); None when none has one or the chain
+    loops."""
+    chain: list[dict[str, Any]] = []
+    on_chain: set[int] = set()
+    node: Any = group
+    t: str | None = None
+    while isinstance(node, dict) and not _is_token(node) and id(node) not in on_chain:
+        if id(node) in file.group_types:
+            t = file.group_types[id(node)]
+            break
+        chain.append(node)
+        on_chain.add(id(node))
+        own = node.get("$type")
+        if isinstance(own, str) and own:
+            t = own
+            break
+        path = _ref_path(node.get("$extends"))
+        node = _node_at(file.root, path) if path is not None else None
+    for g in chain:
+        file.group_types[id(g)] = t
+    return t
+
+
+def _group_type(group: dict[str, Any], inherited: str | None, file: _TokenFile) -> str | None:
+    """The $type a group gives the tokens in it: its own, else the one the group
+    its $extends names gives (the group's type after extension, 6.7.3), else
+    the type it inherits from the groups above it."""
+    t = _extended_type(group, file)
+    return t if t is not None else inherited
+
+
+def _locate(file: _TokenFile, path: list[str]) -> tuple[Any, str | None]:
+    """(node, inherited): the node at a path, with the type the groups above it
+    give it."""
+    node: Any = file.root
+    inherited: str | None = None
+    for part in path:
+        if not isinstance(node, dict) or part not in node:
+            return None, inherited
+        inherited = _group_type(node, inherited, file)
+        node = node[part]
+    return node, inherited
+
+
+def _referenced_token(token: dict[str, Any], file: _TokenFile) -> tuple[dict[str, Any], str | None] | None:
+    """(node, inherited): the token a token's {alias} value or #/path/$value
+    pointer names, with the type its groups give it; None when it names none.
+    A pointer into part of a value names no token."""
+    path: list[str] | None = None
+    if _is_alias(token.get("$value")):
+        path = _ref_path(token["$value"])
+    elif "$value" not in token and _is_pointer(token.get("$ref")):
+        path = _ref_path(token["$ref"])
+        if path and path[-1] == "$value":
+            path = path[:-1]
+    if path is None:
+        return None
+    node, inherited = _locate(file, path)
+    return (node, inherited) if isinstance(node, dict) and _is_token(node) else None
+
+
+def _token_type(token: dict[str, Any], inherited: str | None, file: _TokenFile) -> Any:
+    """A token's type (5.2.2): its own $type, else the type of the token its
+    {alias} value or #/path/$value pointer references, else the type the groups
+    above it give it (None when none does). A pointer into part of a value
+    names no token, so its token takes the groups' type. The tokens on a loop
+    of references take their groups' type: the value of every token on a loop
+    is unknown (7.2.3)."""
+    chain: list[tuple[dict[str, Any], str | None]] = []
+    on_chain: dict[int, int] = {}
+    node, node_inherited = token, inherited
+    t: Any = None
+    while True:
+        if id(node) in file.token_types:
+            t = file.token_types[id(node)]
+            break
+        if _js_truthy(node.get("$type")):
+            t = node["$type"]
+            break
+        at = on_chain.get(id(node))
+        if at is not None:
+            for tok, tok_inherited in chain[at:]:
+                file.token_types[id(tok)] = tok_inherited
+            del chain[at:]
+            t = node_inherited
+            break
+        on_chain[id(node)] = len(chain)
+        chain.append((node, node_inherited))
+        target = _referenced_token(node, file)
+        if target is None:
+            break
+        node, node_inherited = target
+    # Each token before the end takes the type found past it, else its groups'.
+    for tok, tok_inherited in reversed(chain):
+        if not _js_truthy(t):
+            t = tok_inherited
+        file.token_types[id(tok)] = t
+    return t
+
+
+def _resolve_alias(alias: str, file: _TokenFile) -> tuple[Any, str | None] | None:
+    """(value, type): the literal value an alias names, through any chain of
+    aliases, with the type of the token that holds it (None when it has none);
     None when a segment is missing, the target is not a token, or the chain
     loops. Path segments are group and token names, $root included."""
-    seen: set[str] = set()
+    chain: list[str] = []
+    on_chain: set[str] = set()
     ref = alias
-    while _is_alias(ref):
-        if ref in seen:
-            return None
-        seen.add(ref)
-        node: Any = root
-        for part in ref[1:-1].split("."):
-            node = node.get(part) if isinstance(node, dict) else None
+    resolved: tuple[Any, str | None] | None = None
+    while _is_alias(ref) and ref not in on_chain:
+        if ref in file.aliases:
+            resolved = file.aliases[ref]
+            break
+        chain.append(ref)
+        on_chain.add(ref)
+        node, inherited = _locate(file, ref[1:-1].split("."))
         if not isinstance(node, dict) or "$value" not in node:
-            return None
+            break
         if not _is_alias(node["$value"]):
-            t = node.get("$type")
-            return (node["$value"], t if isinstance(t, str) else None)
+            t = _token_type(node, inherited, file)
+            resolved = (node["$value"], t if isinstance(t, str) else None)
+            break
         ref = node["$value"]
-    return None
+    for r in chain:
+        file.aliases[r] = resolved
+    return resolved
+
+
+def _ref_end(token: dict[str, Any], file: _TokenFile) -> Any:
+    """Where a token's JSON Pointer $ref leads (7.4): ("at", node), object
+    members by name, array items by index. Where the pointer reads the $value
+    of a token that holds a $ref instead, it follows that $ref, as tools follow
+    each reference (7.2.2). "unresolved" when a segment names nothing, so the
+    token has no value (tools MUST validate reference targets, 7.5.1); "loop"
+    when the pointer comes back to a token on its own chain (7.2.3). Each
+    token's end is kept, so a chain of n $ref tokens costs n steps in all."""
+    if id(token) in file.refs:
+        return file.refs[id(token)]
+    frames: list[list[Any]] = []  # [token, path, i]
+    on_stack: set[int] = set()
+
+    def push(t: dict[str, Any], path: list[str]) -> None:
+        frames.append([t, path, 0])
+        on_stack.add(id(t))
+
+    def settle(end: Any) -> Any:
+        for f in frames:
+            file.refs[id(f[0])] = end
+        return end
+
+    push(token, _ref_path(token["$ref"]) or [])
+    node: Any = file.root
+    while True:
+        f = frames[-1]
+        if f[2] == len(f[1]):
+            # The pointer names a token on its own chain, such as itself (#/a from a).
+            if isinstance(node, dict) and id(node) in on_stack:
+                return settle("loop")
+            frames.pop()
+            on_stack.discard(id(f[0]))
+            file.refs[id(f[0])] = ("at", node)
+            if not frames:
+                return ("at", node)
+            frames[-1][2] += 1  # past the $value now read
+            continue
+        part = f[1][f[2]]
+        if part == "$value" and isinstance(node, dict) and "$value" not in node and _is_pointer(node.get("$ref")):
+            # A $ref token's value is where its own $ref leads.
+            if id(node) in on_stack:
+                return settle("loop")
+            end = file.refs.get(id(node))
+            if end is None:
+                push(node, _ref_path(node["$ref"]) or [])
+                node = file.root
+                continue
+            if isinstance(end, str):
+                return settle(end)
+            node = end[1]
+        elif isinstance(node, list) and _ARRAY_INDEX.fullmatch(part) and int(part) < len(node):
+            node = node[int(part)]
+        elif isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            return settle("unresolved")
+        f[2] += 1
 
 
 def _js_typeof(v: Any) -> str:
@@ -4420,15 +4654,15 @@ def _is_js_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
-def _dimension_unit_of(v: Any) -> str:
-    """The unit of a dimension value, or '' when it has none the checks accept:
-    a string ending in a CSS length unit, or the 2025.10 object form
-    {value: number, unit}."""
+def _dimension_form(v: Any) -> str:
+    """How t08 reads a dimension value: 'ok' for the 2025.10 form {value:
+    number, unit} in px or rem, 'legacy' for a string ending in a CSS length
+    unit ("16px"), 'bad' for anything else."""
     if isinstance(v, str):
-        return _dimension_unit(v)
-    if isinstance(v, dict) and _is_js_number(v.get("value")) and isinstance(v.get("unit"), str) and v["unit"] in _DIMENSION_UNITS:
-        return v["unit"]
-    return ""
+        return "legacy" if _dimension_unit(v) else "bad"
+    if isinstance(v, dict) and _is_js_number(v.get("value")) and isinstance(v.get("unit"), str) and v["unit"] in _DTCG_DIMENSION_UNITS:
+        return "ok"
+    return "bad"
 
 
 def _dimension_text(v: Any) -> str:
@@ -4462,34 +4696,30 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     def add(cid: str, status: str, detail: str) -> None:
         results.append({"id": cid, "name": names[cid], "status": status, "detail": detail})
 
-    # tokens.$tokens || tokens.tokens || tokens
-    picked: Any = tokens
-    for key in ("$tokens", "tokens"):
-        if _js_truthy(tokens.get(key)):
-            picked = tokens[key]
-            break
-    token_groups: dict[str, Any] = picked if isinstance(picked, dict) else {}
-
-    # t01: $schema present and points to designtokens.org
+    # t01: $schema present and points to designtokens.org. Designesy policy: the
+    # Format Module does not define $schema, so a file without one WARNs.
     schema = tokens.get("$schema")
     has_schema = isinstance(schema, str) and schema != ""
     schema_valid = has_schema and _DTCG_SCHEMA_HOST.match(schema) is not None
-    add("t01", "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
+    add("t01", "PASS" if schema_valid else "WARN",
         f"Schema: {schema}" if has_schema else
-        "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json")
+        "No $schema found. Designesy policy, not a DTCG requirement: point $schema at "
+        "https://www.designtokens.org/schemas/2025.10/format.json so editors can validate the file.")
 
     # t02: token groups exist
-    group_keys = [k for k in _js_keys(token_groups) if not k.startswith("$")]
+    group_keys = [k for k in _js_keys(tokens) if not k.startswith("$")]
     add("t02", "PASS" if group_keys else "FAIL",
         f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
 
     # t03-t10: one walk over the tokens
     counts = {"type": 0, "value": 0, "structured": 0, "bare_hex": 0, "total": 0}
     all_types: list[str] = []  # insertion-ordered, as a JS Set
-    dimension_values: list[tuple[str, str, bool]] = []
+    dimension_values: list[tuple[str, str, str]] = []  # (path, value, form)
     deprecated: list[str] = []
+    file = _TokenFile(tokens)
+    value_issues: list[str] = []
 
-    def walk(obj: dict[str, Any], path: str) -> None:
+    def walk(obj: dict[str, Any], path: str, inherited: str | None) -> None:
         for key in _js_keys(obj):
             # $root is a token (a group's own value), not a property of the group.
             if key.startswith("$") and key != "$root":
@@ -4498,17 +4728,28 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
             current = f"{path}.{key}" if path else key
             if not isinstance(val, dict):
                 continue
-            if "$value" not in val:
-                walk(val, current)
+            if not _is_token(val):
+                walk(val, current, _group_type(val, inherited, file))
                 continue
             counts["total"] += 1
-            t = val.get("$type")
-            v = val["$value"]
+            t = _token_type(val, inherited, file)
+            v = val.get("$value")
             if _js_truthy(t):
                 counts["type"] += 1
                 if isinstance(t, str) and t not in all_types:
                     all_types.append(t)
-            counts["value"] += 1
+            # t04: one value, a $value or a $ref (not both: the 2025.10 token schema
+            # allows one), and a JSON Pointer $ref must lead somewhere. A $ref that
+            # is not a JSON Pointer is t10's.
+            end = _ref_end(val, file) if "$ref" in val and "$value" not in val and _is_pointer(val["$ref"]) else None
+            if "$ref" in val and "$value" in val:
+                value_issues.append(f"Token '{current}' has both $value and $ref (a token takes one)")
+            elif end == "unresolved":
+                value_issues.append(f"Token '{current}' has a $ref that names no location in the file: '{val['$ref']}'")
+            elif end == "loop":
+                value_issues.append(f"Token '{current}' has a $ref that loops: '{val['$ref']}'")
+            else:
+                counts["value"] += 1
             if t == "color":
                 if isinstance(v, dict) and "colorSpace" in v:
                     counts["structured"] += 1
@@ -4517,38 +4758,50 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                     deprecated.append(f"Color token '{current}' uses bare hex (pre-2025.10 pattern)")
             if t == "dimension":
                 if _is_alias(v):
-                    # A reference: its unit is the unit of the value it resolves
+                    # A reference: its form is the form of the value it resolves
                     # to, and the target, if it is a dimension token, answers t10
                     # for itself. A target of another type is named as such.
-                    target = _resolve_alias(v, token_groups)
+                    target = _resolve_alias(v, file)
                     if target is None:
-                        dimension_values.append((current, f"{v} (unresolved alias)", False))
+                        dimension_values.append((current, f"{v} (unresolved alias)", "bad"))
                     elif target[1] is not None and target[1] != "dimension":
-                        dimension_values.append((current, f"{v} -> a {target[1]} token", False))
+                        dimension_values.append((current, f"{v} -> a {target[1]} token", "bad"))
                     else:
-                        dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", bool(_dimension_unit_of(target[0]))))
+                        dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", _dimension_form(target[0])))
                 elif isinstance(v, str):
-                    dimension_values.append((current, v, bool(_dimension_unit(v))))
-                    if not _dimension_unit(v):
-                        deprecated.append(f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
+                    # The advice leads to a t08 PASS: {value, unit} takes px or rem
+                    # only, so a string in another unit is told so.
+                    unit = _dimension_unit(v)
+                    advice = "write { value, unit }" if unit in _DTCG_DIMENSION_UNITS else "a 2025.10 dimension takes px or rem"
+                    dimension_values.append((current, v, _dimension_form(v)))
+                    deprecated.append(
+                        f"Dimension token '{current}' uses the pre-2025.10 string form: '{v}' ({advice})"
+                        if unit else
+                        f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
                 elif _is_js_number(v):
-                    dimension_values.append((current, _js_num(v), False))
-                    deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+                    dimension_values.append((current, _js_num(v), "bad"))
+                    deprecated.append(f"Dimension token '{current}' uses bare number (write {{ value, unit }} in px or rem)")
                 elif isinstance(v, dict):
-                    dimension_values.append((current, _dimension_text(v), bool(_dimension_unit_of(v))))
-            if "$ref" in val:
-                deprecated.append(f"Token '{current}' uses deprecated $ref syntax (use {{path}} in $value)")
+                    dimension_values.append((current, _dimension_text(v), _dimension_form(v)))
+            # A $ref is a JSON Pointer (#/path/to/target); a dot path is not one.
+            if "$ref" in val and not _is_pointer(val["$ref"]):
+                ref = f"'{val['$ref']}'" if isinstance(val["$ref"], str) else f"a value of type {_js_typeof(val['$ref'])}"
+                deprecated.append(f"Token '{current}' has a $ref that is not a JSON Pointer: {ref} (write #/path/to/token/$value)")
 
-    walk(token_groups, "")
+    walk(tokens, "", _group_type(tokens, None, file))
     total, typed = counts["total"], counts["type"]
 
-    # t03: $type on all tokens
-    add("t03", "PASS" if total > 0 and typed == total else ("WARN" if typed > 0 else "FAIL"),
-        f"{typed}/{total} tokens have $type")
+    # t03: $type on all tokens, their own or inherited
+    if total == 0:
+        add("t03", "SKIP", "No tokens found")
+    else:
+        add("t03", "PASS" if typed == total else ("WARN" if typed > 0 else "FAIL"),
+            f"{typed}/{total} tokens have $type (direct or inherited)")
 
-    # t04: $value on all tokens
+    # t04: one value on every token, a $value or a $ref that leads somewhere
+    issues = f": {'; '.join(value_issues[:3])}{'...' if len(value_issues) > 3 else ''}" if value_issues else ""
     add("t04", "PASS" if total > 0 and counts["value"] == total else "FAIL",
-        f"{counts['value']}/{total} tokens have $value")
+        f"{counts['value']}/{total} tokens have one $value or $ref{issues}")
 
     # t05: structured color format (colorSpace + components)
     structured, bare_hex = counts["structured"], counts["bare_hex"]
@@ -4580,16 +4833,19 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
         else:
             add("t07", "WARN", f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(bare_customs)}")
 
-    # t08: dimension tokens have valid CSS length units
+    # t08: dimension tokens use the 2025.10 form, {value, unit} in px or rem.
+    # A legacy string ("16px") WARNs; t08 FAILs only when no value is usable.
     if not dimension_values:
         add("t08", "SKIP", "No dimension tokens found")
     else:
-        bad_units = [f"{p}='{v}'" for p, v, ok in dimension_values if not ok]
-        if not bad_units:
-            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)")
+        others = [f"{p}='{v}'{' (legacy string)' if form == 'legacy' else ''}"
+                  for p, v, form in dimension_values if form != "ok"]
+        bad = sum(1 for _, _, form in dimension_values if form == "bad")
+        if not others:
+            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use the 2025.10 form {{ value, unit }} in px or rem")
         else:
-            add("t08", "WARN" if len(bad_units) < len(dimension_values) else "FAIL",
-                f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}")
+            add("t08", "WARN" if bad < len(dimension_values) else "FAIL",
+                f"{len(others)}/{len(dimension_values)} dimension token(s) are not {{ value, unit }} in px or rem: {', '.join(others[:5])}")
 
     # t09: tokens are organised into groups (nesting is the dot hierarchy)
     if total == 0:
@@ -4601,7 +4857,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
 
     # t10: no pre-2025.10 patterns
     if not deprecated:
-        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)")
+        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no string or bare number dimensions, no $ref that is not a JSON Pointer)")
     else:
         add("t10", "WARN", f"{len(deprecated)} deprecated pattern(s) found: {'; '.join(deprecated[:3])}{'...' if len(deprecated) > 3 else ''}")
 

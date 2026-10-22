@@ -1,6 +1,6 @@
 import { CONTRACT_VERSION } from './design-system-contract';
 /**
- * Designesy Tokens Contract v0.1.2 — machine-readable form.
+ * Designesy Tokens Contract v0.1.3 — machine-readable form.
  * Sibling contract governing W3C DTCG 2025.10 token-format conformance.
  * Source: internal contract markdown (not for public distribution).
  *
@@ -10,13 +10,13 @@ import { CONTRACT_VERSION } from './design-system-contract';
 
 export const tokensContract = {
   id: 'designesy.tokens',
-  version: '0.1.2',
+  version: '0.1.3',
   status: 'provisional',
   name: 'Designesy Tokens Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/tokens',
   machine_url: 'https://www.designesy.org/contracts/tokens.json',
-  updated: '2026-10-11',
+  updated: '2026-10-21',
   purpose:
     'Token-format conformance is the foundation of portable design intelligence. If tokens are not structurally valid, every downstream tool inherits the rot.',
   source_authority: {
@@ -51,7 +51,7 @@ export const tokensContract = {
       object_form: '{ "value": number, "unit": "px" | "rem" }',
       rem_based: 'Designesy uses rem-based dimensions (root 16px). Px permitted for sub-pixel, shadows, borders.',
     },
-    schema_property: 'Files MUST declare $schema per the designesy validator (engine check t01 fails files without it): stricter than the DTCG spec, which marks it SHOULD',
+    schema_property: 'A Designesy policy that DTCG does not set: the Format Module does not define $schema, and the official 2025.10 JSON Schema notes it is not part of the specification. Files SHOULD declare $schema pointing at designtokens.org so editors can validate them; t01 WARNs on a file without one (until v0.1.3 it FAILed it).',
   },
   verification: {
     // Check IDs match the designesy_tokens_score engine exactly
@@ -60,18 +60,18 @@ export const tokensContract = {
     // This document is the CONTRACT (rules), not a DTCG token file — a token
     // file that passes all 10 lives at /export/dtcg (the contract's live export).
     checks: [
-      { id: 't01', item: '$schema declaration present and pointing at designtokens.org', pass: 'Present, designtokens.org', warn: 'Present but non-canonical', fail: 'Missing (no editor validation)' },
+      { id: 't01', item: '$schema declaration present and pointing at designtokens.org (a Designesy policy: DTCG does not require $schema)', pass: 'Present, designtokens.org', warn: 'Missing (no editor validation), or present but non-canonical', fail: 'n/a' },
       { id: 't02', item: 'Token groups present (top-level non-$ keys)', pass: 'Groups found', fail: 'No token groups' },
       { id: 't03', item: 'Every token has $type (direct or inherited)', pass: 'All tokens typed', warn: 'Partial typing', fail: 'Any token missing type' },
-      { id: 't04', item: 'Every token has $value', pass: 'All valued', fail: 'Any missing value' },
+      { id: 't04', item: 'Every token has exactly one of $value and $ref, and a JSON Pointer $ref names a location in the file', pass: 'All valued', fail: 'A token with no value, with both $value and $ref, or with a $ref that names nothing or loops' },
       { id: 't05', item: 'Color tokens use structured {colorSpace, components} format instead of bare hex', pass: 'No bare hex', warn: 'Mixed structured and bare hex', fail: 'All bare hex' },
       { id: 't06', item: '$type values are DTCG 2025.10 standard types', pass: 'All standard', warn: 'Non-standard types present (custom (see t07))', fail: 'No tokens typed' },
       { id: 't07', item: 'Custom types namespaced (dot-prefix, e.g. designesy.spring via $extensions.designesy.*)', pass: 'All namespaced', warn: 'Bare custom type names', fail: 'n/a' },
-      { id: 't08', item: 'Dimension units are valid CSS length units (px, rem preferred)', pass: 'All valid', warn: 'Partial', fail: 'Invalid units' },
+      { id: 't08', item: 'Dimensions use the 2025.10 form { value, unit } in px or rem', pass: 'All in that form', warn: 'Legacy strings such as "16px", or some invalid values', fail: 'No usable dimension value' },
       { id: 't09', item: 'Token naming hierarchy: tokens organized into nested groups', pass: 'Groups with hierarchy', warn: 'Flat token set', fail: 'No tokens' },
-      { id: 't10', item: 'No deprecated pre-2025.10 patterns (bare hex colors, bare number dimensions, $ref syntax)', pass: 'Clean', warn: 'Deprecated patterns found', fail: 'n/a' },
+      { id: 't10', item: 'No deprecated pre-2025.10 patterns (bare hex colors, string or bare number dimensions, a $ref that is not a JSON Pointer)', pass: 'Clean', warn: 'Deprecated patterns found', fail: 'n/a' },
     ],
-    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = ((PASS + 0.5 × WARN) / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90; until v0.1.2 a WARN counted 0, where the motion contract, the score engine and the npm validator count it half). A {group.token} alias is a reference: t08 checks the dimension it resolves to, and a $root token is checked like any other. A≥90, B≥80, C≥70, D≥60, F<60.',
+    scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = ((PASS + 0.5 × WARN) / scored checks) × 100, where a scored check returned PASS, WARN or FAIL (until v0.1.1 a SKIP counted in the denominator, so a clean file with no custom types scored 90; until v0.1.2 a WARN counted 0, where the motion contract, the score engine and the npm validator count it half). A {group.token} alias is a reference: t08 checks the dimension it resolves to, and a $root token is checked like any other. Since v0.1.3 the type of a token is its own $type, else the type of the token it references, else the closest group $type above it ($extends included), and a token written { $type, $ref } is counted, with t04 checking that its JSON Pointer names a location in the file. A≥90, B≥80, C≥70, D≥60, F<60.',
     validation_tools: {
       primary: '@terrazzo/parser 2.4.0: tz check [file]',
       secondary: 'ajv 8.20.0 + ajv-formats 3.0.1 against DTCG JSON Schema URL',
@@ -82,7 +82,7 @@ export const tokensContract = {
       checks: [
         'Semantic tokens have $description: recommended, required on semantic tokens; custom validator needed',
         'Color tokens use OKLCH or Display-P3 (mandatory for new semantic tokens): color-space check not wired',
-        'Aliases resolve to valid typed tokens: t08 resolves aliases on dimension tokens (v0.1.2); resolving every alias and checking its target type is not wired',
+        'References resolve to valid typed tokens: t04 checks that a JSON Pointer $ref names a location in the file (v0.1.3), t03 gives an untyped alias the type of its target (v0.1.3) and t08 resolves aliases on dimension tokens (v0.1.2); an {alias} on a token of another type that names nothing, and a reference to a value of another type, are not reported',
         'Full DTCG 2025.10 JSON Schema validation via @terrazzo/parser (tz check): external, not wired',
         'No type drift between themes: multi-theme comparison not wired',
       ],
