@@ -738,17 +738,17 @@ async function messageText() {
       requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list: params.cursor is fine', params: { cursor: 5 } }),
       want: 'Invalid params: params.cursor: expected string, received number',
     },
-    // A method name is at most 64 characters.
+    // A method name is at most 64 characters: only the length differs here.
     {
       name: 'method-name-64',
       list: issueList([[['params', 'cursor']]]),
-      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: `tools/${'l'.repeat(58)}`, params: { cursor: 5 } }),
-      want: `Invalid params for tools/${'l'.repeat(58)}: params.cursor: expected string, received number`,
+      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'm'.repeat(64), params: { cursor: 5 } }),
+      want: `Invalid params for ${'m'.repeat(64)}: params.cursor: expected string, received number`,
     },
     {
       name: 'method-name-65',
       list: issueList([[['params', 'cursor']]]),
-      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: `tools/${'l'.repeat(59)}`, params: { cursor: 5 } }),
+      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'm'.repeat(65), params: { cursor: 5 } }),
       want: 'Invalid params: params.cursor: expected string, received number',
     },
     // A missing field, in the schema library's own words: "received undefined"
