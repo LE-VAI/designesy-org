@@ -45,6 +45,7 @@ import { a11yContract } from '../../lib/a11y-contract';
 import { tokensContract } from '../../lib/tokens-contract';
 import { scoreTokens } from '../../lib/tokens-score';
 import { GUARDRAILS_PARTS, REPORT_DETAILS, guardrailsPartNames, guardrailsParts, reportSummary } from '../../lib/mcp-trim';
+import { answerInvalidParams } from '../../lib/mcp-invalid-params';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -1027,17 +1028,21 @@ async function compatibilityShim(request: Request): Promise<Response> {
 // F7 usage counters (lib/usage.ts): count each tools/call by tool name. The body
 // is read once here and handed on in a fresh Request, as the shim above does,
 // because a consumed body cannot be read again on Vercel's Node.js runtime.
+// A request whose params fail the protocol schema is answered -32602 naming the
+// field, where the SDK answers -32603 with its raw issue list
+// (lib/mcp-invalid-params.ts); every other answer passes through unchanged.
 async function countedPost(request: Request): Promise<Response> {
   if (request.method !== 'POST') return compatibilityShim(request);
   const bodyText = await request.text();
   for (const name of toolCallNames(bodyText)) {
     after(() => recordUsage(`mcp:${name}`, request));
   }
-  return compatibilityShim(new Request(request.url, {
+  const response = await compatibilityShim(new Request(request.url, {
     method: 'POST',
     headers: new Headers(request.headers),
     body: bodyText,
   }));
+  return answerInvalidParams(response, bodyText);
 }
 
 export { handler as GET, countedPost as POST };
