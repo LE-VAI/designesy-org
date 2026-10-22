@@ -19,11 +19,32 @@
 //
 // answerInvalidParams rewrites those answers to code -32602 and one short line
 // that names each field, for example "Invalid params for initialize:
-// params.clientInfo is missing (expected object)". A message is rewritten only
-// when it is such an issue list (bare, or behind "Invalid <method> request: "
-// or "Invalid params for <method>: ") and every issue in it sits under params.
-// Every result, every other error and every other byte passes through
-// unchanged, and an event stream keeps streaming.
+// params.clientInfo is missing (expected object)". A JSON-RPC message is
+// rewritten only when all of these hold:
+//   1. it is an error: it has a top-level "error" member;
+//   2. its code is -32603 or -32602;
+//   3. its message is such an issue list, bare or behind "Invalid <method>
+//      request: " or "Invalid params for <method>: ";
+//   4. every issue in the list sits under params.
+// Every other answer passes through byte for byte, and an event stream keeps
+// streaming.
+//
+// WHAT IS READ, AND HOW MUCH
+// The unit examined is one payload: a JSON body, or one event-stream line with
+// its newline. A payload is parsed only when condition 1 holds for a message in
+// it, which holdsError decides by stepping over the text's strings and nested
+// values without parsing them, so a payload with no error in it is never
+// parsed, whatever it holds. A payload is held and examined only while it is at
+// most MAX_FRAME_BYTES (4 MiB). A longer one passes on unchanged, failed check
+// or not, and is never held whole: of a JSON body, reading stops at the chunk
+// that passes the bound; of a line, what has arrived goes out as soon as it
+// passes the bound, and the rest follows as it arrives. A failed check's answer
+// grows with its issues, each one a pretty-printed object. With the versions
+// above and zod 4.6.5, an initialize whose clientInfo.icons holds 2,000
+// numbers fails with 2,000 issues in a 482,977-byte answer, which is
+// rewritten; at 17,305 numbers the line is 4,194,076 bytes and still
+// rewritten; at 17,306 it is 4,194,319 bytes, over the bound, and that answer
+// passes unchanged, still -32603.
 //
 // NOT REWRITTEN: a tools/call whose arguments fail a tool's input schema. The
 // SDK answers it with a tool result, isError: true ("Input validation error:
@@ -33,11 +54,14 @@
 // out of range)" under tool execution errors, which are reported that way.
 //
 // scripts/check-mcp-protocol-errors.js drives the real route through the real
-// SDK and holds both behaviours.
+// SDK and holds this behaviour: the rewrite and what it leaves alone, each of
+// the four conditions on its own, the 2,000-issue answer, and the bound (a
+// payload of exactly MAX_FRAME_BYTES is rewritten, one byte more is not).
 //
 // IMPORT-FREE, so a gate can load it on its own.
 
 type Obj = Record<string, unknown>;
+type Methods = () => Map<unknown, string>;
 
 /** One issue of a failed schema check, as the SDK writes it into the message. */
 interface Issue {
@@ -56,8 +80,12 @@ const REQUEST_LABEL = /^Invalid (?:[\w/.-]+ request|params for [\w/.-]+): $/;
 /** A method name taken from the request body is used only when it looks like one. */
 const METHOD_NAME = /^[\w/.-]{1,64}$/;
 
-/** An answer longer than this is a result, never a failed check, and is not parsed. */
-const MAX_ERROR_CHARS = 64 * 1024;
+/**
+ * The most of one payload (a JSON body, or an event-stream line with its
+ * newline) that is held and examined, in bytes. A longer payload passes on
+ * unchanged, whether it is a result or a failed check, and is never held whole.
+ */
+const MAX_FRAME_BYTES = 4 * 1024 * 1024;
 
 /** At most this many issues are named; the rest are counted. */
 const MAX_ISSUES = 3;
@@ -65,8 +93,78 @@ const MAX_ISSUES = 3;
 /** An issue's text is cut to this length: a path can carry a key the client chose. */
 const MAX_ISSUE_CHARS = 160;
 
+const NEWLINE = 0x0a;
+const CARRIAGE_RETURN = 0x0d;
+const SPACE = 0x20;
+/** "data:", the field name of an event-stream data line. */
+const DATA_FIELD = [0x64, 0x61, 0x74, 0x61, 0x3a];
+
+const encoder = new TextEncoder();
+const strictUtf8 = new TextDecoder('utf-8', { fatal: true });
+
 function isObj(x: unknown): x is Obj {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+/** The parts, in order, as one array (the part itself when there is one). */
+function join(parts: Uint8Array[]): Uint8Array {
+  if (parts.length === 1) return parts[0];
+  let size = 0;
+  for (const p of parts) size += p.byteLength;
+  const out = new Uint8Array(size);
+  let at = 0;
+  for (const p of parts) {
+    out.set(p, at);
+    at += p.byteLength;
+  }
+  return out;
+}
+
+/** The bytes as text, or null when they are not UTF-8. */
+function utf8(bytes: Uint8Array): string | null {
+  try {
+    return strictUtf8.decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a JSON-RPC payload holds an error: a message, alone or in a batch,
+ * with a top-level "error" member. One pass over the text that steps over
+ * strings and nested values without parsing them.
+ */
+function holdsError(text: string): boolean {
+  let i = 0;
+  while (i < text.length && (text[i] === ' ' || text[i] === '\t' || text[i] === '\n' || text[i] === '\r')) i++;
+  // A message's members sit one level in, or two in a batch.
+  const memberDepth = text[i] === '[' ? 2 : 1;
+  let depth = 0;
+  let atKey = false;
+  for (; i < text.length; i++) {
+    const c = text.charCodeAt(i);
+    if (c === 0x22 /* " */) {
+      const from = i + 1;
+      for (i = from; i < text.length && text.charCodeAt(i) !== 0x22; i++) {
+        if (text.charCodeAt(i) === 0x5c /* \ */) i++;
+      }
+      if (atKey && depth === memberDepth) {
+        const name = text.slice(from, i);
+        // JSON.stringify never escapes a letter, so a name with an escape is
+        // parsed to be sure rather than read here.
+        if (name === 'error' || name.includes('\\')) return true;
+      }
+    } else if (c === 0x7b /* { */ || c === 0x5b /* [ */) {
+      depth++;
+      if (depth === memberDepth) atKey = c === 0x7b;
+    } else if (c === 0x7d /* } */ || c === 0x5d /* ] */) {
+      depth--;
+    } else if (depth === memberDepth) {
+      if (c === 0x3a /* : */) atKey = false;
+      else if (c === 0x2c /* , */) atKey = true;
+    }
+  }
+  return false;
 }
 
 /** The issue list in an error message, or null when the message is anything else. */
@@ -128,7 +226,7 @@ function methodsById(requestBody: string): Map<unknown, string> {
 }
 
 /** The message with its failed check answered -32602, or null when it is anything else. */
-function rewriteMessage(message: unknown, methods: () => Map<unknown, string>): Obj | null {
+function rewriteMessage(message: unknown, methods: Methods): Obj | null {
   if (!isObj(message) || !isObj(message.error)) return null;
   const error = message.error;
   if (error.code !== INTERNAL_ERROR && error.code !== INVALID_PARAMS) return null;
@@ -138,8 +236,8 @@ function rewriteMessage(message: unknown, methods: () => Map<unknown, string>): 
 }
 
 /** One JSON-RPC payload (a message or a batch) rewritten, or null when nothing in it changes. */
-function rewritePayload(text: string, methods: () => Map<unknown, string>): string | null {
-  if (text.length > MAX_ERROR_CHARS || !text.includes('"error"')) return null;
+function rewritePayload(text: string, methods: Methods): string | null {
+  if (!holdsError(text)) return null;
   let payload: unknown;
   try {
     payload = JSON.parse(text);
@@ -157,6 +255,103 @@ function rewritePayload(text: string, methods: () => Map<unknown, string>): stri
     return one ?? m;
   });
   return changed ? JSON.stringify(all) : null;
+}
+
+/** A body's bytes, or null once they pass `max`: reading stops at the chunk that passes it. */
+async function readAtMost(body: ReadableStream<Uint8Array>, max: number): Promise<Uint8Array | null> {
+  const reader = body.getReader();
+  const parts: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return join(parts);
+    size += value.byteLength;
+    if (size > max) {
+      // Not awaited: one branch of a tee (a clone) settles its cancel only
+      // once the other branch is cancelled too.
+      reader.cancel().catch(() => {});
+      return null;
+    }
+    parts.push(value);
+  }
+}
+
+/**
+ * One whole event-stream line (its parts as they arrived, newline included)
+ * with its failed check answered -32602, or null when it is anything else.
+ */
+function rewriteLine(parts: Uint8Array[], size: number, methods: Methods): Uint8Array | null {
+  if (size > MAX_FRAME_BYTES) return null;
+  const line = join(parts);
+  if (line.length < DATA_FIELD.length || DATA_FIELD.some((b, i) => line[i] !== b)) return null;
+  const start = DATA_FIELD.length + (line[DATA_FIELD.length] === SPACE ? 1 : 0);
+  let end = line.length;
+  if (end > start && line[end - 1] === NEWLINE) end--;
+  if (end > start && line[end - 1] === CARRIAGE_RETURN) end--;
+  const text = utf8(line.subarray(start, end));
+  const next = text === null ? null : rewritePayload(text, methods);
+  if (next === null) return null;
+  const data = encoder.encode(next);
+  const out = new Uint8Array(start + data.length + line.length - end);
+  out.set(line.subarray(0, start));
+  out.set(data, start);
+  out.set(line.subarray(end), start + data.length);
+  return out;
+}
+
+/**
+ * An event stream with each data line that holds a failed check rewritten. It
+ * works on bytes, so every other byte goes out as it came. A line goes out as
+ * soon as its newline arrives, and a chunk with nothing to change goes out as
+ * it is. A line still without its newline after MAX_FRAME_BYTES goes out
+ * unchanged from there on, as it arrives.
+ */
+function eventStreamRewrite(methods: Methods): TransformStream<Uint8Array, Uint8Array> {
+  let held: Uint8Array[] = []; // the start of a line whose newline has not arrived
+  let heldBytes = 0;
+  let passing = false; // the current line passed MAX_FRAME_BYTES: the rest of it goes out as it comes
+  return new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      const out: Uint8Array[] = [];
+      // The chunk goes out as it came unless a line in it changes, part of it
+      // is held, or a held line from earlier chunks goes out with it.
+      let asItCame = held.length === 0;
+      let at = 0;
+      while (at < chunk.length) {
+        const nl = chunk.indexOf(NEWLINE, at);
+        const end = nl < 0 ? chunk.length : nl + 1;
+        const piece = chunk.subarray(at, end);
+        at = end;
+        if (passing) {
+          out.push(piece);
+          passing = nl < 0;
+          continue;
+        }
+        held.push(piece);
+        heldBytes += piece.byteLength;
+        if (nl < 0 && heldBytes <= MAX_FRAME_BYTES) {
+          asItCame = false;
+          continue;
+        }
+        // A whole line, or the start of one that passed the bound.
+        const next = nl < 0 ? null : rewriteLine(held, heldBytes, methods);
+        if (next) {
+          out.push(next);
+          asItCame = false;
+        } else {
+          for (const p of held) out.push(p);
+        }
+        passing = nl < 0;
+        held = [];
+        heldBytes = 0;
+      }
+      if (asItCame) controller.enqueue(chunk);
+      else if (out.length) controller.enqueue(join(out));
+    },
+    flush(controller) {
+      if (held.length) controller.enqueue(rewriteLine(held, heldBytes, methods) ?? join(held));
+    },
+  });
 }
 
 /** The same status and headers around a new body (whose length is not the old one's). */
@@ -179,44 +374,18 @@ export async function answerInvalidParams(response: Response, requestBody: strin
   };
   const type = (response.headers.get('content-type') ?? '').toLowerCase();
 
-  // A JSON answer is complete when it arrives, so it is read whole.
+  // A JSON answer is complete when it arrives. A copy of it is read, up to the
+  // bound; when nothing in it changes, the answer itself is handed back.
   if (type.startsWith('application/json')) {
-    const next = rewritePayload(await response.clone().text(), methods);
+    const copy = response.clone().body;
+    const bytes = copy && (await readAtMost(copy, MAX_FRAME_BYTES));
+    const text = bytes ? utf8(bytes) : null;
+    const next = text === null ? null : rewritePayload(text, methods);
     return next === null ? response : rebody(response, next);
   }
 
-  // An event stream is rewritten line by line as it passes, never buffered: a
-  // line goes out as soon as its newline arrives, and only a data line holding
-  // a failed check changes.
   if (type.startsWith('text/event-stream')) {
-    const decoder = new TextDecoder();
-    const encoder = new TextEncoder();
-    let partial = '';
-    const lines = (text: string) =>
-      text
-        .split('\n')
-        .map((line) => {
-          const prefix = /^data: ?/.exec(line)?.[0];
-          const next = prefix === undefined ? null : rewritePayload(line.slice(prefix.length), methods);
-          return next === null ? line : `${prefix}${next}`;
-        })
-        .join('\n');
-    const body = response.body.pipeThrough(
-      new TransformStream<Uint8Array, Uint8Array>({
-        transform(chunk, controller) {
-          partial += decoder.decode(chunk, { stream: true });
-          const end = partial.lastIndexOf('\n') + 1;
-          if (end === 0) return;
-          controller.enqueue(encoder.encode(lines(partial.slice(0, end))));
-          partial = partial.slice(end);
-        },
-        flush(controller) {
-          partial += decoder.decode();
-          if (partial) controller.enqueue(encoder.encode(lines(partial)));
-        },
-      }),
-    );
-    return rebody(response, body);
+    return rebody(response, response.body.pipeThrough(eventStreamRewrite(methods)));
   }
 
   return response;

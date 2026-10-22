@@ -59,9 +59,17 @@
  *                          enforced on its own, in both framings: a failed check is
  *                          rewritten, and a payload that differs from it in one
  *                          condition only passes unchanged (a result holding an
- *                          error-shaped object; another error code; a message
- *                          whose text before the list is not a request label; a
- *                          list with an issue outside params)
+ *                          error-shaped object, which is also never parsed; another
+ *                          error code; a message whose text before the list is
+ *                          not a request label; a list with an issue outside params)
+ *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
+ *                          (2,000 issues; the check prints the answer's size with
+ *                          and without the rewrite) is answered -32602; a failed
+ *                          check of exactly FRAME_BOUND bytes is rewritten in both
+ *                          framings and one byte more passes unchanged; a JSON body
+ *                          over the bound is handed back before its end arrives;
+ *                          and a line longer than the bound goes out before its
+ *                          newline arrives
  *
  * --app <dir> runs the checks against another checkout's apps/site; that is how
  * the failing verdicts on main were recorded. --against <dir> makes
@@ -91,8 +99,13 @@ const ROUTE = 'app/api/mcp/route.ts';
 const LIB = 'app/lib/mcp-invalid-params.ts';
 const MODERN = '2026-07-28';
 const CLIENT = { name: 'protocol-errors-gate', version: '0.0.0' };
-// A message this long is not "short"; the longest one this gate provokes is under 100.
+// A message this long is not "short". The longest one this gate provokes, three
+// issues named and the rest counted (frame-bound's 2,000 issues), is 230 characters.
 const MAX_MESSAGE = 300;
+// MAX_FRAME_BYTES in mcp-invalid-params.ts: the most of one payload that is held
+// and examined. Written out here, not read from the module, so the gate holds the
+// bound the module's comment states.
+const FRAME_BOUND = 4 * 1024 * 1024;
 
 /** The real mcp-handler, from the loaded app or, failing that, this checkout. */
 function realMcpHandler(app) {
@@ -286,9 +299,7 @@ async function modernClientInfoOptional() {
 
 async function validUnchanged() {
   // The reference: another checkout's route, or this one with the rewrite switched off.
-  const reference = AGAINST
-    ? routeHarness(AGAINST)
-    : routeHarness(APP, { [LIB]: (real) => ({ ...real, answerInvalidParams: async (response) => response }) });
+  const reference = AGAINST ? routeHarness(AGAINST) : routeWithoutRewrite();
   const tokens = JSON.stringify({ $schema: 'https://www.designtokens.org/schemas/2025.10/format.json', space: { $type: 'dimension', $value: { value: 4, unit: 'px' }, $description: 'base step' } });
   const init = (protocolVersion) => ({ protocolVersion, capabilities: {}, clientInfo: CLIENT });
   const cases = [
@@ -351,6 +362,13 @@ function chunked(chunks, type) {
       c.close();
     },
   }), { status: 200, headers: { 'content-type': type } });
+}
+
+/** The bytes cut into pieces of at most `size`. */
+function pieces(bytes, size) {
+  const out = [];
+  for (let at = 0; at < bytes.length; at += size) out.push(bytes.subarray(at, at + size));
+  return out;
 }
 
 /** A promise's value, or null when it has not settled within two seconds. */
@@ -454,16 +472,26 @@ const errorFrame = (code, message) => ({ jsonrpc: '2.0', id: 7, error: { code, m
 /** The request body the module-level cases answer: request 7 is a tools/list. */
 const TOOLS_LIST_7 = JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list', params: { cursor: 5 } });
 
-/** One payload through answerInvalidParams in each framing: the payload it answers with in each. */
+/** One payload through answerInvalidParams in each framing: the payload it answers with, and every text JSON.parse was given. */
 async function throughBothFramings(lib, payload, requestBody) {
   const enc = new TextEncoder();
-  const res = new Response(payload, { status: 200, headers: { 'content-type': 'application/json' } });
-  const out = await lib.answerInvalidParams(res, requestBody);
-  const json = out === res ? { same: true, payload } : { same: false, payload: await out.text() };
-  const stream = await lib.answerInvalidParams(chunked([enc.encode(`event: message\ndata: ${payload}\n\n`)], 'text/event-stream'), requestBody);
-  const text = Buffer.from(await stream.arrayBuffer()).toString('utf8');
-  const line = /^event: message\ndata: (.*)\n\n$/s.exec(text);
-  return { json, eventStream: line ? line[1] : `(not one event: ${short(text)})` };
+  const parsed = [];
+  const realParse = JSON.parse;
+  JSON.parse = function parse(text, reviver) {
+    parsed.push(String(text));
+    return realParse.call(JSON, text, reviver);
+  };
+  try {
+    const res = new Response(payload, { status: 200, headers: { 'content-type': 'application/json' } });
+    const out = await lib.answerInvalidParams(res, requestBody);
+    const json = out === res ? { same: true, payload } : { same: false, payload: await out.text() };
+    const stream = await lib.answerInvalidParams(chunked([enc.encode(`event: message\ndata: ${payload}\n\n`)], 'text/event-stream'), requestBody);
+    const text = Buffer.from(await stream.arrayBuffer()).toString('utf8');
+    const line = /^event: message\ndata: (.*)\n\n$/s.exec(text);
+    return { json, eventStream: line ? line[1] : `(not one event: ${short(text)})`, parsed };
+  } finally {
+    JSON.parse = realParse;
+  }
 }
 
 async function detection() {
@@ -477,8 +505,8 @@ async function detection() {
   // condition is dropped from the module.
   const cases = [
     { name: 'failed-check', frame: errorFrame(-32603, list), rewritten: true },
-    // 1: a result whose content holds an error-shaped object.
-    { name: 'result', frame: { jsonrpc: '2.0', id: 7, result: { structuredContent: { error: { code: -32603, message: list } } } } },
+    // 1: a result whose content holds an error-shaped object. Never parsed either.
+    { name: 'result', frame: { jsonrpc: '2.0', id: 7, result: { structuredContent: { error: { code: -32603, message: list } } } }, unparsed: true },
     // 2: the same list under another error code.
     { name: 'other-code', frame: errorFrame(-32600, list) },
     // 3: the same list behind text that is not a request label.
@@ -496,9 +524,148 @@ async function detection() {
       findings.push({ id: `detection:${c.name}:json`, why: `expected ${what}${c.rewritten ? '' : ' (the same Response)'}, got ${short(got.json.payload)}` });
     }
     if (got.eventStream !== expected) findings.push({ id: `detection:${c.name}:event-stream`, why: `expected ${what}, got ${short(got.eventStream)}` });
+    if (c.unparsed && got.parsed.length) findings.push({ id: `detection:${c.name}:parsed`, why: `a result was parsed: JSON.parse ran ${got.parsed.length} time(s), on ${short(got.parsed[0])}` });
   }
   const answers = cases.length * 2;
-  return { findings, measured: `${answers - findings.length}/${answers} answers as expected: the failed check rewritten in both framings, ${cases.length - 1} near misses unchanged` };
+  const wrong = new Set(findings.filter((f) => !f.id.endsWith(':parsed')).map((f) => f.id)).size;
+  return { findings, measured: `${answers - wrong}/${answers} answers as expected: the failed check rewritten in both framings, ${cases.length - 1} near misses unchanged, the result never parsed` };
+}
+
+// Built on first use: the route with its rewrite switched off.
+let rewriteOff;
+const routeWithoutRewrite = () => {
+  if (!rewriteOff) rewriteOff = routeHarness(APP, { [LIB]: (real) => ({ ...real, answerInvalidParams: async (response) => response }) });
+  return rewriteOff;
+};
+
+async function frameBound() {
+  const findings = [];
+  const notes = [];
+
+  // Through the real route and SDK: 2,000 issues, one per number in clientInfo.icons.
+  const icons = Array.from({ length: 2000 }, () => 5);
+  const request = legacy(1, 'initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { ...CLIENT, icons } });
+  const answer = await send(harness, request);
+  const problems = invalidParamsProblems(answer, 'initialize', 'params.clientInfo.icons[0]');
+  if (!problems.length) {
+    const m = messages(answer)[0].error.message;
+    if (!m.endsWith('; and 1997 more')) problems.push(`the message does not end "; and 1997 more": ${JSON.stringify(m)}`);
+  }
+  if (problems.length) findings.push({ id: 'frame-bound:2000-issues', why: problems.join('; ') });
+  if (fs.existsSync(path.join(APP, LIB))) {
+    const raw = await send(routeWithoutRewrite(), request);
+    notes.push(`2,000 issues: ${raw.bytes.length} bytes without the rewrite, ${answer.bytes.length} with it`);
+  } else {
+    notes.push(`2,000 issues: ${answer.bytes.length} bytes`);
+  }
+
+  const { lib, finding } = rewriteModule('frame-bound');
+  if (!lib) return { findings: [...findings, finding], measured: notes.join('; ') };
+  const enc = new TextEncoder();
+
+  // A failed check padded to an exact size: three issues named, a fourth counted
+  // whose message carries the padding (ASCII, so one byte per character).
+  const named = [[['params', 'a']], [['params', 'b']], [['params', 'c']]];
+  const padded = (pad) => errorFrame(-32603, issueList([...named, [['params', 'pad'], 'x'.repeat(pad)]]));
+  const sized = (bytes, wrap) => padded(bytes - Buffer.byteLength(wrap(JSON.stringify(padded(0)))));
+  const rewrittenFrame = (frame) => JSON.stringify({ ...frame, error: { ...frame.error, code: -32602, message: 'Invalid params for tools/list: params.a: expected string, received number; params.b: expected string, received number; params.c: expected string, received number; and 1 more' } });
+  const KIB64 = 64 * 1024;
+
+  // A JSON body of exactly the bound is rewritten; one byte more is handed back
+  // as it is, and before its end arrives: reading stops at the bound.
+  {
+    const frame = sized(FRAME_BOUND, (p) => p);
+    const body = enc.encode(JSON.stringify(frame));
+    const out = await lib.answerInvalidParams(chunked(pieces(body, KIB64), 'application/json'), TOOLS_LIST_7);
+    const text = await out.text();
+    if (text !== rewrittenFrame(frame)) findings.push({ id: 'frame-bound:json-at-bound', why: `a ${body.length}-byte failed check was not rewritten: ${short(text)}` });
+
+    const over = enc.encode(JSON.stringify(sized(FRAME_BOUND + 1, (p) => p)));
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const res = new Response(new ReadableStream({
+      async start(c) {
+        for (const p of pieces(over.subarray(0, over.length - 1), KIB64)) c.enqueue(p);
+        c.enqueue(over.subarray(over.length - 1));
+        await gate;
+        c.enqueue(enc.encode(' '));
+        c.close();
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    const back = await within(lib.answerInvalidParams(res, TOOLS_LIST_7));
+    release();
+    if (back !== res) findings.push({ id: 'frame-bound:json-over-bound', why: back ? 'a JSON body one byte over the bound came back as a new Response, not the one passed in' : 'a JSON body over the bound was read on past the bound: no answer before the rest arrived' });
+    if (back) await back.arrayBuffer();
+  }
+
+  // An event-stream line of exactly the bound (newline included) is rewritten
+  // across chunks; one byte more passes unchanged.
+  {
+    const frame = sized(FRAME_BOUND, (p) => `data: ${p}\n`);
+    const stream = enc.encode(`event: message\ndata: ${JSON.stringify(frame)}\n\n`);
+    const out = await lib.answerInvalidParams(chunked(pieces(stream, KIB64), 'text/event-stream'), TOOLS_LIST_7);
+    const text = Buffer.from(await out.arrayBuffer()).toString('utf8');
+    if (text !== `event: message\ndata: ${rewrittenFrame(frame)}\n\n`) findings.push({ id: 'frame-bound:event-stream-at-bound', why: `a ${FRAME_BOUND}-byte line was not rewritten: ${short(text)}` });
+
+    const over = enc.encode(`event: message\ndata: ${JSON.stringify(sized(FRAME_BOUND + 1, (p) => `data: ${p}\n`))}\n\n`);
+    const back = Buffer.from(await (await lib.answerInvalidParams(chunked(pieces(over, KIB64), 'text/event-stream'), TOOLS_LIST_7)).arrayBuffer());
+    if (!back.equals(Buffer.from(over))) findings.push({ id: 'frame-bound:event-stream-over-bound', why: `a line one byte over the bound changed: ${short(back.toString('utf8'))}` });
+  }
+
+  // A line that passes the bound goes out before its newline arrives. The
+  // source sends the event line and the line's first FRAME_BOUND + 1 bytes, in
+  // two chunks, then waits; each read is bounded.
+  {
+    const line = enc.encode(`data: ${JSON.stringify(sized(FRAME_BOUND + 1001, (p) => `data: ${p}\n`))}\n`);
+    const event = enc.encode('event: message\n');
+    const first = Buffer.concat([event, line.subarray(0, FRAME_BOUND - 999)]);
+    const second = line.subarray(FRAME_BOUND - 999, FRAME_BOUND + 1);
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const res = new Response(new ReadableStream({
+      async start(c) {
+        c.enqueue(first);
+        c.enqueue(second);
+        await gate;
+        c.enqueue(line.subarray(FRAME_BOUND + 1));
+        c.enqueue(enc.encode('\n'));
+        c.close();
+      },
+    }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    const out = await within(lib.answerInvalidParams(res, TOOLS_LIST_7));
+    const reader = out && out.body ? out.body.getReader() : null;
+    const got = [];
+    let early = 0;
+    let pending = null; // a read that timed out still delivers its chunk later
+    while (reader && early < event.length + FRAME_BOUND + 1) {
+      pending = reader.read();
+      const r = await within(pending);
+      if (!r) break;
+      pending = null;
+      if (r.done) break;
+      got.push(Buffer.from(r.value));
+      early += r.value.length;
+    }
+    release();
+    if (early < event.length + FRAME_BOUND + 1) {
+      findings.push({ id: 'frame-bound:held-line', why: `${early} of the first ${event.length + FRAME_BOUND + 1} bytes came out before the line's newline arrived: a line longer than the bound was held` });
+    }
+    if (reader) {
+      for (let r = await (pending || reader.read()); !r.done; r = await reader.read()) got.push(Buffer.from(r.value));
+      const all = Buffer.concat(got);
+      const sent = Buffer.concat([event, line, enc.encode('\n')]);
+      if (!all.equals(sent)) findings.push({ id: 'frame-bound:held-line-bytes', why: `the ${sent.length}-byte stream came out as ${all.length} different bytes` });
+    }
+  }
+
+  if (!findings.length) {
+    notes.push(`at ${FRAME_BOUND} bytes rewritten and at ${FRAME_BOUND + 1} unchanged, in both framings`, 'a longer JSON body handed back before its end arrived', 'a longer line sent on before its newline arrived');
+  }
+  return { findings, measured: notes.join('; ') };
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -511,6 +678,7 @@ const CHECKS = [
   ['valid-unchanged', validUnchanged],
   ['stream-passthrough', streamPassthrough],
   ['detection', detection],
+  ['frame-bound', frameBound],
 ];
 
 async function main() {
