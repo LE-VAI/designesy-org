@@ -23,13 +23,19 @@ repository now reads the object form (its CHANGELOG, Unreleased); npm
 users get that from the first plugin release after 0.2.2.
 
 Caveat: the plugin matches a CSS length to a token by its text, and this
-token file writes each number in its shortest form. Where a site's `:root`
-and its rules both write `1.50rem`, `4.0px` or `010px`, the plugin mapped
-those spellings with the string form; with this file and the plugin's
-source here it maps `1.5rem`, `4px` and `10px` instead (and `0.75rem` to a
-token written `.75rem`). All 88 dimension strings the previous emitter
-wrote for the pages www.designesy.org served on 2026-10-21 were already in
-the shortest form.
+token file writes each number as JavaScript prints it (`1.50` as `1.5`,
+`.75` as `0.75`). Where a site's `:root` and its rules both write
+`1.50rem`, `4.0px` or `010px`, the plugin mapped those spellings with the
+string form; with this file and the plugin's source here it maps `1.5rem`,
+`4px` and `10px` instead (and `0.75rem` to a token written `.75rem`). Two
+tokens that hold one length in different spellings, such as `1rem` and
+`1.0rem`, now read the same. Where both are in the group a property
+expects (two `--space-*` tokens for `padding`), `no-magic-number` reports
+`1rem` as ambiguous and leaves it as written, where it used to fix it to
+the token that held `1rem`; where only one of them is, `1rem` maps to that
+one. All 88 dimension strings the previous emitter wrote for the pages
+www.designesy.org served on 2026-10-21 were already written as JavaScript
+prints their numbers.
 
 ### Fixed (guardrails)
 
