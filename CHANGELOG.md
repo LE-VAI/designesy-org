@@ -41,15 +41,23 @@ a shadow's lengths, so strings there did not lower the score.
 - `/export/dtcg` takes the shadow objects from the shared parser
   (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
   byte.
+- The hosted `/api/guardrails` caches each URL's result for 24 hours
+  (`unstable_cache`, `revalidate: 86400`, tag `guardrails`). A URL whose
+  result was cached before the deploy can keep returning the string form
+  until that entry is 24 hours old, and the first request after that still
+  receives it while the entry refreshes in the background.
+  `/api/admin/purge` clears the `score` tag only.
 
 ### Gates (guardrails)
 
 - `scripts/check-mcp-accuracy.js` (guardrails-dtcg) fails on a dimension or a
-  shadow length that is not `{ value, unit }` in px or rem, on a unitless 0
-  that does not become 0px, on a length in another unit that the converter
-  or `parseDimension` types rather than leaving as CSS, and on any WARN from
-  the tokens validator, where it failed only on a FAIL. Run against the
-  previous emitter, guardrails-dtcg reports 6 findings.
+  shadow length that is not `{ value, unit }` in px or rem, and on any WARN
+  from the tokens validator, where it failed only on a FAIL. It also probes
+  what the test site does not hold: a unitless 0 on a length name must
+  become 0px; lengths in em, %, vw and pt on their own, and a shadow with an
+  em length, must stay CSS; and `parseDimension` must not type `2em`, `50%`,
+  `10vw`, `12pt` or a unitless `1`. Run against the previous emitter,
+  guardrails-dtcg reports 6 findings.
 - `guardrails-emitted.json` and its golden row are regenerated, and
   `test/test_tokens_score.py` scores that file itself and expects no WARN and
   no FAIL, where it read the golden for no FAIL.
