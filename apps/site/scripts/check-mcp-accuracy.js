@@ -58,9 +58,11 @@
  *   guardrails-dtcg      the emitted token file uses the export's $schema, DTCG
  *                        {group.token} aliases that resolve, structured colors,
  *                        only DTCG types, dimensions and shadow lengths as
- *                        { value, unit } in px or rem (a unitless 0 as 0px;
- *                        em, %, vw and pt lengths, and a shadow with an em
- *                        length, kept as CSS), loses no declaration, and the
+ *                        { value, unit } in px or rem (a unitless 0 as 0px,
+ *                        a unitless 4 as a number; em, %, vw and pt lengths,
+ *                        and a shadow with an em length, kept as CSS; and
+ *                        parseDimension types none of 2em, 50%, 10vw, 12pt
+ *                        and a unitless 1), loses no declaration, and the
  *                        server's own tokens validator gives it 0 WARN and
  *                        0 FAIL
  *   tokens-warn-half     a WARN counts half, and the result, the tool
@@ -404,21 +406,27 @@ async function guardrailsDtcg() {
   // The fixture site's unitless 0s are all shadow offsets, and its one length
   // in a unit other than px or rem (4vw) is inside --gutter's clamp(), which
   // stays CSS for the clamp(). So the converter is also given a 0 on a length
-  // name, which is { value: 0, unit: 'px' }, and values with no 2025.10 form,
-  // which stay CSS: lengths in em, %, vw and pt on their own, and one shadow
-  // with an em length (em is the only unit tried inside a shadow). Those
-  // stop at the converter's own patterns (DIMENSION alone, SHADOW in a
-  // shadow) before parseDimension runs, so parseDimension, which
-  // /export/dtcg also calls, is given 2em, 50%, 10vw, 12pt and a unitless 1
-  // itself.
+  // name, which is { value: 0, unit: 'px' }; a 4 on a length name, which
+  // stays a number, since CSS gives a unitless number no unit and px would
+  // be invented (none of the fixture site's other unitless numbers is on a
+  // length name); and values with no 2025.10 form, which stay CSS: lengths
+  // in em, %, vw and pt on their own, and one shadow with an em length (em
+  // is the only unit tried inside a shadow). Those stop at the converter's
+  // own patterns (DIMENSION alone, SHADOW in a shadow) before parseDimension
+  // runs, so parseDimension, which /export/dtcg also calls, is given 2em,
+  // 50%, 10vw, 12pt and a unitless 1 itself.
   const dtcg = h.load('app/lib/dtcg.ts');
   const units = dtcg.cssTokensToDtcg(
-    { '--space-0': '0', '--inset': '2em', '--size-half': '50%', '--width-wide': '10vw', '--size-print': '12pt', '--shadow-em': '0 1em 2px #000' },
+    { '--space-0': '0', '--space-4': '4', '--inset': '2em', '--size-half': '50%', '--width-wide': '10vw', '--size-print': '12pt', '--shadow-em': '0 1em 2px #000' },
     { source: FIXTURES.site.url, generator: 'mcp-accuracy', extracted: '' },
   );
   const zero = units.space && units.space['0'];
   if (!zero || zero.$type !== 'dimension' || JSON.stringify(zero.$value) !== '{"value":0,"unit":"px"}') {
     push('zero', `--space-0: 0 converts to ${JSON.stringify(zero)}; a unitless 0 on a length name is { value: 0, unit: 'px' }.`);
+  }
+  const four = units.space && units.space['4'];
+  if (!four || four.$type !== 'number' || four.$value !== 4) {
+    push('unitless', `--space-4: 4 converts to ${JSON.stringify(four)}; a unitless number other than 0 is a number, and giving it px would invent a unit.`);
   }
   const keptAsCss = Object.keys(((units.$extensions || {}).designesy || {}).css || {});
   const typed = ['--inset', '--size-half', '--width-wide', '--size-print', '--shadow-em'].filter((n) => !keptAsCss.includes(n));
