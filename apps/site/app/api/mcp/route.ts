@@ -913,8 +913,17 @@ test(${titleJs}, async ({ page }) => {
 //
 // The SDK's modern path (2026-07-28) strictly requires:
 //   1. MCP-Protocol-Version header naming a modern revision (2026-07-28)
-//   2. A _meta envelope with keys io.modelcontextprotocol/protocolVersion,
-//      io.modelcontextprotocol/clientInfo, io.modelcontextprotocol/clientCapabilities
+//   2. A _meta envelope with keys io.modelcontextprotocol/protocolVersion and
+//      io.modelcontextprotocol/clientCapabilities
+//
+// io.modelcontextprotocol/clientInfo is optional. The 2026-07-28 schema
+// declares it `"io.modelcontextprotocol/clientInfo"?: Implementation;` with
+// "Clients SHOULD include this field on every request unless specifically
+// configured not to do so", and the SDK accepts a request without it. This shim
+// used to require it as well, so a request that left it out had its header
+// stripped while its body still named 2026-07-28, and the SDK answered 400
+// -32020 "the required MCP-Protocol-Version header is absent" to a client that
+// had sent the header.
 //
 // Clients that send the modern header but don't form the envelope correctly
 // (missing _meta, using bare key names like "protocolVersion" instead of the
@@ -934,11 +943,10 @@ test(${titleJs}, async ({ page }) => {
 const MODERN_PROTOCOL_VERSION = '2026-07-28';
 const META_PROTOCOL_VERSION_KEY = 'io.modelcontextprotocol/protocolVersion';
 const META_CLIENT_CAPABILITIES_KEY = 'io.modelcontextprotocol/clientCapabilities';
-const META_CLIENT_INFO_KEY = 'io.modelcontextprotocol/clientInfo';
 
 /**
  * Checks whether a JSON-RPC request body carries a valid modern-era _meta envelope.
- * Returns true only if _meta exists and contains all three required keys.
+ * Returns true only if _meta exists and contains both required keys.
  */
 function hasValidModernEnvelope(body: unknown): boolean {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false;
@@ -947,11 +955,7 @@ function hasValidModernEnvelope(body: unknown): boolean {
   const meta = (params as Record<string, unknown>)._meta;
   if (typeof meta !== 'object' || meta === null || Array.isArray(meta)) return false;
   const m = meta as Record<string, unknown>;
-  return (
-    META_PROTOCOL_VERSION_KEY in m &&
-    META_CLIENT_CAPABILITIES_KEY in m &&
-    META_CLIENT_INFO_KEY in m
-  );
+  return META_PROTOCOL_VERSION_KEY in m && META_CLIENT_CAPABILITIES_KEY in m;
 }
 
 /**
