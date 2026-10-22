@@ -8,8 +8,8 @@ this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added — test suite
-- `npm test` also runs the DTCG 2025.10 format test suite: 93 positive and 127 negative fixtures copied unmodified from design-tokens/community-group at `882ebd6` into `test/dtcg-2025.10/`, under the W3C 3-clause BSD License.
-- The validator rejects 13 of the positive fixtures and accepts 38 of the negative ones. `test/dtcg-2025.10/known-gaps.json` lists those ids, and the test fails when any fixture's verdict differs from that list. It compares verdicts, not reasons: t06 reports every token-level `$ref` (a JSON Pointer) as dangling, which is the only reason some negative fixtures are rejected.
+- `npm test` also runs the DTCG 2025.10 format test suite: 93 positive and 127 negative fixtures copied unmodified from design-tokens/community-group at `882ebd6` into `test/dtcg-2025.10/format/`, under the W3C 3-clause BSD License.
+- The validator rejects 13 of the positive fixtures and accepts 38 of the negative ones. `test/dtcg-2025.10/known-gaps.json` lists those ids, and the test fails when any fixture's verdict differs from that list. It compares verdicts, not reasons: t06 reports every token-level `$ref` (a JSON Pointer) as dangling. 18 negative fixtures fail t06 and nothing else; 15 of them have a token-level `$ref` and are rejected whatever it points to.
 - The validator and `dist/` are unchanged. Nothing under `test/` is published.
 
 ## [0.3.0] — 2026-10-08
