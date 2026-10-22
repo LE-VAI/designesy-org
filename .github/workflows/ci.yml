@@ -273,6 +273,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-mcp-accuracy.js
 
+      # A request whose params fail the MCP schema is answered -32602 naming the
+      # field (initialize without clientInfo, a numeric cursor, no uri), never
+      # -32603 with a raw issue list; a 2026-07-28 request may leave out clientInfo;
+      # every valid answer is byte for byte what the route answers without the rewrite.
+      - name: MCP protocol errors
+        if: ${{ !cancelled() }}
+        run: node scripts/check-mcp-protocol-errors.js
+
       - name: Count literal
         if: ${{ !cancelled() }}
         run: node scripts/check-count-literal.js
