@@ -324,7 +324,7 @@ async function exportDtcg() {
   const push = (id, why) => findings.push({ id: `export-dtcg:${id}`, why });
   const tokens = dtcgTokens(doc);
   const byPath = new Map(tokens.map((t) => [t.path, t.token]));
-  const isColor =(v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
+  const isColor = (v) => !!v && typeof v === 'object' && typeof v.colorSpace === 'string' && Array.isArray(v.components);
 
   const withVar = tokens.filter((t) => JSON.stringify(t.token.$value).includes('var('));
   if (withVar.length) push('var', `${withVar.length} $value(s) hold a CSS var(), e.g. ${withVar.slice(0, 3).map((t) => `${t.path}=${JSON.stringify(t.token.$value)}`).join(', ')}.`);
