@@ -52,17 +52,31 @@
  * fixtures whose verdict changes fail here; the ones still rejected are not
  * re-examined.
  *
+ * THE COPY
+ * A test hashes every file under format/ the way git does (line endings as LF)
+ * and compares the list with FORMAT_DIGEST, so a fixture that is removed,
+ * replaced or edited fails here even when the counts still match. Two more
+ * tests check that no two manifest tests share an input and that the inputs
+ * are exactly the files under format/ besides manifest.json.
+ *
  * UPDATING THE SUITE
  * Replace format/ with the same directory from a newer upstream commit. Set
- * SUITE_COMMIT and the counts in SIDES below, and the commit in the
- * pinned-commit line and the tree URL of LICENSE.md (a test checks both). Run
- * npm test, edit known-gaps.json until it names exactly the ids the failures
- * print, and recount the fixtures named under VERDICTS, NOT REASONS.
+ * SUITE_COMMIT, FORMAT_DIGEST and the counts in SIDES below, and the commit in
+ * the pinned-commit line and the tree URL of LICENSE.md (a test checks both).
+ * FORMAT_DIGEST is the sha256 of the lines "<blob id> <path under format/>",
+ * one per file, sorted bytewise, each ending in a newline. From upstream:
+ *   git ls-tree -r <commit> test-suite/tests/2025.10/format \
+ *     | awk '{print $3, substr($4, 33)}' | LC_ALL=C sort | sha256sum
+ * Run npm test, edit known-gaps.json until it names exactly the ids the
+ * failures print, and recount the fixtures named under VERDICTS, NOT REASONS.
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { validateTokens } from '../../dist/validator.js';
 
 function readJson(path) {
@@ -79,6 +93,32 @@ const runs = manifest.tests.map((test) => ({
 
 // The upstream commit format/ was copied from.
 const SUITE_COMMIT = '882ebd6716abef9a46d8ef5fb12e82009d6cee2e';
+
+// sha256 of the sorted "<blob id> <path>" lines for format/ at SUITE_COMMIT
+// (see THE COPY and UPDATING THE SUITE above).
+const FORMAT_DIGEST = 'd6933c41ac61e57837bfb99904b0ccc1682da9f8ecbfec4a8b3f03521ede5db6';
+
+// Every file under format/ as "<git blob id> <path relative to format/>",
+// sorted. The blob id is computed from the content with CRLF read as LF, as
+// git stores it, so a checkout with Windows line endings hashes the same.
+function formatBlobs() {
+  const lines = [];
+  (function walk(dir, prefix) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const rel = prefix + entry.name;
+      if (entry.isDirectory()) {
+        walk(join(dir, entry.name), `${rel}/`);
+      } else {
+        const lf = Buffer.from(readFileSync(join(dir, entry.name)).toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
+        const blob = createHash('sha1').update(`blob ${lf.length}\0`).update(lf).digest('hex');
+        lines.push(`${blob} ${rel}`);
+      }
+    }
+  })(fileURLToPath(new URL('./format/', import.meta.url)), '');
+  return lines.sort();
+}
+
+const blobs = formatBlobs();
 
 // Counts in format/manifest.json at SUITE_COMMIT. Pinned so a fixture lost
 // while copying or updating the suite fails here instead of shrinking the test.
@@ -110,18 +150,49 @@ describe(`DTCG 2025.10 format suite manifest at ${SUITE_COMMIT.slice(0, 7)}`, ()
     assert.equal(manifest.tests.length, total);
   });
 
-  it('LICENSE.md names SUITE_COMMIT in the pinned-commit line and in the tree URL', () => {
-    const licence = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8');
-    // Every commit each place names: a place that is missing, names another
-    // commit or appears twice fails, wherever else the file names SUITE_COMMIT.
-    const named = {
-      pinnedCommit: [...licence.matchAll(/pinned at commit\s+`([^`]*)`/g)].map((m) => m[1]),
-      treeUrl: [...licence.matchAll(/github\.com\/design-tokens\/community-group\/tree\/([^/\s]*)/g)].map((m) => m[1]),
+  it('no two tests share an input file', () => {
+    const shared = manifest.tests.filter((t, i) => manifest.tests.findIndex((u) => u.input === t.input) !== i);
+    assert.deepEqual(shared.map((t) => `${t.id}: ${t.input}`), [], 'tests whose input an earlier test already uses');
+  });
+
+  it('the inputs are exactly the files under format/ besides manifest.json', () => {
+    const files = blobs.map((line) => line.slice(line.indexOf(' ') + 1)).filter((p) => p !== 'manifest.json').sort();
+    assert.deepEqual([...new Set(manifest.tests.map((t) => t.input))].sort(), files);
+  });
+
+  it(`format/ is the upstream copy at ${SUITE_COMMIT.slice(0, 7)}: its file list hashes to FORMAT_DIGEST`, () => {
+    const digest = createHash('sha256').update(blobs.map((line) => `${line}\n`).join('')).digest('hex');
+    assert.equal(
+      digest,
+      FORMAT_DIGEST,
+      `format/ (${blobs.length} files) differs from the copy FORMAT_DIGEST records. Compare git ls-files -s of format/ with git ls-tree -r ${SUITE_COMMIT} test-suite/tests/2025.10/format upstream.`,
+    );
+  });
+
+  it('LICENSE.md names SUITE_COMMIT, and no other commit, in the pinned-commit line and in the tree URL line', () => {
+    const lines = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8').split(/\r?\n/);
+    // A commit is any run of 7 or more hex digits, so a short hash counts too.
+    const commits = (line) => line.match(/\b[0-9a-f]{7,}\b/gi) ?? [];
+    const treeUrl = 'github.com/design-tokens/community-group/tree/';
+    // Each place must be one line that names SUITE_COMMIT once, in the
+    // backticks or as the URL's commit segment, and names no other commit. A
+    // place that is missing, repeated or names another commit fails, wherever
+    // else the file names SUITE_COMMIT.
+    const places = {
+      pinnedCommitLine: lines
+        .filter((l) => l.includes('pinned at commit'))
+        .map((l) => ({ backticked: l.match(/pinned at commit\s+`([^`]*)`/)?.[1] ?? null, commits: commits(l) })),
+      treeUrlLine: lines
+        .filter((l) => l.includes(treeUrl))
+        .map((l) => ({ urlCommits: l.split(treeUrl).slice(1).map((s) => s.split(/[/\s]/)[0]), commits: commits(l) })),
     };
     assert.deepEqual(
-      named,
-      { pinnedCommit: [SUITE_COMMIT], treeUrl: [SUITE_COMMIT] },
-      `LICENSE.md must name ${SUITE_COMMIT} once in the pinned-commit line and once in the tree URL`,
+      places,
+      {
+        pinnedCommitLine: [{ backticked: SUITE_COMMIT, commits: [SUITE_COMMIT] }],
+        treeUrlLine: [{ urlCommits: [SUITE_COMMIT], commits: [SUITE_COMMIT] }],
+      },
+      `LICENSE.md must have one pinned-commit line and one tree URL line, each naming ${SUITE_COMMIT} once and no other commit`,
     );
   });
 
@@ -165,7 +236,8 @@ for (const side of SIDES) {
       );
     });
 
-    it(`all ${gapSet.size} ids in ${side.gapsKey} are still ${side.wrong}`, () => {
+    // Counts the listed ids that are manifest ids of this kind: the ones it checks.
+    it(`all ${[...gapSet].filter((id) => byId.has(id)).length} ids in ${side.gapsKey} are still ${side.wrong}`, () => {
       const fixed = [...gapSet].filter((id) => byId.has(id) && byId.get(id).result.valid === side.valid);
       assert.deepEqual(
         fixed,
