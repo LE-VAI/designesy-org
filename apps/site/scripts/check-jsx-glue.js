@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * JSX glue gate: no sentence may wrap so that JSX glues two words together.
+ * JSX glue gate: no JSX spacing may lose the space between two words, on the
+ * page or in an accessible name.
  *
  * WHY THIS EXISTS
  * JSX removes whitespace that contains a line break when it sits between text
@@ -18,38 +19,72 @@
  * skim reads the sentence the author meant. It takes reading the rendered
  * characters one at a time, which is what this does, from the source.
  *
+ * A space can also be on the page and missing from a name. React's server
+ * render puts a <!-- --> marker between two adjacent text children, and
+ * Chrome can leave a text node that holds only whitespace out of a name it
+ * computes from content when the node sits next to such a marker. On
+ * 2026-10-21 the /methodology summaries showed "13 checks · 13 scored" and
+ * were named "13checks ·13 scored", and its rule tables' row headers showed
+ * "S1 Overused fonts" and were named "S1Overused fonts" (Chrome 155,
+ * react-dom 19.3).
+ *
  * WHAT IT FLAGS
- * A JSX text run and an inline neighbour (an {expression}, a Link, a span,
- * strong, em, code, CountUp...) separated only by whitespace that contains a
- * line break, where the characters on both sides are ones a space normally
- * sits between: a word or closing punctuation before, a letter or digit after.
+ * 1. wrap  A JSX text run and an inline neighbour (an {expression}, a Link, a
+ *          span, strong, em, code, CountUp...) separated only by whitespace
+ *          that contains a line break, where the characters on both sides are
+ *          ones a space normally sits between: a word or closing punctuation
+ *          before, a letter or digit after.
+ * 2. name  A child that renders only whitespace ({' '}, or spaces between two
+ *          children on one line) next to a child that renders text (JSX text,
+ *          or an {expression} that can be a string or a number), anywhere
+ *          inside an element whose name is computed from its content: a, Link,
+ *          button, summary, h1-h6, th, label, legend, caption, option, an
+ *          element whose role takes its name from content (link, button, tab,
+ *          cell, heading...), and a component prop that its component renders
+ *          into one of those (DataTable puts each row's first cell in a
+ *          <th scope="row">). In inline content Chrome 155 drops the space
+ *          from the name; in an inline-flex or grid container it puts a space
+ *          between the items, so the name reads right only because of the
+ *          layout. The gate flags both.
  *
  * THE FIX
- * Wrap the line one word earlier, so the word and its neighbour share a line
- * and the space sits inside the text run:
+ * Keep the space inside a text run that also holds a word:
+ *   - wrap the line one word earlier, so the word and its neighbour share a
+ *     line and the space sits inside the text:
  *
- *     ...the same run                       ...scored once, by the
- *     your <Link>/score</Link> report       same {COUNT} checks the score page
+ *         ...the same run                       ...scored once, by the
+ *         your <Link>/score</Link> report       same {COUNT} checks the score page
  *
- * or let the neighbouring string carry the space ({` ${value}`}). Not {' '}
- * beside text: React's server render puts a <!-- --> marker between two
- * adjacent text children, and Chrome leaves a whitespace-only text node next
- * to that marker out of the accessible name. In a link or button showing
- * "Label: 45", Label:{' '}{value} is named "Label:45", and one showing
- * "Fixes 12", Fixes{' '}<span>12</span> is named "Fixes12" (Chrome 155,
- * react-dom 19.3 server markup). {' '} between two elements has no text
- * beside it, gets no marker and is read as a space.
+ *   - or write the space into the neighbouring text or string: Fixes <span>,
+ *     {` ${value}`}, {`${n} ${noun}`}.
+ * {' '} is safe between two elements: no text beside it, so no marker.
  *
  * WHAT IT DOES NOT FLAG
- *   - {' '}, {' · Lab'} and any string that brings its own leading space;
- *   - an element whose content starts with a space or with punctuation
+ *   - wrap: {' '}, {' · Lab'} and any string that brings its own leading space;
+ *   - wrap: an element whose content starts with a space or with punctuation
  *     (the wordmark's <span>.</span>, <span aria-hidden> →</span>);
- *   - block elements and empty self-closing tags, which carry no inline text;
- *   - text that starts with punctuation after an element ("</a>. Include");
- *   - the same boundary on ONE line: "v{version}" and "pt{plural}" are
- *     deliberate, and JSX keeps same-line spacing exactly as written.
+ *   - wrap: block elements and empty self-closing tags, which carry no inline
+ *     text;
+ *   - wrap: text that starts with punctuation after an element
+ *     ("</a>. Include");
+ *   - wrap: the same boundary on ONE line: "v{version}" and "pt{plural}" are
+ *     deliberate, and JSX keeps same-line spacing exactly as written;
+ *   - name: an element named by a literal aria-label or aria-labelledby, and
+ *     anything under aria-hidden="true";
+ *   - name: an {expression} that clearly renders an element: JSX,
+ *     cond && <El />, a .map() whose callback returns JSX. Any other value
+ *     counts as text, except a component's own {children}, which counts as
+ *     what its callers pass (CopyRow's one caller passes elements);
+ *   - name: JSX that reaches a name in a way the gate does not follow. It
+ *     follows JSX written inside such an element, and props a component
+ *     renders into one, through .map() callbacks, property reads,
+ *     destructuring and other components' props. It does not follow JSX kept
+ *     in a variable, context, state or a helper function's return value.
  *
- * Usage:  node scripts/check-jsx-glue.js [--json]
+ * Usage:  node scripts/check-jsx-glue.js [--json] [--self-test]
+ * --self-test runs both clauses on sources built to break them and on safe
+ * forms, and exits 1 if any is misjudged. Every scan runs it first, so a
+ * clause that cannot fire never reads as a clean tree.
  * Exits 1 on any finding, so it can gate CI.
  */
 
@@ -144,20 +179,387 @@ function edgeChar(node, which) {
   return null;
 }
 
-const findings = [];
-for (const file of walk(APP)) {
-  const rel = path.relative(APP, file).replace(/\\/g, '/');
-  const src = fs.readFileSync(file, 'utf8');
-  const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  const report = (node, before, after) => {
-    const line = sf.getLineAndCharacterOfPosition(node.getStart()).line + 1;
-    findings.push({ file: rel, line, before: before.slice(-40), after: after.slice(0, 40) });
+// ---- clause 2: names -------------------------------------------------------
+
+// Elements whose accessible name is computed from their content.
+const NAME_FROM_CONTENT = new Set([
+  'a', 'Link', 'button', 'summary', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'th', 'label', 'legend', 'caption', 'option',
+]);
+const NAME_FROM_CONTENT_ROLES = new Set([
+  'link', 'button', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'treeitem', 'cell',
+  'gridcell', 'columnheader', 'rowheader', 'heading', 'switch', 'checkbox', 'radio', 'tooltip',
+]);
+
+const attrsOf = (el) => (ts.isJsxElement(el) ? el.openingElement : el).attributes.properties;
+const attrOf = (el, name) => attrsOf(el).find((p) => ts.isJsxAttribute(p) && p.name.getText() === name);
+
+/** An attribute's literal value: a string, true, null for an expression, undefined when absent. */
+function literalAttr(a) {
+  if (!a) return undefined;
+  if (!a.initializer) return true; // <span aria-hidden>
+  if (ts.isStringLiteral(a.initializer)) return a.initializer.text;
+  const e = a.initializer.expression;
+  if (e && isStr(e)) return e.text;
+  if (e && e.kind === ts.SyntaxKind.TrueKeyword) return true;
+  return null;
+}
+
+/** Whether this host element's name is computed from its content. */
+function namedByContent(el) {
+  const role = literalAttr(attrOf(el, 'role'));
+  if (!(typeof role === 'string' ? NAME_FROM_CONTENT_ROLES.has(role) : NAME_FROM_CONTENT.has(tagName(el)))) return false;
+  // A literal aria-label or aria-labelledby names it instead of its content.
+  return !['aria-label', 'aria-labelledby'].some((n) => typeof literalAttr(attrOf(el, n)) === 'string');
+}
+
+const hiddenFromNames = (el) => [true, 'true'].includes(literalAttr(attrOf(el, 'aria-hidden')));
+
+function unwrap(e) {
+  while (ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isNonNullExpression(e) || ts.isSatisfiesExpression(e)) {
+    e = e.expression;
+  }
+  return e;
+}
+
+// JSX drops whitespace-only text that holds a line break, and {/* comments */}.
+const dropped = (k) => (ts.isJsxText(k) && !k.text.trim() && /\n/.test(k.text)) || (ts.isJsxExpression(k) && !k.expression);
+
+/** A child that renders only whitespace: {' '}, {" "}, or spaces between two children on one line. */
+function blank(k) {
+  if (ts.isJsxText(k)) return /^[ \t]+$/.test(k.text);
+  if (ts.isJsxExpression(k) && k.expression) {
+    const e = unwrap(k.expression);
+    return isStr(e) && /^[ \t\n\r\f]+$/.test(e.text);
+  }
+  return false;
+}
+
+/**
+ * Whether an expression can render a text node at its own level, where React
+ * would put a marker beside a neighbouring text child. Unknown values count as
+ * text; JSX, `cond && <El />` and a .map() whose callback returns JSX do not.
+ */
+function exprRendersText(e, side) {
+  e = unwrap(e);
+  if (isStr(e)) return e.text.length > 0;
+  if (ts.isTemplateExpression(e) || ts.isNumericLiteral(e) || ts.isBigIntLiteral(e)) return true;
+  if ([ts.SyntaxKind.TrueKeyword, ts.SyntaxKind.FalseKeyword, ts.SyntaxKind.NullKeyword].includes(e.kind)) return false;
+  if (ts.isIdentifier(e) && e.text === 'undefined') return false;
+  if (ts.isJsxElement(e) || ts.isJsxSelfClosingElement(e)) return false;
+  if (ts.isJsxFragment(e)) return childrenRenderText(e.children, side);
+  if (ts.isConditionalExpression(e)) return exprRendersText(e.whenTrue, side) || exprRendersText(e.whenFalse, side);
+  if (ts.isBinaryExpression(e)) {
+    const op = e.operatorToken.kind;
+    if (op === ts.SyntaxKind.AmpersandAmpersandToken) return exprRendersText(e.right, side);
+    if (op === ts.SyntaxKind.BarBarToken || op === ts.SyntaxKind.QuestionQuestionToken) {
+      return exprRendersText(e.left, side) || exprRendersText(e.right, side);
+    }
+  }
+  if (ts.isArrayLiteralExpression(e)) {
+    const els = e.elements;
+    return els.length > 0 && exprRendersText(side === 'first' ? els[0] : els[els.length - 1], side);
+  }
+  if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression) && ['map', 'flatMap'].includes(e.expression.name.text)) {
+    const cb = e.arguments[0] && unwrap(e.arguments[0]);
+    if (cb && (ts.isArrowFunction(cb) || ts.isFunctionExpression(cb))) {
+      if (!ts.isBlock(cb.body)) return exprRendersText(cb.body, side);
+      const returns = [];
+      const find = (n) => {
+        if (ts.isReturnStatement(n)) returns.push(n.expression);
+        else if (!ts.isFunctionLike(n)) ts.forEachChild(n, find);
+      };
+      ts.forEachChild(cb.body, find);
+      return returns.some((r) => r && exprRendersText(r, side));
+    }
+  }
+  // A component's own {children}: what its callers pass.
+  const comp = childrenPropOf(e);
+  if (comp && CHILD_TEXT.has(comp)) return CHILD_TEXT.get(comp)[side];
+  return true;
+}
+
+// For each component, whether any caller's children render text at the first
+// or last edge. A component with no caller in the tree counts as text.
+let CHILD_TEXT = new Map();
+
+/** The component whose own children an expression reads (`children`, `props.children`), or null. */
+function childrenPropOf(e) {
+  const viaProps = ts.isPropertyAccessExpression(e) && e.name.text === 'children';
+  const id = viaProps ? e.expression : e;
+  if (!ts.isIdentifier(id)) return null;
+  const d = declOf(id);
+  if (!d || d.kind !== 'param' || d.fn.parameters[0] !== d.node) return null;
+  const own = viaProps ? d.path.length === 0 : d.path.length === 1 && d.path[0] === 'children';
+  return own ? componentNameOf(d.fn) : null;
+}
+
+function childText(sources) {
+  const map = new Map();
+  const add = (name, first, last) => {
+    const t = map.get(name) || { first: false, last: false };
+    map.set(name, { first: t.first || first, last: t.last || last });
   };
   const visit = (node) => {
-    if (ts.isJsxElement(node) || ts.isJsxFragment(node)) {
+    if ((ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) && isComponentName(tagName(node))) {
+      const viaProp = !!attrOf(node, 'children');
+      const kids = ts.isJsxElement(node) ? node.children : [];
+      add(tagName(node), viaProp || childrenRenderText(kids, 'first'), viaProp || childrenRenderText(kids, 'last'));
+    }
+    ts.forEachChild(node, visit);
+  };
+  sources.forEach(visit);
+  return map;
+}
+
+/**
+ * The child just outside a fragment, before or after it. A fragment's children
+ * render in the list around it, so a space at its edge meets that neighbour:
+ * Fixes{n > 0 && <>{' '}<b>{n}</b></>} puts the space beside "Fixes".
+ */
+function outside(list, dir) {
+  if (!ts.isJsxFragment(list)) return null;
+  const step = dir === 'prev' ? -1 : 1;
+  let n = list;
+  for (let p = n.parent; p; n = p, p = p.parent) {
+    if (ts.isParenthesizedExpression(p) || ts.isBinaryExpression(p) || ts.isJsxExpression(p)
+      || (ts.isConditionalExpression(p) && p.condition !== n)) continue;
+    if (!ts.isJsxElement(p) && !ts.isJsxFragment(p)) return null;
+    const kids = p.children;
+    let i = kids.indexOf(n) + step;
+    while (i >= 0 && i < kids.length && dropped(kids[i])) i += step;
+    if (i >= 0 && i < kids.length) return kids[i];
+    if (!ts.isJsxFragment(p)) return null;
+  }
+  return null;
+}
+
+/** Whether the first (or last) rendered child of a list is a text node at that level. */
+function childrenRenderText(kids, side) {
+  const live = kids.filter((k) => !dropped(k));
+  return live.length > 0 && rendersText(side === 'first' ? live[0] : live[live.length - 1], side);
+}
+
+function rendersText(k, side) {
+  if (ts.isJsxText(k)) return true;
+  if (ts.isJsxExpression(k)) return exprRendersText(k.expression, side);
+  if (ts.isJsxFragment(k)) return childrenRenderText(k.children, side);
+  return false; // an element or a component: its text sits inside its own node
+}
+
+// ---- which component props end up in a name -------------------------------
+
+const isComponentName = (s) => /^[A-Z]/.test(s);
+
+/** The component a function node defines, if any: `function Name(...)` or `const Name = (...) =>`. */
+function componentNameOf(fn) {
+  if (ts.isFunctionDeclaration(fn) && fn.name && isComponentName(fn.name.text)) return fn.name.text;
+  if ((ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) && ts.isVariableDeclaration(fn.parent)) {
+    const n = fn.parent.name;
+    if (ts.isIdentifier(n) && isComponentName(n.text)) return n.text;
+  }
+  return null;
+}
+
+/** The property path from a binding pattern's root to `name`, or null when the pattern does not bind it. */
+function bindingPath(pattern, name) {
+  if (ts.isIdentifier(pattern)) return pattern.text === name ? [] : null;
+  for (const el of pattern.elements) {
+    if (ts.isOmittedExpression(el)) continue;
+    const key = ts.isObjectBindingPattern(pattern)
+      ? el.dotDotDotToken ? '...' : (el.propertyName || el.name).getText()
+      : '[]';
+    const sub = bindingPath(el.name, name);
+    if (sub) return [key, ...sub];
+  }
+  return null;
+}
+
+/** Where an identifier is declared: { kind: 'param' | 'var', node, path }. */
+function declOf(id) {
+  for (let n = id.parent; n; n = n.parent) {
+    if (ts.isFunctionLike(n)) {
+      for (const p of n.parameters) {
+        const pathTo = bindingPath(p.name, id.text);
+        if (pathTo) return { kind: 'param', node: p, fn: n, path: pathTo };
+      }
+    }
+    const stmts = ts.isBlock(n) || ts.isSourceFile(n) ? n.statements : [];
+    for (const st of stmts) {
+      if (!ts.isVariableStatement(st)) continue;
+      for (const d of st.declarationList.declarations) {
+        const pathTo = bindingPath(d.name, id.text);
+        if (pathTo && d.initializer) return { kind: 'var', node: d, path: pathTo };
+      }
+    }
+    if ((ts.isForOfStatement(n) || ts.isForInStatement(n)) && ts.isVariableDeclarationList(n.initializer)) {
+      for (const d of n.initializer.declarations) {
+        const pathTo = bindingPath(d.name, id.text);
+        if (pathTo) return { kind: 'loop', node: n, path: pathTo };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * The props of `fn` (a component) that an expression's value comes from:
+ * 'rows' for `rows`, `props.rows`, `rows.map((r) => r)[0]`... and '*' for the
+ * props object or a ...rest of it, which carries children.
+ */
+function propsBehind(e, fn, seen = new Set()) {
+  e = unwrap(e);
+  if (seen.has(e)) return [];
+  seen.add(e);
+  const out = [];
+  if (ts.isIdentifier(e)) {
+    const d = declOf(e);
+    if (!d) return out;
+    if (d.kind === 'param' && d.fn === fn && fn.parameters[0] === d.node) {
+      if (!d.path.length || d.path[0] === '...') out.push('*');
+      else out.push(d.path[0]);
+    } else if (d.kind === 'param') {
+      // An element of an array that is mapped: xs.map((x) => ...), xs.map(({ a }) => ...).
+      const call = d.fn.parent;
+      if (call && ts.isCallExpression(call) && call.arguments[0] === d.fn && d.fn.parameters[0] === d.node
+        && ts.isPropertyAccessExpression(call.expression)) {
+        out.push(...propsBehind(call.expression.expression, fn, seen));
+      }
+    } else if (d.kind === 'var') {
+      const from = propsBehind(d.node.initializer, fn, seen);
+      // const { rows } = props: a key read from the props object is that prop.
+      for (const p of from) out.push(p === '*' && d.path.length && d.path[0] !== '...' && d.path[0] !== '[]' ? d.path[0] : p);
+    } else if (d.kind === 'loop') {
+      out.push(...propsBehind(d.node.expression, fn, seen));
+    }
+    return out;
+  }
+  if (ts.isPropertyAccessExpression(e)) {
+    for (const p of propsBehind(e.expression, fn, seen)) out.push(p === '*' ? e.name.text : p);
+    return out;
+  }
+  if (ts.isElementAccessExpression(e)) return propsBehind(e.expression, fn, seen);
+  if (ts.isConditionalExpression(e)) return [...propsBehind(e.whenTrue, fn, seen), ...propsBehind(e.whenFalse, fn, seen)];
+  if (ts.isBinaryExpression(e)) return [...propsBehind(e.left, fn, seen), ...propsBehind(e.right, fn, seen)];
+  if (ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression)
+    && ['slice', 'filter', 'concat', 'flat', 'reverse', 'toReversed', 'toSorted', 'at'].includes(e.expression.name.text)) {
+    return propsBehind(e.expression.expression, fn, seen);
+  }
+  return out;
+}
+
+/**
+ * Walk the JSX in one source with the name context each child list sits in:
+ * false, or the label of the element or prop whose name it feeds. `naming`
+ * maps a component to the props it renders into a name ('children' for its
+ * content). `onList(node, label)` sees every element's and fragment's
+ * children; `onValue(expr, label)` sees every JSX {expression} child and
+ * every prop value placed in a name.
+ */
+function walkJsx(sf, naming, onList, onValue) {
+  const visitAttrs = (el, label) => {
+    const name = tagName(el);
+    const props = isComponentName(name) ? naming.get(name) : null;
+    for (const a of attrsOf(el)) {
+      if (ts.isJsxSpreadAttribute(a)) {
+        if (label) onValue(a.expression, label);
+        visit(a.expression, false);
+        continue;
+      }
+      const into = props && props.has(a.name.getText()) ? `${name} ${a.name.getText()}` : false;
+      if (into && a.initializer) {
+        const v = ts.isJsxExpression(a.initializer) ? a.initializer.expression : a.initializer;
+        if (v) onValue(v, into);
+      }
+      if (a.initializer) visit(a.initializer, into);
+    }
+  };
+  const visit = (node, label) => {
+    if (ts.isJsxElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const name = tagName(node);
+      let inner = label;
+      if (hiddenFromNames(node)) inner = false;
+      else if (!label && !isComponentName(name) && namedByContent(node)) inner = `<${name}>`;
+      else if (!label && name === 'Link' && namedByContent(node)) inner = '<Link>';
+      else if (!label && isComponentName(name) && naming.get(name)?.has('children')) inner = `${name} children`;
+      // A spread on an element in a name passes the props object, children included.
+      visitAttrs(node, inner && (!isComponentName(name) || name === 'Link') ? inner : false);
+      if (ts.isJsxSelfClosingElement(node)) return;
+      onList(node, inner);
+      for (const c of node.children) {
+        if (ts.isJsxExpression(c) && c.expression && inner) onValue(c.expression, inner);
+        visit(c, inner);
+      }
+      return;
+    }
+    if (ts.isJsxFragment(node)) {
+      onList(node, label);
+      for (const c of node.children) {
+        if (ts.isJsxExpression(c) && c.expression && label) onValue(c.expression, label);
+        visit(c, label);
+      }
+      return;
+    }
+    ts.forEachChild(node, (c) => visit(c, label));
+  };
+  visit(sf, false);
+}
+
+/** Component name -> the props it renders inside a name. Found to a fixed point across all sources. */
+function namingProps(sources) {
+  const naming = new Map();
+  for (let changed = true, round = 0; changed && round < 10; round++) {
+    changed = false;
+    for (const sf of sources) {
+      walkJsx(sf, naming, () => {}, (expr, label) => {
+        for (let fn = expr.parent; fn; fn = fn.parent) {
+          if (!ts.isFunctionLike(fn)) continue;
+          const comp = componentNameOf(fn);
+          if (!comp) continue;
+          for (const p of propsBehind(expr, fn)) {
+            const prop = p === '*' ? 'children' : p;
+            if (!naming.has(comp)) naming.set(comp, new Set());
+            if (!naming.get(comp).has(prop)) { naming.get(comp).add(prop); changed = true; }
+          }
+          break;
+        }
+      });
+    }
+  }
+  return naming;
+}
+
+// ---- scan -----------------------------------------------------------------
+
+/** Every finding in a set of .tsx sources ({ rel, src }): `wrap` (clause 1) and `name` (clause 2). */
+function scanSources(files) {
+  const sources = files.map(({ rel, src }) => ts.createSourceFile(rel, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX));
+  const naming = namingProps(sources);
+  // Callers' children are read with every component's own {children} counted as text.
+  CHILD_TEXT = new Map();
+  CHILD_TEXT = childText(sources);
+  const out = [];
+  for (const sf of sources) {
+    const report = (kind, node, before, after, extra = {}) => {
+      const line = sf.getLineAndCharacterOfPosition(node.getStart()).line + 1;
+      out.push({ kind, file: sf.fileName, line, before: before.slice(-40), after: after.slice(0, 40), ...extra });
+    };
+    walkJsx(sf, naming, (node, label) => {
       const kids = node.children;
       for (let i = 0; i < kids.length; i++) {
         const k = kids[i];
+        if (label && blank(k)) {
+          // The rendered neighbours: JSX drops whitespace with a line break, and comments.
+          let p = i - 1;
+          while (p >= 0 && dropped(kids[p])) p--;
+          let n = i + 1;
+          while (n < kids.length && dropped(kids[n])) n++;
+          const prev = p >= 0 ? kids[p] : outside(node, 'prev');
+          const next = n < kids.length ? kids[n] : outside(node, 'next');
+          if ((prev && rendersText(prev, 'last')) || (next && rendersText(next, 'first'))) {
+            const space = ts.isJsxText(k) ? JSON.stringify(k.text) : k.getText();
+            report('name', k, prev ? prev.getText() : '', next ? next.getText() : '', { space, in: label });
+          }
+        }
         if (!ts.isJsxText(k)) continue;
         const raw = k.text;
         if (!raw.trim()) continue;
@@ -166,34 +568,131 @@ for (const file of walk(APP)) {
         if (next && /\S[ \t]*\r?\n\s*$/.test(raw)) {
           const end = raw.trimEnd();
           const c = edgeChar(next, 'first');
-          if (c && WORD_END.test(end) && WORD_START.test(c)) report(k, end, next.getText());
+          if (c && WORD_END.test(end) && WORD_START.test(c)) report('wrap', k, end, next.getText());
         }
         // An inline neighbour, then a line break, then text.
         const prev = kids[i - 1];
         if (prev && /^\s*\n\s*\S/.test(raw)) {
           const start = raw.trimStart();
           const c = edgeChar(prev, 'last');
-          if (c && WORD_START.test(start) && WORD_END.test(c)) report(k, prev.getText(), start);
+          if (c && WORD_START.test(start) && WORD_END.test(c)) report('wrap', k, prev.getText(), start);
         }
       }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(sf);
+    }, () => {});
+  }
+  return out;
 }
+
+// ---- self-test --------------------------------------------------------------
+
+// Each case: sources, and the findings the gate must report ([kind, line] pairs).
+const SELF_TEST = [
+  ['wrap: text, line break, expression', ['<a href="#a">\n  Label:\n  {value}\n</a>'], [['wrap', 2]]],
+  ['wrap: text, line break, Link', ['<p>\n  the same run your\n  <Link href="/score">score</Link> report shows.\n</p>'], [['wrap', 2]]],
+  ['wrap: Link, line break, text', ['<p>\n  <Link href="/score">score</Link>\n  report shows.\n</p>'], [['wrap', 3]]],
+  ["name: text {' '} element", [`<a href="#">Fixes{' '}<span>12</span></a>`], [['name', 1]]],
+  ["name: element {' '} text", [`<button><span>12</span>{' '}checks</button>`], [['name', 1]]],
+  ['name: {n} {w} on one line', ['<summary>{n} {w}</summary>'], [['name', 1]]],
+  ['name: <code>{id}</code> {name} on one line', ['<th scope="row"><code>{id}</code> {name}</th>'], [['name', 1]]],
+  ["name: {' '} at a line end before an expression", [`<summary>\n  {n} checks ·{' '}\n  {m} scored\n</summary>`], [['name', 2]]],
+  ["name: {\" \"} in a role=tab", ['<div role="tab">{a}{" "}{b}</div>'], [['name', 1]]],
+  ['name: deep inside a heading', ['<h2>\n  <span>\n    Poise{\' \'}<em>adopted</em>\n  </span>\n</h2>'], [['name', 3]]],
+  ['name: a prop a component renders into <th>', [
+    'export function Table({ rows }) {\n  return <table><tbody>{rows.map((r) => <tr>{r.map((c, j) => (j === 0 ? <th scope="row">{c}</th> : <td>{c}</td>))}</tr>)}</tbody></table>;\n}',
+    'const t = <Table rows={ITEMS.map((x) => [<span key="a"><code>{x.id}</code> {x.name}</span>])} />;',
+  ], [['name', 1]]],
+  ['name: children a component renders into <button>', [
+    'export const Row = ({ children, ...rest }) => <button {...rest}>{children}</button>;',
+    'const r = <Row>{count}{\' \'}<span>rows</span></Row>;',
+  ], [['name', 1]]],
+  ["name: {' '} at a fragment's edge, beside text outside it", [`<a href="#">Fixes{n > 0 && <>{' '}<b>{n}</b></>}</a>`], [['name', 1]]],
+  ['name: {children} that a caller passes as text', [
+    "export const Row = ({ index, children }) => <button>{index && <i>{index}</i>}{' '}{children}</button>;",
+    'const r = <Row index="01">Root</Row>;',
+  ], [['name', 1]]],
+  ['name: a component passing its prop to one that names it', [
+    'export function Table({ rows }) {\n  return <th>{rows[0]}</th>;\n}',
+    'export function Wrap({ items }) {\n  return <Table rows={items} />;\n}',
+    'const w = <Wrap items={[<>{a} {b}</>]} />;',
+  ], [['name', 1]]],
+  // Safe forms: none of these may be flagged.
+  ['safe: the space inside the text run', ['<a href="#">Fixes <span>12</span></a>'], []],
+  ['safe: a template carries the spaces', ['<summary>{`${n} ${w}`}</summary>'], []],
+  ['safe: the neighbouring string carries the space', ['<th scope="row"><code>{id}</code>{` ${name}`}</th>'], []],
+  ['safe: a string with its own leading space', ["<summary>{n}{' checks'}</summary>"], []],
+  ['safe: text after an expression on one line', ['<summary>{n} checks</summary>'], []],
+  ["safe: {' '} between two elements", [`<a href="#"><span>Alpha</span>{' '}<span>Beta</span></a>`], []],
+  ["safe: {' '} beside text outside a name", [`<p>Fixes{' '}<span>12</span></p>`], []],
+  ["safe: a literal aria-label names it", [`<a href="#" aria-label="Fixes 12">Fixes{' '}<span>12</span></a>`], []],
+  ["safe: inside aria-hidden", [`<a href="#">Go<span aria-hidden="true">{n}{' '}→</span></a>`], []],
+  ["safe: beside a .map() that returns JSX", [`<a href="#">{xs.map((x) => <i key={x}>{x}</i>)}{' '}<b>more</b></a>`], []],
+  ["safe: beside cond && <El />", [`<button>{open && <Icon />}{' '}<span>Menu</span></button>`], []],
+  ['safe: {children} that every caller passes as elements', [
+    "export const Row = ({ index, children }) => <button>{index && <i>{index}</i>}{' '}{children}</button>;",
+    'const r = <Row index="01"><span>Root</span></Row>;',
+  ], []],
+  ['safe: a component prop that is not rendered into a name', [
+    'export function Fig({ note }) {\n  return <p>{note}</p>;\n}',
+    'const f = <Fig note={<>{a} {b}</>} />;',
+  ], []],
+];
+
+function selfTest() {
+  const bad = [];
+  for (const [name, srcs, want] of SELF_TEST) {
+    const got = scanSources(srcs.map((src, i) => ({ rel: `case-${i}.tsx`, src })));
+    const key = (f) => `${f[0] ?? f.kind}:${f[1] ?? f.line}`;
+    const gotKeys = got.map(key).sort().join(' ');
+    const wantKeys = want.map(key).sort().join(' ');
+    if (gotKeys !== wantKeys) bad.push(`${name}: expected [${wantKeys}], got [${gotKeys}]`);
+  }
+  return bad;
+}
+
+// ---- main -------------------------------------------------------------------
+
+const broken = selfTest();
+if (process.argv.includes('--self-test')) {
+  for (const b of broken) console.error(`  [self-test] FAIL ${b}`);
+  console.log(`[jsx-glue] self-test: ${SELF_TEST.length - broken.length}/${SELF_TEST.length} cases judged right`);
+  process.exit(broken.length ? 1 : 0);
+}
+if (broken.length) {
+  console.error('[jsx-glue] the self-test failed, so a clean scan would prove nothing:');
+  for (const b of broken) console.error(`  ${b}`);
+  process.exit(1);
+}
+
+const findings = scanSources(
+  walk(APP).map((file) => ({ rel: path.relative(APP, file).split(path.sep).join('/'), src: fs.readFileSync(file, 'utf8') })),
+);
+const wrap = findings.filter((f) => f.kind === 'wrap');
+const name = findings.filter((f) => f.kind === 'name');
 
 if (process.argv.includes('--json')) {
   console.log(JSON.stringify({ findings }, null, 2));
 } else if (!findings.length) {
-  console.log('[jsx-glue] OK - no line break glues two words together');
+  console.log('[jsx-glue] OK - no line break glues two words together, and no name can lose a space');
 } else {
-  for (const f of findings) {
+  for (const f of wrap) {
     console.log(`  FAIL ${f.file}:${f.line}  ${JSON.stringify(f.before)} + ${JSON.stringify(f.after)}`);
   }
-  console.log(
-    `[jsx-glue] ${findings.length} boundary(ies) where a line break removes the space: wrap one word earlier so the ` +
-      "space stays inside the text, or put it in the neighbouring string ({` ${value}`}). A {' '} beside text is left " +
-      "out of a link's or button's accessible name in Chrome; between two elements it is fine.",
-  );
+  if (wrap.length) {
+    console.log(
+      `[jsx-glue] ${wrap.length} boundary(ies) where a line break removes the space: wrap one word earlier so the ` +
+        "space stays inside the text, or write it into the neighbouring string ({` ${value}`}).",
+    );
+  }
+  for (const f of name) {
+    console.log(`  FAIL ${f.file}:${f.line}  ${JSON.stringify(f.before)} ${f.space} ${JSON.stringify(f.after)}  (in ${f.in})`);
+  }
+  if (name.length) {
+    console.log(
+      `[jsx-glue] ${name.length} space(s) that can drop out of an accessible name: a child that is only whitespace, ` +
+        'beside text, inside content that names a link, button, summary, heading or table header. Write the space ' +
+        "into the neighbouring text or string (Fixes <span>, {` ${value}`}, {`${n} ${noun}`}); {' '} is safe only " +
+        'between two elements.',
+    );
+  }
 }
 process.exit(findings.length ? 1 : 0);
