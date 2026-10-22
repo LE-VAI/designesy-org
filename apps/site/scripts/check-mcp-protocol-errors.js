@@ -47,7 +47,9 @@
  *                          io.modelcontextprotocol/clientInfo get a result
  *   valid-unchanged        valid requests and ordinary errors answer, byte for
  *                          byte, what they answer with the rewrite switched off:
- *                          status, headers and body
+ *                          status, headers and body. Not applicable (SKIP) on a
+ *                          tree without app/lib/mcp-invalid-params.ts and no
+ *                          --against: there is no rewrite to switch off
  *   stream-passthrough     answerInvalidParams hands an event stream on unchanged
  *                          when it holds no failed check, however it is chunked (a
  *                          split inside a line or inside a UTF-8 character),
@@ -298,6 +300,11 @@ async function modernClientInfoOptional() {
 }
 
 async function validUnchanged() {
+  // Without the module there is no rewrite to switch off: the reference would
+  // be this route itself, and every answer would match trivially.
+  if (!AGAINST && !fs.existsSync(path.join(APP, LIB))) {
+    return { findings: [], skipped: `not applicable: this tree has no ${LIB}, so there is no rewrite to switch off (--against <dir> compares with another checkout)` };
+  }
   // The reference: another checkout's route, or this one with the rewrite switched off.
   const reference = AGAINST ? routeHarness(AGAINST) : routeWithoutRewrite();
   const tokens = JSON.stringify({ $schema: 'https://www.designtokens.org/schemas/2025.10/format.json', space: { $type: 'dimension', $value: { value: 4, unit: 'px' }, $description: 'base step' } });
@@ -708,11 +715,16 @@ async function main() {
     console.log(JSON.stringify({ ok: findings.length === 0, app: APP, results }, null, 2));
   } else {
     for (const r of results) {
-      const verdict = r.findings.length === 0 ? 'OK  ' : 'FAIL';
-      console.log(`mcp-protocol-errors: ${verdict} ${r.name}${r.measured ? ` (${r.measured})` : ''}`);
+      const verdict = r.findings.length ? 'FAIL' : r.skipped ? 'SKIP' : 'OK  ';
+      const note = r.findings.length === 0 && r.skipped ? r.skipped : r.measured;
+      console.log(`mcp-protocol-errors: ${verdict} ${r.name}${note ? ` (${note})` : ''}`);
       for (const f of r.findings) console.log(`    [${f.id}] ${f.why}`);
     }
-    console.log(findings.length === 0 ? `mcp-protocol-errors: OK, ${CHECKS.length} check(s) hold` : `mcp-protocol-errors: ${findings.length} finding(s)`);
+    const skipped = results.filter((r) => r.skipped && r.findings.length === 0).length;
+    const notApplicable = skipped ? `, ${skipped} not applicable` : '';
+    console.log(findings.length === 0
+      ? `mcp-protocol-errors: OK, ${CHECKS.length - skipped} check(s) hold${notApplicable}`
+      : `mcp-protocol-errors: ${findings.length} finding(s)${notApplicable}`);
   }
   process.exit(findings.length === 0 ? 0 : 1);
 }
