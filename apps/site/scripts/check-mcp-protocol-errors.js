@@ -51,9 +51,10 @@
  *   stream-passthrough     answerInvalidParams hands an event stream on unchanged
  *                          when it holds no failed check, however it is chunked (a
  *                          split inside a line or inside a UTF-8 character),
- *                          rewrites only a failed check's line, leaves a failed
- *                          result check alone, and sends each event before the
- *                          stream ends
+ *                          rewrites only a failed check's line (as the SDK
+ *                          writes it today, and as an open upstream change would),
+ *                          leaves a failed result check alone, and sends each
+ *                          event before the stream ends
  *
  * --app <dir> runs the checks against another checkout's apps/site; that is how
  * the failing verdicts on main were recorded. --against <dir> makes
@@ -333,7 +334,9 @@ async function streamPassthrough() {
   const findings = [];
   const issues = (path, expected) => JSON.stringify([{ expected, code: 'invalid_type', path, message: `Invalid input: expected ${expected}, received undefined` }], null, 2);
   const result = 'event: message\ndata: {"result":{"content":[{"type":"text","text":"Grüße, 日本語, ✓ and an emoji 🎛"}]},"jsonrpc":"2.0","id":1}\n\n';
-  const failed = (id) => `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code: -32603, message: issues(['params', 'clientInfo'], 'object') } })}\n\n`;
+  // As the SDK answers today (-32603, the bare list), and as an open upstream
+  // change would (-32602, the list behind "Invalid params for <method>: ").
+  const failed = (id, code = -32603, label = '') => `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code, message: `${label}${issues(['params', 'clientInfo'], 'object')}` } })}\n\n`;
   const rewritten = (id) => `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code: -32602, message: 'Invalid params for initialize: params.clientInfo is missing (expected object)' } })}\n\n`;
   const internal = 'event: message\ndata: {"jsonrpc":"2.0","id":3,"error":{"code":-32603,"message":"Internal error"}}\n\n';
   // A tool's result failing its schema is the server's fault, not the caller's: left alone.
@@ -341,6 +344,7 @@ async function streamPassthrough() {
   const requestBody = JSON.stringify([
     { jsonrpc: '2.0', id: 1, method: 'tools/call', params: {} },
     { jsonrpc: '2.0', id: 2, method: 'initialize', params: {} },
+    { jsonrpc: '2.0', id: 5, method: 'initialize', params: {} },
   ]);
   const enc = new TextEncoder();
   const sse = (chunks) => new Response(new ReadableStream({
@@ -373,9 +377,9 @@ async function streamPassthrough() {
     }
   }
 
-  // The same with one failed check inside: only its line changes.
-  const mixed = Buffer.from(enc.encode(result + failed(2) + internal));
-  const expected = Buffer.from(enc.encode(result + rewritten(2) + internal));
+  // The same with failed checks inside, in both forms: only their lines change.
+  const mixed = Buffer.from(enc.encode(result + failed(2) + internal + failed(5, -32602, 'Invalid params for initialize: ')));
+  const expected = Buffer.from(enc.encode(result + rewritten(2) + internal + rewritten(5)));
   for (const splits of [[], [7], [result.length + 20], Array.from({ length: Math.floor((mixed.length - 1) / 5) }, (_, i) => 5 * (i + 1))]) {
     const out = await run(mixed, splits);
     if (!out.equals(expected)) {
