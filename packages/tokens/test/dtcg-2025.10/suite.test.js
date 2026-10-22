@@ -54,8 +54,8 @@
  *
  * UPDATING THE SUITE
  * Replace format/ with the same directory from a newer upstream commit. Set
- * SUITE_COMMIT and the counts in SIDES below, and the two mentions of the
- * commit in LICENSE.md (a test checks that it names SUITE_COMMIT twice). Run
+ * SUITE_COMMIT and the counts in SIDES below, and the commit in the
+ * pinned-commit line and the tree URL of LICENSE.md (a test checks both). Run
  * npm test, edit known-gaps.json until it names exactly the ids the failures
  * print, and recount the fixtures named under VERDICTS, NOT REASONS.
  */
@@ -110,13 +110,18 @@ describe(`DTCG 2025.10 format suite manifest at ${SUITE_COMMIT.slice(0, 7)}`, ()
     assert.equal(manifest.tests.length, total);
   });
 
-  it('LICENSE.md names SUITE_COMMIT twice (the pinned commit and the tree URL)', () => {
+  it('LICENSE.md names SUITE_COMMIT in the pinned-commit line and in the tree URL', () => {
     const licence = readFileSync(new URL('./LICENSE.md', import.meta.url), 'utf-8');
-    const mentions = licence.split(SUITE_COMMIT).length - 1;
-    assert.equal(
-      mentions,
-      2,
-      `LICENSE.md names ${SUITE_COMMIT} ${mentions} time(s); it belongs in the pinned-commit line and in the tree URL`,
+    // Every commit each place names: a place that is missing, names another
+    // commit or appears twice fails, wherever else the file names SUITE_COMMIT.
+    const named = {
+      pinnedCommit: [...licence.matchAll(/pinned at commit\s+`([^`]*)`/g)].map((m) => m[1]),
+      treeUrl: [...licence.matchAll(/github\.com\/design-tokens\/community-group\/tree\/([^/\s]*)/g)].map((m) => m[1]),
+    };
+    assert.deepEqual(
+      named,
+      { pinnedCommit: [SUITE_COMMIT], treeUrl: [SUITE_COMMIT] },
+      `LICENSE.md must name ${SUITE_COMMIT} once in the pinned-commit line and once in the tree URL`,
     );
   });
 
@@ -160,8 +165,8 @@ for (const side of SIDES) {
       );
     });
 
-    it(`all ${gaps.length} ids in ${side.gapsKey} are still ${side.wrong}`, () => {
-      const fixed = gaps.filter((id) => byId.has(id) && byId.get(id).result.valid === side.valid);
+    it(`all ${gapSet.size} ids in ${side.gapsKey} are still ${side.wrong}`, () => {
+      const fixed = [...gapSet].filter((id) => byId.has(id) && byId.get(id).result.valid === side.valid);
       assert.deepEqual(
         fixed,
         [],
