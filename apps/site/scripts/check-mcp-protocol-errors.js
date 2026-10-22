@@ -58,24 +58,33 @@
  *                          rewrites only a failed check's line (as the SDK
  *                          writes it today, and as an open upstream change would),
  *                          leaves a failed result check alone, sends each event
- *                          before the stream ends, keeps a line's CRLF ending, and
+ *                          before the stream ends, keeps a line's CRLF ending,
  *                          rewrites a last line that the stream ends without its
- *                          newline
+ *                          newline and a data line without the space after
+ *                          "data:", and leaves alone a failed check on a line of
+ *                          another field or with bytes that are not UTF-8
  *   detection              each of the four conditions in mcp-invalid-params.ts is
  *                          enforced on its own, in both framings: a failed check is
- *                          rewritten, alone and in a batch, and a payload that
- *                          differs from it in one condition only passes unchanged
- *                          (results holding an error-shaped object, or with an id
- *                          that reads as an "error" member to a scan that ends a
- *                          string at an escaped quote or takes a value for a name,
- *                          none of which is parsed; another error code; a message
- *                          whose text before the list is not a request label, such
- *                          as a result check's; an empty list; a list with an
- *                          issue outside params)
+ *                          rewritten (alone; in a batch, first or second; with its
+ *                          "error" member's name written with an escape; with error
+ *                          data, which is kept; after leading whitespace), and a
+ *                          payload that differs from it in one condition only
+ *                          passes unchanged (results holding an error-shaped
+ *                          object, or with an id that reads as an "error" member to
+ *                          a scan that ends a string at an escaped quote or takes a
+ *                          value for a name, none of which is parsed; another error
+ *                          code; a message whose text before the list is not a
+ *                          request label, such as a result check's; an empty list;
+ *                          a list with an issue outside params). A rewritten answer
+ *                          keeps its status and headers, and no content-length that
+ *                          is not its new body's
  *   message-text           the -32602 message names the method only when the
- *                          request's method looks like one, writes each control
- *                          character as an escape, and cuts each issue to 160
- *                          characters, never inside a character or an escape
+ *                          request's method looks like one; words each kind of
+ *                          issue as stated in mcp-invalid-params.ts (a missing
+ *                          field, an invalid one, a record called an object);
+ *                          writes each control character as an escape; and cuts
+ *                          each issue to 160 characters, never inside a character
+ *                          or an escape
  *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
  *                          (2,000 issues; the check prints the answer's size with
  *                          and without the rewrite) is answered -32602; a failed
@@ -458,7 +467,11 @@ async function streamPassthrough() {
   const result = 'event: message\ndata: {"result":{"content":[{"type":"text","text":"Grüße, 日本語, ✓ and an emoji 🎛"}]},"jsonrpc":"2.0","id":1}\n\n';
   // As the SDK answers today (-32603, the bare list), and as an open upstream
   // change would (-32602, the list behind "Invalid params for <method>: ").
-  const failed = (id, code = -32603, label = '') => `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code, message: `${label}${issues(['params', 'clientInfo'], 'object')}` } })}\n\n`;
+  const failedJson = (id, code = -32603, label = '') => JSON.stringify({ jsonrpc: '2.0', id, error: { code, message: `${label}${issues(['params', 'clientInfo'], 'object')}` } });
+  const failed = (id, code, label) => `event: message\ndata: ${failedJson(id, code, label)}\n\n`;
+  // The same failed check with a member whose string holds a byte that is not UTF-8.
+  const notUtf8Json = Buffer.concat([Buffer.from(`${failedJson(2).slice(0, -1)},"note":"`), Buffer.from([0xff]), Buffer.from('"}')]);
+  const notUtf8 = Buffer.concat([Buffer.from('event: message\ndata: '), notUtf8Json, Buffer.from('\n\n')]);
   const rewritten = (id) => `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id, error: { code: -32602, message: 'Invalid params for initialize: params.clientInfo is missing (expected object)' } })}\n\n`;
   const internal = 'event: message\ndata: {"jsonrpc":"2.0","id":3,"error":{"code":-32603,"message":"Internal error"}}\n\n';
   // A tool's result failing its schema is the server's fault, not the caller's: left alone.
@@ -504,21 +517,27 @@ async function streamPassthrough() {
     }
   }
 
-  // A failed check's line keeps a CRLF ending, and a last line that the stream
-  // ends without its newline is still examined. (Each JSON payload is one line:
-  // JSON.stringify writes no raw newline.)
-  const lineEnds = [
+  // A failed check's line keeps a CRLF ending, a last line that the stream ends
+  // without its newline is still examined, and so is a data line without the
+  // space after "data:". A failed check on a line of another field, or with a
+  // byte that is not UTF-8, is not read as a data line's text: it passes
+  // unchanged. (Each JSON payload is one line: JSON.stringify writes no raw
+  // newline.)
+  const lineForms = [
     ['crlf', failed(2).replace(/\n/g, '\r\n'), rewritten(2).replace(/\n/g, '\r\n')],
     ['unterminated', failed(2).replace(/\n+$/, ''), rewritten(2).replace(/\n+$/, '')],
+    ['no-space', failed(2).replace('data: ', 'data:'), rewritten(2).replace('data: ', 'data:')],
+    ['other-field', failed(2).replace('data: ', 'info: '), failed(2).replace('data: ', 'info: ')],
+    ['not-utf8', notUtf8, notUtf8],
   ];
-  for (const [name, input, output] of lineEnds) {
-    const bytes = Buffer.from(enc.encode(input));
-    const want = Buffer.from(enc.encode(output));
+  for (const [name, input, output] of lineForms) {
+    const bytes = Buffer.isBuffer(input) ? input : Buffer.from(enc.encode(input));
+    const want = Buffer.isBuffer(output) ? output : Buffer.from(enc.encode(output));
     for (const splits of [[], Array.from({ length: Math.floor((bytes.length - 1) / 5) }, (_, i) => 5 * (i + 1))]) {
       const out = await run(bytes, splits);
       if (!out.equals(want)) {
-        const tail = (s) => JSON.stringify(s.slice(-40));
-        findings.push({ id: `stream-passthrough:${name}`, why: `split at ${splits.slice(0, 5).join(',') || 'none'}: the stream ended ${tail(out.toString('utf8'))}, expected ${tail(output)}` });
+        const tail = (b) => JSON.stringify(b.toString('utf8').slice(-40));
+        findings.push({ id: `stream-passthrough:${name}`, why: `split at ${splits.slice(0, 5).join(',') || 'none'}: the stream ended ${tail(out)}, expected ${tail(want)}` });
         break;
       }
     }
@@ -549,10 +568,19 @@ async function streamPassthrough() {
     while (!(await reader.read()).done);
   }
 
-  // A JSON answer without a failed check is handed back as it is.
-  const json = new Response('{"result":{},"jsonrpc":"2.0","id":1}', { status: 200, headers: { 'content-type': 'application/json' } });
-  if ((await lib.answerInvalidParams(json, requestBody)) !== json) {
-    findings.push({ id: 'stream-passthrough:json', why: 'a JSON result came back as a new Response, not the one passed in' });
+  // A JSON answer without a failed check is handed back as it is, and so are a
+  // failed check with a byte that is not UTF-8 and an answer with no body.
+  const handBack = [
+    ['json', '{"result":{},"jsonrpc":"2.0","id":1}', 'application/json', 'a JSON result'],
+    ['json-not-utf8', notUtf8Json, 'application/json', 'a JSON failed check with a byte that is not UTF-8'],
+    ['no-body', null, 'text/event-stream', 'an event-stream answer with no body'],
+  ];
+  for (const [name, body, type, what] of handBack) {
+    const res = new Response(body, { status: body === null ? 202 : 200, headers: { 'content-type': type } });
+    const back = await lib.answerInvalidParams(res, requestBody).catch((e) => ({ threw: e }));
+    if (back !== res) {
+      findings.push({ id: `stream-passthrough:${name}`, why: `${what} ${back && back.threw ? `threw: ${back.threw.message || back.threw}` : 'came back as a new Response, not the one passed in'}` });
+    }
   }
   return { findings, measured: `${cleanRuns} chunkings of a ${clean.length}-byte stream` };
 }
@@ -568,8 +596,12 @@ const errorFrame = (code, message) => ({ jsonrpc: '2.0', id: 7, error: { code, m
 /** The request body the module-level cases answer: request 7 is a tools/list. */
 const TOOLS_LIST_7 = JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list', params: { cursor: 5 } });
 
-/** One payload through answerInvalidParams in each framing: the payload it answers with, and every text JSON.parse was given. */
-async function throughBothFramings(lib, payload, requestBody) {
+/**
+ * One payload through answerInvalidParams in each framing: the payload it
+ * answers with, and every text JSON.parse was given. `linePayload`, when given,
+ * is the event stream's data line text in place of `payload`.
+ */
+async function throughBothFramings(lib, payload, requestBody, linePayload = payload) {
   const enc = new TextEncoder();
   const parsed = [];
   const realParse = JSON.parse;
@@ -581,7 +613,7 @@ async function throughBothFramings(lib, payload, requestBody) {
     const res = new Response(payload, { status: 200, headers: { 'content-type': 'application/json' } });
     const out = await lib.answerInvalidParams(res, requestBody);
     const json = out === res ? { same: true, payload } : { same: false, payload: await out.text() };
-    const stream = await lib.answerInvalidParams(chunked([enc.encode(`event: message\ndata: ${payload}\n\n`)], 'text/event-stream'), requestBody);
+    const stream = await lib.answerInvalidParams(chunked([enc.encode(`event: message\ndata: ${linePayload}\n\n`)], 'text/event-stream'), requestBody);
     const text = Buffer.from(await stream.arrayBuffer()).toString('utf8');
     const line = /^event: message\ndata: (.*)\n\n$/s.exec(text);
     return { json, eventStream: line ? line[1] : `(not one event: ${short(text)})`, parsed };
@@ -601,10 +633,22 @@ async function detection() {
   // is rewritten alone and in a batch. Each other case differs from it in one
   // condition only, so it fails when that condition, or a detail of how the
   // module tests it, is dropped.
+  const failedCheck = errorFrame(-32603, list);
+  const beside = { jsonrpc: '2.0', id: 8, result: {} };
   const cases = [
-    { name: 'failed-check', frame: errorFrame(-32603, list), rewritten: true },
-    // In a batch, beside a result, a message's members sit one level deeper.
-    { name: 'batch', frame: [errorFrame(-32603, list), { jsonrpc: '2.0', id: 8, result: {} }], rewritten: true },
+    { name: 'failed-check', frame: failedCheck, rewritten: true },
+    // In a batch, beside a result, a message's members sit one level deeper,
+    // and every message of the batch is examined, not only the first.
+    { name: 'batch', frame: [failedCheck, beside], rewritten: true },
+    { name: 'batch-second', frame: [beside, failedCheck], rewritten: true },
+    // 1: a member name written with an escape can read "error", so it is parsed
+    // to be sure; here it does.
+    { name: 'escaped-name', frame: failedCheck, text: JSON.stringify(failedCheck).replace('"error":', '"\\u0065rror":'), rewritten: true },
+    // The error's other members, such as data, are kept.
+    { name: 'error-data', frame: { ...failedCheck, error: { ...failedCheck.error, data: { kept: true } } }, rewritten: true },
+    // Whitespace before a batch: its messages are still found one level in.
+    // (An event-stream line holds no newline, so its whitespace is a space and a tab.)
+    { name: 'leading-whitespace', frame: [failedCheck, beside], text: `\r\n\t ${JSON.stringify([failedCheck, beside])}`, line: ` \t${JSON.stringify([failedCheck, beside])}`, rewritten: true },
     // 1: a result whose content holds an error-shaped object. Never parsed either.
     { name: 'result', frame: { jsonrpc: '2.0', id: 7, result: { structuredContent: { error: { code: -32603, message: list } } } }, unparsed: true },
     // 1: results whose id, a string the client chose, reads as an "error" member
@@ -624,9 +668,9 @@ async function detection() {
     { name: 'partly-outside-params', frame: errorFrame(-32603, issueList([[['params', 'cursor']], [['result', 'tools']]])) },
   ];
   for (const c of cases) {
-    const payload = JSON.stringify(c.frame);
+    const payload = c.text || JSON.stringify(c.frame);
     const expected = c.rewritten ? JSON.stringify(answered(c.frame)) : payload;
-    const got = await throughBothFramings(lib, payload, TOOLS_LIST_7);
+    const got = await throughBothFramings(lib, payload, TOOLS_LIST_7, c.line);
     const what = c.rewritten ? `rewritten to ${expected}` : 'unchanged';
     if (got.json.payload !== expected || (!c.rewritten && !got.json.same)) {
       findings.push({ id: `detection:${c.name}:json`, why: `expected ${what}${c.rewritten ? '' : ' (the same Response)'}, got ${short(got.json.payload)}` });
@@ -638,9 +682,27 @@ async function detection() {
   const wrong = new Set(findings.filter((f) => !f.id.endsWith(':parsed')).map((f) => f.id)).size;
   const rewritten = cases.filter((c) => c.rewritten).length;
   const unparsed = cases.filter((c) => c.unparsed).length;
+
+  // A rewritten answer keeps its status and headers. Its body's length changed,
+  // so a content-length it carries, if any, must be the new body's. (Each
+  // content type is written in mixed case, which names the same type.)
+  let kept = 0;
+  for (const [framing, type, body] of [['json', 'Application/JSON; charset=utf-8', JSON.stringify(failedCheck)], ['event-stream', 'Text/Event-Stream', `event: message\ndata: ${JSON.stringify(failedCheck)}\n\n`]]) {
+    const res = new Response(body, { status: 202, statusText: 'Accepted', headers: { 'content-type': type, 'content-length': String(Buffer.byteLength(body)), 'x-kept': 'yes' } });
+    const out = await lib.answerInvalidParams(res, TOOLS_LIST_7);
+    const bytes = Buffer.from(await out.arrayBuffer());
+    const length = out.headers.get('content-length');
+    const problems = [];
+    if (!bytes.toString('utf8').includes('"code":-32602')) problems.push('the failed check was not rewritten');
+    if (out.status !== 202 || out.statusText !== 'Accepted') problems.push(`status ${out.status} ${out.statusText}, not 202 Accepted`);
+    if (out.headers.get('content-type') !== type || out.headers.get('x-kept') !== 'yes') problems.push(`headers ${JSON.stringify([...out.headers])}`);
+    if (length !== null && Number(length) !== bytes.length) problems.push(`content-length ${length} on a ${bytes.length}-byte body`);
+    if (problems.length) findings.push({ id: `detection:headers:${framing}`, why: problems.join('; ') });
+    else kept += 1;
+  }
   return {
     findings,
-    measured: `${answers - wrong}/${answers} answers as expected: the failed check rewritten alone and in a batch, in both framings; ${cases.length - rewritten} near misses unchanged; ${unparsed} results never parsed`,
+    measured: `${answers - wrong}/${answers} answers as expected: ${rewritten} failed checks rewritten, in both framings; ${cases.length - rewritten} near misses unchanged; ${unparsed} results never parsed; status and headers kept in ${kept}/2 framings`,
   };
 }
 
@@ -657,6 +719,10 @@ async function messageText() {
   const { lib, finding } = rewriteModule('message-text');
   if (!lib) return { findings: [finding] };
   const findings = [];
+  // One issue as the schema library writes it, for a tools/call request 7.
+  const one = (issue) => JSON.stringify([issue], null, 2);
+  const toolsCall = JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'designesy_contract', arguments: 'motion' } });
+  const missing = (extra) => one({ code: 'invalid_type', expected: 'string', path: ['params', 'name'], message: 'Invalid input: expected string, received undefined', ...extra });
   // Control characters a key can hold, each written as \u and four hex digits,
   // between characters that are kept as they are (space, ~, no-break space).
   const controls = [0x00, 0x1f, 0x7f, 0x85, 0x9f, 0x2028, 0x2029, 0x0a];
@@ -672,6 +738,41 @@ async function messageText() {
       requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list: params.cursor is fine', params: { cursor: 5 } }),
       want: 'Invalid params: params.cursor: expected string, received number',
     },
+    // A method name is at most 64 characters.
+    {
+      name: 'method-name-64',
+      list: issueList([[['params', 'cursor']]]),
+      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: `tools/${'l'.repeat(58)}`, params: { cursor: 5 } }),
+      want: `Invalid params for tools/${'l'.repeat(58)}: params.cursor: expected string, received number`,
+    },
+    {
+      name: 'method-name-65',
+      list: issueList([[['params', 'cursor']]]),
+      requestBody: JSON.stringify({ jsonrpc: '2.0', id: 7, method: `tools/${'l'.repeat(59)}`, params: { cursor: 5 } }),
+      want: 'Invalid params: params.cursor: expected string, received number',
+    },
+    // A missing field, in the schema library's own words: "received undefined"
+    // ends the message of an invalid_type issue that names the expected type.
+    { name: 'missing', list: missing(), requestBody: toolsCall, want: 'Invalid params for tools/call: params.name is missing (expected string)' },
+    // Any other message keeps its words, after "Invalid input: ".
+    { name: 'missing-not-at-end', list: missing({ message: 'Invalid input: expected string, received undefined or a symbol' }), requestBody: toolsCall, want: 'Invalid params for tools/call: params.name: expected string, received undefined or a symbol' },
+    { name: 'missing-other-code', list: missing({ code: 'custom' }), requestBody: toolsCall, want: 'Invalid params for tools/call: params.name: expected string, received undefined' },
+    { name: 'missing-no-expected', list: missing({ expected: undefined }), requestBody: toolsCall, want: 'Invalid params for tools/call: params.name: expected string, received undefined' },
+    // The schema library calls a JSON object with string keys a record.
+    {
+      name: 'record',
+      list: one({ code: 'invalid_type', expected: 'record', path: ['params', 'arguments'], message: 'Invalid input: expected record, received string' }),
+      requestBody: toolsCall,
+      want: 'Invalid params for tools/call: params.arguments: expected object, received string',
+    },
+    {
+      name: 'missing-record',
+      list: one({ code: 'invalid_type', expected: 'record', path: ['params', 'arguments'], message: 'Invalid input: expected record, received undefined' }),
+      requestBody: toolsCall,
+      want: 'Invalid params for tools/call: params.arguments is missing (expected object)',
+    },
+    // A union that matched no member says only "Invalid input".
+    { name: 'invalid', list: one({ code: 'invalid_union', errors: [], path: ['params', 'cursor'], message: 'Invalid input' }), want: 'Invalid params for tools/list: params.cursor is invalid' },
     // Each control character in a key is written as an escape: the message stays on one line.
     { name: 'control-characters', list: issueList([[['params', `a${keyWith}b`]]]), want: `Invalid params for tools/list: params.a${keyShown}b: expected string, received number` },
     // A path can carry a key the client chose: each issue is cut to 160
@@ -681,6 +782,9 @@ async function messageText() {
     // one a cut keeps, is the first of the two that make up U+1F39B, so the
     // whole character goes.
     { name: 'issue-cut-surrogate', list: issueList([[['params', `${'k'.repeat(151)}\u{1F39B}${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(151)}…` },
+    // Here U+1F39B's two units are the 158th and 159th, the last two a cut
+    // keeps: the character is kept whole.
+    { name: 'issue-cut-surrogate-whole', list: issueList([[['params', `${'k'.repeat(150)}\u{1F39B}${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(150)}\u{1F39B}…` },
     // Nor inside an escape: here the six units of a newline's escape are the
     // 155th to 160th, so the cut would keep five of them and the escape goes;
     // one unit earlier, they end at the 159th and the escape is kept whole.
@@ -698,7 +802,7 @@ async function messageText() {
   const answers = cases.length * 2;
   return {
     findings,
-    measured: `${answers - findings.length}/${answers} messages as expected: the method named only when it looks like one, control characters escaped, each issue cut to 160 characters, never inside a character or an escape`,
+    measured: `${answers - findings.length}/${answers} messages as expected: the method named only when it looks like one, each kind of issue worded as stated, control characters escaped, each issue cut to 160 characters, never inside a character or an escape`,
   };
 }
 
