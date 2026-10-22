@@ -55,6 +55,8 @@ jobs:
               echo ""
               echo "**STALE LEADERBOARD.** Open the latest Rescore Leaderboard run: a red"
               echo "run names the failed check or the stale branch; an open"
+              echo "\"Leaderboard re-score ... is ready to land\" issue means its PR"
+              echo "was never opened (the issue has the command); an open"
               echo "\`leaderboard/weekly-*\` PR needs merging; a merged one with old data"
               echo "here means the deploy did not reach the domain."
             } >> "$GITHUB_STEP_SUMMARY"

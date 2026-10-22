@@ -55,14 +55,22 @@ export function AgentActions({ mdPath, label }: { mdPath: string; label: string 
     }
   }, [mdPath]);
 
+  const copyName = copied ? 'Copied page markdown to clipboard' : `Copy page: ${label} as Markdown for LLMs`;
+  const viewName = `View as Markdown: ${label}`;
+
   return (
     <div className="agent-actions">
       <button
         type="button"
         className="agent-action"
         onClick={onCopy}
-        aria-label={copied ? 'Copied page markdown to clipboard' : `Copy ${label} as Markdown for LLMs`}
-        title={copied ? 'Copied' : `Copy ${label} as Markdown for LLMs`}
+        // Each name opens with the words on the control (WCAG 2.5.3, Label in
+        // Name): "Copy the docs page as Markdown for LLMs" did not contain
+        // "Copy page" as a run, so a voice user saying it missed the button.
+        // The tooltip is the same string: a title that differs from the name
+        // is read again as a description.
+        aria-label={copyName}
+        title={copyName}
         // Deliberately not disabled when clipboard is unavailable: the fallback
         // opens the markdown, which is still useful. Disabling would hide a
         // working path.
@@ -73,8 +81,8 @@ export function AgentActions({ mdPath, label }: { mdPath: string; label: string 
       <a
         className="agent-action"
         href={mdPath}
-        aria-label={`View ${label} as Markdown`}
-        title={`View ${label} as Markdown`}
+        aria-label={viewName}
+        title={viewName}
         target="_blank"
         rel="noopener noreferrer"
       >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, useId, type ReactNode } from 'react';
 import { playExtended } from './cuelume-extend';
 
 /**
@@ -23,6 +23,7 @@ export function Copyable({
 }) {
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const descId = useId();
 
   const copy = useCallback(async () => {
     // Prefer explicit paste payload (agent prompt, machine URL, etc.)
@@ -35,7 +36,7 @@ export function Copyable({
       } else {
         const clone = ref.current.cloneNode(true) as HTMLElement;
         clone
-          .querySelectorAll('.definition-label, .definition-copy-badge')
+          .querySelectorAll('.definition-label, .definition-copy-badge, .definition-copy-desc')
           .forEach((el) => el.remove());
         value = clone.textContent?.trim() ?? '';
       }
@@ -86,6 +87,12 @@ export function Copyable({
     return () => obs.disconnect();
   }, [children]);
 
+  // The card is named by what it shows (WCAG 2.5.3, Label in Name): an
+  // aria-label of "Copy definition" did not contain the card's visible text,
+  // and axe-core 4.14 fails that, so a voice user saying the words they see
+  // reached nothing. "Copy <label>" and "Copied" are now the description,
+  // read from a hidden span (a description reads hidden text that it names);
+  // data-pagefind-ignore keeps that wording out of the search index.
   return (
     <div
       ref={ref}
@@ -100,11 +107,14 @@ export function Copyable({
           copy();
         }
       }}
-      aria-label={copied ? 'Copied' : `Copy ${label ?? 'text'}`}
+      aria-describedby={descId}
     >
       {children}
       <span className="definition-copy-badge" aria-hidden="true">
         {copied ? 'Copied' : 'Copy'}
+      </span>
+      <span className="definition-copy-desc" id={descId} hidden data-pagefind-ignore="">
+        {copied ? 'Copied' : `Copy ${label ?? 'text'}`}
       </span>
     </div>
   );

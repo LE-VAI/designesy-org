@@ -15,10 +15,12 @@ import { useEffect } from 'react';
  */
 export function DefinitionCopyEnhancer() {
   useEffect(() => {
+    // Ids for the hidden description spans, unique across the page.
+    let descCount = 0;
     const extractVisibleValue = (def: HTMLElement): string => {
       const clone = def.cloneNode(true) as HTMLElement;
       clone
-        .querySelectorAll('.definition-label, .definition-copy-badge')
+        .querySelectorAll('.definition-label, .definition-copy-badge, .definition-copy-desc')
         .forEach((el) => el.remove());
       return clone.textContent?.trim() ?? '';
     };
@@ -57,6 +59,17 @@ export function DefinitionCopyEnhancer() {
       //   - anchors: href stashed on data-dce-href, visual "link" still obvious
       //     from surrounding copy; the whole definition is a copy-target.
       def.querySelectorAll('a, button, [tabindex]').forEach((el) => {
+        // An anchor with no tabindex or role of its own is inert once its href
+        // is gone, so it is neither hidden nor given a tabindex: its words stay
+        // in the card's name, which is read from the card's content.
+        if (el.tagName === 'A' && !el.hasAttribute('tabindex') && !el.hasAttribute('role')) {
+          const href = el.getAttribute('href');
+          if (href) {
+            el.setAttribute('data-dce-href', href);
+            el.removeAttribute('href');
+          }
+          return;
+        }
         const existingTabindex = el.getAttribute('tabindex');
         if (existingTabindex === null || existingTabindex === '0') {
           el.setAttribute('tabindex', '-1');
@@ -77,18 +90,29 @@ export function DefinitionCopyEnhancer() {
       def.classList.add('is-copyable');
       def.setAttribute('role', 'button');
       def.setAttribute('tabindex', '0');
-      def.setAttribute(
-        'aria-label',
-        explicit
-          ? `Copy ${copyLabel}`
-          : `Copy ${copyLabel === 'text' ? 'definition' : copyLabel}`,
-      );
 
       const badge = document.createElement('span');
       badge.className = 'definition-copy-badge';
       badge.textContent = 'Copy';
       badge.setAttribute('aria-hidden', 'true');
       def.appendChild(badge);
+
+      // The card is named by what it shows (WCAG 2.5.3, Label in Name): an
+      // aria-label of "Copy definition" did not contain the card's visible
+      // text, and axe-core 4.14 fails that, so a voice user saying the words
+      // they see reached nothing. "Copy <label>" and "Copied" are now the
+      // description, read from a hidden span (a description reads hidden
+      // text that it names).
+      const copyWords = explicit
+        ? `Copy ${copyLabel}`
+        : `Copy ${copyLabel === 'text' ? 'definition' : copyLabel}`;
+      const desc = document.createElement('span');
+      desc.className = 'definition-copy-desc';
+      desc.id = `dce-${++descCount}`;
+      desc.hidden = true;
+      desc.textContent = copyWords;
+      def.appendChild(desc);
+      def.setAttribute('aria-describedby', desc.id);
 
       let resetTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -107,10 +131,12 @@ export function DefinitionCopyEnhancer() {
             document.body.removeChild(ta);
           }
           badge.textContent = 'Copied';
+          desc.textContent = 'Copied';
           def.classList.add('is-copied');
           if (resetTimer) clearTimeout(resetTimer);
           resetTimer = setTimeout(() => {
             badge.textContent = 'Copy';
+            desc.textContent = copyWords;
             def.classList.remove('is-copied');
           }, 1600);
         } catch {
