@@ -201,6 +201,26 @@ files by contract 0.1.3, above.
   and verdicts. The tokens checks change as described above.
 - The hosted endpoint, which has no offline engine or browser probe.
 
+**Engine 1.5.3: f14 counts what a `var()` resolves to, and line-height
+ratios** (the site; not on npm, where `@designesy/score` 0.9.3 runs engine
+1.5.2). A measurement fix to the own-contract score: no check is added, and
+no weight or ceiling moves.
+
+### Fixed (engine 1.5.3)
+
+- f14 (own contract) read a `var()`'s raw custom-property text, so a token
+  whose value is a chain of `var()`s was never counted. It now counts the
+  value the chain resolves to.
+- f14 had no line-height case. A unitless line-height that equals one of
+  the contract's typography ratios (within 0.01, as the other kinds use)
+  now counts. Own-contract formula 1.0.2.
+- On the recorded contract-page fixtures, `landed-capped` and
+  `landed-drift` move f14 from WARN to PASS: their tokens category rises (75
+  to 100, and 25 to 50) and their uncapped fidelity score with it (84.7 to
+  88.6, and 76.7 to 80.7). No reported score or grade moves.
+- designesy-mcp 1.13.10's offline engine reports engine 1.5.3. The Python
+  port has no f14 code, so its verdicts do not change.
+
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
 heights that the stylesheets wrote inline become named `:root` tokens and
@@ -281,8 +301,8 @@ This changes text only:
 - The engine (1.5.2), the checks, the weights and the ceilings, and the MCP
   tools and their descriptions. `CONTRACT_VERSION` in the npm engine source
   moves to v0.4.7, because its test reads the site's contract. Nothing is
-  published to npm or PyPI. The PyPI server's offline engine still reports
-  contract v0.4.6.
+  published to npm or PyPI with it. Until designesy-mcp 1.13.10, the PyPI
+  server's offline engine reported contract v0.4.6.
 - The eleven 16px label lines (`line-height: 1rem` on the 12.8px label step)
   stay lengths. At 1.25, Chrome lays the line out at 15.984375px, and the
   1/64px it loses moves the text below it by a device pixel on some pages.
