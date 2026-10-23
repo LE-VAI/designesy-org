@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.10] — 2026-10-21
+
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
 DTCG 2025.10 Format Module does** (the hosted `/api/mcp`, and the PyPI server
 from designesy-mcp 1.13.10, below). Scores move for files that
@@ -13,12 +15,13 @@ type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
 leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
 write dimensions as strings.
 
-Until 1.13.10 is published, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+An installed PyPI server still on 1.13.9 keeps the 0.1.2 checks
 but names them from the contract it fetches from this site, so its results
 say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
 A file with no `$schema` FAILs t01 under a name that calls `$schema` a
 Designesy policy, and t08 passes `"4px"` under a name that asks for
-`{ value, unit }`. Publishing 1.13.10 closes the gap.
+`{ value, unit }`. 1.13.10, published to PyPI and the MCP registry as
+`v1.13.10`, closes the gap.
 
 ### Fixed (tokens contract 0.1.3)
 
@@ -133,7 +136,7 @@ five fixtures keep their scores.
 - The sibling contract lock records tokens 0.1.3.
 
 **designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
-registry; not yet published, tag `v1.13.10`). Apart from the tokens scoring
+registry `v1.13.10`). Apart from the tokens scoring
 above, nothing changes in the hosted `/api/mcp` except the version it
 reports. It is the first designesy-mcp release since 1.13.9, so it also
 ships the offline engine merged since then: it mirrors engine 1.5.3 and
