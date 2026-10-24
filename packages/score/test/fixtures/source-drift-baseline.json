@@ -20,13 +20,14 @@
       "why": "Output envelope. route.ts attaches a receipt (buildReceipt) for the HTTP API and strips the internal retrievedAt; the package returns the result as-is."
     },
     "fn:fetchPageResilient": {
-      "route": "67f484da8260846d",
-      "engine": "d95d331e394038f8",
+      "route": "0112473beb8921ed",
+      "engine": "8df1ea0d928a76cf",
       "kind": "intentional",
-      "why": "Transport. route.ts uses fetch via fetchCssSingleDetailed and reports a typed failure reason; engine.ts uses node:https with an SSRF guard (isValidUrl, safeLookup). Both resolve stylesheet hrefs against the URL that answered (the candidate read, after its redirects: outcome.finalUrl in route.ts, httpsFetch's finalUrl in engine.ts; engine 1.5.4), and both read a gzip, deflate or br body decoded. Only the transport and the route's byte caps differ: route.ts also reads at most MAX_HTML_BYTES of HTML and MAX_STYLESHEET_BYTES of each stylesheet (MAX_TOTAL_STYLESHEET_BYTES together) and reports a cut read (engine 1.5.1); the package fetches on the user's own machine."
+      "why": "Transport. route.ts uses fetch via fetchCssSingleDetailed and reports a typed failure reason; engine.ts uses node:https with an SSRF guard (isValidUrl, safeLookup). Both resolve stylesheet hrefs against the URL that answered (the candidate read, after its redirects: outcome.finalUrl in route.ts, httpsFetch's finalUrl in engine.ts; engine 1.5.4), and both read a gzip, deflate or br body decoded. Both drop a stylesheet that was not read (route.ts keeps a sheet only when fetchCssSingleDetailed is ok; engine.ts only when httpsFetch's r.ok, engine 1.5.4). Only the transport and the bounds differ: route.ts reads at most MAX_HTML_BYTES of HTML and MAX_STYLESHEET_BYTES of each stylesheet (MAX_TOTAL_STYLESHEET_BYTES together, charged by url-guard as bytes arrive, with at most MAX_DECODING_STYLESHEETS decoding at once) and reports a cut read (engine 1.5.1); engine.ts lets the stylesheets decode no more than MAX_DECODED_BYTES between them and drops a compressed sheet past what is left (engine 1.5.4); the package fetches on the user's own machine."
     }
   },
   "routeOnly": [
+    "const:MAX_DECODING_STYLESHEETS",
     "const:MAX_DESIGN_MD_BYTES",
     "const:MAX_HTML_BYTES",
     "const:MAX_STYLESHEETS",

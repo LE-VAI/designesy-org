@@ -27,19 +27,29 @@
  * WHAT IT ASSERTS
  *   1. Transport: contentCodingOf; safeFetch's resp.url is the last hop; each
  *      coding decodes to what zlib decodes; maxBodyBytes holds a body (plain
- *      or decoded) to cap + 1 bytes; with no cap a decoded body past 16 MiB
- *      rejects; a corrupt, truncated, unknown or stacked coding rejects; an
- *      error status keeps its raw body; 204, 205, 304, HEAD and an empty
- *      gzip body resolve.
+ *      or decoded) to cap + 1 bytes; with no cap a decoded body past 4 MiB
+ *      rejects; a budget shared by reads bounds what they hold together, and
+ *      a failed read gives its bytes back; a corrupt, truncated, registered
+ *      but undecoded or stacked coding rejects, and an unregistered label
+ *      reads as identity; the connection closes when a coded stream ends
+ *      before the response does; a status outside 200-599 rejects at once; an
+ *      error status keeps its raw body; 204, 205, 304, HEAD and an empty gzip
+ *      body resolve.
  *   2. POST /api/score, universal mode: a redirected page's sheets come from
  *      the host that answered; the www. candidate likewise; a gzip page is
- *      read; a corrupt page is unreachable with reason network; a gzip 404
- *      stays http_error (a control); a gzip /DESIGN.md reaches v37's linter.
+ *      read; a corrupt page is unreachable with reason network, and one whose
+ *      coding names "abort" is not a timeout; a gzip 404 stays http_error
+ *      with its status (a control); a 999 answer is http_error with its
+ *      status, and a 999 sheet drops only itself; a gzip /DESIGN.md reaches
+ *      v37's linter; 60 compressed sheets decode no more than the 16 MiB
+ *      stylesheet budget between them (bytes counted at the decoders).
  *   3. POST /api/score, own-contract mode: a gzip bomb sheet is cut at its
  *      cap and the coverage notes say so; a sheet that does not decode is not
- *      counted as read; a gzip contract URL is parsed.
+ *      counted as read; a gzip contract URL is parsed; a gzip contract past
+ *      256 KB is contract_too_large (413), decoded no further than its cap.
  *   4. drift, guardrails, monitor and compare read the redirected page's
- *      sheets from the host that answered.
+ *      sheets from the host that answered; drift's sheets decode no more than
+ *      the 16 MiB stylesheet budget between them.
  *   5. app/lib/page-fetch.ts's stylesheetLinkMatches returns what the
  *      combined pattern returns, on seeded inputs.
  *
@@ -47,6 +57,8 @@
  * --app <dir> runs the gate against another apps/site directory (a source
  * snapshot of main, say): every case but the controls fails there. --flip
  * expects every case but the controls to fail, and exits 1 when one holds.
+ * A control holds on main and on this build: it pins what the fix must not
+ * change (an unregistered label read as identity, as main read it, say).
  *
  * Usage:  node scripts/check-fetch-layer.mjs [--app <dir>] [--flip]
  * Exits 1 on any failure.
@@ -117,7 +129,11 @@ const enc = {
 
 const ROUTES = new Map();
 const route = (hostPath, status, headers, body) => ROUTES.set(hostPath, { status, headers, body });
+/** An answer that sends `body` and then keeps the connection open, sending nothing more. */
+const held = (hostPath, status, headers, body) => ROUTES.set(hostPath, { status, headers, body, hold: true });
 const LOG = [];
+/** host + path -> whether the held connection has been closed, by the reader. */
+const HELD = new Map();
 
 const server = http.createServer((req, res) => {
   const host = req.headers['x-fetch-layer-host'];
@@ -125,6 +141,12 @@ const server = http.createServer((req, res) => {
   LOG.push({ host, path: req.url, method: req.method, headers: req.headers });
   const r = ROUTES.get(key) || { status: 404, headers: { 'content-type': 'text/plain' }, body: 'not here' };
   res.writeHead(r.status, { 'content-type': 'text/html; charset=utf-8', ...r.headers });
+  if (r.hold) {
+    HELD.set(key, false);
+    req.socket.on('close', () => HELD.set(key, true));
+    res.write(r.body);
+    return;
+  }
   res.end(req.method === 'HEAD' || r.body === undefined ? undefined : r.body);
 });
 server.keepAliveTimeout = 0;
@@ -141,12 +163,44 @@ const toLocal = (real) => ({
 });
 const lookup = async () => [{ address: '93.184.215.14', family: 4 }];
 
+// Every byte a decoder in the loaded modules produces, counted where zlib
+// hands it on, and how many decoders are open at once. A bound that holds
+// only after the bytes were decoded (and held) does not show here as one that
+// stops the decoder; a br decoder keeps a window of up to 16 MiB while open.
+const DECODED = { bytes: 0, live: 0, maxLive: 0 };
+const countingZlib = { ...zlib };
+for (const name of ['createGunzip', 'createInflate', 'createInflateRaw', 'createBrotliDecompress']) {
+  countingZlib[name] = (...args) => {
+    const d = zlib[name](...args);
+    DECODED.live += 1;
+    DECODED.maxLive = Math.max(DECODED.maxLive, DECODED.live);
+    // Open until destroyed (which frees its window) or closed, whichever is first.
+    let open = true;
+    const shut = () => {
+      if (open) DECODED.live -= 1;
+      open = false;
+    };
+    const destroy = d.destroy.bind(d);
+    d.destroy = (...a) => {
+      shut();
+      return destroy(...a);
+    };
+    d.once('close', shut);
+    const push = d.push.bind(d);
+    d.push = (chunk, encoding) => {
+      if (chunk) DECODED.bytes += chunk.length;
+      return push(chunk, encoding);
+    };
+    return d;
+  };
+}
+
 const { lint } = await import('@google/design.md/linter');
 const h = createHarness({
   app: APP,
   realSafeFetch: true,
   lookup,
-  stubs: { 'node:http': toLocal(http), 'node:https': toLocal(https), '@google/design.md/linter': { lint } },
+  stubs: { 'node:http': toLocal(http), 'node:https': toLocal(https), 'node:zlib': countingZlib, '@google/design.md/linter': { lint } },
 });
 
 // A throw inside a socket handler (the 204 Response defect) would end the
@@ -187,7 +241,7 @@ const rejects = async (p, re) => {
   return err;
 };
 
-rule('contentCodingOf reads none, gzip (x-gzip too), deflate and br, and refuses the rest', () => {
+rule('contentCodingOf reads none, gzip (x-gzip too), deflate and br, passes an unregistered label as identity, and refuses registered codings it does not decode', () => {
   const { contentCodingOf } = guard();
   assert.equal(typeof contentCodingOf, 'function', 'url-guard exports no contentCodingOf');
   const ok = (v, coding) => assert.deepEqual(contentCodingOf(v), { ok: true, coding }, JSON.stringify(v));
@@ -202,8 +256,15 @@ rule('contentCodingOf reads none, gzip (x-gzip too), deflate and br, and refuses
   ok('br', 'br');
   ok(['gzip'], 'gzip');
   ok('gzip, identity', 'gzip');
+  // A label no registry defines leaves the body as sent, as a browser reads it.
+  ok('none', null);
+  ok('UTF-8', null);
+  ok('binary', null);
+  ok('gzip, none', 'gzip');
   no('zstd');
   no('compress');
+  no('x-compress');
+  no('aes128gcm');
   no('gzip, br');
   no(['gzip', 'br']);
   no('gzip, gzip');
@@ -254,10 +315,112 @@ for (const p of ['bomb.gz', 'bomb.br']) {
     assert.equal(body.subarray(0, 19).toString(), ':root{--paper:#fff}');
   });
 }
-rule('with no cap, a body that decodes past 16 MiB rejects', async () => {
+rule('with no cap, a body that decodes past 4 MiB rejects', async () => {
   const { DEFAULT_MAX_DECODED_BYTES } = guard();
-  assert.equal(DEFAULT_MAX_DECODED_BYTES, 16 * MiB);
+  assert.equal(DEFAULT_MAX_DECODED_BYTES, 4 * MiB);
   await rejects(fetchT('https://caps.fl.example.test/bomb.gz'), /content decoding failed/);
+});
+
+for (let i = 0; i < 6; i++) route(`budget.fl.example.test/b${i}`, 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, BOMB_BR);
+rule('six bombs read at once with a 10 MiB budget hold no more than 10 MiB between them, and a cut body says so', async () => {
+  const { cutByBudget } = guard();
+  assert.equal(typeof cutByBudget, 'function', 'url-guard exports no cutByBudget');
+  const budget = { left: 10 * MiB };
+  const before = DECODED.bytes;
+  const rs = await Promise.all(Array.from({ length: 6 }, (_, i) => fetchT(`https://budget.fl.example.test/b${i}`, { maxBodyBytes: 4 * MiB, budget })));
+  const sizes = await Promise.all(rs.map(async (r) => (await r.arrayBuffer()).byteLength));
+  const total = sizes.reduce((a, b) => a + b, 0);
+  // One uncharged byte past its own cap per read, so a cut read is seen as cut.
+  assert.ok(total <= 10 * MiB + 6, `held ${total} bytes`);
+  assert.ok(sizes.every((n) => n <= 4 * MiB + 1), sizes.join(', '));
+  assert.ok(budget.left >= 0 && budget.left < 4 * MiB, `left ${budget.left}`);
+  assert.ok(rs.some((r) => cutByBudget(r)), 'no body says the budget cut it');
+  // Six decoders, each stopped as its bound was reached: not 6 x 4 MiB.
+  const decoded = DECODED.bytes - before;
+  assert.ok(decoded <= 10 * MiB + 6 * 256 * 1024, `decoded ${decoded} bytes`);
+});
+
+for (let i = 0; i < 5; i++) route(`slots.fl.example.test/s${i}`, 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, enc.br(SHEET));
+rule('a budget of 2 decoders lets no more than 2 bodies decode at once; the rest wait their turn and are read', async () => {
+  const budget = { left: 16 * MiB, decoders: 2 };
+  DECODED.maxLive = DECODED.live;
+  const base = DECODED.live;
+  const texts = await Promise.all(Array.from({ length: 5 }, (_, i) => fetchT(`https://slots.fl.example.test/s${i}`, { budget }).then((r) => r.text())));
+  assert.deepEqual(texts, Array(5).fill(SHEET));
+  assert.ok(DECODED.maxLive - base <= 2, `${DECODED.maxLive - base} decoders were open at once`);
+  assert.equal(budget.decoders, 2, 'a decoder was not given back');
+});
+
+held('slots.fl.example.test/held', 200, { 'content-type': 'text/css', 'content-encoding': 'deflate' }, enc.deflate(SHEET));
+rule('a read aborted while it waits for a decoder gives its turn on, and the next read gets the decoder when it is free', async () => {
+  const budget = { left: 16 * MiB, decoders: 1 };
+  const outcome = (p) => p.then((r) => r.text(), (e) => e);
+  // A holds the one decoder: its stream is complete, but its response never ends.
+  const a = outcome(fetchT('https://slots.fl.example.test/held', { budget, signal: AbortSignal.timeout(700) }));
+  await new Promise((res) => setTimeout(res, 100));
+  const b = outcome(fetchT('https://slots.fl.example.test/s0', { budget, signal: AbortSignal.timeout(250) }));
+  const c = outcome(fetchT('https://slots.fl.example.test/s1', { budget, signal: AbortSignal.timeout(5000) }));
+  const [ra, rb, rc] = await Promise.all([a, b, c]);
+  assert.equal(ra && ra.name, 'AbortError', `A ended with ${ra}`);
+  assert.equal(rb && rb.name, 'AbortError', `B ended with ${rb}`);
+  assert.equal(rc, SHEET);
+  assert.equal(budget.decoders, 1, 'a decoder was not given back');
+});
+
+const HALF_GZ = zlib.gzipSync(Buffer.alloc(2 * MiB, 0x62)).subarray(0, 1500);
+route('budget.fl.example.test/half', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, HALF_GZ);
+rule('a read that fails gives back what it was charged to the budget', async () => {
+  const budget = { left: 8 * MiB };
+  await rejects(fetchT('https://budget.fl.example.test/half', { maxBodyBytes: 4 * MiB, budget }), /content decoding failed \(gzip\)/);
+  assert.equal(budget.left, 8 * MiB);
+});
+
+// A coded stream that ends before the response does: bytes after it, on a
+// connection the server holds open. A br or deflate decoder ends at the end
+// of its stream, so the read resolves; it must not go on reading the socket.
+const TRAILING = Buffer.from('trailing bytes after the end of the coded stream');
+const isClosed = async (key) => {
+  for (let i = 0; i < 40 && !HELD.get(key); i++) await new Promise((res) => setTimeout(res, 25));
+  return HELD.get(key) === true;
+};
+held('heldopen.fl.example.test/br', 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, Buffer.concat([enc.br(SHEET), TRAILING]));
+held('heldopen.fl.example.test/deflate', 200, { 'content-type': 'text/css', 'content-encoding': 'deflate' }, Buffer.concat([enc.deflate(SHEET), TRAILING]));
+for (const p of ['br', 'deflate']) {
+  rule(`a ${p} body whose stream ends before the response does resolves, and its connection is closed`, async () => {
+    const r = await fetchT(`https://heldopen.fl.example.test/${p}`, { signal: AbortSignal.timeout(5000) });
+    assert.equal(await r.text(), SHEET);
+    assert.ok(await isClosed(`heldopen.fl.example.test/${p}`), 'the connection is still open after the body was read');
+  });
+}
+// With nothing after the stream, a decoder waits for the response to end, as
+// a plain read does: the reader's own abort ends it, and closes the socket.
+held('heldopen.fl.example.test/complete', 200, { 'content-type': 'text/css', 'content-encoding': 'deflate' }, enc.deflate(SHEET));
+control('a complete coded stream on a connection held open ends at the reader\'s abort, and the connection is closed', async () => {
+  let err = null;
+  try {
+    await fetchT('https://heldopen.fl.example.test/complete', { signal: AbortSignal.timeout(400) });
+  } catch (e) {
+    err = e;
+  }
+  assert.ok(err && err.name === 'AbortError', `the read ended with ${err ? err.message : 'a body'}`);
+  assert.ok(await isClosed('heldopen.fl.example.test/complete'), 'the connection is still open after the abort');
+});
+
+route('status.fl.example.test/nines', 999, { 'content-type': 'text/plain' }, 'Request denied');
+rule('a 999 answer rejects at once with its status, instead of leaving the read open', async () => {
+  const { InvalidStatusError } = guard();
+  assert.equal(typeof InvalidStatusError, 'function', 'url-guard exports no InvalidStatusError');
+  const t0 = Date.now();
+  const err = await rejects(fetchT('https://status.fl.example.test/nines', { signal: AbortSignal.timeout(5000) }), /invalid HTTP status 999/);
+  assert.ok(err instanceof InvalidStatusError);
+  assert.equal(err.status, 999);
+  assert.ok(Date.now() - t0 < 2000, `took ${Date.now() - t0} ms`);
+});
+
+route('label.fl.example.test/none', 200, { 'content-type': 'text/css', 'content-encoding': 'none' }, SHEET);
+control('a body labelled Content-Encoding: none reads as sent, as main read it', async () => {
+  const r = await fetchT('https://label.fl.example.test/none');
+  assert.equal(await r.text(), SHEET);
 });
 
 route('bad.fl.example.test/corrupt', 200, { 'content-encoding': 'gzip' }, CORRUPT);
@@ -359,11 +522,59 @@ rule('a page that does not decode is unreachable with reason network, not graded
   assert.equal(r.body.score, null);
 });
 
+for (const host of ['abortenc.fl.example.test', 'www.abortenc.fl.example.test']) route(`${host}/`, 200, { 'content-encoding': 'x-abort, zstd' }, Buffer.from(INLINE_PAGE));
+rule('a page whose refused coding names "abort" is unreachable with reason network, not timeout', async () => {
+  const r = await post(SCORE, { url: 'https://abortenc.fl.example.test/', scope: 'universal' });
+  assert.equal(r.body.unreachable, true);
+  assert.equal(r.body.unreachableReason, 'network');
+});
+
 for (const host of ['gone.fl.example.test', 'www.gone.fl.example.test']) route(`${host}/`, 404, { 'content-encoding': 'gzip' }, 'garbage, not gzip');
 control('a 404 marked gzip stays an http_error with its status', async () => {
   const r = await post(SCORE, { url: 'https://gone.fl.example.test/', scope: 'universal' });
   assert.equal(r.body.unreachable, true);
   assert.equal(r.body.unreachableReason, 'http_error');
+  assert.match(r.body.unreachableDetail, /HTTP 404/);
+});
+
+for (const host of ['nines.fl.example.test', 'www.nines.fl.example.test']) route(`${host}/`, 999, { 'content-type': 'text/plain' }, 'Request denied');
+rule('a page that answers 999 on every candidate is an http_error with that status, at once', async () => {
+  const t0 = Date.now();
+  const r = await post(SCORE, { url: 'https://nines.fl.example.test/', scope: 'universal' });
+  assert.equal(r.body.unreachable, true);
+  assert.equal(r.body.unreachableReason, 'http_error');
+  assert.match(r.body.unreachableDetail, /HTTP 999/);
+  assert.ok(Date.now() - t0 < 5000, `took ${Date.now() - t0} ms`);
+});
+
+route('ninesheet.fl.example.test/', 200, {}, page('A 999 sheet', '<link rel="stylesheet" href="/good.css"><link rel="stylesheet" href="/denied.css">'));
+route('ninesheet.fl.example.test/good.css', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, enc.gzip(SHEET));
+route('ninesheet.fl.example.test/denied.css', 999, { 'content-type': 'text/plain' }, 'Request denied');
+rule('a sheet that answers 999 drops only itself: the other sheet is read, well inside the stylesheet deadline', async () => {
+  const t0 = Date.now();
+  const r = await post(SCORE, { url: 'https://ninesheet.fl.example.test/', scope: 'universal' });
+  scored(r);
+  assert.equal(r.body.tokensExtracted, SHEET_TOKENS);
+  assert.ok(Date.now() - t0 < 5000, `took ${Date.now() - t0} ms`);
+});
+
+// A page sent gzip (so a build that does not decode reads no tokens at all)
+// that links 60 distinct br bombs, each 20 MiB decoded and a few KiB sent.
+const MANY = 60;
+route('many.fl.example.test/', 200, { 'content-encoding': 'gzip' }, enc.gzip(page('Many bombs', `<style>:root{--paper:#fff;--ink:#111;--signal:#06c;--muted:#666}</style>${Array.from({ length: MANY }, (_, i) => `<link rel="stylesheet" href="/s.css?${i}">`).join('')}`)));
+for (let i = 0; i < MANY; i++) route(`many.fl.example.test/s.css?${i}`, 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, BOMB_BR);
+rule(`${MANY} br bomb sheets asked for at once decode no more than the 16 MiB stylesheet budget between them, at most 8 at a time`, async () => {
+  const before = DECODED.bytes;
+  DECODED.maxLive = DECODED.live;
+  const r = await post(SCORE, { url: 'https://many.fl.example.test/', scope: 'universal' });
+  scored(r);
+  assert.equal(r.body.tokensExtracted, INLINE_TOKENS);
+  const decoded = DECODED.bytes - before;
+  // The budget, the page, and at most a few decoder chunks per sheet past it.
+  // Each sheet held to its 4 MiB cap alone would decode 240 MiB.
+  assert.ok(decoded <= 16 * MiB + MANY * 256 * 1024, `the decoders produced ${(decoded / MiB).toFixed(1)} MiB`);
+  // Eight sheets' decoders, and the page's or /DESIGN.md's at the edges.
+  assert.ok(DECODED.maxLive <= 9, `${DECODED.maxLive} decoders were open at once`);
 });
 
 route('md.fl.example.test/', 200, {}, INLINE_PAGE);
@@ -420,6 +631,19 @@ rule('a contract URL served gzip-encoded is parsed as the contract it decodes to
   assert.equal(r.body.ownContract.digest, inline.body.ownContract.digest);
 });
 
+route('ocpage2.fl.example.test/', 200, {}, INLINE_PAGE);
+const BIG_CONTRACT = `${CONTRACT}\n${'<!-- padding -->\n'.repeat(Math.ceil((1 * MiB) / 17))}`;
+route('contract.fl.example.test/BIG.md', 200, { 'content-type': 'text/markdown', 'content-encoding': 'gzip' }, enc.gzip(BIG_CONTRACT));
+rule('a gzip contract past 256 KB is contract_too_large (413), decoded no further than its cap', async () => {
+  const before = DECODED.bytes;
+  const r = await post(SCORE, { url: 'https://ocpage2.fl.example.test/', contract: { url: 'https://contract.fl.example.test/BIG.md' } });
+  assert.equal(r.status, 413, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.code, 'contract_too_large');
+  assert.match(r.body.error, /more than 256 KB/);
+  const decoded = DECODED.bytes - before;
+  assert.ok(decoded <= 256 * 1024 + 256 * 1024, `the decoder produced ${decoded} bytes of a ${BIG_CONTRACT.length}-byte contract`);
+});
+
 // ── 4. drift, guardrails, monitor and compare ───────────────────────────────
 section('4. drift, guardrails, monitor and compare (app/lib/page-fetch.ts)');
 
@@ -444,6 +668,20 @@ for (const [name, file, body, tokens] of ROUTES_4) {
     assert.equal(tokens(moved.body), tokens(direct.body));
   });
 }
+
+const DRIFT_MANY = 20;
+route('driftmany.fl.example.test/', 200, { 'content-encoding': 'gzip' }, enc.gzip(page('Many bombs, drift', `<style>:root{--paper:#fff;--ink:#111;--signal:#06c;--muted:#666}</style>${Array.from({ length: DRIFT_MANY }, (_, i) => `<link rel="stylesheet" href="/s.css?${i}">`).join('')}`)));
+for (let i = 0; i < DRIFT_MANY; i++) route(`driftmany.fl.example.test/s.css?${i}`, 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, BOMB_BR);
+rule(`drift: ${DRIFT_MANY} br bomb sheets decode no more than the 16 MiB stylesheet budget between them, and no sheet is asked for once it is spent`, async () => {
+  const before = DECODED.bytes;
+  const r = await post('app/api/drift/route.ts', { url: 'https://driftmany.fl.example.test/' });
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.tokensExtracted, INLINE_TOKENS);
+  const decoded = DECODED.bytes - before;
+  assert.ok(decoded <= 16 * MiB + DRIFT_MANY * 256 * 1024, `the decoders produced ${(decoded / MiB).toFixed(1)} MiB`);
+  const asked = LOG.filter((l) => l.host === 'driftmany.fl.example.test' && l.path.startsWith('/s.css')).length;
+  assert.ok(asked <= 5, `${asked} of ${DRIFT_MANY} sheets were asked for`);
+});
 
 rule('the four routes ask for the page and its sheets with Accept-Encoding: gzip, deflate, br', () => {
   const asked = LOG.filter((l) => ROUTES_4.some(([name]) => l.host === `new-${name}.fl.example.test`));

@@ -34,6 +34,7 @@ offline score is an unweighted pass rate over a subset and says so.
 
 from __future__ import annotations
 
+import email.message
 import gzip
 import hashlib
 import json
@@ -342,7 +343,7 @@ class TestScoreLocalImpl:
             "https://cdn.example.com/b.css": "b{color:blue}",
         }
 
-        def fetch(url, as_json=True):
+        def fetch(url, as_json=True, max_decoded=None):
             calls.append(url)
             if url == "https://example.com/":
                 return self.PAGE
@@ -414,6 +415,7 @@ class TestFetchLayer:
         calls: list[str] = []
         mcp._cache.clear()
         mcp._FINAL_URL.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
         with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, calls)):
             html, css, read = mcp._fetch_page_parts(url)
         return html, css, read, calls
@@ -481,3 +483,51 @@ class TestFetchLayer:
         assert css == ":root{--good:#fff}"
         assert read == ["https://drop.example.test/", "https://drop.example.test/good.css"]
 
+    @staticmethod
+    def _two_lines(first, second):
+        """Response headers that carry Content-Encoding on two lines, as a server may send them."""
+        msg = email.message.Message()
+        msg["Content-Encoding"] = first
+        msg["Content-Encoding"] = second
+        return msg
+
+    def test_a_coding_split_over_two_header_lines_is_two_codings_and_is_not_read(self):
+        # The TypeScript copies see Node's joined "gzip, gzip" and refuse it.
+        # Reading only the first line undid one layer and read the rest as text.
+        url = "https://twolines.example.test/a.css"
+        table = {url: (gzip.compress(gzip.compress(b":root{--a:#fff}" * 100)), self._two_lines("gzip", "gzip"), None)}
+        mcp._cache.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
+        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+            with pytest.raises(ValueError, match="unsupported Content-Encoding 'gzip, gzip'"):
+                mcp._fetch(url, as_json=False)
+
+    def test_control_an_unregistered_label_such_as_none_reads_the_body_as_sent(self):
+        page = '<html><head><style>:root{--paper:#fff}</style></head><body><main><h1>none</h1></main></body></html>'
+        table = {"https://none.example.test/": (page.encode(), {"Content-Encoding": "none"}, None)}
+        html, css, _read, _calls = self._parts(table, "https://none.example.test/")
+        assert html == page
+        assert css == ":root{--paper:#fff}"
+
+    def test_a_pages_compressed_sheets_decode_no_more_than_16_mib_between_them(self):
+        # Eight sheets of 3 MiB each once decoded: five fit (15 MiB), the
+        # sixth would pass 16 MiB, and the budget left cannot hold the rest.
+        links = "".join(f'<link rel="stylesheet" href="/s{i}.css">' for i in range(8))
+        page = f"<html><head>{links}</head><body><main><h1>many</h1></main></body></html>"
+        table = {"https://many.example.test/": (page.encode(), {}, None)}
+        for i in range(8):
+            body = f":root{{--s{i}:#000}}/*".encode() + b"a" * (3 * self.MiB - 64) + b"*/"
+            table[f"https://many.example.test/s{i}.css"] = (gzip.compress(body, 6), {"Content-Encoding": "gzip"}, None)
+        _html, _css, read, _calls = self._parts(table, "https://many.example.test/")
+        assert read == ["https://many.example.test/"] + [f"https://many.example.test/s{i}.css" for i in range(5)]
+
+    def test_a_cached_sheet_is_charged_to_the_budget_as_a_fresh_one_is(self):
+        url = "https://cached.example.test/big.css"
+        table = {url: (gzip.compress(b"a" * (10 * self.MiB)), {"Content-Encoding": "gzip"}, None)}
+        mcp._cache.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
+        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+            assert len(mcp._fetch(url, as_json=False)) == 10 * self.MiB
+            with pytest.raises(ValueError, match="over"):
+                mcp._fetch(url, as_json=False, max_decoded=5 * self.MiB)
+            assert len(mcp._fetch(url, as_json=False, max_decoded=12 * self.MiB)) == 10 * self.MiB

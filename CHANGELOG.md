@@ -14,7 +14,10 @@ of the fetch code: the score route (universal and own-contract mode), the
 drift, guardrails, monitor and compare routes, the npm engine and the Python
 offline engine. No check is added, and no rule, weight or ceiling moves. A
 score moves only for a page reached through a redirect or a fallback address,
-served compressed, or linking a stylesheet with its href first.
+served compressed, or linking a stylesheet with its href first; in the npm
+engine, also for a page linking a stylesheet that answers with an error; in
+the drift, guardrails, monitor and compare routes, also for a page past the
+score route's byte caps.
 
 ### Fixed (engine 1.5.4)
 
@@ -25,39 +28,67 @@ served compressed, or linking a stylesheet with its href first.
   fetched from the host it was not served from, which can answer with an
   HTML page that was then read as CSS. The base is now the URL of the
   response that was read, after every redirect, as a browser resolves it.
-- **A compressed body is decoded.** A 2xx body sent with `Content-Encoding`
+- **A compressed body is decoded.** A body sent with `Content-Encoding`
   gzip (or x-gzip), deflate (zlib-wrapped or raw) or br was read as its
   compressed bytes, whether the request asked for it or not, so its CSS or
   HTML never reached the checks. It is now decoded before it is read. The
-  page, stylesheet and `/DESIGN.md` requests send
-  `Accept-Encoding: gzip, deflate, br`: with no `Accept-Encoding` a server
-  may choose any coding (RFC 9110 section 12.5.3), including ones the
-  engine cannot decode. The Python offline engine still asks for identity
-  and decodes gzip and deflate with the standard library.
-- **Decoding is bounded.** In the score route a decoded body is held to the
-  byte cap of the read it belongs to (8 MiB of HTML, 4 MiB of one
-  stylesheet, 16 MiB of a `/DESIGN.md`), so a body a few kilobytes long on
-  the wire cannot expand past what the engine reads, and a read that
-  reaches its cap still says so (`DOCUMENT_CAP:` in contract mode). A read
-  with no cap of its own (the npm
-  engine, the Python offline engine, the drift, guardrails, monitor and
-  compare routes, a linked contract) fails past 16 MiB decoded.
+  hosted routes and the npm engine ask for the page, its stylesheets and,
+  where they read it, `/DESIGN.md` with `Accept-Encoding: gzip, deflate,
+  br`: with no
+  `Accept-Encoding` a server may choose any coding (RFC 9110 section
+  12.5.3), including ones the engine cannot decode. The Python offline
+  engine still asks for identity and decodes gzip and deflate with the
+  standard library. A label no registry defines (`none`, `utf-8`) leaves
+  a body as it was sent, as identity does and as a browser reads it.
+- **Decoding is bounded, for one read and for a page.** What a read holds
+  is counted as it arrives, decoded or not, so neither one body a few
+  kilobytes long on the wire nor many of them can expand past what the
+  engine reads. In the score route a read is held to its own byte cap
+  (8 MiB of HTML, 4 MiB of one stylesheet, 16 MiB of a `/DESIGN.md`), and a
+  page's stylesheets, asked for at once, share one 16 MiB budget and decode
+  at most eight at a time (a br decoder keeps a window of up to 16 MiB
+  however little it emits); a read that reaches a cap still says so
+  (`DOCUMENT_CAP:` in contract mode). The drift, guardrails, monitor and
+  compare routes read a page with the same caps and budget, and ask for no
+  more stylesheets once it is spent. A
+  linked contract is decoded at most one byte past its 256 KB limit, and a
+  larger one is `contract_too_large` (413) however it was sent. A read
+  that sets no cap of its own (the readiness and MCP reads) fails past
+  4 MiB decoded. The npm engine and the Python offline engine fail a body
+  past 16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
+  between them: a compressed sheet past what is left is left out.
 - **A body that does not decode is not read.** A corrupt or truncated
-  stream, an unknown coding such as zstd, or more than one coding is a
-  failed read: a page that does not decode is unreachable with reason
-  `network`, and a stylesheet that does not decode is left out and not
-  counted as fetched. Only a 2xx body is decoded, so an error page keeps
-  its status: a 404 stays `http_error`. br is not decoded by the Python
-  offline engine, whose standard library has no br decoder.
+  stream, a registered coding the engine does not decode (zstd or
+  compress, say), or more than one coding is a failed read: a page that
+  does not decode is unreachable with reason `network`, and a stylesheet
+  that does not decode is left out and not counted as fetched. The hosted
+  transport decodes only a 2xx body, and the npm engine only a body below
+  status 400 (the bodies it reads), so an error page keeps its status: a
+  404 stays `http_error`. br is not decoded by the Python offline engine,
+  whose standard library has no br decoder, and a coding sent on two
+  header lines counts as two codings there, as in the other copies. When a
+  coded stream ends before its response does (bytes after it, or a
+  connection held open), the decoded body is read and the connection is
+  closed.
 - **A `<link>` with its href before `rel=stylesheet` is read.**
   `<link href="/a.css" rel="stylesheet">` was skipped, because the pattern
   needed rel first. A tag that writes rel first is read exactly as before.
+- **The npm engine leaves out a stylesheet that answers with an error.** A
+  404 or 500 sheet's body (an HTML page, or compressed bytes it does not
+  decode) was added to the CSS. It is left out, as the hosted route leaves
+  it out.
 - The drift, guardrails, monitor and compare routes held four identical
   copies of the page fetch. They now share one, `app/lib/page-fetch.ts`,
   with the score route's scanners.
 - A 204, 205 or 304 answer made the hosted transport throw an uncaught
   error inside its socket handler (a `Response` with a non-null body), and
-  the read stayed open until its timeout. It now resolves with no body.
+  the read stayed open until its timeout. It now resolves with no body. A
+  status a `Response` cannot carry (outside 200 to 599, such as 999) threw
+  the same way; it is now an `http_error` with that status at once, and a
+  stylesheet that answers with one is left out without holding the others.
+- A read that times out is told from one that fails by the read's own
+  abort, never by the words of an error, which can carry text the server
+  sent.
 
 ### Not changed (engine 1.5.4)
 
@@ -73,16 +104,21 @@ served compressed, or linking a stylesheet with its href first.
 - `check-fetch-layer.mjs` (new, in the build and in CI after Score read
   bounds) runs the real routes and URL guard against a local server on
   `*.example.test` hosts with bodies built at run time: the transport (each
-  coding, the caps, a decompression bomb, each refusal, the null-body
-  statuses), `POST /api/score` in universal and own-contract mode, the four
-  other routes, and the shared link scanner. Run against main's source with
-  `--flip`, every rule case fails and every control holds.
-- `packages/score/test/engine-1-5-4.test.mjs`: 9 rule tests that fail on
-  the 1.5.3 build and 4 controls that pass on both.
+  coding, the caps, a shared budget and its decoders, a decompression bomb,
+  each refusal, an unregistered label, a stream that ends before its
+  response, a 999 status, the null-body statuses), `POST /api/score` in
+  universal and own-contract mode (60 compressed stylesheets at once, with
+  the bytes the decoders produce and the decoders open at once counted),
+  the four other routes, and the shared link scanner. Run
+  against main's source with `--flip`, every rule case fails and every
+  control holds.
+- `packages/score/test/engine-1-5-4.test.mjs`: 12 rule tests that fail on
+  main's package engine (1.5.2 in `@designesy/score` 0.9.3) and 5 controls
+  that pass on both.
 - `linear-scan` (TypeScript and Python) holds the link scanner to the
   pattern with both orders, on 10,000 generated inputs, and, on every
   fixture page, to the 1.5.1 pattern: no fixture page writes href first.
-  The Python offline engine gains 11 fetch-layer tests.
+  The Python offline engine gains 15 fetch-layer tests.
 - The corpus, the offline golden and the contract-page records change only
   in their version fields (and `retrieved_at`).
 

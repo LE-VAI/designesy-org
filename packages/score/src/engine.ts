@@ -272,25 +272,32 @@ const BROWSER_HEADERS: Record<string, string> = {
 const MAX_REDIRECT_HOPS = 3;
 
 /**
- * The most bytes httpsFetch decodes from one compressed body (engine 1.5.4).
- * Past it the read fails: a compressed body of a few kilobytes can decode to
- * gigabytes. 16 MiB is the largest cap the hosted route sets on one document.
+ * The most bytes httpsFetch decodes from one compressed body (engine 1.5.4),
+ * and the most a page's stylesheets decode between them (fetchPageResilient
+ * shares one budget of this size across them). Past it the read fails: a
+ * compressed body of a few kilobytes can decode to gigabytes. 16 MiB is the
+ * largest cap the hosted route sets on one document, and its stylesheet total.
  */
 const MAX_DECODED_BYTES = 16 * 1024 * 1024;
 
 /**
- * The coding a Content-Encoding header asks the reader to undo: null for none
- * (no header, empty, or identity), gzip (x-gzip too), deflate or br. Anything
- * else, or more than one coding, is not ok: the body cannot be read as text.
- * The hosted route's transport (app/lib/url-guard.ts) reads it the same way.
+ * The coding a Content-Encoding header asks the reader to undo: null for none,
+ * gzip (x-gzip too), deflate or br. identity, and a label no registry defines
+ * (`none`, `utf-8`, `binary`), leave the body as it was sent, as a browser
+ * reads them. A coding in the IANA HTTP Content Coding Registry that
+ * transforms the body and is not decoded here (zstd, compress and the rest),
+ * or more than one coding, is not ok: the body cannot be read as text. The
+ * hosted route's transport (app/lib/url-guard.ts) reads it the same way.
  */
 function contentCodingOf(v: string | string[] | undefined): { ok: true; coding: 'gzip' | 'deflate' | 'br' | null } | { ok: false; value: string } {
+  const undecoded = ['aes128gcm', 'compress', 'x-compress', 'dcb', 'dcz', 'exi', 'pack200-gzip', 'zstd'];
   const list = (Array.isArray(v) ? v.join(',') : v ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
-    .filter((s) => s !== '' && s !== 'identity');
+    .map((s) => (s === 'x-gzip' ? 'gzip' : s))
+    .filter((s) => s === 'gzip' || s === 'deflate' || s === 'br' || undecoded.includes(s));
   if (list.length === 0) return { ok: true, coding: null };
-  const c = list.length === 1 ? (list[0] === 'x-gzip' ? 'gzip' : list[0]) : '';
+  const c = list.length === 1 ? list[0] : '';
   if (c === 'gzip' || c === 'deflate' || c === 'br') return { ok: true, coding: c };
   return { ok: false, value: list.join(', ') };
 }
@@ -323,17 +330,26 @@ type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected
  * followed redirect read redirected: false. `hop` counts the redirects already
  * followed; callers leave it at 0.
  *
- * Engine 1.5.4: a body below status 400 sent with Content-Encoding gzip,
- * deflate or br is decoded, up to MAX_DECODED_BYTES. A body that does not
- * decode, goes past that, or names another coding (or more than one) is a
- * failed read (ok: false, status 0), never compressed bytes read as text.
+ * Engine 1.5.4: a body below status 400 (the bodies this reads as ok) sent
+ * with Content-Encoding gzip, deflate or br is decoded, up to
+ * MAX_DECODED_BYTES, and up to what is left of `budget` when reads share one:
+ * each decoded byte is charged to it as it is produced, and a read that fails
+ * gives its bytes back. A body that does not decode, goes past either bound,
+ * or names a registered coding not decoded here (or more than one coding) is
+ * a failed read (ok: false, status 0), never compressed bytes read as text.
+ * When the coded stream ends, the response is not read further.
  */
-function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0): Promise<HttpsFetchOutcome> {
+function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0, budget?: { left: number }): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
     let resolved = false;
+    // Decoded bytes this read has charged to `budget`.
+    let charged = 0;
     const done = (r: HttpsFetchOutcome) => {
       if (resolved) return;
       resolved = true;
+      // A failed read holds nothing: what it was charged goes back.
+      if (!r.ok && budget && charged) budget.left += charged;
+      charged = 0;
       resolve(r);
     };
     try {
@@ -350,7 +366,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
               done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
               return;
             }
-            httpsFetch(next, headers, timeoutMs, hop + 1).then(done);
+            httpsFetch(next, headers, timeoutMs, hop + 1, budget).then(done);
             return;
           } catch { /* fall through */ }
         }
@@ -373,19 +389,29 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
           let headBytes = 0;
           let decoded = 0;
           let decoder: Transform | null = null;
-          const stop = () => { decoder?.destroy(); fail(); };
+          let resEnded = false;
+          const stop = () => { decoder?.destroy(); parts.length = 0; fail(); };
           const start = () => {
             const d = decoderFor(coding, Buffer.concat(head));
             decoder = d;
             d.on('data', (c: Buffer) => {
+              if (resolved) return;
               decoded += c.length;
-              if (decoded > MAX_DECODED_BYTES) { stop(); return; }
+              if (decoded > MAX_DECODED_BYTES || (budget && c.length > budget.left)) { stop(); return; }
+              if (budget) {
+                budget.left -= c.length;
+                charged += c.length;
+              }
               parts.push(text.write(c));
             });
             d.on('error', stop);
             d.on('end', () => {
+              if (resolved) return;
               parts.push(text.end());
               done({ ok: true, status: res.statusCode || 0, text: parts.join(''), redirected: hop > 0, finalUrl: url });
+              // The coded stream can end before the response does (bytes after
+              // it, or a connection held open): nothing more is read from it.
+              if (!resEnded) req.destroy();
             });
             d.on('drain', () => res.resume());
             for (const b of head.splice(0)) if (!d.write(b)) res.pause();
@@ -401,6 +427,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
             if (!decoder.write(c)) res.pause();
           });
           res.on('end', () => {
+            resEnded = true;
             if (resolved) return;
             if (!decoder) {
               // No body at all decodes to no body (gunzip of 0 bytes is an error).
@@ -2298,11 +2325,17 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 
   const parts = extractCssLinks(html, pageUrl);
   const cssParts: string[] = [];
+  // Engine 1.5.4: the stylesheets decode no more than MAX_DECODED_BYTES
+  // between them, so a page that links many small compressed bodies cannot
+  // make this process hold many times that. A sheet past what is left fails.
+  const decodedBudget = { left: MAX_DECODED_BYTES };
   for (const part of parts) {
     if (part.startsWith('http')) {
       if (!isValidUrl(part)) continue;
-      const r = await httpsFetch(part);
-      if (r.text) cssParts.push(r.text);
+      const r = await httpsFetch(part, undefined, 8000, 0, decodedBudget);
+      // Only a sheet that was read (engine 1.5.4): a 404 or 500 page is not
+      // CSS, and its body is not decoded, as the hosted route drops it.
+      if (r.ok && r.text) cssParts.push(r.text);
     } else {
       cssParts.push(part);
     }

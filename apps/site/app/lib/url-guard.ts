@@ -22,12 +22,16 @@
 //      cannot insert a private IP between validation and socket open. This closes
 //      the resolve-then-fetch gap (CVE-2026-10546 / CVE-2026-54353 / CVE-2026-27826).
 //   5. Content decoding (engine 1.5.4): a 2xx body sent with Content-Encoding
-//      gzip, deflate or br is decoded before it is returned, and its decoded
-//      size is bounded (maxBodyBytes + 1 when the caller passes a cap, else
-//      DEFAULT_MAX_DECODED_BYTES), so a small compressed body cannot expand
-//      without limit. A body that does not decode, an unknown coding, or more
-//      than one coding rejects the read instead of returning compressed bytes
-//      as text. Other statuses keep their raw body and headers.
+//      gzip, deflate or br is decoded before it is returned, and what is held
+//      is bounded as it is produced: by the read's own cap (maxBodyBytes + 1;
+//      with none, a decoded body past DEFAULT_MAX_DECODED_BYTES rejects) and
+//      by a budget several reads share (SafeFetchInit.budget), so neither one
+//      small compressed body nor many of them can expand without limit. A body
+//      that does not decode, a registered coding this module cannot decode,
+//      or more than one coding rejects the read instead of returning
+//      compressed bytes as text. When the coded stream ends, the connection is
+//      closed. Other statuses keep their raw body and headers; a status a
+//      Response cannot carry (outside 200-599) rejects.
 //
 // Why DNS resolution matters: the prior guard validated hostname strings only.
 // An adversary who registers evil.com -> 127.0.0.1 bypassed the hostname check
@@ -292,7 +296,8 @@ function isPrivateAddress(addr: string): boolean {
 // links against the page it actually read. If a redirect target fails
 // validation or DNS resolution, throws an Error — callers should catch and
 // treat as a failed fetch. A 2xx body is decoded as its Content-Encoding says
-// (point 5 at the top of this file); `maxBodyBytes` bounds what is held.
+// (point 5 at the top of this file); `maxBodyBytes` and `budget` bound what is
+// held.
 
 const MAX_REDIRECTS = 5;
 
@@ -362,22 +367,62 @@ function pinnedLookup(
 type LookupAddress = { address: string; family: number };
 
 /**
- * What safeFetch takes: fetch's init, with `maxBodyBytes`, the most body bytes
- * the caller will read. A body is then held to at most maxBodyBytes + 1 bytes
- * (decoded or not), so a caller that reads up to its cap still sees that the
- * body went past it. Without it an identity body is read whole, as before, and
- * a decoded body is held to DEFAULT_MAX_DECODED_BYTES.
+ * A bound several reads share (a page's stylesheets, say). `left` is the body
+ * bytes they may still hold between them. `decoders`, when set, is how many
+ * more of them may decode a body at once: a br decoder keeps a window of up
+ * to 16 MiB whatever it emits, so many decoding together hold many times
+ * that. A read past it waits, its response paused, until one is given back.
  */
-export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number };
+export type ReadBudget = { left: number; decoders?: number };
+
+/** Reads waiting for one of a budget's decoders, oldest first. */
+const DECODER_WAITERS = new WeakMap<ReadBudget, Array<() => void>>();
+
+/** Run `granted` once one of `budget`'s decoders is this read's. */
+function takeDecoder(budget: ReadBudget, granted: () => void): void {
+  if ((budget.decoders ?? 0) > 0) {
+    budget.decoders = (budget.decoders ?? 0) - 1;
+    granted();
+    return;
+  }
+  const waiting = DECODER_WAITERS.get(budget) ?? [];
+  DECODER_WAITERS.set(budget, waiting);
+  waiting.push(granted);
+}
+
+/** Give a decoder back: to the read that has waited longest, or to the budget. */
+function giveBackDecoder(budget: ReadBudget): void {
+  const next = DECODER_WAITERS.get(budget)?.shift();
+  if (next) next();
+  else budget.decoders = (budget.decoders ?? 0) + 1;
+}
+
+/**
+ * What safeFetch takes: fetch's init, with two bounds on the body it holds.
+ *
+ * - `maxBodyBytes`: the most body bytes the caller will read. A body is then
+ *   held to at most maxBodyBytes + 1 bytes (decoded or not), so a caller that
+ *   reads up to its cap still sees that the body went past it. Without it an
+ *   identity body is read whole, as before, and a decoded body past
+ *   DEFAULT_MAX_DECODED_BYTES rejects.
+ * - `budget`: a budget this read shares with others. Each byte of a 2xx body
+ *   is charged to it as it arrives (decoded, when the body is decoded), so the
+ *   reads together hold no more than it, however many run at once. A read the
+ *   budget stops holds what was left of it, and cutByBudget(response) is true.
+ *   A read that fails gives back what it was charged. With `decoders` set, a
+ *   decoded body also waits for one of them, and gives it back when it ends.
+ */
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
 
 /**
  * The most bytes a decoded body may reach when the caller passes no
  * maxBodyBytes (engine 1.5.4). Past it the read rejects: a compressed body
  * of a few kilobytes can decode to gigabytes, and nothing reads a cut body
- * without a cap of its own to say it was cut. 16 MiB is the largest cap the
- * score route sets on any one document.
+ * without a cap of its own to say it was cut. A read that needs more names
+ * its cap (the score route's are 8 MiB of HTML, 4 MiB of a stylesheet and
+ * 16 MiB of a /DESIGN.md); 4 MiB is the cap on one stylesheet.
  */
-export const DEFAULT_MAX_DECODED_BYTES = 16 * 1024 * 1024;
+export const DEFAULT_MAX_DECODED_BYTES = 4 * 1024 * 1024;
 
 /** Statuses whose Response must have a null body (new Response throws otherwise). */
 const NULL_BODY_STATUS = new Set([204, 205, 304]);
@@ -386,19 +431,58 @@ const NULL_BODY_STATUS = new Set([204, 205, 304]);
 export type ContentCoding = 'gzip' | 'deflate' | 'br';
 
 /**
- * The coding a Content-Encoding header asks the reader to undo: null for none
- * (no header, empty, or identity), gzip (x-gzip too), deflate or br. Anything
- * else, or more than one coding, is not ok: the body cannot be read as text.
+ * Content codings in the IANA HTTP Content Coding Registry that transform the
+ * body and that this module does not decode. Read as text, such a body is
+ * compressed (or encrypted) bytes, so it is refused.
+ */
+const UNDECODED_CODINGS = new Set(['aes128gcm', 'compress', 'x-compress', 'dcb', 'dcz', 'exi', 'pack200-gzip', 'zstd']);
+
+/**
+ * The coding a Content-Encoding header asks the reader to undo: null for none,
+ * gzip (x-gzip too), deflate or br. identity, and a label no registry defines
+ * (`none`, `utf-8`, `binary`), leave the body as it was sent, as a browser
+ * reads them. A registered coding this module cannot decode, or more than one
+ * coding, is not ok: the body cannot be read as text.
  */
 export function contentCodingOf(v: string | string[] | undefined): { ok: true; coding: ContentCoding | null } | { ok: false; value: string } {
   const list = (Array.isArray(v) ? v.join(',') : v ?? '')
     .split(',')
     .map((s) => s.trim().toLowerCase())
-    .filter((s) => s !== '' && s !== 'identity');
+    .map((s) => (s === 'x-gzip' ? 'gzip' : s))
+    .filter((s) => s === 'gzip' || s === 'deflate' || s === 'br' || UNDECODED_CODINGS.has(s));
   if (list.length === 0) return { ok: true, coding: null };
-  const c = list.length === 1 ? (list[0] === 'x-gzip' ? 'gzip' : list[0]) : '';
+  const c = list.length === 1 ? list[0] : '';
   if (c === 'gzip' || c === 'deflate' || c === 'br') return { ok: true, coding: c };
   return { ok: false, value: list.join(', ') };
+}
+
+/**
+ * A status a WHATWG Response cannot carry (outside 200-599, such as 999): the
+ * server answered, but not with a status a reader can use. `status` is what
+ * it sent, so a caller can report it as an HTTP error.
+ */
+export class InvalidStatusError extends Error {
+  readonly status: number;
+  constructor(status: number) {
+    super(`invalid HTTP status ${status}`);
+    this.name = 'InvalidStatusError';
+    this.status = status;
+  }
+}
+
+/** Responses whose body a shared budget stopped (SafeFetchInit.budget). */
+const CUT_BY_BUDGET = new WeakSet<Response>();
+
+/** True when the shared budget ran out before this body did: it holds what was left of the budget. */
+export function cutByBudget(resp: Response): boolean {
+  return CUT_BY_BUDGET.has(resp);
+}
+
+/** A decoding failure. Its message never decides how a caller classifies it. */
+function decodingError(detail: string): Error {
+  const err = new Error(`content decoding failed${detail}`);
+  err.name = 'ContentDecodingError';
+  return err;
 }
 
 /**
@@ -426,8 +510,10 @@ function decoderFor(coding: ContentCoding, head: Buffer): Transform {
  * returned as-is (with a Location header) for the caller to re-validate + follow.
  *
  * The Response's `url` is the URL requested. A 2xx body (not for HEAD, 204 or
- * 205) is decoded as its Content-Encoding says, up to the cap in SafeFetchInit;
- * one that does not decode rejects. Every other body is returned raw.
+ * 205) is decoded as its Content-Encoding says, within the bounds in
+ * SafeFetchInit; one that does not decode rejects. Every other body is
+ * returned raw. A status a Response cannot carry rejects (InvalidStatusError).
+ * Once the body is complete, cut, or failed, the connection is not read again.
  */
 function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   return new Promise((resolve, reject) => {
@@ -443,9 +529,26 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     // an abort can each arrive after another has settled it.
     let settled = false;
     let decoder: Transform | null = null;
+    // The body held so far, and what of it is charged to the shared budget.
+    const out: Buffer[] = [];
+    let charged = 0;
+    const budget = init?.budget;
+    // The budget's decoder this read holds, if any; given back once, when
+    // the read ends however it ends.
+    let giveBackSlot = () => {};
+    // A read that fails holds nothing: it lets go of its bytes and gives
+    // back what it was charged, so the reads sharing the budget can use it.
+    const release = () => {
+      out.length = 0;
+      if (budget && charged) budget.left += charged;
+      charged = 0;
+      decoder?.destroy();
+      giveBackSlot();
+    };
     const fail = (e: Error) => {
       if (settled) return;
       settled = true;
+      release();
       decoder?.destroy();
       req.destroy();
       reject(e);
@@ -478,78 +581,137 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
       },
       (res) => {
         const status = res.statusCode || 0;
+        // new Response throws for a status outside 200-599 (999, say), and a
+        // throw here would leave the read with no outcome at all.
+        if (status < 200 || status > 599) {
+          fail(new InvalidStatusError(status));
+          return;
+        }
         // Only a body the caller will read is decoded. A 3xx, 4xx or 5xx keeps
         // its raw body and its headers, so a garbled error page stays an
         // http_error rather than becoming a network failure.
         const readsBody = method.toUpperCase() !== 'HEAD' && status >= 200 && status < 300 && !NULL_BODY_STATUS.has(status);
         const cod = readsBody ? contentCodingOf(res.headers['content-encoding']) : { ok: true as const, coding: null };
         if (!cod.ok) {
-          fail(new Error(`content decoding failed: unsupported Content-Encoding "${cod.value}"`));
+          // The header is the server's: clipped here, and never classified.
+          fail(decodingError(`: unsupported Content-Encoding "${cod.value.slice(0, 64)}"`));
           return;
         }
         const coding = cod.coding;
-        // The most bytes held: one past the caller's cap, so its own cap reads
-        // as reached; for a decoded body with no cap, one past the default.
-        const hold = coding
-          ? (maxBodyBytes ?? DEFAULT_MAX_DECODED_BYTES) + 1
-          : maxBodyBytes === undefined ? Infinity : maxBodyBytes + 1;
-        const out: Buffer[] = [];
+        // The read's own cap: the caller's, or for a decoded body with none,
+        // the default. Only a body the caller reads is charged to the budget.
+        const cap = maxBodyBytes ?? (coding ? DEFAULT_MAX_DECODED_BYTES : Infinity);
+        const shared = readsBody ? budget : undefined;
         let held = 0;
+        let cut = false;
+        let resEnded = false;
         const head: Buffer[] = [];
         let headBytes = 0;
 
+        // A decoded body waits for one of the budget's decoders, when it
+        // counts them; its response stays paused until then (TCP holds the
+        // rest), and the read's own abort still ends the wait.
+        if (coding && shared && shared.decoders !== undefined) {
+          const slots = shared;
+          let slotHeld = false;
+          giveBackSlot = () => {
+            if (!slotHeld) return;
+            slotHeld = false;
+            giveBackDecoder(slots);
+          };
+          res.pause();
+          takeDecoder(slots, () => {
+            slotHeld = true;
+            if (settled) {
+              giveBackSlot();
+              return;
+            }
+            res.resume();
+          });
+        }
+
         const finish = () => {
           if (settled) return;
+          let r: Response;
+          try {
+            // Build a WHATWG Response from the node IncomingMessage.
+            const rsHeaders = new Headers();
+            const raw = res.headers as Record<string, string | string[] | undefined>;
+            for (const [k, v] of Object.entries(raw)) {
+              if (v === undefined) continue;
+              if (Array.isArray(v)) v.forEach((x) => rsHeaders.append(k, x));
+              else rsHeaders.append(k, v);
+            }
+            // The body is no longer encoded, and its length is not the sent one.
+            if (coding) {
+              rsHeaders.delete('content-encoding');
+              rsHeaders.delete('content-length');
+            }
+            r = new Response(NULL_BODY_STATUS.has(status) ? null : Buffer.concat(out), {
+              status,
+              statusText: res.statusMessage || '',
+              headers: rsHeaders,
+            });
+          } catch (e) {
+            fail(e as Error);
+            return;
+          }
           settled = true;
-          // Build a WHATWG Response from the node IncomingMessage.
-          const rsHeaders = new Headers();
-          const raw = res.headers as Record<string, string | string[] | undefined>;
-          for (const [k, v] of Object.entries(raw)) {
-            if (v === undefined) continue;
-            if (Array.isArray(v)) v.forEach((x) => rsHeaders.append(k, x));
-            else rsHeaders.append(k, v);
-          }
-          // The body is no longer encoded, and its length is not the sent one.
-          if (coding) {
-            rsHeaders.delete('content-encoding');
-            rsHeaders.delete('content-length');
-          }
-          const r = new Response(NULL_BODY_STATUS.has(status) ? null : Buffer.concat(out), {
-            status,
-            statusText: res.statusMessage || '',
-            headers: rsHeaders,
-          });
+          out.length = 0;
           // A Response built by hand has url ''. safeFetch returns the last
           // hop's Response, so this makes resp.url the URL that answered.
           Object.defineProperty(r, 'url', { value: url, enumerable: true });
+          if (cut) CUT_BY_BUDGET.add(r);
           resolve(r);
+          // The body is complete or cut. A decoder ends with its coded stream,
+          // which can come before the response does (bytes after it, or a
+          // connection held open): nothing more is read from this one.
+          decoder?.destroy();
+          giveBackSlot();
+          if (!resEnded) req.destroy();
         };
 
+        const keep = (c: Buffer, charge: boolean) => {
+          out.push(c);
+          held += c.length;
+          if (charge && shared) {
+            shared.left -= c.length;
+            charged += c.length;
+          }
+        };
+
+        // Each byte is held, and charged, as it arrives (decoded, when the body
+        // is decoded), so a bound stops the read as soon as it is reached.
         const take = (c: Buffer) => {
           if (settled) return;
-          const room = hold - held;
-          if (c.length < room) {
-            out.push(c);
-            held += c.length;
+          const capLeft = cap - held;
+          const budgetLeft = shared ? Math.max(0, shared.left) : Infinity;
+          if (c.length <= capLeft && c.length <= budgetLeft) {
+            keep(c, true);
             return;
           }
-          out.push(c.subarray(0, room));
-          held += room;
-          if (coding && maxBodyBytes === undefined) {
-            fail(new Error(`content decoding failed (${coding}): the decoded body is over ${DEFAULT_MAX_DECODED_BYTES} bytes`));
-            return;
+          if (capLeft <= budgetLeft) {
+            // The read's own cap: one byte past it is held, uncharged, so a
+            // caller that reads up to its cap sees that the body went past it.
+            keep(c.subarray(0, capLeft), true);
+            keep(c.subarray(capLeft, capLeft + 1), false);
+            if (coding && maxBodyBytes === undefined) {
+              fail(decodingError(` (${coding}): the decoded body is over ${DEFAULT_MAX_DECODED_BYTES} bytes`));
+              return;
+            }
+          } else {
+            // The shared budget: what was left of it is held, and the body is cut.
+            keep(c.subarray(0, budgetLeft), true);
+            cut = true;
           }
-          // The caller's cap is reached: return what it will read, stop here.
           finish();
-          decoder?.destroy();
-          req.destroy();
         };
 
         const startDecoder = () => {
           const d = decoderFor(coding as ContentCoding, Buffer.concat(head));
           decoder = d;
           d.on('data', take);
-          d.on('error', (e: NodeJS.ErrnoException) => fail(new Error(`content decoding failed (${coding}): ${e.code || e.message}`)));
+          d.on('error', (e: NodeJS.ErrnoException) => fail(decodingError(` (${coding}): ${e.code || e.message}`)));
           d.on('end', finish);
           d.on('drain', () => res.resume());
           for (const b of head.splice(0)) if (!d.write(b)) res.pause();
@@ -571,6 +733,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
           if (!decoder.write(c)) res.pause();
         });
         res.on('end', () => {
+          resEnded = true;
           if (settled) return;
           if (!coding) {
             finish();
@@ -595,6 +758,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     req.on('error', (e) => {
       if (settled) return;
       settled = true;
+      release();
       decoder?.destroy();
       reject(e as Error);
     });
@@ -607,6 +771,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         const err = abortedError();
         const wasSettled = settled;
         settled = true;
+        if (!wasSettled) release();
         decoder?.destroy();
         req.destroy(err);
         if (!wasSettled) reject(err);
@@ -619,7 +784,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   });
 }
 
-/** The error an aborted read rejects with; callers classify it by /abort/i. */
+/** The error an aborted read rejects with; callers classify it by its name, AbortError. */
 function abortedError(): Error {
   const err = new Error('aborted');
   err.name = 'AbortError';

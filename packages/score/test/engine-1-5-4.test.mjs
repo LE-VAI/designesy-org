@@ -8,8 +8,13 @@
  *     sheets fetched from the host it moved away from.
  *   - A body below status 400 sent with Content-Encoding gzip (x-gzip),
  *     deflate (zlib-wrapped or raw) or br is decoded. One that does not
- *     decode, decodes past 16 MiB, or names another coding (or more than
- *     one) is not read. Until 1.5.4 the compressed bytes were read as text.
+ *     decode, decodes past 16 MiB, or names a registered coding not decoded
+ *     here (or more than one coding) is not read; a label no registry
+ *     defines (none) reads as identity. A page's stylesheets decode no more
+ *     than 16 MiB between them. When a coded stream ends before the
+ *     response does, the request is destroyed. Until 1.5.4 the compressed
+ *     bytes were read as text.
+ *   - A 4xx or 5xx stylesheet is not read as CSS.
  *   - A <link> that writes href before rel=stylesheet is read.
  *
  * node:https cannot reach a local server here (safeLookup refuses loopback,
@@ -17,7 +22,8 @@
  * engine-1-3-1.test.mjs, and every host is an example.test name. Each answer
  * is a real readable stream of the bytes a server would send.
  *
- * The rule tests fail on the 1.5.3 build; the controls (marked) pass on both.
+ * The rule tests fail on main's package engine (1.5.2 in @designesy/score
+ * 0.9.3); the controls (marked) pass on both.
  * Zero dependencies: node:test + node:assert/strict.
  */
 import { describe, it } from 'node:test';
@@ -47,12 +53,17 @@ async function withSite(routes, url) {
   https.get = (target, opts, cb) => {
     const u = new URL(String(target));
     const key = `${u.host}${u.pathname}`;
-    calls.push({ key, headers: (opts && opts.headers) || {} });
-    const [statusCode, headers = {}, body = ''] = routes[key] || [404, {}, 'not here'];
+    const call = { key, headers: (opts && opts.headers) || {}, destroyed: false };
+    calls.push(call);
+    const [statusCode, headers = {}, body = '', options = {}] = routes[key] || [404, {}, 'not here'];
     const bytes = Buffer.isBuffer(body) ? body : Buffer.from(body);
-    const res = Object.assign(Readable.from(bytes.length ? [bytes] : [], { objectMode: false }), { statusCode, headers });
+    // options.held: the body is sent and the response never ends, as a
+    // server that holds the connection open.
+    const res = options.held
+      ? Object.assign(new Readable({ read() { if (!this.sent) { this.sent = true; this.push(bytes); } } }), { statusCode, headers })
+      : Object.assign(Readable.from(bytes.length ? [bytes] : [], { objectMode: false }), { statusCode, headers });
     setImmediate(() => cb(res));
-    return { on() { return this; }, destroy() {} };
+    return { on() { return this; }, destroy() { call.destroyed = true; res.destroy(); } };
   };
   syncBuiltinESMExports();
   try {
@@ -162,6 +173,38 @@ describe('engine 1.5.4: a compressed body is decoded, or not read', () => {
     const { result } = await withSite({ 'gone.example.test/': missing, 'www.gone.example.test/': missing }, 'https://gone.example.test/');
     assert.equal(result.unreachable, true);
     assert.equal(result.unreachableReason, 'http_error');
+    assert.match(result.unreachableDetail, /HTTP 404/);
+  });
+
+  it('control: a label no registry defines (Content-Encoding: none) reads the body as sent', async () => {
+    const { result } = await withSite({
+      'none.example.test/': asHtml(page(`<style>${sheet('none', 4)}</style>`), 'none'),
+    }, 'https://none.example.test/');
+    assert.equal(typeof result.score, 'number');
+    assert.equal(result.tokensExtracted, 4);
+  });
+
+  it('a page\'s compressed sheets decode no more than 16 MiB between them: a sheet past what is left is dropped', async () => {
+    // Eight sheets of 3 MiB each once decoded, a few KiB each on the wire:
+    // five fit in 16 MiB (15 MiB), the sixth would pass it, the last two too.
+    const routes = { 'many.example.test/': asHtml(page(Array.from({ length: 8 }, (_, i) => `<link rel="stylesheet" href="/s${i}.css">`).join(''))) };
+    for (let i = 0; i < 8; i++) {
+      const body = Buffer.concat([Buffer.from(`${sheet(`s${i}`, 1)}/*`), Buffer.alloc(3 * MiB - 64, 0x61), Buffer.from('*/')]);
+      routes[`many.example.test/s${i}.css`] = asCss(zlib.gzipSync(body), 'gzip');
+    }
+    const { result } = await withSite(routes, 'https://many.example.test/');
+    assert.equal(typeof result.score, 'number');
+    assert.equal(result.tokensExtracted, 5);
+  });
+
+  it('a br page whose stream ends before the response does is read, and its request is destroyed', { timeout: 10000 }, async () => {
+    const body = Buffer.concat([zlib.brotliCompressSync(page(`<style>${sheet('held', 3)}</style>`)), Buffer.from('bytes after the end of the coded stream')]);
+    const { result, calls } = await withSite({
+      'held.example.test/': [200, { 'content-type': 'text/html', 'content-encoding': 'br' }, body, { held: true }],
+    }, 'https://held.example.test/');
+    assert.equal(result.tokensExtracted, 3);
+    assert.equal(calls[0].key, 'held.example.test/');
+    assert.equal(calls[0].destroyed, true, 'the connection was left open after the page was read');
   });
 
   it('asks for gzip, deflate and br by name, for the page and for each sheet', async () => {
@@ -178,6 +221,18 @@ describe('engine 1.5.4: a compressed body is decoded, or not read', () => {
       'id.example.test/': [200, { 'content-encoding': 'identity' }, page('<link rel="stylesheet" href="/a.css">')],
       'id.example.test/a.css': asCss(sheet('id', 3)),
     }, 'https://id.example.test/');
+    assert.equal(result.tokensExtracted, 3);
+  });
+});
+
+describe('engine 1.5.4: a 4xx or 5xx stylesheet is not read as CSS', () => {
+  it('drops a 404 sheet, whether its body is an HTML page or compressed bytes the engine does not decode', async () => {
+    const { result } = await withSite({
+      'err.example.test/': asHtml(page('<link rel="stylesheet" href="/good.css"><link rel="stylesheet" href="/missing.css"><link rel="stylesheet" href="/broken.css">')),
+      'err.example.test/good.css': asCss(sheet('good', 3)),
+      'err.example.test/missing.css': [404, { 'content-type': 'text/html' }, TRAP],
+      'err.example.test/broken.css': [500, { 'content-type': 'text/html', 'content-encoding': 'gzip' }, zlib.gzipSync(TRAP)],
+    }, 'https://err.example.test/');
     assert.equal(result.tokensExtracted, 3);
   });
 });

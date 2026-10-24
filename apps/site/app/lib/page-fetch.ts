@@ -11,14 +11,19 @@
 //     that was read, after its redirects, never the URL that was asked for;
 //   - a <link> is a stylesheet with rel=stylesheet before or after its href;
 //   - a body sent gzip, deflate or br is decoded by safeFetch, and one that
-//     does not decode is not read.
+//     does not decode is not read;
+//   - what is held is bounded as it arrives, with the score route's caps:
+//     8 MiB of HTML, 4 MiB of one stylesheet, and 16 MiB for a page's
+//     stylesheets together, decoded or not. A body past a cap is read up to
+//     it, so a few kilobytes on the wire cannot expand past what is read,
+//     however many sheets a page links.
 // The scanners below are the score route's (app/api/score/route.ts), copied
 // unchanged: each reads a run of text once, and
 // packages/score/test/linear-scan.test.mjs holds the score engine's copies to
 // the patterns they stand for. scripts/check-fetch-layer.mjs holds this
 // module's stylesheetLinkMatches to the same pattern and runs all four routes.
 
-import { safeFetch } from './url-guard';
+import { safeFetch, type ReadBudget } from './url-guard';
 
 /** Headers the page and sheet requests send. */
 // Accept-Encoding names the three codings url-guard decodes (engine 1.5.4):
@@ -188,6 +193,11 @@ export function stylesheetLinkMatches(html: string): ScanMatch[] {
 
 // ── Fetching ────────────────────────────────────────────────────────────────
 
+/** The score route's byte caps (app/api/score/route.ts, engine 1.5.1), applied here since engine 1.5.4. */
+const MAX_HTML_BYTES = 8 * 1024 * 1024;
+const MAX_STYLESHEET_BYTES = 4 * 1024 * 1024;
+const MAX_TOTAL_STYLESHEET_BYTES = 16 * 1024 * 1024;
+
 /**
  * Inline <style> bodies, then the absolute URL of each linked stylesheet,
  * in document order. `baseUrl` is the URL the page was read from.
@@ -206,20 +216,26 @@ export function extractCssLinks(html: string, baseUrl: string): string[] {
 }
 
 /**
- * A body as text and the URL that answered (resp.url, after redirects; a
- * Response built by hand has url ''), or '' and the URL asked for when the
- * read failed.
+ * A body as text, up to `maxBytes` (decoded as Response.text() decodes), and
+ * the URL that answered (resp.url, after redirects; a Response built by hand
+ * has url ''), or '' and the URL asked for when the read failed. `budget`,
+ * when given, is shared with the other reads of the same page.
  */
-async function fetchText(url: string): Promise<{ text: string; url: string }> {
+async function fetchText(url: string, maxBytes: number, budget?: ReadBudget): Promise<{ text: string; url: string }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
+    // safeFetch holds at most maxBytes + 1 bytes of the body, and charges
+    // the shared budget as they arrive.
     const resp = await safeFetch(url, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
+      maxBodyBytes: maxBytes,
+      budget,
     });
     if (!resp.ok) return { text: '', url };
-    return { text: await resp.text(), url: resp.url || url };
+    const bytes = new Uint8Array(await resp.arrayBuffer());
+    return { text: new TextDecoder().decode(bytes.subarray(0, maxBytes)), url: resp.url || url };
   } catch {
     return { text: '', url };
   } finally {
@@ -231,7 +247,9 @@ async function fetchText(url: string): Promise<{ text: string; url: string }> {
  * The page at `targetUrl` (or at its www. host when the bare host gives no
  * page) and its CSS: the inline <style> bodies, then each linked sheet, read
  * one after another, joined with newlines. A sheet that cannot be read is
- * left out. With no page, both are ''.
+ * left out. With no page, both are ''. Each sheet is read up to
+ * MAX_STYLESHEET_BYTES, and the sheets share MAX_TOTAL_STYLESHEET_BYTES;
+ * once that is spent, no more are asked for.
  */
 export async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
   let html = '';
@@ -243,7 +261,7 @@ export async function fetchPageResilient(targetUrl: string): Promise<{ html: str
       !parsed.hostname.startsWith('www.') ? `https://www.${parsed.hostname}${parsed.pathname}` : '',
     ].filter(Boolean);
     for (const c of candidates) {
-      const r = await fetchText(c);
+      const r = await fetchText(c, MAX_HTML_BYTES);
       html = r.text;
       pageUrl = r.url;
       if (html && html.length > 50) break;
@@ -254,9 +272,12 @@ export async function fetchPageResilient(targetUrl: string): Promise<{ html: str
   if (!html) return { html: '', css: '' };
   const parts = extractCssLinks(html, pageUrl);
   const cssParts: string[] = [];
+  const budget: ReadBudget = { left: MAX_TOTAL_STYLESHEET_BYTES };
   for (const part of parts) {
     if (part.startsWith('http')) {
-      const ext = (await fetchText(part)).text;
+      // A spent budget holds no byte of any later sheet.
+      if (budget.left <= 0) continue;
+      const ext = (await fetchText(part, MAX_STYLESHEET_BYTES, budget)).text;
       if (ext) cssParts.push(ext);
     } else {
       cssParts.push(part);

@@ -184,30 +184,54 @@ def _validate_url(url: str) -> None:
 # The URL that answered each fetched URL, after urllib's redirects.
 _FINAL_URL: dict[str, str] = {}
 
-# The most bytes one compressed body may decode to (engine 1.5.4). Past it the
-# read fails: a body of a few kilobytes can decode to gigabytes. 16 MiB is the
-# largest cap the hosted engine sets on one document.
+# How many bytes each fetched URL's body decoded to (0 when it was not
+# compressed), so a cached body is charged to a page's budget as a fresh one is.
+_DECODED_BYTES: dict[str, int] = {}
+
+# The most bytes one compressed body may decode to (engine 1.5.4), and the most
+# a page's stylesheets may decode to between them (_fetch_page_parts shares one
+# budget of this size). Past it the read fails: a body of a few kilobytes can
+# decode to gigabytes. 16 MiB is the largest cap the hosted engine sets on one
+# document, and its stylesheet total.
 _MAX_DECODED_BYTES = 16 * 1024 * 1024
 
+# Codings in the IANA HTTP Content Coding Registry that transform the body and
+# that this port does not decode (br has no standard-library decoder). A label
+# no registry defines (none, utf-8, binary) leaves the body as it was sent, as a
+# browser reads it.
+_UNDECODED_CODINGS = frozenset({"br", "aes128gcm", "compress", "x-compress", "dcb", "dcz", "exi", "pack200-gzip", "zstd"})
 
-def _decode_content(raw: bytes, encoding: str | None) -> bytes:
+
+def _header_values(headers: Any, name: str) -> str | None:
+    """Every line of a repeated header, joined with ", " as Node joins them."""
+    get_all = getattr(headers, "get_all", None)
+    if callable(get_all):
+        values = [v for v in (get_all(name) or []) if isinstance(v, str)]
+        return ", ".join(values) if values else None
+    value = headers.get(name) if headers is not None else None
+    return value if isinstance(value, str) else None
+
+
+def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
     """`raw` with its Content-Encoding undone, as the live engine reads it.
 
     The request asks for identity, but a server may compress anyway. gzip
     (x-gzip too) and deflate (zlib-wrapped, or raw as some servers send it,
     told apart by the zlib header) are decoded with the standard library, up
-    to _MAX_DECODED_BYTES. br has no decoder in the standard library and this
-    package has no dependencies, so a br body fails, as do zstd, any other
-    coding, more than one coding, a corrupt or truncated stream and a body
-    that decodes past the cap: ValueError, never compressed bytes read as text.
+    to `limit` bytes (at most _MAX_DECODED_BYTES). identity and labels no
+    registry defines leave the body as sent. br has no decoder in the standard
+    library and this package has no dependencies, so a br body fails, as do
+    zstd and the other registered codings in _UNDECODED_CODINGS, more than one
+    coding, a corrupt or truncated stream and a body that decodes past the
+    limit: ValueError, never compressed bytes read as text.
     """
-    codings = [c.strip().lower() for c in (encoding or "").split(",")]
-    codings = [c for c in codings if c and c != "identity"]
+    codings = ["gzip" if c == "x-gzip" else c for c in (c.strip().lower() for c in (encoding or "").split(","))]
+    codings = [c for c in codings if c in ("gzip", "deflate") or c in _UNDECODED_CODINGS]
     if not codings:
         return raw
     if len(codings) > 1:
         raise ValueError(f"content decoding failed: unsupported Content-Encoding {', '.join(codings)!r}")
-    coding = "gzip" if codings[0] == "x-gzip" else codings[0]
+    coding = codings[0]
     if coding == "gzip":
         d = zlib.decompressobj(16 + zlib.MAX_WBITS)
     elif coding == "deflate":
@@ -217,23 +241,31 @@ def _decode_content(raw: bytes, encoding: str | None) -> bytes:
         raise ValueError(f"content decoding failed: unsupported Content-Encoding {coding!r}")
     if not raw:
         return raw
+    limit = max(0, min(limit, _MAX_DECODED_BYTES))
     try:
-        out = d.decompress(raw, _MAX_DECODED_BYTES + 1)
+        out = d.decompress(raw, limit + 1)
     except zlib.error as exc:
         raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
-    if len(out) > _MAX_DECODED_BYTES or d.unconsumed_tail:
-        raise ValueError(f"content decoding failed ({coding}): the decoded body is over {_MAX_DECODED_BYTES} bytes")
+    if len(out) > limit or d.unconsumed_tail:
+        raise ValueError(f"content decoding failed ({coding}): the decoded body is over {limit} bytes")
     if not d.eof:
         raise ValueError(f"content decoding failed ({coding}): the stream is truncated")
     return out
 
 
-def _fetch(url: str, as_json: bool = True) -> Any:
-    """Fetch a URL with in-memory caching. Returns parsed JSON or text."""
+def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> Any:
+    """Fetch a URL with in-memory caching. Returns parsed JSON or text.
+
+    `max_decoded` bounds what a compressed body may decode to (a page's
+    remaining stylesheet budget); a cached body that decoded past it fails the
+    same way, ValueError.
+    """
     _validate_url(url)
     now = time.time()
     cached = _cache.get(url)
     if cached and (now - cached[0]) < CACHE_TTL:
+        if max_decoded is not None and _DECODED_BYTES.get(url, 0) > max_decoded:
+            raise ValueError(f"content decoding failed: the decoded body is over {max_decoded} bytes")
         return cached[1]
 
     # Merge browser headers with per-call Accept override.
@@ -256,8 +288,12 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         # URL that answered (engine 1.5.4), so it is kept beside the body.
         final = resp.geturl()
         _FINAL_URL[url] = final if isinstance(final, str) and final else url
-        coding = resp.headers.get("Content-Encoding")
-        body = _decode_content(resp.read(), coding if isinstance(coding, str) else None).decode("utf-8")
+        # Every Content-Encoding line: a coding split over two lines is two codings.
+        coding = _header_values(resp.headers, "Content-Encoding")
+        raw = resp.read()
+        decoded = _decode_content(raw, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
+        _DECODED_BYTES[url] = len(decoded) if decoded is not raw else 0
+        body = decoded.decode("utf-8")
 
     if as_json:
         data = json.loads(body)
@@ -1616,8 +1652,10 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal. The third item lists the URLs read:
-    the page, then each sheet that loaded.
+    fails to load is dropped, not fatal. The sheets decode no more than
+    _MAX_DECODED_BYTES between them (engine 1.5.4), as the npm engine's do: a
+    compressed sheet past what is left fails. The third item lists the URLs
+    read: the page, then each sheet that loaded.
     """
     html = _fetch(url, as_json=False)
     read = [url]
@@ -1626,11 +1664,13 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     parts = _extract_css_parts(html, _FINAL_URL.get(url, url))
     css_parts = [p for p in parts if not p.startswith("http")]
     external = list(dict.fromkeys(p for p in parts if p.startswith("http")))
+    budget = _MAX_DECODED_BYTES
     for href in external[:_MAX_STYLESHEETS]:
         try:
-            text = _fetch(href, as_json=False)
+            text = _fetch(href, as_json=False, max_decoded=budget)
         except Exception:
             continue
+        budget -= _DECODED_BYTES.get(href, 0)
         read.append(href)
         if text:
             css_parts.append(text)

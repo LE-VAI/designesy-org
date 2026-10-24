@@ -570,14 +570,20 @@ async function measure(url) {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
     Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   };
-  const html = await (await fetch(url, { headers })).text();
+  const resp = await fetch(url, { headers });
+  const html = await resp.text();
+  // The routes resolve a sheet against the URL that answered, after redirects
+  // (engine 1.5.4). The harness serves the page at `url` with no redirect, so
+  // each sheet is fetched from where the live routes fetch it and served at
+  // the address the harnessed route asks for.
+  const base = resp.url || url;
   const pages = { [url]: html };
   // The links the routes read from engine 1.5.4: rel before href, or href before rel.
   const linkRe = /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi;
   let m;
   while ((m = linkRe.exec(html)) !== null) {
-    const href = new URL(m[1] ?? m[2], url).href;
-    pages[href] = await (await fetch(href, { headers })).text();
+    const href = m[1] ?? m[2];
+    pages[new URL(href, url).href] = await (await fetch(new URL(href, base).href, { headers })).text();
   }
   const h = createHarness({ app: APP, pages });
   Object.assign(pages, servedContracts(h));
