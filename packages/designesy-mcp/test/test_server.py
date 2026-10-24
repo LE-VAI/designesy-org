@@ -808,13 +808,16 @@ class TestScoreFormatScope:
         local.assert_called_once_with("https://example.com/", None)
         assert result == local_result
 
-    def test_default_format_falls_back_when_the_engine_reply_is_not_ok(self):
+    def test_default_format_returns_the_error_when_the_engine_reply_is_not_ok(self):
+        # Until 1.13.10 this fell back to the local engine (see section 9).
         def urlopen(req, timeout=None, context=None):
             return _reply('{"ok": false, "error": "Could not reach https://example.com/"}')
         with patch.object(mcp.urllib.request, "urlopen", urlopen), \
-                patch.object(mcp, "_score_local_impl", return_value={"note": "local"}) as local:
-            assert mcp._score_impl(url="https://example.com/") == {"note": "local"}
-        local.assert_called_once()
+                patch.object(mcp, "_score_local_impl") as local:
+            result = mcp._score_impl(url="https://example.com/")
+        local.assert_not_called()
+        assert result["success"] is False
+        assert "Could not reach https://example.com/" in result["error"]
 
     def test_fallback_applies_the_requested_scope(self):
         # The offline engine has scope modes since it mirrors engine 1.1.0, so
@@ -825,3 +828,583 @@ class TestScoreFormatScope:
         assert engine.bodies == [{"url": "https://example.com/", "format": "designesy", "scope": "contract"}]
         local.assert_called_once_with("https://example.com/", "contract")
         assert result == {"note": "local"}
+
+
+# ── 9. Fails closed: TLS, engine refusals, the browser probe ──────────────────
+#
+# Measured on 1.13.9: _fetch and _post_api retried with CERT_NONE after a
+# failed certificate verification, after any raw ssl.SSLError and after any
+# error whose text said "certificate" (an HTTP error with such a reason
+# phrase included).
+# designesy_score scored a URL locally whenever the engine did not return a
+# score, so http://100.100.100.200/, which the engine refuses with HTTP 400 and
+# _validate_url lets through, was fetched from this machine, and the offline
+# engine then opened it in whatever Chrome answered on 127.0.0.1:9222.
+# urlopen and subprocess.run are mocked here, so nothing reaches a network or
+# a browser.
+
+import http.client  # noqa: E402
+import io  # noqa: E402
+import re  # noqa: E402
+import shutil  # noqa: E402
+import socket  # noqa: E402
+import ssl  # noqa: E402
+import subprocess  # noqa: E402
+import threading  # noqa: E402
+
+PACKAGE = Path(__file__).resolve().parent.parent
+
+
+def _cert_error() -> urllib.error.URLError:
+    """What urlopen raises for an expired certificate."""
+    err = ssl.SSLCertVerificationError(
+        1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired"
+    )
+    err.verify_message = "certificate has expired"
+    return urllib.error.URLError(err)
+
+
+class _FreshState:
+    """Gives each test an env fixture: no opt-in set, and an empty cache."""
+
+    @pytest.fixture
+    def env(self, monkeypatch):
+        monkeypatch.delenv("DESIGNESY_INSECURE_TLS", raising=False)
+        monkeypatch.delenv("DESIGNESY_CDP_URL", raising=False)
+        mcp._cache.clear()
+        mcp._TLS_UNVERIFIED.clear()
+        yield monkeypatch
+        mcp._cache.clear()
+        mcp._TLS_UNVERIFIED.clear()
+
+
+class _Site:
+    """Stands in for urlopen: a body per URL, or that URL's error on its first call."""
+
+    def __init__(self, bodies: dict, fail_first: dict | None = None):
+        self.bodies = bodies
+        self.fail_first = dict(fail_first or {})
+        self.calls = []
+
+    def __call__(self, req, timeout=None, context=None):
+        self.calls.append((req.full_url, context))
+        if req.full_url in self.fail_first:
+            raise self.fail_first.pop(req.full_url)
+        return _reply(self.bodies[req.full_url])
+
+    def contexts(self, url: str) -> list:
+        return [c for u, c in self.calls if u == url]
+
+
+def _not_a_verification_failure(kind: str) -> Exception:
+    if kind == "raw-ssl-error":
+        return ssl.SSLError(1, "[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC] decryption failed or bad record mac")
+    if kind == "bad-certificate-alert":
+        return urllib.error.URLError(ssl.SSLError(1, "[SSL: TLSV1_ALERT_BAD_CERTIFICATE] tlsv1 alert bad certificate"))
+    return urllib.error.HTTPError("https://example.com/t.json", 495, "SSL Certificate Error", {}, io.BytesIO(b""))
+
+
+class TestTlsIsVerified(_FreshState):
+    @pytest.mark.parametrize("opt_in", [False, True])
+    def test_post_api_never_builds_the_unverified_context(self, env, opt_in):
+        # designesy.org's own API: no opt-out, whatever the environment says.
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = f"{mcp.BASE_URL}/api/monitor"
+        site = _Site({}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError, match="certificate has expired"):
+                mcp._post_api("monitor", {"url": "https://example.com/"})
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    def test_a_failed_verification_is_raised_with_its_reason(self, env):
+        url = "https://expired.example/t.json"
+        site = _Site({url: "{}"}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError, match="certificate has expired"):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    @pytest.mark.parametrize("opt_in", [False, True])
+    @pytest.mark.parametrize("kind", ["raw-ssl-error", "bad-certificate-alert", "http-495"])
+    def test_an_error_that_only_mentions_certificates_is_never_retried(self, env, opt_in, kind):
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = "https://example.com/t.json"
+        error = _not_a_verification_failure(kind)
+        site = _Site({url: "{}"}, {url: error})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(type(error)):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+        assert site.contexts(url) == [mcp._SSL_CONTEXT]
+
+    def test_the_opt_in_never_covers_designesy_org(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url = f"{mcp.BASE_URL}/open.json"
+        site = _Site({url: "{}"}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site), \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            with pytest.raises(urllib.error.URLError):
+                mcp._fetch(url)
+        unverified.assert_not_called()
+
+    def test_the_opt_in_reads_a_callers_url_unverified_and_the_result_says_so(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        tokens_url = "https://expired.example/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        tokens = json.dumps({"ink": {"$type": "color", "$value": {"colorSpace": "srgb", "components": [0, 0, 0]}}})
+        site = _Site({contract_url: contract, tokens_url: tokens}, {tokens_url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._tokens_score_impl(url=tokens_url)
+        assert result["tls_verified"] is False
+        assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
+        first, retry = site.contexts(tokens_url)
+        assert first is mcp._SSL_CONTEXT
+        assert retry.verify_mode == ssl.CERT_NONE and retry.check_hostname is False
+
+    def test_a_verified_result_carries_no_tls_flag(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        tokens_url = "https://example.com/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        site = _Site({contract_url: contract, tokens_url: '{"ink": {"$type": "color", "$value": "#000"}}'})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._tokens_score_impl(url=tokens_url)
+        assert "tls_verified" not in result
+
+    def test_offline_score_says_when_a_stylesheet_was_read_unverified(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        page, sheet = "https://example.com/", "https://cdn.example.com/a.css"
+        html = f'<html><head><link rel="stylesheet" href="{sheet}"></head><body><main>x</main></body></html>'
+        site = _Site({page: html, sheet: ":root{--paper:#fff}"}, {sheet: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._score_local_impl(page)
+        assert result["tls_verified"] is False
+        assert site.contexts(page) == [mcp._SSL_CONTEXT]
+
+    def test_the_opt_in_flags_a_motion_score_read_unverified(self, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        contract_url = "https://www.designesy.org/contracts/motion.json"
+        lottie_url = "https://expired.example/intro.json"
+        motion = PACKAGE / "test" / "fixtures" / "motion"
+        site = _Site({
+            contract_url: (motion / "contract.json").read_text(encoding="utf-8"),
+            lottie_url: (motion / "conformant.json").read_text(encoding="utf-8"),
+        }, {lottie_url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            result = mcp._motion_score_impl(url=lottie_url)
+        assert result["tls_verified"] is False
+        assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
+        assert site.contexts(lottie_url)[1].verify_mode == ssl.CERT_NONE
+
+
+class TestEngineErrorIsTheResult(_FreshState):
+    REFUSED = "http://100.100.100.200/"
+
+    def test_the_local_guard_lets_the_refused_url_through(self):
+        # Why the fallback mattered: the engine refuses this address with
+        # HTTP 400, and _validate_url does not.
+        mcp._validate_url(self.REFUSED)
+        mcp._validate_url("http://[fec0::1]/")
+
+    @pytest.mark.parametrize("status, error", [
+        (400, "Invalid URL. Enter a valid domain like designesy.org or nike.com."),
+        (429, "Rate limit exceeded. Maximum 100 scores per hour."),
+        (502, "Could not reach http://100.100.100.200/: fetch failed"),
+    ])
+    def test_an_http_error_is_returned_and_nothing_runs_locally(self, env, status, error):
+        body = json.dumps({"ok": False, "error": error}).encode("utf-8")
+        refusal = urllib.error.HTTPError(f"{mcp.BASE_URL}/api/score", status, "refused", {}, io.BytesIO(body))
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=refusal)), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        payload = json.loads(result["content"][0]["text"])
+        assert payload["success"] is False
+        assert payload["url"] == self.REFUSED
+        assert f"HTTP {status}: {error}" in payload["error"]
+
+    @pytest.mark.parametrize("reply, reason", [
+        ('{"ok": false, "error": "Could not reach the page"}', "Could not reach the page"),
+        ("<html>gateway error</html>", "the reply was not a JSON object"),
+        ("[]", "the reply was not a JSON object"),
+    ], ids=["ok-false", "not-json", "not-an-object"])
+    def test_a_reply_without_a_score_is_returned_and_nothing_runs_locally(self, env, reply, reason):
+        def urlopen(req, timeout=None, context=None):
+            return _reply(reply)
+        with patch.object(mcp.urllib.request, "urlopen", urlopen), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        assert f"did not score http://100.100.100.200/ ({reason})." in json.loads(result["content"][0]["text"])["error"]
+
+    @pytest.mark.parametrize("error", [
+        http.client.RemoteDisconnected("Remote end closed connection without response"),
+        ConnectionResetError(104, "Connection reset by peer"),
+        TimeoutError("The read operation timed out"),
+        socket.timeout("timed out"),
+        http.client.IncompleteRead(b"{", 10),
+    ], ids=["remote-disconnected", "connection-reset", "read-timeout", "socket-timeout", "incomplete-read"])
+    def test_a_failure_after_the_request_was_sent_is_returned_and_nothing_runs_locally(self, env, error):
+        # urllib raises these as they are, from getresponse() or read(): the
+        # request had gone out. The engine can spend longer on a page than
+        # this call waits, so a page that answers it slowly can cause the
+        # timeout; a fallback would then fetch that page from this machine.
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=error)), \
+                patch.object(mcp, "_fetch") as fetch, \
+                patch.object(mcp, "_cdp_available") as cdp:
+            result = _call({"url": self.REFUSED})
+        fetch.assert_not_called()
+        cdp.assert_not_called()
+        assert result["isError"] is True
+        text = json.loads(result["content"][0]["text"])["error"]
+        assert f"(the call failed after the request was sent: {type(error).__name__}: " in text
+        assert "the offline engine runs only when the network fails before the request is sent" in text
+
+    @pytest.mark.parametrize("reason", [
+        socket.gaierror(11001, "getaddrinfo failed"),
+        ConnectionRefusedError(111, "Connection refused"),
+        TimeoutError("timed out"),
+    ], ids=["dns", "refused", "connect-timeout"])
+    def test_a_network_failure_before_the_request_is_sent_still_falls_back(self, env, reason):
+        # What urllib wraps in a URLError failed before the request was sent.
+        with patch.object(mcp.urllib.request, "urlopen", _Engine(error=urllib.error.URLError(reason))), \
+                patch.object(mcp, "_score_local_impl", return_value={"note": "local"}) as local:
+            result = _call({"url": "https://example.com/"})
+        local.assert_called_once_with("https://example.com/", None)
+        assert result["isError"] is False
+
+    @pytest.mark.parametrize("opt_in", [False, True])
+    def test_an_engine_certificate_that_fails_verification_is_returned(self, env, opt_in):
+        # The opt-in covers a caller's URL only, and the offline engine does
+        # not stand in for an engine whose certificate failed.
+        if opt_in:
+            env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        engine = _Engine(error=_cert_error())
+        with patch.object(mcp.urllib.request, "urlopen", engine), \
+                patch.object(mcp, "_score_local_impl") as local, \
+                patch.object(mcp, "_unverified_ssl_context") as unverified:
+            result = _call({"url": "https://example.com/"})
+        local.assert_not_called()
+        unverified.assert_not_called()
+        assert len(engine.requests) == 1
+        assert result["isError"] is True
+        text = json.loads(result["content"][0]["text"])["error"]
+        assert f"(the certificate of {mcp.BASE_URL} failed verification: " in text
+        assert "certificate has expired" in text
+
+
+class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
+    def test_unset_means_no_connection_and_no_probe(self, env):
+        with patch.object(mcp.urllib.request, "urlopen") as urlopen, \
+                patch.object(mcp.subprocess, "run") as run:
+            assert mcp._cdp_available() is False
+            assert mcp._check_viewport_overflow_cdp("https://example.com/") == ("MANUAL", mcp._V02_MANUAL)
+            assert mcp._check_cwv_cdp("https://example.com/") == ("MANUAL", mcp._V21_MANUAL)
+        urlopen.assert_not_called()
+        run.assert_not_called()
+
+    def test_set_names_the_endpoint_that_is_checked(self, env):
+        env.setenv("DESIGNESY_CDP_URL", "http://127.0.0.1:59222/")
+        seen = []
+
+        def urlopen(url, timeout=None):
+            seen.append(url)
+            return MagicMock()
+        with patch.object(mcp.urllib.request, "urlopen", urlopen):
+            assert mcp._cdp_available() is True
+        assert seen == ["http://127.0.0.1:59222/json/version"]
+
+    def test_set_passes_the_endpoint_to_both_probes(self, env):
+        env.setenv("DESIGNESY_CDP_URL", "http://127.0.0.1:59222/")
+        failed = MagicMock(returncode=1, stdout="", stderr="no browser")
+        with patch.object(mcp, "_cdp_available", return_value=True), \
+                patch.object(mcp.subprocess, "run", return_value=failed) as run:
+            mcp._check_viewport_overflow_cdp("https://example.com/")
+            mcp._check_cwv_cdp("https://example.com/")
+        assert [c.args[0][2:] for c in run.call_args_list] == [
+            ["https://example.com/", "--cdp=http://127.0.0.1:59222"],
+        ] * 2
+
+    def test_the_description_says_so(self):
+        desc = mcp.TOOL_MAP["designesy_score"]["description"]
+        assert "DESIGNESY_CDP_URL" in desc and "both read MANUAL" in desc
+        assert "nothing is scored offline" in desc
+
+    @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+    @pytest.mark.parametrize("script", ["cdp-viewport-check.cjs", "cdp-cwv-expr.cjs"])
+    def test_the_node_scripts_use_the_endpoint_they_are_given(self, script):
+        # A port with nothing listening: the script must try it, and no other.
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+        proc = subprocess.run(
+            ["node", str(PACKAGE / script), "https://example.com/", f"--cdp=http://127.0.0.1:{port}"],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert proc.returncode == 1
+        assert f"127.0.0.1:{port}" in proc.stderr
+        # Every port the output names is the one given. A bare "9222" check
+        # would fail whenever the free port was 39222, 49222 or 59222.
+        assert set(re.findall(r":(\d+)\b", proc.stdout + proc.stderr)) == {str(port)}
+
+    # Stands in for a DevTools endpoint inside the node process: http and
+    # WebSocket are replaced before the script loads, so nothing opens a socket.
+    # /json/new answers per NEW_TAB, which the test prepends; /json/list holds a
+    # tab the browser's owner already had open on the same host.
+    DEVTOOLS_STUB = r"""
+const http = require('http');
+const { EventEmitter } = require('events');
+const log = (m) => process.stderr.write(`STUB ${m}\n`);
+const tab = (id, url) => ({ type: 'page', id, url, webSocketDebuggerUrl: `ws://127.0.0.1:1/devtools/page/${id}` });
+function answer(path) {
+  if (path.startsWith('/json/new')) return NEW_TAB === 'opens' ? JSON.stringify(tab('NEW-TAB', 'https://example.com/')) : 'not json';
+  if (path.startsWith('/json/list')) return JSON.stringify([tab('OWNER-TAB', 'https://example.com/inbox')]);
+  return '{}';
+}
+function fake(path, cb) {
+  log(`http ${path.split('?')[0]}`);
+  const req = new EventEmitter();
+  req.end = () => {
+    const res = new EventEmitter();
+    if (cb) cb(res);
+    process.nextTick(() => { res.emit('data', answer(path)); res.emit('end'); });
+  };
+  return req;
+}
+http.request = (opts, cb) => fake(opts.path, cb);
+http.get = (opts, cb) => { const req = fake(typeof opts === 'string' ? new URL(opts).pathname : opts.path, cb); req.end(); return req; };
+globalThis.WebSocket = class {
+  constructor(url) { log(`websocket ${url.split('/').pop()}`); setTimeout(() => this.onopen && this.onopen(), 0); }
+  send(data) { const { id } = JSON.parse(data); setTimeout(() => this.onmessage && this.onmessage({ data: JSON.stringify({ id, result: {} }) }), 0); }
+  close() {}
+};
+"""
+
+    @pytest.mark.skipif(shutil.which("node") is None, reason="node is not installed")
+    @pytest.mark.parametrize("script", ["cdp-viewport-check.cjs", "cdp-cwv-expr.cjs"])
+    @pytest.mark.parametrize("new_tab, steps, code", [
+        ("fails", ["http /json/new"], 1),
+        ("opens", ["http /json/new", "websocket NEW-TAB", "http /json/close/NEW-TAB"], 0),
+    ], ids=["new-tab-fails", "new-tab-opens"])
+    def test_the_node_scripts_measure_and_close_only_a_tab_they_opened(self, tmp_path, script, new_tab, steps, code):
+        # Until 1.13.10 the viewport probe, when /json/new failed, measured in
+        # OWNER-TAB and then closed it.
+        stub = tmp_path / "devtools-stub.cjs"
+        stub.write_text(f"const NEW_TAB = {json.dumps(new_tab)};" + self.DEVTOOLS_STUB, encoding="utf-8")
+        proc = subprocess.run(
+            ["node", "-r", str(stub), str(PACKAGE / script), "https://example.com/", "--cdp=http://127.0.0.1:1"],
+            capture_output=True, text=True, timeout=60,
+        )
+        assert [line[5:] for line in proc.stderr.splitlines() if line.startswith("STUB ")] == steps
+        assert proc.returncode == code
+        if code:
+            assert "Error: Could not create tab" in proc.stderr
+
+
+# ── 10. JSON-RPC: no line ends the session ────────────────────────────────────
+#
+# Measured on 1.13.9 with a stdio probe: an array, a bare string, a number, or
+# params null raised AttributeError and ended the process; a notification got
+# an error frame; an unknown tool or resource got -32601; and a tool that
+# failed (a blocked URL, a fetch error) came back as JSON-RPC -32000 rather
+# than an isError result. stdin was decoded with the locale's codec: under a
+# strict UTF-8 one a byte that is not UTF-8 ended the process, and on Windows a
+# UTF-8 request was read as cp1252. main() runs here on in-memory stdin and
+# stdout, and twice on the real process.
+
+INIT = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+    "protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "t", "version": "0"}}})
+PING = '{"jsonrpc":"2.0","id":99,"method":"ping"}'
+NOT_UTF8 = b'{"jsonrpc":"2.0","id":2,"method":"ping","params":{"x":"\xff"}}'
+SERVER = str(Path(__file__).resolve().parent.parent / "designesy_mcp_server.py")
+
+
+def _session(*lines: str | bytes, stdin_encoding: str = "utf-8") -> list[dict]:
+    """Run main() over the lines (bytes go as they are); return every reply it wrote, in order.
+
+    stdin is a strict text stream in stdin_encoding over those bytes, as
+    sys.stdin is; main() reads its buffer.
+    """
+    data = b"".join((line if isinstance(line, bytes) else line.encode("utf-8")) + b"\n" for line in lines)
+    out = io.StringIO()
+    with patch.object(mcp.sys, "stdin", io.TextIOWrapper(io.BytesIO(data), encoding=stdin_encoding, errors="strict")), \
+            patch.object(mcp.sys, "stdout", out):
+        mcp.main()
+    return [json.loads(line) for line in out.getvalue().splitlines()]
+
+
+def _request(method: str, params=None, req_id=5) -> str:
+    msg = {"jsonrpc": "2.0", "id": req_id, "method": method}
+    if params is not None:
+        msg["params"] = params
+    return json.dumps(msg)
+
+
+class TestJsonRpcSession(_FreshState):
+    def test_the_probe_gets_four_replies_and_the_session_ends_at_eof(self):
+        replies = _session(
+            INIT, "[1]", '"hello"',
+            '{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":1}}',
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}',
+        )
+        assert len(replies) == 4
+        assert replies[0]["id"] == 1 and replies[0]["result"]["protocolVersion"] == "2024-11-05"
+        assert [(r["id"], r["error"]["code"]) for r in replies[1:3]] == [(None, -32600), (None, -32600)]
+        assert replies[3]["id"] == 2 and len(replies[3]["result"]["tools"]) == 17
+
+    @pytest.mark.parametrize("line", ["[]", "[1]", '[{"jsonrpc":"2.0","id":3,"method":"ping"}]',
+                                      '"hello"', "42", "null", "true"])
+    def test_a_message_that_is_not_an_object_is_an_invalid_request(self, line):
+        replies = _session(line, PING)
+        assert replies[0] == {"jsonrpc": "2.0", "id": None, "error": {
+            "code": -32600,
+            "message": "Invalid Request: a message must be a JSON object; batches are not supported"}}
+        assert replies[1] == {"jsonrpc": "2.0", "id": 99, "result": {}}
+
+    @pytest.mark.parametrize("line", ["{not json", '{"jsonrpc":"2.0","id":3', "[" * 100000],
+                             ids=["not-json", "truncated", "nested-100000-deep"])
+    def test_a_line_that_is_not_json_is_a_parse_error(self, line):
+        replies = _session(line, PING)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(None, -32700), (99, None)]
+
+    @pytest.mark.parametrize("stdin_encoding", ["utf-8", "cp1252"])
+    def test_a_line_that_is_not_utf8_is_a_parse_error(self, stdin_encoding):
+        # The ping before it, read in the same chunk, is answered too.
+        replies = _session(PING.replace("99", "1"), NOT_UTF8, PING, stdin_encoding=stdin_encoding)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(1, None), (None, -32700), (99, None)]
+        assert replies[1]["error"]["message"] == "Parse error: the line is not valid UTF-8"
+
+    @pytest.mark.parametrize("stdin_encoding", ["utf-8", "cp1252"])
+    def test_a_request_is_read_as_utf8_whatever_the_stdin_codec(self, stdin_encoding):
+        # Read as cp1252, the UTF-8 bytes of "café" were "cafÃ©".
+        line = '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"café","arguments":{}}}'
+        assert _session(line, stdin_encoding=stdin_encoding)[0]["error"] == {
+            "code": -32602, "message": "Unknown tool: café"}
+
+    def test_the_server_process_reads_on_past_a_line_that_is_not_utf8(self):
+        # The real process, its stdin forced to the strict UTF-8 decoding
+        # CPython gives sys.stdin by default on a UTF-8 Linux locale. Until
+        # 1.13.10 it exited 1 here, before answering either ping.
+        proc = subprocess.run(
+            [sys.executable, SERVER], input=b"\n".join([PING.replace("99", "1").encode(), NOT_UTF8, PING.encode(), b""]),
+            capture_output=True, timeout=60, env={**os.environ, "PYTHONIOENCODING": "utf-8:strict"},
+        )
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stderr == b""
+        assert [json.loads(line)["id"] for line in proc.stdout.splitlines()] == [1, None, 99]
+
+    def test_the_server_process_answers_each_line_before_the_next_arrives(self):
+        # stdin is read as bytes now; a reply must not wait for more input.
+        proc = subprocess.Popen([sys.executable, SERVER], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        guard = threading.Timer(30, proc.kill)
+        guard.start()
+        try:
+            for req_id in (1, 2, 3):
+                proc.stdin.write(PING.replace("99", str(req_id)).encode() + b"\n")
+                proc.stdin.flush()
+                assert json.loads(proc.stdout.readline())["id"] == req_id
+            proc.stdin.close()
+            assert proc.wait(timeout=30) == 0
+        finally:
+            guard.cancel()
+            proc.kill()
+            proc.stdout.close()
+
+    def test_a_method_that_is_not_a_string_is_an_invalid_request(self):
+        replies = _session('{"jsonrpc":"2.0","method":1,"params":"bar"}', PING)
+        assert [(r["id"], r.get("error", {}).get("code")) for r in replies] == [(None, -32600), (99, None)]
+
+    @pytest.mark.parametrize("line", [
+        '{"jsonrpc":"2.0","method":"notifications/cancelled","params":{"requestId":1,"reason":"x"}}',
+        '{"jsonrpc":"2.0","method":"notifications/initialized"}',
+        '{"jsonrpc":"2.0","method":"notifications/unknown","params":null}',
+        '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"designesy_catalog"}}',
+    ], ids=["cancelled", "initialized", "unknown", "tools-call-without-id"])
+    def test_a_notification_gets_no_reply_and_runs_nothing(self, line):
+        with patch.object(mcp, "_dispatch") as dispatch:
+            replies = _session(line, PING)
+        dispatch.assert_not_called()
+        assert replies == [{"jsonrpc": "2.0", "id": 99, "result": {}}]
+
+    def test_params_null_reads_as_an_empty_object(self):
+        tools = mcp._handle({"jsonrpc": "2.0", "id": 4, "method": "tools/list", "params": None})
+        assert len(tools["result"]["tools"]) == 17
+        unknown_tool = mcp._handle({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": None})
+        assert unknown_tool["error"]["code"] == -32602
+        unknown_resource = mcp._handle({"jsonrpc": "2.0", "id": 6, "method": "resources/read", "params": None})
+        assert unknown_resource["error"]["code"] == -32002
+
+    @pytest.mark.parametrize("params", [[1], "x", 3])
+    def test_params_that_are_not_an_object_are_invalid_params(self, params):
+        reply = mcp._handle({"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": params})
+        assert reply == {"jsonrpc": "2.0", "id": 5, "error": {
+            "code": -32602, "message": "Invalid params: params must be an object"}}
+
+    def test_arguments_null_reads_as_an_empty_object(self):
+        with patch.object(mcp, "_dispatch", return_value={"ok": True}) as dispatch:
+            reply = mcp._handle(json.loads(_request("tools/call", {"name": "designesy_catalog", "arguments": None})))
+        dispatch.assert_called_once_with("designesy_catalog", {})
+        assert reply["result"]["isError"] is False
+
+    @pytest.mark.parametrize("arguments", [[1], "x", 3])
+    def test_arguments_that_are_not_an_object_are_invalid_params(self, arguments):
+        with patch.object(mcp, "_dispatch") as dispatch:
+            reply = mcp._handle(json.loads(_request("tools/call", {"name": "designesy_score", "arguments": arguments})))
+        dispatch.assert_not_called()
+        assert reply["error"] == {"code": -32602, "message": "Invalid params: arguments must be an object"}
+
+    @pytest.mark.parametrize("name", ["nope", ["designesy_score"], 7])
+    def test_an_unknown_tool_is_invalid_params(self, name):
+        reply = mcp._handle(json.loads(_request("tools/call", {"name": name, "arguments": {}})))
+        assert reply["error"]["code"] == -32602
+        assert reply["error"]["message"] == f"Unknown tool: {name}"
+
+    @pytest.mark.parametrize("uri", ["designesy://nope", ["designesy://open"], 7])
+    def test_an_unknown_resource_is_not_found(self, uri):
+        reply = mcp._handle(json.loads(_request("resources/read", {"uri": uri})))
+        assert reply["error"] == {"code": -32002, "message": f"Unknown resource: {uri}"}
+
+    def test_an_unknown_method_is_still_method_not_found(self):
+        assert mcp._handle(json.loads(_request("foo/bar")))["error"]["code"] == -32601
+
+    def test_a_blocked_url_is_an_is_error_result(self, env):
+        def fetch(url, as_json=True):
+            mcp._validate_url(url)
+            return {}
+        with patch.object(mcp, "_fetch", fetch):
+            reply = mcp._handle(json.loads(_request(
+                "tools/call", {"name": "designesy_tokens_score", "arguments": {"url": "http://127.0.0.1/t.json"}})))
+        assert reply["result"] == {"content": [{"type": "text", "text": (
+            "Tool execution failed: Blocked: internal host '127.0.0.1'")}], "isError": True}
+
+    def test_a_fetch_error_is_an_is_error_result(self, env):
+        url = "https://expired.example/t.json"
+        contract_url = "https://www.designesy.org/contracts/tokens.json"
+        contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
+        site = _Site({contract_url: contract}, {url: _cert_error()})
+        with patch.object(mcp.urllib.request, "urlopen", site):
+            reply = mcp._handle(json.loads(_request(
+                "tools/call", {"name": "designesy_tokens_score", "arguments": {"url": url}})))
+        assert reply["result"]["isError"] is True
+        text = reply["result"]["content"][0]["text"]
+        assert text.startswith("Failed to fetch URL: ") and "certificate has expired" in text
+
+    def test_a_handler_that_raises_answers_minus_32603_and_the_session_reads_on(self):
+        with patch.object(mcp, "_result", side_effect=RuntimeError("boom")):
+            replies = _session(PING, "[1]")
+        assert replies[0] == {"jsonrpc": "2.0", "id": 99, "error": {"code": -32603, "message": "Internal error: boom"}}
+        assert replies[1]["error"]["code"] == -32600

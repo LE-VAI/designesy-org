@@ -110,12 +110,12 @@ export default function BadgePage() {
             <ol className="badge-steps">
               <li>
                 <strong>The badge reads the score cache.</strong> It shows the score the cache holds for your
-                site and the date that score was measured: the same run your{' '}
-                <Link href="/score" className="text-link">/score</Link> report shows.
+                site and the date that score was measured: the same run
+                your <Link href="/score" className="text-link">/score</Link> report shows.
               </li>
               <li>
-                <strong>A site with no score in the cache is scored once</strong>, by the same{' '}
-                {ENGINE_CHECK_COUNT} checks the score page runs, and later views read that result. New
+                <strong>A site with no score in the cache is scored once</strong>, by the
+                same {ENGINE_CHECK_COUNT} checks the score page runs, and later views read that result. New
                 scores started by badges are rate limited; at the limit the badge reads &quot;Not
                 scored&quot; for a minute, then tries again.
               </li>

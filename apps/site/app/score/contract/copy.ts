@@ -523,10 +523,12 @@ export function gapsFlag(fidelity: ResultCheck[], scored: number): { lead: strin
   return { lead: 'Measured with gaps.', text: `${head} Fidelity covers the ${scored} that ran.` };
 }
 
-/** The leaderboard note under the pair. */
+/** The note under the pair: how the baseline differs from the URL score at
+    /score. (Named for the leaderboard number it used to compare with; the
+    public leaderboard is withdrawn, decided 2026-10-23.) */
 export function leaderboardFlag(baselineTotal: number): { lead: string; text: string } {
   return {
-    lead: "Baseline differs from this page's leaderboard number:",
+    lead: "Baseline differs from this URL's score at /score:",
     text: `it runs ${baselineTotal} universal checks and leaves out Designesy's own checks, slop and originality.`,
   };
 }

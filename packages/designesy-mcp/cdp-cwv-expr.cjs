@@ -7,15 +7,19 @@
 //   - Settle-based wait (handled inside cwv-expr.js).
 //   - --throttle flag applies Lighthouse mobile preset.
 //
-// Usage: node cdp-cwv-expr.cjs <url> [--throttle]
+// Usage: node cdp-cwv-expr.cjs <url> [--throttle] [--cdp=<DevTools URL>]
+// The DevTools endpoint is --cdp (http://127.0.0.1:9222 without it). The MCP
+// server runs this script only when DESIGNESY_CDP_URL is set, and passes it.
 const http = require('http');
 // Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
 // No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 const fs = require('fs');
 const path = require('path');
 
-const CDP_HOST = '127.0.0.1';
-const CDP_PORT = 9222;
+const CDP_ARG = process.argv.slice(2).find(a => a.startsWith('--cdp='));
+const CDP = new URL(CDP_ARG ? CDP_ARG.slice('--cdp='.length) : 'http://127.0.0.1:9222');
+const CDP_HOST = CDP.hostname.replace(/^\[|\]$/g, '');
+const CDP_PORT = Number(CDP.port) || 80;
 
 function cdpRequest(p, method = 'PUT') {
   return new Promise((resolve, reject) => {
@@ -177,5 +181,5 @@ async function checkCWV(url, throttle) {
 const args = process.argv.slice(2);
 const throttle = args.includes('--throttle');
 const url = args.find(a => !a.startsWith('--'));
-if (!url) { console.error('Usage: node cdp-cwv-expr.cjs <url> [--throttle]'); process.exit(1); }
+if (!url) { console.error('Usage: node cdp-cwv-expr.cjs <url> [--throttle] [--cdp=<DevTools URL>]'); process.exit(1); }
 checkCWV(url, throttle).then(r => { console.log('\n' + JSON.stringify(r, null, 2)); process.exit(0); }).catch(e => { console.error('Error:', e.message); process.exit(1); });

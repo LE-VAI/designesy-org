@@ -306,7 +306,6 @@ function EngineTile({
   const grade = ok ? result.grade || 'F' : '—';
   const warn = result?.warn || 0;
   const fail = result?.fail || 0;
-  const pass = result?.pass || 0;
   // What needs attention, as the category lines say it; "All passed" if nothing.
   const attention = [fail ? statusCount('FAIL', fail) : '', warn ? statusCount('WARN', warn) : ''].filter(Boolean).join(' · ') || 'All passed';
 
@@ -318,7 +317,11 @@ function EngineTile({
       aria-selected={active}
       role="tab"
       data-grade={ok ? grade.toLowerCase() : undefined}
-      aria-label={`${label} ${checkCount}: ${ok ? `grade ${grade}, ${fmtScore(score)} out of 100, ${statusCount('PASS', pass)}, ${statusCount('WARN', warn)}, ${statusCount('FAIL', fail)}` : 'not yet run'}`}
+      // Named by what it shows (WCAG 2.5.3, Label in Name): an aria-label that
+      // read "grade D, 67.9 out of 100" beside the tile's "D 67.9/100" fails
+      // axe-core 4.14 once a run lands. Chrome puts a space between the
+      // tile's flex items, so the name reads "Contract score (45) D 67.9/100
+      // 7 failed · 18 need work".
     >
       <span className="score-engine-tile-head">
         <span className="score-engine-tile-label">{label}</span>

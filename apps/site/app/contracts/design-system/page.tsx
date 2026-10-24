@@ -414,8 +414,8 @@ export default function DesignSystemContractPage() {
           <div className="definition">
             <p>
               UX copy principles from NN/g, Polaris, IBM Carbon, Microsoft
-              Fluent, Apple HIG, and Atlassian. Gap source:{' '}
-              <a
+              Fluent, Apple HIG, and Atlassian.
+              Gap source: <a
                 href="https://detail.design"
                 // Underlined: inside a sentence, color alone does not mark a
                 // link (WCAG 1.4.1; axe link-in-text-block measured 1.93:1
@@ -423,8 +423,7 @@ export default function DesignSystemContractPage() {
                 style={{ color: 'var(--signal-text)', textDecoration: 'underline', textUnderlineOffset: '0.15em' }}
               >
                 detail.design
-              </a>{' '}
-              Copywriting discipline. 16 principles across button text, error
+              </a> Copywriting discipline. 16 principles across button text, error
               messages, empty states, link text, general microcopy, and voice &
               tone. 4 codifiable principles are verification checks (v38 to v41);
               12 are governance. Verb-first buttons, descriptive links, and

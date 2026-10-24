@@ -84,6 +84,16 @@
  *                        within two, FAIL past two, SKIP with no history), an
  *                        unknown cadence is a 400, and every result's score
  *                        and counts match the checks it returns
+ *   monitor-no-mail      no monitor mail under any setting: with MONITOR_EMAIL_ENABLED
+ *                        "true" and a Resend key set, and Resend's API answered inside
+ *                        the harness, a run that raises an alert sends nothing; an email
+ *                        given as an address, 5 or null returns 200 with no address in
+ *                        the result; m10 is SKIP and the tally leaves it out; the hosted
+ *                        designesy_monitor_score posts no email and is annotated
+ *                        read-only; a malformed history is a 400 naming the field, an
+ *                        oversized array is refused with one element's issues at most
+ *                        (no throw), a run trimmed to the fields the checks read is
+ *                        answered, and a body over 512 KB is a 413
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -125,7 +135,10 @@ function servedContracts(h) {
   };
 }
 
-/** A harness serving the fixture site (and, optionally, the compare page and score API). */
+/**
+ * A harness serving the fixture site (and, optionally, the compare page and score API).
+ * extra.api answers a fetch first; returning undefined passes it to the score API.
+ */
 function siteHarness(extra = {}) {
   const s = FIXTURES.site;
   const origin = new URL(s.url).origin;
@@ -137,12 +150,14 @@ function siteHarness(extra = {}) {
     ...(extra.pages || {}),
   };
   const api = (url, init) => {
+    const a = extra.api && extra.api(url, init);
+    if (a !== undefined) return a;
     if (url === 'https://www.designesy.org/api/score' && init && init.body) {
       return FIXTURES.compare.scores[JSON.parse(init.body).url];
     }
     return undefined;
   };
-  const h = createHarness({ app: APP, pages, api });
+  const h = createHarness({ app: APP, pages, api, stubs: extra.stubs });
   Object.assign(pages, servedContracts(h));
   return h;
 }
@@ -521,6 +536,234 @@ async function monitorM02() {
   return { findings, measured: seen.join('; ') };
 }
 
+// The most zod issues a refused monitor body may carry: one run's worth (its
+// required fields and the first failing check's), with room to spare.
+const ISSUE_CAP = 64;
+
+async function monitorNoMail() {
+  // Monitor email delivery was retired in monitor contract 0.1.5 (CHANGELOG):
+  // /api/monitor sends no mail under any setting. So the old switch is set to
+  // "true", a Resend key is set, and Resend's API is answered inside the
+  // harness (RESEND_BASE_URL points at a .test host as a second fence): a run
+  // that raises an alert must reach neither host. An `email` of any type is
+  // accepted, ignored and never returned (designesy-mcp 1.13.10 and earlier
+  // still send it); m10 is SKIP and not scored; the hosted tool forwards no
+  // email; and the body is checked for shape and bounds before any check
+  // reads it. Each call is caught, so a route that throws is a finding.
+  const findings = [];
+  const push = (id, why) => findings.push({ id: `monitor-no-mail:${id}`, why });
+  const sends = [];
+  const RESEND_HOSTS = new Set(['api.resend.com', 'api.resend.test']);
+  const resendApi = (u, init) => {
+    let host = '';
+    try {
+      host = new URL(u).hostname;
+    } catch {
+      /* not a URL: not Resend */
+    }
+    if (!RESEND_HOSTS.has(host)) return undefined;
+    sends.push({ url: u, body: init && init.body });
+    return { id: 'stub' };
+  };
+  const ENV = ['MONITOR_EMAIL_ENABLED', 'RESEND_API_KEY', 'RESEND_BASE_URL'];
+  const saved = Object.fromEntries(ENV.map((n) => [n, process.env[n]]));
+  process.env.MONITOR_EMAIL_ENABLED = 'true';
+  process.env.RESEND_API_KEY = 're_stub';
+  process.env.RESEND_BASE_URL = 'https://api.resend.test';
+  const seen = [];
+  try {
+    const h = siteHarness({ api: resendApi });
+    const url = FIXTURES.site.url;
+    const post = async (label, body, headers) => {
+      try {
+        return await h.post('app/api/monitor/route.ts', body, headers);
+      } catch (e) {
+        push(`${label}:threw`, `${label}: the route threw (${e && e.message ? e.message : e}); it must answer.`);
+        return null;
+      }
+    };
+    let retired = null;
+    try {
+      retired = h.load('app/lib/monitor-history.ts').M10_RETIRED_DETAIL;
+    } catch (e) {
+      push('retired-detail', `app/lib/monitor-history.ts could not be loaded (${e && e.message ? e.message : e}), so m10's detail has nothing to match.`);
+    }
+
+    const first = await post('first-run', { url });
+    const snap = first && first.body && first.body.currentSnapshot;
+    if (!snap) {
+      push('first-run', `A first run returned no currentSnapshot (${first ? `${first.status} ${JSON.stringify(first.body).slice(0, 200)}` : 'it threw'}).`);
+      return { findings };
+    }
+    // A baseline with 50 more tokens raises the m08 alert, and every field
+    // stays inside the history bounds.
+    const history = [{ ...snap, tokensExtracted: snap.tokensExtracted + 50 }, snap];
+    const address = 'alerts@example.com';
+    for (const email of [address, 5, null]) {
+      const label = `email ${JSON.stringify(email)}`;
+      sends.length = 0;
+      const r = await post(label, { url, email, history });
+      if (!r) continue;
+      const m10 = (r.body.monitorChecks || []).find((c) => c.id === 'm10');
+      seen.push(`${label} ${r.status}, ${sends.length} sent, m10 ${m10 ? m10.status : 'missing'}`);
+      if (r.status !== 200) {
+        push(`${label}:status`, `${label}: HTTP ${r.status} (${JSON.stringify(r.body).slice(0, 200)}); an email field of any type is accepted and ignored.`);
+        continue;
+      }
+      if (!(r.body.alerts || []).length) push(`${label}:no-alert`, `${label}: the history raised no alert, so this case tested nothing.`);
+      if (sends.length) push(`${label}:sent`, `${label}: ${sends.length} request(s) reached Resend (${sends.map((s) => s.url).join(', ')}) with MONITOR_EMAIL_ENABLED "true"; the monitor sends no mail.`);
+      if (JSON.stringify(r.body).includes(address)) push(`${label}:echo`, `${label}: the result carries the address ${address}.`);
+      if ('emailAlert' in r.body) push(`${label}:emailAlert`, `${label}: the result still has emailAlert (${JSON.stringify(r.body.emailAlert)}).`);
+      const checks = r.body.monitorChecks || [];
+      if (!m10 || m10.status !== 'SKIP' || (retired !== null && m10.detail !== retired)) {
+        push(`${label}:m10`, `${label}: m10 is ${m10 ? `${m10.status} ("${m10.detail}")` : 'missing'}; it is SKIP with "${retired}".`);
+      }
+      const scored = checks.filter((c) => c.status !== 'SKIP');
+      const points = scored.reduce((sum, c) => sum + (c.status === 'PASS' ? 1 : c.status === 'WARN' ? 0.5 : 0), 0);
+      const want = scored.length ? Math.round((points / scored.length) * 100) : 0;
+      const counts = ['PASS', 'WARN', 'FAIL'].map((st) => checks.filter((c) => c.status === st).length);
+      if (r.body.score !== want || r.body.pass !== counts[0] || r.body.warn !== counts[1] || r.body.fail !== counts[2] || r.body.total !== 10) {
+        push(`${label}:tally`, `${label}: the result says score ${r.body.score} (${r.body.pass}/${r.body.warn}/${r.body.fail} of ${r.body.total}); its checks without SKIP give ${want} (${counts.join('/')} of 10).`);
+      }
+    }
+
+    // The hosted tool: what it posts to /api/monitor, and how it is annotated.
+    let posted = null;
+    const mcp = siteHarness({
+      api: (u, init) => {
+        if (u !== 'https://www.designesy.org/api/monitor') return undefined;
+        posted = init && typeof init.body === 'string' ? init.body : null;
+        return { ok: true, alerts: [] };
+      },
+    });
+    try {
+      const { config } = await mcp.callTool('designesy_monitor_score', { url, email: address, history });
+      let body = {};
+      try {
+        body = JSON.parse(posted || 'null') || {};
+      } catch {
+        /* reported below */
+      }
+      if (posted === null) push('mcp:no-post', 'The hosted designesy_monitor_score posted nothing to /api/monitor.');
+      else if ('email' in body || posted.includes(address)) push('mcp:email', `The hosted designesy_monitor_score posted ${posted.slice(0, 200)}; it forwards no email.`);
+      seen.push(`MCP body ${posted !== null && !('email' in body) && !posted.includes(address) ? 'has no email' : 'carries the email'}`);
+      const a = config.annotations || {};
+      if (a.readOnlyHint !== true || a.idempotentHint !== true) push('mcp:annotations', `The hosted tool is annotated readOnlyHint ${a.readOnlyHint}, idempotentHint ${a.idempotentHint}; it sends no mail, so both are true.`);
+      if (/Resend|MONITOR_EMAIL_ENABLED|schedule registered/i.test(config.description)) push('mcp:description', 'The hosted tool description still names Resend, MONITOR_EMAIL_ENABLED or "schedule registered".');
+      const shape = (config.inputSchema && config.inputSchema.shape) || {};
+      const emailDescription = (shape.email && shape.email.description) || '';
+      if (!/ignored/.test(emailDescription)) push('mcp:email-param', `The email parameter is described as ${JSON.stringify(emailDescription)}; it is deprecated and ignored.`);
+      const skipRun = [{ ...snap, checks: [{ ...snap.checks[0], status: 'SKIP' }] }];
+      if (!config.inputSchema.safeParse({ url, history: skipRun }).success || config.inputSchema.safeParse({ url, history: [{ ...snap, score: 'x' }] }).success) {
+        push('mcp:history-schema', 'The hosted tool\'s history schema is not the route\'s: it must accept a SKIP check and refuse a score that is not a number.');
+      }
+      // The MCP SDK validates tools/call arguments against this schema before
+      // the handler runs, so its bounds must hold there too.
+      try {
+        const wide = config.inputSchema.safeParse({ url, history: [{ ...snap, checks: Array.from({ length: 30000 }, () => ({})) }] });
+        const issues = wide.success ? 0 : wide.error.issues.length;
+        if (wide.success || issues > ISSUE_CAP) push('mcp:history-bounds', `The hosted tool's schema took a run with 30,000 empty checks as ${wide.success ? 'valid' : `${issues} issues`}; it refuses it with ${ISSUE_CAP} issues at most.`);
+      } catch (e) {
+        push('mcp:history-bounds', `The hosted tool's schema threw on a run with 30,000 empty checks (${e && e.message ? e.message : e}).`);
+      }
+    } catch (e) {
+      push('mcp:threw', `The hosted designesy_monitor_score threw: ${e && e.message ? e.message : e}`);
+    }
+
+    // A malformed request is a 400 that names the field.
+    const run = { timestamp: 't', score: 50, grade: 'C', tokensExtracted: 0, checks: [] };
+    // The largest history of empty runs a 512 KB body holds.
+    const prefix = JSON.stringify({ url, history: [] }).length;
+    const emptyRuns = Math.floor((512 * 1024 - prefix + 1) / 3);
+    const bad = [
+      ['history [{}]', { url, history: [{}] }, 'history[0].score'],
+      ['score "x"', { url, history: [snap, { ...snap, score: 'x' }] }, 'history[1].score'],
+      ['status MAYBE', { url, history: [{ ...snap, checks: [{ ...snap.checks[0], status: 'MAYBE' }] }] }, 'history[0].checks[0].status'],
+      ['1001 runs', { url, history: Array.from({ length: 1001 }, () => ({ ...run })) }, 'history'],
+      // Before each array's length was checked first, the first of these threw
+      // a RangeError while zod merged its issues (a 500), and the second built
+      // about 870,000 issues before its 400.
+      ['30,000 empty checks', { url, history: [{ ...run, checks: Array.from({ length: 30000 }, () => ({})) }] }, 'history[0].checks'],
+      [`${emptyRuns} empty runs (512 KB)`, { url, history: Array.from({ length: emptyRuns }, () => ({})) }, 'history'],
+      ['1000 runs of 12 empty checks', { url, history: Array.from({ length: 1000 }, () => ({ checks: Array.from({ length: 12 }, () => ({})) })) }, 'history[0].score'],
+      ['history "x"', { url, history: 'x' }, 'history'],
+      ['url 5', { url: 5 }, 'url'],
+      ['body null', null, 'body'],
+    ];
+    let refused = 0;
+    let schema = null;
+    try {
+      schema = h.load('app/lib/monitor-history.ts').monitorRequestSchema;
+    } catch {
+      /* reported above, as retired-detail */
+    }
+    let mostIssues = 0;
+    for (const [label, body, want] of bad) {
+      const id = label.replace(/[^a-z0-9]+/gi, '-');
+      const bytes = Buffer.byteLength(JSON.stringify(body));
+      if (bytes > 512 * 1024) push(`malformed:${id}:size`, `${label} is ${bytes} bytes, past the 512 KB limit, so it tests the 413, not the schema.`);
+      const r = await post(label, body);
+      if (!r) continue;
+      if (r.status === 400 && r.body && r.body.path === want) refused++;
+      else push(`malformed:${id}`, `${label}: HTTP ${r.status} with path ${JSON.stringify(r.body && r.body.path)} (${JSON.stringify(r.body).slice(0, 160)}); it is a 400 naming ${want}.`);
+      // The schema stops at the first element that fails, so a refused body
+      // carries one element's issues, never one per element.
+      if (schema) {
+        try {
+          const parsed = schema.safeParse(body);
+          const issues = parsed.success ? 0 : parsed.error.issues.length;
+          mostIssues = Math.max(mostIssues, issues);
+          if (issues > ISSUE_CAP) push(`malformed:${id}:issues`, `${label}: the schema built ${issues} issues; it stops at the first element that fails (${ISSUE_CAP} at most).`);
+        } catch (e) {
+          push(`malformed:${id}:schema-threw`, `${label}: the schema threw (${e && e.message ? e.message : e}).`);
+        }
+      }
+    }
+    seen.push(`${refused}/${bad.length} malformed refused with the field named, at most ${mostIssues} issues each`);
+
+    // Only what a check reads is required: a run trimmed to its timestamp,
+    // score, tokensExtracted and each check's id and status is answered, and so
+    // is a null history (no history, as before the schema).
+    const trimmed = { timestamp: snap.timestamp, score: snap.score, tokensExtracted: snap.tokensExtracted, checks: snap.checks.map((c) => ({ id: c.id, status: c.status })) };
+    for (const [label, body, runs] of [
+      ['trimmed runs', { url, history: [trimmed, trimmed] }, 2],
+      ['history null', { url, history: null }, 0],
+    ]) {
+      const r = await post(label, body);
+      if (!r) continue;
+      const m01 = (r.body.monitorChecks || []).find((c) => c.id === 'm01');
+      seen.push(`${label} ${r.status}`);
+      if (r.status !== 200 || !m01 || m01.status !== (runs ? 'PASS' : 'SKIP')) {
+        push(`accepted:${label.replace(/[^a-z0-9]+/gi, '-')}`, `${label}: HTTP ${r.status}, m01 ${m01 ? m01.status : 'missing'} (${JSON.stringify(r.body).slice(0, 160)}); it is answered as ${runs} earlier run${runs === 1 ? '' : 's'}.`);
+      }
+    }
+
+    const big = await post('600 KB body', { url, history: [snap], pad: 'x'.repeat(600 * 1024) });
+    if (big) {
+      seen.push(`600 KB body ${big.status}`);
+      if (big.status !== 413) push('size', `A 600 KB body returned HTTP ${big.status}; a body over 512 KB is a 413.`);
+    }
+    // A Content-Length past the limit is refused before the body is read.
+    const declared = await post('Content-Length 600 KB', { url }, { 'content-length': String(600 * 1024) });
+    if (declared) {
+      seen.push(`Content-Length 600 KB ${declared.status}`);
+      if (declared.status !== 413) push('size:content-length', `A request declaring Content-Length ${600 * 1024} returned HTTP ${declared.status}; it is a 413 before the body is read.`);
+    }
+  } finally {
+    for (const [name, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[name];
+      else process.env[name] = v;
+    }
+  }
+
+  // No route and no dependency can send monitor mail.
+  const pkg = JSON.parse(fs.readFileSync(path.join(APP, 'package.json'), 'utf8'));
+  if ((pkg.dependencies || {}).resend !== undefined) push('dependency', `apps/site/package.json still depends on resend ${pkg.dependencies.resend}.`);
+  const routeSrc = fs.readFileSync(path.join(APP, 'app', 'api', 'monitor', 'route.ts'), 'utf8');
+  if (/from\s+['"]resend['"]|require\(\s*['"]resend['"]\s*\)/.test(routeSrc)) push('import', 'app/api/monitor/route.ts still imports resend.');
+  return { findings, measured: `MONITOR_EMAIL_ENABLED "true": ${seen.join('; ')}` };
+}
+
 async function compareRounding() {
   const findings = [];
   const h = siteHarness();
@@ -683,6 +926,7 @@ const CHECKS = [
   ['monitor-m01', monitorM01],
   ['monitor-m02', monitorM02],
   ['monitor-m09', monitorM09],
+  ['monitor-no-mail', monitorNoMail],
   ['compare-rounding', compareRounding],
 ];
 

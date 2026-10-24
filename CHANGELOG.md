@@ -89,20 +89,242 @@ prints their numbers.
   `test/test_tokens_score.py` scores that file itself and expects no WARN and
   no FAIL, where it read the golden for no FAIL.
 
+**Monitor contract 0.1.5: monitor alert email is retired, and scores move.**
+`/api/monitor` sends no email under any setting; alerts come back in the result
+(`alerts[]`), as `/monitor` shows them. m10 is no longer scored, so a stable
+site moves from 90 (A) to 89 (B) on its third run or later.
+
+### Removed
+
+- **Monitor alert email.** The send code, `app/lib/monitor-email.ts`, the `resend`
+  import and the `resend` dependency are gone from apps/site, so no setting can
+  make `/api/monitor` send mail, `MONITOR_EMAIL_ENABLED=true` included. Nothing
+  in the site reads that variable now. The Continuity waitlist still sends its
+  notices through Resend's HTTP API with `RESEND_API_KEY`, unchanged.
+- `emailAlert` is gone from the monitor result, and with it the one-hour
+  cooldown and the address check.
+
+### Changed
+
+- **m10 is N/A on every run and is not scored.** Its detail says alerts are
+  returned in the response and email delivery was retired; the ids m01 to m10
+  stay. m10 passed on every run unless a send was tried and failed, so leaving
+  it out takes a PASS out of the score: a stable site moves from 90 (A) to 89
+  (B) on its third run or later and from 95 to 94 on its second; a first run
+  stays at 100.
+- **An `email` field is accepted and ignored.** An address, `5` or `null` returns
+  200, and no address appears in the result. designesy-mcp 1.13.10 and earlier
+  forward `email` when given; the field has no effect, so they keep working.
+- **`/monitor` has no email field.** It sends no address, and on load it removes
+  an address an earlier version saved in the browser (`designesy:monitor-email`).
+  Its formula reads `÷ scored checks` (it said `÷ 10`, which a SKIP made wrong),
+  m10 is labelled "Alert email", and the engine bar has no email field type.
+  When the engine refuses the runs the browser stored for a URL (a 400 naming
+  `history`, or a 413), the error offers "Clear this history", since every
+  later run of that URL would send the same runs.
+- **The hosted `designesy_monitor_score` is read-only.** `readOnlyHint` and
+  `idempotentHint` are true, and its title is "Monitor drift over time". The
+  handler forwards no `email`; the parameter is described as deprecated and
+  ignored. Its `history` argument takes the route's schema, so a SKIP check is
+  accepted, the same bounds apply, and a run needs only the fields the checks
+  read (it required every field). Its description listed m01 as "schedule
+  registered" (m01's name until 0.1.2) and said results are cached ~24h per
+  URL; it now says "history supplied" and that the cache is per URL and history.
+- The monitor contract (0.1.5) rewrites `alert_delivery`, the m10 row, the
+  scoring line and the email open question; `/changelog` has the entry, and
+  `/docs/mcp`, `/contracts/monitor`, `/monitor` and both READMEs follow. The repo
+  README says all 17 tools are read-only.
+- `apps/site/.env.example` drops `MONITOR_EMAIL_ENABLED` and says the Resend key
+  is for waitlist notices only.
+
+### Fixed
+
+- **A malformed request is a 400 that names the field.** `app/lib/monitor-history.ts`
+  holds one bounds-only schema, which the route and the hosted tool share: types,
+  a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS,
+  FAIL, WARN or SKIP, string lengths, at most 12 checks a run and at most 1000
+  runs. It does not recompute a run's score from its checks, so runs stored by an
+  earlier engine stay valid. Only what a check reads is required: each run's
+  `score`, `tokensExtracted` and `checks`, and each check's `id` and `status`.
+  The `timestamp`, `grade`, `item`, `category` and `detail` are checked when
+  present, so a run trimmed to the required fields is still answered. Each
+  array's length is checked before its elements, and parsing stops at the
+  first run that fails, so a refused body carries the issues of one run at
+  most. A body over 512 KB is a 413 and is never held whole: a Content-Length
+  past the limit is refused before the body is read, and any other body stops
+  being read at the first chunk past it. Before, an `email` such as `5`, a
+  `url` such as `5`, a body of `null` and `history: [{}]` crashed the route,
+  and a non-numeric `score` such as `"x"` made the m03, m04 and m07 deltas
+  NaN. A `history` that is a string, a number, a boolean or an object was read
+  as no history; it is now a 400. `null` still means no history.
+
+### Tests
+
+- `check-mcp-accuracy`'s `monitor-no-mail` replaces `monitor-mail-off`: with
+  `MONITOR_EMAIL_ENABLED="true"`, a Resend key set and Resend's API answered
+  inside the harness, a run that raises an alert sends nothing; an `email` given
+  as an address, `5` or `null` returns 200 with no address in the result; m10 is
+  SKIP and the score leaves it out; the hosted handler posts no `email`, is
+  annotated read-only and takes the route's history schema; each malformed
+  request is a 400 naming its field, and the schema builds at most 64 issues
+  for it, among them a run of 30,000 empty checks and a 512 KB history of empty
+  runs; a run trimmed to the fields the checks read and a `null` history
+  return 200; and a 600 KB body, or a Content-Length past 512 KB, is a 413. The
+  route harness no longer stubs the `resend` module.
+
+**designesy-mcp, next release: `designesy_monitor_score` is read-only** (PyPI
+and the MCP registry; not yet released). Until then, designesy-mcp 1.13.10
+forwards `email` to `/api/monitor`, which ignores it.
+
+### Changed (designesy-mcp, next release)
+
+- `designesy_monitor_score` forwards no `email`; the parameter stays in the
+  schema, described as deprecated and ignored, so older callers keep working.
+  `readOnlyHint` and `idempotentHint` are true, as on the hosted endpoint, and
+  the title is "Monitor drift over time".
+- Its description says alerts come back in `alerts[]` and no email is sent,
+  lists m01 as "history supplied", drops `emailAlert`, and says the cache is per
+  URL and history. Its history schema accepts SKIP, caps the array at 1000
+  runs and a run's checks at 12, and marks as required what the engine
+  requires: each run's `score`, `tokensExtracted` and `checks`, and each
+  check's `id` and `status`.
+- The SAFETY docstring, the annotation notes, and the README summary and
+  Safety section say every tool is read-only; the README tools table and the
+  pyproject summary drop their email clauses.
+- `test_tool_annotations.py` asserts that every tool is read-only, that the
+  monitor forwards no `email` (an address or `5`), that its description
+  names no Resend key and lists m01 as "history supplied", and that the README
+  offers no email alert and names neither Resend nor `MONITOR_EMAIL_ENABLED`.
+
+**Monitor contract 0.1.4: drift-alert email is off unless the server
+switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
+mailed an alert to whatever address a request named, and nothing confirmed
+that the address's owner had asked for it.
+Superseded by 0.1.5 above: the switch, the escaping, `monitor-mail-off`, the
+per-request m10 and the `/monitor` email field went with the sending, and m10
+is N/A (SKIP) on every run. The entries below record 0.1.4 as it was built.
+
+### Security
+
+- **No alert email without `MONITOR_EMAIL_ENABLED=true`.** A server sends
+  monitor alert mail only when that variable is exactly `true` and
+  `RESEND_API_KEY` is set. It is off unless set to exactly `true`. With it
+  off, a request that names an email and raises an alert gets
+  `emailAlert.off: true` and no mail, and the per-hour cooldown is not
+  touched. Setting the switch alone brought back the old sending, with the
+  HTML escaped; 0.1.5 removes the sending, so no setting does now.
+- **Every value the alert email's HTML interpolates is escaped.** The host,
+  the grade, both scores, the alert texts and the URL pass through
+  `escapeHtml`.
+  A previous score that is not a finite number shows as "no score recorded".
+- **`check-mcp-accuracy` holds both.** Its new `monitor-mail-off` check runs
+  the route with Resend stubbed. With the switch unset, `""`, `"1"`, `"TRUE"`
+  or `"yes"`, a run that names an email and raises an alert sends nothing.
+  With `"true"` it sends one email, in which a previous score that is not a
+  number shows as missing. It also checks that `escapeHtml` turns `<`, `>`,
+  `"`, `'` and `&` into entities.
+
+### Changed
+
+- m10 is rebuilt on every request, so when an alert fires it reports whether
+  email alerts are on. With them off it says the alert was surfaced in-UI and
+  that email alerts are off on this server, adding "so no email was sent" when
+  an email was given. It stays PASS. A request whose send would have failed
+  (m10 WARN) now sends nothing (PASS).
+- `/monitor` shows no email field, and sends no saved address, while email
+  alerts are off. Its method step and its descriptions no longer offer an
+  email alert.
+- The monitor contract (0.1.4) names the switch in `alert_delivery`, m10 and
+  its open questions. Its m10 row now matches the engine: it passes when an
+  alert is delivered, held back by the cooldown or surfaced in-UI, warns when
+  a send fails, and never fails (it said in-UI only was a WARN). The
+  `designesy_monitor_score` description, its `email` parameter, `/docs/mcp`
+  and the designesy-mcp README's Safety section named the switch until 0.1.5.
+- `/contracts/monitor` no longer offers an email alert in its description.
+
+### Not changed
+
+- The PyPI server's text named only `RESEND_API_KEY`. It is rewritten here,
+  and reaches PyPI with the next designesy-mcp release.
+
+**The public leaderboard is withdrawn** (the site; decided 2026-10-23). With
+this change, the site's pages and APIs publish no ranked list of sites and no
+stored grade, score or rank for any other site. A URL scored on demand still
+gets its own result (Not changed, below). designesy.org's own score stays as
+a dated reference (measured 2026-10-19), with no rank.
+
+### Removed (leaderboard withdrawal)
+
+- The leaderboard page and its submit form, the framework evaluation pages,
+  the state-of-compliance report, the `/blog` routes (they redirected to four
+  posts on dev.to, which are not part of this change), and one third-party
+  case study under `/work`, with their social images. Their URLs redirect
+  (308): `/leaderboard`, `/frameworks`, `/state-of-compliance` and `/blog`,
+  and every path under them, to `/methodology`, and the case study to
+  `/work`. Their `.md` twins redirect to `/methodology.md` and `/work.md`.
+- `/api/leaderboard/submit` and `/api/cron/rescore`.
+- The scheduled re-score. `rescore-leaderboard.yml` runs only when started by
+  hand, the Vercel cron is gone, and the daily freshness workflow is deleted.
+- Every row but designesy.org's from the seed, the batch data and the
+  snapshot.
+- From the home page: the cohort strip (other sites' scores and the lowest
+  score) and "rescored weekly".
+- From `/methodology`: the cohort figure, the site counts under each grade
+  band, the rank-bounds study, the per-site version-diff table and its named
+  largest rise and fall, the rank-move counts in the sensitivity study, the
+  names of sites a study left out, the data exports and the leaderboard
+  button.
+- The framework evaluations entry in `/open`, `open.json`, `llms.txt`,
+  `llms-full.txt` and `/.well-known/agent.json`, and its spoken abstract.
+- The Proof pane on one platform score landing, which showed a third-party
+  case study's grade.
+- `leaderboard-findings.gif`, which no page linked.
+
+### Changed (leaderboard withdrawal)
+
+- `/api/leaderboard` and `/api/leaderboard.csv` answer `410 Gone`. The reply
+  says the leaderboard has been withdrawn and points to
+  `/api/badge?site=designesy.org`. CORS is unchanged.
+- `/api/badge?site=` answers for designesy.org only. Any other host gets the
+  reply an unknown host got before, whose message now reads "not listed" (it
+  said "not on the leaderboard").
+- The `/brand` data specimen shows designesy.org's own reading, labelled
+  self-scored.
+- `/docs` prints the date of designesy.org's own reading beside it.
+- One `/changelog` entry said, in the present tense, that the leaderboard
+  shows new scores from its next re-score. It now says it showed them.
+- `/benchmarks`, `/maturity` and `/score` link to `/score` or `/methodology`
+  where they linked to the leaderboard. The independence firewall on
+  `/pricing` and `/pricing/review` no longer mentions leaderboard placement.
+- The note under the pair on `/score/contract` compares the baseline with the
+  URL score at `/score`, and so does the published formula's baseline note.
+- The README badges read `/api/badge?site=designesy.org` and link to the
+  score report for designesy.org.
+
+### Not changed (leaderboard withdrawal)
+
+- Scoring any URL on demand: `/score`, `/score/report`, `/api/score`,
+  `/api/badge?url=`, `/compare` and the MCP tools.
+- The engine, the contract and every check. No score moves.
+- The earlier entries in this changelog, which record the leaderboard as it
+  was.
+
+## [1.13.10] — 2026-10-21
+
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
-DTCG 2025.10 Format Module does** (the hosted `/api/mcp`; the PyPI server
-carries the same change in its next release). Scores move for files that
+DTCG 2025.10 Format Module does** (the hosted `/api/mcp`, and the PyPI server
+from designesy-mcp 1.13.10, below). Scores move for files that
 type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
 leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
 write dimensions as strings.
 
-Until that release, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+An installed PyPI server still on 1.13.9 keeps the 0.1.2 checks
 but names them from the contract it fetches from this site, so its results
 say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
 A file with no `$schema` FAILs t01 under a name that calls `$schema` a
 Designesy policy, and t08 passes `"4px"` under a name that asks for
-`{ value, unit }`. Publishing the PyPI server with this change closes the
-gap.
+`{ value, unit }`. 1.13.10, published to PyPI and the MCP registry as
+`v1.13.10`, closes the gap.
 
 ### Fixed (tokens contract 0.1.3)
 
@@ -150,10 +372,12 @@ gap.
   that a 2025.10 dimension takes px or rem, and a bare number, which was told
   to include a unit string, to write `{ value, unit }` in px or rem.
 - **A chain of references is followed once.** t08 walked the whole chain of
-  each dimension alias, so 5,000 chained aliases took 5 seconds to score in
-  the hosted port and 15 in the PyPI port. Each chain of aliases, JSON
+  each dimension alias, so 5,000 chained aliases took 3.7 to 5.4 seconds to
+  score in the hosted port and 12 to 16 in the PyPI port (several runs, one
+  machine). Each chain of aliases, JSON
   Pointers or `$extends` is now followed once per file, in a loop: the same
-  file scores in 14 ms in the hosted port and 48 ms in the PyPI port, and
+  file scores in 10 to 14 ms in the hosted port and 34 to 48 ms in the PyPI
+  port, and
   every 5,000-long chain of aliases, pointers, dimension aliases or
   `$extends` in under 100 ms.
 - **The tool description no longer says `$description` is checked.** No
@@ -187,9 +411,8 @@ Measured with both servers on the shared fixtures in
 `site-export.json` (the site's `/export/dtcg`) stays at 100, and the other
 five fixtures keep their scores.
 
-- `designesy_guardrails` wrote dimensions as strings, so under 0.1.3 the
-  token file it emitted scored 89 with no FAIL. It now writes
-  `{ value, unit }` and scores 100 (the guardrails entry above).
+- `designesy_guardrails` still writes dimensions as strings, so the token
+  file it emits now scores 89 with no FAIL. The emitter is not changed here.
 - On the 127 invalid (negative) files of the same suite, 7 scores drop and
   10 rise. The drops are files now caught: `dimension-wrong-unit.json` by t08
   (100 to 88), and by t04 a token with both `$value` and `$ref` (94 to 88)
@@ -214,6 +437,92 @@ five fixtures keep their scores.
 - The three token fixtures of `scripts/check-mcp-accuracy.js` write
   dimensions as `{ value, unit }`, so each still tests the rule it names.
 - The sibling contract lock records tokens 0.1.3.
+
+**designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
+registry `v1.13.10`). Apart from the tokens scoring
+above, nothing changes in the hosted `/api/mcp` except the version it
+reports. It is the first designesy-mcp release since 1.13.9, so it also
+ships the offline engine merged since then: it mirrors engine 1.5.3 and
+contract v0.4.7 (1.13.9 mirrored 1.4.0 and v0.4.6), and it scores tokens
+files by contract 0.1.3, above.
+
+### Fixed (designesy-mcp 1.13.10)
+
+- **Every certificate is verified.** `_fetch` and `_post_api` retried with
+  `CERT_NONE` after a failed verification, after any raw `ssl.SSLError`, and
+  after any error whose text said "certificate" (an HTTP error with such a
+  reason phrase included). That covered the POSTs to designesy.org's
+  engines, the monitor email among them. A failed verification is now a tool
+  error that names the reason, and `designesy_score` no longer scores offline
+  when the engine's own certificate fails (1.13.9 did, without saying why).
+  To read a site with a bad certificate anyway, set
+  `DESIGNESY_INSECURE_TLS=1`: a URL the caller passes (never one on
+  designesy.org) whose verification fails is then read without it, and the
+  result carries `tls_verified: false`.
+- **An engine error is not scored offline.** `designesy_score` fell back to
+  the offline engine whenever the engine returned no score, so a URL the
+  engine refused (HTTP 400 for `http://100.100.100.200/` and
+  `http://[fec0::1]/`, both of which the server's own URL check lets
+  through) was fetched from the user's machine instead. It now falls back
+  only when the network fails before the request is sent (no DNS, no route,
+  a refused connection). An HTTP error (a refused URL, a rate limit, a page
+  the engine could not reach), `ok: false`, a reply that is not a JSON
+  object, a failure after the request was sent (a reset, a read timeout),
+  or a certificate that fails verification is returned as an error. 1.13.9
+  scored the read timeout offline too, and the engine can spend longer on a
+  page than the call waits, so a page that answered the engine slowly could
+  have itself fetched from the user's machine.
+- **No browser unless the operator names one.** The offline engine opened
+  the URL in a new tab of any Chrome answering on `127.0.0.1:9222` to measure
+  v02 and v21. It now does so only when `DESIGNESY_CDP_URL` names a Chrome
+  DevTools endpoint, and both Node probes connect to that endpoint;
+  otherwise both checks read MANUAL. The `designesy_score` description says
+  so. Neither probe uses a tab it did not open: when `/json/new` failed, the
+  viewport probe measured in a tab already open on the same host and then
+  closed it.
+- **No line ends the session.** An array, a bare string, a number, or
+  `params: null` raised AttributeError and stopped the server, and so did a
+  byte that is not UTF-8 wherever stdin was decoded strictly (CPython's
+  default on a UTF-8 Linux locale). Each line is now decoded as UTF-8,
+  whatever the locale. A line that is not UTF-8 or not JSON gets -32700, a
+  message that is not an object gets -32600 (the 2024-11-05 revision has no
+  batches), and a handler that raises gets -32603; the server reads on.
+  On Windows, where stdin was read as cp1252, a non-ASCII request now
+  arrives intact (a tool name `café` arrived as `cafÃ©`).
+- **Notifications get no reply.** `notifications/cancelled` got a -32601
+  error frame back.
+- **Error codes follow the 2024-11-05 revision.** An unknown tool is -32602
+  and an unknown resource -32002 (both were -32601). `params` or `arguments`
+  of null read as `{}`, and any other non-object is -32602. A tool that runs
+  and fails (a fetch error, a blocked URL) returns an `isError` result with
+  the same text, instead of a JSON-RPC -32000 error.
+
+### Not changed (designesy-mcp 1.13.10)
+
+- The tool list, the schemas, the titles and the annotations:
+  `designesy_score` stays `readOnlyHint: true`. The offline engine's checks
+  and verdicts. The tokens checks change as described above.
+- The hosted endpoint, which has no offline engine or browser probe.
+
+**Engine 1.5.3: f14 counts what a `var()` resolves to, and line-height
+ratios** (the site; not on npm, where `@designesy/score` 0.9.3 runs engine
+1.5.2). A measurement fix to the own-contract score: no check is added, and
+no weight or ceiling moves.
+
+### Fixed (engine 1.5.3)
+
+- f14 (own contract) read a `var()`'s raw custom-property text, so a token
+  whose value is a chain of `var()`s was never counted. It now counts the
+  value the chain resolves to.
+- f14 had no line-height case. A unitless line-height that equals one of
+  the contract's typography ratios (within 0.01, as the other kinds use)
+  now counts. Own-contract formula 1.0.2.
+- On the recorded contract-page fixtures, `landed-capped` and
+  `landed-drift` move f14 from WARN to PASS: their tokens category rises (75
+  to 100, and 25 to 50) and their uncapped fidelity score with it (84.7 to
+  88.6, and 76.7 to 80.7). No reported score or grade moves.
+- designesy-mcp 1.13.10's offline engine reports engine 1.5.3. The Python
+  port has no f14 code, so its verdicts do not change.
 
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
@@ -295,8 +604,8 @@ This changes text only:
 - The engine (1.5.2), the checks, the weights and the ceilings, and the MCP
   tools and their descriptions. `CONTRACT_VERSION` in the npm engine source
   moves to v0.4.7, because its test reads the site's contract. Nothing is
-  published to npm or PyPI. The PyPI server's offline engine still reports
-  contract v0.4.6.
+  published to npm or PyPI with it. Until designesy-mcp 1.13.10, the PyPI
+  server's offline engine reported contract v0.4.6.
 - The eleven 16px label lines (`line-height: 1rem` on the 12.8px label step)
   stay lengths. At 1.25, Chrome lays the line out at 15.984375px, and the
   1/64px it loses moves the text below it by a device pixel on some pages.
@@ -1949,6 +2258,6 @@ ships in the npm CLI's bundled engine; the PyPI `designesy_score` tool passes
 [1.0.4]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.4
 [1.0.3]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.3
 [1.0.2]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.2
-[1.0.1]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.1
+[1.0.1]: https://github.com/LE-VAI/designesy-org/compare/designesy-score%401.0.0...1adacfb8c1ff92173104161e5a18ebc2732ee106
 [1.0.0]: https://github.com/LE-VAI/designesy-org/releases/tag/designesy-score%401.0.0
 [0.4.2]: https://github.com/LE-VAI/designesy-org/compare/v0.4.0...designesy-score%401.0.0

@@ -1167,7 +1167,9 @@ async function main() {
       const focusOk = st.focus ? await page.evaluate((sel) => !!document.activeElement && document.activeElement !== document.body && document.activeElement.matches(sel), st.focus) : true;
       await page.addScriptTag({ content: axe });
       const viol = await page.evaluate(async (tags) => {
-        const r = await window.axe.run(document, { runOnly: { type: 'tag', values: tags } });
+        // Label in Name runs by name as well: axe-core before 4.14 marks it
+        // experimental, and a tag run skips it (as in a11y-sweep.js).
+        const r = await window.axe.run(document, { runOnly: { type: 'tag', values: tags }, rules: { 'label-content-name-mismatch': { enabled: true } } });
         return r.violations.map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0]?.target?.join(' ')}`);
       }, AXE_TAGS);
 

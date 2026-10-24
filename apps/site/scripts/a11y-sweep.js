@@ -77,9 +77,7 @@ function axeSource() {
 
 /** Routes to sweep when no list is given. Same derivation as visual-floor.js:
  *  MARKDOWN_ROUTES is the site's own single source of truth for "pages that
- *  matter", plus the force-dynamic routes that render real pages. The
- *  [slug] framework pages are data-driven rows of one template; the /frameworks
- *  index covers the family, so they are not enumerated. */
+ *  matter", plus the force-dynamic routes that render real pages. */
 function routesFromConfig() {
   const fs = require('node:fs');
   const path = require('node:path');
@@ -146,6 +144,10 @@ const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 const PROBE = async (tags) => {
   const axeRes = await axe.run(document, {
     runOnly: { type: 'tag', values: tags },
+    // Label in Name (WCAG 2.5.3) carries the wcag21a tag, but axe-core before
+    // 4.14 marks it experimental and a tag run skips it. Named here, it runs
+    // on every axe version this checkout may pin.
+    rules: { 'label-content-name-mismatch': { enabled: true } },
   });
   const rulesRun = axeRes.passes.length + axeRes.violations.length +
     axeRes.incomplete.length + axeRes.inapplicable.length;

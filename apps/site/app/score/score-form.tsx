@@ -11,7 +11,7 @@ import {
   truncateUrl,
   type ScoreHistoryEntry,
 } from '../lib/score-history';
-import { ENGINE_CHECK_COUNT } from '../hero-stats';
+import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { EngineBar, Segmented } from '../lib/engine/command-bar';
 import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { useSegmentIndicator } from '../lib/engine/use-segment-indicator';

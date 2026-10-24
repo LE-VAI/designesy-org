@@ -445,20 +445,30 @@ function StageMatrix({
         const answered = qs.filter((q) => answers[q.id] !== undefined).length;
         const score = axisScore(answers, axis.id);
         const stage = answered ? stageFromScore(score) : 0;
-        const label = answered
-          ? `${axis.label}: stage ${stage}, ${STAGE_LABELS[stage]}, ${score} of 100${answered < 4 ? `, ${answered} of 4 answered` : ''}`
-          : `${axis.label}: not answered`;
+        const detail = answered
+          ? `stage ${stage}, ${STAGE_LABELS[stage]}, ${score} of 100${answered < 4 ? `, ${answered} of 4 answered` : ''}`
+          : 'not answered';
+        const label = `${axis.label}: ${detail}`;
+        const meta = answered < 4 ? `${answered} of 4` : axis.contractWeight;
+        // The button's name opens with what the row shows, in order (WCAG
+        // 2.5.3, Label in Name): "Token discipline: not answered" left out the
+        // "0 of 4" under it, and axe-core 4.14 fails that. Each number is said
+        // once, the score as "of 100". The {' '} keep the words apart; the
+        // grid draws no whitespace between its items.
+        const name = answered
+          ? `${axis.label}, ${meta}, ${score} of 100: stage ${stage}, ${STAGE_LABELS[stage]}. Go to this axis.`
+          : `${axis.label}, ${meta}: not answered. Go to this axis.`;
         const body = (
           <>
             <span className="mt-row-name">
-              {axis.label}
-              <small>{answered < 4 ? `${answered} of 4` : axis.contractWeight}</small>
-            </span>
+              {axis.label}{' '}
+              <small>{meta}</small>
+            </span>{' '}
             <span className="mt-cells" aria-hidden="true">
               {[1, 2, 3, 4].map((s) => (
                 <i key={s} className="mt-cell" data-tone={s <= stage ? STAGE_TONE[stage] : undefined} />
               ))}
-            </span>
+            </span>{' '}
             <span className="mt-row-score">{answered ? score : ''}</span>
           </>
         );
@@ -469,7 +479,7 @@ function StageMatrix({
                 type="button"
                 className="mt-row"
                 aria-current={current === i ? 'step' : undefined}
-                aria-label={`${label}. Go to this axis.`}
+                aria-label={name}
                 onClick={() => onPick(i)}
               >
                 {body}

@@ -25,8 +25,9 @@ must together be exactly the live engine's check list, so a check added to the
 live engine fails here until it is ported or listed.
 
 WHAT THIS DOES NOT MEASURE
-The browser probes for v02 and v21 (they need Chrome on 127.0.0.1:9222; the
-parity runs score with browser_probes=False and both engines read MANUAL), the
+The browser probes for v02 and v21 (they need the Chrome DevTools endpoint
+DESIGNESY_CDP_URL names; the parity runs score with browser_probes=False and
+both engines read MANUAL), the
 network fetch itself (timeouts, redirects, candidate URLs), and the score: the
 offline score is an unweighted pass rate over a subset and says so.
 """
