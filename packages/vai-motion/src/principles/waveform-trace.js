@@ -14,6 +14,7 @@
 // Reduced motion: tier 1 — REMOVE (decorative; the arrival matters, not the plot)
 
 import { EASE, resolveDuration } from '../reduced-motion.js';
+import { readEase } from '../easing.js';
 
 export const waveformTrace = {
   name: 'waveform-trace',
@@ -34,6 +35,7 @@ export const waveformTrace = {
   // @returns Promise<void>
   async plotPath(path, opts = {}) {
     const o = { ...this.defaultOptions, ...opts };
+    const ease = readEase(o.ease);
     const length = path.getTotalLength();
     path.style.stroke = o.stroke;
     path.style.strokeWidth = String(o.strokeWidth);
@@ -50,8 +52,8 @@ export const waveformTrace = {
     const start = performance.now() + o.delay;
     await new Promise((resolve) => {
       const tick = (now) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = easeOutCubic(t);
+        const t = Math.min(1, Math.max(0, (now - start) / duration));
+        const eased = ease(t);
         path.style.strokeDashoffset = String(length * (1 - eased));
         if (t < 1) requestAnimationFrame(tick);
         else resolve();
@@ -66,6 +68,7 @@ export const waveformTrace = {
   // @param opts   { duration, ease, delay }
   async drawLine(el, opts = {}) {
     const o = { ...this.defaultOptions, ...opts };
+    const ease = readEase(o.ease);
     const duration = resolveDuration(this.tier, o.duration);
     if (duration === 0) {
       el.classList.add('vai-waveform');
@@ -76,8 +79,8 @@ export const waveformTrace = {
     const start = performance.now() + o.delay;
     await new Promise((resolve) => {
       const tick = (now) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = easeOutCubic(t);
+        const t = Math.min(1, Math.max(0, (now - start) / duration));
+        const eased = ease(t);
         el.style.setProperty('--vai-trace-progress', String(eased));
         if (t < 1) requestAnimationFrame(tick);
         else {
@@ -89,7 +92,3 @@ export const waveformTrace = {
     });
   },
 };
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}

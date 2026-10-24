@@ -16,6 +16,7 @@
 // it just happens fast)
 
 import { EASE, resolveDuration } from '../reduced-motion.js';
+import { readEase } from '../easing.js';
 
 export const markSettle = {
   name: 'mark-settle',
@@ -30,13 +31,14 @@ export const markSettle = {
   },
 
   // Settle a mark (image, svg, or text element) from blur to sharp.
-  // Uses a temporary class with CSS transitions for the blur, and a
-  // WAAPI animation for the scale+opacity (transform/opacity only).
+  // Blur, scale and opacity follow one eased progress, written on each
+  // animation frame (requestAnimationFrame).
   // @param el    HTMLElement
   // @param opts  { duration, ease, fromScale, fromBlur }
   // @returns Promise<void>
   async settle(el, opts = {}) {
     const o = { ...this.defaultOptions, ...opts };
+    const ease = readEase(o.ease);
     const duration = resolveDuration(this.tier, o.duration);
     if (duration === 0) {
       el.style.filter = 'none';
@@ -49,8 +51,8 @@ export const markSettle = {
     const start = performance.now();
     await new Promise((resolve) => {
       const tick = (now) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = easeOutCubic(t);
+        const t = Math.min(1, Math.max(0, (now - start) / duration));
+        const eased = ease(t);
         el.style.filter = `blur(${o.fromBlur * (1 - eased)}px)`;
         el.style.opacity = String(eased);
         el.style.transform = `scale(${o.fromScale + (1 - o.fromScale) * eased})`;
@@ -61,7 +63,3 @@ export const markSettle = {
     });
   },
 };
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}

@@ -14,6 +14,7 @@
 // Reduced motion: tier 2 — SOFTEN (≤200ms, transform/opacity only)
 
 import { EASE, resolveDuration } from '../reduced-motion.js';
+import { readEase } from '../easing.js';
 
 export const fieldBreath = {
   name: 'field-breath',
@@ -27,12 +28,14 @@ export const fieldBreath = {
     maxOpacity: 0.85,
   },
 
-  // Run one breath cycle (swell + release) on an element.
+  // Run one swell on an element: opacity eases from minOpacity up to
+  // maxOpacity over `duration`. It does not release; see loop().
   // @param el    HTMLElement
   // @param opts  { duration, ease, minOpacity, maxOpacity }
   // @returns Promise<void>
   async breathe(el, opts = {}) {
     const o = { ...this.defaultOptions, ...opts };
+    const ease = readEase(o.ease);
     const duration = resolveDuration(this.tier, o.duration);
     if (duration === 0) {
       el.style.opacity = String(o.maxOpacity);
@@ -41,8 +44,8 @@ export const fieldBreath = {
     const start = performance.now();
     await new Promise((resolve) => {
       const tick = (now) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = easeInOut(t);
+        const t = Math.min(1, Math.max(0, (now - start) / duration));
+        const eased = ease(t);
         const opacity = o.minOpacity + (o.maxOpacity - o.minOpacity) * eased;
         el.style.opacity = String(opacity);
         if (t < 1) requestAnimationFrame(tick);
@@ -53,11 +56,14 @@ export const fieldBreath = {
   },
 
   // Start a continuous ambient loop. Returns a stop function.
+  // Each cycle is one breathe(), so opacity steps from maxOpacity back to
+  // minOpacity in one frame between cycles.
   // @param el    HTMLElement
   // @param opts  { duration, ease, minOpacity, maxOpacity }
   // @returns () => void
   loop(el, opts = {}) {
     const o = { ...this.defaultOptions, ...opts };
+    readEase(o.ease); // a bad ease throws here, not in the unawaited cycle
     let running = true;
     const cycle = async () => {
       while (running) {
@@ -70,7 +76,3 @@ export const fieldBreath = {
     };
   },
 };
-
-function easeInOut(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
