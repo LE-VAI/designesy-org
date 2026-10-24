@@ -66,7 +66,7 @@ The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 - `designesy_drift_score` — Score a live URL for UI drift: 12 checks on its custom properties and var() references.
 - `designesy_readiness_score` — Score a URL for AI readiness: 10 probes for machine-readable design artifacts (DTCG tokens, llms.txt, agent.json, an MCP endpoint, DESIGN.md and more).
 - `designesy_guardrails` — Generate a build-contract bundle for coding agents from a site's tokens: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns and DESIGN.md.
-- `designesy_monitor_score` — Re-run the drift checks against earlier snapshots and compute 10 monitor checks; can send a drift-alert email to an address you pass.
+- `designesy_monitor_score` — Re-run the drift checks against earlier snapshots and compute 10 monitor checks; alerts come back in the result.
 - `designesy_compare` — Diff the tokens of two live URLs: added, removed, renamed, changed values, scale and contrast drift, and the score delta.
 - `designesy_report` — One composite report for a URL (score × 0.5 + drift × 0.3 + readiness × 0.2), with an interactive dashboard in hosts that support MCP Apps.
 
@@ -88,7 +88,7 @@ The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 | `designesy_drift_score` | Score a live URL for UI drift (12 checks on custom properties and var() references) |
 | `designesy_readiness_score` | Score a URL for AI readiness (10 probes for machine-readable design artifacts) |
 | `designesy_guardrails` | Generate a build-contract bundle for coding agents from a site's tokens (6 files) |
-| `designesy_monitor_score` | Re-run drift checks against earlier snapshots; 10 monitor checks; optional drift-alert email |
+| `designesy_monitor_score` | Re-run drift checks against earlier snapshots; 10 monitor checks; alerts in the result |
 | `designesy_compare` | Diff the tokens of two live URLs, with the score delta |
 | `designesy_report` | Composite report for one URL (score, drift, readiness), with an MCP App dashboard |
 
@@ -201,7 +201,7 @@ Designesy is a system.
 ## FAQ
 
 **Does it need an API key?**
-No. The MCP endpoint is stateless Streamable HTTP with no authentication. Sixteen of the 17 tools are read-only; `designesy_monitor_score` can send a drift-alert email to an address you pass.
+No. The MCP endpoint is stateless Streamable HTTP with no authentication. All 17 tools are read-only.
 
 **Is it deterministic?**
 Yes. There is no LLM in the scoring loop: every check is deterministic and reproducible. The same page, engine and contract always produce the same verdicts, and the receipt's digest lets anyone check that. A live URL can change between runs, and results are cached for 24 hours.

@@ -634,6 +634,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy monitor contract v0.1.4',
   },
 
+  // ── Monitor contract v0.1.5: alert email is retired, m10 is not scored ──
+  {
+    version: 'monitor v0.1.5',
+    date: '2026-10-23',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.5: alert email is retired, and m10 is not scored',
+    description:
+      'alert_delivery changed: alerts come back in the result (alerts[]), and the monitor sends no email under any setting. An email field in a request, of any type, is accepted and ignored, and no address is returned. m10 (alert delivered) is N/A on every run and is not scored; the ids m01 to m10 stay. The history a request carries is checked for shape and bounds (a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS, FAIL, WARN or SKIP, string lengths, at most 12 checks a run, at most 1000 runs, and a body of at most 512 KB), and a malformed history is refused with a 400 that names the field. Only what a check reads is required (each run\'s score, token count and checks, and each check\'s id and status), so a run trimmed to those is still answered. Before, a history of [{}] crashed the route, and a non-numeric score such as "x" broke the m03, m04 and m07 deltas.',
+    rationale:
+      'Rules changed: m10 and the scoring. m10 passed on every run unless a send was tried and failed, so leaving it out takes a PASS out of the score: a stable site moves from 90 (A) to 89 (B) on its third run or later and from 95 to 94 on its second, and a first run stays at 100. No check is added or removed.',
+    source: 'Designesy monitor contract v0.1.5',
+  },
+
   // ── Compare contract v0.1.1: the editorial pass, versioned ──
   {
     version: 'compare v0.1.1',
