@@ -581,8 +581,9 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
       },
       (res) => {
         const status = res.statusCode || 0;
-        // new Response throws for a status outside 200-599 (999, say), and a
-        // throw here would leave the read with no outcome at all.
+        // new Response throws for a status outside 200-599 (999, say). Refusing
+        // it here, as its headers arrive, keeps a body that never ends from
+        // holding the read open, and gives the caller the status.
         if (status < 200 || status > 599) {
           fail(new InvalidStatusError(status));
           return;
