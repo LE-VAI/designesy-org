@@ -5,22 +5,34 @@
 // the curve it runs.
 //
 // Accepted values:
-//   'cubic-bezier(x1, y1, x2, y2)'   x1 and x2 in [0, 1], as CSS requires
+//   'cubic-bezier(x1, y1, x2, y2)'   four finite numbers, x1 and x2 in
+//                                    [0, 1], as CSS requires
 //   'linear' 'ease' 'ease-in' 'ease-out' 'ease-in-out'   (the CSS keywords)
-//   a function (t) => progress       used as given
+//   a function (t) => progress       used as given, if it returns a
+//                                    finite number
+//
+// The keywords are accepted for parity with CSS. The contract asks for the
+// EASE tokens (src/reduced-motion.js) and rules out ease-in on UI motion.
 //
 // Anything else throws a TypeError, before the principle writes a style.
 // It does not fall back to a default curve: a typo, or a token reference
 // such as 'var(--ease-out)', would then run a curve nobody chose, and no
 // one would see it. That silent substitution is the defect this module
-// replaces.
+// replaces. A function is called at 0 and 1 when it is read, and on every
+// frame; a result that is not a finite number is a TypeError.
 //
 // t is clamped to [0, 1] before the curve sees it, so a frame that lands
 // before a delayed start reads as progress 0.
 //
-// Accuracy: the bezier is solved for x by Newton's method, with bisection
-// as the fallback, until x is within EASE_TOLERANCE (1e-7) of t. The ends
-// are exact: 0 at t = 0, 1 at t = 1.
+// Accuracy: the bezier is solved by bisection on its parameter s, until the
+// interval holding s is narrower than EASE_TOLERANCE (1e-7). The output is
+// then within 3e-7 of the exact curve when y1 and y2 are in [0, 1] (the
+// curve's slope in s is at most 3 there), and within a proportionally
+// larger bound for curves that overshoot. One exception: where x stops
+// rising, or nearly stops, partway along the curve (cubic-bezier(1, 0, 0, 1)
+// at t = 0.5), rounding in x(s) limits any solver that works in doubles,
+// and the error measured there is 3e-6. The ends are exact: 0 at t = 0,
+// 1 at t = 1.
 
 export const EASE_TOLERANCE = 1e-7;
 
@@ -39,7 +51,7 @@ const CUBIC_BEZIER = new RegExp(`^cubic-bezier\\(${NUMBER},${NUMBER},${NUMBER},$
 // @param value  CSS easing string, or a function of t
 // @returns (t: number) => number
 export function readEase(value) {
-  if (typeof value === 'function') return (t) => value(clamp01(t));
+  if (typeof value === 'function') return readFunction(value);
   if (typeof value === 'string') {
     const text = value.trim().toLowerCase();
     if (text === 'linear') return clamp01;
@@ -47,7 +59,9 @@ export function readEase(value) {
     const m = CUBIC_BEZIER.exec(text);
     if (m) {
       const [x1, y1, x2, y2] = m.slice(1).map(Number);
-      if (x1 >= 0 && x1 <= 1 && x2 >= 0 && x2 <= 1) return cubicBezier(x1, y1, x2, y2);
+      // '1e400' parses to Infinity, and an infinite y makes every output NaN.
+      const finite = [x1, y1, x2, y2].every(Number.isFinite);
+      if (finite && x1 >= 0 && x1 <= 1 && x2 >= 0 && x2 <= 1) return cubicBezier(x1, y1, x2, y2);
     }
   }
   const got = typeof value === 'string' ? JSON.stringify(value) : typeof value;
@@ -55,6 +69,22 @@ export function readEase(value) {
     `@vai/motion: ease must be cubic-bezier(x1, y1, x2, y2) with x1 and x2 in [0, 1], ` +
       `one of linear, ease, ease-in, ease-out, ease-in-out, or a function of t; got ${got}`,
   );
+}
+
+// A function ease. A result that is not a finite number would be written
+// as opacity 'NaN' or 'undefined', which the browser ignores, so the
+// element would stay hidden while the promise resolved.
+function readFunction(fn) {
+  const ease = (t) => {
+    const p = fn(clamp01(t));
+    if (typeof p !== 'number' || !Number.isFinite(p)) {
+      throw new TypeError(`@vai/motion: an ease function must return a finite number; got ${String(p)} at t = ${clamp01(t)}`);
+    }
+    return p;
+  };
+  ease(0);
+  ease(1);
+  return ease;
 }
 
 function cubicBezier(x1, y1, x2, y2) {
@@ -66,32 +96,22 @@ function cubicBezier(x1, y1, x2, y2) {
   const by = 3 * (y2 - y1) - cy;
   const ay = 1 - cy - by;
   const x = (s) => ((ax * s + bx) * s + cx) * s;
-  const dx = (s) => (3 * ax * s + 2 * bx) * s + cx;
   const y = (s) => ((ay * s + by) * s + cy) * s;
 
   // Find s where x(s) = t. x rises monotonically on [0, 1] because x1 and
-  // x2 are in [0, 1], so bisection always converges.
+  // x2 are in [0, 1], so bisection always converges: 24 halvings bring the
+  // interval under 1e-7. It stops on the width of s, not on |x(s) - t|: where
+  // the curve is steep, x can be within 1e-7 of t while s, and so the
+  // output, is still far off.
   const solve = (t) => {
-    let s = t;
-    for (let i = 0; i < 8; i++) {
-      const err = x(s) - t;
-      if (Math.abs(err) < EASE_TOLERANCE) return s;
-      const slope = dx(s);
-      if (Math.abs(slope) < 1e-6) break;
-      s -= err / slope;
-      if (s < 0 || s > 1) break;
-    }
     let lo = 0;
     let hi = 1;
-    s = t;
-    for (let i = 0; i < 60; i++) {
-      const err = x(s) - t;
-      if (Math.abs(err) < EASE_TOLERANCE) break;
-      if (err > 0) hi = s;
-      else lo = s;
-      s = (lo + hi) / 2;
+    while (hi - lo > EASE_TOLERANCE) {
+      const mid = (lo + hi) / 2;
+      if (x(mid) < t) lo = mid;
+      else hi = mid;
     }
-    return s;
+    return (lo + hi) / 2;
   };
 
   return (t) => {
@@ -101,6 +121,7 @@ function cubicBezier(x1, y1, x2, y2) {
   };
 }
 
+// NaN maps to 0, so a NaN t cannot pass through as progress.
 function clamp01(t) {
-  return t <= 0 ? 0 : t >= 1 ? 1 : t;
+  return t >= 1 ? 1 : t > 0 ? t : 0;
 }
