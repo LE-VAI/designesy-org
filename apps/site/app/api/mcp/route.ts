@@ -711,17 +711,18 @@ test(${titleJs}, async ({ page }) => {
     // Continuous design-drift monitor — re-runs drift checks on a URL and
     // computes 10 governance checks (m01-m10) comparing the current run
     // against snapshot history supplied by the caller. Sends email alerts
-    // via Resend when drift is detected + email provided + key set.
+    // via Resend when drift is detected + email provided + email alerts
+    // switched on (MONITOR_EMAIL_ENABLED, off unless exactly "true") + key set.
     // That email is a side effect outside this server, so this is the one
     // tool annotated readOnlyHint: false (see MCP_TOOL_ANNOTATIONS).
     server.registerTool(
       'designesy_monitor_score',
       {
         ...mcpToolDisplay('designesy_monitor_score'),
-        description: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): schedule registered, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email address is provided, sends an HTML drift-alert email via Resend (requires RESEND_API_KEY env var). Pass a history array of prior snapshots to compute deltas; omit it for a first-run baseline. Use this to watch a design system over time: "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable: fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts, emailAlert }. Results cached ~24h per URL.',
+        description: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): schedule registered, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email address is provided, sends an HTML drift-alert email via Resend, only where email alerts are switched on (MONITOR_EMAIL_ENABLED=true and RESEND_API_KEY set on www.designesy.org, which runs the monitor for this tool). With MONITOR_EMAIL_ENABLED not "true", emailAlert.off is true and nothing is sent. Pass a history array of prior snapshots to compute deltas; omit it for a first-run baseline. Use this to watch a design system over time: "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable: fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts, emailAlert }. Results cached ~24h per URL.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.'),
-          email: z.string().optional().describe('Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional: without it, alerts surface in-UI only.'),
+          email: z.string().optional().describe('Email address to receive drift alerts. When alerts fire AND this is provided AND the server has email alerts switched on (MONITOR_EMAIL_ENABLED=true, RESEND_API_KEY set), an HTML alert email is sent. Optional: without it, alerts surface in-UI only.'),
           history: z.array(z.object({
             timestamp: z.string(),
             score: z.number(),

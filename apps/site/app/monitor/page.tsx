@@ -7,6 +7,7 @@ import { pageMeta } from '../lib/site-meta';
 import { MonitorForm } from './monitor-form';
 import { registry } from '../lib/engine/registry';
 import { EngineHead, EngineMethod, EngineNext, GradeLine } from '../lib/engine/engine-page';
+import { monitorEmailOn } from '../lib/monitor-email';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,13 +15,13 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Drift monitor',
   description:
-    'Monitor any URL for design drift over time: each run you start is kept as a snapshot in your browser and compared with your first run and your last, with an optional email alert when drift is found. 10 governance checks plus the 12 drift checks on every run.',
+    'Monitor any URL for design drift over time: each run you start is kept as a snapshot in your browser and compared with your first run and your last. 10 governance checks plus the 12 drift checks on every run.',
   path: '/monitor',
 
   machineSibling: '/contracts/monitor.json',
   ogTitle: 'Drift monitor · Designesy',
   ogDescription:
-    'Re-run a URL and compare each run with your first and your last: score deltas, trend slopes, new violations, token mutations, and an optional email alert.',
+    'Re-run a URL and compare each run with your first and your last: score deltas, trend slopes, new violations and token mutations.',
   twitterDescription: 'Designesy drift monitor · designesy.org/monitor',
 });
 
@@ -29,6 +30,7 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
   const initialUrl = typeof params?.url === 'string' ? params.url : '';
   const reg = registry('monitor');
   const drift = registry('drift');
+  const emailAlerts = monitorEmailOn();
 
   return (
     <>
@@ -46,6 +48,7 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
           initialUrl={initialUrl}
           registry={{ checks: reg.checks, groups: reg.groups, machine: reg.machine }}
           drift={{ checks: drift.checks, groups: drift.groups, machine: drift.machine }}
+          emailAlerts={emailAlerts}
         />
 
         <EngineMethod
@@ -53,7 +56,12 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
             { title: 'Run the drift radar', text: 'The same 12 checks as the drift radar, on the live page.' },
             { title: 'Load your history', text: 'Earlier snapshots of this URL, read from this browser and sent with the run.' },
             { title: 'Compare', text: 'Against the first run and the last: score, three-run trend, new failures, the token set and the contract version.' },
-            { title: 'Alert', text: 'A drop past the threshold raises an alert, mailed to the address you left, at most once an hour.' },
+            {
+              title: 'Alert',
+              text: emailAlerts
+                ? 'A drop past the threshold raises an alert, mailed to the address you left, at most once an hour.'
+                : 'A drop past the threshold raises an alert, shown with the run.',
+            },
           ]}
           formula={
             <>

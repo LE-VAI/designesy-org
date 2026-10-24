@@ -170,7 +170,7 @@ All responses are cached with a 5-minute TTL. The server only fetches public, ma
 
 ## Safety
 
-**Read-only, with one exception.** `designesy_monitor_score` can send email: when you pass an `email` address and a drift alert fires, designesy.org sends an HTML drift-alert email to that address through Resend, if the server has a Resend key configured. A repeated call can send another email. The other 16 tools only read. The server writes no local files and reads no credentials.
+**Read-only, with one exception.** `designesy_monitor_score` can send email: when you pass an `email` address and a drift alert fires, designesy.org sends an HTML drift-alert email to that address through Resend, if the server has email alerts switched on (`MONITOR_EMAIL_ENABLED=true`) and a Resend key configured. A repeated call can send another email. The other 16 tools only read. The server writes no local files and reads no credentials.
 
 **Certificates are verified.** A site whose TLS certificate fails verification, designesy.org included, returns a tool error that names the reason. To read such a site anyway, set `DESIGNESY_INSECURE_TLS=1` in the server's environment: a URL you pass (never one on designesy.org) whose certificate fails verification is then read without it, and the result carries `tls_verified: false`.
 

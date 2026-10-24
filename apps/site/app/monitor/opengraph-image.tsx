@@ -8,7 +8,7 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Monitor',
     title: 'Design drift over time',
-    lede: 'Each run you start compares a URL with your earlier runs, kept in your browser. Optional email alert on regression.',
+    lede: 'Each run you start compares a URL with your earlier runs, kept in your browser.',
     path: 'designesy.org/monitor',
   });
 }

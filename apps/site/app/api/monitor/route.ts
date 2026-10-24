@@ -20,13 +20,16 @@
 //   m08 token-set mutation (tokens added/removed/renamed since baseline)
 //   m09 contract version (the design contract version this run is scored
 //       against: CONTRACT_VERSION, the value /api/score reports as contractVersion)
-//   m10 alert delivered (email via Resend when alerts fire + email provided + key set;
-//        falls back to in-UI surfacing otherwise)
+//   m10 alert delivered (email via Resend when alerts fire + email provided +
+//        email alerts switched on + key set; falls back to in-UI surfacing
+//        otherwise)
 //
-// Email alerting (v0.2.0): When the POST body includes an `email` field AND
-// the RESEND_API_KEY environment variable is set, the monitor sends an HTML
-// alert email to that address when any alert condition fires. Without the
-// key or email, alerts are surfaced in-UI only (graceful degradation).
+// Email alerting (v0.2.0): When the POST body includes an `email` field,
+// MONITOR_EMAIL_ENABLED is "true" AND the RESEND_API_KEY environment variable
+// is set, the monitor sends an HTML alert email to that address when any alert
+// condition fires. MONITOR_EMAIL_ENABLED is off unless exactly "true" (lib/monitor-email):
+// nothing confirms that the address's owner asked for the mail. Otherwise
+// alerts are surfaced in-UI only (graceful degradation).
 //
 // Contract: /contracts/monitor.json (designesy.monitor; the version is lib/monitor-contract's)
 
@@ -36,6 +39,7 @@ import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { Resend } from 'resend';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { clientKey } from '../../lib/rate-limit';
+import { escapeHtml, monitorEmailOn } from '../../lib/monitor-email';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -242,13 +246,7 @@ type MonitorResponse = {
   driftChecks?: DriftCheckResult[];
   monitorChecks?: MonitorCheckResult[];
   alerts?: string[];
-  emailAlert?: {
-    attempted: boolean;
-    delivered: boolean;
-    recipient?: string;
-    fromAddress?: string;
-    error?: string;
-  };
+  emailAlert?: EmailAlert;
   error?: string;
 };
 
@@ -453,7 +451,13 @@ function checkM09ContractVersion(previous: Snapshot | null): MonitorCheckResult 
   return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} detected: version history comparison requires v0.2` };
 }
 
-function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }): MonitorCheckResult {
+// `off` is set when an alert fired, an email was given and email alerts are
+// switched off, so nothing was sent (lib/monitor-email).
+type EmailAlert = { attempted: boolean; delivered: boolean; off?: boolean; recipient?: string; fromAddress?: string; error?: string };
+
+// mailOn is false when email alerts are switched off on this server. The cached
+// run builds m10 without it, so POST rebuilds m10 on every request.
+function checkM10AlertDelivered(alerts: string[], emailAlert?: EmailAlert, mailOn = true): MonitorCheckResult {
   if (alerts.length === 0) {
     return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered: no alert needed' };
   }
@@ -466,6 +470,9 @@ function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: bool
   if (emailAlert?.attempted && !emailAlert.delivered) {
     return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI: email delivery failed (${emailAlert.error || 'unknown error'})` };
   }
+  if (emailAlert?.off || !mailOn) {
+    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI: email alerts are off on this server${emailAlert?.off ? ', so no email was sent' : ''}` };
+  }
   // No email provided or no Resend key — alerts surfaced in-UI only
   return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI (add an email address to get drift alerts by mail)` };
 }
@@ -473,8 +480,11 @@ function checkM10AlertDelivered(alerts: string[], emailAlert?: { attempted: bool
 // ── Email alerting via Resend ────────────────────────────────────────────────
 // Sends an HTML alert email when drift alerts fire. Requires:
 //   1. An `email` field in the POST body (the recipient)
-//   2. RESEND_API_KEY environment variable (set in Vercel project settings)
-// Without either, alerts are surfaced in-UI only (graceful degradation).
+//   2. MONITOR_EMAIL_ENABLED set to exactly "true" (lib/monitor-email)
+//   3. RESEND_API_KEY environment variable (set in Vercel project settings)
+// Without all three, alerts are surfaced in-UI only (graceful degradation).
+// Every value the HTML body interpolates is escaped: the history snapshots
+// come from the request.
 
 async function sendAlertEmail(
   targetUrl: string,
@@ -482,7 +492,10 @@ async function sendAlertEmail(
   alerts: string[],
   currentSnapshot: Snapshot,
   previous: Snapshot | null,
-): Promise<{ attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string }> {
+): Promise<EmailAlert> {
+  if (!monitorEmailOn()) {
+    return { attempted: false, delivered: false, off: true };
+  }
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     return { attempted: false, delivered: false };
@@ -494,9 +507,11 @@ async function sendAlertEmail(
   try {
     const resend = new Resend(apiKey);
     const host = (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })();
-    const prevScore = previous?.score ?? '—';
-    const scoreDelta = previous ? currentSnapshot.score - previous.score : 0;
+    // A previous score that is not a finite number is reported as missing.
+    const prevScore = typeof previous?.score === 'number' && Number.isFinite(previous.score) ? previous.score : null;
+    const scoreDelta = prevScore === null ? 0 : currentSnapshot.score - prevScore;
     const deltaStr = scoreDelta >= 0 ? `+${scoreDelta}` : `${scoreDelta}`;
+    const e = escapeHtml;
 
     const subject = `[Designesy] Drift alert for ${host}: ${currentSnapshot.grade}/${currentSnapshot.score}`;
     const html = `<!DOCTYPE html>
@@ -510,30 +525,30 @@ async function sendAlertEmail(
     <tr>
       <td style="padding-bottom:1.5rem;">
         <h1 style="margin:0 0 0.25rem;font-size:1.5rem;font-weight:700;color:#ffffff;">Designesy Drift Alert</h1>
-        <p style="margin:0;font-size:0.85rem;color:#999999;">${host} · ${new Date().toLocaleString('en-US')}</p>
+        <p style="margin:0;font-size:0.85rem;color:#999999;">${e(host)} · ${e(new Date().toLocaleString('en-US'))}</p>
       </td>
     </tr>
     <tr>
       <td style="background:#16161b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
         <p style="margin:0 0 0.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Score</p>
-        <p style="margin:0;font-size:2rem;font-weight:700;color:${currentSnapshot.score >= 70 ? '#4ade80' : currentSnapshot.score >= 50 ? '#facc15' : '#f87171'};">${currentSnapshot.grade} · ${currentSnapshot.score}/100</p>
-        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? `Previous: ${prevScore}/100 (${deltaStr} points)` : 'First run: baseline established'}</p>
+        <p style="margin:0;font-size:2rem;font-weight:700;color:${currentSnapshot.score >= 70 ? '#4ade80' : currentSnapshot.score >= 50 ? '#facc15' : '#f87171'};">${e(currentSnapshot.grade)} · ${e(currentSnapshot.score)}/100</p>
+        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? (prevScore === null ? 'Previous: no score recorded' : `Previous: ${e(prevScore)}/100 (${e(deltaStr)} points)`) : 'First run: baseline established'}</p>
       </td>
     </tr>
     <tr>
       <td style="padding:1rem 0;">
-        <p style="margin:0 0 0.75rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Alerts (${alerts.length})</p>
-        ${alerts.map((a) => `<p style="margin:0.25rem 0;padding:0.75rem 1rem;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:4px;font-size:0.85rem;color:#ffffff;line-height:1.5;">${a}</p>`).join('')}
+        <p style="margin:0 0 0.75rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Alerts (${e(alerts.length)})</p>
+        ${alerts.map((a) => `<p style="margin:0.25rem 0;padding:0.75rem 1rem;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:4px;font-size:0.85rem;color:#ffffff;line-height:1.5;">${e(a)}</p>`).join('')}
       </td>
     </tr>
     <tr>
       <td style="padding:1.5rem 0;">
-        <a href="https://www.designesy.org/monitor?url=${encodeURIComponent(targetUrl)}" style="display:inline-block;padding:0.75rem 1.5rem;background:#0A94FF;color:#010102;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
+        <a href="https://www.designesy.org/monitor?url=${e(encodeURIComponent(targetUrl))}" style="display:inline-block;padding:0.75rem 1.5rem;background:#0A94FF;color:#010102;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
       </td>
     </tr>
     <tr>
       <td style="padding-top:2rem;border-top:1px solid rgba(255,255,255,0.06);">
-        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because a monitor run for ${targetUrl} on designesy.org was requested with this address for alerts. Nothing is scheduled: each run is one request, compared with the earlier runs sent with it. This alert was triggered by a score degradation, new violations, or token-set mutation detected during that run.</p>
+        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because a monitor run for ${e(targetUrl)} on designesy.org was requested with this address for alerts. Nothing is scheduled: each run is one request, compared with the earlier runs sent with it. This alert was triggered by a score degradation, new violations, or token-set mutation detected during that run.</p>
       </td>
     </tr>
   </table>
@@ -749,9 +764,13 @@ export async function POST(request: Request) {
   // the email param doesn't pollute the cache key). A per-URL+email cooldown
   // prevents identical alerts from spamming the inbox on repeated requests —
   // the email only fires if the alert set changed or the cooldown has elapsed.
+  // With email alerts switched off nothing is sent and the cooldown is not
+  // touched.
+  const mailOn = monitorEmailOn();
   if (result.ok && result.alerts && result.alerts.length > 0 && email && result.currentSnapshot) {
-    const suppressed = emailOnCooldown(targetUrl, email, result.alerts);
-    if (suppressed) {
+    if (!mailOn) {
+      result.emailAlert = { attempted: false, delivered: false, off: true };
+    } else if (emailOnCooldown(targetUrl, email, result.alerts)) {
       result.emailAlert = { attempted: false, delivered: false, fromAddress: 'suppressed (cooldown)' };
     } else {
       const emailResult = await sendAlertEmail(
@@ -763,13 +782,14 @@ export async function POST(request: Request) {
       );
       result.emailAlert = emailResult;
     }
+  }
 
-    // Update m10 check to reflect email delivery status
-    if (result.monitorChecks) {
-      const m10Index = result.monitorChecks.findIndex((c) => c.id === 'm10');
-      if (m10Index >= 0) {
-        result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts, result.emailAlert);
-      }
+  // m10 reflects this request's email delivery status and whether email
+  // alerts are on, neither of which the cached run knows.
+  if (result.ok && result.monitorChecks) {
+    const m10Index = result.monitorChecks.findIndex((c) => c.id === 'm10');
+    if (m10Index >= 0) {
+      result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts ?? [], result.emailAlert, mailOn);
     }
   }
 
