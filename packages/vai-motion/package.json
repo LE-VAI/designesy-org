@@ -48,7 +48,8 @@
     "node": ">=16"
   },
   "scripts": {
-    "demo": "node demo/serve.mjs"
+    "demo": "node demo/serve.mjs",
+    "test": "node --test"
   },
   "private": false
 }

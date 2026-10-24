@@ -512,17 +512,18 @@ jobs:
       - name: Retired literals, every package
         run: node scripts/check-retired-literals-packages.js
 
-  # Both @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens have
-  # test suites that only ran at publish time. This job runs them on every PR
-  # so a broken test can't merge. The pretest hook runs `npm run build`
-  # automatically before `npm test`.
+  # @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens had test
+  # suites that only ran at publish time. This job runs them, and @vai/motion's
+  # timing and easing tests, on every PR so a broken test can't merge. In the
+  # two TypeScript packages the pretest hook runs `npm run build` before
+  # `npm test`; @vai/motion is plain ES modules and has no build step.
   test-packages:
     name: Test ${{ matrix.package }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       matrix:
-        package: [tokens, stylelint-plugin-dtcg-tokens]
+        package: [tokens, stylelint-plugin-dtcg-tokens, vai-motion]
 
     steps:
       - name: Checkout

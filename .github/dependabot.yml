@@ -23,12 +23,13 @@
 #   - "each needs its own ENTRY" is no longer true. The plural `directories` key
 #     (GA since June 2024) covers several paths in one entry, provided no path
 #     overlaps another entry's. The five remaining packages now share one.
-#   - "with its own lockfile" was wrong. lab-builder, vai-icons and vai-motion
-#     have NO lockfile — and also zero dependencies, so nothing is narrowed
-#     today. But the rule still bites if that changes: without a lockfile,
-#     Dependabot excludes indirect dependencies inferred from the manifest from
-#     vulnerability checks, so alert coverage would be direct-deps-only. Add a
-#     lockfile with the first dependency, not after.
+#   - "with its own lockfile" was wrong. lab-builder and vai-icons have NO
+#     lockfile — and also zero dependencies, so nothing is narrowed today.
+#     (vai-motion has a lockfile with no dependencies in it, so CI can run
+#     `npm ci` there.) But the rule still bites if that changes:
+#     without a lockfile, Dependabot excludes indirect dependencies inferred
+#     from the manifest from vulnerability checks, so alert coverage would be
+#     direct-deps-only. Add a lockfile with the first dependency, not after.
 #
 # "overrides" for transitive pins remains per-directory and is unaffected.)
 
