@@ -4041,6 +4041,7 @@ TOOLS = [
                             "tokensExtracted": {"type": "number"},
                             "checks": {
                                 "type": "array",
+                                "maxItems": 12,
                                 "items": {
                                     "type": "object",
                                     "properties": {
@@ -4050,9 +4051,13 @@ TOOLS = [
                                         "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
                                         "detail": {"type": "string"},
                                     },
+                                    "required": ["id", "status"],
                                 },
                             },
                         },
+                        # What the engine's checks read; /api/monitor
+                        # refuses a run without them (HTTP 400).
+                        "required": ["score", "tokensExtracted", "checks"],
                     },
                     "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
                 },
@@ -4187,8 +4192,10 @@ TOOLS = [
 # - designesy_monitor_score posts the url and history to /api/monitor, which
 #   fetches the url and compares it with the history. It sends no email: the
 #   site retired monitor email in monitor contract 0.1.5, and this server
-#   forwards no `email`. It keeps nothing but a 24-hour result cache, so a
-#   repeated call has no further effect: readOnlyHint and idempotentHint are True.
+#   forwards no `email`. The route keeps only its 24-hour result cache and a
+#   per-caller rate-limit count, as every engine route does, so a repeated
+#   call has no effect beyond that count: readOnlyHint and idempotentHint
+#   are True.
 
 TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_catalog": {"title": "List Designesy packages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},

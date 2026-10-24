@@ -89,6 +89,30 @@ site moves from 90 (A) to 89 (B) on its third run or later.
   return 200; and a 600 KB body, or a Content-Length past 512 KB, is a 413. The
   route harness no longer stubs the `resend` module.
 
+**designesy-mcp, next release: `designesy_monitor_score` is read-only** (PyPI
+and the MCP registry; not yet released). Until then, designesy-mcp 1.13.10
+forwards `email` to `/api/monitor`, which ignores it.
+
+### Changed (designesy-mcp, next release)
+
+- `designesy_monitor_score` forwards no `email`; the parameter stays in the
+  schema, described as deprecated and ignored, so older callers keep working.
+  `readOnlyHint` and `idempotentHint` are true, as on the hosted endpoint, and
+  the title is "Monitor drift over time".
+- Its description says alerts come back in `alerts[]` and no email is sent,
+  lists m01 as "history supplied", drops `emailAlert`, and says the cache is per
+  URL and history. Its history schema accepts SKIP, caps the array at 1000
+  runs and a run's checks at 12, and marks as required what the engine
+  requires: each run's `score`, `tokensExtracted` and `checks`, and each
+  check's `id` and `status`.
+- The SAFETY docstring, the annotation notes, and the README summary and
+  Safety section say every tool is read-only; the README tools table and the
+  pyproject summary drop their email clauses.
+- `test_tool_annotations.py` asserts that every tool is read-only, that the
+  monitor forwards no `email` (an address or `5`), that its description
+  names no Resend key and lists m01 as "history supplied", and that the README
+  offers no email alert and names neither Resend nor `MONITOR_EMAIL_ENABLED`.
+
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed

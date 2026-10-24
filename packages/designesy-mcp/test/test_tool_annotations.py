@@ -12,7 +12,7 @@ spec default, which is the least safe reading. These tests hold:
 - the hints match what the code does, shown by calling the implementations;
 - the table equals the hosted endpoint's MCP_TOOL_ANNOTATIONS, so the PyPI
   server and https://www.designesy.org/api/mcp describe each tool the same way;
-- the package metadata and README make no claim that a tool sends email.
+- the pyproject summary and the README make no claim that a tool sends email.
 
 Network calls are mocked; no live internet is needed.
 """
@@ -223,6 +223,12 @@ class TestReadOnlyClaims:
         summary = self._summary()
         assert "email" not in summary.lower(), "no tool sends email, so the summary names none"
         assert "\u2014" not in summary, "PyPI summary is visible copy: no em dashes"
+
+    def test_readme_makes_no_email_claim(self):
+        readme = (PACKAGE / "README.md").read_text(encoding="utf-8")
+        for claim in ("drift-alert email", "email alerts", "can send email", "Resend", "MONITOR_EMAIL_ENABLED", "RESEND_API_KEY"):
+            assert claim.lower() not in readme.lower(), f"no tool sends email, so the README does not say {claim!r}"
+        assert "Every tool is read-only" in readme
 
     def test_readme_does_not_claim_the_server_never_writes(self):
         readme = (PACKAGE / "README.md").read_text(encoding="utf-8")

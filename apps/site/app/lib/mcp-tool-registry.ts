@@ -106,8 +106,9 @@ export interface McpToolAnnotation {
  *   inline JSON). Open world.
  * - monitor_score sends no email: delivery was retired in monitor contract
  *   0.1.5, /api/monitor ignores an `email` field, and the handler forwards
- *   none. It returns the comparison and keeps nothing but its 24-hour result
- *   cache, so a repeated call has no further effect (idempotentHint true).
+ *   none. It returns the comparison and keeps only its 24-hour result cache
+ *   and a per-caller rate-limit count, as every engine route does, so a
+ *   repeated call has no effect beyond that count (idempotentHint true).
  *
  * Every tools/call also increments this site's privacy-preserving usage
  * counters (lib/usage.ts). That is the operator's own telemetry and does not
