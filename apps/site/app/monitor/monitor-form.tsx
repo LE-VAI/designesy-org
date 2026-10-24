@@ -120,7 +120,7 @@ export function MonitorForm({
   const [url, setUrl] = useState(initialUrl);
   const [history, setHistory] = useState<Snapshot[]>([]);
   const [watches, setWatches] = useState<ReturnType<typeof loadWatches>>([]);
-  const { phase, result, scanned, error, when: at, run } = useEngineRun<MonitorResponse>('/api/monitor', 'monitor engine');
+  const { phase, result, scanned, error, failure, when: at, run } = useEngineRun<MonitorResponse>('/api/monitor', 'monitor engine');
   const findings = useRef<FindingsHandle>(null);
 
   useEffect(() => {
@@ -157,6 +157,13 @@ export function MonitorForm({
     setHistory([]);
     setWatches(loadWatches());
   };
+
+  // The engine refuses a stored run outside its bounds (a 400 naming history,
+  // or a 413 for a body over 512 KB), and every later run of the URL sends the
+  // same runs, so the error offers to clear them.
+  const failedPath = typeof failure?.body?.path === 'string' ? failure.body.path : '';
+  const historyRefused =
+    phase === 'error' && history.length > 0 && (failure?.status === 413 || (failure?.status === 400 && failedPath.startsWith('history')));
 
   const outcomes = toOutcomes(result?.monitorChecks);
   const driftOutcomes = toOutcomes(result?.driftChecks);
@@ -229,6 +236,14 @@ export function MonitorForm({
           <>
             <p><b>{host || 'This URL'}</b> could not be checked.</p>
             <p>{error}</p>
+            {historyRefused && (
+              <p>
+                The engine refused the {history.length === 1 ? 'run' : `${history.length} runs`} this browser stored for this URL.{' '}
+                <button type="button" className="eg-share-btn" onClick={clear}>
+                  Clear this history
+                </button>
+              </p>
+            )}
           </>
         }
         errorText={error}

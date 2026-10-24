@@ -36,11 +36,15 @@ site moves from 90 (A) to 89 (B) on its third run or later.
   an address an earlier version saved in the browser (`designesy:monitor-email`).
   Its formula reads `÷ scored checks` (it said `÷ 10`, which a SKIP made wrong),
   m10 is labelled "Alert email", and the engine bar has no email field type.
+  When the engine refuses the runs the browser stored for a URL (a 400 naming
+  `history`, or a 413), the error offers "Clear this history", since every
+  later run of that URL would send the same runs.
 - **The hosted `designesy_monitor_score` is read-only.** `readOnlyHint` and
   `idempotentHint` are true, and its title is "Monitor drift over time". The
   handler forwards no `email`; the parameter is described as deprecated and
   ignored. Its `history` argument takes the route's schema, so a SKIP check is
-  accepted and the same bounds apply. Its description listed m01 as "schedule
+  accepted, the same bounds apply, and a run needs only the fields the checks
+  read (it required every field). Its description listed m01 as "schedule
   registered" (m01's name until 0.1.2) and said results are cached ~24h per
   URL; it now says "history supplied" and that the cache is per URL and history.
 - The monitor contract (0.1.5) rewrites `alert_delivery`, the m10 row, the
@@ -55,12 +59,21 @@ site moves from 90 (A) to 89 (B) on its third run or later.
 - **A malformed request is a 400 that names the field.** `app/lib/monitor-history.ts`
   holds one bounds-only schema, which the route and the hosted tool share: types,
   a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS,
-  FAIL, WARN or SKIP, string lengths and at most 1000 runs. It does not recompute
-  a run's score from its checks, so runs stored by an earlier engine stay valid.
-  A body over 512 KB is a 413. Before, `history: [{}]`, an `email` that was not a
-  string, a `url` that was not a string and a body of `null` crashed the route,
-  and a `score` that was not a number made the m03 and m07 deltas NaN. A
-  `history` that is not an array was read as no history; it is now a 400.
+  FAIL, WARN or SKIP, string lengths, at most 12 checks a run and at most 1000
+  runs. It does not recompute a run's score from its checks, so runs stored by an
+  earlier engine stay valid. Only what a check reads is required: each run's
+  `score`, `tokensExtracted` and `checks`, and each check's `id` and `status`.
+  The `timestamp`, `grade`, `item`, `category` and `detail` are checked when
+  present, so a run trimmed to the required fields is still answered. Each
+  array's length is checked before its elements, and parsing stops at the
+  first run that fails, so a refused body carries the issues of one run at
+  most. A body over 512 KB is a 413 and is never held whole: a Content-Length
+  past the limit is refused before the body is read, and any other body stops
+  being read at the first chunk past it. Before, an `email` such as `5`, a
+  `url` such as `5`, a body of `null` and `history: [{}]` crashed the route,
+  and a non-numeric `score` such as `"x"` made the m03, m04 and m07 deltas
+  NaN. A `history` that is a string, a number, a boolean or an object was read
+  as no history; it is now a 400. `null` still means no history.
 
 ### Tests
 
@@ -70,15 +83,19 @@ site moves from 90 (A) to 89 (B) on its third run or later.
   as an address, `5` or `null` returns 200 with no address in the result; m10 is
   SKIP and the score leaves it out; the hosted handler posts no `email`, is
   annotated read-only and takes the route's history schema; each malformed
-  request is a 400 naming its field, and a 600 KB body is a 413. The route
-  harness no longer stubs the `resend` module.
+  request is a 400 naming its field, and the schema builds at most 64 issues
+  for it, among them a run of 30,000 empty checks and a 512 KB history of empty
+  runs; a run trimmed to the fields the checks read and a `null` history
+  return 200; and a 600 KB body, or a Content-Length past 512 KB, is a 413. The
+  route harness no longer stubs the `resend` module.
 
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed
 that the address's owner had asked for it.
-Superseded by 0.1.5 above: the switch, the escaping and `monitor-mail-off`
-went with the sending.
+Superseded by 0.1.5 above: the switch, the escaping, `monitor-mail-off`, the
+per-request m10 and the `/monitor` email field went with the sending, and m10
+is N/A (SKIP) on every run. The entries below record 0.1.4 as it was built.
 
 ### Security
 

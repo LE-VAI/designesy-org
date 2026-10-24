@@ -36,7 +36,7 @@ import { unstable_cache } from 'next/cache';
 import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { clientKey } from '../../lib/rate-limit';
-import { MONITOR_BODY_MAX_BYTES, M10_RETIRED_DETAIL, monitorRequestSchema, requestProblem } from '../../lib/monitor-history';
+import { MONITOR_BODY_MAX_BYTES, M10_RETIRED_DETAIL, monitorRequestSchema, requestProblem, type PriorRun } from '../../lib/monitor-history';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -191,6 +191,15 @@ type Snapshot = {
   checks: DriftCheckResult[];
 };
 
+// What the monitor checks read from a run: this run's snapshot, or an earlier
+// run as the request carries it (lib/monitor-history requires only these).
+type Run = {
+  timestamp?: string;
+  score: number;
+  tokensExtracted: number;
+  checks: { id: string; status: string }[];
+};
+
 type MonitorResponse = {
   ok: boolean;
   url?: string;
@@ -201,8 +210,8 @@ type MonitorResponse = {
   fail?: number;
   total?: number;
   currentSnapshot?: Snapshot;
-  baseline?: Snapshot | null;
-  previous?: Snapshot | null;
+  baseline?: PriorRun | null;
+  previous?: PriorRun | null;
   driftChecks?: DriftCheckResult[];
   monitorChecks?: MonitorCheckResult[];
   alerts?: string[];
@@ -262,7 +271,7 @@ function createSnapshot(timestamp: string, checks: DriftCheckResult[], tokensExt
 // watched"), but this route schedules nothing and stores nothing: the caller
 // supplies the earlier runs. It now says what the run had to compare against,
 // and a first run, with nothing to compare, is not scored.
-function checkM01HistorySupplied(history: Snapshot[]): MonitorCheckResult {
+function checkM01HistorySupplied(history: Run[]): MonitorCheckResult {
   if (history.length === 0) {
     return { id: 'm01', item: 'History supplied', status: 'SKIP', detail: 'No history: drift needs a previous run. This run is the baseline; pass it back as history next time.' };
   }
@@ -279,7 +288,7 @@ const CADENCE_DAYS = { daily: 1, weekly: 7, monthly: 30 } as const;
 type Cadence = keyof typeof CADENCE_DAYS;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function checkM02LastRunFresh(history: Snapshot[], cadence: Cadence, now: number): MonitorCheckResult {
+function checkM02LastRunFresh(history: Run[], cadence: Cadence, now: number): MonitorCheckResult {
   const item = 'Last run fresh';
   if (history.length === 0) {
     return { id: 'm02', item, status: 'SKIP', detail: 'No earlier run: freshness is measured from the newest run in the history you pass.' };
@@ -301,7 +310,7 @@ function checkM02LastRunFresh(history: Snapshot[], cadence: Cadence, now: number
   return { id: 'm02', item, status: 'FAIL', detail: `Previous run ${ago} ago, more than two ${cadence} windows: the watch may have stopped` };
 }
 
-function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
+function checkM03DriftDelta(current: Snapshot, baseline: Run | null): MonitorCheckResult {
   if (!baseline) {
     return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: 'No baseline yet: this is the first run (baseline established)' };
   }
@@ -315,7 +324,7 @@ function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): Monit
   return { id: 'm03', item: 'Drift delta vs baseline', status: 'WARN', detail: `Score ${current.score} vs baseline ${baseline.score}: slipped ${Math.abs(delta)} points` };
 }
 
-function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
+function checkM04TrendSlope(history: Run[]): MonitorCheckResult {
   if (history.length < 3) {
     return { id: 'm04', item: 'Drift trend slope', status: 'PASS', detail: `Insufficient data for trend (${history.length} run${history.length === 1 ? '' : 's'}: need 3 for slope)` };
   }
@@ -330,7 +339,7 @@ function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
   return { id: 'm04', item: 'Drift trend slope', status: 'WARN', detail: `Trend flat over last 3 runs (${slope >= 0 ? '+' : ''}${slope} points)` };
 }
 
-function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
+function checkM05NewViolations(current: Snapshot, previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm05', item: 'New violations since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
@@ -345,7 +354,7 @@ function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): Mo
   return { id: 'm05', item: 'New violations since last run', status: 'WARN', detail: `${newFails.length} check newly failed: ${newFails.map((c) => c.id).join(', ')}` };
 }
 
-function checkM06Resolved(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
+function checkM06Resolved(current: Snapshot, previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
@@ -363,7 +372,7 @@ function checkM06Resolved(current: Snapshot, previous: Snapshot | null): Monitor
   return { id: 'm06', item: 'Resolved since last run', status: 'WARN', detail: 'No checks resolved since the previous run' };
 }
 
-function checkM07ScoreDegradation(current: Snapshot, previous: Snapshot | null, threshold = 5): MonitorCheckResult {
+function checkM07ScoreDegradation(current: Snapshot, previous: Run | null, threshold = 5): MonitorCheckResult {
   if (!previous) {
     return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: 'No previous run: threshold check starts now' };
   }
@@ -377,7 +386,7 @@ function checkM07ScoreDegradation(current: Snapshot, previous: Snapshot | null, 
   return { id: 'm07', item: 'Score degradation threshold', status: 'WARN', detail: `Score dropped ${drop} points (within threshold of ${threshold})` };
 }
 
-function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
+function checkM08TokenMutation(current: Snapshot, baseline: Run | null): MonitorCheckResult {
   if (!baseline) {
     return { id: 'm08', item: 'Token-set mutation', status: 'PASS', detail: 'No baseline: token set recorded as initial state' };
   }
@@ -403,7 +412,7 @@ function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): Mo
 // the same page.
 // Snapshots do not record a contract version yet, so a run with history says
 // so instead of comparing.
-function checkM09ContractVersion(previous: Snapshot | null): MonitorCheckResult {
+function checkM09ContractVersion(previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} recorded as baseline` };
   }
@@ -419,7 +428,7 @@ function checkM10AlertDelivered(): MonitorCheckResult {
 
 // ── Main scoring function ────────────────────────────────────────────────────
 
-async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Promise<MonitorResponse> {
+async function scoreMonitorUncached(targetUrl: string, history: PriorRun[]): Promise<MonitorResponse> {
   const { html, css } = await fetchPageResilient(targetUrl);
 
   if (!html && !css) {
@@ -526,6 +535,35 @@ const scoreMonitor = unstable_cache(scoreMonitorUncached, ['designesy-monitor'],
   tags: ['monitor'],
 });
 
+// ── Request body ─────────────────────────────────────────────────────────────
+
+// The body as text, as Request.text() decodes it (UTF-8, a leading byte order
+// mark dropped, U+FFFD for a malformed sequence), or null when it is larger
+// than maxBytes. A Content-Length over the limit is refused before a byte is
+// read, and a body without one stops being read at the first chunk past the
+// limit, so an oversized body is never held whole.
+async function readBodyCapped(request: Request, maxBytes: number): Promise<string | null> {
+  const declared = Number(request.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) return null;
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let read = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    read += value.byteLength;
+    if (read > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    parts.push(decoder.decode(value, { stream: true }));
+  }
+  parts.push(decoder.decode());
+  return parts.join('');
+}
+
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -537,18 +575,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // The body is read as text so its size is known before it is parsed. The
+  // The body is read up to the limit before it is parsed (readBodyCapped). The
   // checks read only the first run in the history (m03, m08) and the last two
   // (m04; m02, m05, m06, m07 and m09 read the last), so a caller near the limit
   // can send those.
   const noStore = { 'Cache-Control': 'no-store' };
-  let raw: string;
+  let raw: string | null;
   try {
-    raw = await request.text();
+    raw = await readBodyCapped(request, MONITOR_BODY_MAX_BYTES);
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400, headers: noStore });
   }
-  if (Buffer.byteLength(raw, 'utf8') > MONITOR_BODY_MAX_BYTES) {
+  if (raw === null) {
     return NextResponse.json(
       { ok: false, error: 'Request body is larger than 512 KB. The checks compare against only the first run in the history and the last two, so send those.' },
       { status: 413, headers: noStore },
@@ -561,8 +599,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400, headers: noStore });
   }
   // Shape and bounds (lib/monitor-history): a malformed field is a 400 that
-  // names it. An `email` of any type is accepted and never read.
-  const checked = monitorRequestSchema.safeParse(parsed);
+  // names it. An `email` of any type is accepted and never read. The schema
+  // checks each array's length before its elements; anything it throws is
+  // still a 400 naming the body, not a 500.
+  let checked: ReturnType<typeof monitorRequestSchema.safeParse>;
+  try {
+    checked = monitorRequestSchema.safeParse(parsed);
+  } catch {
+    return NextResponse.json({ ok: false, path: 'body', error: 'body: the request could not be checked.' }, { status: 400, headers: noStore });
+  }
   if (!checked.success) {
     return NextResponse.json({ ok: false, ...requestProblem(checked.error) }, { status: 400, headers: noStore });
   }
@@ -585,7 +630,7 @@ export async function POST(request: Request) {
   }
   const cadence = cadenceRaw as Cadence;
 
-  const history: Snapshot[] = body.history ?? [];
+  const history: PriorRun[] = body.history ?? [];
   const result = await scoreMonitor(targetUrl, history);
 
   // m02 is time-dependent, so it is measured now, not read from the cache.

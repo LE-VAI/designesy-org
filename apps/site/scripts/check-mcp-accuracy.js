@@ -77,8 +77,10 @@
  *                        given as an address, 5 or null returns 200 with no address in
  *                        the result; m10 is SKIP and the tally leaves it out; the hosted
  *                        designesy_monitor_score posts no email and is annotated
- *                        read-only; a malformed history is a 400 naming the field, and a
- *                        body over 512 KB is a 413
+ *                        read-only; a malformed history is a 400 naming the field, an
+ *                        oversized array is refused with one element's issues at most
+ *                        (no throw), a run trimmed to the fields the checks read is
+ *                        answered, and a body over 512 KB is a 413
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -473,6 +475,10 @@ async function monitorM02() {
   return { findings, measured: seen.join('; ') };
 }
 
+// The most zod issues a refused monitor body may carry: one run's worth (its
+// required fields and the first failing check's), with room to spare.
+const ISSUE_CAP = 64;
+
 async function monitorNoMail() {
   // Monitor email delivery was retired in monitor contract 0.1.5 (CHANGELOG):
   // /api/monitor sends no mail under any setting. So the old switch is set to
@@ -507,9 +513,9 @@ async function monitorNoMail() {
   try {
     const h = siteHarness({ api: resendApi });
     const url = FIXTURES.site.url;
-    const post = async (label, body) => {
+    const post = async (label, body, headers) => {
       try {
-        return await h.post('app/api/monitor/route.ts', body);
+        return await h.post('app/api/monitor/route.ts', body, headers);
       } catch (e) {
         push(`${label}:threw`, `${label}: the route threw (${e && e.message ? e.message : e}); it must answer.`);
         return null;
@@ -590,33 +596,97 @@ async function monitorNoMail() {
       if (!config.inputSchema.safeParse({ url, history: skipRun }).success || config.inputSchema.safeParse({ url, history: [{ ...snap, score: 'x' }] }).success) {
         push('mcp:history-schema', 'The hosted tool\'s history schema is not the route\'s: it must accept a SKIP check and refuse a score that is not a number.');
       }
+      // The MCP SDK validates tools/call arguments against this schema before
+      // the handler runs, so its bounds must hold there too.
+      try {
+        const wide = config.inputSchema.safeParse({ url, history: [{ ...snap, checks: Array.from({ length: 30000 }, () => ({})) }] });
+        const issues = wide.success ? 0 : wide.error.issues.length;
+        if (wide.success || issues > ISSUE_CAP) push('mcp:history-bounds', `The hosted tool's schema took a run with 30,000 empty checks as ${wide.success ? 'valid' : `${issues} issues`}; it refuses it with ${ISSUE_CAP} issues at most.`);
+      } catch (e) {
+        push('mcp:history-bounds', `The hosted tool's schema threw on a run with 30,000 empty checks (${e && e.message ? e.message : e}).`);
+      }
     } catch (e) {
       push('mcp:threw', `The hosted designesy_monitor_score threw: ${e && e.message ? e.message : e}`);
     }
 
     // A malformed request is a 400 that names the field.
     const run = { timestamp: 't', score: 50, grade: 'C', tokensExtracted: 0, checks: [] };
+    // The largest history of empty runs a 512 KB body holds.
+    const prefix = JSON.stringify({ url, history: [] }).length;
+    const emptyRuns = Math.floor((512 * 1024 - prefix + 1) / 3);
     const bad = [
-      ['history [{}]', { url, history: [{}] }, 'history[0].timestamp'],
+      ['history [{}]', { url, history: [{}] }, 'history[0].score'],
       ['score "x"', { url, history: [snap, { ...snap, score: 'x' }] }, 'history[1].score'],
       ['status MAYBE', { url, history: [{ ...snap, checks: [{ ...snap.checks[0], status: 'MAYBE' }] }] }, 'history[0].checks[0].status'],
       ['1001 runs', { url, history: Array.from({ length: 1001 }, () => ({ ...run })) }, 'history'],
+      // Before each array's length was checked first, the first of these threw
+      // a RangeError while zod merged its issues (a 500), and the second built
+      // about 870,000 issues before its 400.
+      ['30,000 empty checks', { url, history: [{ ...run, checks: Array.from({ length: 30000 }, () => ({})) }] }, 'history[0].checks'],
+      [`${emptyRuns} empty runs (512 KB)`, { url, history: Array.from({ length: emptyRuns }, () => ({})) }, 'history'],
+      ['1000 runs of 12 empty checks', { url, history: Array.from({ length: 1000 }, () => ({ checks: Array.from({ length: 12 }, () => ({})) })) }, 'history[0].score'],
       ['history "x"', { url, history: 'x' }, 'history'],
       ['url 5', { url: 5 }, 'url'],
       ['body null', null, 'body'],
     ];
     let refused = 0;
+    let schema = null;
+    try {
+      schema = h.load('app/lib/monitor-history.ts').monitorRequestSchema;
+    } catch {
+      /* reported above, as retired-detail */
+    }
+    let mostIssues = 0;
     for (const [label, body, want] of bad) {
+      const id = label.replace(/[^a-z0-9]+/gi, '-');
+      const bytes = Buffer.byteLength(JSON.stringify(body));
+      if (bytes > 512 * 1024) push(`malformed:${id}:size`, `${label} is ${bytes} bytes, past the 512 KB limit, so it tests the 413, not the schema.`);
       const r = await post(label, body);
       if (!r) continue;
       if (r.status === 400 && r.body && r.body.path === want) refused++;
-      else push(`malformed:${label.replace(/[^a-z0-9]+/gi, '-')}`, `${label}: HTTP ${r.status} with path ${JSON.stringify(r.body && r.body.path)} (${JSON.stringify(r.body).slice(0, 160)}); it is a 400 naming ${want}.`);
+      else push(`malformed:${id}`, `${label}: HTTP ${r.status} with path ${JSON.stringify(r.body && r.body.path)} (${JSON.stringify(r.body).slice(0, 160)}); it is a 400 naming ${want}.`);
+      // The schema stops at the first element that fails, so a refused body
+      // carries one element's issues, never one per element.
+      if (schema) {
+        try {
+          const parsed = schema.safeParse(body);
+          const issues = parsed.success ? 0 : parsed.error.issues.length;
+          mostIssues = Math.max(mostIssues, issues);
+          if (issues > ISSUE_CAP) push(`malformed:${id}:issues`, `${label}: the schema built ${issues} issues; it stops at the first element that fails (${ISSUE_CAP} at most).`);
+        } catch (e) {
+          push(`malformed:${id}:schema-threw`, `${label}: the schema threw (${e && e.message ? e.message : e}).`);
+        }
+      }
     }
-    seen.push(`${refused}/${bad.length} malformed refused with the field named`);
+    seen.push(`${refused}/${bad.length} malformed refused with the field named, at most ${mostIssues} issues each`);
+
+    // Only what a check reads is required: a run trimmed to its timestamp,
+    // score, tokensExtracted and each check's id and status is answered, and so
+    // is a null history (no history, as before the schema).
+    const trimmed = { timestamp: snap.timestamp, score: snap.score, tokensExtracted: snap.tokensExtracted, checks: snap.checks.map((c) => ({ id: c.id, status: c.status })) };
+    for (const [label, body, runs] of [
+      ['trimmed runs', { url, history: [trimmed, trimmed] }, 2],
+      ['history null', { url, history: null }, 0],
+    ]) {
+      const r = await post(label, body);
+      if (!r) continue;
+      const m01 = (r.body.monitorChecks || []).find((c) => c.id === 'm01');
+      seen.push(`${label} ${r.status}`);
+      if (r.status !== 200 || !m01 || m01.status !== (runs ? 'PASS' : 'SKIP')) {
+        push(`accepted:${label.replace(/[^a-z0-9]+/gi, '-')}`, `${label}: HTTP ${r.status}, m01 ${m01 ? m01.status : 'missing'} (${JSON.stringify(r.body).slice(0, 160)}); it is answered as ${runs} earlier run${runs === 1 ? '' : 's'}.`);
+      }
+    }
+
     const big = await post('600 KB body', { url, history: [snap], pad: 'x'.repeat(600 * 1024) });
     if (big) {
       seen.push(`600 KB body ${big.status}`);
       if (big.status !== 413) push('size', `A 600 KB body returned HTTP ${big.status}; a body over 512 KB is a 413.`);
+    }
+    // A Content-Length past the limit is refused before the body is read.
+    const declared = await post('Content-Length 600 KB', { url }, { 'content-length': String(600 * 1024) });
+    if (declared) {
+      seen.push(`Content-Length 600 KB ${declared.status}`);
+      if (declared.status !== 413) push('size:content-length', `A request declaring Content-Length ${600 * 1024} returned HTTP ${declared.status}; it is a 413 before the body is read.`);
     }
   } finally {
     for (const [name, v] of Object.entries(saved)) {
