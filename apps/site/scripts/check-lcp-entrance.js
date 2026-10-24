@@ -50,7 +50,7 @@
  */
 
 const ROUTES = [
-  '/', '/score', '/leaderboard', '/drift', '/contracts', '/pricing',
+  '/', '/score', '/drift', '/contracts', '/pricing',
   '/learn/what-is-design-verification', '/work/designesy-org', '/work/tile', '/review/poise',
   '/changelog', '/badge',
 ];

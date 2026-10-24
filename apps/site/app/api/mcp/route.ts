@@ -37,6 +37,7 @@ import { recordUsage, toolCallNames } from '../../lib/usage';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
 import { safeFetch } from '../../lib/url-guard';
+import { monitorHistorySchema } from '../../lib/monitor-history';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
 import { motionContract } from '../../lib/motion-contract';
@@ -361,7 +362,7 @@ const handler = createMcpHandler(
       'designesy_tokens_score',
       {
         ...mcpToolDisplay('designesy_tokens_score'),
-        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type/$value/$description present, structured colors (colorSpace + components rather than bare hex), a valid $schema pointer to designtokens.org, and correct dimension units. With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], provenance, validator_note }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
+        description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type (direct or inherited) present, one $value or $ref per token (a JSON Pointer $ref must resolve), structured colors (colorSpace + components rather than bare hex), dimensions in the 2025.10 { value, unit } form, and a $schema pointer to designtokens.org (a Designesy policy: DTCG does not require $schema). With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], provenance, validator_note }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
           dtcg_file: z.string().optional().describe('Raw DTCG token JSON string to validate (alternative to url).'),
@@ -708,41 +709,28 @@ test(${titleJs}, async ({ page }) => {
     );
 
     // ── Tool 15: designesy_monitor_score ───────────────────────────────────────
-    // Continuous design-drift monitor — re-runs drift checks on a URL and
-    // computes 10 governance checks (m01-m10) comparing the current run
-    // against snapshot history supplied by the caller. Sends email alerts
-    // via Resend when drift is detected + email provided + key set.
-    // That email is a side effect outside this server, so this is the one
-    // tool annotated readOnlyHint: false (see MCP_TOOL_ANNOTATIONS).
+    // Continuous design-drift monitor: re-runs the drift checks on a URL and
+    // computes 10 governance checks (m01-m10) comparing the current run against
+    // snapshot history supplied by the caller. Alerts come back in the result;
+    // /api/monitor sends no email (retired in monitor contract 0.1.5) and this
+    // handler forwards no `email`, so the tool is read-only (MCP_TOOL_ANNOTATIONS).
     server.registerTool(
       'designesy_monitor_score',
       {
         ...mcpToolDisplay('designesy_monitor_score'),
-        description: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): schedule registered, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email address is provided, sends an HTML drift-alert email via Resend (requires RESEND_API_KEY env var). Pass a history array of prior snapshots to compute deltas; omit it for a first-run baseline. Use this to watch a design system over time: "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable: fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts, emailAlert }. Results cached ~24h per URL.',
+        description: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks (d01-d12) on the URL and computes 10 monitor checks (m01-m10): history supplied, last run fresh, drift delta vs baseline, trend slope (3-run trajectory), new violations since last run, resolved since last run (the healing signal), score degradation threshold, token-set mutation, contract version drift, and alert delivered. Alerts come back in the result as alerts[]. No email is sent: email delivery was retired, so m10 is SKIP on every run and is not scored, and the email argument is deprecated and ignored. Pass a history array of prior snapshots (each call\'s currentSnapshot) to compute deltas; omit it for a first-run baseline. History is checked for shape and bounds (at most 1000 runs, a request of at most 512 KB). Use this to watch a design system over time: "weekly audits at cents per report" (Into Design Systems 2026). When NOT to use: for a single point-in-time drift check, use designesy_drift_score; for design-contract scoring, use designesy_score. Executable: fetches the URL, extracts CSS + :root tokens, runs checks, computes deltas. No browser needed. Returns JSON: { ok, url, score (0-100, governance health; SKIP is not scored), grade (A-F), pass, warn, fail, total, currentSnapshot, baseline, previous, driftChecks, monitorChecks, alerts }. Results are cached ~24h per URL and history: a repeat call with the same URL and history returns the cached run, with m02 measured again.',
         inputSchema: z.object({
           url: z.string().optional().describe('URL to monitor for drift. Defaults to https://www.designesy.org/ if not provided.'),
-          email: z.string().optional().describe('Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional: without it, alerts surface in-UI only.'),
-          history: z.array(z.object({
-            timestamp: z.string(),
-            score: z.number(),
-            grade: z.string(),
-            tokensExtracted: z.number(),
-            checks: z.array(z.object({
-              id: z.string(),
-              item: z.string(),
-              category: z.string(),
-              status: z.enum(['PASS', 'FAIL', 'WARN']),
-              detail: z.string(),
-            })),
-          })).optional().describe('Prior snapshots for delta computation. Omit for a first-run baseline.'),
+          email: z.string().optional().describe('Deprecated and ignored: email delivery was retired, so no email is sent and the address is not forwarded. Alerts come back in the result as alerts[].'),
+          history: monitorHistorySchema.optional().describe('Prior snapshots for delta computation (currentSnapshot from earlier calls). Omit for a first-run baseline.'),
         }),
       },
-      async ({ url, history, email }) => {
+      async ({ url, history }) => {
         const targetUrl = url || `${BASE_URL}/`;
         const res = await fetch(`${BASE_URL}/api/monitor`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: targetUrl, history: history || [], ...(email ? { email } : {}) }),
+          body: JSON.stringify({ url: targetUrl, history: history || [] }),
         });
         if (!res.ok) {
           const errText = await res.text().catch(() => res.statusText);

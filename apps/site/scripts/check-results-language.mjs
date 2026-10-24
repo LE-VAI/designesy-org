@@ -21,7 +21,7 @@
  *
  * WHAT IT ASSERTS
  *   1. verdict.ts: the score format, the category tone (equal to the
- *      leaderboard's scoreTone at every score), the grade bands (equal to the
+ *      cohort module's scoreTone at every score), the grade bands (equal to the
  *      engine's computeGrade at every tenth), the scale position, the status
  *      words and counts, and the attention line.
  *   2. No visitor surface carries a retired term or format: "Legitimacy",
@@ -99,7 +99,7 @@ check('score format: one decimal, "/100" beside it', () => {
   assert.equal(V.fmtCategory(87.5), '88');
 });
 
-check('category tone equals the leaderboard scoreTone at every score', () => {
+check('category tone equals the cohort scoreTone at every score', () => {
   const { scoreTone } = shipped(path.join(APP, 'app', 'lib', 'data', 'cohort.ts'), ['scoreTone']);
   for (let s = 0; s <= 1000; s++) assert.equal(V.categoryTone(s / 10), scoreTone(s / 10), `at ${s / 10}`);
   assert.equal(V.categoryTone(null), 'none');
@@ -161,7 +161,6 @@ const SURFACES = [
   'app/lib/engine/instrument.tsx',
   'app/report/page.tsx',
   'app/report/report-form.tsx',
-  'app/leaderboard/page.tsx',
   // /score/contract: its builders and every result component.
   'app/score/contract/copy.ts',
   'app/score/contract/contract-form.tsx',

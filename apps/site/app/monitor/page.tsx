@@ -14,13 +14,13 @@ export const revalidate = 0;
 export const metadata: Metadata = pageMeta({
   title: 'Drift monitor',
   description:
-    'Monitor any URL for design drift over time: each run you start is kept as a snapshot in your browser and compared with your first run and your last, with an optional email alert when drift is found. 10 governance checks plus the 12 drift checks on every run.',
+    'Monitor any URL for design drift over time: each run you start is kept as a snapshot in your browser and compared with your first run and your last. 10 governance checks plus the 12 drift checks on every run.',
   path: '/monitor',
 
   machineSibling: '/contracts/monitor.json',
   ogTitle: 'Drift monitor · Designesy',
   ogDescription:
-    'Re-run a URL and compare each run with your first and your last: score deltas, trend slopes, new violations, token mutations, and an optional email alert.',
+    'Re-run a URL and compare each run with your first and your last: score deltas, trend slopes, new violations and token mutations.',
   twitterDescription: 'Designesy drift monitor · designesy.org/monitor',
 });
 
@@ -53,11 +53,11 @@ export default async function MonitorPage({ searchParams }: { searchParams?: Pro
             { title: 'Run the drift radar', text: 'The same 12 checks as the drift radar, on the live page.' },
             { title: 'Load your history', text: 'Earlier snapshots of this URL, read from this browser and sent with the run.' },
             { title: 'Compare', text: 'Against the first run and the last: score, three-run trend, new failures, the token set and the contract version.' },
-            { title: 'Alert', text: 'A drop past the threshold raises an alert, mailed to the address you left, at most once an hour.' },
+            { title: 'Alert', text: 'A drop past the threshold raises an alert, shown with the run.' },
           ]}
           formula={
             <>
-              <span><b>governance</b> = (pass + warn × 0.5) ÷ 10 × 100</span>
+              <span><b>governance</b> = (pass + warn × 0.5) ÷ scored checks × 100</span>
               <GradeLine />
               <span>Snapshots stay in this browser: 50 runs per URL.</span>
             </>

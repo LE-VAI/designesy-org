@@ -11,7 +11,6 @@ const SURFACE_LINKS = [
   { href: '/score', label: 'Score' },
   { href: '/drift', label: 'Drift' },
   { href: '/readiness', label: 'Readiness' },
-  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/methodology', label: 'Methodology' },
   { href: '/benchmarks', label: 'Benchmarks' },
   { href: '/open', label: 'Open' },

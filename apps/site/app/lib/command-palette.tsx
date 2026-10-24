@@ -82,13 +82,10 @@ const INDEX: SearchItem[] = [
   { title: 'Drift radar', href: '/drift', group: 'Verify', keywords: 'drift ai generated ui token fabrication value variance off contract patterns compiled css failure modes deterministic radar', meta: '12-check drift' },
   { title: 'AI Readiness score', href: '/readiness', group: 'Verify', keywords: 'ai readiness machine readable tokens llms.txt agent.json mcp endpoint design.md sitemap robots.txt social meta maturity axis', meta: '10-check readiness' },
   { title: 'Guardrails', href: '/guardrails', group: 'Verify', keywords: 'guardrails frozen build contract coding agents emit generate dtcg tokens stylelint config agents.md component contract anti-patterns design.md lint enforce', meta: '5-check emitter' },
-  { title: 'Drift monitor', href: '/monitor', group: 'Verify', keywords: 'monitor drift over time continuous governance watch cadence re-score snapshot baseline delta trend email alert regression', meta: '10-check monitor' },
+  { title: 'Drift monitor', href: '/monitor', group: 'Verify', keywords: 'monitor drift over time continuous governance watch cadence re-score snapshot baseline delta trend alert regression', meta: '10-check monitor' },
   { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff two design systems urls side by side tokens added removed renamed value changed scale structure contrast drift score delta', meta: '8-check diff' },
   { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report design intelligence synthesis composite score drift readiness unified one grade holistic assessment capstone', meta: 'synthesis capstone' },
-  { title: 'Leaderboard', href: '/leaderboard', group: 'Verify', keywords: 'ranking cohort scores sites top', meta: 'cohort ranking' },
-  { title: 'Framework evaluations', href: '/frameworks', group: 'Verify', keywords: 'framework evaluation article per site breakdown category score grade dedicated page deep dive', meta: '30 evaluations' },
-  { title: 'State of Design Compliance', href: '/state-of-compliance', group: 'Verify', keywords: 'annual report compliance cohort material 3 framework rankings independence', meta: 'annual report' },
-  { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline cohort', meta: '' },
+  { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline', meta: '' },
   { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire radar chart axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
   { title: 'Contract changelog', href: '/changelog', group: 'Verify', keywords: 'changelog history version dimension tokens motion cadence accessibility takt poise acoustics copywriting identity security verification adopted added modified', meta: 'by dimension' },
@@ -116,14 +113,6 @@ const INDEX: SearchItem[] = [
   { title: 'Design verification vs linting vs visual regression', href: '/learn/design-verification-vs-linting-vs-visual-regression', group: 'Learn', keywords: 'lint linting stylelint visual regression snapshot baseline diff token drift comparison', meta: 'Article' },
   { title: 'The pause button that emptied our pages', href: '/learn/the-pause-button-that-emptied-our-pages', group: 'Learn', keywords: 'case study pause animations motion toggle wcag 2.2.2 reduced motion fade in invisible', meta: 'Article' },
   { title: 'Why we built a public design score', href: '/learn/why-we-built-a-public-design-score', group: 'Learn', keywords: 'public score honesty transparency same checks same thresholds', meta: 'Article' },
-  // Blog: each of these routes redirects to its post on dev.to, so none is
-  // prerendered as a page and Pagefind cannot index them; this list is how
-  // Find reaches them.
-  { title: 'Blog', href: '/blog', group: 'Learn', keywords: 'blog posts field reports findings articles dev.to', meta: 'on dev.to' },
-  { title: "Fintech sites that can't pass a design contract", href: '/blog/scoring-11-fintech', group: 'Learn', keywords: 'blog fintech finance banking payments money klarna robinhood scoring 11 sites field report', meta: 'Blog, on dev.to' },
-  { title: 'Dev tools score worse than the design awards', href: '/blog/scoring-16-devtools', group: 'Learn', keywords: 'blog dev tools developer tools devtools scoring 16 more sites field report', meta: 'Blog, on dev.to' },
-  { title: 'We scored 30 real websites', href: '/blog/scoring-30-sites', group: 'Learn', keywords: 'blog scoring 30 sites websites cohort field report', meta: 'Blog, on dev.to' },
-  { title: 'We scored 57 sites. None passed.', href: '/blog/scoring-57-synthesis', group: 'Learn', keywords: 'blog scoring 57 sites synthesis cohort none passed field report', meta: 'Blog, on dev.to' },
   { title: 'Open', href: '/open', group: 'Learn', keywords: 'portable intelligence index feed open.json', meta: 'open.json' },
   { title: 'Open handoff', href: '/open/handoff', group: 'Learn', keywords: 'handoff agent ingest', meta: '' },
   { title: 'Graph', href: '/graph', group: 'Learn', keywords: 'relationships map nodes', meta: '' },
@@ -157,7 +146,6 @@ const INDEX: SearchItem[] = [
   { title: 'Continuity case study', href: '/work/continuity', group: 'Company', keywords: 'continuity case study work artifact live', meta: 'case study' },
   { title: 'Compile case study', href: '/work/compile', group: 'Company', keywords: 'compile principle compiler plain language contracts case study work', meta: 'case study' },
   { title: 'Tile case study', href: '/work/tile', group: 'Company', keywords: 'tile interactive series composer case study work', meta: 'case study' },
-  { title: 'lovable.dev case study', href: '/work/lovable-dev', group: 'Company', keywords: 'lovable A on arrival ai built site snapshot case study work', meta: 'case study' },
   { title: 'designesy.org case study', href: '/work/designesy-org', group: 'Company', keywords: 'self score D to A before after publisher case study work', meta: 'case study' },
   { title: 'Pricing', href: '/pricing', group: 'Company', keywords: 'cost price how much plans continuity free subscribe upgrade tiers', meta: '' },
   { title: 'Designesy Review', href: '/pricing/review', group: 'Company', keywords: 'full review human audit accessibility wcag store ecommerce shop fix list one-time cost price how much buy order', meta: 'one-time' },
@@ -368,8 +356,8 @@ function cleanHref(url: string): string {
 /** Derive a display group from the href so hit rows keep the visual grouping. */
 function groupForHref(href: string): SearchItem['group'] {
   if (!href) return 'Company';
-  if (href.startsWith('/score') || href.startsWith('/leaderboard') || href.startsWith('/state-of-compliance') || href.startsWith('/benchmarks')
-    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity') || href.startsWith('/frameworks')
+  if (href.startsWith('/score') || href.startsWith('/benchmarks')
+    || href.startsWith('/methodology') || href.startsWith('/specs') || href.startsWith('/maturity')
     || href.startsWith('/changelog') || href.startsWith('/m3-bridge') || href.startsWith('/spring-validator')) return 'Verify';
   if (href.startsWith('/contracts') || href.startsWith('/acoustic-tokens')) return 'Contract';
   if (href.startsWith('/docs') || href.startsWith('/learn') || href.startsWith('/open') || href.startsWith('/graph')) return 'Learn';

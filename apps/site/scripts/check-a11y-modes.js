@@ -121,7 +121,6 @@ const ROUTES = [
   '/score',
   '/drift',
   '/compare',
-  '/leaderboard',
   '/contracts',
   '/learn/the-pause-button-that-emptied-our-pages',
   '/docs',

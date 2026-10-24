@@ -11,14 +11,14 @@ import { lockScroll, scrollLocked } from './scroll-lock';
 import { pushLayer } from './overlay-stack';
 import { Lockup } from './brand-logotype';
 
-// Primary nav — 5 items. Score + Leaderboard pair as the public verification
-// surface; Contract, Kits, Docs cover the developer/designer path.
+// Primary nav — 4 items. Score is the public verification surface; Contract,
+// Kits, Docs cover the developer/designer path. (Leaderboard was the fifth until
+// the public leaderboard was withdrawn, decided 2026-10-23.)
 // Secondary routes (Learn, Open, Labs, Review, Badge, Work, Graph, Continuity,
 // Privacy) live in the footer.
 // See: razegrowth.com SaaS navigation architecture guide.
 const NAV_ROUTES = [
   { href: '/score', label: 'Score' },
-  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/contracts', label: 'Contract' },
   { href: '/kits', label: 'Kits' },
   { href: '/docs', label: 'Docs' },
@@ -26,7 +26,7 @@ const NAV_ROUTES = [
 
 // The phone menu's second tier. On a phone these pages were reachable only
 // through the footer's moving rails. Three groups of at most six, each under a
-// short label, below the five primary rows and styled as the lower tier: the
+// short label, below the primary rows and styled as the lower tier: the
 // shape NN/g's menu research and Baymard's (~10 options at one level) point to.
 // Labels are the pages' own titles.
 const MORE_GROUPS = [
@@ -49,8 +49,6 @@ const MORE_GROUPS = [
       { href: '/methodology', label: 'Methodology' },
       { href: '/benchmarks', label: 'Benchmarks' },
       { href: '/specs', label: 'Specs' },
-      { href: '/frameworks', label: 'Frameworks' },
-      { href: '/state-of-compliance', label: 'State of compliance' },
       { href: '/changelog', label: 'Changelog' },
     ],
   },

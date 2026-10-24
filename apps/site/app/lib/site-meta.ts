@@ -18,9 +18,8 @@ export const LISTING_LINE = `Design quality gate for AI-generated UI: score any 
 /**
  * The one address the site publishes for people to write to: the footer,
  * security.txt, agent.json and the JSON-LD use it too. Every mailto that asks a
- * person to get in touch (a question about the Review, a leaderboard dispute, a
- * site proposed for the leaderboard) reads it from here, so a change of address
- * is one edit.
+ * person to get in touch (a question about the Review, a question about a
+ * score) reads it from here, so a change of address is one edit.
  */
 export const SITE_CONTACT_EMAIL = 'hello@designesy.org';
 
@@ -48,7 +47,7 @@ export const SITE_DEFAULT_DESCRIPTION = LISTING_LINE;
  */
 const MARKDOWN_ROUTES = new Set([
   '',  // the homepage: public path '/', markdown twin at /index.md
-  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
+  'docs', 'methodology', 'kits', 'open', 'benchmarks',
   'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
   'contracts/drift', 'contracts/readiness', 'contracts/guardrails',
@@ -56,7 +55,6 @@ const MARKDOWN_ROUTES = new Set([
   'contracts/tokens', 'labs/poise', 'labs/takt', 'labs/cadence',
   'labs/acoustics',
   'docs/mcp',
-  'state-of-compliance',
   'changelog',
   'work/compile',
   'work/continuity',
@@ -72,7 +70,6 @@ const MARKDOWN_ROUTES = new Set([
   'labs',
   'maturity',
   'continuity',
-  'frameworks',
   'work',
   'learn',
   'acoustic-tokens',
@@ -94,7 +91,6 @@ const MARKDOWN_ROUTES = new Set([
   'score/v0',
   'spring-validator',
   'work/designesy-org',
-  'work/lovable-dev',
   'work/tile',
 ]);
 

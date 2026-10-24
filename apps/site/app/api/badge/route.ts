@@ -5,8 +5,9 @@
 //                              run, from the score cache. Any site; one that
 //                              cannot be read or that the SSRF guard refuses
 //                              draws "Not scored". See lib/badge/.
-//   ?site=<host>               shields.io "endpoint" JSON for a leaderboard site
-//                              (below), for shields-style READMEs.
+//   ?site=designesy.org        shields.io "endpoint" JSON for the site's own
+//                              seed score (below), for shields-style READMEs.
+//                              Any other host gets the unknown-host reply.
 //
 // The live badge is the lead embed on /badge: the
 // static images read the same for every site, so a page could show one whatever
@@ -14,13 +15,13 @@
 //
 // shields embed:
 //   https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org
-// (shields' dynamic-JSON badge cannot filter /api/leaderboard by site, hence this route.)
 //
 // Why the JSON exists: the README carried a hand-copied score ("93% A, 36
 // passed, 1 skipped") that drifted from the live engine (98 A, 39 passed, 0
-// skipped on 2026-10-08). A badge built from the leaderboard seed, the same
-// data /api/leaderboard serves, cannot drift; it changes when the weekly
-// re-score lands.
+// skipped on 2026-10-08). A badge built from the seed row cannot drift from
+// it. The seed now holds designesy.org alone (the public leaderboard is
+// withdrawn, decided 2026-10-23), and ?site= answers for that host only, so this
+// route cannot republish a third-party score even if a row comes back.
 import { liveBadgeResponse } from '../../lib/badge/live-badge-route';
 import { SEED, LEADERBOARD_LAST_SCORED, staleLabel } from '../../leaderboard/seed';
 
@@ -63,6 +64,10 @@ function hostOf(value: string): string {
   }
 }
 
+// The one host ?site= answers for. Every other host, a former leaderboard
+// site included, gets the same reply as a host that was never listed.
+const SELF_HOST = 'designesy.org';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -71,10 +76,10 @@ export async function GET(request: Request) {
   if (params.has('url')) return liveBadgeResponse(request);
 
   const site = hostOf(params.get('site') ?? '');
-  const row = SEED.find((s) => hostOf(s.url) === site);
-  // A score the latest run could not renew (site unreachable) is labelled in
-  // the leaderboard's own words, "last scored <date> · could not re-score", and
-  // greyed: never presented as current.
+  const row = site === SELF_HOST ? SEED.find((s) => hostOf(s.url) === SELF_HOST) : undefined;
+  // A score the latest run could not renew (site unreachable) is labelled
+  // "last scored <date> · could not re-score" and greyed: never presented as
+  // current.
   const body =
     row && row.score !== null && row.grade
       ? {
@@ -89,7 +94,7 @@ export async function GET(request: Request) {
       : {
           schemaVersion: 1,
           label: 'contract score',
-          message: row ? 'not scored' : 'not on the leaderboard',
+          message: row ? 'not scored' : 'not listed',
           color: NEUTRAL_COLOR,
           isError: !row,
         };

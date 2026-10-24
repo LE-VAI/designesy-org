@@ -198,7 +198,7 @@ const MONITOR = build(
     m07: 'Drop threshold',
     m08: 'Token set stable',
     m09: 'Contract version',
-    m10: 'Alert delivered',
+    m10: 'Alert email',
   },
   {
     m01: 'watch', m02: 'watch', m10: 'watch',
@@ -206,7 +206,7 @@ const MONITOR = build(
     m05: 'change', m06: 'change', m08: 'change', m09: 'change',
   },
   [
-    { id: 'watch', label: 'The watch', hint: 'Earlier runs to compare against, a run on time, and alerts that can reach you.' },
+    { id: 'watch', label: 'The watch', hint: 'Earlier runs to compare against and a run on time. Alerts come back with the run.' },
     { id: 'trend', label: 'The trend', hint: 'Where the score is heading across runs.' },
     { id: 'change', label: 'What changed', hint: 'Checks, tokens and contract since the last run.' },
   ],

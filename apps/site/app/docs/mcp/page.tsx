@@ -25,7 +25,7 @@ export const metadata: Metadata = pageMeta({
 const ENDPOINT = 'https://www.designesy.org/api/mcp';
 
 // The contract-score card reads designesy.org's own reading from
-// self-report.json, which the weekly re-score writes from the live engine
+// self-report.json, which a hand-run re-score writes from the live engine
 // (scripts/rescore-leaderboard.mjs), in the same run that records the engine
 // version in seed.ts. It used to print every scored check as PASS, derived
 // from the registry, while the engine returned 40 PASS and 1 WARN.
@@ -135,8 +135,8 @@ const TOOLS = [
   {
     name: 'designesy_monitor_score',
     kind: 'Executable',
-    desc: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks and computes 10 monitor checks: schedule registered, last run fresh, drift delta vs baseline, trend slope, new violations, resolved since last run, score degradation threshold, token-set mutation, contract version drift, and alert delivered. When alerts fire and an email is provided, sends an HTML drift-alert email via Resend. Pass a history array of prior snapshots to compute deltas.',
-    args: 'url?: string, email?: string (for drift alerts), history?: Snapshot[] (omit for first-run baseline)',
+    desc: 'Score a URL for continuous design-drift governance, the temporal layer over the drift radar. Re-runs the 12 drift checks and computes 10 monitor checks: history supplied, last run fresh, drift delta vs baseline, trend slope, new violations, resolved since last run, score degradation threshold, token-set mutation, contract version drift, and alert delivered. Alerts come back in the result as alerts[]; email delivery was retired, so m10 is SKIP on every run and is not scored, and an email argument is ignored. Pass a history array of prior snapshots to compute deltas. For a notification, run it on your own schedule and pass alerts[] to your own channel.',
+    args: 'url?: string, history?: Snapshot[] (omit for first-run baseline), email?: string (deprecated, ignored)',
     source: '/api/monitor',
   },
   {
@@ -499,7 +499,7 @@ export default function McpDocsPage() {
               Compute reuses warm instances, so cache hits are common. The
               tools that score a URL (designesy_score, drift, readiness,
               guardrails, monitor, compare and report) call the site&apos;s own
-              engines, which cache each result for 24 hours per URL. A
+              engines, which cache each result for 24 hours per URL (monitor: per URL and history). A
               designesy_score receipt carries retrieved_at, the time the page
               was read.
             </p>

@@ -2,7 +2,7 @@
   "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
   "space": {
     "$root": { "$type": "dimension", "$value": { "value": 4, "unit": "px" } },
-    "16": { "$type": "dimension", "$value": "16px" },
+    "16": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } },
     "md": { "$type": "dimension", "$value": "{space.16}" },
     "lg": { "$type": "dimension", "$value": { "value": 1.5, "unit": "rem" } },
     "gutter": { "$type": "dimension", "$value": "{space.md}" },

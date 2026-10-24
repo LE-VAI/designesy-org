@@ -79,7 +79,7 @@ if (BASE) {
 // 3. The build wired it: every page carries the inline subset and the loader,
 //    and no page links a stylesheet under /_css/ as render-blocking.
 const generated = JSON.parse(fs.readFileSync(path.join(SITE, 'app/lib/critical-css.generated.json'), 'utf8'));
-// Redirect-only routes (redirect() in a page, e.g. /blog) prerender Next's bare
+// Redirect-only routes (a page that calls redirect()) prerender Next's bare
 // error shell, <html id="__next_error__">, which renders no layout and no content.
 // With a deployment id (Vercel sets one) Next 16 writes data-dpl-id into that
 // <html> tag before the id, so the shell is matched by its id alone.

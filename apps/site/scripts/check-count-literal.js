@@ -84,8 +84,7 @@ const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'public']);
  *
  * A changelog that says "Engine expanded from 36 to 40 checks" is a dated
  * record of what was true then; rewriting it to 42 would make the history
- * false. Same for the /blog scoring write-ups, which describe a specific
- * scoring run against a 40-check contract at the time.
+ * false.
  *
  * This is a real distinction with a real cost if lost: the receipt is the
  * product's premise, and a receipt that gets edited to match today's number is
@@ -94,11 +93,8 @@ const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'public']);
  */
 const HISTORICAL_ALLOWLIST = [
   /^app[\\/]changelog[\\/]page\.tsx$/,
-  /^app[\\/]blog[\\/].*$/,
-  /^app[\\/]state-of-compliance[\\/]page\.tsx$/,  // comment documenting its own CHECKS array
   /^scripts[\\/]prose-lint\.js$/,                // quotes the bug it was built to catch
   /^app[\\/]leaderboard[\\/]seed\.ts$/,          // dated re-score provenance header
-  /^app[\\/]api[\\/]leaderboard/,                // dated batch provenance
   /^scripts[\\/]check-jsx-glue\.js$/,            // quotes the bugs it was built to catch
 ];
 

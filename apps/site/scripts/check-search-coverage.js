@@ -38,9 +38,8 @@
  *                             .tsx). A dynamic route ([slug]) counts as found
  *                             when any found route fills its pattern. The
  *                             index alone cannot cover everything: the tool
- *                             pages (/score, /drift, ...) render per request
- *                             and the /blog routes redirect to dev.to, so
- *                             neither is ever prerendered.
+ *                             pages (/score, /drift, ...) render per request,
+ *                             so they are never prerendered.
  *
  * Exempt from routes-findable, each on purpose (FIND_EXEMPT below):
  *   /test          a scratch page with robots noindex; not for visitors.

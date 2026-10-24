@@ -12,7 +12,7 @@ spec default, which is the least safe reading. These tests hold:
 - the hints match what the code does, shown by calling the implementations;
 - the table equals the hosted endpoint's MCP_TOOL_ANNOTATIONS, so the PyPI
   server and https://www.designesy.org/api/mcp describe each tool the same way;
-- the package metadata no longer calls the whole server read-only.
+- the pyproject summary and the README make no claim that a tool sends email.
 
 Network calls are mocked; no live internet is needed.
 """
@@ -99,30 +99,41 @@ class TestTitleCopy:
 
 
 class TestHintsMatchBehaviour:
-    def test_monitor_score_is_the_only_tool_that_is_not_read_only(self):
-        """designesy_monitor_score can send email, so it cannot be read-only.
+    def test_every_tool_is_read_only(self):
+        """No tool writes anything, designesy_monitor_score included.
 
-        /api/monitor sends a drift-alert email through Resend when the caller
-        passes `email`, an alert fires, and the server has RESEND_API_KEY set.
-        Mail is additive (destructiveHint False), and a repeated call can send
-        another email (idempotentHint False). Adding a second writing tool must
-        be a deliberate change to this test.
+        designesy.org retired monitor email in monitor contract 0.1.5, and
+        this server forwards no `email`, so the monitor returns its comparison
+        and sends nothing; its 24-hour result cache makes a repeated call
+        idempotent. Adding a writing tool must be a deliberate change to this
+        test.
         """
         writers = [n for n, a in mcp.TOOL_ANNOTATIONS.items() if not a["readOnlyHint"]]
-        assert writers == ["designesy_monitor_score"]
+        assert writers == []
         monitor = mcp.TOOL_ANNOTATIONS["designesy_monitor_score"]
         assert monitor["destructiveHint"] is False
-        assert monitor["idempotentHint"] is False
+        assert monitor["idempotentHint"] is True
         assert monitor["openWorldHint"] is True
 
-    def test_monitor_score_forwards_the_email_that_triggers_the_send(self):
+    @pytest.mark.parametrize("email", ["owner@example.com", 5])
+    def test_monitor_score_forwards_no_email(self, email):
         history = [{"timestamp": "t", "score": 90, "grade": "A", "tokensExtracted": 1, "checks": []}]
+        args = {"url": "https://example.com/", "email": email, "history": history}
         with patch.object(mcp, "_post_api", return_value={"ok": True}) as post:
-            mcp._monitor_score_impl(url="https://example.com/", email="owner@example.com", history=history)
+            mcp._dispatch("designesy_monitor_score", args)
         endpoint, body = post.call_args.args
         assert endpoint == "monitor"
-        assert body["email"] == "owner@example.com"
+        assert "email" not in body
+        assert "owner@example.com" not in json.dumps(body)
         assert body["history"] == history
+
+    def test_monitor_description_says_email_is_ignored(self):
+        tool = mcp.TOOL_MAP["designesy_monitor_score"]
+        description = tool["description"]
+        for stale in ("Resend", "RESEND_API_KEY", "schedule registered"):
+            assert stale not in description, stale
+        assert "history supplied" in description
+        assert "ignored" in tool["inputSchema"]["properties"]["email"]["description"]
 
     def test_a11y_score_never_fetches_the_callers_url(self):
         """Closed world: the url goes into the returned script, never on the wire."""
@@ -198,7 +209,7 @@ class TestHostedEndpointAgreement:
         assert ours == hosted[name], f"{name}: PyPI {ours} vs hosted {hosted[name]}"
 
 
-# ── Package metadata states the side effect ──────────────────────────────────
+# ── Package metadata makes no side-effect claim ──────────────────────────────
 
 
 class TestReadOnlyClaims:
@@ -208,11 +219,16 @@ class TestReadOnlyClaims:
         assert m, "description not found in pyproject.toml"
         return m.group(1)
 
-    def test_summary_names_the_email_exception(self):
+    def test_summary_makes_no_email_claim(self):
         summary = self._summary()
-        assert not summary.lower().startswith("read-only"), summary
-        assert "email" in summary.lower(), "the summary must say monitor alerts can send email"
+        assert "email" not in summary.lower(), "no tool sends email, so the summary names none"
         assert "\u2014" not in summary, "PyPI summary is visible copy: no em dashes"
+
+    def test_readme_makes_no_email_claim(self):
+        readme = (PACKAGE / "README.md").read_text(encoding="utf-8")
+        for claim in ("drift-alert email", "email alerts", "can send email", "Resend", "MONITOR_EMAIL_ENABLED", "RESEND_API_KEY"):
+            assert claim.lower() not in readme.lower(), f"no tool sends email, so the README does not say {claim!r}"
+        assert "Every tool is read-only" in readme
 
     def test_readme_does_not_claim_the_server_never_writes(self):
         readme = (PACKAGE / "README.md").read_text(encoding="utf-8")
