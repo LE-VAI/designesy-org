@@ -107,7 +107,7 @@ export interface McpToolAnnotation {
  * - monitor_score: NOT read-only. /api/monitor sends a drift-alert email
  *   through Resend when the caller passes `email`, an alert fires (one needs a
  *   non-empty `history`), the server has MONITOR_EMAIL_ENABLED=true (off
- *   unless set: lib/monitor-email) and RESEND_API_KEY set, and the same
+ *   unless exactly "true": lib/monitor-email) and RESEND_API_KEY set, and the same
  *   (url, email, alert set) was not sent from that instance in the last hour.
  *   Sending mail is additive, so destructiveHint is false; the cooldown lives
  *   in one instance's memory, so a repeated call can send another email and

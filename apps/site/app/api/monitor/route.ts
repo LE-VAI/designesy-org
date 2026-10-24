@@ -27,7 +27,7 @@
 // Email alerting (v0.2.0): When the POST body includes an `email` field,
 // MONITOR_EMAIL_ENABLED is "true" AND the RESEND_API_KEY environment variable
 // is set, the monitor sends an HTML alert email to that address when any alert
-// condition fires. MONITOR_EMAIL_ENABLED is off unless set (lib/monitor-email):
+// condition fires. MONITOR_EMAIL_ENABLED is off unless exactly "true" (lib/monitor-email):
 // nothing confirms that the address's owner asked for the mail. Otherwise
 // alerts are surfaced in-UI only (graceful degradation).
 //
@@ -451,8 +451,8 @@ function checkM09ContractVersion(previous: Snapshot | null): MonitorCheckResult 
   return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} detected: version history comparison requires v0.2` };
 }
 
-// `off` is set when an email was given and email alerts are switched off, so
-// nothing was sent (lib/monitor-email).
+// `off` is set when an alert fired, an email was given and email alerts are
+// switched off, so nothing was sent (lib/monitor-email).
 type EmailAlert = { attempted: boolean; delivered: boolean; off?: boolean; recipient?: string; fromAddress?: string; error?: string };
 
 // mailOn is false when email alerts are switched off on this server. The cached
@@ -480,10 +480,11 @@ function checkM10AlertDelivered(alerts: string[], emailAlert?: EmailAlert, mailO
 // ── Email alerting via Resend ────────────────────────────────────────────────
 // Sends an HTML alert email when drift alerts fire. Requires:
 //   1. An `email` field in the POST body (the recipient)
-//   2. MONITOR_EMAIL_ENABLED set to "true" (off unless set: lib/monitor-email)
+//   2. MONITOR_EMAIL_ENABLED set to exactly "true" (lib/monitor-email)
 //   3. RESEND_API_KEY environment variable (set in Vercel project settings)
 // Without all three, alerts are surfaced in-UI only (graceful degradation).
-// Every interpolated value is escaped: the snapshots come from the request.
+// Every value the HTML body interpolates is escaped: the history snapshots
+// come from the request.
 
 async function sendAlertEmail(
   targetUrl: string,

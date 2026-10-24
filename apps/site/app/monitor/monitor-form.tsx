@@ -156,8 +156,8 @@ export function MonitorForm({
       setWatches(loadWatches());
     }
   };
-  // A shared monitor link only fills the field: a run stores history and can
-  // send mail, so it waits for the visitor to press run.
+  // A shared monitor link only fills the field: a run stores history and, where
+  // email alerts are on, can send mail, so it waits for the visitor to press run.
 
   const clear = () => {
     try {
@@ -290,7 +290,7 @@ export function MonitorForm({
                 </div>
                 <div>
                   <dt>A drop past the threshold <span className="eg-ref-where">m07 m10</span></dt>
-                  <dd>Raises an alert, mailed to you if you left an address.</dd>
+                  <dd>{emailAlerts ? 'Raises an alert, mailed to you if you left an address.' : 'Raises an alert, shown with the run.'}</dd>
                 </div>
               </dl>
             )}

@@ -12,8 +12,9 @@ export function monitorEmailOn(): boolean {
 }
 
 // Text for an element body or a quoted attribute in the alert email. Every
-// value the email interpolates passes through here, numbers included: a
-// snapshot's fields come from the request body, so a "score" can be any JSON.
+// value the HTML body interpolates passes through here, numbers included: the
+// history snapshots come from the request body, so a "score" can be any JSON.
+// The subject is plain text: the scanned host, the grade and the score.
 export function escapeHtml(value: unknown): string {
   return String(value)
     .replace(/&/g, '&amp;')

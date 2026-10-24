@@ -74,8 +74,10 @@
  *   monitor-mail-off     with MONITOR_EMAIL_ENABLED unset or anything but "true",
  *                        a run that names an email and raises an alert sends
  *                        nothing and m10 says email alerts are off; with "true"
- *                        it sends one email, with what the request supplied
- *                        escaped (Resend is stubbed: nothing leaves the process)
+ *                        it sends one email in which a previous score that is
+ *                        not a number shows as missing, and escapeHtml turns
+ *                        each HTML-special character into an entity (Resend is
+ *                        stubbed: nothing leaves the process)
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -466,9 +468,8 @@ async function monitorM02() {
 }
 
 async function monitorMailOff() {
-  // /api/monitor mailed a drift alert to whatever address a request named, and
-  // put the request's own snapshot fields into the HTML unescaped. It now sends
-  // nothing unless MONITOR_EMAIL_ENABLED is exactly "true". The Resend stub
+  // /api/monitor sends no alert email unless MONITOR_EMAIL_ENABLED is exactly
+  // "true", and escapes what the email's HTML interpolates. The Resend stub
   // records each message instead of sending it.
   const findings = [];
   const sent = [];
@@ -498,7 +499,7 @@ async function monitorMailOff() {
   const url = FIXTURES.site.url;
   const email = 'alerts@example.com';
   const snap = (await run(undefined, { url })).body.currentSnapshot;
-  // A baseline 200 points higher raises m03; the previous run's score is markup.
+  // A history that raises an alert, whose previous score is not a number.
   const history = [{ ...snap, score: snap.score + 200 }, { ...snap, score: '<img src=x>' }];
   const m10Of = (r) => (r.body.monitorChecks || []).find((c) => c.id === 'm10');
   const seen = [];
@@ -534,6 +535,11 @@ async function monitorMailOff() {
     findings.push({ id: 'monitor-mail-off:on:sent', why: `With the switch "true", ${sent.length} email(s) were sent and emailAlert is ${JSON.stringify(on.body.emailAlert)}; one email must go out.` });
   } else if (sent[0].to !== email || /<img/i.test(sent[0].html) || !sent[0].html.includes('Previous: no score recorded')) {
     findings.push({ id: 'monitor-mail-off:on:escaped', why: `With the switch "true", the email went to ${sent[0].to}, ${/<img/i.test(sent[0].html) ? 'carries the request\'s <img> markup' : 'does not say the previous score is missing'}.` });
+  }
+  const { escapeHtml } = siteHarness().load('app/lib/monitor-email.ts');
+  const escaped = escapeHtml(`<a href="x">'&`);
+  if (escaped !== '&lt;a href=&quot;x&quot;&gt;&#39;&amp;') {
+    findings.push({ id: 'monitor-mail-off:escape', why: `escapeHtml gives ${JSON.stringify(escaped)}; each of < > " ' & must become an entity.` });
   }
   return { findings, measured: seen.join('; ') };
 }
