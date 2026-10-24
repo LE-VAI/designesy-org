@@ -1,8 +1,7 @@
 /* ==========================================================================
-   Data surfaces: /leaderboard /state-of-compliance /frameworks /methodology
-   /benchmarks /specs. The page shell is the engine pages' (engine.css: the
-   head, sections, grade scale); this sheet draws the cohort the engine
-   scored, on the scale it grades by.
+   Data surfaces: /methodology /benchmarks /specs. The page shell is the
+   engine pages' (engine.css: the head, sections, grade scale); this sheet
+   draws scores on the scale the engine grades by.
 
    Figures: every number that can change sits in tabular figures, in
    Schibsted Grotesk or Geist Mono. Fraunces in the site's build has no

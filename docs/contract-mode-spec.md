@@ -557,7 +557,7 @@ Caps, in this order, each applied only when it lowers the score:
 2. **No A while any baseline check fails:** any FAIL caps the baseline at 89.9, as the URL score does.
 3. **Registry ceilings** of the automatic baseline checks: a v25 FAIL caps at 75; a v44 FAIL caps at 65.
 
-When a cap lowers the score, `ceilingReason` says which and `uncappedScore` carries the score before it. `ceilingApplied` is true for caps 2 and 3. The baseline differs from the leaderboard score for the same URL, because the leaderboard runs every check plus the slop deduction and the originality lift. The published formula says so.
+When a cap lowers the score, `ceilingReason` says which and `uncappedScore` carries the score before it. `ceilingApplied` is true for caps 2 and 3. The baseline differs from the URL score at `/score` for the same URL, because the URL score runs every check plus the slop deduction and the originality lift. The published formula says so.
 
 ---
 

@@ -18,9 +18,8 @@
  * the codebase sets no utm_ or campaign parameters, and both products already
  * group views by route.
  *
- * Paths are kept. The only dynamic segment on the site is /frameworks/[slug],
- * whose values come from the site's own list, so a path never carries a
- * visitor's input.
+ * Paths are kept. The site has no dynamic route segment, so a path never
+ * carries a visitor's input.
  *
  * Import-free on purpose: scripts/check-analytics-redaction.js loads this file
  * with Node's type stripping and runs it, so the gate tests the code that

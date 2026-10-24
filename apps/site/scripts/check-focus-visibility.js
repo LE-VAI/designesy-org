@@ -20,7 +20,7 @@
  *
  * WHAT IT ASSERTS
  *   Routes (GET only; every other method is aborted and counted): /, /score,
- *   /drift, /compare, /leaderboard, /contracts and a /learn article, dark and
+ *   /drift, /compare, /contracts and a /learn article, dark and
  *   light, at 1440x900 and 390x844. On each it presses Tab through the first
  *   N controls (default 40). For each control it shoots the control's box
  *   plus 6px (the field's well, for an input inside one) focused, then
@@ -115,7 +115,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROUTES = ['/', '/score', '/drift', '/compare', '/leaderboard', '/contracts', '/learn/the-pause-button-that-emptied-our-pages'];
+const ROUTES = ['/', '/score', '/drift', '/compare', '/contracts', '/learn/the-pause-button-that-emptied-our-pages'];
 const INVALID_ROUTES = ['/score', '/compare'];
 const VIEWPORTS = [
   { w: 1440, h: 900 },

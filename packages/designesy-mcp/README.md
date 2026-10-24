@@ -144,7 +144,7 @@ The server also exposes 7 MCP resources (read-only URIs):
 | security | 5 | Security headers — CSP, X-Content-Type-Options, referrer policy |
 | spec | 4 | Spec conformance — `lang` attr, `charset`, doctype |
 
-No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself, in public: its current score is on the [leaderboard](https://www.designesy.org/leaderboard).
+No LLM. No roast. The same engine scores [designesy.org](https://www.designesy.org) itself, in public: anyone can [score designesy.org now](https://www.designesy.org/score/report?url=designesy.org).
 
 ## Standards positioning
 
@@ -201,7 +201,6 @@ MIT
 - [MCP Registry entry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.LE-VAI%2Fdesignesy-org/versions/latest)
 - [Changelog](https://github.com/LE-VAI/designesy-org/releases)
 - [Design-system contract](https://www.designesy.org/contracts/design-system.json)
-- [Leaderboard](https://www.designesy.org/leaderboard) — 30-site public cohort, A–F histogram, weekly re-score
 - [Score badge](https://www.designesy.org/badge) — live SVG badge with a site's cached grade, score and scoring date
 - [Score API](https://www.designesy.org/specs) — `POST /api/score` with a JSON body, no key, no login (request example on the specs page)
 - [Methodology](https://www.designesy.org/methodology)
