@@ -1,5 +1,6 @@
 // The request body /api/monitor accepts, checked for shape and bounds before any
-// monitor check reads it.
+// monitor check reads it. The route and the hosted designesy_monitor_score tool
+// (app/api/mcp/route.ts) share it, so both accept the same history.
 //
 // Bounds only: types, a score from 0 to 100, a grade from A to F, drift check
 // ids d01 to d12, PASS, FAIL, WARN or SKIP, and string lengths. A run's score is

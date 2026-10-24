@@ -75,9 +75,10 @@
  *                        "true" and a Resend key set, and Resend's API answered inside
  *                        the harness, a run that raises an alert sends nothing; an email
  *                        given as an address, 5 or null returns 200 with no address in
- *                        the result; m10 is SKIP and the tally leaves it out; a
- *                        malformed history is a 400 naming the field, and a body over
- *                        512 KB is a 413
+ *                        the result; m10 is SKIP and the tally leaves it out; the hosted
+ *                        designesy_monitor_score posts no email and is annotated
+ *                        read-only; a malformed history is a 400 naming the field, and a
+ *                        body over 512 KB is a 413
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -479,9 +480,9 @@ async function monitorNoMail() {
   // harness (RESEND_BASE_URL points at a .test host as a second fence): a run
   // that raises an alert must reach neither host. An `email` of any type is
   // accepted, ignored and never returned (designesy-mcp 1.13.10 and earlier
-  // still send it); m10 is SKIP and not scored; and the body is checked for
-  // shape and bounds before any check reads it. Each call is caught, so a
-  // route that throws is a finding.
+  // still send it); m10 is SKIP and not scored; the hosted tool forwards no
+  // email; and the body is checked for shape and bounds before any check
+  // reads it. Each call is caught, so a route that throws is a finding.
   const findings = [];
   const push = (id, why) => findings.push({ id: `monitor-no-mail:${id}`, why });
   const sends = [];
@@ -557,6 +558,40 @@ async function monitorNoMail() {
       if (r.body.score !== want || r.body.pass !== counts[0] || r.body.warn !== counts[1] || r.body.fail !== counts[2] || r.body.total !== 10) {
         push(`${label}:tally`, `${label}: the result says score ${r.body.score} (${r.body.pass}/${r.body.warn}/${r.body.fail} of ${r.body.total}); its checks without SKIP give ${want} (${counts.join('/')} of 10).`);
       }
+    }
+
+    // The hosted tool: what it posts to /api/monitor, and how it is annotated.
+    let posted = null;
+    const mcp = siteHarness({
+      api: (u, init) => {
+        if (u !== 'https://www.designesy.org/api/monitor') return undefined;
+        posted = init && typeof init.body === 'string' ? init.body : null;
+        return { ok: true, alerts: [] };
+      },
+    });
+    try {
+      const { config } = await mcp.callTool('designesy_monitor_score', { url, email: address, history });
+      let body = {};
+      try {
+        body = JSON.parse(posted || 'null') || {};
+      } catch {
+        /* reported below */
+      }
+      if (posted === null) push('mcp:no-post', 'The hosted designesy_monitor_score posted nothing to /api/monitor.');
+      else if ('email' in body || posted.includes(address)) push('mcp:email', `The hosted designesy_monitor_score posted ${posted.slice(0, 200)}; it forwards no email.`);
+      seen.push(`MCP body ${posted !== null && !('email' in body) && !posted.includes(address) ? 'has no email' : 'carries the email'}`);
+      const a = config.annotations || {};
+      if (a.readOnlyHint !== true || a.idempotentHint !== true) push('mcp:annotations', `The hosted tool is annotated readOnlyHint ${a.readOnlyHint}, idempotentHint ${a.idempotentHint}; it sends no mail, so both are true.`);
+      if (/Resend|MONITOR_EMAIL_ENABLED|schedule registered/i.test(config.description)) push('mcp:description', 'The hosted tool description still names Resend, MONITOR_EMAIL_ENABLED or "schedule registered".');
+      const shape = (config.inputSchema && config.inputSchema.shape) || {};
+      const emailDescription = (shape.email && shape.email.description) || '';
+      if (!/ignored/.test(emailDescription)) push('mcp:email-param', `The email parameter is described as ${JSON.stringify(emailDescription)}; it is deprecated and ignored.`);
+      const skipRun = [{ ...snap, checks: [{ ...snap.checks[0], status: 'SKIP' }] }];
+      if (!config.inputSchema.safeParse({ url, history: skipRun }).success || config.inputSchema.safeParse({ url, history: [{ ...snap, score: 'x' }] }).success) {
+        push('mcp:history-schema', 'The hosted tool\'s history schema is not the route\'s: it must accept a SKIP check and refuse a score that is not a number.');
+      }
+    } catch (e) {
+      push('mcp:threw', `The hosted designesy_monitor_score threw: ${e && e.message ? e.message : e}`);
     }
 
     // A malformed request is a 400 that names the field.

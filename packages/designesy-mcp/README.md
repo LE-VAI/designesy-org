@@ -14,7 +14,7 @@
 [![Install in Cursor](https://img.shields.io/badge/Cursor-Install-000000?style=flat-square&logo=cursor&logoColor=white)](cursor://anysphere.cursor-deeplink/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22designesy-mcp%22%5D%7D%7D)
 [![Install Remote (HTTP)](https://img.shields.io/badge/Remote-Streamable_HTTP-FF6B35?style=flat-square&logo=vercel&logoColor=white)](https://vscode.dev/redirect/mcp/install?name=designesy&config=%7B%22designesy%22%3A%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fwww.designesy.org%2Fapi%2Fmcp%22%7D%7D)
 
-Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. This package is the **stdio MCP server** that exposes [designesy.org](https://www.designesy.org)'s tools to agents. Every tool is read-only except `designesy_monitor_score`, which can send a drift-alert email (see [Safety](#safety)).
+Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. This package is the **stdio MCP server** that exposes [designesy.org](https://www.designesy.org)'s tools to agents. Every tool is read-only (see [Safety](#safety)).
 
 Zero external dependencies. Pure Python stdlib. Implements the [Model Context Protocol](https://modelcontextprotocol.io) JSON-RPC 2.0 over stdio.
 
@@ -105,7 +105,7 @@ The server exposes 17 tools, all fetched live from `https://www.designesy.org/`:
 | `designesy_drift_score` | 12-check AI-drift radar — detects token fabrication, within-session drift, between-session amnesia, and silent breaking changes. |
 | `designesy_readiness_score` | 10-check AI readiness probe — tests for DTCG tokens, llms.txt, agent.json, MCP endpoint, DESIGN.md, sitemap, robots, OG meta. |
 | `designesy_guardrails` | Generate a frozen build-contract bundle: DTCG tokens, Stylelint config, AGENTS.md rules, component contract, anti-patterns, DESIGN.md. The full bundle runs from about 7 KB to about 530 KB of JSON; `parts` (for example `["designMd"]`) returns only the files named. |
-| `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas, trend slope, and email alerts via Resend. |
+| `designesy_monitor_score` | Continuous drift governance — 10 monitor checks with history deltas and trend slope; alerts come back in the result. |
 | `designesy_compare` | Diff two design systems from live URLs — 8-dimension structured diff (added, removed, renamed, value-changed, scale, contrast, structure, score). |
 | `designesy_report` | Composite synthesis — fires score + drift + readiness in parallel, computes weighted composite grade. The most shareable surface. The full result runs to about 75 to 100 KB of JSON; `detail: "summary"` keeps the composite, each engine's score and grade, the totals and only the checks that did not PASS. |
 
@@ -170,13 +170,13 @@ All responses are cached with a 5-minute TTL. The server only fetches public, ma
 
 ## Safety
 
-**Read-only, with one exception.** `designesy_monitor_score` can send email: when you pass an `email` address and a drift alert fires, designesy.org sends an HTML drift-alert email to that address through Resend, if the server has email alerts switched on (`MONITOR_EMAIL_ENABLED=true`) and a Resend key configured. A repeated call can send another email. The other 16 tools only read. The server writes no local files and reads no credentials.
+**Read-only.** Every tool only reads: the document tools fetch designesy.org exports, and the scoring tools fetch the URLs you pass, directly or through designesy.org's engines. `designesy_monitor_score` sends no email: its `email` argument is deprecated and ignored, and the server does not forward it. The server writes no local files and reads no credentials.
 
 **Certificates are verified.** A site whose TLS certificate fails verification, designesy.org included, returns a tool error that names the reason. To read such a site anyway, set `DESIGNESY_INSECURE_TLS=1` in the server's environment: a URL you pass (never one on designesy.org) whose certificate fails verification is then read without it, and the result carries `tls_verified: false`.
 
 **No browser unless you name one.** `designesy_score`'s offline engine measures overflow (v02) and Core Web Vitals (v21) by opening the page in a new tab of a Chrome DevTools endpoint, and closing it after; it never uses a tab it did not open. It does so only when `DESIGNESY_CDP_URL` names that endpoint (for example `http://127.0.0.1:9222`); otherwise both checks read MANUAL.
 
-Every tool declares a `title` and the MCP annotation hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), matching the hosted endpoint at `https://www.designesy.org/api/mcp`. `designesy_monitor_score` is the one tool marked `readOnlyHint: false`.
+Every tool declares a `title` and the MCP annotation hints (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`), matching the hosted endpoint at `https://www.designesy.org/api/mcp`. Every tool is marked `readOnlyHint: true`.
 
 ## Provenance
 
