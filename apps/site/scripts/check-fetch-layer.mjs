@@ -377,6 +377,15 @@ rule('a gzip /DESIGN.md is read decoded, so v37 runs the linter on it', async ()
   assert.doesNotMatch(v37.detail, /does not appear to be a valid DESIGN\.md|not publicly served|could not fetch/);
 });
 
+route('ae.fl.example.test/', 200, {}, page('Accept-Encoding', '<link rel="stylesheet" href="/a.css">'));
+route('ae.fl.example.test/a.css', 200, { 'content-type': 'text/css' }, SHEET);
+rule('the page, its sheets and /DESIGN.md are asked for with Accept-Encoding: gzip, deflate, br', async () => {
+  scored(await post(SCORE, { url: 'https://ae.fl.example.test/', scope: 'universal' }));
+  const asked = LOG.filter((l) => l.host === 'ae.fl.example.test');
+  assert.deepEqual(asked.map((l) => l.path).sort(), ['/', '/DESIGN.md', '/a.css']);
+  for (const l of asked) assert.equal(l.headers['accept-encoding'], 'gzip, deflate, br', l.path);
+});
+
 // ── 3. POST /api/score, own-contract mode ────────────────────────────────────
 section('3. POST /api/score, own-contract mode (contract scoring reads pages through the same fetch)');
 
@@ -435,6 +444,12 @@ for (const [name, file, body, tokens] of ROUTES_4) {
     assert.equal(tokens(moved.body), tokens(direct.body));
   });
 }
+
+rule('the four routes ask for the page and its sheets with Accept-Encoding: gzip, deflate, br', () => {
+  const asked = LOG.filter((l) => ROUTES_4.some(([name]) => l.host === `new-${name}.fl.example.test`));
+  assert.ok(asked.length >= 12, `only ${asked.length} requests reached the hosts the routes read`);
+  for (const l of asked) assert.equal(l.headers['accept-encoding'], 'gzip, deflate, br', `${l.host}${l.path}`);
+});
 
 // ── 5. The shared link scanner ───────────────────────────────────────────────
 section('5. app/lib/page-fetch.ts stylesheetLinkMatches');

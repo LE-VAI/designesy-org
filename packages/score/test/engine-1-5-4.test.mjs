@@ -164,6 +164,15 @@ describe('engine 1.5.4: a compressed body is decoded, or not read', () => {
     assert.equal(result.unreachableReason, 'http_error');
   });
 
+  it('asks for gzip, deflate and br by name, for the page and for each sheet', async () => {
+    const { calls } = await withSite({
+      'ae.example.test/': asHtml(page('<link rel="stylesheet" href="/a.css">')),
+      'ae.example.test/a.css': asCss(sheet('ae', 1)),
+    }, 'https://ae.example.test/');
+    assert.equal(calls.length, 2);
+    for (const c of calls) assert.equal(c.headers['Accept-Encoding'], 'gzip, deflate, br', c.key);
+  });
+
   it('control: identity pages and sheets read exactly as before', async () => {
     const { result } = await withSite({
       'id.example.test/': [200, { 'content-encoding': 'identity' }, page('<link rel="stylesheet" href="/a.css">')],
