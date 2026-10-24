@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.10] — 2026-10-21
+
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the
 DTCG 2025.10 Format Module does** (the hosted `/api/mcp`, and the PyPI server
 from designesy-mcp 1.13.10, below). Scores move for files that
@@ -13,12 +15,13 @@ type their groups, reference with a JSON Pointer `$ref`, hold a `$ref` that
 leads nowhere, leave out `$schema`, keep a top-level group named `tokens`, or
 write dimensions as strings.
 
-Until 1.13.10 is published, an installed PyPI server (1.13.9) keeps the 0.1.2 checks
+An installed PyPI server still on 1.13.9 keeps the 0.1.2 checks
 but names them from the contract it fetches from this site, so its results
 say `contract_version` 0.1.3 and put the 0.1.3 names beside 0.1.2 verdicts.
 A file with no `$schema` FAILs t01 under a name that calls `$schema` a
 Designesy policy, and t08 passes `"4px"` under a name that asks for
-`{ value, unit }`. Publishing 1.13.10 closes the gap.
+`{ value, unit }`. 1.13.10, published to PyPI and the MCP registry as
+`v1.13.10`, closes the gap.
 
 ### Fixed (tokens contract 0.1.3)
 
@@ -133,7 +136,7 @@ five fixtures keep their scores.
 - The sibling contract lock records tokens 0.1.3.
 
 **designesy-mcp 1.13.10: the stdio server fails closed** (PyPI and the MCP
-registry; not yet published, tag `v1.13.10`). Apart from the tokens scoring
+registry `v1.13.10`). Apart from the tokens scoring
 above, nothing changes in the hosted `/api/mcp` except the version it
 reports. It is the first designesy-mcp release since 1.13.9, so it also
 ships the offline engine merged since then: it mirrors engine 1.5.3 and
@@ -197,6 +200,26 @@ files by contract 0.1.3, above.
   `designesy_score` stays `readOnlyHint: true`. The offline engine's checks
   and verdicts. The tokens checks change as described above.
 - The hosted endpoint, which has no offline engine or browser probe.
+
+**Engine 1.5.3: f14 counts what a `var()` resolves to, and line-height
+ratios** (the site; not on npm, where `@designesy/score` 0.9.3 runs engine
+1.5.2). A measurement fix to the own-contract score: no check is added, and
+no weight or ceiling moves.
+
+### Fixed (engine 1.5.3)
+
+- f14 (own contract) read a `var()`'s raw custom-property text, so a token
+  whose value is a chain of `var()`s was never counted. It now counts the
+  value the chain resolves to.
+- f14 had no line-height case. A unitless line-height that equals one of
+  the contract's typography ratios (within 0.01, as the other kinds use)
+  now counts. Own-contract formula 1.0.2.
+- On the recorded contract-page fixtures, `landed-capped` and
+  `landed-drift` move f14 from WARN to PASS: their tokens category rises (75
+  to 100, and 25 to 50) and their uncapped fidelity score with it (84.7 to
+  88.6, and 76.7 to 80.7). No reported score or grade moves.
+- designesy-mcp 1.13.10's offline engine reports engine 1.5.3. The Python
+  port has no f14 code, so its verdicts do not change.
 
 **Contract v0.4.7: the contract declares what the site ships** (the site;
 no engine, npm or PyPI release). Tints, radii, fluid type sizes and line
@@ -278,8 +301,8 @@ This changes text only:
 - The engine (1.5.2), the checks, the weights and the ceilings, and the MCP
   tools and their descriptions. `CONTRACT_VERSION` in the npm engine source
   moves to v0.4.7, because its test reads the site's contract. Nothing is
-  published to npm or PyPI. The PyPI server's offline engine still reports
-  contract v0.4.6.
+  published to npm or PyPI with it. Until designesy-mcp 1.13.10, the PyPI
+  server's offline engine reported contract v0.4.6.
 - The eleven 16px label lines (`line-height: 1rem` on the 12.8px label step)
   stay lengths. At 1.25, Chrome lays the line out at 15.984375px, and the
   1/64px it loses moves the text below it by a device pixel on some pages.
