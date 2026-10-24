@@ -119,29 +119,6 @@ export const CASE_STUDIES: CaseStudy[] = [
       { id: 'v10', item: 'Takt rules match CSS', before: 'SKIP', after: 'PASS' },
     ],
   },
-  {
-    slug: 'lovable-dev',
-    title: 'lovable.dev · A on arrival',
-    lede: 'Snapshot (2026-07-25): an AI-built site that scored A on the contract without knowing it existed.',
-    status: 'Verified · public',
-    badge: 'A · 93.2',
-    artifact: 'lovable.dev',
-    date: '2026-07-25',
-    metrics: 'A 93.2 · 19 pass / 0 fail / 3 warn / 4 skip',
-    summary:
-      'lovable.dev is the case the AI-site-build narrative did not expect: a site built by an AI app platform that scores A on the Designesy contract without ever citing it. The remaining 3 WARNs are token-strictness issues (will-change, rem confirmation, tabular-nums). The 4 SKIPs are browser-only checks. This is the upper bound of what an AI-built site can score today, and the proof that the contract is reachable.',
-    beforeScore: 93.2,
-    gradeBefore: 'A',
-    afterScore: null,
-    gradeAfter: null,
-    beforeCounts: { pass: 19, fail: 0, warn: 3, skip: 4 },
-    fix: 'No fix applied yet. The 3 WARNs (v12 will-change, v16 rem, v19 tabular-nums) are token-strictness gaps that an after-fix could resolve; the projected score would land at A+.',
-    deltaChecks: [
-      { id: 'v12', item: 'will-change restricted to transform and opacity only', before: 'WARN', after: 'pending' },
-      { id: 'v16', item: 'Rem-based scale: all text sizes in rem, root at 16px', before: 'WARN', after: 'pending' },
-      { id: 'v19', item: 'tabular-nums: 8 instances across the live CSS', before: 'WARN', after: 'pending' },
-    ],
-  },
 ];
 
 /** Find a case study by slug. Returns undefined if not found. */

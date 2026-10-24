@@ -82,7 +82,7 @@ export default function MaturityPage() {
           items={[
             { title: 'Score the live site', desc: `The ${ENGINE_CHECK_COUNT}-check engine turns self-perception into a measured grade.`, route: '/score' },
             { title: 'Read the contract the axes map to', desc: `The ${CONTRACT_VERSION} design system contract and its 14 weighted categories.`, route: '/contracts/design-system' },
-            { title: 'See where others land', desc: 'The public leaderboard, scored by the same engine and dated.', route: '/leaderboard' },
+            { title: 'Read how a score is made', desc: 'Every check, its weight and the math behind the grade.', route: '/methodology' },
           ]}
         />
       </main>

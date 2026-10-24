@@ -9,7 +9,7 @@ import { logLabel } from './check-labels';
  * WHAT IT SHOWS, AND WHY IT IS TRUE
  * Every cell is one check from CHECKS, grouped into one row per category, so
  * the rows are the contract's real anatomy (cadence's twelve checks make the
- * longest row). The statuses are the self-score's: the leaderboard seed records
+ * longest row). The statuses are the self-score's: the seed's self row records
  * pass/warn/fail counts for designesy.org, and when those counts reconcile with
  * the registry (every automated check passed, nothing warned or failed) each
  * automated cell resolves to pass and each manual one to "by a person". If they
@@ -413,7 +413,7 @@ export function VerifyConsole({
         <span>
           This site, scored by its own engine against contract {contract}: {scoreText}%, grade {grade}.
         </span>
-        <span className="vc-caption-meta">Measured {measured}, rescored weekly</span>
+        <span className="vc-caption-meta">Measured {measured}</span>
       </figcaption>
     </figure>
   );

@@ -273,7 +273,7 @@ export default function ReviewOfferPage() {
           <p className="surface-note review-offer-note">
             The contract score in a Review comes from the engine and published
             contract that score every site for free. Designesy does not accept
-            payment for scores or leaderboard placement; the{' '}
+            payment for scores; the{' '}
             <Link href="/pricing#independence-firewall" className="text-link">
               independence firewall
             </Link>{' '}

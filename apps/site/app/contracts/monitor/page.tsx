@@ -12,11 +12,11 @@ import '../contracts.css';
 export const metadata: Metadata = pageMeta({
   title: 'Monitor contract',
   description:
-    `Designesy Monitor Contract v${monitorContract.version}: design drift over time. Each call re-runs the drift checks on a URL and compares the result with the history you pass in, against the first snapshot and the last, with an optional email alert when drift is found. Nothing is scheduled, and the server keeps no history of its own. 10 verification checks.`,
+    `Designesy Monitor Contract v${monitorContract.version}: design drift over time. Each call re-runs the drift checks on a URL and compares the result with the history you pass in, against the first snapshot and the last. Nothing is scheduled, and the server keeps no history of its own. 10 verification checks.`,
   path: '/contracts/monitor',
   ogTitle: 'Monitor contract · Designesy',
   ogDescription:
-    'Design drift over time: each call compares a URL with the history you pass in. 10 checks for score delta, trend slope, new violations, token mutation, and alert delivery.',
+    'Design drift over time: each call compares a URL with the history you pass in. 10 checks for score delta, trend slope, new violations and token mutation; alerts come back with the result.',
   twitterDescription: 'Designesy monitor · designesy.org/contracts/monitor',
 });
 

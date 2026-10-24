@@ -117,7 +117,6 @@ function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
   if (kind === 'lab') return null;
   const route = path.replace(/^designesy\.org/, '') || '/';
   if (route === '/' || route === '/report' || route.startsWith('/score')) return 'score';
-  if (route === '/leaderboard') return 'leaderboard';
   if (route === '/monitor') return 'monitor';
   // The badge shows a grade, so its tile is the score icon (the dot marks
   // the active grade).

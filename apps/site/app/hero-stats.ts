@@ -24,13 +24,15 @@ export { ENGINE_CHECK_COUNT };
 // Kept as a named re-export so the 4 existing importers do not need to move.
 export { CONTRACT_VERSION } from './lib/design-system-contract';
 
-// Latest self-score — DERIVED from the public leaderboard seed row, never a
-// second literal. The hero and the leaderboard show the same number because
-// they read the same source: two frozen values for one fact is the exact
-// contradiction this module exists to kill.
+// Latest self-score — DERIVED from the designesy.org seed row, never a
+// second literal. The hero, /api/badge?site=designesy.org and the other self
+// surfaces show the same number because they read the same source: two frozen
+// values for one fact is the exact contradiction this module exists to kill.
+// (The public leaderboard that once shared this row is withdrawn, decided
+// 2026-10-23; the seed now holds the self row alone.)
 //
 // The number below is derived from the seed row, never a second literal —
-// update the seed (via the weekly rescore) to change it.
+// update the seed (via a hand-run re-score) to change it.
 //
 // ⚠️ DO NOT RESTATE THE CURRENT VALUE HERE. This comment used to read
 // "(2026-08-22 fresh engine re-score): 93% A (36P / 0F / 0W / 1S / 3M …)" and had
@@ -47,7 +49,7 @@ export { CONTRACT_VERSION } from './lib/design-system-contract';
 function selfRow() {
   const row = SEED.find((s) => s.url === 'https://www.designesy.org');
   if (!row || row.score === null || row.grade === null) {
-    throw new Error('hero-stats: leaderboard seed lost its designesy.org self row');
+    throw new Error('hero-stats: the seed lost its designesy.org self row');
   }
   return row;
 }
@@ -63,49 +65,15 @@ export const SELF_COUNTS = {
 };
 
 // The contract version the self-score above was MEASURED against, in display
-// form. It is the version the leaderboard run recorded (seed.ts,
+// form. It is the version the scoring run recorded (seed.ts,
 // LEADERBOARD_VERSION), not the registry's current CONTRACT_VERSION: a contract
 // bump between two runs would otherwise print the new version beside a score
 // the old one produced, with the old run's date.
 export const MEASURED_CONTRACT_VERSION = `v${LEADERBOARD_VERSION}`;
 
-// Seeded cohort honesty — what the public leaderboard actually contains.
-export const COHORT_SCORED_COUNT = SEED.filter((s) => s.score !== null).length;
-export const COHORT_TOTAL_COUNT = SEED.length;
-export const COHORT_LAST_SCORED = LEADERBOARD_LAST_SCORED;
-// A site the engine could not read on the last run keeps its previous score,
-// flagged unreachable. Those are held over, not rescored, and the hero says so.
-export const COHORT_HELD_OVER_COUNT = SEED.filter((s) => s.score !== null && s.unreachable).length;
-export const COHORT_RESCORED_COUNT = COHORT_SCORED_COUNT - COHORT_HELD_OVER_COUNT;
-
-// "Recent scores" rail — the REAL seeded sites, ranked, top 5. These are
-// real engine batch results (refreshed weekly via rescore-leaderboard workflow),
-// not a fabricated ticker. Ordered by seed rank (composite score desc).
-export const RECENT_SCORES = SEED.filter((s) => s.score !== null && s.rank !== null)
-  .sort((a, b) => (a.rank as number) - (b.rank as number))
-  .slice(0, 5)
-  .map((s) => ({
-    name: s.name,
-    grade: s.grade as string,
-    score: s.score as number,
-    url: s.url,
-    isSelf: s.url === 'https://www.designesy.org',
-  }));
-
-// Lowest score in the cohort — the proof the engine doesn't grade-inflate.
-// Showing the floor alongside the self-score makes the self-score credible:
-// a benchmark that only shows its own A and hides everyone's F reads as
-// rigged. The floor is the honesty signal. Derived from the seed, same as
-// everything else — never a second literal.
-// Only scores from the latest run count: a held-over score (unreachable) came
-// from an earlier run and often an earlier engine, so it cannot stand as this
-// week's floor beside a label that says this week.
-const lowestRow = SEED
-  .filter((s) => s.score !== null && !s.unreachable && s.url !== 'https://www.designesy.org')
-  .sort((a, b) => (a.score as number) - (b.score as number))[0];
-export const LOWEST_SCORE = lowestRow ? (lowestRow.score as number) : null;
-export const LOWEST_GRADE = lowestRow ? (lowestRow.grade as string) : null;
-export const LOWEST_NAME = lowestRow ? lowestRow.name : null;
+// The date the self row was measured, printed beside the self-score so a
+// reader can see its age. One run date for the whole seed (seed.ts).
+export const SELF_MEASURED_ON = LEADERBOARD_LAST_SCORED;
 
 // Explicitly NOT exported: any "scores today" / total-scores counter. There
 // is no global score-count store — score history is per-browser

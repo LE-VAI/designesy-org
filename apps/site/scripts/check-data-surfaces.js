@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * data-surfaces gate: every chart on the six data surfaces can be read without
+ * data-surfaces gate: every chart on the three data surfaces can be read without
  * seeing it, and none of them waits on a uniform entrance animation.
  *
  * WHAT IT READS
- * The prerendered HTML of /leaderboard, /state-of-compliance, /frameworks and
- * every /frameworks/<site>, /methodology, /benchmarks and /specs, from
- * .next/server/app after `next build`. The drawings are rendered on the server,
- * so the HTML is what a screen reader and a crawler meet first.
+ * The prerendered HTML of /methodology, /benchmarks and /specs, from
+ * .next/server/app after `next build`, plus the home page for clause 4. The
+ * drawings are rendered on the server, so the HTML is what a screen reader and
+ * a crawler meet first.
  *
  * CLAUSES
  *   1. named     Every element with role="img" carries a non-empty aria-label,
@@ -20,8 +20,13 @@
  *                page is complete at rest and its motion means something.
  *   4. dated     lib/data/cohort re-exports the batch date from
  *                leaderboard/batch-data.ts, the file's header states the same
- *                date, and the pages print it (a figure of batch data without
- *                its date was the defect this wave removed).
+ *                date, and the page that draws the batch record (the home
+ *                page's category rack) prints it in the rack's own label,
+ *                "batch run of <date>" (a figure of batch data without its
+ *                date was the defect this wave removed). The date alone is
+ *                not enough: the home page prints the same day elsewhere
+ *                (VerifyConsole's "Measured <date>"), so a page-wide match
+ *                would pass a rack that lost its date.
  *
  * GUARDS AGAINST A CLAUSE THAT CANNOT FAIL
  *   * Attribute matching is scoped to one start tag: the pattern cannot cross
@@ -41,9 +46,21 @@ const path = require('node:path');
 
 const SITE = path.resolve(__dirname, '..');
 const APP_HTML = path.join(SITE, '.next', 'server', 'app');
-const ROUTES = ['leaderboard', 'state-of-compliance', 'frameworks', 'methodology', 'benchmarks', 'specs'];
+const ROUTES = ['methodology', 'benchmarks', 'specs'];
 // Routes that draw: each must carry at least one named image.
-const DRAWS = new Set(['leaderboard', 'state-of-compliance', 'methodology', 'frameworks']);
+const DRAWS = new Set(['methodology']);
+// Pages that draw batch data and must print its date (clause 4). The home
+// page's category rack is the self row's batch record; its label carries the
+// date as "batch run of <date>" (app/page.tsx and contract-health-rack.tsx).
+const DATED = [{ route: '/', file: path.join(APP_HTML, 'index.html') }];
+const datedMarker = (date) => `batch run of ${date}`;
+
+/** Clause 4 on one page's HTML: the batch record prints its own date. */
+function datedProblem(route, html, declared) {
+  return html.includes(datedMarker(declared))
+    ? null
+    : `dated: ${route} draws batch data without printing "${datedMarker(declared)}"`;
+}
 
 function startTags(html, test) {
   const out = [];
@@ -100,15 +117,11 @@ function pagesToCheck() {
     const file = path.join(APP_HTML, `${r}.html`);
     out.push({ route: `/${r}`, file, draws: DRAWS.has(r) });
   }
-  const fwDir = path.join(APP_HTML, 'frameworks');
-  const slugs = fs.existsSync(fwDir) ? fs.readdirSync(fwDir).filter((n) => n.endsWith('.html')) : [];
-  if (!slugs.length) out.push({ route: '/frameworks/<site>', file: path.join(fwDir, '<none>.html'), draws: true });
-  for (const n of slugs) out.push({ route: `/frameworks/${n.replace(/\.html$/, '')}`, file: path.join(fwDir, n), draws: true });
   return out;
 }
 
 /** Clause 4: the batch date is declared once and printed where batch data is drawn. */
-function checkDated(pages) {
+function checkDated() {
   const problems = [];
   const batch = fs.readFileSync(path.join(SITE, 'app', 'leaderboard', 'batch-data.ts'), 'utf8');
   const cohort = fs.readFileSync(path.join(SITE, 'app', 'lib', 'data', 'cohort.ts'), 'utf8');
@@ -118,9 +131,13 @@ function checkDated(pages) {
   else if (header && header !== declared) problems.push(`dated: batch-data.ts header says ${header}, BATCH_RUN_DATE says ${declared}`);
   if (!/export \{ BATCH_RUN_DATE \}/.test(cohort)) problems.push('dated: lib/data/cohort does not re-export BATCH_RUN_DATE');
   if (declared) {
-    for (const p of pages.filter((x) => ['/leaderboard', '/state-of-compliance'].includes(x.route) || x.route.startsWith('/frameworks/'))) {
-      if (!fs.existsSync(p.file)) continue;
-      if (!fs.readFileSync(p.file, 'utf8').includes(declared)) problems.push(`dated: ${p.route} draws batch data without printing ${declared}`);
+    for (const p of DATED) {
+      if (!fs.existsSync(p.file)) {
+        problems.push(`dated: ${p.route} has no prerendered HTML, so its batch date cannot be read`);
+        continue;
+      }
+      const problem = datedProblem(p.route, fs.readFileSync(p.file, 'utf8'), declared);
+      if (problem) problems.push(problem);
     }
   }
   return problems;
@@ -153,8 +170,22 @@ function selfTest() {
     bad++;
     console.error(`self-test: a correct page failed: ${good.problems.join('; ')}`);
   }
+  // Clause 4: a page that prints the day only outside the rack must fail.
+  const datedCases = [
+    ['<p>Measured <!-- -->2026-10-19</p><ol class="hm" aria-label="designesy.org by category"></ol>', true],
+    ['<ol class="hm" aria-label="designesy.org by category, out of 100, batch run of 2026-10-19"></ol>', false],
+  ];
+  for (const [html, broken] of datedCases) {
+    const caught = datedProblem('/self-test', html, '2026-10-19') !== null;
+    if (caught !== broken) {
+      bad++;
+      console.error(`self-test: clause "dated" ${broken ? 'let a broken page through' : 'failed a correct page'}: ${html}`);
+    }
+  }
   if (bad) process.exit(1);
-  console.log(`data-surfaces self-test: OK (${cases.length} broken pages caught, 1 correct page passed)`);
+  console.log(
+    `data-surfaces self-test: OK (${cases.length + 1} broken pages caught, 2 correct pages passed)`,
+  );
 }
 
 function main() {
@@ -170,9 +201,9 @@ function main() {
       results.push({ route: p.route, charts: 0, figures: 0, problems: ['missing: no prerendered HTML for this route'] });
       continue;
     }
-    results.push(checkPage(p.route, fs.readFileSync(p.file, 'utf8'), p.draws || p.route.startsWith('/frameworks/')));
+    results.push(checkPage(p.route, fs.readFileSync(p.file, 'utf8'), p.draws));
   }
-  const dated = checkDated(pages);
+  const dated = checkDated();
   const failed = results.filter((r) => r.problems.length);
   if (process.argv.includes('--json')) {
     console.log(JSON.stringify({ results, dated }, null, 2));
