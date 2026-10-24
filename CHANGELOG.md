@@ -6,6 +6,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.4: the engine reads the page the site served, decoded** (the
+site; npm `@designesy/score` 0.9.3 runs engine 1.5.2 until its next release,
+and the PyPI offline engine follows in the next designesy-mcp release). Three
+defects in how a page and its stylesheets were fetched are fixed in every copy
+of the fetch code: the score route (universal and own-contract mode), the
+drift, guardrails, monitor and compare routes, the npm engine and the Python
+offline engine. No check is added, and no rule, weight or ceiling moves. A
+score moves only for a page reached through a redirect or a fallback address,
+served compressed, or linking a stylesheet with its href first.
+
+### Fixed (engine 1.5.4)
+
+- **A stylesheet href resolves against the URL that answered.** It resolved
+  against the URL the engine was asked to score. A page reached through a
+  redirect, or through the `www.` or `http://` candidate when the address
+  given did not answer, had a relative href such as `/assets/site.css`
+  fetched from the host it was not served from, which can answer with an
+  HTML page that was then read as CSS. The base is now the URL of the
+  response that was read, after every redirect, as a browser resolves it.
+- **A compressed body is decoded.** A 2xx body sent with `Content-Encoding`
+  gzip (or x-gzip), deflate (zlib-wrapped or raw) or br was read as its
+  compressed bytes, whether the request asked for it or not, so its CSS or
+  HTML never reached the checks. It is now decoded before it is read. The
+  page, stylesheet and `/DESIGN.md` requests send
+  `Accept-Encoding: gzip, deflate, br`: with no `Accept-Encoding` a server
+  may choose any coding (RFC 9110 section 12.5.3), including ones the
+  engine cannot decode. The Python offline engine still asks for identity
+  and decodes gzip and deflate with the standard library.
+- **Decoding is bounded.** In the score route a decoded body is held to the
+  byte cap of the read it belongs to (8 MiB of HTML, 4 MiB of one
+  stylesheet, 16 MiB of a `/DESIGN.md`), so a body a few kilobytes long on
+  the wire cannot expand past what the engine reads, and a read that
+  reaches its cap still says so (`DOCUMENT_CAP:` in contract mode). A read
+  with no cap of its own (the npm
+  engine, the Python offline engine, the drift, guardrails, monitor and
+  compare routes, a linked contract) fails past 16 MiB decoded.
+- **A body that does not decode is not read.** A corrupt or truncated
+  stream, an unknown coding such as zstd, or more than one coding is a
+  failed read: a page that does not decode is unreachable with reason
+  `network`, and a stylesheet that does not decode is left out and not
+  counted as fetched. Only a 2xx body is decoded, so an error page keeps
+  its status: a 404 stays `http_error`. br is not decoded by the Python
+  offline engine, whose standard library has no br decoder.
+- **A `<link>` with its href before `rel=stylesheet` is read.**
+  `<link href="/a.css" rel="stylesheet">` was skipped, because the pattern
+  needed rel first. A tag that writes rel first is read exactly as before.
+- The drift, guardrails, monitor and compare routes held four identical
+  copies of the page fetch. They now share one, `app/lib/page-fetch.ts`,
+  with the score route's scanners.
+- A 204, 205 or 304 answer made the hosted transport throw an uncaught
+  error inside its socket handler (a `Response` with a non-null body), and
+  the read stayed open until its timeout. It now resolves with no body.
+
+### Not changed (engine 1.5.4)
+
+- The subject of a score is the URL given: scope detection, the result's
+  URL and the `/DESIGN.md` probe use it, not the URL a redirect led to.
+- `<base href>` and unquoted hrefs are still not read.
+- The checks, their rules, weights and ceilings, and the response shapes.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10; nothing is published.
+
+### Gates (engine 1.5.4)
+
+- `check-fetch-layer.mjs` (new, in the build and in CI after Score read
+  bounds) runs the real routes and URL guard against a local server on
+  `*.example.test` hosts with bodies built at run time: the transport (each
+  coding, the caps, a decompression bomb, each refusal, the null-body
+  statuses), `POST /api/score` in universal and own-contract mode, the four
+  other routes, and the shared link scanner. Run against main's source with
+  `--flip`, every rule case fails and every control holds.
+- `packages/score/test/engine-1-5-4.test.mjs`: 9 rule tests that fail on
+  the 1.5.3 build and 4 controls that pass on both.
+- `linear-scan` (TypeScript and Python) holds the link scanner to the
+  pattern with both orders, on 10,000 generated inputs, and, on every
+  fixture page, to the 1.5.1 pattern: no fixture page writes href first.
+  The Python offline engine gains 11 fetch-layer tests.
+- The corpus, the offline golden and the contract-page records change only
+  in their version fields (and `retrieved_at`).
+
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed

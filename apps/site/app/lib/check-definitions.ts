@@ -246,5 +246,12 @@ export const ENGINE_MANUAL_CHECK_COUNT = CHECKS.filter((c) => c.type === 'manual
  *                      (font: 500 0.66rem/1 var(--mono)), and finds each
  *                      finding's rule from one index of the sheet. No check
  *                      added, no weight or ceiling moved.
+ *   1.5.4  2026-10-24  fetch layer only. A stylesheet href resolves against
+ *                      the URL that answered (after redirects, or the www./
+ *                      http:// candidate); a 2xx body sent with
+ *                      Content-Encoding gzip, deflate or br is decoded up to
+ *                      the read's byte cap, and one that does not decode is
+ *                      not read; a <link> with href before rel=stylesheet is
+ *                      read. No check added, no weight or ceiling moved.
  */
-export const ENGINE_VERSION = '1.5.3';
+export const ENGINE_VERSION = '1.5.4';

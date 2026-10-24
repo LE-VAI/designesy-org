@@ -562,7 +562,7 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.5.3"
+OFFLINE_ENGINE_MIRRORS = "1.5.4"
 OFFLINE_CONTRACT_VERSION = "v0.4.7"
 
 # The live engine's checks that this engine does not run, in the live engine's
