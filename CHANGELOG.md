@@ -6,10 +6,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Monitor contract 0.1.5: monitor alert email is retired, and scores move.**
+`/api/monitor` sends no email under any setting; alerts come back in the result
+(`alerts[]`), as `/monitor` shows them. m10 is no longer scored, so a stable
+site moves from 90 (A) to 89 (B) on its third run or later.
+
+### Removed
+
+- **Monitor alert email.** The send code, `app/lib/monitor-email.ts`, the `resend`
+  import and the `resend` dependency are gone from apps/site, so no setting can
+  make `/api/monitor` send mail, `MONITOR_EMAIL_ENABLED=true` included. Nothing
+  in the site reads that variable now. The Continuity waitlist still sends its
+  notices through Resend's HTTP API with `RESEND_API_KEY`, unchanged.
+- `emailAlert` is gone from the monitor result, and with it the one-hour
+  cooldown and the address check.
+
+### Changed
+
+- **m10 is N/A on every run and is not scored.** Its detail says alerts are
+  returned in the response and email delivery was retired; the ids m01 to m10
+  stay. m10 passed on every run unless a send was tried and failed, so leaving
+  it out takes a PASS out of the score: a stable site moves from 90 (A) to 89
+  (B) on its third run or later and from 95 to 94 on its second; a first run
+  stays at 100.
+- **An `email` field is accepted and ignored.** An address, `5` or `null` returns
+  200, and no address appears in the result. designesy-mcp 1.13.10 and earlier
+  forward `email` when given; the field has no effect, so they keep working.
+- **`/monitor` has no email field.** It sends no address, and on load it removes
+  an address an earlier version saved in the browser (`designesy:monitor-email`).
+  Its formula reads `÷ scored checks` (it said `÷ 10`, which a SKIP made wrong),
+  m10 is labelled "Alert email", and the engine bar has no email field type.
+- The monitor contract (0.1.5) rewrites `alert_delivery`, the m10 row, the
+  scoring line and the email open question; `/changelog` has the entry, and
+  `/contracts/monitor` and `/monitor` follow.
+- `apps/site/.env.example` drops `MONITOR_EMAIL_ENABLED` and says the Resend key
+  is for waitlist notices only.
+
+### Fixed
+
+- **A malformed request is a 400 that names the field.** `app/lib/monitor-history.ts`
+  holds one bounds-only schema, which the route reads: types,
+  a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS,
+  FAIL, WARN or SKIP, string lengths and at most 1000 runs. It does not recompute
+  a run's score from its checks, so runs stored by an earlier engine stay valid.
+  A body over 512 KB is a 413. Before, `history: [{}]`, an `email` that was not a
+  string, a `url` that was not a string and a body of `null` crashed the route,
+  and a `score` that was not a number made the m03 and m07 deltas NaN. A
+  `history` that is not an array was read as no history; it is now a 400.
+
+### Tests
+
+- `check-mcp-accuracy`'s `monitor-no-mail` replaces `monitor-mail-off`: with
+  `MONITOR_EMAIL_ENABLED="true"`, a Resend key set and Resend's API answered
+  inside the harness, a run that raises an alert sends nothing; an `email` given
+  as an address, `5` or `null` returns 200 with no address in the result; m10 is
+  SKIP and the score leaves it out; each malformed request is a 400 naming its
+  field, and a 600 KB body is a 413. The route harness no longer stubs the
+  `resend` module.
+
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed
 that the address's owner had asked for it.
+Superseded by 0.1.5 above: the switch, the escaping and `monitor-mail-off`
+went with the sending.
 
 ### Security
 
@@ -18,8 +78,8 @@ that the address's owner had asked for it.
   `RESEND_API_KEY` is set. It is off unless set to exactly `true`. With it
   off, a request that names an email and raises an alert gets
   `emailAlert.off: true` and no mail, and the per-hour cooldown is not
-  touched. Setting the switch alone brings back the old sending, with the
-  HTML escaped, so it stays unset until recipients can opt in.
+  touched. Setting the switch alone brought back the old sending, with the
+  HTML escaped; 0.1.5 removes the sending, so no setting does now.
 - **Every value the alert email's HTML interpolates is escaped.** The host,
   the grade, both scores, the alert texts and the URL pass through
   `escapeHtml`.
