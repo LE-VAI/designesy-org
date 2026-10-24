@@ -27,7 +27,7 @@ export const metadata: Metadata = pageMeta({
     built and not yet hosted. The review verdict is the chip's to state. */
 // A confirmed fact takes the check: a shipped site, or a verified score
 // whose page links the public re-run that proves it (no "verified"
-// without proof; both verified studies link /score?url=<site>). Anything
+// without proof; the verified study links /score?url=<site>). Anything
 // else is plain words, with no glyph and no dot.
 function lampFor(cs: CaseStudy): 'done' | 'none' {
   if (cs.status === 'Verified · public' || cs.status === 'Shipped · live') return 'done';
@@ -43,8 +43,8 @@ function toneFor(cs: CaseStudy): 'pass' | 'warn' | 'neutral' {
 
 /** The readout: the score move where one was measured, else the study's
     metric. The chip above it states the grade, so a metric that opens with
-    the same grade and score drops that segment (row 05 read "A · 93.2" over
-    "A 93.2 · 19 pass / ..."). */
+    the same grade and score drops that segment (a chip reading "A · 93.2"
+    once sat over "A 93.2 · 19 pass / ..."). */
 function readoutFor(cs: CaseStudy): string {
   if (cs.beforeScore != null && cs.afterScore != null) {
     const delta = (cs.afterScore - cs.beforeScore).toFixed(1);

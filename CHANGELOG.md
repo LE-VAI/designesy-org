@@ -173,6 +173,68 @@ that the address's owner had asked for it.
   this site's `/api/monitor`, so it sends no mail while the switch is off. Its
   text, and the README on PyPI, follow in the next designesy-mcp release.
 
+**The public leaderboard is withdrawn** (the site; decided 2026-10-23). With
+this change, the site's pages and APIs publish no ranked list of sites and no
+stored grade, score or rank for any other site. A URL scored on demand still
+gets its own result (Not changed, below). designesy.org's own score stays as
+a dated reference (measured 2026-10-19), with no rank.
+
+### Removed (leaderboard withdrawal)
+
+- The leaderboard page and its submit form, the framework evaluation pages,
+  the state-of-compliance report, the `/blog` routes (they redirected to four
+  posts on dev.to, which are not part of this change), and one third-party
+  case study under `/work`, with their social images. Their URLs redirect
+  (308): `/leaderboard`, `/frameworks`, `/state-of-compliance` and `/blog`,
+  and every path under them, to `/methodology`, and the case study to
+  `/work`. Their `.md` twins redirect to `/methodology.md` and `/work.md`.
+- `/api/leaderboard/submit` and `/api/cron/rescore`.
+- The scheduled re-score. `rescore-leaderboard.yml` runs only when started by
+  hand, the Vercel cron is gone, and the daily freshness workflow is deleted.
+- Every row but designesy.org's from the seed, the batch data and the
+  snapshot.
+- From the home page: the cohort strip (other sites' scores and the lowest
+  score) and "rescored weekly".
+- From `/methodology`: the cohort figure, the site counts under each grade
+  band, the rank-bounds study, the per-site version-diff table and its named
+  largest rise and fall, the rank-move counts in the sensitivity study, the
+  names of sites a study left out, the data exports and the leaderboard
+  button.
+- The framework evaluations entry in `/open`, `open.json`, `llms.txt`,
+  `llms-full.txt` and `/.well-known/agent.json`, and its spoken abstract.
+- The Proof pane on one platform score landing, which showed a third-party
+  case study's grade.
+- `leaderboard-findings.gif`, which no page linked.
+
+### Changed (leaderboard withdrawal)
+
+- `/api/leaderboard` and `/api/leaderboard.csv` answer `410 Gone`. The reply
+  says the leaderboard has been withdrawn and points to
+  `/api/badge?site=designesy.org`. CORS is unchanged.
+- `/api/badge?site=` answers for designesy.org only. Any other host gets the
+  reply an unknown host got before, whose message now reads "not listed" (it
+  said "not on the leaderboard").
+- The `/brand` data specimen shows designesy.org's own reading, labelled
+  self-scored.
+- `/docs` prints the date of designesy.org's own reading beside it.
+- One `/changelog` entry said, in the present tense, that the leaderboard
+  shows new scores from its next re-score. It now says it showed them.
+- `/benchmarks`, `/maturity` and `/score` link to `/score` or `/methodology`
+  where they linked to the leaderboard. The independence firewall on
+  `/pricing` and `/pricing/review` no longer mentions leaderboard placement.
+- The note under the pair on `/score/contract` compares the baseline with the
+  URL score at `/score`, and so does the published formula's baseline note.
+- The README badges read `/api/badge?site=designesy.org` and link to the
+  score report for designesy.org.
+
+### Not changed (leaderboard withdrawal)
+
+- Scoring any URL on demand: `/score`, `/score/report`, `/api/score`,
+  `/api/badge?url=`, `/compare` and the MCP tools.
+- The engine, the contract and every check. No score moves.
+- The earlier entries in this changelog, which record the leaderboard as it
+  was.
+
 ## [1.13.10] — 2026-10-21
 
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the

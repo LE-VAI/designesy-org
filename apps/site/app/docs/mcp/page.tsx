@@ -25,7 +25,7 @@ export const metadata: Metadata = pageMeta({
 const ENDPOINT = 'https://www.designesy.org/api/mcp';
 
 // The contract-score card reads designesy.org's own reading from
-// self-report.json, which the weekly re-score writes from the live engine
+// self-report.json, which a hand-run re-score writes from the live engine
 // (scripts/rescore-leaderboard.mjs), in the same run that records the engine
 // version in seed.ts. It used to print every scored check as PASS, derived
 // from the registry, while the engine returned 40 PASS and 1 WARN.

@@ -1,13 +1,14 @@
-// The scored cohort, derived once from the leaderboard seed, for every data
-// surface (leaderboard, state of compliance, framework evaluations,
-// methodology). Those pages used to derive the same numbers separately, and
-// some had frozen them in prose ("Material 3 scores 59/F" while the seed said
-// 67.6/D). Anything a page states about the cohort comes from here.
+// The scored cohort, derived once from the seed. The public leaderboard and
+// the pages built on it (state of compliance, framework evaluations) are
+// withdrawn (decided 2026-10-23), and the seed now holds the designesy.org
+// row alone, so this module serves that self row, the category order and the grade
+// helpers to /methodology, /benchmarks and the home page's category rack.
+// Anything a page states about a scored site comes from here.
 //
-// Two dates, because there are two sources: the composite scores are re-run
-// weekly (seed.ts, LEADERBOARD_LAST_SCORED); the per-category breakdowns come
-// from one batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both
-// says both.
+// Two dates, because there are two sources: the composite score is dated by
+// seed.ts (LEADERBOARD_LAST_SCORED); the per-category breakdowns come from one
+// batch run (batch-data.ts, BATCH_RUN_DATE). A figure that uses both says
+// both.
 
 import {
   SEED,
@@ -237,8 +238,8 @@ export function categoryStats(key: string): { mean: number | null; scored: numbe
   };
 }
 
-/** "designesy.org (scored by its own engine), X and GitHub Primer": the sites
-    at one grade, named as the leaderboard names them. */
+/** "designesy.org (scored by its own engine), A and B": the sites at one
+    grade, named as the seed names them. */
 export function namesAt(grade: Grade): string {
   const names = COHORT.filter((s) => s.grade === grade).map((s) =>
     s.self ? `${s.host} (scored by its own engine)` : s.name,
