@@ -11,7 +11,7 @@ git clone https://github.com/LE-VAI/designesy-org.git
 npm install ./designesy-org/packages/vai-motion
 ```
 
-To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173.
+To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173. `npm test` runs the timing and easing tests (Node's built-in test runner, no dependencies).
 
 ## Why principles, not components
 
@@ -48,7 +48,7 @@ No other motion library tiers reduced motion as a first-class API. CSS-only cons
 
 ## Usage
 
-### JS (zero dependencies, WAAPI-driven)
+### JS (zero dependencies, requestAnimationFrame-driven)
 
 ```js
 import { waveformTrace, fieldBreath, markSettle, blockSettle, grainShift } from '@vai/motion';
@@ -68,6 +68,10 @@ await blockSettle.settleAll(document.querySelectorAll('.card'));
 // Shift ambient grain over a surface
 grainShift.apply(document.querySelector('.stage'));
 ```
+
+`settleAll` starts block i at `i × stagger` ms (80 by default) and resolves when the last block lands, so three blocks at 600ms take about 760ms. Under reduced motion all blocks settle at once, in 200ms, as they do in the CSS layer.
+
+`ease` takes `cubic-bezier(x1, y1, x2, y2)`, one of the CSS keywords `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or a function of t. Any other value throws a `TypeError`. There is no fallback curve, so a typo cannot quietly run a curve you did not choose.
 
 ### CSS-only (classes, keyframes, tiered media queries)
 
