@@ -249,13 +249,13 @@ export default function PricingPage() {
               <p className="pricing-firewall-label">Independence firewall</p>
               <p className="pricing-firewall-text">
                 <strong>
-                  Designesy does not accept payment for scores, methodology
-                  changes, or leaderboard placement.
+                  Designesy does not accept payment for scores or methodology
+                  changes.
                 </strong>{' '}
                 Every score is computed by the same deterministic {ENGINE_CHECK_COUNT}-check engine
                 against the same published contract. Enterprise customers pay for
-                private scoring on their own infrastructure, never for public
-                leaderboard placement. If a scored site is also an
+                private scoring on their own infrastructure, never for a public
+                score. If a scored site is also an
                 enterprise customer, their public score is computed identically to
                 any non-customer&rsquo;s score.
               </p>
@@ -267,10 +267,6 @@ export default function PricingPage() {
               </div>
               <div>
                 <dt>Methodology</dt>
-                <dd>Not for sale</dd>
-              </div>
-              <div>
-                <dt>Placement</dt>
                 <dd>Not for sale</dd>
               </div>
             </dl>

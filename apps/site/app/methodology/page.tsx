@@ -6,8 +6,10 @@
 // paint.
 //
 // Sources: the check registry and weights (lib/check-definitions, which the
-// engine route mirrors), the cohort (lib/data/cohort), and the four validation
-// reports in scripts/, each shown with the date it was generated. The CHECKS
+// engine route mirrors), the category order and grade bands (lib/data/cohort),
+// and three validation reports in scripts/, each shown with the date it was
+// generated. With the public leaderboard withdrawn (decided 2026-10-23) the page
+// names no scored site: the studies show aggregate figures only. The CHECKS
 // prose below documents the registry's checks and is held to it: a check
 // added, removed or moved to another category without the prose following
 // stops the build.
@@ -36,25 +38,12 @@ import {
 import { EngineHead } from '../lib/engine/engine-page';
 import { GradeScale } from '../lib/engine/instrument';
 import { display } from '../lib/engine/types';
-import {
-  COHORT,
-  COHORT_STATS,
-  GRADE_COUNTS,
-  GRADES,
-  SCORES_DATE,
-  CATEGORY_LABELS,
-  CATEGORY_ORDER,
-  WEIGHT_TOTAL,
-  fmt,
-  hostOf,
-} from '../lib/data/cohort';
+import { GRADES, CATEGORY_LABELS, CATEGORY_ORDER, WEIGHT_TOTAL, fmt } from '../lib/data/cohort';
 import { DataFigure, DataTable } from '../lib/data/figure';
 import { unbroken } from '../lib/data/unbroken';
-import { CohortStrip } from '../lib/data/strip';
-import { BarList, RangeList } from '../lib/data/bars';
+import { BarList } from '../lib/data/bars';
 import { OnThisPage } from '../lib/data/on-this-page';
 import SENSITIVITY from '../../scripts/sensitivity-report.json';
-import RANK_BOUNDS from '../../scripts/rank-bounds-report.json';
 import SCORE_DIFF from '../../scripts/score-diff-report.json';
 import BLIND from '../../scripts/blind-comparison-report.json';
 
@@ -309,7 +298,7 @@ const CHECKS: CheckDef[] = [
     id: 'v28',
     item: 'Reading width 45-75ch on prose containers',
     category: 'cadence',
-    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose: paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45 to 75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it, which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two leaderboard sites (X, GitHub Primer) moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed rather than applied silently.',
+    how: 'Parses each CSS rule and keeps its selector alongside its ch value, then asks whether that selector actually targets prose: paragraph-like elements (p, article, li, blockquote) or prose-named classes (.prose, .lede, .measure, .note). Rules on structural selectors (grid, table, row, flex, pre, code) are excluded, because a measure on a grid narrows one track rather than fixing line length. PASS requires a prose-targeting rule in 45 to 75ch (66ch ideal). WARN covers three distinct states, reported separately: ch rules exist but none reach prose; prose rules exist but all are outside the band; or no ch rule at all. Lines longer than 75ch are hard to track; shorter than 45ch feels choppy. Method change 2026-09-17: v28 previously scanned the stylesheet for any max-width in ch units and passed if one value was in range, without checking which selector carried it, which let this site measure 108.6ch on three pages while scoring zero v28 warnings. The check now requires the measure to reach prose. Two other scored sites moved PASS to WARN under the corrected method, about 0.6 points each; recorded because a method change that moves published grades should be disclosed rather than applied silently.',
   },
   {
     id: 'x01',
@@ -505,24 +494,27 @@ const JUDGMENT_CALLS = ([
   .sort((a, b) => b.flips - a.flips);
 const [TOP_CALL, ...NEXT_CALLS] = JUDGMENT_CALLS;
 
-type RankRow = { url: string; baselineRank: number; bestRank: number; worstRank: number; bandWidth: number };
-const RANKS = [...(RANK_BOUNDS.perSite as RankRow[])].sort((a, b) => a.baselineRank - b.baselineRank);
-const WIDEST = [...RANKS].sort((a, b) => b.bandWidth - a.bandWidth)[0];
-
 type DiffRow = { url: string; v030: { score: number; grade: string }; v040: { score: number; grade: string }; delta: number };
-// A site the engine could not read on a run is an error row in that report:
-// named under the table, never scored (scripts/live-score.mjs).
+// A site the engine could not read on a run is an error row in that report,
+// never scored (scripts/live-score.mjs). The page counts those rows and names
+// no site: it shows each study's aggregate figures only.
 const DIFF_ALL = SCORE_DIFF.rows as unknown as (DiffRow | { url: string; error: string })[];
 const DIFF_ROWS = DIFF_ALL.filter((r): r is DiffRow => !('error' in r));
 const DIFF_UNREAD = DIFF_ALL.filter((r) => 'error' in r);
-/** " Left out, the engine could not read them on that run: a, b." or "". */
-const unread = (list: readonly { url: string }[] | undefined) =>
-  list && list.length ? ` Left out, the engine could not read them on that run: ${list.map((x) => hostOf(x.url)).join(', ')}.` : '';
+const NUMBER_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+/** " Three sites are left out: the engine could not read them on that run." or "". */
+const unread = (list: readonly unknown[] | undefined) => {
+  const n = list?.length ?? 0;
+  if (n === 0) return '';
+  return n === 1
+    ? ' One site is left out: the engine could not read it on that run.'
+    : ` ${NUMBER_WORDS[n] ?? String(n)} sites are left out: the engine could not read them on that run.`;
+};
 const ORDER = 'FDCBA';
 const DIFF_UP = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) > ORDER.indexOf(r.v030.grade)).length;
 const DIFF_DOWN = DIFF_ROWS.filter((r) => ORDER.indexOf(r.v040.grade) < ORDER.indexOf(r.v030.grade)).length;
-const DIFF_MAX_UP = [...DIFF_ROWS].sort((a, b) => b.delta - a.delta)[0];
-const DIFF_MAX_DOWN = [...DIFF_ROWS].sort((a, b) => a.delta - b.delta)[0];
+const DIFF_MAX_UP = Math.max(...DIFF_ROWS.map((r) => r.delta));
+const DIFF_MAX_DOWN = Math.min(...DIFF_ROWS.map((r) => r.delta));
 
 const K = BLIND.kappa;
 const AXE = (BLIND.method.match(/axe-core [\d.]+/) ?? ['axe-core'])[0];
@@ -569,7 +561,6 @@ const TOC = [
   { id: 'scoring-math', label: 'How a score is made' },
   { id: 'category-weights', label: 'Category weights' },
   { id: 'grade-bands', label: 'Grade bands' },
-  { id: 'score-distribution', label: 'The cohort today' },
   { id: 'a11y-floor', label: 'Accessibility floor' },
   { id: 'anti-slop', label: 'Anti-slop deduction' },
   { id: 'originality-lift', label: 'Originality lift' },
@@ -578,7 +569,6 @@ const TOC = [
   { id: 'what-engine-skips', label: 'What it skips' },
   { id: 'validation', label: 'How the method is tested' },
   { id: 'checks', label: 'Every check' },
-  { id: 'exports', label: 'Data exports' },
 ];
 
 export default function MethodologyPage() {
@@ -597,9 +587,6 @@ export default function MethodologyPage() {
           <div className="dx-actions">
             <Link className="button primary" href="/score" data-cuelume-press>
               Score a site
-            </Link>
-            <Link className="button ghost" href="/leaderboard" data-cuelume-press>
-              View the leaderboard
             </Link>
           </div>
           <AgentActions mdPath="/methodology.md" label="the methodology page" />
@@ -710,7 +697,7 @@ export default function MethodologyPage() {
                   </div>
                   <p className="dx-src">
                     round(… × 1000) / 10 keeps one decimal place: 95.2, never 95.2347. The per-category sub-scores use step 1
-                    only; they are the category profiles on the leaderboard.
+                    only.
                   </p>
                 </figure>
               </section>
@@ -778,43 +765,10 @@ export default function MethodologyPage() {
                         </span>
                         <span className="dx-band-range">{BAND_RANGE[g]}</span>
                       </dt>
-                      <dd>
-                        {BAND_NOTES[g]}{' '}
-                        <span className="dx-band-n">
-                          {GRADE_COUNTS[g]} of {COHORT_STATS.count} sites today.
-                        </span>
-                      </dd>
+                      <dd>{BAND_NOTES[g]}</dd>
                     </div>
                   ))}
                 </dl>
-              </section>
-
-              <section className="dx-sec" id="score-distribution" aria-labelledby="m-dist-h">
-                <h2 className="eg-h2" id="m-dist-h">
-                  The cohort today
-                </h2>
-                <DataFigure
-                  id="m-dist"
-                  title={`All ${COHORT_STATS.count} leaderboard sites on the grade scale`}
-                  note={`Median ${fmt(COHORT_STATS.median)}, mean ${fmt(COHORT_STATS.mean)}, from ${fmt(COHORT_STATS.min)} to ${fmt(COHORT_STATS.max)}. ${GRADE_COUNTS.D + GRADE_COUNTS.F} of ${COHORT_STATS.count} land in D or F.`}
-                  source={`Weekly run of ${SCORES_DATE}.`}
-                  tableLabel="Every site's score"
-                  table={
-                    <DataTable
-                      caption={`Composite score of every leaderboard site, weekly run of ${SCORES_DATE}.`}
-                      head={['Site', 'Rank', 'Grade', 'Score']}
-                      numeric={[1, 3]}
-                      rows={COHORT.map((s) => [s.name, s.rank ?? 'not ranked', s.grade, fmt(s.score)])}
-                    />
-                  }
-                >
-                  <CohortStrip
-                    sites={COHORT.map((s) => ({ slug: s.slug, name: s.name, score: s.score, grade: s.grade, rank: s.rank, self: s.self, held: s.unreachable, heldLabel: s.staleLabel }))}
-                    median={COHORT_STATS.median}
-                    label={`Composite scores of ${COHORT_STATS.count} sites from 40 to 100: ${GRADES.map((g) => `${g} ${GRADE_COUNTS[g]}`).join(', ')}; median ${fmt(COHORT_STATS.median)}.`}
-                    idle={<span className="dx-readout-meta">point at a dot, or tap it, to read the site</span>}
-                  />
-                </DataFigure>
               </section>
 
               <section className="dx-sec" id="a11y-floor" aria-labelledby="m-floor-h">
@@ -936,7 +890,7 @@ export default function MethodologyPage() {
                     <dd>
                       Inline style blocks and linked stylesheets, the <code>:root</code> custom properties, and the served HTML. A
                       design system can document a rich token taxonomy in Storybook and still score low if its public surface
-                      exposes none of it at <code>:root</code>; that gap is what the leaderboard shows.
+                      exposes none of it at <code>:root</code>; that gap is what the score shows.
                     </dd>
                   </div>
                   <div>
@@ -985,8 +939,8 @@ export default function MethodologyPage() {
                   How the method is tested
                 </h2>
                 <p className="dx-lead">
-                  Four studies test the method against itself and against an outside instrument. Each figure below is read from the
-                  study&apos;s own report file, dated, and each report regenerates with one command.
+                  Three studies test the method against itself and against an outside instrument. Each figure below is read from
+                  the study&apos;s own report file, with the date it was generated.
                 </p>
 
                 <details className="dx-study" id="sensitivity">
@@ -1000,13 +954,13 @@ export default function MethodologyPage() {
                   <div className="dx-study-body">
                     <div className="dx-prose">
                       <p>
-                        Every leaderboard site&apos;s real check statuses are recomputed under {KNOBS.length} changes to the method:
-                        weight scaling, the WARN credit, the slop and originality layers, the bands, the floor and ceilings, and each
-                        category favoured one at a time.
+                        The real check statuses of the {SENSITIVITY.sites} sites in the study are recomputed under {KNOBS.length}{' '}
+                        changes to the method: weight scaling, the WARN credit, the slop and originality layers, the bands, the floor
+                        and ceilings, and each category favoured one at a time.
                       </p>
                       <p>
                         <strong>Uniform weight changes do nothing.</strong> Scaling every weight by 10 or 20 per cent in either
-                        direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} and no rank:
+                        direction moves no score by more than {fmt(Math.max(...UNIFORM.map((k) => k.maxScoreDelta)))} points:
                         the ratio cancels uniform scaling. <strong>The judgment calls carry the sensitivity:</strong> {TOP_CALL?.name}{' '}
                         ({TOP_CALL?.flips} grades), then {NEXT_CALLS.slice(0, 2).map((c) => `${c.name} (${c.flips})`).join(' and ')}. Favouring any single category by half again moves at most {OAT_MAX_FLIPS} grades
                         and {fmt(OAT_MAX_DELTA)} points.
@@ -1016,14 +970,14 @@ export default function MethodologyPage() {
                       id="m-sens"
                       title="Grades that change under each perturbation"
                       note={`The ${MOVING.length} perturbations that change any grade, most first; the other ${STILL} change none.`}
-                      source={`sensitivity-report.json, generated ${day(SENSITIVITY.generatedAt)} for contract ${SENSITIVITY.contractVersion}.${unread(SENSITIVITY.excluded)} Regenerate: node scripts/sensitivity-analysis.mjs.`}
+                      source={`sensitivity-report.json, generated ${day(SENSITIVITY.generatedAt)} for contract ${SENSITIVITY.contractVersion}.${unread(SENSITIVITY.excluded)}`}
                       table={
                         <DataTable
-                          caption={`All ${KNOBS.length} perturbations: grades changed, rank positions moved, largest score change.`}
-                          head={['Perturbation', 'Grades changed', 'Rank moves', 'Largest change']}
-                          numeric={[1, 2, 3]}
-                          opt={[3]}
-                          rows={KNOBS.map((k) => [k.label, k.gradeChanges, k.rankPositionsMoved, fmt(k.maxScoreDelta)])}
+                          caption={`All ${KNOBS.length} perturbations: grades changed and largest score change.`}
+                          head={['Perturbation', 'Grades changed', 'Largest change']}
+                          numeric={[1, 2]}
+                          opt={[2]}
+                          rows={KNOBS.map((k) => [k.label, k.gradeChanges, fmt(k.maxScoreDelta)])}
                         />
                       }
                     >
@@ -1033,7 +987,6 @@ export default function MethodologyPage() {
                         bars={MOVING.map((k) => ({
                           key: k.key,
                           label: k.label,
-                          meta: `${k.rankPositionsMoved} rank moves`,
                           value: k.gradeChanges,
                           display: `${k.gradeChanges} of ${SENSITIVITY.sites}`,
                           tone: 'plain' as const,
@@ -1055,31 +1008,17 @@ export default function MethodologyPage() {
                     <div className="dx-prose">
                       <p>
                         A method release should never be a silent regression. Each contract version is diffed: the same check
-                        statuses scored under the previous version&apos;s profile, rebuilt from the changelog, and the change
-                        reported per site. From v0.3.0 to v0.4.0, {SCORE_DIFF.summary.gradeFlips} grades moved ({DIFF_UP} up,{' '}
-                        {DIFF_DOWN} down); the largest rise was {hostOf(DIFF_MAX_UP.url)} at +{fmt(DIFF_MAX_UP.delta)}, the largest
-                        fall {hostOf(DIFF_MAX_DOWN.url)} at {fmt(DIFF_MAX_DOWN.delta)}.
+                        statuses scored under the previous version&apos;s profile, rebuilt from the changelog. From v0.3.0 to v0.4.0,
+                        across {DIFF_ROWS.length} sites, {SCORE_DIFF.summary.gradeFlips} grades moved ({DIFF_UP} up, {DIFF_DOWN}{' '}
+                        down). The largest rise was +{fmt(DIFF_MAX_UP)} points, the largest fall {fmt(DIFF_MAX_DOWN)}.
                       </p>
                       <p>
                         Every score response pins its <code>contractVersion</code>. Before adopting a new version in CI, run the diff:
                         if a grade moves, it says why.
                       </p>
                     </div>
-                    <div className="dx-table-box">
-                      <DataTable
-                        caption={`Score under v0.3.0 and v0.4.0 for each site, generated ${day(SCORE_DIFF.generatedAt)}.`}
-                        head={['Site', 'v0.3.0', 'v0.4.0', 'Change']}
-                        numeric={[1, 2, 3]}
-                        rows={DIFF_ROWS.map((r) => [
-                          hostOf(r.url),
-                          `${fmt(r.v030.score)} ${r.v030.grade}`,
-                          `${fmt(r.v040.score)} ${r.v040.grade}`,
-                          `${r.delta > 0 ? '+' : r.delta < 0 ? '−' : ''}${fmt(Math.abs(r.delta))}`,
-                        ])}
-                      />
-                    </div>
                     <p className="dx-src">
-                      score-diff-report.json, generated {day(SCORE_DIFF.generatedAt)}.{unread(DIFF_UNREAD)} Regenerate: node scripts/score-diff.mjs --all.
+                      score-diff-report.json, generated {day(SCORE_DIFF.generatedAt)}.{unread(DIFF_UNREAD)}
                     </p>
                   </div>
                 </details>
@@ -1117,67 +1056,8 @@ export default function MethodologyPage() {
                       />
                     </div>
                     <p className="dx-src">
-                      blind-comparison-report.json, generated {day(BLIND.generatedAt)}.
-                      {BLIND.excluded.length
-                        ? ` Left out, with no verdict from one of the two raters: ${BLIND.excluded.map((x) => hostOf(x.url)).join(', ')}.`
-                        : ''}
+                      blind-comparison-report.json, generated {day(BLIND.generatedAt)}.{unread(BLIND.excluded)}
                     </p>
-                  </div>
-                </details>
-
-                <details className="dx-study" id="rank-bounds">
-                  <summary>
-                    <span className="dx-study-title">Rank bounds</span>
-                    <span className="dx-study-line">
-                      {RANK_BOUNDS.scenarios} weight scenarios; the widest band is {WIDEST.bandWidth} places
-                    </span>
-                  </summary>
-                  <div className="dx-study-body">
-                    <div className="dx-prose">
-                      <p>
-                        After sensitivity comes the adversarial test: can a chosen weighting put a site on top? (An analysis of the
-                        OECD Better Life Index found 19 of 36 countries could be ranked first.) Every site is recomputed under{' '}
-                        {RANK_BOUNDS.scenarios} weightings (the published one, uniform, and each category doubled or halved) and its
-                        best and worst rank reported.
-                      </p>
-                      <p>
-                        On {day(RANK_BOUNDS.generatedAt)},{' '}
-                        {RANK_BOUNDS.top5Fragile.length === 0
-                          ? 'the top five held under every scenario'
-                          : `${RANK_BOUNDS.top5Fragile.length} of the top five could be pushed out by some weighting`}. The widest band
-                        was {hostOf(WIDEST.url)}, ranks {WIDEST.bestRank} to {WIDEST.worstRank}. Ranks here are that run&apos;s, which
-                        can differ from today&apos;s leaderboard.
-                      </p>
-                    </div>
-                    <DataFigure
-                      id="m-ranks"
-                      title="Each site's rank band across the weight scenarios"
-                      note="The segment runs from the best rank to the worst any scenario gave; the dot is the published rank. Rank 1 is at the left."
-                      source={`rank-bounds-report.json, generated ${day(RANK_BOUNDS.generatedAt)}.${unread(RANK_BOUNDS.excluded)} Regenerate: node scripts/rank-bounds.mjs.`}
-                      table={
-                        <DataTable
-                          caption={`Best, published and worst rank per site across ${RANK_BOUNDS.scenarios} weight scenarios.`}
-                          head={['Site', 'Best', 'Published', 'Worst', 'Band']}
-                          numeric={[1, 2, 3, 4]}
-                          opt={[4]}
-                          rows={RANKS.map((r) => [hostOf(r.url), r.bestRank, r.baselineRank, r.worstRank, r.bandWidth])}
-                        />
-                      }
-                    >
-                      <RangeList
-                        min={1}
-                        max={RANK_BOUNDS.sites}
-                        label={`Rank bands across ${RANK_BOUNDS.scenarios} weight scenarios for ${RANK_BOUNDS.sites} sites; the widest is ${hostOf(WIDEST.url)} from ${WIDEST.bestRank} to ${WIDEST.worstRank}.`}
-                        ranges={RANKS.map((r) => ({
-                          key: r.url,
-                          label: hostOf(r.url),
-                          lo: r.bestRank,
-                          hi: r.worstRank,
-                          at: r.baselineRank,
-                          display: r.bestRank === r.worstRank ? `${r.bestRank}` : `${r.bestRank} to ${r.worstRank}`,
-                        }))}
-                      />
-                    </DataFigure>
                   </div>
                 </details>
               </section>
@@ -1220,30 +1100,6 @@ export default function MethodologyPage() {
                     </div>
                   </details>
                 ))}
-              </section>
-
-              <section className="dx-sec" id="exports" aria-labelledby="m-exp-h">
-                <h2 className="eg-h2" id="m-exp-h">
-                  Data exports
-                </h2>
-                <dl className="dx-defs">
-                  <div>
-                    <dt>
-                      <a href="/api/leaderboard">/api/leaderboard</a>
-                    </dt>
-                    <dd>
-                      JSON with each site&apos;s category scores, its status (current and ranked, or stale: last scored on an
-                      earlier run because the latest could not re-score it), its relationship to Designesy (operator or
-                      competitor) with a disclosure, and the address for disputes. CORS-enabled.
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>
-                      <a href="/api/leaderboard.csv">/api/leaderboard.csv</a>
-                    </dt>
-                    <dd>RFC 4180 CSV with a header row, for spreadsheets. The same status, relationship and disclosure columns.</dd>
-                  </div>
-                </dl>
                 <p className="dx-src">
                   Contract {CONTRACT_VERSION} · engine {ENGINE_VERSION} · {ENGINE_CHECK_COUNT} checks in{' '}
                   {Object.keys(CATEGORY_WEIGHTS).length} categories · 12 slop rules, up to −20 · originality, up to +8 · {CEILINGS.length} hard-fail

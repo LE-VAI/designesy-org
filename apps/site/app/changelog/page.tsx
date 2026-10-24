@@ -744,7 +744,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'v27 found the word input, textarea or select and then the next rule, across a closing brace, so "select" in user-select: none made the following rule a field rule and a 12px caption failed the page. It now reads each font-size against the selector of the rule it sits in. A class that names a field still counts, and select { font-size: 14px } still fails. v37 is renamed "DESIGN.md spec-layer validation (DESIGN.md format lint)", and its fix text names the format\'s linter; the install and run commands are unchanged.',
     checks: ['v27', 'v37'],
     rationale:
-      'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard shows the new scores from its next weekly re-score. This site stays 100 A, and a real field under 16px still fails.',
+      'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard showed the new scores from its next re-score. This site stays 100 A, and a real field under 16px still fails.',
     source: 'engine 1.4.1 entry in CHANGELOG.md',
   },
 

@@ -46,7 +46,7 @@ pip install designesy-mcp && designesy-mcp
     post-comment: true   # posts a summary comment on PRs (default)
 ```
 
-The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), a GitHub Action, and a live leaderboard at [designesy.org/leaderboard](https://www.designesy.org/leaderboard).
+The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI with no required dependencies (`npx @designesy/score`), and a GitHub Action.
 
 **Designesy Contract Check** is a GitHub Action that scores any URL against a **45-check design-system contract** (tokens, motion, accessibility, cadence, takt, poise, identity, interaction, performance, responsive, semantic, security, spec, copywriting) and fails your CI workflow when the score or grade drops below your threshold. No LLM in the loop: every check is a published, deterministic rule, so the same page gives the same verdicts.
 
@@ -97,16 +97,15 @@ The same 45-check engine powers an MCP server (17 tools for AI agents), a CLI wi
 - **Site:** [designesy.org](https://www.designesy.org)
 - **MCP endpoint:** [designesy.org/api/mcp](https://www.designesy.org/api/mcp) (Streamable HTTP, no auth)
 - **Score a site:** [designesy.org/score](https://www.designesy.org/score)
-- **Leaderboard:** [designesy.org/leaderboard](https://www.designesy.org/leaderboard) — 30 sites scored
 - **Methodology:** [designesy.org/methodology](https://www.designesy.org/methodology) — full 45-check scoring methodology
 - **Contract:** [designesy.org/contracts/design-system](https://www.designesy.org/contracts/design-system)
 - **Machine export:** [designesy.org/contracts/design-system.json](https://www.designesy.org/contracts/design-system.json)
 
 ## Contract verification
 
-[![Designesy contract score](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org)](https://www.designesy.org/leaderboard) [![Last scored](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fleaderboard&query=%24.lastScored&label=last%20scored&color=blue)](https://www.designesy.org/leaderboard)
+[![Designesy contract score](https://img.shields.io/endpoint?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org)](https://www.designesy.org/score/report?url=designesy.org) [![Last scored](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fwww.designesy.org%2Fapi%2Fbadge%3Fsite%3Ddesignesy.org&query=%24.lastScored&label=last%20scored&color=blue)](https://www.designesy.org/score/report?url=designesy.org)
 
-The live site is verified against the design system contract — 45 deterministic checks with provenance back to tokens. Both badges read the live leaderboard, which the weekly re-score refreshes, so the score here cannot drift from the engine; the per-check result is on the [score page](https://www.designesy.org/score). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
+The live site is verified against the design system contract — 45 deterministic checks with provenance back to tokens. Both badges read the site's own recorded score from `/api/badge?site=designesy.org`, which carries the date it was measured; for a fresh reading with every check, [score designesy.org now](https://www.designesy.org/score/report?url=designesy.org). See the [methodology page](https://www.designesy.org/methodology) for how the score is computed.
 
 ## The contract
 

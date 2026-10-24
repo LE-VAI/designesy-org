@@ -77,9 +77,7 @@ function axeSource() {
 
 /** Routes to sweep when no list is given. Same derivation as visual-floor.js:
  *  MARKDOWN_ROUTES is the site's own single source of truth for "pages that
- *  matter", plus the force-dynamic routes that render real pages. The
- *  [slug] framework pages are data-driven rows of one template; the /frameworks
- *  index covers the family, so they are not enumerated. */
+ *  matter", plus the force-dynamic routes that render real pages. */
 function routesFromConfig() {
   const fs = require('node:fs');
   const path = require('node:path');

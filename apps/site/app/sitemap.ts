@@ -102,27 +102,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
     },
     {
-      url: `${BASE}/leaderboard`,
-      lastModified: NOW,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE}/state-of-compliance`,
-      lastModified: NOW,
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
       url: `${BASE}/maturity`,
       lastModified: NOW,
       changeFrequency: 'monthly',
-      priority: 0.85,
-    },
-    {
-      url: `${BASE}/frameworks`,
-      lastModified: NOW,
-      changeFrequency: 'weekly',
       priority: 0.85,
     },
     {
@@ -504,12 +486,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${BASE}/work/lovable-dev`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
       url: `${BASE}/acoustic-tokens`,
       lastModified: NOW,
       changeFrequency: 'monthly',
@@ -574,36 +550,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: NOW,
       changeFrequency: 'monthly',
       priority: 0.7,
-    },
-    {
-      url: `${BASE}/blog`,
-      lastModified: NOW,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE}/blog/scoring-30-sites`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.75,
-    },
-    {
-      url: `${BASE}/blog/scoring-11-fintech`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.75,
-    },
-    {
-      url: `${BASE}/blog/scoring-16-devtools`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.75,
-    },
-    {
-      url: `${BASE}/blog/scoring-57-synthesis`,
-      lastModified: NOW,
-      changeFrequency: 'monthly',
-      priority: 0.75,
     },
     {
       url: `${BASE}/export/dtcg`,

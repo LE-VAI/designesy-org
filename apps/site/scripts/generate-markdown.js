@@ -54,16 +54,13 @@ const OUT_DIR = path.join(APP_DIR, 'public');
  * negotiatedResponse helper — generating a second markdown copy for them here
  * would create two markdown paths that could disagree.
  *
- * /leaderboard is here because it is the single worst agent-facing page on the
- * site: 603KB of HTML for 10.8KB of markdown, and a plain GET spends 57% of that
- * on the RSC payload and another 35% on table markup — the same 30 rows shipped
- * twice, once as HTML and once as a serialized React tree. An agent that
- * truncates at 100KB reads less than half its prose. The markdown carries the
- * whole cohort (all 30 sites, grades, scores, check counts, the COI disclosure
- * on the self-scored row) in a GFM table.
+ * A route removed from the site comes out of this list, next.config.ts and
+ * lib/site-meta.ts in the same change; next.config.ts redirects its old .md
+ * path (the leaderboard, frameworks, state-of-compliance and work/lovable-dev
+ * pages are withdrawn, decided 2026-10-23).
  *
- * Note the .md twin is a REPRESENTATION, not a replacement: the page's own
- * ranking logic, live re-score links and SVG fingerprints stay in the HTML.
+ * Note the .md twin is a REPRESENTATION, not a replacement: live re-score
+ * links and SVG fingerprints stay in the HTML.
  *
  * 'index' is the homepage. The key is 'index' because that is the literal file
  * Next emits (index.html -> index.md); its PUBLIC path is '/', and the header
@@ -76,7 +73,6 @@ const ROUTES = [
   'kits',
   'open',
   'benchmarks',
-  'leaderboard',
   'contracts',
   'contracts/design-system',
   'contracts/a11y',
@@ -93,7 +89,6 @@ const ROUTES = [
   'labs/cadence',
   'labs/acoustics',
   'docs/mcp',
-  'state-of-compliance',
   'changelog',
   'work/compile',
   'work/continuity',
@@ -109,7 +104,6 @@ const ROUTES = [
   'labs',
   'maturity',
   'continuity',
-  'frameworks',
   'work',
   'learn',
   'acoustic-tokens',
@@ -131,7 +125,6 @@ const ROUTES = [
   'score/v0',
   'spring-validator',
   'work/designesy-org',
-  'work/lovable-dev',
   'work/tile',
 ];
 
