@@ -196,8 +196,9 @@ jobs:
 
       # A response body stops at the cap its caller names while it is still
       # arriving, the caller's signal ends a read of a server that sends one
-      # byte a second, a reader's chunk holds only its own bytes, and the MCP
-      # tools still read a URL that answers (the real URL guard and MCP route
+      # byte a second, no read leaves a listener on that signal once it
+      # settles, a reader's chunk holds only its own bytes, and the MCP tools
+      # still read a URL that answers (the real URL guard and MCP route
       # against a local server).
       - name: Fetch bounds
         if: ${{ !cancelled() }}
