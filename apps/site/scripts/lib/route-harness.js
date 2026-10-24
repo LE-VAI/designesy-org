@@ -94,7 +94,6 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: 
         return async () => new Response('stub', { status: 501 });
       },
     },
-    resend: { Resend: class { constructor() { this.emails = { send: async () => ({ error: { message: 'stubbed' } }) }; } } },
     '@upstash/redis': { Redis: class {} },
     '@upstash/ratelimit': { Ratelimit: class {} },
   };

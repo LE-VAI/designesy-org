@@ -33,12 +33,13 @@ type MonitorResponse = {
   driftChecks?: Check[];
   monitorChecks?: Check[];
   alerts?: string[];
-  emailAlert?: { attempted: boolean; delivered: boolean; off?: boolean; recipient?: string; fromAddress?: string; error?: string };
   error?: string;
 };
 
 const STORAGE_KEY = 'designesy:monitor-history';
-const EMAIL_KEY = 'designesy:monitor-email';
+// Until monitor contract 0.1.5 this page kept the alert address here. Email
+// delivery was retired, so the page removes it.
+const RETIRED_EMAIL_KEY = 'designesy:monitor-email';
 const MAX_HISTORY = 50;
 
 function loadHistory(url: string): Snapshot[] {
@@ -107,30 +108,24 @@ function Sparkline({ scores }: { scores: number[] }) {
   );
 }
 
-// emailAlerts is false when the server has email alerts switched off
-// (lib/monitor-email): the email field is not shown and no address is sent.
 export function MonitorForm({
   initialUrl,
   registry,
   drift,
-  emailAlerts,
 }: {
   initialUrl: string;
   registry: RegistryView;
   drift: RegistryView;
-  emailAlerts: boolean;
 }) {
   const [url, setUrl] = useState(initialUrl);
-  const [email, setEmail] = useState('');
   const [history, setHistory] = useState<Snapshot[]>([]);
   const [watches, setWatches] = useState<ReturnType<typeof loadWatches>>([]);
-  const { phase, result, scanned, error, when: at, run } = useEngineRun<MonitorResponse>('/api/monitor', 'monitor engine');
+  const { phase, result, scanned, error, failure, when: at, run } = useEngineRun<MonitorResponse>('/api/monitor', 'monitor engine');
   const findings = useRef<FindingsHandle>(null);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(EMAIL_KEY);
-      if (saved) setEmail(saved);
+      localStorage.removeItem(RETIRED_EMAIL_KEY);
     } catch {
       /* storage refused */
     }
@@ -140,15 +135,9 @@ export function MonitorForm({
   const start = async (target: string) => {
     const u = normalizeUrl(target);
     if (!u) return;
-    const mail = emailAlerts ? email.trim() : '';
-    try {
-      if (mail) localStorage.setItem(EMAIL_KEY, mail);
-    } catch {
-      /* storage refused */
-    }
     const prior = loadHistory(u);
     setHistory(prior);
-    const data = await run(u, { url: u, history: prior, ...(mail ? { email: mail } : {}) });
+    const data = await run(u, { url: u, history: prior });
     if (data?.currentSnapshot) {
       const next = [...prior, data.currentSnapshot];
       saveHistory(u, next);
@@ -156,8 +145,8 @@ export function MonitorForm({
       setWatches(loadWatches());
     }
   };
-  // A shared monitor link only fills the field: a run stores history and, where
-  // email alerts are on, can send mail, so it waits for the visitor to press run.
+  // A shared monitor link only fills the field: a run stores history in this
+  // browser, so it waits for the visitor to press run.
 
   const clear = () => {
     try {
@@ -169,12 +158,18 @@ export function MonitorForm({
     setWatches(loadWatches());
   };
 
+  // The engine refuses a stored run outside its bounds (a 400 naming history,
+  // or a 413 for a body over 512 KB), and every later run of the URL sends the
+  // same runs, so the error offers to clear them.
+  const failedPath = typeof failure?.body?.path === 'string' ? failure.body.path : '';
+  const historyRefused =
+    phase === 'error' && history.length > 0 && (failure?.status === 413 || (failure?.status === 400 && failedPath.startsWith('history')));
+
   const outcomes = toOutcomes(result?.monitorChecks);
   const driftOutcomes = toOutcomes(result?.driftChecks);
   const host = scanned ? hostOf(scanned) : '';
   const scores = history.map((s) => s.score);
   const alerts = result?.alerts ?? [];
-  const mail = result?.emailAlert;
 
   const sideExtra =
     phase === 'done' && result ? (
@@ -187,19 +182,6 @@ export function MonitorForm({
                 <li key={i}>{display(a)}</li>
               ))}
             </ul>
-            {mail && (
-              <p className="eg-quiet">
-                {mail.delivered
-                  ? `Sent to ${mail.recipient}.`
-                  : mail.off
-                    ? 'Email alerts are off on this server: nothing was sent.'
-                    : mail.fromAddress === 'suppressed (cooldown)'
-                    ? 'Mail held back: the same alert went out within the hour.'
-                    : mail.attempted
-                      ? `Mail could not be sent: ${display(mail.error || 'no reason given')}.`
-                      : 'Add an email to get this by mail.'}
-              </p>
-            )}
           </div>
         )}
         {scores.length > 1 && (
@@ -220,15 +202,12 @@ export function MonitorForm({
       <EngineBar
         fields={[
           { value: url, onChange: setUrl, label: 'URL to watch for drift', placeholder: 'Any public URL, like stripe.com' },
-          ...(emailAlerts
-            ? [{ value: email, onChange: setEmail, label: 'Email for drift alerts, optional', placeholder: 'Email for alerts, optional', type: 'email' as const, optional: true }]
-            : []),
         ]}
         onSubmit={() => start(url)}
         busy={phase === 'running'}
         go="Run a check"
         goBusy="Checking"
-        note={emailAlerts ? 'History stays in this browser. The email is used for drift alerts and nothing else.' : 'History stays in this browser.'}
+        note="History stays in this browser."
       />
       {/* One pattern for every instrument run: Azure while
           the watch runs, the flame (the loading ignition) when its result
@@ -257,6 +236,14 @@ export function MonitorForm({
           <>
             <p><b>{host || 'This URL'}</b> could not be checked.</p>
             <p>{error}</p>
+            {historyRefused && (
+              <p>
+                The engine refused the {history.length === 1 ? 'run' : `${history.length} runs`} this browser stored for this URL.{' '}
+                <button type="button" className="eg-share-btn" onClick={clear}>
+                  Clear this history
+                </button>
+              </p>
+            )}
           </>
         }
         errorText={error}
@@ -289,8 +276,8 @@ export function MonitorForm({
                   <dd>Compared with the baseline and the run before: score, trend, failures, tokens.</dd>
                 </div>
                 <div>
-                  <dt>A drop past the threshold <span className="eg-ref-where">m07 m10</span></dt>
-                  <dd>{emailAlerts ? 'Raises an alert, mailed to you if you left an address.' : 'Raises an alert, shown with the run.'}</dd>
+                  <dt>A drop past the threshold <span className="eg-ref-where">m07</span></dt>
+                  <dd>Raises an alert, shown with the run.</dd>
                 </div>
               </dl>
             )}

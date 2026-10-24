@@ -6,10 +6,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Monitor contract 0.1.5: monitor alert email is retired, and scores move.**
+`/api/monitor` sends no email under any setting; alerts come back in the result
+(`alerts[]`), as `/monitor` shows them. m10 is no longer scored, so a stable
+site moves from 90 (A) to 89 (B) on its third run or later.
+
+### Removed
+
+- **Monitor alert email.** The send code, `app/lib/monitor-email.ts`, the `resend`
+  import and the `resend` dependency are gone from apps/site, so no setting can
+  make `/api/monitor` send mail, `MONITOR_EMAIL_ENABLED=true` included. Nothing
+  in the site reads that variable now. The Continuity waitlist still sends its
+  notices through Resend's HTTP API with `RESEND_API_KEY`, unchanged.
+- `emailAlert` is gone from the monitor result, and with it the one-hour
+  cooldown and the address check.
+
+### Changed
+
+- **m10 is N/A on every run and is not scored.** Its detail says alerts are
+  returned in the response and email delivery was retired; the ids m01 to m10
+  stay. m10 passed on every run unless a send was tried and failed, so leaving
+  it out takes a PASS out of the score: a stable site moves from 90 (A) to 89
+  (B) on its third run or later and from 95 to 94 on its second; a first run
+  stays at 100.
+- **An `email` field is accepted and ignored.** An address, `5` or `null` returns
+  200, and no address appears in the result. designesy-mcp 1.13.10 and earlier
+  forward `email` when given; the field has no effect, so they keep working.
+- **`/monitor` has no email field.** It sends no address, and on load it removes
+  an address an earlier version saved in the browser (`designesy:monitor-email`).
+  Its formula reads `÷ scored checks` (it said `÷ 10`, which a SKIP made wrong),
+  m10 is labelled "Alert email", and the engine bar has no email field type.
+  When the engine refuses the runs the browser stored for a URL (a 400 naming
+  `history`, or a 413), the error offers "Clear this history", since every
+  later run of that URL would send the same runs.
+- **The hosted `designesy_monitor_score` is read-only.** `readOnlyHint` and
+  `idempotentHint` are true, and its title is "Monitor drift over time". The
+  handler forwards no `email`; the parameter is described as deprecated and
+  ignored. Its `history` argument takes the route's schema, so a SKIP check is
+  accepted, the same bounds apply, and a run needs only the fields the checks
+  read (it required every field). Its description listed m01 as "schedule
+  registered" (m01's name until 0.1.2) and said results are cached ~24h per
+  URL; it now says "history supplied" and that the cache is per URL and history.
+- The monitor contract (0.1.5) rewrites `alert_delivery`, the m10 row, the
+  scoring line and the email open question; `/changelog` has the entry, and
+  `/docs/mcp`, `/contracts/monitor`, `/monitor` and both READMEs follow. The repo
+  README says all 17 tools are read-only.
+- `apps/site/.env.example` drops `MONITOR_EMAIL_ENABLED` and says the Resend key
+  is for waitlist notices only.
+
+### Fixed
+
+- **A malformed request is a 400 that names the field.** `app/lib/monitor-history.ts`
+  holds one bounds-only schema, which the route and the hosted tool share: types,
+  a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS,
+  FAIL, WARN or SKIP, string lengths, at most 12 checks a run and at most 1000
+  runs. It does not recompute a run's score from its checks, so runs stored by an
+  earlier engine stay valid. Only what a check reads is required: each run's
+  `score`, `tokensExtracted` and `checks`, and each check's `id` and `status`.
+  The `timestamp`, `grade`, `item`, `category` and `detail` are checked when
+  present, so a run trimmed to the required fields is still answered. Each
+  array's length is checked before its elements, and parsing stops at the
+  first run that fails, so a refused body carries the issues of one run at
+  most. A body over 512 KB is a 413 and is never held whole: a Content-Length
+  past the limit is refused before the body is read, and any other body stops
+  being read at the first chunk past it. Before, an `email` such as `5`, a
+  `url` such as `5`, a body of `null` and `history: [{}]` crashed the route,
+  and a non-numeric `score` such as `"x"` made the m03, m04 and m07 deltas
+  NaN. A `history` that is a string, a number, a boolean or an object was read
+  as no history; it is now a 400. `null` still means no history.
+
+### Tests
+
+- `check-mcp-accuracy`'s `monitor-no-mail` replaces `monitor-mail-off`: with
+  `MONITOR_EMAIL_ENABLED="true"`, a Resend key set and Resend's API answered
+  inside the harness, a run that raises an alert sends nothing; an `email` given
+  as an address, `5` or `null` returns 200 with no address in the result; m10 is
+  SKIP and the score leaves it out; the hosted handler posts no `email`, is
+  annotated read-only and takes the route's history schema; each malformed
+  request is a 400 naming its field, and the schema builds at most 64 issues
+  for it, among them a run of 30,000 empty checks and a 512 KB history of empty
+  runs; a run trimmed to the fields the checks read and a `null` history
+  return 200; and a 600 KB body, or a Content-Length past 512 KB, is a 413. The
+  route harness no longer stubs the `resend` module.
+
+**designesy-mcp, next release: `designesy_monitor_score` is read-only** (PyPI
+and the MCP registry; not yet released). Until then, designesy-mcp 1.13.10
+forwards `email` to `/api/monitor`, which ignores it.
+
+### Changed (designesy-mcp, next release)
+
+- `designesy_monitor_score` forwards no `email`; the parameter stays in the
+  schema, described as deprecated and ignored, so older callers keep working.
+  `readOnlyHint` and `idempotentHint` are true, as on the hosted endpoint, and
+  the title is "Monitor drift over time".
+- Its description says alerts come back in `alerts[]` and no email is sent,
+  lists m01 as "history supplied", drops `emailAlert`, and says the cache is per
+  URL and history. Its history schema accepts SKIP, caps the array at 1000
+  runs and a run's checks at 12, and marks as required what the engine
+  requires: each run's `score`, `tokensExtracted` and `checks`, and each
+  check's `id` and `status`.
+- The SAFETY docstring, the annotation notes, and the README summary and
+  Safety section say every tool is read-only; the README tools table and the
+  pyproject summary drop their email clauses.
+- `test_tool_annotations.py` asserts that every tool is read-only, that the
+  monitor forwards no `email` (an address or `5`), that its description
+  names no Resend key and lists m01 as "history supplied", and that the README
+  offers no email alert and names neither Resend nor `MONITOR_EMAIL_ENABLED`.
+
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed
 that the address's owner had asked for it.
+Superseded by 0.1.5 above: the switch, the escaping, `monitor-mail-off`, the
+per-request m10 and the `/monitor` email field went with the sending, and m10
+is N/A (SKIP) on every run. The entries below record 0.1.4 as it was built.
 
 ### Security
 
@@ -18,8 +128,8 @@ that the address's owner had asked for it.
   `RESEND_API_KEY` is set. It is off unless set to exactly `true`. With it
   off, a request that names an email and raises an alert gets
   `emailAlert.off: true` and no mail, and the per-hour cooldown is not
-  touched. Setting the switch alone brings back the old sending, with the
-  HTML escaped, so it stays unset until recipients can opt in.
+  touched. Setting the switch alone brought back the old sending, with the
+  HTML escaped; 0.1.5 removes the sending, so no setting does now.
 - **Every value the alert email's HTML interpolates is escaped.** The host,
   the grade, both scores, the alert texts and the URL pass through
   `escapeHtml`.
@@ -46,16 +156,13 @@ that the address's owner had asked for it.
   alert is delivered, held back by the cooldown or surfaced in-UI, warns when
   a send fails, and never fails (it said in-UI only was a WARN). The
   `designesy_monitor_score` description, its `email` parameter, `/docs/mcp`
-  and the designesy-mcp README's Safety section name the switch as well.
+  and the designesy-mcp README's Safety section named the switch until 0.1.5.
 - `/contracts/monitor` no longer offers an email alert in its description.
 
 ### Not changed
 
-- The PyPI server's text still names only `RESEND_API_KEY`: the
-  `designesy_monitor_score` description and `email` parameter, the safety and
-  annotation comments, and the pyproject description. That server forwards to
-  this site's `/api/monitor`, so it sends no mail while the switch is off. Its
-  text, and the README on PyPI, follow in the next designesy-mcp release.
+- The PyPI server's text named only `RESEND_API_KEY`. It is rewritten here,
+  and reaches PyPI with the next designesy-mcp release.
 
 **The public leaderboard is withdrawn** (the site; decided 2026-10-23). With
 this change, the site's pages and APIs publish no ranked list of sites and no

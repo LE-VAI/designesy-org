@@ -98,20 +98,17 @@ export interface McpToolAnnotation {
  *   llms_full_txt: GET a fixed designesy.org export. Closed world.
  * - a11y_score: GETs the a11y contract only. The url argument is written into
  *   the returned Playwright script and never fetched here. Closed world.
- * - score, drift_score, readiness_score, guardrails, compare, report: POST to
- *   this site's own engine routes, which fetch the caller's URL(s) and return a
- *   verdict. readiness also sends a JSON-RPC tools/list to the target's
- *   /api/mcp, which is a read. Open world.
+ * - score, drift_score, readiness_score, guardrails, monitor_score, compare,
+ *   report: POST to this site's own engine routes, which fetch the caller's
+ *   URL(s) and return a verdict. readiness also sends a JSON-RPC tools/list to
+ *   the target's /api/mcp, which is a read. Open world.
  * - tokens_score, motion_score: fetch the caller's url when given (or parse the
  *   inline JSON). Open world.
- * - monitor_score: NOT read-only. /api/monitor sends a drift-alert email
- *   through Resend when the caller passes `email`, an alert fires (one needs a
- *   non-empty `history`), the server has MONITOR_EMAIL_ENABLED=true (off
- *   unless exactly "true": lib/monitor-email) and RESEND_API_KEY set, and the same
- *   (url, email, alert set) was not sent from that instance in the last hour.
- *   Sending mail is additive, so destructiveHint is false; the cooldown lives
- *   in one instance's memory, so a repeated call can send another email and
- *   idempotentHint is false.
+ * - monitor_score sends no email: delivery was retired in monitor contract
+ *   0.1.5, /api/monitor ignores an `email` field, and the handler forwards
+ *   none. It returns the comparison and keeps only its 24-hour result cache
+ *   and a per-caller rate-limit count, as every engine route does, so a
+ *   repeated call has no effect beyond that count (idempotentHint true).
  *
  * Every tools/call also increments this site's privacy-preserving usage
  * counters (lib/usage.ts). That is the operator's own telemetry and does not
@@ -133,7 +130,7 @@ export const MCP_TOOL_ANNOTATIONS = {
   designesy_drift_score: { title: 'Score UI drift', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   designesy_readiness_score: { title: 'Score AI readiness', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   designesy_guardrails: { title: 'Generate build-contract bundle', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  designesy_monitor_score: { title: 'Monitor drift with email alerts', readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  designesy_monitor_score: { title: 'Monitor drift over time', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   designesy_compare: { title: 'Compare two design systems', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   designesy_report: { title: 'Build composite design report', readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
 } as const satisfies Record<McpToolName, McpToolAnnotation>;

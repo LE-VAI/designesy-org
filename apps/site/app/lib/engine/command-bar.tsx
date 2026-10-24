@@ -73,22 +73,12 @@ export function checkUrl(raw: string, reads: 'page' | 'origin' | 'site' = 'page'
   return { ok: true, text: <>{verb} <b>{target}</b></>, plain: `${verb} ${target}`, verb, target };
 }
 
-export function checkEmail(raw: string): FieldCheck | null {
-  const v = raw.trim();
-  if (!v) return null;
-  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return { ok: true, text: <>Drift alerts go to <b>{v}</b></>, plain: `Drift alerts go to ${v}` };
-  const plain = 'Add a full address, like you@studio.com.';
-  return { ok: false, text: plain, plain };
-}
-
 type Field = {
   value: string;
   onChange: (v: string) => void;
   /** The field's accessible name. */
   label: string;
   placeholder: string;
-  type?: 'url' | 'email';
-  optional?: boolean;
   /** A letter shown in the well instead of the globe (the compare pair: A, B). */
   mark?: string;
   /** readiness probes the origin, the badge reads the site's home page,
@@ -97,7 +87,7 @@ type Field = {
 };
 
 function check(f: Field): FieldCheck | null {
-  return f.type === 'email' ? checkEmail(f.value) : checkUrl(f.value, f.reads);
+  return checkUrl(f.value, f.reads);
 }
 
 function FieldMark({ field }: { field: Field }) {
@@ -106,14 +96,6 @@ function FieldMark({ field }: { field: Field }) {
       <span className="eg-bar-mark" aria-hidden="true">
         {field.mark}
       </span>
-    );
-  }
-  if (field.type === 'email') {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <rect x="3" y="5" width="18" height="14" rx="2.5" />
-        <path d="m4 7 8 6 8-6" />
-      </svg>
     );
   }
   return (
@@ -166,8 +148,7 @@ export function EngineBar({
     for (let i = 0; i < fields.length; i++) {
       const f = fields[i];
       if (!f.value.trim()) {
-        if (f.optional) continue;
-        refuse(i, f.type === 'email' ? 'Add an email address first.' : 'Add a URL first, like stripe.com.');
+        refuse(i, 'Add a URL first, like stripe.com.');
         return;
       }
       const c = check(f);
@@ -215,10 +196,10 @@ export function EngineBar({
                 inputs.current[i] = el;
               }}
               className="eg-bar-input"
-              type={f.type === 'email' ? 'email' : 'text'}
-              inputMode={f.type === 'email' ? 'email' : 'url'}
+              type="text"
+              inputMode="url"
               enterKeyHint="go"
-              autoComplete={f.type === 'email' ? 'email' : 'url'}
+              autoComplete="url"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}

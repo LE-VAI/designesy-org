@@ -2,8 +2,7 @@
 """
 designesy_mcp_server — stdio MCP server exposing designesy.org's design
 intelligence infrastructure as native agent tools and resources. Every tool
-reads only, except designesy_monitor_score, which can send an alert email (see
-SAFETY below).
+only reads (see SAFETY below).
 
 Zero external dependencies (stdlib only). Implements the MCP JSON-RPC 2.0
 protocol over stdio (initialize, tools/list, tools/call, resources/list,
@@ -33,16 +32,16 @@ PROVENANCE:
     The server caches responses with a 5-minute TTL. No local files are read.
 
 SAFETY:
-    Read-only with one exception. designesy_monitor_score posts to
-    designesy.org's /api/monitor, which sends a drift-alert email through
-    Resend when the caller passes `email`, an alert fires, and the server has
-    a Resend key configured. Every other tool only reads: the document tools
-    fetch designesy.org exports, and the scoring tools fetch the URLs the
-    caller supplies, directly or through designesy.org's engines. The server
-    writes no local files and reads no credentials. TOOL_ANNOTATIONS records
-    each tool's hints. Every certificate is verified unless the operator sets
-    DESIGNESY_INSECURE_TLS=1, which covers a caller's URL only, and no
-    browser is used unless the operator sets DESIGNESY_CDP_URL.
+    Read-only. The document tools fetch designesy.org exports, and the
+    scoring tools fetch the URLs the caller supplies, directly or through
+    designesy.org's engines. designesy_monitor_score sends no email: its
+    `email` argument is deprecated and ignored, and this server does not
+    forward it (designesy.org retired monitor email in monitor contract
+    0.1.5). The server writes no local files and reads no credentials.
+    TOOL_ANNOTATIONS records each tool's hints. Every certificate is verified
+    unless the operator sets DESIGNESY_INSECURE_TLS=1, which covers a
+    caller's URL only, and no browser is used unless the operator sets
+    DESIGNESY_CDP_URL.
 """
 from __future__ import annotations
 
@@ -3995,26 +3994,29 @@ TOOLS = [
             "Score a URL for continuous design-drift governance — the "
             "temporal layer over the drift radar. Re-runs the 12 drift "
             "checks (d01-d12) on the URL and computes 10 monitor checks "
-            "(m01-m10): schedule registered, last run fresh, drift "
+            "(m01-m10): history supplied, last run fresh, drift "
             "delta vs baseline, trend slope (3-run trajectory), new "
             "violations since last run, resolved since last run (the "
             "healing signal), score degradation threshold, token-set "
             "mutation, contract version drift, and alert delivered. "
-            "When alerts fire and an email address is provided, sends "
-            "an HTML drift-alert email via Resend (requires "
-            "RESEND_API_KEY env var). Pass a history array of prior "
-            "snapshots to compute deltas; omit it for a first-run "
-            "baseline. Use this to watch a design system over time — "
+            "Alerts come back in the result as alerts[]. No email is "
+            "sent: email delivery was retired, so m10 is SKIP on every "
+            "run and is not scored, and the email argument is deprecated "
+            "and ignored. Pass a history array of prior snapshots to "
+            "compute deltas; omit it for a first-run baseline. The "
+            "engine refuses a malformed history, more than 1000 runs, or "
+            "a request over 512 KB (HTTP 400 or 413). Use this to watch "
+            "a design system over time — "
             "'weekly audits at cents per report' (Into Design Systems "
             "2026). When NOT to use: for a single point-in-time drift "
             "check, use designesy_drift_score; for design-contract "
             "scoring, use designesy_score. Executable — fetches the "
             "URL, extracts CSS + :root tokens, runs checks, computes "
             "deltas. No browser needed. Returns JSON: { ok, url, score "
-            "(0-100, governance health), grade (A-F), pass, warn, fail, "
-            "total, currentSnapshot, baseline, previous, driftChecks, "
-            "monitorChecks, alerts, emailAlert }. Results cached ~24h "
-            "server-side per URL."
+            "(0-100, governance health; SKIP is not scored), grade (A-F), "
+            "pass, warn, fail, total, currentSnapshot, baseline, previous, "
+            "driftChecks, monitorChecks, alerts }. Results cached ~24h "
+            "server-side per URL and history."
         ),
         "inputSchema": {
             "type": "object",
@@ -4025,10 +4027,11 @@ TOOLS = [
                 },
                 "email": {
                     "type": "string",
-                    "description": "Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional — without it, alerts surface in-UI only.",
+                    "description": "Deprecated and ignored: email delivery was retired, so this server does not forward it and no email is sent. Alerts come back in the result as alerts[].",
                 },
                 "history": {
                     "type": "array",
+                    "maxItems": 1000,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -4038,18 +4041,23 @@ TOOLS = [
                             "tokensExtracted": {"type": "number"},
                             "checks": {
                                 "type": "array",
+                                "maxItems": 12,
                                 "items": {
                                     "type": "object",
                                     "properties": {
                                         "id": {"type": "string"},
                                         "item": {"type": "string"},
                                         "category": {"type": "string"},
-                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN"]},
+                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
                                         "detail": {"type": "string"},
                                     },
+                                    "required": ["id", "status"],
                                 },
                             },
                         },
+                        # What the engine's checks read; /api/monitor
+                        # refuses a run without them (HTTP 400).
+                        "required": ["score", "tokensExtracted", "checks"],
                     },
                     "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
                 },
@@ -4181,12 +4189,13 @@ TOOLS = [
 #   closes it; neither probe uses a tab it did not open. That leaves nothing
 #   behind, so the tool stays read-only. The other scoring tools post to the
 #   designesy.org engines, which fetch the url. Open world.
-# - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
-#   email through Resend when the caller passes `email`, an alert fires (one
-#   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
-#   instance has not sent the same alert set for that url and address within
-#   the hour. Sending mail is additive, so destructiveHint is False; a repeated
-#   call can send another email, so idempotentHint is False.
+# - designesy_monitor_score posts the url and history to /api/monitor, which
+#   fetches the url and compares it with the history. It sends no email: the
+#   site retired monitor email in monitor contract 0.1.5, and this server
+#   forwards no `email`. The route keeps only its 24-hour result cache and a
+#   per-caller rate-limit count, as every engine route does, so a repeated
+#   call has no effect beyond that count: readOnlyHint and idempotentHint
+#   are True.
 
 TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_catalog": {"title": "List Designesy packages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
@@ -4203,7 +4212,7 @@ TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_drift_score": {"title": "Score UI drift", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_readiness_score": {"title": "Score AI readiness", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_guardrails": {"title": "Generate build-contract bundle", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-    "designesy_monitor_score": {"title": "Monitor drift with email alerts", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True},
+    "designesy_monitor_score": {"title": "Monitor drift over time", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_compare": {"title": "Compare two design systems", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_report": {"title": "Build composite design report", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
 }
@@ -5377,7 +5386,7 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
     """POST to a designesy.org API endpoint and return the JSON result.
 
     The certificate is always verified: DESIGNESY_INSECURE_TLS covers a
-    caller's URL only, and this body can carry a monitor email address.
+    caller's URL only, never designesy.org's engines.
     """
     url = f"{BASE_URL}/api/{endpoint}"
     data = json.dumps(body).encode("utf-8")
@@ -5428,15 +5437,15 @@ def _guardrails_impl(url: str | None = None, parts: Any = None) -> dict[str, Any
 
 def _monitor_score_impl(
     url: str | None = None,
-    email: str | None = None,
     history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Proxy to /api/monitor — continuous drift governance."""
+    """Proxy to /api/monitor — continuous drift governance.
+
+    No email is forwarded: monitor email was retired, and the tool's `email`
+    argument is accepted and ignored.
+    """
     target = url or f"{BASE_URL}/"
-    body: dict[str, Any] = {"url": target, "history": history or []}
-    if email:
-        body["email"] = email
-    return _post_api("monitor", body)
+    return _post_api("monitor", {"url": target, "history": history or []})
 
 
 def _compare_impl(url_a: str, url_b: str) -> dict[str, Any]:
@@ -5604,7 +5613,6 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     elif name == "designesy_monitor_score":
         return _monitor_score_impl(
             url=args.get("url"),
-            email=args.get("email"),
             history=args.get("history"),
         )
     elif name == "designesy_compare":
