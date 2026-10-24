@@ -514,8 +514,10 @@ jobs:
 
   # @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens had test
   # suites that only ran at publish time. This job runs them, and @vai/motion's
-  # timing and easing tests, on every PR so a broken test can't merge. In the
-  # two TypeScript packages the pretest hook runs `npm run build` before
+  # timing and easing tests, on every PR. Test tokens and Test
+  # stylelint-plugin-dtcg-tokens are required checks on main, so a broken test
+  # there can't merge; Test vai-motion is not a required check yet. In the two
+  # TypeScript packages the pretest hook runs `npm run build` before
   # `npm test`; @vai/motion is plain ES modules and has no build step.
   test-packages:
     name: Test ${{ matrix.package }}

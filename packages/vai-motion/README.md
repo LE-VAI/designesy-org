@@ -11,7 +11,7 @@ git clone https://github.com/LE-VAI/designesy-org.git
 npm install ./designesy-org/packages/vai-motion
 ```
 
-To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173. `npm test` runs the timing and easing tests (Node's built-in test runner, no dependencies).
+To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173. `npm test` runs the timing and easing tests (Node's built-in test runner, Node 18.13 or later, no dependencies).
 
 ## Why principles, not components
 
@@ -22,7 +22,7 @@ Component catalogs sell you a scroll reveal. VAI Motion sells you the *named pri
 | Principle | What it does | Tier |
 |---|---|---|
 | **waveform-trace** | A data line plots itself across the surface — signal arrives, then rests. Retired scan-beam/signal-sweep. | 1 · remove |
-| **field-breath** | The ambient atmosphere breathes — slow opacity swell and release. Background presence, never a demand. Retired the fake-liveness pulse. | 2 · soften |
+| **field-breath** | The ambient atmosphere breathes — a slow opacity swell. Background presence, never a demand. Retired the fake-liveness pulse. | 2 · soften |
 | **mark-settle** | The mark resolves — blur-to-sharp iris settle. Arrive sharp, then rest. | 2 · soften |
 | **block-settle** | Content blocks settle into place — one composed, weighted drop onto the grid. Not scattered identical entrances. | 2 · soften |
 | **grain-shift** | Ambient grain shifts over the surface — material, not decoration. | 1 · remove |
@@ -36,7 +36,7 @@ VAI tiers it:
 ```js
 import { prefersReducedMotion, resolveDuration, REDUCED_MOTION } from '@vai/motion';
 
-// tier 1 → 0ms (removed) · tier 2 → ≤200ms (softened) · tier 3 → full
+// tier 1 → 0ms (removed) · tier 2 → ≤200ms (softened, never longer than full) · tier 3 → full
 const ms = resolveDuration('tier2', 600); // 200 under reduce, 600 full
 ```
 
@@ -48,7 +48,7 @@ No other motion library tiers reduced motion as a first-class API. CSS-only cons
 
 ## Usage
 
-### JS (zero dependencies, requestAnimationFrame-driven)
+### JS (zero dependencies; requestAnimationFrame-driven, except grain-shift, which adds CSS classes)
 
 ```js
 import { waveformTrace, fieldBreath, markSettle, blockSettle, grainShift } from '@vai/motion';
@@ -69,9 +69,13 @@ await blockSettle.settleAll(document.querySelectorAll('.card'));
 grainShift.apply(document.querySelector('.stage'));
 ```
 
-`settleAll` starts block i at `i × stagger` ms (80 by default) and resolves when the last block lands, so three blocks at 600ms take about 760ms. Under reduced motion all blocks settle at once, in 200ms, as they do in the CSS layer.
+`settleAll` starts block i at `delay + i × stagger` ms (stagger 80 by default) and resolves when the last block lands, so three blocks at 600ms take about 760ms. Every block takes its from-state (opacity 0) at the call, so with many blocks the last one waits a while: 20 blocks keep the last one hidden for 1520ms. Under reduced motion the stagger and any `delay` you pass are dropped, and all blocks settle at once in 200ms: tier 2 promises 200ms or less, and the CSS layer does the same.
 
-`ease` takes `cubic-bezier(x1, y1, x2, y2)`, one of the CSS keywords `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or a function of t. Any other value throws a `TypeError`. There is no fallback curve, so a typo cannot quietly run a curve you did not choose.
+An option that is left out or passed as `undefined` takes its default. Numbers must be finite, and `duration` 0 or more; `'80ms'`, `null` or `NaN` is a `TypeError`.
+
+`ease` takes `cubic-bezier(x1, y1, x2, y2)` with x1 and x2 in [0, 1], one of the CSS keywords `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, or a function of t that returns a finite number. The keywords are there for parity with CSS; the contract asks for the `EASE` tokens and rules out `ease-in` on UI motion. A bad option is a `TypeError` before any style is written: the returned promise rejects (`fieldBreath.loop` throws at the call). An ease function that stops returning a finite number partway stops the motion on that frame, and the promise rejects. There is no fallback curve, so a typo cannot quietly run a curve you did not choose.
+
+A new run on an element stops the run already on it, on its next frame, and the older promise resolves. The stop function from `fieldBreath.loop` also takes effect on the next frame.
 
 ### CSS-only (classes, keyframes, tiered media queries)
 
