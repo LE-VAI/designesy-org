@@ -6,8 +6,8 @@ import { CHECKS } from './lib/check-definitions';
 
 /*
   This site, by category: one cell meter per category the engine scored
-  designesy.org on, read from the leaderboard batch (batch-data.ts, written by
-  the weekly re-score from the live /api/score engine).
+  designesy.org on, read from the self row's batch record (batch-data.ts,
+  written by a hand-run re-score from the live /api/score engine).
 
   It replaces a rack titled "Contract health" whose eight readings (Type 95,
   Motion 90, A11y 88 ...) were typed into the source when the panel was drawn
@@ -54,7 +54,7 @@ export const SELF_NOT_RECORDED = CATEGORY_ORDER.filter((k) => !(k in SELF_CATEGO
 export const SELF_CATEGORY_DATE = BATCH_RUN_DATE;
 export const SELF_CATEGORY_ENGINE = LEADERBOARD_ENGINE_VERSION;
 
-/** One decimal where the engine gives one, as the leaderboard prints scores. */
+/** One decimal where the engine gives one, as the score pages print scores. */
 export const fmtCategory = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
 const CELLS = 20;

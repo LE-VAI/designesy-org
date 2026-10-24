@@ -19,8 +19,8 @@ import { SEED, LEADERBOARD_LAST_SCORED } from '../leaderboard/seed';
   Every value on the page comes from somewhere the site already keeps:
   the brand colours from the design system contract (which the contract-drift
   gate holds to globals.css), the logo from the masters' path data in
-  brand-logotype.tsx, the icons from brand-icons.tsx, the data line from the
-  leaderboard's own record, and the kit's size and file count from the file
+  brand-logotype.tsx, the icons from brand-icons.tsx, the data line from this
+  site's own score record, and the kit's size and file count from the file
   itself. The contrast ratios are computed here, at build, from those values.
 */
 
@@ -119,16 +119,17 @@ const GRADES = [
   { letter: 'F', dark: COLORS.grade_f.value, light: '#CD2323' },
 ].map((g) => ({ ...g, dark: g.dark.toUpperCase(), light: g.light.toUpperCase() }));
 
-// The data specimen is a real reading: a site's current grade, score and
-// measurement date from the leaderboard record, so it can never go stale.
-const SPECIMEN_SITE =
-  SEED.find((s) => s.url === 'https://stripe.com' && s.score !== null) ??
-  SEED.find((s) => s.score !== null);
-if (!SPECIMEN_SITE) throw new Error('/brand: the leaderboard has no scored site for the data specimen');
-// Three readings, each kept on one line: grade and score, host, date.
+// The data specimen is a real reading: this site's own grade, score and
+// measurement date from its seed row, so it can never go stale. It shows
+// designesy.org only: the page names no other site beside a grade.
+const SPECIMEN_SITE = SEED.find((s) => s.url === 'https://www.designesy.org' && s.score !== null);
+if (!SPECIMEN_SITE) throw new Error('/brand: the seed has no scored designesy.org row for the data specimen');
+// Three readings, each kept on one line: grade and score, host, date. The
+// host says the score is the site's own, from its own engine, as every other
+// self surface does, so the grade does not read as an outside verdict.
 const DATA_PARTS = [
   `${SPECIMEN_SITE.grade} ${SPECIMEN_SITE.score} /100`,
-  new URL(SPECIMEN_SITE.url).hostname.replace(/^www\./, ''),
+  `${new URL(SPECIMEN_SITE.url).hostname.replace(/^www\./, '')}, self-scored`,
   SPECIMEN_SITE.scoredAt ?? LEADERBOARD_LAST_SCORED,
 ];
 

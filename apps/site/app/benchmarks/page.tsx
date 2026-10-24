@@ -1,6 +1,6 @@
 // /benchmarks: designesy beside hallmark and slop-eval, the two closest tools,
 // and the wider field. Everything about designesy is read from the engine
-// registry and the leaderboard data; everything about the other tools is the
+// registry and its own seed row; everything about the other tools is the
 // research of 2026-08-01, dated where it is shown.
 
 import type { Metadata } from 'next';
@@ -118,7 +118,7 @@ const COMPARE = [2, 4, 3, 3];
 const DESCRIBE = [2, 4, 6];
 
 const SOURCES = [
-  { what: 'designesy score', where: `the weekly leaderboard run of ${SCORES_DATE}, engine ${SCORES_ENGINE_VERSION}` },
+  { what: 'designesy score', where: `designesy.org's own score, measured ${SCORES_DATE}, engine ${SCORES_ENGINE_VERSION}` },
   { what: 'hallmark, 57 gates', where: 'github.com/Nutlope/hallmark, skills/hallmark/references/slop-test.md' },
   { what: 'slop-eval, 108 tells', where: 'github.com/fabricioctelles/skills, skills/slop-eval/references/tells.md' },
   { what: 'slop-eval scoring', where: 'github.com/fabricioctelles/skills, skills/slop-eval/SKILL.md' },
@@ -163,8 +163,8 @@ export default function BenchmarksPage() {
           </div>
           <p className="dx-lead dx-after">
             A full pipeline can use all three: hallmark while a design is generated, slop-eval to score what exists, designesy to
-            verify the result against the contract. Of the three, only designesy scores a URL through an API, which is what CI,
-            leaderboards and automated pipelines call.
+            verify the result against the contract. Of the three, only designesy scores a URL through an API, which is what CI
+            and automated pipelines call.
           </p>
         </section>
 
@@ -238,7 +238,7 @@ export default function BenchmarksPage() {
                 On designesy.org itself
               </h2>
               <p className="eg-section-sub">
-                weekly run of <span className="dx-nowrap">{SCORES_DATE}</span>
+                measured <span className="dx-nowrap">{SCORES_DATE}</span>
               </p>
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function BenchmarksPage() {
         <EngineNext
           items={[
             { title: 'The methodology', desc: 'Every designesy check, its weight and how it is decided.', route: '/methodology' },
-            { title: 'The leaderboard', desc: 'The same engine on 30 sites, re-scored weekly.', route: '/leaderboard' },
+            { title: 'Score a site', desc: 'The same engine on any URL, on demand.', route: '/score' },
             { title: 'The contract', desc: 'The versioned design contract every check reads.', route: '/contracts/design-system' },
           ]}
         />

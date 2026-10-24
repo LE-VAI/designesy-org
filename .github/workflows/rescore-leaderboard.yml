@@ -1,10 +1,15 @@
 name: Rescore Leaderboard
 
-# Weekly re-score of all leaderboard seed sites against the live designesy.org
-# /api/score engine. Computes delta-since-last-week badges, pushes a branch
-# with the updated seed.ts + snapshot.json and opens a landing issue. A person
-# opens the PR and lands it after its full CI passes (v5, below); this
-# workflow opens no PR and does not merge.
+# Re-score of the seed sites against the live designesy.org /api/score engine.
+# Computes delta-since-last-run badges, pushes a branch with the updated
+# seed.ts + snapshot.json and opens a landing issue. A person opens the PR and
+# lands it after its full CI passes (v5, below); this workflow opens no PR and
+# does not merge.
+#
+# v6 (decided 2026-10-23): the public leaderboard is withdrawn (CHANGELOG.md).
+# The seed now holds designesy.org alone, and the Monday schedule is removed so no
+# run republishes third-party scores. The workflow runs only when started by
+# hand (workflow_dispatch), and then re-scores only the sites in the seed.
 #
 # History: prior to 2026-08-25 this workflow pushed directly to main. After
 # main was locked down with branch protection (PR-only + required CI
@@ -31,34 +36,29 @@ name: Rescore Leaderboard
 # starts CI or merges. It re-scores, opens the PR and stops. A maintainer
 # starts the held CI runs, checks the data, and
 # merges only when every check, the visual gates included, has passed and
-# GitHub reports CLEAN. leaderboard-freshness.yml
-# independently alarms if the public data is more than 8 days old.
+# GitHub reports CLEAN.
 #
 # v5 (2026-10-21): since 2026-10-15 the repository does not let Actions
 # create or approve pull requests, on purpose. The 2026-10-19 run re-scored
 # every site and pushed its branch, then `gh pr create` failed with "GitHub
 # Actions is not permitted to create or approve pull requests", so no PR
-# existed, the site kept the 2026-10-12 data, and the freshness check went red
-# that Wednesday. This workflow now pushes the branch and opens a landing issue,
+# existed and the site kept the 2026-10-12 data. This workflow now pushes the
+# branch and opens a landing issue,
 # assigned to the maintainer, with a link that opens the PR and the exact
 # command to open it. A person opens the PR, so its CI runs without the
-# approval step bot-opened PRs needed. A newer week's issue closes an older
+# approval step bot-opened PRs needed. A newer run's issue closes an older
 # unlanded one, whose data it replaces.
 # The setting stays off, and no personal or App token takes its place: a token
 # that can push this branch and open its pull request could also merge it.
 #
-# The Vercel Cron (/api/cron/rescore) also fires weekly but only returns
-# scores as a JSON response — it can't write to the repo. This workflow IS
-# the write path. It runs the re-score, generates the updated TypeScript,
-# commits to a branch, and opens the landing issue for its PR.
+# This workflow is the only write path for the seed. It runs the re-score,
+# generates the updated TypeScript, commits to a branch, and opens the landing
+# issue for its PR. (The Vercel Cron that warmed the score cache before each
+# Monday run is removed with the schedule, v6 above.)
 #
-# Schedule: Mondays 10:00 UTC (one hour after the Vercel Cron fires, so the
-# Vercel /api/score cache is warm from the cron's probe — the Action's fetches
-# are instant instead of 3-8s cold).
+# No schedule: manual dispatch only (v6, above).
 
 on:
-  schedule:
-    - cron: '0 10 * * 1'   # every Monday 10:00 UTC
   workflow_dispatch:         # manual trigger from the Actions tab
     inputs:
       expect_engine_version:
@@ -75,15 +75,16 @@ jobs:
     permissions:
       contents: write          # needed to push the leaderboard branch
       issues: write            # needed to open the landing issue and its labels
-    # Re-scoring 30 sites against the live engine takes ~7 min. The run no
-    # longer waits for CI (v4), so 20 minutes leaves room for slow fetches.
+    # Re-scoring the 30-site seed took ~7 min; the one-site seed takes far less.
+    # The run no longer waits for CI (v4), so 20 minutes leaves room for slow
+    # fetches.
     timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0      # full history so the date command works
-          # The re-score runs code over pages fetched from 30 outside sites, so
+          # The re-score runs code over pages fetched from the seed's sites, so
           # the write token is not left in .git/config for it. Only the push
           # step below authenticates.
           persist-credentials: false
@@ -96,7 +97,7 @@ jobs:
       - name: Re-score all leaderboard sites
         env:
           SCORE_API: 'https://www.designesy.org/api/score'
-          # Empty on the weekly schedule; set when dispatched after a release.
+          # Empty unless set when dispatched after a release.
           EXPECT_ENGINE_VERSION: ${{ github.event.inputs.expect_engine_version }}
         run: node scripts/rescore-leaderboard.mjs
 
@@ -108,7 +109,7 @@ jobs:
           # pages' category breakdowns went stale while the composites moved.
           if git diff --quiet apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json apps/site/app/leaderboard/batch-data.ts apps/site/app/docs/self-report.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No score changes since last week — skipping PR."
+            echo "No score changes since the last run — skipping PR."
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
@@ -123,8 +124,8 @@ jobs:
           gh auth setup-git
           DATE_STAMP=$(date -u +%Y-%m-%d)
           BRANCH="leaderboard/weekly-${DATE_STAMP}"
-          # A second run on the same UTC day (a manual dispatch, then the
-          # Monday cron) found the first run's merged branch still on the
+          # A second run on the same UTC day (two dispatches, or, before v6, a
+          # dispatch and then the Monday cron) found the first run's merged branch still on the
           # remote: the push was rejected as non-fast-forward after the
           # scoring had finished, and that week's data was lost (2026-10-12).
           # Keep the plain name when it is free; otherwise add the run id.
@@ -135,10 +136,10 @@ jobs:
           git config user.email '281449961+LE-VAI@users.noreply.github.com'
           git checkout -b "${BRANCH}"
           git add apps/site/app/leaderboard/seed.ts apps/site/app/leaderboard/snapshot.json apps/site/app/leaderboard/batch-data.ts apps/site/app/docs/self-report.json
-          git commit -m "chore(leaderboard): weekly re-score ${DATE_STAMP}
+          git commit -m "chore(leaderboard): re-score ${DATE_STAMP}
 
-          Automated re-score of all leaderboard seed sites against the live
-          /api/score engine. Delta badges computed from the previous week's
+          Re-score of the seed sites against the live /api/score engine,
+          started by hand. Delta badges computed from the previous run's
           snapshot. Triggered by .github/workflows/rescore-leaderboard.yml."
           git push -u origin "${BRANCH}"
 
@@ -152,7 +153,7 @@ jobs:
           # Actions may not open the PR (v5, above), so a person does. The
           # issue carries what they need. The PR body closes the issue on
           # merge, so the issue's number goes in after it exists.
-          TITLE="chore(leaderboard): weekly re-score ${DATE_STAMP}"
+          TITLE="chore(leaderboard): re-score ${DATE_STAMP}"
           SERVER_REPO="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}"
           ISSUE_URL=$(gh issue create \
             --title "Leaderboard re-score ${DATE_STAMP} is ready to land" \
@@ -160,10 +161,10 @@ jobs:
             --label "leaderboard,automated" \
             --assignee LE-VAI)
           ISSUE="${ISSUE_URL##*/}"
-          PR_BODY="Weekly re-score of the leaderboard cohort from ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID}. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Closes #${ISSUE}."
+          PR_BODY="Re-score of the seed from ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID}. Updates seed.ts, snapshot.json, the per-category batch-data.ts and the /docs self-report.json from the live /api/score engine. Closes #${ISSUE}."
           {
-            echo "The weekly re-score finished and pushed \`${BRANCH}\` (run: ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID})."
-            echo "Actions may not open pull requests in this repository, so the PR is opened by hand. Until it merges, the public leaderboard keeps last week's data, and the freshness check fails once that data is more than 8 days old."
+            echo "The re-score finished and pushed \`${BRANCH}\` (run: ${SERVER_REPO}/actions/runs/${GITHUB_RUN_ID})."
+            echo "Actions may not open pull requests in this repository, so the PR is opened by hand. Until it merges, the site keeps the previous run's data."
             echo ""
             echo "**Open the PR**: ${SERVER_REPO}/compare/main...${BRANCH}?expand=1, or:"
             echo ""
@@ -175,7 +176,7 @@ jobs:
           } > "${RUNNER_TEMP}/landing-issue.md"
           gh issue edit "${ISSUE}" --body-file "${RUNNER_TEMP}/landing-issue.md"
 
-          # An older landing issue still open means that week never landed.
+          # An older landing issue still open means that run never landed.
           # This branch carries newer data, so the older one is closed.
           for OLD in $(gh issue list --state open --label leaderboard --json number,title \
               --jq ".[] | select(.title | endswith(\"is ready to land\")) | select(.number != ${ISSUE}) | .number"); do
