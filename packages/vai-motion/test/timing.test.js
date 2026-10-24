@@ -31,6 +31,10 @@ function useFrames(t, { reduced = false } = {}) {
   let frame = 0;
   let now = 0;
   let queue = [];
+  // A browser reports an error thrown in a frame callback and carries on;
+  // it does not reach the code that asked for the frame. So does this
+  // clock, and a test fails if any frame threw.
+  const frameErrors = [];
   const define = (key, value) =>
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   define('performance', { now: () => now });
@@ -47,6 +51,7 @@ function useFrames(t, { reduced = false } = {}) {
       if (desc) Object.defineProperty(globalThis, key, desc);
       else delete globalThis[key];
     }
+    if (frameErrors.length) throw frameErrors[0];
   });
 
   const turn = () => new Promise((r) => setImmediate(r)); // drains microtasks
@@ -55,12 +60,19 @@ function useFrames(t, { reduced = false } = {}) {
     now = (frame * 1000) / 60;
     const due = queue;
     queue = [];
-    for (const cb of due) cb(now);
+    for (const cb of due) {
+      try {
+        cb(now);
+      } catch (err) {
+        frameErrors.push(err);
+      }
+    }
     await turn();
   };
   return {
     now: () => now,
     pending: () => queue.length,
+    frameErrors,
     async run(promise, limit = 20000) {
       let done = false;
       let error = null;
@@ -267,6 +279,7 @@ test('an ease function that fails mid-curve rejects the promise; it does not sta
   const ease = (x) => (x > 0.5 && x < 1 ? NaN : x);
   await assert.rejects(clock.run(blockSettle.settle(el, { ease, duration: 600 })), TypeError);
   assert.ok(clock.now() > 300 && clock.now() <= 300 + FRAME, `rejected at ${clock.now()}ms`);
+  assert.equal(clock.frameErrors.length, 0, 'the error escaped into the frame callback');
   assert.equal(clock.pending(), 0);
   assert.ok(writes(el, 'opacity').every((w) => Number.isFinite(w.v)));
 });
