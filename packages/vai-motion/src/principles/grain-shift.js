@@ -13,6 +13,8 @@
 // Provenance: VAI aesthetic audit 2026-08-09
 // Reduced motion: tier 1 — REMOVE (ambient texture; no information lost)
 
+import { readOptions } from '../options.js';
+
 export const grainShift = {
   name: 'grain-shift',
   tier: 'tier1',
@@ -27,7 +29,7 @@ export const grainShift = {
   // @param el    HTMLElement
   // @param opts  { speed }
   apply(el, opts = {}) {
-    const o = { ...this.defaultOptions, ...opts };
+    const o = readOptions(this.defaultOptions, opts);
     el.classList.add('vai-grain');
     el.classList.add(`vai-grain--${o.speed}`);
   },
