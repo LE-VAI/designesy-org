@@ -21,6 +21,13 @@
 //      undici/node never re-resolves at connect time — a DNS-rebinding race
 //      cannot insert a private IP between validation and socket open. This closes
 //      the resolve-then-fetch gap (CVE-2026-10546 / CVE-2026-54353 / CVE-2026-27826).
+//   5. Content decoding (engine 1.5.4): a 2xx body sent with Content-Encoding
+//      gzip, deflate or br is decoded before it is returned, and its decoded
+//      size is bounded (maxBodyBytes + 1 when the caller passes a cap, else
+//      DEFAULT_MAX_DECODED_BYTES), so a small compressed body cannot expand
+//      without limit. A body that does not decode, an unknown coding, or more
+//      than one coding rejects the read instead of returning compressed bytes
+//      as text. Other statuses keep their raw body and headers.
 //
 // Why DNS resolution matters: the prior guard validated hostname strings only.
 // An adversary who registers evil.com -> 127.0.0.1 bypassed the hostname check
@@ -46,6 +53,8 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
 import * as https from 'node:https';
 import * as http from 'node:http';
+import { createBrotliDecompress, createGunzip, createInflate, createInflateRaw } from 'node:zlib';
+import type { Transform } from 'node:stream';
 import ipaddr from 'ipaddr.js';
 
 // ── Normalization ────────────────────────────────────────────────────────────
@@ -278,9 +287,12 @@ function isPrivateAddress(addr: string): boolean {
 //   • The hostname-string bypass (evil.com -> 127.0.0.1)
 //   • The redirect bypass (public URL 302s to http://169.254.169.254/)
 //
-// Caps at MAX_REDIRECTS (5) hops. Returns the final Response. If a redirect
-// target fails validation or DNS resolution, throws an Error — callers should
-// catch and treat as a failed fetch.
+// Caps at MAX_REDIRECTS (5) hops. Returns the final Response, whose `url` is
+// the URL that answered (after every redirect), so a caller resolves relative
+// links against the page it actually read. If a redirect target fails
+// validation or DNS resolution, throws an Error — callers should catch and
+// treat as a failed fetch. A 2xx body is decoded as its Content-Encoding says
+// (point 5 at the top of this file); `maxBodyBytes` bounds what is held.
 
 const MAX_REDIRECTS = 5;
 
@@ -350,6 +362,61 @@ function pinnedLookup(
 type LookupAddress = { address: string; family: number };
 
 /**
+ * What safeFetch takes: fetch's init, with `maxBodyBytes`, the most body bytes
+ * the caller will read. A body is then held to at most maxBodyBytes + 1 bytes
+ * (decoded or not), so a caller that reads up to its cap still sees that the
+ * body went past it. Without it an identity body is read whole, as before, and
+ * a decoded body is held to DEFAULT_MAX_DECODED_BYTES.
+ */
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number };
+
+/**
+ * The most bytes a decoded body may reach when the caller passes no
+ * maxBodyBytes (engine 1.5.4). Past it the read rejects: a compressed body
+ * of a few kilobytes can decode to gigabytes, and nothing reads a cut body
+ * without a cap of its own to say it was cut. 16 MiB is the largest cap the
+ * score route sets on any one document.
+ */
+export const DEFAULT_MAX_DECODED_BYTES = 16 * 1024 * 1024;
+
+/** Statuses whose Response must have a null body (new Response throws otherwise). */
+const NULL_BODY_STATUS = new Set([204, 205, 304]);
+
+/** A content coding this module decodes. */
+export type ContentCoding = 'gzip' | 'deflate' | 'br';
+
+/**
+ * The coding a Content-Encoding header asks the reader to undo: null for none
+ * (no header, empty, or identity), gzip (x-gzip too), deflate or br. Anything
+ * else, or more than one coding, is not ok: the body cannot be read as text.
+ */
+export function contentCodingOf(v: string | string[] | undefined): { ok: true; coding: ContentCoding | null } | { ok: false; value: string } {
+  const list = (Array.isArray(v) ? v.join(',') : v ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter((s) => s !== '' && s !== 'identity');
+  if (list.length === 0) return { ok: true, coding: null };
+  const c = list.length === 1 ? (list[0] === 'x-gzip' ? 'gzip' : list[0]) : '';
+  if (c === 'gzip' || c === 'deflate' || c === 'br') return { ok: true, coding: c };
+  return { ok: false, value: list.join(', ') };
+}
+
+/**
+ * A streaming decoder for `coding`. `head` holds the body's first bytes:
+ * deflate is meant to be zlib-wrapped (RFC 9110 section 8.4.1.2), but some
+ * servers send raw deflate data, so the zlib header (CM 8, a window of at
+ * most 32 KiB, and the check bits) picks between the two.
+ */
+function decoderFor(coding: ContentCoding, head: Buffer): Transform {
+  if (coding === 'gzip') return createGunzip();
+  if (coding === 'br') return createBrotliDecompress();
+  const b0 = head[0] ?? 0;
+  const b1 = head[1] ?? 0;
+  const zlibWrapped = head.length >= 2 && (b0 & 0x0f) === 8 && (b0 >> 4) <= 7 && ((b0 << 8) | b1) % 31 === 0;
+  return zlibWrapped ? createInflate() : createInflateRaw();
+}
+
+/**
  * HTTP(S) GET with connection-level IP pinning. Returns a WHATWG `Response` so
  * it is a drop-in replacement for `fetch(url, { redirect: 'manual' })`.
  *
@@ -357,8 +424,12 @@ type LookupAddress = { address: string; family: number };
  * the socket can only ever reach a validated public IP — DNS rebinding (TOCTOU)
  * is closed at connect time. `redirect: 'manual'` is honored explicitly: 3xx is
  * returned as-is (with a Location header) for the caller to re-validate + follow.
+ *
+ * The Response's `url` is the URL requested. A 2xx body (not for HEAD, 204 or
+ * 205) is decoded as its Content-Encoding says, up to the cap in SafeFetchInit;
+ * one that does not decode rejects. Every other body is returned raw.
  */
-function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
+function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   return new Promise((resolve, reject) => {
     const signal = init?.signal ?? undefined;
     // A signal that fired before this hop started (during the previous hop or
@@ -368,6 +439,17 @@ function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string
       reject(abortedError());
       return;
     }
+    // One outcome per call: the body, a decoding failure, a socket error and
+    // an abort can each arrive after another has settled it.
+    let settled = false;
+    let decoder: Transform | null = null;
+    const fail = (e: Error) => {
+      if (settled) return;
+      settled = true;
+      decoder?.destroy();
+      req.destroy();
+      reject(e);
+    };
     let parsed: URL;
     try {
       parsed = new URL(url);
@@ -381,22 +463,44 @@ function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string
     for (const [k, v] of Object.entries(init?.headers ?? {})) {
       if (v !== undefined) headers[k] = String(v);
     }
+    const method = init?.method || 'GET';
+    const maxBodyBytes = init?.maxBodyBytes;
     const reqFn = isHttps ? https.request : http.request;
     const req = reqFn(
       {
         hostname: parsed.hostname,
         port: parsed.port || (isHttps ? 443 : 80),
         path: parsed.pathname + parsed.search,
-        method: init?.method || 'GET',
+        method,
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
         timeout: init?.signal ? undefined : 15000,
       },
       (res) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const body = Buffer.concat(chunks);
+        const status = res.statusCode || 0;
+        // Only a body the caller will read is decoded. A 3xx, 4xx or 5xx keeps
+        // its raw body and its headers, so a garbled error page stays an
+        // http_error rather than becoming a network failure.
+        const readsBody = method.toUpperCase() !== 'HEAD' && status >= 200 && status < 300 && !NULL_BODY_STATUS.has(status);
+        const cod = readsBody ? contentCodingOf(res.headers['content-encoding']) : { ok: true as const, coding: null };
+        if (!cod.ok) {
+          fail(new Error(`content decoding failed: unsupported Content-Encoding "${cod.value}"`));
+          return;
+        }
+        const coding = cod.coding;
+        // The most bytes held: one past the caller's cap, so its own cap reads
+        // as reached; for a decoded body with no cap, one past the default.
+        const hold = coding
+          ? (maxBodyBytes ?? DEFAULT_MAX_DECODED_BYTES) + 1
+          : maxBodyBytes === undefined ? Infinity : maxBodyBytes + 1;
+        const out: Buffer[] = [];
+        let held = 0;
+        const head: Buffer[] = [];
+        let headBytes = 0;
+
+        const finish = () => {
+          if (settled) return;
+          settled = true;
           // Build a WHATWG Response from the node IncomingMessage.
           const rsHeaders = new Headers();
           const raw = res.headers as Record<string, string | string[] | undefined>;
@@ -405,21 +509,95 @@ function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string
             if (Array.isArray(v)) v.forEach((x) => rsHeaders.append(k, x));
             else rsHeaders.append(k, v);
           }
-          resolve(
-            new Response(body, {
-              status: res.statusCode || 0,
-              statusText: res.statusMessage || '',
-              headers: rsHeaders,
-            }),
-          );
+          // The body is no longer encoded, and its length is not the sent one.
+          if (coding) {
+            rsHeaders.delete('content-encoding');
+            rsHeaders.delete('content-length');
+          }
+          const r = new Response(NULL_BODY_STATUS.has(status) ? null : Buffer.concat(out), {
+            status,
+            statusText: res.statusMessage || '',
+            headers: rsHeaders,
+          });
+          // A Response built by hand has url ''. safeFetch returns the last
+          // hop's Response, so this makes resp.url the URL that answered.
+          Object.defineProperty(r, 'url', { value: url, enumerable: true });
+          resolve(r);
+        };
+
+        const take = (c: Buffer) => {
+          if (settled) return;
+          const room = hold - held;
+          if (c.length < room) {
+            out.push(c);
+            held += c.length;
+            return;
+          }
+          out.push(c.subarray(0, room));
+          held += room;
+          if (coding && maxBodyBytes === undefined) {
+            fail(new Error(`content decoding failed (${coding}): the decoded body is over ${DEFAULT_MAX_DECODED_BYTES} bytes`));
+            return;
+          }
+          // The caller's cap is reached: return what it will read, stop here.
+          finish();
+          decoder?.destroy();
+          req.destroy();
+        };
+
+        const startDecoder = () => {
+          const d = decoderFor(coding as ContentCoding, Buffer.concat(head));
+          decoder = d;
+          d.on('data', take);
+          d.on('error', (e: NodeJS.ErrnoException) => fail(new Error(`content decoding failed (${coding}): ${e.code || e.message}`)));
+          d.on('end', finish);
+          d.on('drain', () => res.resume());
+          for (const b of head.splice(0)) if (!d.write(b)) res.pause();
+        };
+
+        res.on('data', (c: Buffer) => {
+          if (settled) return;
+          if (!coding) {
+            take(c);
+            return;
+          }
+          if (!decoder) {
+            // The decoder is picked from the first two bytes (deflate's header).
+            head.push(c);
+            headBytes += c.length;
+            if (headBytes >= 2) startDecoder();
+            return;
+          }
+          if (!decoder.write(c)) res.pause();
         });
-        res.on('error', (e) => reject(e as Error));
+        res.on('end', () => {
+          if (settled) return;
+          if (!coding) {
+            finish();
+            return;
+          }
+          if (!decoder) {
+            // No body at all decodes to no body (gunzip of 0 bytes is an error).
+            if (headBytes === 0) {
+              finish();
+              return;
+            }
+            startDecoder();
+          }
+          (decoder as Transform | null)?.end();
+        });
+        res.on('error', (e) => fail(e as Error));
       },
     );
     req.on('timeout', () => {
       req.destroy(new Error('SSRF guard: fetch timeout'));
     });
-    req.on('error', (e) => reject(e as Error));
+    req.on('error', (e) => {
+      if (settled) return;
+      settled = true;
+      decoder?.destroy();
+      reject(e as Error);
+    });
     // Honor AbortSignal (route handlers pass controller.signal). The abort
     // settles the promise itself: destroying the request mid-body does not
     // reliably surface as an 'error' on the response stream, and a caller
@@ -427,8 +605,11 @@ function pinnedFetch(url: string, init?: RequestInit & { headers?: Record<string
     if (signal && typeof signal.addEventListener === 'function') {
       const onAbort = () => {
         const err = abortedError();
+        const wasSettled = settled;
+        settled = true;
+        decoder?.destroy();
         req.destroy(err);
-        reject(err);
+        if (!wasSettled) reject(err);
       };
       // Left registered once the call settles: the signal belongs to this one
       // read, and a late abort then only destroys a finished request.
@@ -463,10 +644,7 @@ function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefine
 // every body. A DNS answer that arrives after the signal fired is not followed
 // by a request, so a redirect to a host with a slow resolver cannot carry a
 // read past the caller's deadline.
-export async function safeFetch(
-  url: string,
-  init?: RequestInit & { headers?: Record<string, string> },
-): Promise<Response> {
+export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   const signal = init?.signal ?? undefined;
   let currentUrl = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
