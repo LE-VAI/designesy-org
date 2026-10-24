@@ -79,7 +79,7 @@ export const acousticTokens = {
       cuelume_cue: 'whisper',
       character: 'Breathy quiet swell',
       interaction_role: 'Dense list / surface scan',
-      where_used: 'Contracts pages, review overview, check grids, toggle rows, state-of-compliance, dense principle rails',
+      where_used: 'Contracts pages, review overview, check grids, toggle rows, dense principle rails',
     },
     {
       token: '--cue:switch',

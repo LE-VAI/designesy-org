@@ -8,8 +8,7 @@
  *
  *   apps/site/app/<...>/page.tsx      -> that page's route
  *   apps/site/app/page.tsx            -> '/'
- *   apps/site/app/frameworks/[slug]   -> '/frameworks' (the index; slug rows
- *                                        are data of one template)
+ *   a page under a dynamic [segment]  -> FULL (no one route stands for it)
  *   apps/site/next.config.ts          -> FULL (rewrites/redirects serve every
  *                                        route)
  *   apps/site/public/*                -> FULL (assets render wherever they are
@@ -109,11 +108,8 @@ for (const f of files) {
     routes.add(dir ? '/' + dir : '/');
     continue;
   }
-  if (rel.includes('[slug]')) {
-    routes.add('/frameworks');
-    continue;
-  }
-  // Everything else under app/ is shared surface or per-family css.
+  // Everything else under app/ (a dynamic [segment] included) is shared
+  // surface or per-family css.
   full = true;
 }
 

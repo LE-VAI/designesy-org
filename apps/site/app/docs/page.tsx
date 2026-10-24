@@ -14,10 +14,11 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import selfReportRaw from './self-report.json';
 import { fmtScore } from '../score/verdict';
 
-// Self-report receipt data — regenerated weekly from the live engines by
-// scripts/rescore-leaderboard.mjs. Imported (not fetched) so this page stays
-// static: no runtime request, and it cannot disagree with the engines any
-// more than one week, which is the cadence the engines themselves re-run on.
+// Self-report receipt data — regenerated from the live engines by
+// scripts/rescore-leaderboard.mjs whenever that re-score is run by hand (its
+// schedule was removed by the owner's decision of 2026-10-23). Imported (not
+// fetched) so this page stays static: no runtime request. The receipt prints
+// generatedAt in its first sentence, so a reader can see its age.
 type EngineReading = {
   score: number;
   grade: string;
@@ -450,8 +451,8 @@ export default function DocsPage() {
           <div className="definition">
             <p className="definition-label">Honest reading of /report?url=designesy.org</p>
             {/* Every figure below is READ from self-report.json, which the
-                weekly rescore-leaderboard workflow regenerates from the live
-                engines (scripts/rescore-leaderboard.mjs). These were literal
+                rescore-leaderboard workflow, run by hand, regenerates from the
+                live engines (scripts/rescore-leaderboard.mjs). These were literal
                 strings until 2026-09-23, when this section was found claiming
                 drift 92/A and readiness 80/B against live values of 96/A and
                 90/A — a receipt, on a site whose thesis is receipts, that had
@@ -462,7 +463,7 @@ export default function DocsPage() {
             {hasReceipt && selfReport && scoreEngine && driftEngine && readinessEngine ? (
               <>
                 <p>
-                  The combined score is <strong>
+                  The combined score, measured {selfReport.generatedAt}, is <strong>
                     {compositeGrade} ({fmtScore(selfReport.composite as number)} /100)
                   </strong>
                   , a weighted synthesis of the design-score engine (

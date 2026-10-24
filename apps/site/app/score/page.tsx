@@ -54,7 +54,7 @@ export async function generateMetadata({
   const base = pageMeta({
     // Was 'Verify'. Thirty-one inbound CTAs — the nav item, the command
     // palette, every "Score a site" / "Start scoring" button across /pricing,
-    // /leaderboard, /methodology, /continuity, /maturity and the homepage —
+    // /methodology, /continuity, /maturity and the homepage —
     // all say Score, and the URL is /score. Not one inbound link said
     // "Verify". The destination was the only surface using different
     // vocabulary for the same thing, so clicking "Start scoring" landed on a
@@ -154,7 +154,7 @@ export default function ScorePage() {
         <EngineNext
           items={[
             { title: 'Read the contract behind the checks', desc: `The ${CONTRACT_VERSION} design system contract, with every rule the ${ENGINE_CHECK_COUNT} checks enforce.`, route: '/contracts/design-system' },
-            { title: 'See where others land', desc: 'The public leaderboard, scored by the same engine and dated.', route: '/leaderboard' },
+            { title: 'Read how a score is made', desc: 'Every check, its weight and the math behind the grade.', route: '/methodology' },
             { title: 'Track a site over time', desc: 'Each Monitor run re-checks drift and compares the result with your earlier runs, kept in your browser.', route: '/monitor' },
           ]}
         />

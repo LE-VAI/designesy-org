@@ -97,7 +97,6 @@ export const openIndex = {
     'spring physics accessibility validation',
     'Material 3 to DTCG token bridge',
     'design compliance maturity self-assessment',
-    'framework evaluation and scoring',
     'contract changelog by design dimension',
     'Designesy',
   ],
@@ -425,19 +424,6 @@ export const openIndex = {
       machine_path: null,
     },
     {
-      id: 'designesy.frameworks',
-      kind: 'tool' as const,
-      number: null,
-      title: 'Framework evaluations',
-      version: '0.1',
-      status: 'live',
-      lede: 'Per-site evaluation pages for 30 scored design frameworks and sites. Each page has a score dial, per-category breakdown, auto-generated narrative, peer comparison, and cohort context.',
-      human_url: 'https://www.designesy.org/frameworks',
-      machine_url: null,
-      path: '/frameworks',
-      machine_path: null,
-    },
-    {
       id: 'designesy.changelog',
       kind: 'tool' as const,
       number: null,
@@ -578,10 +564,9 @@ If you can fetch URLs:
 
   Interactive tools (all client-side, no server required):
   9.  Maturity self-assessment: /maturity, 24-question compliance diagnostic
-  10. Framework evaluations: /frameworks, per-site score breakdowns (30 sites)
-  11. Contract changelog: /changelog, changes by design dimension, by version
-  12. M3→DTCG bridge: /m3-bridge, convert Material 3 tokens to W3C DTCG format
-  13. Spring physics validator: /spring-validator, spring overshoot + reduced-motion verdict
+  10. Contract changelog: /changelog, changes by design dimension, by version
+  11. M3→DTCG bridge: /m3-bridge, convert Material 3 tokens to W3C DTCG format
+  12. Spring physics validator: /spring-validator, spring overshoot + reduced-motion verdict
 
 If you cannot fetch URLs:
   The human index at designesy.org/open lists all packages.
@@ -600,7 +585,6 @@ Agent brief: https://www.designesy.org/llms.txt
 Design Review kit: https://www.designesy.org/kits/design-review
 Design system contract: https://www.designesy.org/contracts/design-system
 Maturity self-assessment: https://www.designesy.org/maturity
-Framework evaluations: https://www.designesy.org/frameworks
 Contract changelog: https://www.designesy.org/changelog
 M3→DTCG bridge: https://www.designesy.org/m3-bridge
 Spring physics validator: https://www.designesy.org/spring-validator`,
