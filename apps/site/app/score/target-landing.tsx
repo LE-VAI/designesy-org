@@ -6,13 +6,9 @@ import { AgentActions } from '../lib/agent-actions';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 import { CONTRACT_VERSION } from '../lib/design-system-contract';
 
-// The snapshot each Proof row's case study records, for the row's side pane:
-// the grade and score the engine returned, and the day it ran. Source: the
-// case study page itself (app/work/lovable-dev/page.tsx: A, 93.2, captured
-// 2026-07-25). A landing without an entry shows no side pane.
-const CASE_SNAPSHOTS: Record<string, { grade: string; score: string; date: string }> = {
-  lovable: { grade: 'A', score: '93.2', date: '2026-07-25' },
-};
+// The landings show no other site's grade: the Proof pane that carried a
+// third-party case study's snapshot is removed with the public leaderboard
+// (decided 2026-10-23). The form scores whatever URL the visitor enters.
 
 // The copy payload of THE OUTPUT card: its sentence, without the side key.
 //
@@ -49,12 +45,6 @@ export type TargetLandingProps = {
   body: string;
   /** Example URL to prefill into the ScoreForm (not scored until the visitor asks) */
   exampleUrl?: string;
-  /** The score that exampleUrl got, if known (e.g. 'A · 93.2') */
-  exampleScore?: string;
-  /** Case study link for the proof section */
-  caseStudyHref?: string;
-  caseStudyTitle?: string;
-  caseStudyMeta?: string;
 };
 
 export function TargetLanding({
@@ -65,12 +55,7 @@ export function TargetLanding({
   lede,
   body,
   exampleUrl,
-  exampleScore,
-  caseStudyHref,
-  caseStudyTitle,
-  caseStudyMeta,
 }: TargetLandingProps) {
-  const snapshot = CASE_SNAPSHOTS[slug];
   return (
     <>
       <Topbar scrolled />
@@ -90,60 +75,12 @@ export function TargetLanding({
 
         <section className="doctrine-section fade-up fade-up-delay-1">
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
-            {exampleScore ? (
-              <>
-                <strong>{platform}</strong> currently scores{' '}
-                <strong>{exampleScore}</strong> on the contract. Score your own{' '}
-                {platform} site below: the engine runs the same {ENGINE_CHECK_COUNT} checks
-                against your URL.
-              </>
-            ) : (
-              <>
-                Score your <strong>{platform}</strong> site below: the engine
-                runs the same {ENGINE_CHECK_COUNT} checks against your URL as it
-                does against any other.
-              </>
-            )}
+            Score your <strong>{platform}</strong> site below: the engine
+            runs the same {ENGINE_CHECK_COUNT} checks against your URL as it
+            does against any other.
           </p>
           <ScoreForm prefillUrl={exampleUrl} />
         </section>
-
-        {caseStudyHref && caseStudyTitle && (
-          <section className="doctrine-section fade-up fade-up-delay-2">
-            <h2 className="doctrine-heading">Proof</h2>
-            <div className="row-stack" role="list">
-              <div role="listitem">
-                <Link
-                  href={caseStudyHref}
-                  className="row"
-                  data-cuelume-hover="bloom"
-                  data-cuelume-press
-                >
-                  <span className="row-index">01</span>
-                  <span className="row-body">
-                    <span className="row-title">{caseStudyTitle}</span>
-                    <span className="row-meta">{caseStudyMeta}</span>
-                  </span>
-                  {/* The side pane carries the snapshot the case study is
-                      about (grade, score, date) and the route's arrow. */}
-                  {snapshot && (
-                    <span className="row-side">
-                      <span className="row-side-line">
-                        <span className="row-side-chip" data-state="pass">
-                          {snapshot.grade} · {snapshot.score}
-                        </span>
-                      </span>
-                      <span className="row-side-line">
-                        Snapshot · <time dateTime={snapshot.date}>{snapshot.date}</time>
-                      </span>
-                      <span className="row-side-arrow" aria-hidden="true" />
-                    </span>
-                  )}
-                </Link>
-              </div>
-            </div>
-          </section>
-        )}
 
         <section className="doctrine-section fade-up fade-up-delay-2">
           <h2 className="doctrine-heading">What you get</h2>

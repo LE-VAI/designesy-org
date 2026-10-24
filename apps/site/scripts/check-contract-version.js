@@ -79,14 +79,9 @@ const LINE_EXEMPTIONS = [
     why: 'This file IS the source of truth; its prose records contract history.',
   },
   {
-    file: /^(api\/score|api\/leaderboard|leaderboard\/seed)/,
+    file: /^(api\/score|leaderboard\/seed)/,
     line: /^\s*\/\//,
     why: 'Comment recording which contract a past re-score or release used.',
-  },
-  {
-    file: /^frameworks\/\[slug\]\/page\.tsx$/,
-    line: /Scored 20/,
-    why: 'States the contract a dated evaluation was run against.',
   },
 ];
 

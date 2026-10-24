@@ -1,0 +1,13 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "color": {
+    "$type": "color",
+    "blue": { "$value": { "colorSpace": "srgb", "components": [0, 0.4, 0.8], "alpha": 1 } }
+  },
+  "semantic": {
+    "primary": { "$type": "color", "$ref": "#/color/blue/$value" },
+    "accent": { "$ref": "#/color/blue/$value" },
+    "hue": { "$type": "number", "$ref": "#/color/blue/$value/components/0" },
+    "legacy": { "$type": "color", "$ref": "color.blue" }
+  }
+}

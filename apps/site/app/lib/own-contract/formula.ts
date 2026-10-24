@@ -176,7 +176,7 @@ export function ownContractFormula() {
       floor: BASELINE_FLOOR,
       anyFailCap: BASELINE_ANY_FAIL_CAP,
       ceilings: baselineCeilings(),
-      note: 'The baseline reads no contract. It differs from the leaderboard number, which runs every check plus the slop deduction and the originality lift.',
+      note: 'The baseline reads no contract. It differs from the URL score at /score, which runs every check plus the slop deduction and the originality lift.',
     },
     nullRules: NULL_RULES,
     intake: {

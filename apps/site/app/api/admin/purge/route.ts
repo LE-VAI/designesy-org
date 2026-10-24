@@ -4,12 +4,12 @@
 // Why: the score response is wrapped in unstable_cache with a 24h TTL and the
 // 'score' tag (see apps/site/app/api/score/route.ts). When the scoring logic
 // changes (new checks, new dimensions like the originality lift), every URL
-// scored in the prior 24h — including the leaderboard cohort primed by the
-// weekly cron — keeps serving the OLD shape until the tag is purged. Vercel
+// scored in the prior 24h keeps serving the OLD shape until the tag is
+// purged. Vercel
 // has no dashboard button for this; the only programmatic path is
 // revalidateTag(). This route is that manual trigger.
 //
-// Security: same CRON_SECRET bearer check as /api/cron/rescore. The secret is a
+// Security: a CRON_SECRET bearer check, as on the other /api/admin routes. The secret is a
 // server-only env var; without it the endpoint returns 401 and never touches
 // the cache. Purging is safe and idempotent — the cache simply rebuilds on the
 // next request.

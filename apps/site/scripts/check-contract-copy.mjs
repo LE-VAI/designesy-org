@@ -251,8 +251,8 @@ check('gaps flag: both clauses, and a zero clause left out', () => {
   assert.equal(C.gapsFlag([sk('f07', 'not_located'), sk('f08', 'not_located')], 12).text, '2 checks found too little on this page. Fidelity covers the 12 that ran.');
   assert.equal(C.gapsFlag([{ id: 'f02', status: 'PASS' }], 14), null);
 });
-check('leaderboard note carries the baseline count', () => {
-  assert.equal(`${C.leaderboardFlag(18).lead} ${C.leaderboardFlag(18).text}`, "Baseline differs from this page's leaderboard number: it runs 18 universal checks and leaves out Designesy's own checks, slop and originality.");
+check('score note carries the baseline count', () => {
+  assert.equal(`${C.leaderboardFlag(18).lead} ${C.leaderboardFlag(18).text}`, "Baseline differs from this URL's score at /score: it runs 18 universal checks and leaves out Designesy's own checks, slop and originality.");
 });
 check('first finding: the first failure, else the first that needs work, else none', () => {
   const s = (id, status) => ({ id, status });

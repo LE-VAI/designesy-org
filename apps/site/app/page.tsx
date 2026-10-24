@@ -27,14 +27,8 @@ import {
   CONTRACT_VERSION,
   SELF_SCORE,
   SELF_GRADE,
-  COHORT_RESCORED_COUNT,
-  COHORT_HELD_OVER_COUNT,
-  COHORT_TOTAL_COUNT,
-  COHORT_LAST_SCORED,
+  SELF_MEASURED_ON,
   MEASURED_CONTRACT_VERSION,
-  RECENT_SCORES,
-  LOWEST_SCORE,
-  LOWEST_GRADE,
   SELF_COUNTS,
 } from './hero-stats';
 
@@ -46,20 +40,20 @@ import {
 // ⚠️ RE-RENDER CADENCE IS NOT DATA FRESHNESS — do not conflate these.
 // `revalidate = 3600` controls how often this PAGE re-renders. It says nothing
 // about how fresh the numbers on it are. The hero's self-score is read from the
-// leaderboard seed, which only changes when the weekly rescore workflow runs
-// (Mondays 10:00 UTC) — so the page can re-render hourly while quoting a score
-// measured days earlier.
+// seed row for designesy.org, which changes only when someone re-scores it by
+// hand (the scheduled re-score is stopped, decided 2026-10-23) — so the page can
+// re-render hourly while quoting a score measured days earlier.
 //
 // This comment previously read "the hero self-score is baked at build/revalidate
 // time — it refreshes within the hour window", which is true of the RENDER and
 // false of the VALUE. That wording is why the hero displayed "Self-score 93%" as
 // though it were live while the live engine returned 98% for the same verdict
 // counts. The number now renders with its measurement date beside it
-// (COHORT_LAST_SCORED) so the reader is told which fact they are looking at.
+// (SELF_MEASURED_ON) so the reader is told which fact they are looking at.
 //
-// If you want the hero to quote a fresher number, the fix is to raise the
-// rescore cadence in .github/workflows/rescore-leaderboard.yml — NOT to lower
-// this value. Lowering it re-renders the same stale number more often.
+// If you want the hero to quote a fresher number, the fix is to re-score the
+// self row (.github/workflows/rescore-leaderboard.yml, run by hand) — NOT to
+// lower this value. Lowering it re-renders the same stale number more often.
 export const revalidate = 3600;
 
 // The home page's one-liner is the confirmed listing line,
@@ -389,7 +383,7 @@ const PRINCIPLES = [
 const listOf = (items: string[]) =>
   items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 const HEALTH_NOTE = [
-  `Category scores for designesy.org from its own engine (${SELF_CATEGORY_ENGINE}), in the leaderboard batch.`,
+  `Category scores for designesy.org from its own engine (${SELF_CATEGORY_ENGINE}).`,
   SELF_BROWSER_ONLY.length > 0 ? `${listOf(SELF_BROWSER_ONLY)} need a browser, so they are not scored here.` : '',
   SELF_NOT_RECORDED.length > 0 ? `The batch does not record ${listOf(SELF_NOT_RECORDED)} by category.` : '',
 ]
@@ -452,7 +446,7 @@ export default function HomePage() {
                     href="/contracts/design-system"
                     data-cuelume-hover="tick"
                   >
-                    Held to contract {CONTRACT_VERSION}, rescored weekly
+                    Held to contract {CONTRACT_VERSION}
                     <span aria-hidden="true"> →</span>
                   </Link>
                 }
@@ -461,51 +455,18 @@ export default function HomePage() {
           </div>
 
           {/* The instrument: this site, verified by its own engine. Every
-              value is from the registry and the leaderboard seed. */}
+              value is from the registry and the self row of the seed. */}
           <VerifyConsole
             host="designesy.org"
             score={SELF_SCORE}
             grade={SELF_GRADE}
-            measured={COHORT_LAST_SCORED}
+            measured={SELF_MEASURED_ON}
             contract={MEASURED_CONTRACT_VERSION}
             pass={SELF_COUNTS.pass}
             warn={SELF_COUNTS.warn}
             fail={SELF_COUNTS.fail}
           />
 
-          <div className="hero-cohort" role="group" aria-label="This week's cohort">
-            <span className="hero-cohort-label">
-              Cohort, week of {COHORT_LAST_SCORED}: <b>{COHORT_RESCORED_COUNT}</b> of {COHORT_TOTAL_COUNT} sites rescored
-              {COHORT_HELD_OVER_COUNT > 0 && <>, {COHORT_HELD_OVER_COUNT} held over</>}
-            </span>
-            <ul className="hero-cohort-list">
-              {RECENT_SCORES.filter((s) => !s.isSelf)
-                .slice(0, 3)
-                .map((s) => (
-                  <li key={s.url}>
-                    <a
-                      className="hero-cohort-link"
-                      href={`/score?url=${encodeURIComponent(new URL(s.url).host.replace(/^www\./, ''))}`}
-                      data-cuelume-hover="tick"
-                    >
-                      <span className="hero-cohort-name">{s.name}</span>
-                      <span className="hero-cohort-score" data-tabular>{s.score.toFixed(1)}</span>
-                      <span className={`hero-cohort-grade is-${s.grade.toLowerCase()}`}>{s.grade}</span>
-                    </a>
-                  </li>
-                ))}
-              {LOWEST_SCORE !== null && (
-                <li className="hero-cohort-low">
-                  Lowest <span data-tabular>{LOWEST_SCORE.toFixed(1)}</span>
-                  <span className={`hero-cohort-grade is-${LOWEST_GRADE?.toLowerCase()}`}>{LOWEST_GRADE}</span>
-                </li>
-              )}
-            </ul>
-            <Link className="hero-cohort-more text-link" href="/leaderboard" data-cuelume-hover="tick">
-              See the leaderboard
-              <span aria-hidden="true"> →</span>
-            </Link>
-          </div>
         </PlayWhenVisible>
 
         {/* --- Inspection: the product, working, told by scroll ---
@@ -562,7 +523,7 @@ export default function HomePage() {
         {/* --- The contract: nine principles and this site by category ---
             All nine principles as a two-column serif list beside the
             engine's category scores for designesy.org, read from the
-            leaderboard batch. */}
+            self row's batch record (batch-data.ts). */}
         <section className="section home-principles" aria-labelledby="principles-title">
           <div className="home-principles-grid g12">
             <div className="home-principles-main">

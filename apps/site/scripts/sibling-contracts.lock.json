@@ -38,9 +38,9 @@
     },
     {
       "id": "designesy.monitor",
-      "version": "0.1.3",
-      "value": "e336d7a5b044b3d7d759766c564b120f6d71c28c90af48ee74535f3d507def16",
-      "source": "1a533f103b1ba35249ec5f32b9c09782f66515931bea3d814cebd0c47f14d505"
+      "version": "0.1.5",
+      "value": "c46ff442a3304bbe1524799bf88005997592976f996574a244512f4767b68faf",
+      "source": "973138b2df1bc18e214530216bc5323b809682277a60ec8ac0cf61cb26011078"
     },
     {
       "id": "designesy.motion",
@@ -62,9 +62,9 @@
     },
     {
       "id": "designesy.tokens",
-      "version": "0.1.2",
-      "value": "07bcada2135a79e224044abc874e5b6bebc3b5d4227fee0875c064cb95353780",
-      "source": "5dbf12f3cbc2a0e8e69cb28e78e0e3da9609cbd869465dcea8262f095e4b051b"
+      "version": "0.1.3",
+      "value": "74c73cf910655a3d24751c71ad583e101aac549610608f3fa575969793c0d088",
+      "source": "8ceaacbc88323cccd6b35cee5defbc0d7e5e1fcd6eecc8a2365029bb131954a0"
     }
   ]
 }

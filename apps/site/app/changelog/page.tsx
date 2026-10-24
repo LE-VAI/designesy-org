@@ -620,6 +620,34 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy monitor contract v0.1.3; designesy-org pull requests 297 (7190efc) and 283 (6d75289)',
   },
 
+  // ── Monitor contract v0.1.4: alert email is off unless switched on ──
+  {
+    version: 'monitor v0.1.4',
+    date: '2026-10-23',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.4: alert email is off unless the server switches it on',
+    description:
+      'alert_delivery adds a condition: a server sends an alert email only when MONITOR_EMAIL_ENABLED is exactly "true" and, as before, an alert fires, the request names an email and RESEND_API_KEY is set. The switch is off unless set to exactly "true", because nothing confirms that an address belongs to the person who asked for the mail. m10 and the open questions name the switch. With it off and an alert fired, m10 says the alert was surfaced in-UI and that email alerts are off on the server. The m10 row now matches the engine: it passes when an alert is delivered, held back by the cooldown or surfaced in-UI, warns when a send fails, and never fails.',
+    rationale:
+      'Rules changed: when an alert email is sent. No check is added. m10 stays PASS when an alert is only surfaced in-UI, so the one score change is a request whose send would have failed (WARN) that now sends nothing (PASS).',
+    source: 'Designesy monitor contract v0.1.4',
+  },
+
+  // ── Monitor contract v0.1.5: alert email is retired, m10 is not scored ──
+  {
+    version: 'monitor v0.1.5',
+    date: '2026-10-23',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.5: alert email is retired, and m10 is not scored',
+    description:
+      'alert_delivery changed: alerts come back in the result (alerts[]), and the monitor sends no email under any setting. An email field in a request, of any type, is accepted and ignored, and no address is returned. m10 (alert delivered) is N/A on every run and is not scored; the ids m01 to m10 stay. The history a request carries is checked for shape and bounds (a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS, FAIL, WARN or SKIP, string lengths, at most 12 checks a run, at most 1000 runs, and a body of at most 512 KB), and a malformed history is refused with a 400 that names the field. Only what a check reads is required (each run\'s score, token count and checks, and each check\'s id and status), so a run trimmed to those is still answered. Before, a history of [{}] crashed the route, and a non-numeric score such as "x" broke the m03, m04 and m07 deltas.',
+    rationale:
+      'Rules changed: m10 and the scoring. m10 passed on every run unless a send was tried and failed, so leaving it out takes a PASS out of the score: a stable site moves from 90 (A) to 89 (B) on its third run or later and from 95 to 94 on its second, and a first run stays at 100. No check is added or removed.',
+    source: 'Designesy monitor contract v0.1.5',
+  },
+
   // ── Compare contract v0.1.1: the editorial pass, versioned ──
   {
     version: 'compare v0.1.1',
@@ -716,7 +744,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'v27 found the word input, textarea or select and then the next rule, across a closing brace, so "select" in user-select: none made the following rule a field rule and a 12px caption failed the page. It now reads each font-size against the selector of the rule it sits in. A class that names a field still counts, and select { font-size: 14px } still fails. v37 is renamed "DESIGN.md spec-layer validation (DESIGN.md format lint)", and its fix text names the format\'s linter; the install and run commands are unchanged.',
     checks: ['v27', 'v37'],
     rationale:
-      'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard shows the new scores from its next weekly re-score. This site stays 100 A, and a real field under 16px still fails.',
+      'A FAIL on a page whose fields are right is a wrong reading, and it caps the grade. Removing it raises the affected scores: measured on the leaderboard cohort on the same bytes, two sites move up, one by a full grade where the false FAIL had pulled its accessibility checks under the 60% cap. No score goes down. The leaderboard showed the new scores from its next re-score. This site stays 100 A, and a real field under 16px still fails.',
     source: 'engine 1.4.1 entry in CHANGELOG.md',
   },
 
@@ -761,6 +789,20 @@ const CHANGELOG: ChangelogEntry[] = [
     rationale:
       "This site's own hero console was sized through the shorthand, down to 8.8px under a 12.8px floor, and v46 never saw it: measuring the rendered page found the gap. Re-scored on the leaderboard cohort on the same bytes, no score or grade moves (v46 WARNs, it never FAILs); v46 measures more sizes on three sites, this one included, fewer on none, and finds new sub-floor or off-scale sizes on two.",
     source: 'engine 1.5.2 entry in CHANGELOG.md; CSS Fonts 4 (the font shorthand); the design-system contract type scale (12.8px floor)',
+  },
+
+  // ── Tokens contract v0.1.3: types as the format assigns them ──
+  {
+    version: 'tokens v0.1.3',
+    date: '2026-10-21',
+    dimension: 'tokens',
+    change: 'modified',
+    title: 'Tokens contract 0.1.3: a token takes the type of its group, and $schema is Designesy policy',
+    description:
+      'A token with no $type of its own takes the type of the token it references, else the closest $type on the groups above it, a group\'s $extends included, as the 2025.10 Format Module assigns it. Until 0.1.3 only a $type written on the token counted, so 13 of the 93 valid files in the DTCG 2025.10 test suite failed t03 and scored 50 to 71; none of the 93 now fails t03 or t06. A token written { $type, $ref } is counted, and a $ref that is a JSON Pointer is no longer a deprecated pattern; t10 reports a $ref that is not one. t04 fails a token with both $value and $ref, or a JSON Pointer that names nothing in the file or loops. The whole file is read, where a top-level group named tokens was scored alone. A missing $schema is a t01 WARN named as Designesy policy, where it was a FAIL that said DTCG requires it. t08 expects { value, unit } in px or rem and reports a string such as "16px" as the legacy form, which t10 also lists. With no tokens, t03 is N/A.',
+    rationale:
+      'Rules changed: how a token\'s type is found, what counts as a token and as its value, the t01 verdict on a missing $schema, the dimension form t08 accepts and the $ref that t10 reports. The checks misread valid DTCG files and stated requirements the format does not make.',
+    source: 'tokens contract 0.1.3 entry in CHANGELOG.md; Design Tokens Format Module 2025.10, sections 5.2.2, 6.7.3, 7.1.2, 7.2.3, 7.5.1 and 8.2',
   },
 ];
 

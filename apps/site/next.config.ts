@@ -85,7 +85,7 @@ const agentLinkHeaders = {
  */
 const MARKDOWN_ROUTES = [
   'index',
-  'docs', 'methodology', 'kits', 'open', 'benchmarks', 'leaderboard',
+  'docs', 'methodology', 'kits', 'open', 'benchmarks',
   'contracts',
   'contracts/design-system', 'contracts/a11y', 'contracts/motion',
   'contracts/drift', 'contracts/readiness', 'contracts/guardrails',
@@ -93,7 +93,6 @@ const MARKDOWN_ROUTES = [
   'contracts/tokens', 'labs/poise', 'labs/takt', 'labs/cadence',
   'labs/acoustics',
   'docs/mcp',
-  'state-of-compliance',
   'changelog',
   'work/compile',
   'work/continuity',
@@ -109,7 +108,6 @@ const MARKDOWN_ROUTES = [
   'labs',
   'maturity',
   'continuity',
-  'frameworks',
   'work',
   'learn',
   'acoustic-tokens',
@@ -131,7 +129,6 @@ const MARKDOWN_ROUTES = [
   'score/v0',
   'spring-validator',
   'work/designesy-org',
-  'work/lovable-dev',
   'work/tile',
 ];
 
@@ -187,8 +184,8 @@ const nextConfig: NextConfig = {
       './node_modules/@google/design.md/**/*',
     ],
     // lib/og-card reads its TTFs with readFileSync at render time. Static OG
-    // routes render at build, but the parameterised ones (score report,
-    // frameworks/[slug]) render in a Lambda, where NFT cannot see a runtime
+    // routes render at build, but the parameterised ones (the score report)
+    // render in a Lambda, where NFT cannot see a runtime
     // path join. Include the fonts for every route.
     '/**/*': ['./app/lib/og-fonts/*.ttf'],
   },
@@ -289,13 +286,37 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Withdrawn routes (decided 2026-10-23): the public leaderboard and the pages
+  // built on it are removed. Each old path, its sub-paths and its .md twin answer
+  // 308 to the page that now explains the method, so inbound links and the
+  // link checker land on a page instead of a 404. No destination below matches
+  // a source, so none of them can loop, and no source covers a kept route.
   async redirects() {
+    const withdrawn: [string, string][] = [
+      ['/leaderboard', '/methodology'],
+      ['/frameworks', '/methodology'],
+      ['/state-of-compliance', '/methodology'],
+      ['/blog', '/methodology'],
+      ['/work/lovable-dev', '/work'],
+    ];
+    // The routes that had a markdown twin (MARKDOWN_ROUTES before the withdrawal).
+    const withdrawnMarkdown: [string, string][] = [
+      ['/leaderboard.md', '/methodology.md'],
+      ['/frameworks.md', '/methodology.md'],
+      ['/state-of-compliance.md', '/methodology.md'],
+      ['/work/lovable-dev.md', '/work.md'],
+    ];
     return [
       {
         source: '/index',
         destination: '/',
         permanent: true,
       },
+      ...withdrawn.flatMap(([from, to]) => [
+        { source: from, destination: to, permanent: true },
+        { source: `${from}/:path*`, destination: to, permanent: true },
+      ]),
+      ...withdrawnMarkdown.map(([from, to]) => ({ source: from, destination: to, permanent: true })),
     ];
   },
 };

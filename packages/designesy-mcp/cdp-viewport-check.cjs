@@ -11,25 +11,19 @@
  *     per-width waits with settle-based waits (MutationObserver). Faster on
  *     light pages, more reliable on SPAs.
  *
- * Usage: node cdp-viewport-check.cjs <url>
- * Requires Chrome running with --remote-debugging-port=9222
+ * Usage: node cdp-viewport-check.cjs <url> [--cdp=<DevTools URL>]
+ * Requires Chrome running with --remote-debugging-port, at the --cdp endpoint
+ * (http://127.0.0.1:9222 without it). The MCP server runs this script only
+ * when DESIGNESY_CDP_URL is set, and passes it as --cdp.
  */
 const http = require('http');
 // Node 21+ provides a global WebSocket (DOM API: onopen/onmessage/onerror).
 // No need for the 'ws' npm package — this keeps the MCP package zero-dependency.
 
-const CDP_HOST = '127.0.0.1';
-const CDP_PORT = 9222;
-
-function getTargets() {
-  return new Promise((resolve, reject) => {
-    http.get(`http://${CDP_HOST}:${CDP_PORT}/json/list`, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(JSON.parse(data)));
-    }).on('error', reject);
-  });
-}
+const CDP_ARG = process.argv.slice(3).find(a => a.startsWith('--cdp='));
+const CDP = new URL(CDP_ARG ? CDP_ARG.slice('--cdp='.length) : 'http://127.0.0.1:9222');
+const CDP_HOST = CDP.hostname.replace(/^\[|\]$/g, '');
+const CDP_PORT = Number(CDP.port) || 80;
 
 function createTab(url) {
   return new Promise((resolve, reject) => {
@@ -184,13 +178,10 @@ async function settleInSession(session, settleMs = 500, maxWaitMs = 3000) {
 async function checkViewportOverflow(url) {
   console.log(`Opening ${url}...`);
   const tab = await createTab(url);
-  if (!tab.webSocketDebuggerUrl) {
-    const targets = await getTargets();
-    const pageTab = targets.find(t => t.type === 'page' && t.url.includes(url.split('/')[2]));
-    if (!pageTab) throw new Error('Could not create or find tab');
-    tab.webSocketDebuggerUrl = pageTab.webSocketDebuggerUrl;
-    tab.id = pageTab.id;
-  }
+  // Only a tab this run opened is measured and closed. Until 1.13.10 a failed
+  // /json/new fell back to a page tab already open on the same host, measured
+  // the four widths in it, and closed it: one of the browser owner's tabs.
+  if (!tab.webSocketDebuggerUrl) throw new Error('Could not create tab');
 
   const wsUrl = tab.webSocketDebuggerUrl;
   console.log(`Tab created: ${tab.id}`);
@@ -239,7 +230,7 @@ async function checkViewportOverflow(url) {
 }
 
 const url = process.argv[2];
-if (!url) { console.error('Usage: node cdp-viewport-check.cjs <url>'); process.exit(1); }
+if (!url) { console.error('Usage: node cdp-viewport-check.cjs <url> [--cdp=<DevTools URL>]'); process.exit(1); }
 checkViewportOverflow(url)
   .then(result => { console.log('\n' + JSON.stringify(result, null, 2)); process.exit(0); })
   .catch(err => { console.error('Error:', err.message); process.exit(1); });

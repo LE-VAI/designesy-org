@@ -32,9 +32,9 @@
  */
 
 const ROUTES = [
-  '/', '/score', '/leaderboard', '/drift', '/compare', '/badge', '/changelog',
+  '/', '/score', '/drift', '/compare', '/badge', '/changelog',
   '/work', '/labs', '/contracts', '/pricing', '/methodology', '/learn',
-  '/m3-bridge', '/spring-validator', '/frameworks',
+  '/m3-bridge', '/spring-validator',
 ];
 
 const args = process.argv.slice(2);

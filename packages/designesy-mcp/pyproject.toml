@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "designesy-mcp"
-version = "1.13.9"
-description = "Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade. Read-only except monitor alerts, which can send email when configured."
+version = "1.13.10"
+description = "Design quality gate for AI-generated UI: score any URL on 45 deterministic checks, A–F grade."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"

@@ -2,8 +2,7 @@
 """
 designesy_mcp_server — stdio MCP server exposing designesy.org's design
 intelligence infrastructure as native agent tools and resources. Every tool
-reads only, except designesy_monitor_score, which can send an alert email (see
-SAFETY below).
+only reads (see SAFETY below).
 
 Zero external dependencies (stdlib only). Implements the MCP JSON-RPC 2.0
 protocol over stdio (initialize, tools/list, tools/call, resources/list,
@@ -33,18 +32,21 @@ PROVENANCE:
     The server caches responses with a 5-minute TTL. No local files are read.
 
 SAFETY:
-    Read-only with one exception. designesy_monitor_score posts to
-    designesy.org's /api/monitor, which sends a drift-alert email through
-    Resend when the caller passes `email`, an alert fires, and the server has
-    a Resend key configured. Every other tool only reads: the document tools
-    fetch designesy.org exports, and the scoring tools fetch the URLs the
-    caller supplies, directly or through designesy.org's engines. The server
-    writes no local files and reads no credentials. TOOL_ANNOTATIONS records
-    each tool's hints.
+    Read-only. The document tools fetch designesy.org exports, and the
+    scoring tools fetch the URLs the caller supplies, directly or through
+    designesy.org's engines. designesy_monitor_score sends no email: its
+    `email` argument is deprecated and ignored, and this server does not
+    forward it (designesy.org retired monitor email in monitor contract
+    0.1.5). The server writes no local files and reads no credentials.
+    TOOL_ANNOTATIONS records each tool's hints. Every certificate is verified
+    unless the operator sets DESIGNESY_INSECURE_TLS=1, which covers a
+    caller's URL only, and no browser is used unless the operator sets
+    DESIGNESY_CDP_URL.
 """
 from __future__ import annotations
 
 import json
+import os
 import re
 import ssl
 import sys
@@ -54,7 +56,7 @@ import urllib.error
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
-SERVER_VERSION = "1.13.9"
+SERVER_VERSION = "1.13.10"
 
 # ── Configuration ────────────────────────────────────────────────────────────
 
@@ -93,14 +95,51 @@ _BROWSER_HEADERS = {
     "Upgrade-Insecure-Requests": "1",
 }
 
-# Some surfaces (e.g. framer.com) serve expired/rotated certs.  As a last
-# resort we fall back to a lenient context so the stress log can still
-# capture the surface rather than dying on TLS.  The primary fetch stays
-# strict; this only activates on SSLCertVerificationError.
+# Certificates are always verified. Until 1.13.10, _fetch and _post_api
+# retried with CERT_NONE after a failed verification, a raw ssl.SSLError of
+# any kind, or any error whose text said "certificate" (an HTTP error with
+# such a reason phrase included), so a POST to designesy.org's engines,
+# monitor email and all, could go out unverified. A failed verification is
+# now the result. An operator who has to read a site with a bad certificate
+# can set DESIGNESY_INSECURE_TLS=1: a caller's URL (never designesy.org's)
+# whose certificate fails verification is then read without it, and the
+# tool's result says tls_verified: false.
 _SSL_CONTEXT = ssl.create_default_context()
-_SSL_CONTEXT_LENIENT = ssl.create_default_context()
-_SSL_CONTEXT_LENIENT.check_hostname = False
-_SSL_CONTEXT_LENIENT.verify_mode = ssl.CERT_NONE
+
+# Caller URLs whose cached body was read without certificate verification.
+_TLS_UNVERIFIED: set[str] = set()
+
+
+def _unverified_ssl_context() -> ssl.SSLContext:
+    """A context that checks neither the certificate nor the host name."""
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def _insecure_tls_allowed(url: str) -> bool:
+    """True when DESIGNESY_INSECURE_TLS=1 and url is not on designesy.org."""
+    from urllib.parse import urlparse
+
+    if os.environ.get("DESIGNESY_INSECURE_TLS") != "1":
+        return False
+    host = (urlparse(url).hostname or "").lower()
+    return host != "designesy.org" and not host.endswith(".designesy.org")
+
+
+def _is_cert_failure(exc: BaseException) -> bool:
+    """True for a failed certificate verification, raised or wrapped in a URLError."""
+    return isinstance(exc, ssl.SSLCertVerificationError) or isinstance(
+        getattr(exc, "reason", None), ssl.SSLCertVerificationError
+    )
+
+
+def _tls_flagged(result: Any, *urls: str) -> Any:
+    """The result, with tls_verified False if any of urls was read unverified."""
+    if isinstance(result, dict) and any(u in _TLS_UNVERIFIED for u in urls):
+        result["tls_verified"] = False
+    return result
 
 # ── SSRF protection ──────────────────────────────────────────────────────────
 # Block URLs that could reach internal services when a user supplies an
@@ -154,15 +193,15 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         headers["Accept"] = "application/json, text/plain, */*"
 
     req = urllib.request.Request(url, headers=headers)
+    verified = True
     try:
         opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT)
     except Exception as exc:
-        # SSLCertVerificationError often wraps inside URLError — catch broadly.
-        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
-            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
-            opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT_LENIENT)
-        else:
+        if not (_is_cert_failure(exc) and _insecure_tls_allowed(url)):
             raise
+        sys.stderr.write(f"WARNING: certificate verification failed for {url}, reading it unverified (DESIGNESY_INSECURE_TLS=1): {exc}\n")
+        opener = urllib.request.urlopen(req, timeout=15, context=_unverified_ssl_context())
+        verified = False
     with opener as resp:
         body = resp.read().decode("utf-8")
 
@@ -172,6 +211,10 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         data = body
 
     _cache[url] = (now, data)
+    if verified:
+        _TLS_UNVERIFIED.discard(url)
+    else:
+        _TLS_UNVERIFIED.add(url)
     return data
 
 
@@ -1478,14 +1521,16 @@ def _extract_css_parts(html: str, base_url: str) -> list[str]:
     return parts
 
 
-def _fetch_page_parts(url: str) -> tuple[str, str]:
+def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     """Fetch a page and its CSS the way route.ts fetchPageResilient assembles it.
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal.
+    fails to load is dropped, not fatal. The third item lists the URLs read:
+    the page, then each sheet that loaded.
     """
     html = _fetch(url, as_json=False)
+    read = [url]
     parts = _extract_css_parts(html, url)
     css_parts = [p for p in parts if not p.startswith("http")]
     external = list(dict.fromkeys(p for p in parts if p.startswith("http")))
@@ -1494,9 +1539,10 @@ def _fetch_page_parts(url: str) -> tuple[str, str]:
             text = _fetch(href, as_json=False)
         except Exception:
             continue
+        read.append(href)
         if text:
             css_parts.append(text)
-    return html, "\n".join(css_parts)
+    return html, "\n".join(css_parts), read
 
 
 # ── Tokens ───────────────────────────────────────────────────────────────────
@@ -2578,9 +2624,13 @@ def _check_rem_scale(css: str) -> dict[str, str]:  # checkRemScale
 #
 # The live engine reports these MANUAL: they need a browser, and the full
 # audit (/api/score/audit) resolves them. This engine reports the same MANUAL,
-# except that v02 and v21 are measured when a Chrome DevTools endpoint is
-# running on 127.0.0.1:9222 (the Node scripts beside this file drive it). A
-# probe that cannot run or measure leaves the check MANUAL, never PASS.
+# except that v02 and v21 are measured when the operator sets
+# DESIGNESY_CDP_URL to a Chrome DevTools endpoint that answers (the Node
+# scripts beside this file, given it as --cdp, open a tab there, measure, and
+# close it). Until 1.13.10 any endpoint answering on 127.0.0.1:9222 was used
+# unasked, so a score call could open the caller's URL in the operator's own
+# browser. A probe that cannot run or measure leaves the check MANUAL, never
+# PASS.
 #
 # .cjs extension is required: this package sits inside a "type": "module"
 # monorepo, so a bare .js file is parsed as ESM and `require` throws
@@ -2597,11 +2647,19 @@ _CDP_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-viewport-check.cjs")
 _CDP_CWV_SCRIPT = os.path.join(os.path.dirname(__file__), "cdp-cwv-expr.cjs")
 
 
+def _cdp_url() -> str | None:
+    """The DevTools endpoint DESIGNESY_CDP_URL names, or None when it is unset."""
+    return os.environ.get("DESIGNESY_CDP_URL", "").strip().rstrip("/") or None
+
+
 def _cdp_available() -> bool:
-    """Check if Chrome CDP is reachable on port 9222."""
+    """Check that DESIGNESY_CDP_URL is set and its DevTools endpoint answers."""
+    base = _cdp_url()
+    if base is None:
+        return False
     try:
         import urllib.request as ur
-        ur.urlopen("http://127.0.0.1:9222/json/version", timeout=2).read()
+        ur.urlopen(f"{base}/json/version", timeout=2).read()
         return True
     except Exception:
         return False
@@ -2652,7 +2710,7 @@ def _check_viewport_overflow_cdp(url: str) -> tuple[str, str]:
 
     try:
         result = subprocess.run(
-            ["node", _CDP_SCRIPT, url],
+            ["node", _CDP_SCRIPT, url, f"--cdp={_cdp_url()}"],
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_SCRIPT),
         )
@@ -2711,7 +2769,7 @@ def _check_cwv_cdp(url: str) -> tuple[str, str]:
 
     try:
         result = subprocess.run(
-            ["node", _CDP_CWV_SCRIPT, url],
+            ["node", _CDP_CWV_SCRIPT, url, f"--cdp={_cdp_url()}"],
             capture_output=True, text=True, timeout=60,
             cwd=os.path.dirname(_CDP_CWV_SCRIPT),
         )
@@ -3059,15 +3117,42 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     The site API is the single source of truth for the contract it serves
     (45 checks, 14 categories). The version is reported from that reply, not
     asserted here, so this docstring names no version to fall stale.
-    Returns the normalized response, or None if the API is unreachable
-    (caller falls back to the local engine).
+    Returns the normalized response, or None when the network failed before
+    the request was sent, and the caller falls back to the local engine.
+    urllib raises a URLError with no HTTP status only for a failure before
+    the request is sent (no DNS, no route, a refused connection, the TLS
+    handshake); one after it (a reset, a read timeout) is raised as it is.
+
+    Anything else is an error result, and nothing is scored locally: an HTTP
+    error status (a refused URL, a rate limit, a page the engine could not
+    reach), ok false, a reply that is not a JSON object, a failure after the
+    request was sent, or a certificate that fails verification. The engine
+    can spend longer reading a page than this call waits, so a page that
+    answers the engine slowly can time the call out; a fallback then would
+    let any page have itself fetched from this machine. Until 1.13.10 all of
+    these fell back, so a URL the engine refused, such as one on the host
+    100.100.100.200, was fetched from this machine instead, through
+    _validate_url, which lets that address through.
     """
     try:
-        data = json.loads(_post_score_api(url, "designesy", scope))
-    except Exception:
-        return None
+        body = _post_score_api(url, "designesy", scope)
+    except urllib.error.HTTPError as exc:
+        return _score_declined(url, _score_api_failure(exc))
+    except urllib.error.URLError as exc:
+        if not _is_cert_failure(exc):
+            return None
+        return _score_declined(url, _scrub_local_paths(
+            f"the certificate of {BASE_URL} failed verification: {exc.reason}"))
+    except Exception as exc:
+        return _score_declined(url, f"the call failed after the request was sent: {_score_api_failure(exc)}")
+    try:
+        data = json.loads(body)
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return _score_declined(url, "the reply was not a JSON object")
     if not data.get("ok"):
-        return None
+        return _score_declined(url, _scrub_local_paths(str(data.get("error") or "the reply was not ok")))
 
     checks = data.get("checks", [])
     summary = {
@@ -3127,6 +3212,20 @@ def _score_api_failure(exc: Exception) -> str:
     return _scrub_local_paths(f"{type(exc).__name__}: {exc}")
 
 
+def _score_declined(url: str, reason: str) -> dict[str, Any]:
+    """The designesy_score error for an engine call that returned no score."""
+    return {
+        "success": False,
+        "error": (
+            f"The scoring engine at {BASE_URL}/api/score did not score {url} "
+            f"({reason}). Nothing was scored locally: the offline engine runs "
+            "only when the network fails before the request is sent (no DNS, "
+            "no route, a refused connection)."
+        ),
+        "url": url,
+    }
+
+
 def _score_impl(
     url: str | None = None,
     format: str | None = None,
@@ -3139,10 +3238,12 @@ def _score_impl(
 
     format designesy (the default) reshapes the engine's native JSON into
     this tool's long-standing shape, and falls back to the offline engine
-    (_score_local_impl) when the API is unreachable, so the tool still works
-    offline. The offline engine runs a subset of the live engine's checks,
-    mirrors live engine OFFLINE_ENGINE_MIRRORS for each one, and applies the
-    same scope: the one requested, or the one auto-detected from the URL.
+    (_score_local_impl) when the network fails before the request is sent,
+    so the tool still works offline; any other failure is the result (see
+    _score_remote), an engine's error among them. The offline engine runs a
+    subset of the live engine's checks, mirrors live engine
+    OFFLINE_ENGINE_MIRRORS for each one, and applies the same scope: the one
+    requested, or the one auto-detected from the URL.
 
     format canonical and google return the engine's JSON unchanged, and
     format review returns its markdown unchanged (a str, which the
@@ -3200,13 +3301,14 @@ def _score_local_impl(url: str, scope: str | None = None) -> dict[str, Any]:
 
     Fetches the page and its CSS the way the live engine assembles them, then
     runs the offline checks (_offline_checks) under the requested scope, or
-    the one auto-detected from the URL. v02 and v21 are measured when a Chrome
-    DevTools endpoint is running on 127.0.0.1:9222, and read MANUAL otherwise.
-    It fetches only the page and its stylesheets; the contract JSON from
-    designesy.org, which the previous engine's v01 needed, is not fetched.
+    the one auto-detected from the URL. v02 and v21 are measured when
+    DESIGNESY_CDP_URL names a Chrome DevTools endpoint that answers, and read
+    MANUAL otherwise. It fetches only the page and its stylesheets; the
+    contract JSON from designesy.org, which the previous engine's v01 needed,
+    is not fetched.
     """
-    html, css = _fetch_page_parts(url)
-    return _offline_result(url, html, css, scope, browser_probes=True)
+    html, css, read = _fetch_page_parts(url)
+    return _tls_flagged(_offline_result(url, html, css, scope, browser_probes=True), *read)
 
 
 # The live engine's cap on a page with any FAIL (scoreArithmetic, engine
@@ -3596,14 +3698,23 @@ TOOLS = [
             "engine's @google/design.md-compatible JSON unchanged. "
             "scope sets the scoring scope: contract or universal. Omit it "
             "and the engine auto-detects: contract for designesy.org, "
-            "universal for every other site. If the engine is "
-            "unreachable, format designesy falls back to the offline "
+            "universal for every other site. If the network fails before "
+            "the request reaches the engine (no DNS, no route, a refused "
+            "connection), format designesy falls back to the offline "
             "engine: 27 of the 45 checks run locally, each mirroring the "
             "live engine's verdict, under the same scope. Its result adds "
             "engine (kind offline, the engine version it mirrors, and the "
-            "checks it did not run) and scope, and its note says so. The "
-            "other three formats return an error, because only the live "
-            "engine produces them."
+            "checks it did not run) and scope, and its note says so. "
+            "Offline, overflow (v02) and Core Web Vitals (v21) are measured "
+            "only when the server sets DESIGNESY_CDP_URL to a Chrome "
+            "DevTools endpoint, where the page opens in a new tab; otherwise "
+            "both read MANUAL. Any other failure returns an error, and "
+            "nothing is scored offline: an engine that answers with an "
+            "error (a refused URL, a rate limit, a page it could not "
+            "reach), a call that fails after the request was sent (a "
+            "reset, a timeout), or a designesy.org certificate that fails "
+            "verification. The other three formats return an error, because "
+            "only the live engine produces them."
         ),
         "inputSchema": {
             "type": "object",
@@ -3647,10 +3758,12 @@ TOOLS = [
             "Candidate Recommendation and considered stable). Returns 10 "
             "conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this "
             "to verify a tokens.json (or any DTCG token export) is "
-            "structurally correct: $type/$value/$description present, "
-            "structured colors (colorSpace + components rather than bare "
-            "hex), a valid $schema pointer to designtokens.org, and "
-            "correct dimension units. With 84% of teams now using design "
+            "structurally correct: $type (direct or inherited) present, one "
+            "$value or $ref per token (a JSON Pointer $ref must resolve), "
+            "structured colors (colorSpace + components rather "
+            "than bare hex), dimensions in the 2025.10 { value, unit } "
+            "form, and a $schema pointer to designtokens.org (a Designesy "
+            "policy: DTCG does not require $schema). With 84% of teams now using design "
             "tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, "
             "every adopting team needs a validator. When NOT to use: for "
             "scoring a whole live site (not just its token file), use "
@@ -3881,26 +3994,29 @@ TOOLS = [
             "Score a URL for continuous design-drift governance — the "
             "temporal layer over the drift radar. Re-runs the 12 drift "
             "checks (d01-d12) on the URL and computes 10 monitor checks "
-            "(m01-m10): schedule registered, last run fresh, drift "
+            "(m01-m10): history supplied, last run fresh, drift "
             "delta vs baseline, trend slope (3-run trajectory), new "
             "violations since last run, resolved since last run (the "
             "healing signal), score degradation threshold, token-set "
             "mutation, contract version drift, and alert delivered. "
-            "When alerts fire and an email address is provided, sends "
-            "an HTML drift-alert email via Resend (requires "
-            "RESEND_API_KEY env var). Pass a history array of prior "
-            "snapshots to compute deltas; omit it for a first-run "
-            "baseline. Use this to watch a design system over time — "
+            "Alerts come back in the result as alerts[]. No email is "
+            "sent: email delivery was retired, so m10 is SKIP on every "
+            "run and is not scored, and the email argument is deprecated "
+            "and ignored. Pass a history array of prior snapshots to "
+            "compute deltas; omit it for a first-run baseline. The "
+            "engine refuses a malformed history, more than 1000 runs, or "
+            "a request over 512 KB (HTTP 400 or 413). Use this to watch "
+            "a design system over time — "
             "'weekly audits at cents per report' (Into Design Systems "
             "2026). When NOT to use: for a single point-in-time drift "
             "check, use designesy_drift_score; for design-contract "
             "scoring, use designesy_score. Executable — fetches the "
             "URL, extracts CSS + :root tokens, runs checks, computes "
             "deltas. No browser needed. Returns JSON: { ok, url, score "
-            "(0-100, governance health), grade (A-F), pass, warn, fail, "
-            "total, currentSnapshot, baseline, previous, driftChecks, "
-            "monitorChecks, alerts, emailAlert }. Results cached ~24h "
-            "server-side per URL."
+            "(0-100, governance health; SKIP is not scored), grade (A-F), "
+            "pass, warn, fail, total, currentSnapshot, baseline, previous, "
+            "driftChecks, monitorChecks, alerts }. Results cached ~24h "
+            "server-side per URL and history."
         ),
         "inputSchema": {
             "type": "object",
@@ -3911,10 +4027,11 @@ TOOLS = [
                 },
                 "email": {
                     "type": "string",
-                    "description": "Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional — without it, alerts surface in-UI only.",
+                    "description": "Deprecated and ignored: email delivery was retired, so this server does not forward it and no email is sent. Alerts come back in the result as alerts[].",
                 },
                 "history": {
                     "type": "array",
+                    "maxItems": 1000,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -3924,18 +4041,23 @@ TOOLS = [
                             "tokensExtracted": {"type": "number"},
                             "checks": {
                                 "type": "array",
+                                "maxItems": 12,
                                 "items": {
                                     "type": "object",
                                     "properties": {
                                         "id": {"type": "string"},
                                         "item": {"type": "string"},
                                         "category": {"type": "string"},
-                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN"]},
+                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
                                         "detail": {"type": "string"},
                                     },
+                                    "required": ["id", "status"],
                                 },
                             },
                         },
+                        # What the engine's checks read; /api/monitor
+                        # refuses a run without them (HTTP 400).
+                        "required": ["score", "tokensExtracted", "checks"],
                     },
                     "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
                 },
@@ -4061,17 +4183,19 @@ TOOLS = [
 #   returned script and never fetches it. Closed world.
 # - designesy_tokens_score and designesy_motion_score fetch the caller's url.
 #   designesy_score posts to the designesy.org engine, which fetches the url;
-#   when the engine is unreachable, its offline fallback fetches the page here
-#   and, only when a Chrome DevTools endpoint answers on 127.0.0.1:9222, opens
-#   a tab there to measure and then closes it. That probe leaves nothing
+#   when the network fails before the request reaches the engine, its offline
+#   fallback fetches the page here and, only when DESIGNESY_CDP_URL names a
+#   DevTools endpoint that answers, opens a new tab there to measure and then
+#   closes it; neither probe uses a tab it did not open. That leaves nothing
 #   behind, so the tool stays read-only. The other scoring tools post to the
 #   designesy.org engines, which fetch the url. Open world.
-# - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
-#   email through Resend when the caller passes `email`, an alert fires (one
-#   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
-#   instance has not sent the same alert set for that url and address within
-#   the hour. Sending mail is additive, so destructiveHint is False; a repeated
-#   call can send another email, so idempotentHint is False.
+# - designesy_monitor_score posts the url and history to /api/monitor, which
+#   fetches the url and compares it with the history. It sends no email: the
+#   site retired monitor email in monitor contract 0.1.5, and this server
+#   forwards no `email`. The route keeps only its 24-hour result cache and a
+#   per-caller rate-limit count, as every engine route does, so a repeated
+#   call has no effect beyond that count: readOnlyHint and idempotentHint
+#   are True.
 
 TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_catalog": {"title": "List Designesy packages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
@@ -4088,7 +4212,7 @@ TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_drift_score": {"title": "Score UI drift", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_readiness_score": {"title": "Score AI readiness", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_guardrails": {"title": "Generate build-contract bundle", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-    "designesy_monitor_score": {"title": "Monitor drift with email alerts", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True},
+    "designesy_monitor_score": {"title": "Monitor drift over time", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_compare": {"title": "Compare two design systems", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_report": {"title": "Build composite design report", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
 }
@@ -4177,7 +4301,8 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 
     if not isinstance(token_data, dict):
         return {"success": False, "error": "Token file is not a JSON object"}
-    return _tokens_score(token_data, contract, url or "(inline dtcg_file)")
+    result = _tokens_score(token_data, contract, url or "(inline dtcg_file)")
+    return result if dtcg_file else _tls_flagged(result, url)
 
 
 # ── designesy_tokens_score: the tokens contract's ten checks ─────────────────
@@ -4192,6 +4317,19 @@ def _tokens_score_impl(url: str | None = None, dtcg_file: str | None = None) -> 
 # literal with no unit, a spurious WARN in t08 and t10); a $root token (a
 # group's own value) is checked like any other (it was skipped); and the
 # 2025.10 dimension form {value, unit} is checked in t08 (it was not read).
+# Since tokens contract 0.1.3 a token's type is its own $type, else the type
+# of the token it references, else the closest group $type above it, a
+# group's $extends included (only a $type on the token counted, so a file that
+# typed its groups FAILed t03 and t06); a {$type, $ref} token is a token and a
+# JSON Pointer $ref is no deprecated pattern (a $ref that is not one is), while
+# t04 FAILs a token with both $value and $ref, or a JSON Pointer that names no
+# location in the file or loops (7.5.1, 7.2.3); the
+# whole file is walked (a top-level group named tokens or $tokens was scored
+# alone); a missing $schema WARNs as Designesy policy (it FAILed, and the
+# detail said DTCG requires it); and t08 expects {value, unit} in px or rem,
+# reporting a string such as "16px" as the legacy form. Each chain of aliases,
+# pointers or $extends is followed once per file (_TokenFile): t08 walked each
+# dimension alias's whole chain, so 5,000 chained aliases took seconds.
 # Check names are the contract's own, looked up by id. Both
 # implementations run on test/fixtures/tokens/ and must produce expected.json
 # there (test/test_tokens_score.py here, check-mcp-tool-parity.js there).
@@ -4205,7 +4343,7 @@ TOKENS_CHECK_NAMES = {
     "t01": "$schema declaration",
     "t02": "Token groups present",
     "t03": "$type on all tokens",
-    "t04": "$value on all tokens",
+    "t04": "One $value or $ref on every token",
     "t05": "Structured color format",
     "t06": "Standard type names",
     "t07": "Custom type extension",
@@ -4219,12 +4357,16 @@ TOKENS_SCORING = (
     "A>=90, B>=80, C>=70, D>=60, F<60."
 )
 
+# CSS length units, which a legacy string dimension ("16px") may end in.
 _DIMENSION_UNITS = sorted(
     ["px", "rem", "em", "%", "vw", "vh", "vmin", "vmax",
      "ch", "ex", "svh", "lvh", "dvh", "svw", "lvw", "dvw",
      "cm", "mm", "in", "pt", "pc", "fr"],
     key=len, reverse=True,
 )
+
+# The units the 2025.10 dimension form allows (8.2.1).
+_DTCG_DIMENSION_UNITS = ["px", "rem"]
 
 
 def _js_truthy(x: Any) -> bool:
@@ -4268,27 +4410,242 @@ _DTCG_SCHEMA_HOST = re.compile(
 )
 
 
-def _resolve_alias(alias: str, root: dict[str, Any]) -> tuple[Any, str | None] | None:
-    """(value, $type): the literal value an alias names, through any chain of
-    aliases, with the $type of the token that holds it (None when it has none);
+def _is_pointer(v: Any) -> bool:
+    """A JSON Pointer reference (RFC 6901), the form a $ref takes: #/path/to/target."""
+    return isinstance(v, str) and v.startswith("#/")
+
+
+def _ref_path(ref: Any) -> list[str] | None:
+    """The path segments a {group.token} alias or a #/ JSON Pointer names."""
+    if _is_alias(ref):
+        return ref[1:-1].split(".")
+    if _is_pointer(ref):
+        return [s.replace("~1", "/").replace("~0", "~") for s in ref[2:].split("/")]
+    return None
+
+
+def _is_token(node: dict[str, Any]) -> bool:
+    """A token holds a $value or a $ref; any other object is a group."""
+    return "$value" in node or "$ref" in node
+
+
+def _node_at(root: dict[str, Any], path: list[str]) -> Any:
+    """The node at a path from the root, or None when a segment is missing."""
+    node: Any = root
+    for part in path:
+        node = node.get(part) if isinstance(node, dict) else None
+    return node
+
+
+class _TokenFile:
+    """The file being scored, and what is worked out once for it: the type each
+    group takes through its $extends, the type of each token, what each alias
+    resolves to and where each $ref leads (TokenFile in tokens-score.ts). Every
+    chain of aliases, pointers or $extends is followed in a loop and each
+    answer kept, so a chain of n references costs n steps in all. Following it again from every token
+    on it cost n * n, and the recursion ran out of stack on a chain of 1,200.
+    Keys are id() of nodes the file holds, which live as long as it does."""
+
+    def __init__(self, root: dict[str, Any]) -> None:
+        self.root = root
+        self.group_types: dict[int, str | None] = {}
+        self.token_types: dict[int, Any] = {}
+        self.aliases: dict[str, tuple[Any, str | None] | None] = {}
+        # Where each $ref leads: ("at", node), "unresolved" or "loop" (RefEnd).
+        self.refs: dict[int, Any] = {}
+
+
+# An array index in a JSON Pointer (RFC 6901): 0, or digits with no leading 0.
+_ARRAY_INDEX = re.compile(r"0|[1-9][0-9]*")
+
+
+def _extended_type(group: dict[str, Any], file: _TokenFile) -> str | None:
+    """A group's own $type, else the one the group its $extends names gives,
+    through any chain of $extends (6.7.3); None when none has one or the chain
+    loops."""
+    chain: list[dict[str, Any]] = []
+    on_chain: set[int] = set()
+    node: Any = group
+    t: str | None = None
+    while isinstance(node, dict) and not _is_token(node) and id(node) not in on_chain:
+        if id(node) in file.group_types:
+            t = file.group_types[id(node)]
+            break
+        chain.append(node)
+        on_chain.add(id(node))
+        own = node.get("$type")
+        if isinstance(own, str) and own:
+            t = own
+            break
+        path = _ref_path(node.get("$extends"))
+        node = _node_at(file.root, path) if path is not None else None
+    for g in chain:
+        file.group_types[id(g)] = t
+    return t
+
+
+def _group_type(group: dict[str, Any], inherited: str | None, file: _TokenFile) -> str | None:
+    """The $type a group gives the tokens in it: its own, else the one the group
+    its $extends names gives (the group's type after extension, 6.7.3), else
+    the type it inherits from the groups above it."""
+    t = _extended_type(group, file)
+    return t if t is not None else inherited
+
+
+def _locate(file: _TokenFile, path: list[str]) -> tuple[Any, str | None]:
+    """(node, inherited): the node at a path, with the type the groups above it
+    give it."""
+    node: Any = file.root
+    inherited: str | None = None
+    for part in path:
+        if not isinstance(node, dict) or part not in node:
+            return None, inherited
+        inherited = _group_type(node, inherited, file)
+        node = node[part]
+    return node, inherited
+
+
+def _referenced_token(token: dict[str, Any], file: _TokenFile) -> tuple[dict[str, Any], str | None] | None:
+    """(node, inherited): the token a token's {alias} value or #/path/$value
+    pointer names, with the type its groups give it; None when it names none.
+    A pointer into part of a value names no token."""
+    path: list[str] | None = None
+    if _is_alias(token.get("$value")):
+        path = _ref_path(token["$value"])
+    elif "$value" not in token and _is_pointer(token.get("$ref")):
+        path = _ref_path(token["$ref"])
+        if path and path[-1] == "$value":
+            path = path[:-1]
+    if path is None:
+        return None
+    node, inherited = _locate(file, path)
+    return (node, inherited) if isinstance(node, dict) and _is_token(node) else None
+
+
+def _token_type(token: dict[str, Any], inherited: str | None, file: _TokenFile) -> Any:
+    """A token's type (5.2.2): its own $type, else the type of the token its
+    {alias} value or #/path/$value pointer references, else the type the groups
+    above it give it (None when none does). A pointer into part of a value
+    names no token, so its token takes the groups' type. The tokens on a loop
+    of references take their groups' type: the value of every token on a loop
+    is unknown (7.2.3)."""
+    chain: list[tuple[dict[str, Any], str | None]] = []
+    on_chain: dict[int, int] = {}
+    node, node_inherited = token, inherited
+    t: Any = None
+    while True:
+        if id(node) in file.token_types:
+            t = file.token_types[id(node)]
+            break
+        if _js_truthy(node.get("$type")):
+            t = node["$type"]
+            break
+        at = on_chain.get(id(node))
+        if at is not None:
+            for tok, tok_inherited in chain[at:]:
+                file.token_types[id(tok)] = tok_inherited
+            del chain[at:]
+            t = node_inherited
+            break
+        on_chain[id(node)] = len(chain)
+        chain.append((node, node_inherited))
+        target = _referenced_token(node, file)
+        if target is None:
+            break
+        node, node_inherited = target
+    # Each token before the end takes the type found past it, else its groups'.
+    for tok, tok_inherited in reversed(chain):
+        if not _js_truthy(t):
+            t = tok_inherited
+        file.token_types[id(tok)] = t
+    return t
+
+
+def _resolve_alias(alias: str, file: _TokenFile) -> tuple[Any, str | None] | None:
+    """(value, type): the literal value an alias names, through any chain of
+    aliases, with the type of the token that holds it (None when it has none);
     None when a segment is missing, the target is not a token, or the chain
     loops. Path segments are group and token names, $root included."""
-    seen: set[str] = set()
+    chain: list[str] = []
+    on_chain: set[str] = set()
     ref = alias
-    while _is_alias(ref):
-        if ref in seen:
-            return None
-        seen.add(ref)
-        node: Any = root
-        for part in ref[1:-1].split("."):
-            node = node.get(part) if isinstance(node, dict) else None
+    resolved: tuple[Any, str | None] | None = None
+    while _is_alias(ref) and ref not in on_chain:
+        if ref in file.aliases:
+            resolved = file.aliases[ref]
+            break
+        chain.append(ref)
+        on_chain.add(ref)
+        node, inherited = _locate(file, ref[1:-1].split("."))
         if not isinstance(node, dict) or "$value" not in node:
-            return None
+            break
         if not _is_alias(node["$value"]):
-            t = node.get("$type")
-            return (node["$value"], t if isinstance(t, str) else None)
+            t = _token_type(node, inherited, file)
+            resolved = (node["$value"], t if isinstance(t, str) else None)
+            break
         ref = node["$value"]
-    return None
+    for r in chain:
+        file.aliases[r] = resolved
+    return resolved
+
+
+def _ref_end(token: dict[str, Any], file: _TokenFile) -> Any:
+    """Where a token's JSON Pointer $ref leads (7.4): ("at", node), object
+    members by name, array items by index. Where the pointer reads the $value
+    of a token that holds a $ref instead, it follows that $ref, as tools follow
+    each reference (7.2.2). "unresolved" when a segment names nothing, so the
+    token has no value (tools MUST validate reference targets, 7.5.1); "loop"
+    when the pointer comes back to a token on its own chain (7.2.3). Each
+    token's end is kept, so a chain of n $ref tokens costs n steps in all."""
+    if id(token) in file.refs:
+        return file.refs[id(token)]
+    frames: list[list[Any]] = []  # [token, path, i]
+    on_stack: set[int] = set()
+
+    def push(t: dict[str, Any], path: list[str]) -> None:
+        frames.append([t, path, 0])
+        on_stack.add(id(t))
+
+    def settle(end: Any) -> Any:
+        for f in frames:
+            file.refs[id(f[0])] = end
+        return end
+
+    push(token, _ref_path(token["$ref"]) or [])
+    node: Any = file.root
+    while True:
+        f = frames[-1]
+        if f[2] == len(f[1]):
+            # The pointer names a token on its own chain, such as itself (#/a from a).
+            if isinstance(node, dict) and id(node) in on_stack:
+                return settle("loop")
+            frames.pop()
+            on_stack.discard(id(f[0]))
+            file.refs[id(f[0])] = ("at", node)
+            if not frames:
+                return ("at", node)
+            frames[-1][2] += 1  # past the $value now read
+            continue
+        part = f[1][f[2]]
+        if part == "$value" and isinstance(node, dict) and "$value" not in node and _is_pointer(node.get("$ref")):
+            # A $ref token's value is where its own $ref leads.
+            if id(node) in on_stack:
+                return settle("loop")
+            end = file.refs.get(id(node))
+            if end is None:
+                push(node, _ref_path(node["$ref"]) or [])
+                node = file.root
+                continue
+            if isinstance(end, str):
+                return settle(end)
+            node = end[1]
+        elif isinstance(node, list) and _ARRAY_INDEX.fullmatch(part) and int(part) < len(node):
+            node = node[int(part)]
+        elif isinstance(node, dict) and part in node:
+            node = node[part]
+        else:
+            return settle("unresolved")
+        f[2] += 1
 
 
 def _js_typeof(v: Any) -> str:
@@ -4306,15 +4663,15 @@ def _is_js_number(v: Any) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
 
 
-def _dimension_unit_of(v: Any) -> str:
-    """The unit of a dimension value, or '' when it has none the checks accept:
-    a string ending in a CSS length unit, or the 2025.10 object form
-    {value: number, unit}."""
+def _dimension_form(v: Any) -> str:
+    """How t08 reads a dimension value: 'ok' for the 2025.10 form {value:
+    number, unit} in px or rem, 'legacy' for a string ending in a CSS length
+    unit ("16px"), 'bad' for anything else."""
     if isinstance(v, str):
-        return _dimension_unit(v)
-    if isinstance(v, dict) and _is_js_number(v.get("value")) and isinstance(v.get("unit"), str) and v["unit"] in _DIMENSION_UNITS:
-        return v["unit"]
-    return ""
+        return "legacy" if _dimension_unit(v) else "bad"
+    if isinstance(v, dict) and _is_js_number(v.get("value")) and isinstance(v.get("unit"), str) and v["unit"] in _DTCG_DIMENSION_UNITS:
+        return "ok"
+    return "bad"
 
 
 def _dimension_text(v: Any) -> str:
@@ -4348,34 +4705,30 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
     def add(cid: str, status: str, detail: str) -> None:
         results.append({"id": cid, "name": names[cid], "status": status, "detail": detail})
 
-    # tokens.$tokens || tokens.tokens || tokens
-    picked: Any = tokens
-    for key in ("$tokens", "tokens"):
-        if _js_truthy(tokens.get(key)):
-            picked = tokens[key]
-            break
-    token_groups: dict[str, Any] = picked if isinstance(picked, dict) else {}
-
-    # t01: $schema present and points to designtokens.org
+    # t01: $schema present and points to designtokens.org. Designesy policy: the
+    # Format Module does not define $schema, so a file without one WARNs.
     schema = tokens.get("$schema")
     has_schema = isinstance(schema, str) and schema != ""
     schema_valid = has_schema and _DTCG_SCHEMA_HOST.match(schema) is not None
-    add("t01", "PASS" if schema_valid else ("WARN" if has_schema else "FAIL"),
+    add("t01", "PASS" if schema_valid else "WARN",
         f"Schema: {schema}" if has_schema else
-        "No $schema found. DTCG 2025.10 requires $schema pointing to designtokens.org/schemas/2025.10/format.json")
+        "No $schema found. Designesy policy, not a DTCG requirement: point $schema at "
+        "https://www.designtokens.org/schemas/2025.10/format.json so editors can validate the file.")
 
     # t02: token groups exist
-    group_keys = [k for k in _js_keys(token_groups) if not k.startswith("$")]
+    group_keys = [k for k in _js_keys(tokens) if not k.startswith("$")]
     add("t02", "PASS" if group_keys else "FAIL",
         f"{len(group_keys)} token groups found: {', '.join(group_keys[:5])}{'...' if len(group_keys) > 5 else ''}")
 
     # t03-t10: one walk over the tokens
     counts = {"type": 0, "value": 0, "structured": 0, "bare_hex": 0, "total": 0}
     all_types: list[str] = []  # insertion-ordered, as a JS Set
-    dimension_values: list[tuple[str, str, bool]] = []
+    dimension_values: list[tuple[str, str, str]] = []  # (path, value, form)
     deprecated: list[str] = []
+    file = _TokenFile(tokens)
+    value_issues: list[str] = []
 
-    def walk(obj: dict[str, Any], path: str) -> None:
+    def walk(obj: dict[str, Any], path: str, inherited: str | None) -> None:
         for key in _js_keys(obj):
             # $root is a token (a group's own value), not a property of the group.
             if key.startswith("$") and key != "$root":
@@ -4384,17 +4737,28 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
             current = f"{path}.{key}" if path else key
             if not isinstance(val, dict):
                 continue
-            if "$value" not in val:
-                walk(val, current)
+            if not _is_token(val):
+                walk(val, current, _group_type(val, inherited, file))
                 continue
             counts["total"] += 1
-            t = val.get("$type")
-            v = val["$value"]
+            t = _token_type(val, inherited, file)
+            v = val.get("$value")
             if _js_truthy(t):
                 counts["type"] += 1
                 if isinstance(t, str) and t not in all_types:
                     all_types.append(t)
-            counts["value"] += 1
+            # t04: one value, a $value or a $ref (not both: the 2025.10 token schema
+            # allows one), and a JSON Pointer $ref must lead somewhere. A $ref that
+            # is not a JSON Pointer is t10's.
+            end = _ref_end(val, file) if "$ref" in val and "$value" not in val and _is_pointer(val["$ref"]) else None
+            if "$ref" in val and "$value" in val:
+                value_issues.append(f"Token '{current}' has both $value and $ref (a token takes one)")
+            elif end == "unresolved":
+                value_issues.append(f"Token '{current}' has a $ref that names no location in the file: '{val['$ref']}'")
+            elif end == "loop":
+                value_issues.append(f"Token '{current}' has a $ref that loops: '{val['$ref']}'")
+            else:
+                counts["value"] += 1
             if t == "color":
                 if isinstance(v, dict) and "colorSpace" in v:
                     counts["structured"] += 1
@@ -4403,38 +4767,50 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
                     deprecated.append(f"Color token '{current}' uses bare hex (pre-2025.10 pattern)")
             if t == "dimension":
                 if _is_alias(v):
-                    # A reference: its unit is the unit of the value it resolves
+                    # A reference: its form is the form of the value it resolves
                     # to, and the target, if it is a dimension token, answers t10
                     # for itself. A target of another type is named as such.
-                    target = _resolve_alias(v, token_groups)
+                    target = _resolve_alias(v, file)
                     if target is None:
-                        dimension_values.append((current, f"{v} (unresolved alias)", False))
+                        dimension_values.append((current, f"{v} (unresolved alias)", "bad"))
                     elif target[1] is not None and target[1] != "dimension":
-                        dimension_values.append((current, f"{v} -> a {target[1]} token", False))
+                        dimension_values.append((current, f"{v} -> a {target[1]} token", "bad"))
                     else:
-                        dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", bool(_dimension_unit_of(target[0]))))
+                        dimension_values.append((current, f"{v} -> {_dimension_text(target[0])}", _dimension_form(target[0])))
                 elif isinstance(v, str):
-                    dimension_values.append((current, v, bool(_dimension_unit(v))))
-                    if not _dimension_unit(v):
-                        deprecated.append(f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
+                    # The advice leads to a t08 PASS: {value, unit} takes px or rem
+                    # only, so a string in another unit is told so.
+                    unit = _dimension_unit(v)
+                    advice = "write { value, unit }" if unit in _DTCG_DIMENSION_UNITS else "a 2025.10 dimension takes px or rem"
+                    dimension_values.append((current, v, _dimension_form(v)))
+                    deprecated.append(
+                        f"Dimension token '{current}' uses the pre-2025.10 string form: '{v}' ({advice})"
+                        if unit else
+                        f"Dimension token '{current}' has unrecognized or missing unit: '{v}'")
                 elif _is_js_number(v):
-                    dimension_values.append((current, _js_num(v), False))
-                    deprecated.append(f"Dimension token '{current}' uses bare number (should include unit string)")
+                    dimension_values.append((current, _js_num(v), "bad"))
+                    deprecated.append(f"Dimension token '{current}' uses bare number (write {{ value, unit }} in px or rem)")
                 elif isinstance(v, dict):
-                    dimension_values.append((current, _dimension_text(v), bool(_dimension_unit_of(v))))
-            if "$ref" in val:
-                deprecated.append(f"Token '{current}' uses deprecated $ref syntax (use {{path}} in $value)")
+                    dimension_values.append((current, _dimension_text(v), _dimension_form(v)))
+            # A $ref is a JSON Pointer (#/path/to/target); a dot path is not one.
+            if "$ref" in val and not _is_pointer(val["$ref"]):
+                ref = f"'{val['$ref']}'" if isinstance(val["$ref"], str) else f"a value of type {_js_typeof(val['$ref'])}"
+                deprecated.append(f"Token '{current}' has a $ref that is not a JSON Pointer: {ref} (write #/path/to/token/$value)")
 
-    walk(token_groups, "")
+    walk(tokens, "", _group_type(tokens, None, file))
     total, typed = counts["total"], counts["type"]
 
-    # t03: $type on all tokens
-    add("t03", "PASS" if total > 0 and typed == total else ("WARN" if typed > 0 else "FAIL"),
-        f"{typed}/{total} tokens have $type")
+    # t03: $type on all tokens, their own or inherited
+    if total == 0:
+        add("t03", "SKIP", "No tokens found")
+    else:
+        add("t03", "PASS" if typed == total else ("WARN" if typed > 0 else "FAIL"),
+            f"{typed}/{total} tokens have $type (direct or inherited)")
 
-    # t04: $value on all tokens
+    # t04: one value on every token, a $value or a $ref that leads somewhere
+    issues = f": {'; '.join(value_issues[:3])}{'...' if len(value_issues) > 3 else ''}" if value_issues else ""
     add("t04", "PASS" if total > 0 and counts["value"] == total else "FAIL",
-        f"{counts['value']}/{total} tokens have $value")
+        f"{counts['value']}/{total} tokens have one $value or $ref{issues}")
 
     # t05: structured color format (colorSpace + components)
     structured, bare_hex = counts["structured"], counts["bare_hex"]
@@ -4466,16 +4842,19 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
         else:
             add("t07", "WARN", f"Custom type(s) without namespacing (recommend dot-prefix like 'com.example.glow'): {', '.join(bare_customs)}")
 
-    # t08: dimension tokens have valid CSS length units
+    # t08: dimension tokens use the 2025.10 form, {value, unit} in px or rem.
+    # A legacy string ("16px") WARNs; t08 FAILs only when no value is usable.
     if not dimension_values:
         add("t08", "SKIP", "No dimension tokens found")
     else:
-        bad_units = [f"{p}='{v}'" for p, v, ok in dimension_values if not ok]
-        if not bad_units:
-            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use valid units (px, rem, em, %, etc.)")
+        others = [f"{p}='{v}'{' (legacy string)' if form == 'legacy' else ''}"
+                  for p, v, form in dimension_values if form != "ok"]
+        bad = sum(1 for _, _, form in dimension_values if form == "bad")
+        if not others:
+            add("t08", "PASS", f"All {len(dimension_values)} dimension token(s) use the 2025.10 form {{ value, unit }} in px or rem")
         else:
-            add("t08", "WARN" if len(bad_units) < len(dimension_values) else "FAIL",
-                f"{len(bad_units)}/{len(dimension_values)} dimension token(s) have missing/unrecognized units: {', '.join(bad_units[:5])}")
+            add("t08", "WARN" if bad < len(dimension_values) else "FAIL",
+                f"{len(others)}/{len(dimension_values)} dimension token(s) are not {{ value, unit }} in px or rem: {', '.join(others[:5])}")
 
     # t09: tokens are organised into groups (nesting is the dot hierarchy)
     if total == 0:
@@ -4487,7 +4866,7 @@ def _tokens_score(tokens: dict[str, Any], contract: dict[str, Any], url: str) ->
 
     # t10: no pre-2025.10 patterns
     if not deprecated:
-        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no bare number dimensions, no $ref syntax)")
+        add("t10", "PASS", "No deprecated DTCG patterns detected (no bare hex colors, no string or bare number dimensions, no $ref that is not a JSON Pointer)")
     else:
         add("t10", "WARN", f"{len(deprecated)} deprecated pattern(s) found: {'; '.join(deprecated[:3])}{'...' if len(deprecated) > 3 else ''}")
 
@@ -4638,7 +5017,8 @@ def _motion_score_impl(url: str | None = None, lottie_file: str | None = None) -
 
     if not isinstance(lottie_data, dict):
         return {"success": False, "error": "Lottie file is not a JSON object"}
-    return _motion_score(lottie_data, contract, url or "(inline lottie_file)")
+    result = _motion_score(lottie_data, contract, url or "(inline lottie_file)")
+    return result if lottie_file else _tls_flagged(result, url)
 
 
 # ── designesy_motion_score: the motion contract's ten checks ─────────────────
@@ -5003,7 +5383,11 @@ def _motion_score(lottie: dict[str, Any], contract: dict[str, Any], url: str) ->
 
 
 def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
-    """POST to a designesy.org API endpoint and return the JSON result."""
+    """POST to a designesy.org API endpoint and return the JSON result.
+
+    The certificate is always verified: DESIGNESY_INSECURE_TLS covers a
+    caller's URL only, never designesy.org's engines.
+    """
     url = f"{BASE_URL}/api/{endpoint}"
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
@@ -5016,15 +5400,7 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
         },
         method="POST",
     )
-    try:
-        opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT)
-    except Exception as exc:
-        if "certificate" in str(exc).lower() or isinstance(exc, ssl.SSLError):
-            sys.stderr.write(f"WARNING: SSL verification failed for {url}, falling back to lenient context: {exc}\n")
-            opener = urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT_LENIENT)
-        else:
-            raise
-    with opener as resp:
+    with urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 
@@ -5061,15 +5437,15 @@ def _guardrails_impl(url: str | None = None, parts: Any = None) -> dict[str, Any
 
 def _monitor_score_impl(
     url: str | None = None,
-    email: str | None = None,
     history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Proxy to /api/monitor — continuous drift governance."""
+    """Proxy to /api/monitor — continuous drift governance.
+
+    No email is forwarded: monitor email was retired, and the tool's `email`
+    argument is accepted and ignored.
+    """
     target = url or f"{BASE_URL}/"
-    body: dict[str, Any] = {"url": target, "history": history or []}
-    if email:
-        body["email"] = email
-    return _post_api("monitor", body)
+    return _post_api("monitor", {"url": target, "history": history or []})
 
 
 def _compare_impl(url_a: str, url_b: str) -> dict[str, Any]:
@@ -5237,7 +5613,6 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     elif name == "designesy_monitor_score":
         return _monitor_score_impl(
             url=args.get("url"),
-            email=args.get("email"),
             history=args.get("history"),
         )
     elif name == "designesy_compare":
@@ -5268,10 +5643,47 @@ def _error(req_id: Any, code: int, message: str) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
 
 
-def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
+def _tool_error(req_id: Any, text: str) -> dict[str, Any]:
+    """A tool that ran and failed: an isError result the model can read and act on."""
+    return _result(req_id, {"content": [{"type": "text", "text": text}], "isError": True})
+
+
+# ── Message rules ───────────────────────────────────────────────────────────
+#
+# JSON-RPC 2.0 and the 2024-11-05 revision this server negotiates. Until
+# 1.13.10, an array, a bare string or a null params raised AttributeError and
+# ended the session, and a notification such as notifications/cancelled got an
+# error frame back. stdin was decoded by sys.stdin, with the locale's codec
+# and error handler: on Windows a pipe read UTF-8 as cp1252 (a tool name café
+# arrived as cafÃ©), and under the strict handler, CPython's default on a
+# UTF-8 Linux locale, one byte that is not UTF-8 ended the session.
+#   - Each line is decoded as UTF-8, the encoding JSON text between systems
+#     must use (RFC 8259, section 8.1), whatever the locale.
+#   - A line that is not UTF-8 or not JSON gets -32700, and a message that is
+#     not an object gets -32600, all with id null. 2024-11-05 has no batches
+#     (2025-03-26 added them, 2025-06-18 removed them), so an array is
+#     answered the same.
+#   - A message with no id is a notification and gets no reply.
+#   - params or arguments null reads as {}; any other non-object is -32602.
+#   - An unknown tool is -32602 and an unknown resource -32002, the codes the
+#     2024-11-05 tools and resources pages give. A tool that runs and fails
+#     (a fetch error, a blocked URL, an engine error) is an isError result.
+
+
+def _handle(msg: Any) -> dict[str, Any] | None:
+    if not isinstance(msg, dict):
+        return _error(None, -32600, "Invalid Request: a message must be a JSON object; batches are not supported")
     method = msg.get("method")
     req_id = msg.get("id")
-    params = msg.get("params", {})
+    if not isinstance(method, str):
+        return _error(req_id, -32600, "Invalid Request: method must be a string")
+    if "id" not in msg:
+        return None
+    params = msg.get("params")
+    if params is None:
+        params = {}
+    elif not isinstance(params, dict):
+        return _error(req_id, -32602, "Invalid params: params must be an object")
 
     if method == "initialize":
         return _result(req_id, {
@@ -5285,15 +5697,19 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         return _result(req_id, {"tools": TOOLS})
     elif method == "tools/call":
         name = params.get("name", "")
-        args = params.get("arguments", {})
-        if name not in TOOL_MAP:
-            return _error(req_id, -32601, f"Unknown tool: {name}")
+        args = params.get("arguments")
+        if args is None:
+            args = {}
+        if not isinstance(name, str) or name not in TOOL_MAP:
+            return _error(req_id, -32602, f"Unknown tool: {name}")
+        if not isinstance(args, dict):
+            return _error(req_id, -32602, "Invalid params: arguments must be an object")
         try:
             res = _dispatch(name, args)
         except urllib.error.URLError as e:
-            return _error(req_id, -32000, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
+            return _tool_error(req_id, f"Failed to fetch URL: {_scrub_local_paths(str(e))}")
         except Exception as e:
-            return _error(req_id, -32000, f"Tool execution failed: {_scrub_local_paths(str(e))}")
+            return _tool_error(req_id, f"Tool execution failed: {_scrub_local_paths(str(e))}")
         # A str result (designesy_score format=review) is already the text
         # the tool returns, so it is sent as written; JSON-encoding it would
         # wrap the markdown in quotes and escape every newline.
@@ -5306,8 +5722,8 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
         return _result(req_id, {"resources": RESOURCES})
     elif method == "resources/read":
         uri = params.get("uri", "")
-        if uri not in _RESOURCE_FETCHERS:
-            return _error(req_id, -32601, f"Unknown resource: {uri}")
+        if not isinstance(uri, str) or uri not in _RESOURCE_FETCHERS:
+            return _error(req_id, -32002, f"Unknown resource: {uri}")
         try:
             content = _RESOURCE_FETCHERS[uri]()
         except Exception as e:
@@ -5326,16 +5742,32 @@ def _handle(msg: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def main() -> None:
-    """Read JSON-RPC messages from stdin, one per line."""
-    for line in sys.stdin:
-        line = line.strip()
+    """Read JSON-RPC messages from stdin, one per line.
+
+    No line ends the session: one that is not UTF-8 or not JSON gets -32700,
+    and a request whose handler raises gets -32603 while the loop reads on.
+    Lines are read as bytes and decoded here, one at a time, so neither the
+    locale's codec nor its error handler applies.
+    """
+    for raw in sys.stdin.buffer:
+        try:
+            line = raw.decode("utf-8").strip()
+        except UnicodeDecodeError:
+            _send(_error(None, -32700, "Parse error: the line is not valid UTF-8"))
+            continue
         if not line:
             continue
         try:
             msg = json.loads(line)
-        except json.JSONDecodeError:
+        except (ValueError, RecursionError):
+            _send(_error(None, -32700, "Parse error: the line is not valid JSON"))
             continue
-        response = _handle(msg)
+        try:
+            response = _handle(msg)
+        except Exception as e:
+            if not (isinstance(msg, dict) and "id" in msg):
+                continue
+            response = _error(msg.get("id"), -32603, f"Internal error: {_scrub_local_paths(str(e))}")
         if response is not None:
             _send(response)
 
