@@ -1722,19 +1722,43 @@ function longLinearEasings(css: string): string[] {
 }
 
 /**
- * Group 1 of each match of
- * /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi:
- * the last quoted href in the tag after its first rel=stylesheet.
+ * Group 1, or else group 2, of each match of
+ * /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi.
+ * The first alternative is the pattern before engine 1.5.4: the last quoted
+ * href in the tag after its first rel=stylesheet. The second (engine 1.5.4)
+ * reads a tag that writes href first: the last quoted href in the tag that is
+ * followed by rel=stylesheet before the next `>`.
  */
 function stylesheetLinkMatches(html: string): ScanMatch[] {
   const start = /<link/gi;
   const rel = nextMatchFinder(html, /rel=["']?stylesheet/gi);
+  const rels = matchStarts(html, /rel=["']?stylesheet/gi);
   const hrefs = matchStarts(html, /href=["']/gi);
   const gt = nextMatchFinder(html, />/g);
+  const gtAfterValue = nextMatchFinder(html, />/g);
+  const quote = nextMatchFinder(html, /["']/g);
   const n = html.length;
   const isQuote = (c: number): boolean => c === 34 || c === 39;
   let lastQuote = n - 1;
   while (lastQuote >= 0 && !isQuote(html.charCodeAt(lastQuote))) lastQuote--;
+  // The second alternative, worked out once per href, since it does not
+  // depend on where the tag starts: the value is non-empty and closes at q,
+  // and a rel=stylesheet starts after q and before the first `>` after q.
+  // The greedy [^>]* ends the match with the last such rel.
+  const hrefFirst = hrefs.map((at) => {
+    const v = at + 6;
+    if (!(v < n && !isQuote(html.charCodeAt(v)) && lastQuote > v)) return null;
+    const q = quote(v + 1);
+    const k = lowerBound(rels, Math.min(gtAfterValue(q + 1), n)) - 1;
+    if (k < 0 || rels[k] <= q) return null;
+    return { q, end: rels[k] + (isQuote(html.charCodeAt(rels[k] + 4)) ? 15 : 14) };
+  });
+  // lastViable[i]: the largest k <= i whose href reads by the second alternative, or -1.
+  const lastViable: number[] = [];
+  for (let i = 0, lv = -1; i < hrefs.length; i++) {
+    if (hrefFirst[i]) lv = i;
+    lastViable.push(lv);
+  }
   const out: ScanMatch[] = [];
   let ptr = 0;
   for (let pos = 0; ;) {
@@ -1760,7 +1784,15 @@ function stylesheetLinkMatches(html: string): ScanMatch[] {
       pos = q + 1;
       continue;
     }
-    // Every start before g sees less of the same tag.
+    // No rel before an href: the last href in the tag that rel=stylesheet follows.
+    const k = end > ptr ? lastViable[end - 1] : -1;
+    if (k >= ptr) {
+      const hit = hrefFirst[k] as { q: number; end: number };
+      out.push({ index: m.index, text: html.slice(m.index, hit.end), groups: [html.slice(hrefs[k] + 6, hit.q)] });
+      pos = hit.end;
+      continue;
+    }
+    // Every start before g sees less of the same tag, by either alternative.
     if (g >= n) break;
     pos = g + 1;
   }
@@ -2085,21 +2117,26 @@ async function readCapped(resp: Response, maxBytes: number, budget?: { left: num
 }
 
 type FetchOutcome =
-  | { ok: true; text: string; truncated: boolean }
+  /** finalUrl: the URL that answered, after any redirect (engine 1.5.4). */
+  | { ok: true; text: string; truncated: boolean; finalUrl: string }
   | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number };
 
 async function fetchCssSingleDetailed(url: string, maxBytes = MAX_STYLESHEET_BYTES, budget?: { left: number }): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
+    // maxBodyBytes: safeFetch holds no more than this read will take (one
+    // byte over, so a cut read is still seen as cut), decoded or not.
     const resp = await safeFetch(url, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
+      maxBodyBytes: maxBytes,
     });
     if (!resp.ok) return { ok: false, reason: 'http_error', status: resp.status };
     const { text, truncated } = await readCapped(resp, maxBytes, budget);
     if (!text || text.length <= 50) return { ok: false, reason: 'empty_body' };
-    return { ok: true, text, truncated };
+    // A Response built by hand (a test's, say) has url ''.
+    return { ok: true, text, truncated, finalUrl: resp.url || url };
   } catch (e) {
     const aborted = e instanceof Error && (e.name === 'AbortError' || /abort/i.test(e.message));
     return { ok: false, reason: aborted ? 'timeout' : 'network' };
@@ -2184,6 +2221,9 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 
   let html = '';
   let htmlTruncated = false;
+  // The URL that answered: the candidate that was read, after its redirects.
+  // Its stylesheet hrefs resolve against it (engine 1.5.4), as a browser's do.
+  let pageUrl = targetUrl;
   // Remember WHY each candidate failed. A 403 on every candidate means the site
   // is blocking us — a different fact from a timeout, and the caller needs to
   // tell them apart.
@@ -2191,7 +2231,7 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 
   for (const candidate of candidateUrls) {
     const outcome = await fetchCssSingleDetailed(candidate, MAX_HTML_BYTES);
-    if (outcome.ok) { html = outcome.text; htmlTruncated = outcome.truncated; break; }
+    if (outcome.ok) { html = outcome.text; htmlTruncated = outcome.truncated; pageUrl = outcome.finalUrl; break; }
     lastFail = outcome;
   }
 
@@ -2221,7 +2261,7 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   //      parallel), and the cap cost github.com 6.2 points by hiding CSS.
   //   3. Fetch concurrently. THIS is the actual latency fix: sequential makes
   //      latency the SUM of every slow sheet, concurrent makes it the MAX.
-  const allParts = extractCssLinks(html, targetUrl);
+  const allParts = extractCssLinks(html, pageUrl);
   const inlineParts = allParts.filter((p) => !p.startsWith('http'));
   const uniqueExternal = [...new Set(allParts.filter((p) => p.startsWith('http')))];
   const externalParts = uniqueExternal.slice(0, MAX_STYLESHEETS);
@@ -6204,6 +6244,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     const resp = await safeFetch(designMdUrl, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
+      maxBodyBytes: MAX_DESIGN_MD_BYTES,
     });
     clearTimeout(timeout);
     if (!resp.ok) {

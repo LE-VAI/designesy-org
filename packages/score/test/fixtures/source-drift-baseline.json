@@ -2,10 +2,10 @@
   "$comment": "Known divergences between the two 44-check engines, pinned to the canonical hash of BOTH sides. kind=intentional: the copies differ by design (transport, output envelope). kind=debt: a fix landed in route.ts and was never ported; porting it and deleting the entry is the goal. See scripts/source-drift.mjs.",
   "divergent": {
     "fn:checkDesignMdSpec": {
-      "route": "7d98466c6918542a",
+      "route": "2d8db8bb83058e8f",
       "engine": "4335fd9e0b6d2cae",
       "kind": "intentional",
-      "why": "Transport, with the verdict logic now ALIGNED (measured 2026-09-30). route.ts fetches via safeFetch (throws on failure -> its own SKIP) and engine.ts via httpsFetch with an SSRF guard (returns an outcome object, so the equivalent SKIP happens at the length check). Every verdict branch now carries the same status: SKIP not-served, WARN no-frontmatter, MANUAL linter-unavailable, FAIL lint errors, WARN lint warnings, PASS linted clean, WARN lint threw. The linter-unavailable branch was PASS in engine.ts (asserted validation that never ran), then WARN (2026-09-30), which charged the scored site for a package missing from the runtime: the npm CLI scored www.designesy.org 96.1 against the API's 98. Both copies moved to MANUAL, weight 0, on 2026-10-06 (score 0.5.1). Both copies pass a caught error's text through the shared sanitizeErrorText before it reaches the detail (2026-10-10, score 0.7.1: 0.7.0 echoed the CLI user's npm cache path). Only the fetch wiring differs, so this stays baselined as transport rather than debt. route.ts reads at most MAX_DESIGN_MD_BYTES of /DESIGN.md (engine 1.5.1)."
+      "why": "Transport, with the verdict logic now ALIGNED (measured 2026-09-30). route.ts fetches via safeFetch (throws on failure -> its own SKIP) and engine.ts via httpsFetch with an SSRF guard (returns an outcome object, so the equivalent SKIP happens at the length check). Every verdict branch now carries the same status: SKIP not-served, WARN no-frontmatter, MANUAL linter-unavailable, FAIL lint errors, WARN lint warnings, PASS linted clean, WARN lint threw. The linter-unavailable branch was PASS in engine.ts (asserted validation that never ran), then WARN (2026-09-30), which charged the scored site for a package missing from the runtime: the npm CLI scored www.designesy.org 96.1 against the API's 98. Both copies moved to MANUAL, weight 0, on 2026-10-06 (score 0.5.1). Both copies pass a caught error's text through the shared sanitizeErrorText before it reaches the detail (2026-10-10, score 0.7.1: 0.7.0 echoed the CLI user's npm cache path). Only the fetch wiring differs, so this stays baselined as transport rather than debt. route.ts reads at most MAX_DESIGN_MD_BYTES of /DESIGN.md (engine 1.5.1), and passes the cap to safeFetch as maxBodyBytes so a compressed /DESIGN.md is decoded only that far (engine 1.5.4)."
     },
     "fn:emitCanonical": {
       "route": "a9126cc3e8e35702",
@@ -20,10 +20,10 @@
       "why": "Output envelope. route.ts attaches a receipt (buildReceipt) for the HTTP API and strips the internal retrievedAt; the package returns the result as-is."
     },
     "fn:fetchPageResilient": {
-      "route": "812ce403863f2d10",
-      "engine": "d49b1ab5a784915b",
+      "route": "67f484da8260846d",
+      "engine": "d95d331e394038f8",
       "kind": "intentional",
-      "why": "Transport. route.ts uses fetch via fetchCssSingleDetailed and reports a typed failure reason; engine.ts uses node:https with an SSRF guard (isValidUrl, safeLookup). route.ts also reads at most MAX_HTML_BYTES of HTML and MAX_STYLESHEET_BYTES of each stylesheet (MAX_TOTAL_STYLESHEET_BYTES together) and reports a cut read (engine 1.5.1); the package fetches on the user's own machine."
+      "why": "Transport. route.ts uses fetch via fetchCssSingleDetailed and reports a typed failure reason; engine.ts uses node:https with an SSRF guard (isValidUrl, safeLookup). Both resolve stylesheet hrefs against the URL that answered (the candidate read, after its redirects: outcome.finalUrl in route.ts, httpsFetch's finalUrl in engine.ts; engine 1.5.4), and both read a gzip, deflate or br body decoded. Only the transport and the route's byte caps differ: route.ts also reads at most MAX_HTML_BYTES of HTML and MAX_STYLESHEET_BYTES of each stylesheet (MAX_TOTAL_STYLESHEET_BYTES together) and reports a cut read (engine 1.5.1); the package fetches on the user's own machine."
     }
   },
   "routeOnly": [
@@ -50,7 +50,10 @@
   ],
   "engineOnly": [
     "const:CONTRACT_VERSION",
+    "const:MAX_DECODED_BYTES",
     "const:MAX_REDIRECT_HOPS",
+    "fn:contentCodingOf",
+    "fn:decoderFor",
     "fn:httpsFetch",
     "fn:isPrivateIPv4",
     "fn:isValidUrl",

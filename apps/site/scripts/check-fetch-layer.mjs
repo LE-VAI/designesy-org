@@ -301,6 +301,116 @@ control('a HEAD request resolves, with nothing decoded', async () => {
   assert.equal(await r.text(), '');
 });
 
+// ── 2. POST /api/score, universal mode ───────────────────────────────────────
+section('2. POST /api/score, universal mode (app/api/score/route.ts)');
+
+const SCORE = 'app/api/score/route.ts';
+const scored = (r) => {
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.unreachable, undefined, r.body.unreachableDetail);
+  assert.equal(typeof r.body.score, 'number');
+};
+
+// A page that moved: its sheets live on the host it moved to. The host it
+// moved away from answers each sheet path with an HTML page.
+const MOVED = page('Moved page', '<link rel=stylesheet href="/assets/site.css"><link href="theme.css" rel="stylesheet">');
+const movedSite = (from, to) => {
+  route(`${from}/x/`, 301, { location: `https://${to}/x/` }, '');
+  route(`${to}/x/`, 200, {}, MOVED);
+  route(`${to}/assets/site.css`, 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, enc.gzip(SHEET));
+  route(`${to}/x/theme.css`, 200, { 'content-type': 'text/css', 'content-encoding': 'br' }, enc.br(THEME));
+  route(`${from}/assets/site.css`, 200, {}, TRAP);
+  route(`${from}/x/theme.css`, 200, {}, TRAP);
+};
+const trapAsked = (from) => requested(from, '/assets/site.css') || requested(from, '/x/theme.css');
+
+movedSite('old.fl.example.test', 'new.fl.example.test');
+rule('a redirected page reads its sheets from the host it landed on: a gzip sheet, and a br sheet linked href first', async () => {
+  const r = await post(SCORE, { url: 'https://old.fl.example.test/x/', scope: 'universal' });
+  scored(r);
+  assert.ok(!trapAsked('old.fl.example.test'), 'a sheet was asked of the host the page moved away from');
+  assert.equal(r.body.tokensExtracted, SHEET_TOKENS + THEME_TOKENS);
+});
+
+route('bare.fl.example.test/', 403, {}, 'Forbidden');
+route('www.bare.fl.example.test/', 200, {}, page('www candidate', '<link rel="stylesheet" href="/w.css">'));
+route('www.bare.fl.example.test/w.css', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, enc.gzip(SHEET));
+route('bare.fl.example.test/w.css', 200, {}, TRAP);
+rule('the www. candidate that answered is the base for its sheets', async () => {
+  const r = await post(SCORE, { url: 'https://bare.fl.example.test/', scope: 'universal' });
+  scored(r);
+  assert.ok(!requested('bare.fl.example.test', '/w.css'), 'the sheet was asked of the bare host');
+  assert.equal(r.body.tokensExtracted, SHEET_TOKENS);
+});
+
+route('gzpage.fl.example.test/', 200, { 'content-encoding': 'gzip' }, enc.gzip(INLINE_PAGE));
+rule('a page sent gzip-encoded is scored from its decoded HTML', async () => {
+  const r = await post(SCORE, { url: 'https://gzpage.fl.example.test/', scope: 'universal' });
+  scored(r);
+  assert.equal(r.body.tokensExtracted, INLINE_TOKENS);
+});
+
+for (const host of ['cpage.fl.example.test', 'www.cpage.fl.example.test']) route(`${host}/`, 200, { 'content-encoding': 'gzip' }, Buffer.from(INLINE_PAGE));
+rule('a page that does not decode is unreachable with reason network, not graded as compressed bytes', async () => {
+  const r = await post(SCORE, { url: 'https://cpage.fl.example.test/', scope: 'universal' });
+  assert.equal(r.status, 200);
+  assert.equal(r.body.unreachable, true);
+  assert.equal(r.body.unreachableReason, 'network');
+  assert.equal(r.body.score, null);
+});
+
+for (const host of ['gone.fl.example.test', 'www.gone.fl.example.test']) route(`${host}/`, 404, { 'content-encoding': 'gzip' }, 'garbage, not gzip');
+control('a 404 marked gzip stays an http_error with its status', async () => {
+  const r = await post(SCORE, { url: 'https://gone.fl.example.test/', scope: 'universal' });
+  assert.equal(r.body.unreachable, true);
+  assert.equal(r.body.unreachableReason, 'http_error');
+});
+
+route('md.fl.example.test/', 200, {}, INLINE_PAGE);
+route('md.fl.example.test/DESIGN.md', 200, { 'content-type': 'text/markdown', 'content-encoding': 'gzip' }, enc.gzip(DESIGN_MD));
+rule('a gzip /DESIGN.md is read decoded, so v37 runs the linter on it', async () => {
+  const r = await post(SCORE, { url: 'https://md.fl.example.test/', scope: 'universal' });
+  scored(r);
+  const v37 = r.body.checks.find((c) => c.id === 'v37');
+  assert.ok(v37, 'no v37 in the result');
+  assert.ok(['PASS', 'WARN', 'FAIL'].includes(v37.status), `${v37.status}: ${v37.detail}`);
+  assert.doesNotMatch(v37.detail, /does not appear to be a valid DESIGN\.md|not publicly served|could not fetch/);
+});
+
+// ── 3. POST /api/score, own-contract mode ────────────────────────────────────
+section('3. POST /api/score, own-contract mode (contract scoring reads pages through the same fetch)');
+
+const CONTRACT = (await import('node:fs')).readFileSync(path.join(HERE, 'fixtures', 'own-contract', 'DM-1.md'), 'utf8');
+
+route('ocbomb.fl.example.test/', 200, {}, page('Own contract, bomb sheet', '<link rel="stylesheet" href="/bomb.css">'));
+route('ocbomb.fl.example.test/bomb.css', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, BOMB_GZ);
+rule('a gzip bomb sheet is read up to the stylesheet cap, and the coverage notes say so (DOCUMENT_CAP)', async () => {
+  const r = await post(SCORE, { url: 'https://ocbomb.fl.example.test/', contract: { content: CONTRACT } });
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.mode, 'own-contract');
+  assert.ok(r.body.coverage.notes.some((n) => n.startsWith('DOCUMENT_CAP')), r.body.coverage.notes.join(' | '));
+});
+
+route('ocbad.fl.example.test/', 200, {}, page('Own contract, two sheets', '<link rel="stylesheet" href="/bad.css"><link rel="stylesheet" href="/good.css">'));
+route('ocbad.fl.example.test/bad.css', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, CORRUPT);
+route('ocbad.fl.example.test/good.css', 200, { 'content-type': 'text/css', 'content-encoding': 'gzip' }, enc.gzip(SHEET));
+rule('a sheet that does not decode is not counted as read: 1 of 2 stylesheets fetched', async () => {
+  const r = await post(SCORE, { url: 'https://ocbad.fl.example.test/', contract: { content: CONTRACT } });
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.site.stylesheetsTotal, 2);
+  assert.equal(r.body.site.stylesheetsFetched, 1);
+});
+
+route('ocpage.fl.example.test/', 200, {}, INLINE_PAGE);
+route('contract.fl.example.test/DESIGN.md', 200, { 'content-type': 'text/markdown', 'content-encoding': 'gzip' }, enc.gzip(CONTRACT));
+rule('a contract URL served gzip-encoded is parsed as the contract it decodes to', async () => {
+  const r = await post(SCORE, { url: 'https://ocpage.fl.example.test/', contract: { url: 'https://contract.fl.example.test/DESIGN.md' } });
+  assert.equal(r.status, 200, JSON.stringify(r.body).slice(0, 300));
+  assert.equal(r.body.ownContract.source, 'url');
+  const inline = await post(SCORE, { url: 'https://ocpage.fl.example.test/', contract: { content: CONTRACT } });
+  assert.equal(r.body.ownContract.digest, inline.body.ownContract.digest);
+});
+
 // ── Run ──────────────────────────────────────────────────────────────────────
 
 console.log(`Fetch layer (${path.relative(process.cwd(), APP) || '.'}, node ${process.version}${FLIP ? ', --flip' : ''})`);
@@ -320,7 +430,8 @@ for (const c of CASES) {
       new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`still open after ${CASE_DEADLINE_MS / 1000} s`)), CASE_DEADLINE_MS); }),
     ]);
   } catch (e) {
-    why = String(e && e.message).split('\n')[0];
+    const lines = String(e && e.message).split('\n').map((l) => l.trim()).filter(Boolean);
+    why = lines.slice(0, 4).join(' / ').slice(0, 300) || String((e && e.name) || 'failed');
   } finally {
     clearTimeout(timer);
   }
