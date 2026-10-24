@@ -411,6 +411,63 @@ rule('a contract URL served gzip-encoded is parsed as the contract it decodes to
   assert.equal(r.body.ownContract.digest, inline.body.ownContract.digest);
 });
 
+// ── 4. drift, guardrails, monitor and compare ───────────────────────────────
+section('4. drift, guardrails, monitor and compare (app/lib/page-fetch.ts)');
+
+const ROUTES_4 = [
+  ['drift', 'app/api/drift/route.ts', (url) => ({ url }), (b) => b.tokensExtracted],
+  ['guardrails', 'app/api/guardrails/route.ts', (url) => ({ url }), (b) => b.tokensExtracted],
+  ['monitor', 'app/api/monitor/route.ts', (url) => ({ url }), (b) => b.currentSnapshot && b.currentSnapshot.tokensExtracted],
+  ['compare', 'app/api/compare/route.ts', (url) => ({ urlA: url, urlB: 'https://plain-compare.fl.example.test/' }), (b) => b.tokensA],
+];
+route('plain-compare.fl.example.test/', 200, {}, INLINE_PAGE);
+for (const [name, file, body, tokens] of ROUTES_4) {
+  const from = `old-${name}.fl.example.test`;
+  const to = `new-${name}.fl.example.test`;
+  movedSite(from, to);
+  rule(`${name} reads a redirected page's sheets from the host it landed on, as many tokens as the page read directly`, async () => {
+    const moved = await post(file, body(`https://${from}/x/`));
+    assert.equal(moved.status, 200, JSON.stringify(moved.body).slice(0, 300));
+    assert.ok(!trapAsked(from), 'a sheet was asked of the host the page moved away from');
+    const direct = await post(file, body(`https://${to}/x/`));
+    assert.equal(direct.status, 200, JSON.stringify(direct.body).slice(0, 300));
+    assert.equal(tokens(direct.body), SHEET_TOKENS + THEME_TOKENS, 'the page read directly: the gzip sheet and the br sheet linked href first');
+    assert.equal(tokens(moved.body), tokens(direct.body));
+  });
+}
+
+// ── 5. The shared link scanner ───────────────────────────────────────────────
+section('5. app/lib/page-fetch.ts stylesheetLinkMatches');
+
+const LINK_ORACLE = /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi;
+const oracleLinks = (s) => {
+  const out = [];
+  LINK_ORACLE.lastIndex = 0;
+  for (let m = LINK_ORACLE.exec(s); m; m = LINK_ORACLE.exec(s)) out.push({ index: m.index, text: m[0], groups: [m[1] ?? m[2]] });
+  return out;
+};
+rule('returns what the combined pattern returns on 2,000 seeded inputs, href-first tags among them', () => {
+  const { stylesheetLinkMatches } = h.load('app/lib/page-fetch.ts');
+  const alphabet = ['<link', '<LINK', ' ', 'rel=', 'rel="stylesheet"', "rel='stylesheet'", 'rel=stylesheet', 'stylesheet', 'href=', 'href="', "href='", 'a.css', '"', "'", '>', 'x', ' rel="stylesheet">', 'href="a.css" ', '<', 'REL=STYLESHEET', 'HREF="'];
+  let seed = 0x5eed;
+  const rand = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  let hrefFirst = 0;
+  for (let i = 0; i < 2000; i++) {
+    let s = '';
+    const len = 1 + Math.floor(rand() * 30);
+    for (let j = 0; j < len; j++) s += alphabet[Math.floor(rand() * alphabet.length)];
+    const want = oracleLinks(s);
+    assert.deepEqual(stylesheetLinkMatches(s), want, JSON.stringify(s));
+    if (want.some((m) => /^<link[^>]*?href=["'][^"']+["'][^>]*rel=/i.test(m.text) && !/rel=["']?stylesheet["']?[^>]*href=/i.test(m.text))) hrefFirst++;
+  }
+  assert.ok(hrefFirst >= 20, `only ${hrefFirst} inputs matched by href before rel`);
+});
+
 // ── Run ──────────────────────────────────────────────────────────────────────
 
 console.log(`Fetch layer (${path.relative(process.cwd(), APP) || '.'}, node ${process.version}${FLIP ? ', --flip' : ''})`);

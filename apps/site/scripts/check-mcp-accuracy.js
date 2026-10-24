@@ -572,10 +572,11 @@ async function measure(url) {
   };
   const html = await (await fetch(url, { headers })).text();
   const pages = { [url]: html };
-  const linkRe = /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi;
+  // The links the routes read from engine 1.5.4: rel before href, or href before rel.
+  const linkRe = /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi;
   let m;
   while ((m = linkRe.exec(html)) !== null) {
-    const href = new URL(m[1], url).href;
+    const href = new URL(m[1] ?? m[2], url).href;
     pages[href] = await (await fetch(href, { headers })).text();
   }
   const h = createHarness({ app: APP, pages });

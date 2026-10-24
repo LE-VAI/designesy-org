@@ -35,7 +35,8 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { fetchPageResilient } from '../../lib/page-fetch';
 import { Resend } from 'resend';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { clientKey } from '../../lib/rate-limit';
@@ -102,84 +103,7 @@ function isEmailAddress(email: string): boolean {
   return email.length <= EMAIL_MAX_LENGTH && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// ── Fetching (mirrors drift/score routes) ─────────────────────────────────────
-
-const BROWSER_HEADERS: Record<string, string> = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-};
-
-function extractCssLinks(html: string, baseUrl: string): string[] {
-  const links: string[] = [];
-  const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  let m;
-  while ((m = styleRe.exec(html)) !== null) {
-    links.push(m[1]);
-  }
-  const linkRe = /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi;
-  while ((m = linkRe.exec(html)) !== null) {
-    try {
-      links.push(new URL(m[1], baseUrl).href);
-    } catch {
-      // ignore malformed
-    }
-  }
-  return links;
-}
-
-async function fetchText(url: string): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const resp = await safeFetch(url, {
-      headers: BROWSER_HEADERS,
-      signal: controller.signal,
-    });
-    if (!resp.ok) return '';
-    return await resp.text();
-  } catch {
-    return '';
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
-  let html = '';
-  try {
-    const parsed = new URL(targetUrl);
-    const candidates = [
-      targetUrl,
-      !parsed.hostname.startsWith('www.') ? `https://www.${parsed.hostname}${parsed.pathname}` : '',
-    ].filter(Boolean);
-    for (const c of candidates) {
-      html = await fetchText(c);
-      if (html && html.length > 50) break;
-    }
-  } catch {
-    // fall through
-  }
-  if (!html) return { html: '', css: '' };
-  const parts = extractCssLinks(html, targetUrl);
-  const cssParts: string[] = [];
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      const ext = await fetchText(part);
-      if (ext) cssParts.push(ext);
-    } else {
-      cssParts.push(part);
-    }
-  }
-  return { html, css: cssParts.join('\n') };
-}
+// ── Fetching: app/lib/page-fetch.ts, shared by drift, guardrails, monitor and compare ──
 
 import {
   runDriftChecks,
