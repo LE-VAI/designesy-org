@@ -6,6 +6,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Monitor contract 0.1.4: drift-alert email is off unless the server
+switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
+mailed an alert to whatever address a request named, and nothing confirmed
+that the address's owner had asked for it.
+
+### Security
+
+- **No alert email without `MONITOR_EMAIL_ENABLED=true`.** A server sends
+  monitor alert mail only when that variable is exactly `true` and
+  `RESEND_API_KEY` is set. It is off unless set. With it off, a request that
+  names an email gets `emailAlert.off: true` and no mail, and the per-hour
+  cooldown is not touched. Setting the switch alone brings back the old
+  sending, with the HTML escaped, so it stays unset until recipients can opt
+  in.
+- **Every value the alert email interpolates is escaped.** The host, the
+  grade, both scores, the alert texts and the URL pass through `escapeHtml`.
+  A previous score that is not a finite number shows as "no score recorded".
+- **`check-mcp-accuracy` holds both.** Its new `monitor-mail-off` check runs
+  the route with Resend stubbed. With the switch unset, `""`, `"1"`, `"TRUE"`
+  or `"yes"`, a run that names an email and raises an alert sends nothing.
+  With `"true"` it sends one email, and markup in the request's previous
+  score does not reach it.
+
+### Changed
+
+- m10 is rebuilt on every request, so it reports whether email alerts are on.
+  With them off it says the alert was surfaced in-UI and that email alerts are
+  off on this server, adding "so no email was sent" when an email was given.
+  It stays PASS.
+- `/monitor` shows no email field, and sends no saved address, while email
+  alerts are off. Its method step and its descriptions no longer offer an
+  email alert.
+- The monitor contract (0.1.4) names the switch in `alert_delivery`, m10 and
+  its open questions. The `designesy_monitor_score` description and its
+  `email` parameter name it as well.
+
+### Not changed
+
+- The PyPI server's `designesy_monitor_score` description still names only
+  `RESEND_API_KEY`. That server forwards to this site's `/api/monitor`, so it
+  sends no mail while the switch is off; its text follows in the next
+  designesy-mcp release.
+
 ## [1.13.10] — 2026-10-21
 
 **Tokens contract 0.1.3: `designesy_tokens_score` reads a file the way the

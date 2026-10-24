@@ -1,5 +1,5 @@
 /**
- * Designesy Monitor Contract v0.1.2 — machine-readable form.
+ * Designesy Monitor Contract v0.1.4 — machine-readable form.
  * Sibling contract governing continuous design-drift monitoring.
  * Source: Into Design Systems 2026 (Morales Achiardi / Enara),
  *          Design Systems Collective 2026, Lollypop agentic governance,
@@ -19,13 +19,13 @@
 
 export const monitorContract = {
   id: 'designesy.monitor',
-  version: '0.1.3',
+  version: '0.1.4',
   status: 'provisional',
   name: 'Designesy Monitor Contract',
   kind: 'contract' as const,
   public_url: 'https://www.designesy.org/contracts/monitor',
   machine_url: 'https://www.designesy.org/contracts/monitor.json',
-  updated: '2026-10-11',
+  updated: '2026-10-23',
   purpose:
     'Monitor is the governance layer over time: each call re-runs the drift checks on a URL and compares the result with the history the caller passes in, computing deltas against the first snapshot (the baseline) and the one before, so a regression shows on the run it lands. Nothing is scheduled, and the server keeps no history of its own (each result is cached for 24 hours); /monitor keeps the history in your browser.',
   source_authority: {
@@ -58,10 +58,11 @@ export const monitorContract = {
     ],
     alert_delivery: {
       method: 'Email via Resend (transactional email service)',
-      trigger: 'When any alert condition fires AND the monitor request includes an email address AND RESEND_API_KEY is set as a Vercel env var',
+      trigger: 'When any alert condition fires AND the monitor request includes an email address AND MONITOR_EMAIL_ENABLED is "true" AND RESEND_API_KEY is set as a Vercel env var',
+      switch: 'MONITOR_EMAIL_ENABLED is off unless set: nothing confirms that an address belongs to the person who asked for the mail, so a server sends no alert email until its operator switches it on',
       from: 'monitor@designesy.org',
       format: 'HTML email with score, delta, alert details, and link to full report',
-      fallback: 'Without email or key, alerts are surfaced in-UI only (graceful degradation: no feature loss)',
+      fallback: 'Without the email, the switch or the key, alerts are surfaced in-UI only (graceful degradation: no feature loss)',
     },
   },
   verification: {
@@ -75,7 +76,7 @@ export const monitorContract = {
       { id: 'm07', item: 'Score degradation threshold: alert if score drops > N points', pass: 'Score drop within threshold since previous run', fail: 'Score dropped beyond the alert threshold (alert fired)' },
       { id: 'm08', item: 'Token-set mutation: tokens added/removed/renamed since baseline', pass: 'Token set is stable vs baseline', fail: 'Token set mutated; tokens added, removed, or renamed (silent breaking changes)', warn: '1-2 token changes since baseline' },
       { id: 'm09', item: 'Contract version drift: the design contract version this run is scored against (the version designesy_score reports) changed since last run', pass: 'No contract version change detected', fail: 'Contract version changed since last run (verify the change is intentional)', warn: 'Contract metadata changed (not version)' },
-      { id: 'm10', item: 'Alert delivered: email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered (check the email address or RESEND_API_KEY)', warn: 'Alert surfaced in-UI only (no email provided or Resend key not set)' },
+      { id: 'm10', item: 'Alert delivered: email fired on threshold breach', pass: 'Alert delivered to the registered email address via Resend', fail: 'Alert could not be delivered (check the email address or RESEND_API_KEY)', warn: 'Alert surfaced in-UI only (no email provided, email alerts switched off, or Resend key not set)' },
     ],
     scoring: '10 checks. PASS=1, WARN=0.5, FAIL=0; SKIP (m01 and m02 on a first run) is not scored. Score = (points / scored checks) × 100. A≥90, B≥80, C≥70, D≥60, F<60. Note: the monitor score reflects governance health (is the watch working, is the site stable) rather than design quality, which is the /score surface.',
     validation_tools: {
@@ -92,7 +93,7 @@ export const monitorContract = {
   },
   open_questions: [
     'Snapshot storage is client-side (localStorage) in v0.1.0: production monitoring needs server-side persistence (database or KV store)',
-    'Email alerting (m10) requires RESEND_API_KEY env var + verified sending domain (monitor@designesy.org): without the key, alerts surface in-UI only',
+    'Email alerting (m10) requires MONITOR_EMAIL_ENABLED="true" + RESEND_API_KEY env var + verified sending domain (monitor@designesy.org): the switch is off unless set, because nothing yet confirms that an address belongs to the person who asked for the mail; without the switch or the key, alerts surface in-UI only',
     'Scheduled cadence (daily/weekly/monthly) requires a cron runner (Vercel Cron Jobs): v0.1.0 monitors on manual trigger only',
     'Cross-page drift (drift mode 2) requires crawling multiple pages: the monitor checks the single URL it is given',
     'The 3-run trend slope (m04) needs 3 snapshots: the first 2 runs will show insufficient data',

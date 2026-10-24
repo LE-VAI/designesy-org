@@ -71,6 +71,11 @@
  *                        within two, FAIL past two, SKIP with no history), an
  *                        unknown cadence is a 400, and every result's score
  *                        and counts match the checks it returns
+ *   monitor-mail-off     with MONITOR_EMAIL_ENABLED unset or anything but "true",
+ *                        a run that names an email and raises an alert sends
+ *                        nothing and m10 says email alerts are off; with "true"
+ *                        it sends one email, with what the request supplied
+ *                        escaped (Resend is stubbed: nothing leaves the process)
  *   compare-rounding     every number in a compare result has at most two decimals
  *
  * --app <dir> runs the same checks against another checkout's apps/site, which
@@ -129,7 +134,7 @@ function siteHarness(extra = {}) {
     }
     return undefined;
   };
-  const h = createHarness({ app: APP, pages, api });
+  const h = createHarness({ app: APP, pages, api, stubs: extra.stubs });
   Object.assign(pages, servedContracts(h));
   return h;
 }
@@ -460,6 +465,79 @@ async function monitorM02() {
   return { findings, measured: seen.join('; ') };
 }
 
+async function monitorMailOff() {
+  // /api/monitor mailed a drift alert to whatever address a request named, and
+  // put the request's own snapshot fields into the HTML unescaped. It now sends
+  // nothing unless MONITOR_EMAIL_ENABLED is exactly "true". The Resend stub
+  // records each message instead of sending it.
+  const findings = [];
+  const sent = [];
+  const stubs = {
+    resend: {
+      Resend: class {
+        constructor() {
+          this.emails = { send: async (msg) => (sent.push(msg), { error: null }) };
+        }
+      },
+    },
+  };
+  const saved = { MONITOR_EMAIL_ENABLED: process.env.MONITOR_EMAIL_ENABLED, RESEND_API_KEY: process.env.RESEND_API_KEY };
+  const run = async (value, body) => {
+    if (value === undefined) delete process.env.MONITOR_EMAIL_ENABLED;
+    else process.env.MONITOR_EMAIL_ENABLED = value;
+    process.env.RESEND_API_KEY = 'stub';
+    try {
+      return await siteHarness({ stubs }).post('app/api/monitor/route.ts', body);
+    } finally {
+      for (const [name, v] of Object.entries(saved)) {
+        if (v === undefined) delete process.env[name];
+        else process.env[name] = v;
+      }
+    }
+  };
+  const url = FIXTURES.site.url;
+  const email = 'alerts@example.com';
+  const snap = (await run(undefined, { url })).body.currentSnapshot;
+  // A baseline 200 points higher raises m03; the previous run's score is markup.
+  const history = [{ ...snap, score: snap.score + 200 }, { ...snap, score: '<img src=x>' }];
+  const m10Of = (r) => (r.body.monitorChecks || []).find((c) => c.id === 'm10');
+  const seen = [];
+  for (const value of [undefined, '', '1', 'TRUE', 'yes']) {
+    const label = value === undefined ? 'unset' : JSON.stringify(value);
+    sent.length = 0;
+    const r = await run(value, { url, email, history });
+    const m10 = m10Of(r);
+    seen.push(`${label} ${sent.length} sent`);
+    if (!(r.body.alerts || []).length) {
+      findings.push({ id: `monitor-mail-off:${label}:no-alert`, why: `Switch ${label}: the forged baseline raised no alert, so this case tested nothing.` });
+    }
+    if (sent.length) {
+      findings.push({ id: `monitor-mail-off:${label}:sent`, why: `Switch ${label}: ${sent.length} email(s) sent to ${sent.map((m) => m.to).join(', ')}; with the switch not "true" nothing may be sent.` });
+    }
+    if (!r.body.emailAlert || r.body.emailAlert.off !== true) {
+      findings.push({ id: `monitor-mail-off:${label}:emailAlert`, why: `Switch ${label}: emailAlert is ${JSON.stringify(r.body.emailAlert)}; it must say off.` });
+    }
+    if (!m10 || !/email alerts are off on this server, so no email was sent/.test(m10.detail)) {
+      findings.push({ id: `monitor-mail-off:${label}:m10`, why: `Switch ${label}: m10 is ${m10 ? `"${m10.detail}"` : 'missing'}; it must say email alerts are off and no email was sent.` });
+    }
+  }
+  sent.length = 0;
+  const bare = await run(undefined, { url, history });
+  const m10Bare = m10Of(bare);
+  if (!m10Bare || !/email alerts are off on this server$/.test(m10Bare.detail)) {
+    findings.push({ id: 'monitor-mail-off:no-email:m10', why: `With no email and the switch unset, m10 is ${m10Bare ? `"${m10Bare.detail}"` : 'missing'}; it must say email alerts are off, not invite an address.` });
+  }
+  sent.length = 0;
+  const on = await run('true', { url, email, history });
+  seen.push(`"true" ${sent.length} sent`);
+  if (sent.length !== 1 || !on.body.emailAlert || on.body.emailAlert.delivered !== true) {
+    findings.push({ id: 'monitor-mail-off:on:sent', why: `With the switch "true", ${sent.length} email(s) were sent and emailAlert is ${JSON.stringify(on.body.emailAlert)}; one email must go out.` });
+  } else if (sent[0].to !== email || /<img/i.test(sent[0].html) || !sent[0].html.includes('Previous: no score recorded')) {
+    findings.push({ id: 'monitor-mail-off:on:escaped', why: `With the switch "true", the email went to ${sent[0].to}, ${/<img/i.test(sent[0].html) ? 'carries the request\'s <img> markup' : 'does not say the previous score is missing'}.` });
+  }
+  return { findings, measured: seen.join('; ') };
+}
+
 async function compareRounding() {
   const findings = [];
   const h = siteHarness();
@@ -622,6 +700,7 @@ const CHECKS = [
   ['monitor-m01', monitorM01],
   ['monitor-m02', monitorM02],
   ['monitor-m09', monitorM09],
+  ['monitor-mail-off', monitorMailOff],
   ['compare-rounding', compareRounding],
 ];
 

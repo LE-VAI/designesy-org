@@ -33,7 +33,7 @@ type MonitorResponse = {
   driftChecks?: Check[];
   monitorChecks?: Check[];
   alerts?: string[];
-  emailAlert?: { attempted: boolean; delivered: boolean; recipient?: string; fromAddress?: string; error?: string };
+  emailAlert?: { attempted: boolean; delivered: boolean; off?: boolean; recipient?: string; fromAddress?: string; error?: string };
   error?: string;
 };
 
@@ -107,14 +107,18 @@ function Sparkline({ scores }: { scores: number[] }) {
   );
 }
 
+// emailAlerts is false when the server has email alerts switched off
+// (lib/monitor-email): the email field is not shown and no address is sent.
 export function MonitorForm({
   initialUrl,
   registry,
   drift,
+  emailAlerts,
 }: {
   initialUrl: string;
   registry: RegistryView;
   drift: RegistryView;
+  emailAlerts: boolean;
 }) {
   const [url, setUrl] = useState(initialUrl);
   const [email, setEmail] = useState('');
@@ -136,7 +140,7 @@ export function MonitorForm({
   const start = async (target: string) => {
     const u = normalizeUrl(target);
     if (!u) return;
-    const mail = email.trim();
+    const mail = emailAlerts ? email.trim() : '';
     try {
       if (mail) localStorage.setItem(EMAIL_KEY, mail);
     } catch {
@@ -187,7 +191,9 @@ export function MonitorForm({
               <p className="eg-quiet">
                 {mail.delivered
                   ? `Sent to ${mail.recipient}.`
-                  : mail.fromAddress === 'suppressed (cooldown)'
+                  : mail.off
+                    ? 'Email alerts are off on this server: nothing was sent.'
+                    : mail.fromAddress === 'suppressed (cooldown)'
                     ? 'Mail held back: the same alert went out within the hour.'
                     : mail.attempted
                       ? `Mail could not be sent: ${display(mail.error || 'no reason given')}.`
@@ -214,13 +220,15 @@ export function MonitorForm({
       <EngineBar
         fields={[
           { value: url, onChange: setUrl, label: 'URL to watch for drift', placeholder: 'Any public URL, like stripe.com' },
-          { value: email, onChange: setEmail, label: 'Email for drift alerts, optional', placeholder: 'Email for alerts, optional', type: 'email', optional: true },
+          ...(emailAlerts
+            ? [{ value: email, onChange: setEmail, label: 'Email for drift alerts, optional', placeholder: 'Email for alerts, optional', type: 'email' as const, optional: true }]
+            : []),
         ]}
         onSubmit={() => start(url)}
         busy={phase === 'running'}
         go="Run a check"
         goBusy="Checking"
-        note="History stays in this browser. The email is used for drift alerts and nothing else."
+        note={emailAlerts ? 'History stays in this browser. The email is used for drift alerts and nothing else.' : 'History stays in this browser.'}
       />
       {/* One pattern for every instrument run: Azure while
           the watch runs, the flame (the loading ignition) when its result

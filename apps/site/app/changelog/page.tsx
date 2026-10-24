@@ -620,6 +620,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy monitor contract v0.1.3; designesy-org pull requests 297 (7190efc) and 283 (6d75289)',
   },
 
+  // ── Monitor contract v0.1.4: alert email is off unless switched on ──
+  {
+    version: 'monitor v0.1.4',
+    date: '2026-10-23',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.4: alert email is off unless the server switches it on',
+    description:
+      'alert_delivery adds a condition: a server sends an alert email only when MONITOR_EMAIL_ENABLED is "true", as well as when an alert fires, the request names an email and RESEND_API_KEY is set. The switch is off unless set, because nothing confirms that an address belongs to the person who asked for the mail. m10 and the open questions name the switch. With it off, m10 says the alert was surfaced in-UI and that email alerts are off on the server.',
+    rationale:
+      'Rules changed: when an alert email is sent. No check is added and no score moves; m10 stays PASS when an alert is only surfaced in-UI.',
+    source: 'Designesy monitor contract v0.1.4',
+  },
+
   // ── Compare contract v0.1.1: the editorial pass, versioned ──
   {
     version: 'compare v0.1.1',
