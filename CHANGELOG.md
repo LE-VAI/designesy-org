@@ -6,10 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**Fetch bounds: a finished read lets go of its signal, and every URL the MCP
-route reads ends at 15 s** (the site: its URL guard and the hosted MCP route;
-no version moves). Two fixes to how the site's server reads a URL, a new gate
-that runs both against a local server, and stricter status cases in the
+**Fetch bounds: a finished read lets go of its signal, every URL the MCP
+route reads for itself ends at 15 s, and a body peaks at twice its size in
+memory** (the site: its URL guard and the hosted MCP route; no version
+moves). Three changes to how the site's server reads a URL, a new gate that
+runs them against a local server, and stricter status cases in the
 fetch-layer gate. No check is added, and no rule, weight, ceiling or score
 moves.
 
@@ -23,7 +24,7 @@ moves.
   (an 8 s `AbortSignal.timeout`) and the MCP route's reads (below) pass such
   a signal. A read now removes the listener as it resolves, as it fails, and
   when its request errors. An abort ends a read as before.
-- **Every URL the MCP route reads ends at 15 s.** The `url` of
+- **Every URL the MCP route reads for itself ends at 15 s.** The `url` of
   `designesy_tokens_score` and `designesy_motion_score`, and the designesy.org
   documents the seven read-only tools serve, were read with no signal. The
   URL guard's own 15 s timeout fires only when the socket goes quiet, so a
@@ -34,12 +35,30 @@ moves.
   an error. 15 s is the idle timeout's own figure, so a server that stops
   answering is given up on no later than before. Each tool keeps its result
   and error shapes.
+- **A body the URL guard reads peaks at twice its size in memory, not four
+  times.** The guard joined a body's chunks with `Buffer.concat` and built
+  the Response from those bytes, and a Response copies bytes it is given: in
+  Node 24, one built from an 8 MiB Buffer holds 16 MiB after a GC. The guard
+  now joins the chunks once, into a buffer of the body's own size, and gives
+  the Response a stream that hands a reader that buffer itself. Measured on
+  Node 24.15.0 with one read whose cap is the body's size, the peak falls
+  from 16 to 8 MiB for a 4 MiB body and from 32 to 16 MiB for an 8 MiB body,
+  and a caller that keeps the Response after the score route's reader has
+  read it no longer holds a copy of the body beside the text. Once the
+  reader returns, both versions hold only the text. `resp.body` is now a default
+  stream, not a byte stream, so a BYOB reader throws; nothing in the site
+  reads a body that way.
 
 ### Not changed (fetch bounds)
 
 - The engine, its checks, their rules, weights and ceilings, and every score.
-- The byte caps, which are engine 1.5.4's: the readiness and MCP reads still
-  set none of their own.
+- Byte limits. The MCP and readiness reads still set none of their own, so
+  a body sent without a content coding is read whole within the deadline,
+  and a gzip, deflate or brotli body is held to engine 1.5.4's 4 MiB
+  decoded.
+- The seven tools that call the site's own API (score, drift, readiness,
+  guardrails, monitor, compare and report). Those calls are not made through
+  the URL guard and have no deadline of their own, as before.
 - Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
   1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
   published.

@@ -39,7 +39,7 @@
  * getEventListeners (node:events) counts the abort listeners left on a
  * signal. The MCP route is loaded before the first case starts, so no case's
  * time includes its load, and one case reads its source instead of running
- * it. The cases run concurrently, each on its own host names; the last one
+ * it. The cases run concurrently, each on its own URLs; the last one
  * runs once the others have settled.
  *
  * WHAT IT ASSERTS
@@ -191,7 +191,7 @@ for (let i = 0; i < PATTERN.length; i++) PATTERN[i] = 0x21 + (i % 89);
 /** An earlier read's body: no later read's chunk may reach these bytes. */
 const EARLIER = 'fetch bounds: the body of an earlier read, which no later reader may reach';
 
-// host + path -> what the server sends. Each case below owns its host names.
+// host + path -> what the server sends. Each case below owns its URLs.
 const ROUTES = {
   'ok.example.com/': { body: PAGE },
   'big.example.com/ten': { bytes: PATTERN },
