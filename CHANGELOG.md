@@ -258,22 +258,23 @@ of 2 to 5 s, 1 s less than that one.
 
 ### Gates (requests and deadlines)
 
-- `check-fetch-bounds.mjs` runs 59 cases (48 before this change), in 22.4
-  to 23.5 s over 4 runs. A POST through the guard carries its 46-byte body
-  with `Content-Length: 46`; after a 307 or 308 the URL it lands on
-  receives the same POST, and after a 301, 302 or 303 a GET with no body
-  and none of the headers that describe one, while a header that describes
-  no body is kept; a PUT is repeated after a 302 and becomes a GET after
-  a 303. A string of 3 characters and 9 bytes arrives as 9 bytes with
-  `Content-Length: 9`, and a view of part of a buffer as only the bytes it
-  views; URLSearchParams, and a body on a GET or a HEAD, are refused with a
-  TypeError, with no DNS query and no request. Readiness r04 on an endpoint
-  built with mcp-handler is PASS with its one tool, also through a 307,
-  and WARN with HTTP 405 through a 302; the same endpoint answers a
-  tools/list POST with no body with 400. A server that sends nothing for
-  6 s partway through its body is read whole by a caller whose deadline is
-  12 s; on a connection kept alive from an answer that gave a 5 s
-  Keep-Alive timeout, one quiet for 4.5 s is read by a caller whose
+- `check-fetch-bounds.mjs` runs 59 cases (48 before this change), in 22.67
+  to 22.94 s over 5 runs, with a peak of 619 to 671 MiB of memory (maxRSS
+  at exit), on Node 24.15.0 on Windows. A POST through the guard carries
+  its 46-byte body with `Content-Length: 46`; after a 307 or 308 the URL it
+  lands on receives the same POST, and after a 301, 302 or 303 a GET with
+  no body and none of the headers that describe one, while a header that
+  describes no body is kept; a PUT is repeated after a 302 and becomes a
+  GET after a 303. A string of 3 characters and 9 bytes arrives as 9 bytes
+  with `Content-Length: 9`, and a view of part of a buffer as only the
+  bytes it views; URLSearchParams, and a body on a GET or a HEAD, are
+  refused with a TypeError, with no DNS query and no request. Readiness r04
+  on an endpoint built with mcp-handler is PASS with its one tool, also
+  through a 307, and WARN with HTTP 405 through a 302; the same endpoint
+  answers a tools/list POST with no body with 400. A server that sends
+  nothing for 6 s partway through its body is read whole by a caller whose
+  deadline is 12 s; on a connection kept alive from an answer that gave a
+  5 s Keep-Alive timeout, one quiet for 4.5 s is read by a caller whose
   deadline is 5 s, and after one that gave 2 s, one quiet for 1.5 s.
   Readiness r02, the score route and page-fetch each read a server quiet
   for 6 s before it answers, the score route reports a page that sends its
@@ -282,25 +283,31 @@ of 2 to 5 s, 1 s less than that one.
   `Fetch timed out after 15 s`. A read given no signal fails after 15 s of
   quiet. Every read a route makes through the guard (seven calls) passes a
   signal that a timer fires. page-fetch, on a page whose first stylesheet
-  answers at once, whose next three send their headers and then nothing
-  and whose fifth answers at once, ends at 20 s with the first sheet's CSS
-  and never asks for the fifth. The cache key case also asserts
-  `request-body-deadline` in all six keys.
-- On the tree before this change, 50 of the 59 cases pass. Eight of the 11
-  new cases fail: each URL receives a POST with 0 body bytes, each body of
-  the body kinds case arrives with `Content-Length: 0`, and URLSearchParams
-  and the GET and HEAD bodies are sent; r04 is WARN with HTTP 400 (directly
-  and through the 307 and the 302); the 6 s read ends at 5.10 s with
-  `SSRF guard: fetch timeout`, and the kept-alive ones at 4.00 s and
-  1.00 s; r02 is FAIL, the score route reports the quiet page unreachable
-  and page-fetch reads nothing; the silent page is unreachable because the
-  request failed at the network level; and page-fetch reads the fifth
-  stylesheet after 15.40 s. The cache key case fails too, naming all six
-  keys. The `designesy_tokens_score` case holds there, because that tree's
-  MCP route passed its 15 s deadline as an idle timeout too; with that
-  taken out, it fails at 5.10 s, and the 8 s token-file case at 5.06 s. The
-  no-signal and call-site cases hold there: they pin what was already true
-  for a later change, and each fails against a change made to break it.
+  answers at once, whose next three send their headers and then nothing and
+  whose fifth answers at once, ends at 20 s with the first sheet's CSS and
+  never asks for the fifth. The cache key case also asserts
+  `request-body-deadline` in all six keys, and lists the guardrails key's
+  `dtcg-objects-1` part.
+- On the tree before this change, 50 of the 59 cases pass, in each of
+  4 runs. Eight of the 11 new cases fail: each URL receives a POST with 0
+  body bytes, each body of the body kinds case arrives with
+  `Content-Length: 0`, and URLSearchParams and the GET and HEAD bodies are
+  sent; r04 is WARN with HTTP 400 (directly and through the 307 and the
+  302); the 6 s read ends at 5.12 to 5.15 s with `SSRF guard: fetch
+  timeout`, and the kept-alive ones at 4.00 s and 1.00 s; r02 is FAIL, the
+  score route reports the quiet page unreachable and page-fetch reads
+  nothing; the silent page is unreachable because the request failed at the
+  network level; and page-fetch reads the fifth stylesheet after 15.27 to
+  15.35 s. The cache key case fails too, naming all six keys. The
+  `designesy_tokens_score` case holds there, because that tree's MCP route
+  passed its 15 s deadline as an idle timeout too; with that taken out, it
+  fails at 5.10 to 5.15 s, and the 8 s token-file case at 5.06 to 5.08 s
+  (3 runs). The no-signal and call-site cases hold there: they pin what was
+  already true for a later change, and each fails against a change made to
+  break it.
+- Against main at #396, from before the read limits, 32 of the 59 cases
+  fail, in each of 2 runs, and every control holds: the 24 the read limits
+  make fail there, the cache key case among them, and the 8 above.
 
 **Read limits: each URL the MCP route reads for itself, and each URL the
 readiness route reads, has a byte limit of its own, 16 MiB for a Lottie
