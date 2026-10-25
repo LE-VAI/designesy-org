@@ -69,9 +69,10 @@
  * say how far a body got and whether the request was destroyed. The server
  * reads each request's body before it answers, and records the method, the
  * headers that describe a body, one header that does not, and the body
- * (asked), so a case can say what a request carried. One host is answered by an MCP endpoint
- * built with mcp-handler, the package the site's MCP route serves its tools
- * with, resolved from the app checked or else from this checkout. The
+ * (asked), so a case can say what a request carried. One host is answered
+ * by an MCP endpoint built with mcp-handler, the package the site's MCP
+ * route serves its tools with, resolved from the app checked or else from
+ * this checkout. The
  * keep-alive case's host has a server of its own, on its own port, so the
  * connection Node's agent keeps alive from its first answer is taken by no
  * other case's request.
@@ -128,9 +129,13 @@
  *     budget. Between them they reach every place the transport settles a
  *     read other than an abort.
  *   - A POST carries its body: a 46 byte tools/list request reaches the
- *     server with content-length 46. After a 307 the URL it lands on receives
- *     the same POST; after a 302 or a 303 it receives a GET with no body and
- *     no content-type, as fetch follows those redirects.
+ *     server with content-length 46. After a 307 or a 308 the URL it lands
+ *     on receives the same POST; after a 301, a 302 or a 303 it receives a
+ *     GET with no body and none of the headers that describe one
+ *     (content-type, content-language and content-location), while a header
+ *     that describes no body is kept. A PUT is repeated, its body included,
+ *     after a 302, and becomes such a GET after a 303. Each is as fetch
+ *     follows that redirect.
  *   - A request body is sent as its bytes, with their count as its
  *     content-length: a string past ASCII (3 characters, 9 bytes), an
  *     ArrayBuffer, and a view of part of a buffer (only the bytes it views).
@@ -147,10 +152,18 @@
  *     nothing for 6 s mid-body is read whole by a caller whose signal ends
  *     at 12 s. On a connection kept alive from an answer that gave a 5 s
  *     Keep-Alive timeout, a server that sends nothing for 4.5 s before it
- *     answers is read by a caller whose signal ends at 5 s, and the read
- *     opens no connection of its own. designesy_tokens_score on a server
- *     that sends its headers and then nothing ends at the 15 s read deadline
- *     with the route's timeout error, its request destroyed.
+ *     answers is read by a caller whose signal ends at 5 s, and so is one
+ *     quiet for 1.5 s after an answer that gave 2 s; neither read opens a
+ *     connection of its own. designesy_tokens_score on a server that sends
+ *     its headers and then nothing ends at the 15 s read deadline with the
+ *     route's timeout error, its request destroyed.
+ *   - A read given no signal fails once its server has sent nothing for
+ *     15 s, with "SSRF guard: fetch timeout", its request destroyed.
+ *   - Every safeFetch call in the site's app directory (url-guard's own
+ *     aside), and fetchContract's call of the fetcher it is handed, passes a
+ *     signal that a timer fires: an AbortSignal.timeout, or the signal of an
+ *     AbortController that a setTimeout in the same function aborts. These
+ *     are the seven reads a route makes through the guard.
  *   - Each MCP read of a body 1 MiB past its limit fails with "Fetch failed:
  *     the response is over the N MiB read limit": designesy_tokens_score
  *     (4 MiB), designesy_motion_score (16 MiB) and designesy_llms_txt
@@ -381,34 +394,47 @@
  *
  * Against the tree from before the requests and deadline cases, seven of
  * them fail: the POST case (each URL receives a POST with 0 body bytes), the
- * mcp-handler r04 case (WARN with HTTP 400, also through the 307 and the
- * 302), the 6 s mid-body case (it ends at 5 s with "SSRF guard: fetch
- * timeout"), the keep-alive case (at 4 s), the 8 s callers case (r02 is
- * FAIL, the score route reports the page unreachable and page-fetch reads
- * nothing), the silent page case (unreachable at about 10 s, because the
- * request failed at the network level) and the body kinds case (below). Its
- * MCP route passed its 15 s deadline as an idle timeout too, so the silent
- * MCP case holds there; with that taken out, the silent MCP case and the 8 s
- * quiet case fail at 5 s. A url-guard that leaves the agent's idle timeout on for a read given a
- * signal fails the 6 s mid-body, keep-alive, silent MCP, 8 s quiet, 8 s
- * callers and silent page cases. One that follows every redirect with the
- * caller's method and body fails the POST case after the 302 and the 303,
- * and the r04 case through the 302.
+ * body kinds case (below), the mcp-handler r04 case (WARN with HTTP 400,
+ * also through the 307 and the 302), the 6 s mid-body case (it ends at 5 s
+ * with "SSRF guard: fetch timeout"), the keep-alive case (at 4 s after the
+ * 5 s Keep-Alive timeout and at 1 s after the 2 s one), the 8 s callers case
+ * (r02 is FAIL, the score route reports the page unreachable and page-fetch
+ * reads nothing) and the silent page case (unreachable at about 10 s,
+ * because the request failed at the network level). Its MCP route passed
+ * its 15 s deadline as an idle timeout too, so the silent MCP case holds
+ * there; with that taken out, the silent MCP case and the 8 s quiet case
+ * fail at 5 s. A url-guard that leaves the agent's idle timeout on for a
+ * read given a signal fails the 6 s mid-body, keep-alive, silent MCP, 8 s
+ * quiet, 8 s callers and silent page cases. One that follows every redirect
+ * with the caller's method and body fails the POST case after the 301, the
+ * 302 and the 303 (and the PUT after the 303), and the r04 case through the
+ * 302. The POST case also
+ * fails against a url-guard that keeps content-language and
+ * content-location on the GET, one that makes a PUT a GET after a 302, one
+ * that makes a 308 a GET, and one that repeats a POST after a 301.
  *
  * On that tree each body of the body kinds case arrives with content-length
  * 0, and URLSearchParams, a body on a GET and a body on a HEAD are each sent
  * (HTTP 404, as the server lists none of those URLs). Against the tree that
  * merged the read limits into this change, before the guard checked a body
- * ahead of the DNS check, it fails on the three refusals:
- * URLSearchParams is refused only after its host is looked up, and the GET
- * and the HEAD are sent with their body. A url-guard that counts a string
- * body's length in characters, one that sends the whole buffer behind a
- * view, one that sends a URLSearchParams body as no body, one that checks
- * the body only as each hop is requested, and one that sends a body with a
- * GET or HEAD each fail it.
+ * ahead of the DNS check, it fails on the three refusals: URLSearchParams
+ * is refused only after its host is looked up, and the GET and the HEAD are
+ * sent with their body. A url-guard that counts a string body's length in
+ * characters, one that sends the whole buffer behind a view, one that sends
+ * a URLSearchParams body as no body, one that checks the body only as each
+ * hop is requested, and one that sends a body with a GET or HEAD each fail
+ * it.
+ *
+ * The no-signal case and the call-site case hold on the trees from before
+ * this change and from before the read limits, where each of those reads
+ * had its timer and a read given no signal had the same 15 s idle timeout;
+ * they pin both for a later change. A url-guard that sets no idle timeout
+ * on any read leaves the no-signal read open at the case deadline, and a
+ * page-fetch whose fetchText passes no signal, or whose timer does not
+ * abort it, fails the call-site case.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 31 of the 56 cases fail and every
+ * readiness route from before them), 31 of the 58 cases fail and every
  * control holds: the 24 the read limits make fail there, and the seven
  * above.
  *
@@ -454,10 +480,15 @@ const PAST_LIMIT = MiB;
 const SIGNAL_DEADLINE_S = 3;
 /** How long the quiet case's server sends nothing mid-body: longer than the 5 s idle timeout of Node's global agent. */
 const QUIET_S = 6;
-/** The keep-alive case: the Keep-Alive timeout its first answer gives, how long its second is quiet, and the signal of each read. */
-const KEEP_ALIVE_HINT_S = 5;
-const KEEP_ALIVE_QUIET_S = 4.5;
+/**
+ * The keep-alive case: each [Keep-Alive timeout its first answer gives, how
+ * long its second is quiet], and the signal of each read. Node's agent then
+ * ends a quiet socket 1 s before that timeout: after 4 s for 5, and 1 s for 2.
+ */
+const KEEP_ALIVE = [[5, 4.5], [2, 1.5]];
 const KEEP_ALIVE_SIGNAL_S = 5;
+/** url-guard's idle timeout for a read given no signal. */
+const NO_SIGNAL_IDLE_S = 15;
 /** The deadline of the readiness probes, the score route's page read and page-fetch's (an 8 s abort in each). */
 const CALLER_DEADLINE_S = 8;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
@@ -665,6 +696,15 @@ const ROUTES = {
   'post-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
   'post-303.example.com/rpc': { status: 303, location: 'https://post-landed-303.example.com/rpc' },
   'post-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-301.example.com/rpc': { status: 301, location: 'https://post-landed-301.example.com/rpc' },
+  'post-landed-301.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-308.example.com/rpc': { status: 308, location: 'https://post-landed-308.example.com/rpc' },
+  'post-landed-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A PUT through a 302, which repeats it, and through a 303, which makes it a GET.
+  'put-302.example.com/rpc': { status: 302, location: 'https://put-landed-302.example.com/rpc' },
+  'put-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'put-303.example.com/rpc': { status: 303, location: 'https://put-landed-303.example.com/rpc' },
+  'put-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
   // Bodies of each kind the guard sends.
   'body-kinds.example.com/text': { body: 'ok', type: 'text/plain' },
   'body-kinds.example.com/buffer': { body: 'ok', type: 'text/plain' },
@@ -673,8 +713,12 @@ const ROUTES = {
   // the headers on a connection an earlier answer kept alive.
   'quiet.example.com/': { bytes: Buffer.from(PAGE), length: true, pause: QUIET_S * 1000 },
   'tokens-silent.example.com/tokens.json': { silent: true, type: 'application/json' },
-  'keepalive.example.com/first': { body: 'the first answer', type: 'text/plain', keepAlive: KEEP_ALIVE_HINT_S },
-  'keepalive.example.com/quiet': { body: PAGE, type: 'text/html', delayMs: KEEP_ALIVE_QUIET_S * 1000 },
+  ...Object.fromEntries(KEEP_ALIVE.flatMap(([hint, quiet]) => [
+    [`keepalive.example.com/first-${hint}`, { body: 'the first answer', type: 'text/plain', keepAlive: hint }],
+    [`keepalive.example.com/quiet-${hint}`, { body: PAGE, type: 'text/html', delayMs: quiet * 1000 }],
+  ])),
+  // Headers, and then nothing, read with no signal.
+  'nosignal-silent.example.com/': { silent: true, type: 'text/plain' },
   // A page whose server is quiet for QUIET_S before it answers, for the score route and for page-fetch.
   'score-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
   'page-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
@@ -1392,6 +1436,81 @@ const CONCURRENT = [
     },
   },
   {
+    name: `a read given no signal fails once its server has sent nothing for ${NO_SIGNAL_IDLE_S} s`,
+    run: async () => {
+      const key = 'nosignal-silent.example.com/';
+      const { err, s } = await timedRejection(safeFetch(`https://${key}`));
+      assert.equal(err.message, 'SSRF guard: fetch timeout', `ended with ${err.name}: ${err.message}`);
+      endedAt(s, NO_SIGNAL_IDLE_S);
+      assert.equal(seen.get(key).req.destroyed, true, 'the request was not destroyed');
+      return `${s.toFixed(2)} s, "${err.message}"`;
+    },
+  },
+  {
+    name: 'every read the site makes through safeFetch passes a signal that a timer fires',
+    run: async () => {
+      const files = [];
+      const walk = (dir) => {
+        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else if (/\.tsx?$/.test(e.name)) files.push(p);
+        }
+      };
+      walk(path.join(APP, 'app'));
+      // The text of a call's arguments, from `open` (just past its "(") to the
+      // ")" that closes it, past brackets and quoted strings.
+      const argsOf = (src, open) => {
+        let depth = 0;
+        for (let k = open; k < src.length; k++) {
+          const ch = src[k];
+          if (ch === "'" || ch === '"' || ch === '`') {
+            for (k++; k < src.length && src[k] !== ch; k++) if (src[k] === '\\') k++;
+          } else if ('([{'.includes(ch)) depth++;
+          else if (')]}'.includes(ch)) {
+            if (depth === 0) return src.slice(open, k);
+            depth--;
+          }
+        }
+        return src.slice(open);
+      };
+      // How `expr`, a call's signal, is fired, read from `fn` (its function up to the call), or null.
+      const firedBy = (expr, fn) => {
+        if (/^AbortSignal\.timeout\(/.test(expr)) return 'AbortSignal.timeout';
+        if (new RegExp(`\\bconst ${expr} = AbortSignal\\.timeout\\(`).test(fn)) return `${expr}, an AbortSignal.timeout`;
+        const c = /^(\w+)\.signal$/.exec(expr);
+        if (!c) return null;
+        const made = new RegExp(`\\bconst ${c[1]} = new AbortController\\(\\)`).test(fn);
+        const timed = new RegExp(`setTimeout\\(\\(\\) => (?:\\{[^}]*\\b${c[1]}\\.abort\\(\\)|${c[1]}\\.abort\\(\\))`).test(fn);
+        return made && timed ? `${expr}, aborted by a setTimeout` : null;
+      };
+      const found = [];
+      const wrong = [];
+      for (const file of files) {
+        const rel = path.relative(APP, file).split(path.sep).join('/');
+        if (rel === 'app/lib/url-guard.ts') continue;
+        const src = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+        // fetchContract reads a contract URL through the fetcher it is handed, url-guard's safeFetch.
+        const call = rel === 'app/lib/own-contract/fetch-contract.ts' ? /\bfetcher\(/g : /\bsafeFetch\(/g;
+        for (const { index, 0: name } of src.matchAll(call)) {
+          const before = src.slice(0, index);
+          if (/^\s*(?:\/\/|\/?\*)/.test(before.slice(before.lastIndexOf('\n') + 1))) continue;
+          const starts = [...before.matchAll(/^(?:export )?(?:async )?function (\w+)/gm)];
+          const fn = starts.length ? starts[starts.length - 1] : null;
+          const where = `${rel}:${before.split('\n').length} (${fn ? fn[1] : 'top level'})`;
+          const m = /\bsignal\b(?:\s*:\s*([\w.]+(?:\([^)]*\))?))?/.exec(argsOf(src, index + name.length));
+          const expr = m ? m[1] || 'signal' : null;
+          const how = expr && firedBy(expr, fn ? src.slice(fn.index, index) : '');
+          if (how) found.push(`${where}: ${how}`);
+          else wrong.push(`${where}: ${expr ? `${expr}, which no timer fires` : 'no signal'}`);
+        }
+      }
+      assert.equal(wrong.length, 0, wrong.join('; '));
+      assert.ok(found.length > 0, 'no safeFetch call found');
+      return `${found.length} calls: ${found.join('; ')}`;
+    },
+  },
+  {
     name: `a server that goes quiet for ${QUIET_S} s mid-body is read whole by a caller whose signal ends at ${2 * QUIET_S} s`,
     run: async () => {
       const t0 = performance.now();
@@ -1404,42 +1523,50 @@ const CONCURRENT = [
     },
   },
   {
-    name: `on a connection kept alive from an answer that gave a ${KEEP_ALIVE_HINT_S} s Keep-Alive timeout, a server that sends nothing for ${KEEP_ALIVE_QUIET_S} s before it answers is read by a caller whose signal ends at ${KEEP_ALIVE_SIGNAL_S} s`,
+    name: `on a connection kept alive from an answer that gave a Keep-Alive timeout of ${KEEP_ALIVE.map(([hint]) => hint).join(' s or ')} s, a server that sends nothing for 0.5 s less than that before it answers is read by a caller whose signal ends at ${KEEP_ALIVE_SIGNAL_S} s`,
     run: async () => {
       const signal = () => AbortSignal.timeout(KEEP_ALIVE_SIGNAL_S * 1000);
-      const first = await resolution(safeFetch('https://keepalive.example.com/first', { signal: signal() }));
-      assert.equal(await first.text(), 'the first answer');
-      // Node's agent keeps the connection once the answer has ended.
-      await new Promise((r) => setTimeout(r, SETTLE_MS));
-      const connections = keepAliveConnections;
-      const t0 = performance.now();
-      const read = await settledRead(safeFetch('https://keepalive.example.com/quiet', { signal: signal() }));
-      const s = (performance.now() - t0) / 1000;
-      assert.equal(keepAliveConnections, connections, `the second read opened ${keepAliveConnections - connections} connection(s) of its own, so it did not use the one kept alive`);
-      assert.ok(read.text !== undefined, `ended at ${s.toFixed(2)} s with ${read.err && read.err.name}: ${read.err && read.err.message}`);
-      assert.equal(read.text, PAGE, `${read.text.length} of ${PAGE.length} bytes, not the page`);
-      assert.ok(s >= KEEP_ALIVE_QUIET_S - 0.5, `${s.toFixed(2)} s: read before the server's ${KEEP_ALIVE_QUIET_S} s quiet ended`);
-      return `${s.toFixed(2)} s, ${read.text.length} bytes, on the connection the first answer kept alive`;
+      return eachRead(KEEP_ALIVE.map(([hint, quiet]) => [`a ${hint} s Keep-Alive timeout, ${quiet} s quiet`, async () => {
+        const first = await resolution(safeFetch(`https://keepalive.example.com/first-${hint}`, { signal: signal() }));
+        assert.equal(await first.text(), 'the first answer');
+        // Node's agent keeps the connection once the answer has ended.
+        await new Promise((r) => setTimeout(r, SETTLE_MS));
+        const connections = keepAliveConnections;
+        const t0 = performance.now();
+        const read = await settledRead(safeFetch(`https://keepalive.example.com/quiet-${hint}`, { signal: signal() }));
+        const s = (performance.now() - t0) / 1000;
+        assert.equal(keepAliveConnections, connections, `the second read opened ${keepAliveConnections - connections} connection(s) of its own, so it did not use the one kept alive`);
+        assert.ok(read.text !== undefined, `ended at ${s.toFixed(2)} s with ${read.err && read.err.name}: ${read.err && read.err.message}`);
+        assert.equal(read.text, PAGE, `${read.text.length} of ${PAGE.length} bytes, not the page`);
+        assert.ok(s >= quiet - 0.5, `${s.toFixed(2)} s: read before the server's ${quiet} s quiet ended`);
+        return `${s.toFixed(2)} s, ${read.text.length} bytes, on the connection the first answer kept alive`;
+      }]));
     },
   },
   {
-    name: 'a POST carries its body, with its length; a 307 sends it again, and a 302 or a 303 is followed with a GET that carries none',
+    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, and a PUT is repeated after a 302 and made a GET by a 303',
     run: async () => {
       const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-      const init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body };
-      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', body };
-      const got = { method: 'GET', length: undefined, type: undefined, body: '' };
+      // Content-Type, Content-Language and Content-Location describe the body; X-Kept does not.
+      const headers = { 'Content-Type': 'application/json', 'Content-Language': 'en', 'Content-Location': '/rpc', 'X-Kept': 'kept' };
+      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', language: 'en', place: '/rpc', kept: 'kept', body };
+      const put = { ...posted, method: 'PUT' };
+      const got = { method: 'GET', length: undefined, type: undefined, language: undefined, place: undefined, kept: 'kept', body: '' };
       return eachRead([
-        ['no redirect', 'post-direct.example.com/rpc', 'post-direct.example.com/rpc', posted],
-        ['after a 307', 'post-307.example.com/rpc', 'post-landed-307.example.com/rpc', posted],
-        ['after a 302', 'post-302.example.com/rpc', 'post-landed-302.example.com/rpc', got],
-        ['after a 303', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
-      ].map(([label, key, landed, want]) => [label, async () => {
-        const resp = await resolution(safeFetch(`https://${key}`, init));
+        ['no redirect', 'POST', 'post-direct.example.com/rpc', 'post-direct.example.com/rpc', posted],
+        ['after a 307', 'POST', 'post-307.example.com/rpc', 'post-landed-307.example.com/rpc', posted],
+        ['after a 308', 'POST', 'post-308.example.com/rpc', 'post-landed-308.example.com/rpc', posted],
+        ['after a 301', 'POST', 'post-301.example.com/rpc', 'post-landed-301.example.com/rpc', got],
+        ['after a 302', 'POST', 'post-302.example.com/rpc', 'post-landed-302.example.com/rpc', got],
+        ['after a 303', 'POST', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
+        ['a PUT after a 302', 'PUT', 'put-302.example.com/rpc', 'put-landed-302.example.com/rpc', put],
+        ['a PUT after a 303', 'PUT', 'put-303.example.com/rpc', 'put-landed-303.example.com/rpc', got],
+      ].map(([label, method, key, landed, want]) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, { method, headers, body }));
         assert.equal(resp.status, 200, `HTTP ${resp.status}`);
         const a = asked.get(landed);
         assert.ok(a, `no request reached ${landed}`);
-        const carried = { method: a.method, length: a.length, type: a.type, body: a.body.toString() };
+        const carried = { method: a.method, length: a.length, type: a.type, language: a.language, place: a.place, kept: a.kept, body: a.body.toString() };
         assert.deepEqual(carried, want, `${landed} received ${JSON.stringify(carried)}`);
         return `${landed} received a ${a.method} with ${a.body.length} body bytes${a.length ? ` (content-length ${a.length})` : ''}`;
       }]));
