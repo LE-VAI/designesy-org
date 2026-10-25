@@ -29,10 +29,13 @@ score moves.
   cancels a mute that is still waiting, so cuelume and the switch agree.
   The switch, `html[data-audio]` and the stored preference change in the
   click, as before.
-- **A second sound control leaves a waiting mute to finish.** The switch on
-  the Acoustics and Poise lab pages and the senses menu each keep their own
-  state. One that mounts within 39 ms of a mute reads the stored "off" and
-  leaves the waiting mute in place, so the cue is not cut.
+- **A second sound control leaves a waiting mute to finish.** Each page
+  with the top bar renders its own senses menu, so the menu mounts again
+  when the page changes, and the Acoustics and Poise lab pages add a sound
+  switch. Each keeps its own state. One that mounts within 39 ms of a
+  mute, such as the next page's menu after a quick navigation, reads the
+  stored "off" and leaves the waiting mute in place, so the cue is not
+  cut.
 
 ### Not changed (sound mute cue)
 
@@ -49,9 +52,10 @@ cue that starts inside them still sounds while the switch says off, such as
 the hover cue of the next row in the senses menu when the pointer gets there
 that fast. A cue already sounding at the click, such as the tap cue a touch
 screen plays for the row itself, plays on for up to 39 ms. Before this
-change both faded within 15 ms of the click. The 15 ms fade and the length
-of the cue were read from cuelume's source, and the wait was checked with a
-stand-in for cuelume. Neither was listened to in a browser.
+change the first did not play at all and the second faded within 15 ms of
+the click. The 15 ms fade and the length of the cue were read from cuelume's
+source, and the wait was checked with a stand-in for cuelume. Neither was
+listened to in a browser.
 
 ### Gates (sound mute cue)
 
