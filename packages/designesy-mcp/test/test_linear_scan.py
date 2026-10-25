@@ -50,6 +50,11 @@ J = mcp._js_re
 GENERATED = int(os.environ.get("LINEAR_SCAN_CASES", "10000"))
 BUDGET_MS = 250.0
 
+# _stylesheet_link_matches's reference from engine 1.5.4: the 1.5.1 pattern
+# (rel before href) as the first alternative, href before rel as the second.
+LINK_1_5_1 = J(r"<link[^>]*rel=[\"']?stylesheet[\"']?[^>]*href=[\"']([^\"']+)[\"']", "gi")
+LINK_1_5_4 = J(r"<link(?:[^>]*rel=[\"']?stylesheet[\"']?[^>]*href=[\"']([^\"']+)[\"']|[^>]*href=[\"']([^\"']+)[\"'][^>]*rel=[\"']?stylesheet)", "gi")
+
 
 # ── The old code, as the port ran it before engine 1.5.1 ─────────────────────
 
@@ -315,12 +320,17 @@ SITES = [
         "alphabet": ["<style", "<STYLE", "</style>", "</Style>", ">", "<", "x", " ", "<styles", "</styl"],
     },
     {
+        # Engine 1.5.4: the reference is the combined pattern, with group 1 or
+        # else group 2 (href before rel) as the one group the helper reports.
         "id": "stylesheet <link> hrefs",
-        "old": lambda s: _all(J(r"<link[^>]*rel=[\"']?stylesheet[\"']?[^>]*href=[\"']([^\"']+)[\"']", "gi"), s),
+        "old": lambda s: [(i, t, (g[0] if g[0] is not None else g[1],)) for i, t, g in _all(LINK_1_5_4, s)],
         "new": lambda s: _scan(mcp._stylesheet_link_matches(s)),
-        "samples": ['<link rel="stylesheet" href="/a.css">', "<link rel=stylesheet href='b.css' >", '<LINK REL="stylesheet" media=x href="c.css" href="d.css">', '<link rel="stylesheet"href=""x">'],
-        "long": [["<link rel=stylesheet ", "href='", ""], ["", "<link", "\u2600"]],
-        "alphabet": ["<link", "<LINK", " rel=", "rel=", '"stylesheet"', "'stylesheet'", "stylesheet", "styleshee", "href=", 'href="', "href='", '"', "'", "a.css", ">", " ", "x", "<"],
+        "samples": [
+            '<link rel="stylesheet" href="/a.css">', "<link rel=stylesheet href='b.css' >", '<LINK REL="stylesheet" media=x href="c.css" href="d.css">', '<link rel="stylesheet"href=""x">',
+            '<link href="a.css" rel="stylesheet">', "<LINK HREF='c.css' REL=stylesheet>", '<link href="x>y" rel=stylesheet>', '<link href="a" href="b" rel=stylesheet href="c">',
+        ],
+        "long": [["<link rel=stylesheet ", "href='", ""], ["", "<link", "\u2600"], ["<link href='a' ", "href='a' ", ""], ["", "<link href='a' ", ""]],
+        "alphabet": ["<link", "<LINK", " rel=", "rel=", '"stylesheet"', "'stylesheet'", "stylesheet", "styleshee", "href=", 'href="', "href='", '"', "'", "a.css", ">", " ", "x", "<", ' rel="stylesheet">', 'href="a.css" '],
     },
     {
         "id": "@media block strip",
@@ -731,6 +741,16 @@ def test_name_run_and_digits_match_their_regex_classes():
 def test_the_fixture_pages_are_read():
     assert len(PAGES) >= 150
     assert len(INPUTS) >= 1000
+
+
+def test_engine_1_5_4_link_helper_reads_every_fixture_page_as_1_5_1_did():
+    """No fixture page writes href before rel, so engine 1.5.4 reads the same links on each."""
+    links = 0
+    for html, _css in PAGES:
+        before = _all(LINK_1_5_1, html)
+        assert _scan(mcp._stylesheet_link_matches(html)) == before
+        links += len(before)
+    assert links > 0
 
 
 @pytest.mark.parametrize("site", SITES, ids=[s["id"] for s in SITES])

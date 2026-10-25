@@ -80,6 +80,12 @@ const OUT = join(HERE, '..', 'corpus.json');
  * Engine 1.5.2 (2026-10-15) adds no fixture either: v46 reads the font
  * shorthand, pinned in test/engine-1-5-2.test.mjs, and no fixture uses the
  * shorthand under a type scale, so no verdict, detail or score moves.
+ *
+ * Engine 1.5.3 (2026-10-17) changed the site's own-contract f14 only, which
+ * this package engine does not run, so the corpus stayed at 1.5.2. Engine
+ * 1.5.4 (2026-10-24) changes the fetch layer (the href base, content decoding
+ * and href-first links), pinned in test/engine-1-5-4.test.mjs; the corpus is
+ * scored from parts and never fetches, so no verdict, detail or score moves.
  */
 const CORPUS_VERSION = '1.4.0';
 
@@ -89,7 +95,7 @@ const CORPUS_VERSION = '1.4.0';
  * against the fixtures' observed behavior. Kept explicit rather than omitted:
  * an unpinned version would make the artifact unattributable.
  */
-const ENGINE_VERSION = '1.5.2';
+const ENGINE_VERSION = '1.5.4';
 
 async function build() {
   const rows = await runCorpus();

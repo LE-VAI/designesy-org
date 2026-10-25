@@ -239,7 +239,7 @@ export function messageFor(code: string, p: Extra | Problem): string {
       return `We could not fetch your contract from ${p.url ? clipValue(p.url) : 'that address'}: ${why}.${add}`;
     }
     case 'contract_too_large':
-      return `This contract is ${sizeWords(p.count ?? MAX_CONTRACT_BYTES + 1)}. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.`;
+      return `This contract is ${p.count === undefined ? `more than ${sizeWords(MAX_CONTRACT_BYTES)}` : sizeWords(p.count)}. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.`;
     case 'body_too_large':
       return 'This request is larger than 300 KB. Send the contract by link instead of pasting it.';
     case 'scope_conflict':
