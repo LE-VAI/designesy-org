@@ -22,6 +22,9 @@
 import { get as httpsGet } from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import type { LookupOptions, LookupAddress } from 'node:dns';
+import { createBrotliDecompress, createGunzip, createInflate, createInflateRaw } from 'node:zlib';
+import { StringDecoder } from 'node:string_decoder';
+import type { Transform } from 'node:stream';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -247,10 +250,14 @@ function safeLookup(
     });
 }
 
+// Engine 1.5.4: Accept-Encoding names the three codings httpsFetch decodes
+// (gzip, deflate, br). With no Accept-Encoding a server may send any coding
+// (RFC 9110 section 12.5.3), zstd included, which the reader would refuse.
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
   'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124"',
   'Sec-Ch-Ua-Mobile': '?0',
   'Sec-Ch-Ua-Platform': '"Windows"',
@@ -263,6 +270,51 @@ const BROWSER_HEADERS: Record<string, string> = {
 
 /** Redirects httpsFetch follows before it gives up (engine 1.3.1). */
 const MAX_REDIRECT_HOPS = 3;
+
+/**
+ * The most bytes httpsFetch decodes from one compressed body (engine 1.5.4),
+ * and the most a page's stylesheets decode between them (fetchPageResilient
+ * shares one budget of this size across them). Past it the read fails: a
+ * compressed body of a few kilobytes can decode to gigabytes. 16 MiB is the
+ * largest cap the hosted route sets on one document, and its stylesheet total.
+ */
+const MAX_DECODED_BYTES = 16 * 1024 * 1024;
+
+/**
+ * The coding a Content-Encoding header asks the reader to undo: null for none,
+ * gzip (x-gzip too), deflate or br. identity, and a label no registry defines
+ * (`none`, `utf-8`, `binary`), leave the body as it was sent, as a browser
+ * reads them. A coding in the IANA HTTP Content Coding Registry that
+ * transforms the body and is not decoded here (zstd, compress and the rest),
+ * or more than one coding, is not ok: the body cannot be read as text. The
+ * hosted route's transport (app/lib/url-guard.ts) reads it the same way.
+ */
+function contentCodingOf(v: string | string[] | undefined): { ok: true; coding: 'gzip' | 'deflate' | 'br' | null } | { ok: false; value: string } {
+  const undecoded = ['aes128gcm', 'compress', 'x-compress', 'dcb', 'dcz', 'exi', 'pack200-gzip', 'zstd'];
+  const list = (Array.isArray(v) ? v.join(',') : v ?? '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .map((s) => (s === 'x-gzip' ? 'gzip' : s))
+    .filter((s) => s === 'gzip' || s === 'deflate' || s === 'br' || undecoded.includes(s));
+  if (list.length === 0) return { ok: true, coding: null };
+  const c = list.length === 1 ? list[0] : '';
+  if (c === 'gzip' || c === 'deflate' || c === 'br') return { ok: true, coding: c };
+  return { ok: false, value: list.join(', ') };
+}
+
+/**
+ * A streaming decoder for `coding`. `head` holds the body's first bytes:
+ * deflate is meant to be zlib-wrapped (RFC 9110 section 8.4.1.2), but some
+ * servers send raw deflate data, so the zlib header picks between the two.
+ */
+function decoderFor(coding: 'gzip' | 'deflate' | 'br', head: Buffer): Transform {
+  if (coding === 'gzip') return createGunzip();
+  if (coding === 'br') return createBrotliDecompress();
+  const b0 = head[0] ?? 0;
+  const b1 = head[1] ?? 0;
+  const zlibWrapped = head.length >= 2 && (b0 & 0x0f) === 8 && (b0 >> 4) <= 7 && ((b0 << 8) | b1) % 31 === 0;
+  return zlibWrapped ? createInflate() : createInflateRaw();
+}
 
 type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected: boolean; finalUrl: string };
 
@@ -277,13 +329,27 @@ type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected
  * 1.3.1 redirected was true only when the LAST response was itself a 3xx, so a
  * followed redirect read redirected: false. `hop` counts the redirects already
  * followed; callers leave it at 0.
+ *
+ * Engine 1.5.4: a body below status 400 (the bodies this reads as ok) sent
+ * with Content-Encoding gzip, deflate or br is decoded, up to
+ * MAX_DECODED_BYTES, and up to what is left of `budget` when reads share one:
+ * each decoded byte is charged to it as it is produced, and a read that fails
+ * gives its bytes back. A body that does not decode, goes past either bound,
+ * or names a registered coding not decoded here (or more than one coding) is
+ * a failed read (ok: false, status 0), never compressed bytes read as text.
+ * When the coded stream ends, the response is not read further.
  */
-function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0): Promise<HttpsFetchOutcome> {
+function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0, budget?: { left: number }): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
     let resolved = false;
+    // Decoded bytes this read has charged to `budget`.
+    let charged = 0;
     const done = (r: HttpsFetchOutcome) => {
       if (resolved) return;
       resolved = true;
+      // A failed read holds nothing: what it was charged goes back.
+      if (!r.ok && budget && charged) budget.left += charged;
+      charged = 0;
       resolve(r);
     };
     try {
@@ -300,9 +366,81 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
               done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
               return;
             }
-            httpsFetch(next, headers, timeoutMs, hop + 1).then(done);
+            httpsFetch(next, headers, timeoutMs, hop + 1, budget).then(done);
             return;
           } catch { /* fall through */ }
+        }
+        const cod = (res.statusCode || 0) < 400 ? contentCodingOf(res.headers['content-encoding']) : { ok: true as const, coding: null };
+        if (!cod.ok) {
+          req.destroy();
+          done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
+          return;
+        }
+        if (cod.coding) {
+          const coding = cod.coding;
+          const fail = () => {
+            req.destroy();
+            done({ ok: false, status: 0, text: '', redirected: false, finalUrl: url });
+          };
+          // Read as setEncoding('utf-8') reads: a StringDecoder over the bytes.
+          const text = new StringDecoder('utf8');
+          const parts: string[] = [];
+          const head: Buffer[] = [];
+          let headBytes = 0;
+          let decoded = 0;
+          let decoder: Transform | null = null;
+          let resEnded = false;
+          const stop = () => { decoder?.destroy(); parts.length = 0; fail(); };
+          const start = () => {
+            const d = decoderFor(coding, Buffer.concat(head));
+            decoder = d;
+            d.on('data', (c: Buffer) => {
+              if (resolved) return;
+              decoded += c.length;
+              if (decoded > MAX_DECODED_BYTES || (budget && c.length > budget.left)) { stop(); return; }
+              if (budget) {
+                budget.left -= c.length;
+                charged += c.length;
+              }
+              parts.push(text.write(c));
+            });
+            d.on('error', stop);
+            d.on('end', () => {
+              if (resolved) return;
+              parts.push(text.end());
+              done({ ok: true, status: res.statusCode || 0, text: parts.join(''), redirected: hop > 0, finalUrl: url });
+              // The coded stream can end before the response does (bytes after
+              // it, or a connection held open): nothing more is read from it.
+              if (!resEnded) req.destroy();
+            });
+            d.on('drain', () => res.resume());
+            for (const b of head.splice(0)) if (!d.write(b)) res.pause();
+          };
+          res.on('data', (c: Buffer) => {
+            if (resolved) return;
+            if (!decoder) {
+              head.push(c);
+              headBytes += c.length;
+              if (headBytes >= 2) start();
+              return;
+            }
+            if (!decoder.write(c)) res.pause();
+          });
+          res.on('end', () => {
+            resEnded = true;
+            if (resolved) return;
+            if (!decoder) {
+              // No body at all decodes to no body (gunzip of 0 bytes is an error).
+              if (headBytes === 0) {
+                done({ ok: true, status: res.statusCode || 0, text: '', redirected: hop > 0, finalUrl: url });
+                return;
+              }
+              start();
+            }
+            (decoder as Transform | null)?.end();
+          });
+          res.on('error', stop);
+          return;
         }
         let body = '';
         res.setEncoding('utf-8');
@@ -1839,19 +1977,43 @@ function longLinearEasings(css: string): string[] {
 }
 
 /**
- * Group 1 of each match of
- * /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi:
- * the last quoted href in the tag after its first rel=stylesheet.
+ * Group 1, or else group 2, of each match of
+ * /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi.
+ * The first alternative is the pattern before engine 1.5.4: the last quoted
+ * href in the tag after its first rel=stylesheet. The second (engine 1.5.4)
+ * reads a tag that writes href first: the last quoted href in the tag that is
+ * followed by rel=stylesheet before the next `>`.
  */
 function stylesheetLinkMatches(html: string): ScanMatch[] {
   const start = /<link/gi;
   const rel = nextMatchFinder(html, /rel=["']?stylesheet/gi);
+  const rels = matchStarts(html, /rel=["']?stylesheet/gi);
   const hrefs = matchStarts(html, /href=["']/gi);
   const gt = nextMatchFinder(html, />/g);
+  const gtAfterValue = nextMatchFinder(html, />/g);
+  const quote = nextMatchFinder(html, /["']/g);
   const n = html.length;
   const isQuote = (c: number): boolean => c === 34 || c === 39;
   let lastQuote = n - 1;
   while (lastQuote >= 0 && !isQuote(html.charCodeAt(lastQuote))) lastQuote--;
+  // The second alternative, worked out once per href, since it does not
+  // depend on where the tag starts: the value is non-empty and closes at q,
+  // and a rel=stylesheet starts after q and before the first `>` after q.
+  // The greedy [^>]* ends the match with the last such rel.
+  const hrefFirst = hrefs.map((at) => {
+    const v = at + 6;
+    if (!(v < n && !isQuote(html.charCodeAt(v)) && lastQuote > v)) return null;
+    const q = quote(v + 1);
+    const k = lowerBound(rels, Math.min(gtAfterValue(q + 1), n)) - 1;
+    if (k < 0 || rels[k] <= q) return null;
+    return { q, end: rels[k] + (isQuote(html.charCodeAt(rels[k] + 4)) ? 15 : 14) };
+  });
+  // lastViable[i]: the largest k <= i whose href reads by the second alternative, or -1.
+  const lastViable: number[] = [];
+  for (let i = 0, lv = -1; i < hrefs.length; i++) {
+    if (hrefFirst[i]) lv = i;
+    lastViable.push(lv);
+  }
   const out: ScanMatch[] = [];
   let ptr = 0;
   for (let pos = 0; ;) {
@@ -1877,7 +2039,15 @@ function stylesheetLinkMatches(html: string): ScanMatch[] {
       pos = q + 1;
       continue;
     }
-    // Every start before g sees less of the same tag.
+    // No rel before an href: the last href in the tag that rel=stylesheet follows.
+    const k = end > ptr ? lastViable[end - 1] : -1;
+    if (k >= ptr) {
+      const hit = hrefFirst[k] as { q: number; end: number };
+      out.push({ index: m.index, text: html.slice(m.index, hit.end), groups: [html.slice(hrefs[k] + 6, hit.q)] });
+      pos = hit.end;
+      continue;
+    }
+    // Every start before g sees less of the same tag, by either alternative.
     if (g >= n) break;
     pos = g + 1;
   }
@@ -2136,11 +2306,14 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   ].filter(Boolean);
 
   let html = '';
+  // The URL that answered: the candidate that was read, after its redirects.
+  // Its stylesheet hrefs resolve against it (engine 1.5.4), as a browser's do.
+  let pageUrl = targetUrl;
   let lastStatus = 0;
   for (const candidate of candidateUrls) {
     if (!isValidUrl(candidate)) continue;
     const r = await httpsFetch(candidate);
-    if (r.ok && r.text.length > 50) { html = r.text; break; }
+    if (r.ok && r.text.length > 50) { html = r.text; pageUrl = r.finalUrl; break; }
     lastStatus = r.status;
   }
   if (!html) {
@@ -2150,13 +2323,19 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
     return { ok: false, reason, status: lastStatus || undefined, attempted: candidateUrls };
   }
 
-  const parts = extractCssLinks(html, targetUrl);
+  const parts = extractCssLinks(html, pageUrl);
   const cssParts: string[] = [];
+  // Engine 1.5.4: the stylesheets decode no more than MAX_DECODED_BYTES
+  // between them, so a page that links many small compressed bodies cannot
+  // make this process hold many times that. A sheet past what is left fails.
+  const decodedBudget = { left: MAX_DECODED_BYTES };
   for (const part of parts) {
     if (part.startsWith('http')) {
       if (!isValidUrl(part)) continue;
-      const r = await httpsFetch(part);
-      if (r.text) cssParts.push(r.text);
+      const r = await httpsFetch(part, undefined, 8000, 0, decodedBudget);
+      // Only a sheet that was read (engine 1.5.4): a 404 or 500 page is not
+      // CSS, and its body is not decoded, as the hosted route drops it.
+      if (r.ok && r.text) cssParts.push(r.text);
     } else {
       cssParts.push(part);
     }
