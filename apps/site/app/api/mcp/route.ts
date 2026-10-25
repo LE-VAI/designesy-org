@@ -946,6 +946,13 @@ test(${titleJs}, async ({ page }) => {
 // 2026-07-28) and doesn't require the envelope — it uses the 2025-era
 // initialize handshake instead.
 //
+// Stripping the header rescues a body whose _meta does not name
+// io.modelcontextprotocol/protocolVersion. A body whose _meta names it but
+// leaves out clientCapabilities is still answered 400 by the SDK, -32602
+// "Invalid _meta envelope for protocol revision 2026-07-28:
+// io.modelcontextprotocol/clientCapabilities: missing": the body itself
+// still claims 2026-07-28, with the header or without it.
+//
 // Requests with a properly-formed envelope pass through untouched.
 // Requests with no MCP-Protocol-Version header pass through untouched
 // (the SDK classifies them as legacy automatically).
