@@ -48,10 +48,15 @@ const MiB = 1024 * 1024;
 // read, never "not found" for a file that answered ok, and a partial body is
 // never read as if it were whole.
 //
-// 4 MiB. The largest token files measured are 1,674,878 bytes (Primer's light
-// theme) and 1,039,520 bytes (Spectrum's variables.json). The largest of this
-// site's own documents measured 100,907 bytes (/contracts/design-system.json,
-// as its route wrote it on 2026-10-24).
+// 4 MiB. The largest token files measured are 1,674,878 bytes
+// (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json)
+// and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
+// dist/json/variables.json). The largest of the seven documents the MCP
+// route reads from this site measured 100,907 bytes
+// (/contracts/design-system.json, as its route wrote it on 2026-10-24). This
+// site's home page, which a scan of it reads, measured 392,061 bytes, and
+// its /changelog page 460,417 bytes, each served with no content coding on
+// 2026-10-25.
 const READ_LIMIT = 4 * 1024 * 1024;
 
 /** The detail of a check whose file answered with a body longer than READ_LIMIT. */
@@ -450,15 +455,17 @@ async function scoreReadinessUncached(targetUrl: string) {
 
 const READINESS_TTL = 60 * 60 * 24; // 24h
 
-// The second key part names the result format. A result cached under the old
-// key could be wrong for a site with a file past the read limit: a probe
-// whose gzip, deflate or br body decoded past 4 MiB failed, so its check
-// reported a file that exists as not found, and a home page that did so
-// failed the whole scan as not fetched. Under the old key such a result would
-// still be served after a deploy, until 24 h after it was cached, and then
-// once more, to the request that starts a new scan. Under this key no result
-// cached before the read limit is read. (Next.js 16.4.2 also puts the
-// function's source in the key; this part does not depend on that.)
+// The second key part names the result format. A result cached before the
+// read limit could be wrong for a site with a file past it: a probe whose
+// gzip, deflate or br body decoded past 4 MiB failed, so its check reported
+// a file that exists as not found, and a home page that did so failed the
+// whole scan as not fetched. Under this key no result cached before the
+// read limit is read. Next.js 16.4.2 puts the function's source in the key
+// too, and the read limit edits this function, so on that version the old
+// entries are not read under either key. This part keeps them unread
+// whatever the framework does with the source; without both, such a result
+// would be served until 24 h after it was cached and once more, to the
+// request that starts a new scan.
 const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib'], {
   revalidate: READINESS_TTL,
   tags: ['readiness'],

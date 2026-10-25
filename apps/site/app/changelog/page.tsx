@@ -819,17 +819,17 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'fetch bounds entry in CHANGELOG.md',
   },
 
-  // ── v0.4.7 (engine 1.5.4): each MCP and readiness read has a byte limit ──
+  // ── v0.4.7 (engine 1.5.4): each URL the MCP route reads for itself and each readiness read has a byte limit ──
   {
     version: 'v0.4.7 · engine 1.5.4',
     date: '2026-10-25',
     dimension: 'verification',
     change: 'modified',
-    title: 'Read limits: each URL the MCP and readiness routes read holds 4 MiB, or 16 MiB for a Lottie file',
+    title: 'Read limits: each URL the MCP route reads for itself and each URL the readiness checks read holds 4 MiB, or 16 MiB for a Lottie file',
     description:
       'Each URL the hosted MCP route reads for itself, and each URL the readiness checks read, now passes the URL guard a byte limit of its own, counted after decoding when the body is compressed, and the guard ends the request one byte past it. The url of designesy_motion_score is held to 16 MiB. The url of designesy_tokens_score, the seven documents the read-only tools read from this site, every readiness probe and r04\'s read of a tools/list answer are held to 4 MiB. Past its limit, an MCP read fails with "Fetch failed: the response is over the 16 MiB read limit" (4 MiB for the others), and a readiness check reports WARN with a detail that names the file and says it is larger than the 4 MiB read limit and was not read. The status is read first, so a 404 with a large body still fails as "Fetch failed: 404" in the MCP tools and is still judged as a 404 by the readiness checks that need an ok response. Before, a body sent with no content coding was read whole however long it was, and a compressed body that decoded past 4 MiB failed: in the MCP tools with an error that named no limit, and in readiness as a file not found or, for the page scanned, a scan that could not fetch it.',
     rationale:
-      'A tool or a check reads a file whole or says it did not read it. The limits sit above the largest files measured: Lottie files of 8,873,709 and 4,713,147 bytes, token files of 1,674,878 bytes (Primer\'s light theme) and 1,039,520 bytes (Spectrum\'s variables.json), and this site\'s own documents at 100,907 bytes or less. No check, rule, weight or grade boundary changed and no version moves; a result changes only for a file past its limit. Readiness results are cached under a new key, so none from before the limit is served; a report cached before it keeps its readiness part until the report is made again, 24 h after it was cached.',
+      'A tool or a check reads a file whole or says it did not read it. The limits sit above the largest files measured: Lottie files of 8,873,709 and 4,713,147 bytes, token files of 1,674,878 bytes (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json) and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0, dist/json/variables.json), the seven documents the read-only tools read from this site at 100,907 bytes or less, and this site\'s home page at 392,061 bytes. No check, rule, weight or grade boundary changed and no version moves; a result changes only for a file past its limit. Readiness results are cached under a new key, so none from before the limit is served; a report cached before it keeps its readiness part until the report is made again, 24 h after it was cached.',
     source: 'read limits entry in CHANGELOG.md',
   },
 

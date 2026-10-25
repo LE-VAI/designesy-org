@@ -80,10 +80,12 @@ const MiB = 1024 * 1024;
 // master branch on 2026-10-24.
 const LOTTIE_READ_LIMIT = 16 * 1024 * 1024;
 // 4 MiB for the url of designesy_tokens_score and for every cachedFetch
-// read. The largest token files measured are 1,674,878 bytes (Primer's light
-// theme) and 1,039,520 bytes (Spectrum's variables.json). The largest of the
-// seven documents cachedFetch reads from this site measured 100,907 bytes
-// (/contracts/design-system.json, as its route wrote it on 2026-10-24).
+// read. The largest token files measured are 1,674,878 bytes
+// (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json)
+// and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
+// dist/json/variables.json). The largest of the seven documents cachedFetch
+// reads from this site measured 100,907 bytes (/contracts/design-system.json,
+// as its route wrote it on 2026-10-24).
 const READ_LIMIT = 4 * 1024 * 1024;
 
 /** What readUrl returns: an ok response's body as text, or the status of a response that is not ok. */
