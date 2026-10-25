@@ -5,8 +5,10 @@
  * ends a read at its deadline however slowly the server sends and keeps no
  * listener once the read settles, a reader's chunk holds only the bytes
  * returned, every URL the MCP route reads for itself ends at the route's 15 s
- * read deadline, and the MCP tools that read a URL through url-guard still
- * read one that answers.
+ * read deadline and fails once its body is past that read's byte limit
+ * (16 MiB for a Lottie file, 4 MiB for a token file or one of this site's
+ * documents), and the MCP tools that read a URL through url-guard still read
+ * one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -19,14 +21,18 @@
  * all. The MCP route passed no signal for the URLs it reads (cachedFetch, and
  * the url of designesy_tokens_score and designesy_motion_score), so nothing
  * in the process ended such a read short of the function's maxDuration
- * (300 s, vercel.json). Each hop of a read adds an abort listener to the
- * caller's signal, and it stayed there once the read settled. A signal can
- * outlive the read: Node keeps an AbortSignal.timeout that has a listener
- * alive until its timer fires, and the listener kept the read's request and
- * the body it read reachable until then. The Response reads the body as one
- * chunk the transport joins, uncopied. Joined by Buffer.concat, a body under
- * 4 KiB would sit in Node's shared 8 KiB pool, whose buffer also holds other
- * reads' bytes.
+ * (300 s, vercel.json). It passed no maxBodyBytes either, so it held an
+ * identity body whole however long it was, and a compressed body that
+ * decoded past url-guard's default of 4 MiB (DEFAULT_MAX_DECODED_BYTES)
+ * failed with "content decoding failed", which names no limit, a gzip Lottie
+ * file that decodes to 16 MiB among them. Each hop of a read adds an abort
+ * listener to the caller's signal, and it stayed there once the read settled.
+ * A signal can outlive the read: Node keeps an AbortSignal.timeout that has a
+ * listener alive until its timer fires, and the listener kept the read's
+ * request and the body it read reachable until then. The Response reads the
+ * body as one chunk the transport joins, uncopied. Joined by Buffer.concat, a
+ * body under 4 KiB would sit in Node's shared 8 KiB pool, whose buffer also
+ * holds other reads' bytes.
  *
  * HOW IT MEASURES
  * The real URL guard and the real MCP route, loaded through
@@ -39,8 +45,21 @@
  * getEventListeners (node:events) counts the abort listeners left on a
  * signal. The MCP route is loaded before the first case starts, so no case's
  * time includes its load, and one case reads its source instead of running
- * it. The cases run concurrently, each on its own URLs; the last one
- * runs once the others have settled.
+ * it. The cases run concurrently, each on its own URLs; the last one runs
+ * once the others have settled.
+ *
+ * The MCP read limits are stated here (MCP_READ_LIMITS), as the read deadline
+ * is (MCP_DEADLINE_S): a route file cannot export them. The bodies of the
+ * limit cases are built so that a body cut anywhere does not parse or shows
+ * it was cut: JSON padded with spaces after its opening brace, and a document
+ * whose last line says it is whole. The server sends an identity body of a
+ * limit case at most PACE_WINDOW (256 KiB) ahead of what the client has
+ * received, so a socket buffer larger than the 1 MiB past each limit cannot
+ * let the server finish before the client stops reading. designesy_llms_txt
+ * reads one fixed URL, and the route caches a read that succeeds for 5
+ * minutes and answers later calls from it, so the designesy_llms_txt cases
+ * take turns (llmsTurn), in the order they are listed, each setting what that
+ * URL serves.
  *
  * WHAT IT ASSERTS
  *   - A 10 MiB body read with maxBodyBytes 1 MiB resolves with exactly its
@@ -67,11 +86,31 @@
  *     designesy_motion_score, and designesy_llms_txt through cachedFetch)
  *     ends at the route's 15 s read deadline with an error saying the fetch
  *     timed out after 15 s, and its request is destroyed.
+ *   - Each MCP read of a body 1 MiB past its limit fails with "Fetch failed:
+ *     the response is over the N MiB read limit": designesy_tokens_score
+ *     (4 MiB), designesy_motion_score (16 MiB) and designesy_llms_txt
+ *     (cachedFetch, 4 MiB), each for an identity body sent with no
+ *     content-length and with one. At most one socket read past the limit
+ *     reached the client, the request was destroyed, and the server never
+ *     finished sending. A gzip body that decodes to 1 MiB past the limit
+ *     fails the same way in each of the three.
+ *   - designesy_motion_score reads a gzip Lottie file that decodes to exactly
+ *     16 MiB whole.
  *   - Every safeFetch call in the MCP route is the one in readUrl, which
- *     passes it a signal from AbortSignal.timeout(READ_DEADLINE_MS), and
- *     READ_DEADLINE_MS is 15 s.
- *   - designesy_tokens_score still reads a token file that answers, and
- *     designesy_llms_full_txt (cachedFetch) a document that answers.
+ *     passes it a signal from AbortSignal.timeout(READ_DEADLINE_MS) and its
+ *     limit as maxBodyBytes, and READ_DEADLINE_MS is 15 s. readUrl is called
+ *     in three places, each with the limit in MCP_READ_LIMITS: cachedFetch
+ *     (4 MiB), designesy_tokens_score (4 MiB) and designesy_motion_score
+ *     (16 MiB).
+ *   - Controls, which hold on a route with no read limit too: a body of
+ *     exactly the limit is read whole (a 4 MiB token file, a 16 MiB Lottie
+ *     file, a 4 MiB document read by designesy_skill_md through cachedFetch);
+ *     a 404 whose body is 1 MiB past the limit still fails as "Fetch failed:
+ *     404" in each of the three tools; a token file that is not JSON, and a
+ *     document cachedFetch reads as JSON that is not, fail with JSON.parse's
+ *     own message, and a token file that starts with a byte order mark is
+ *     read; designesy_tokens_score still reads a token file that answers,
+ *     and designesy_llms_full_txt (cachedFetch) a document that answers.
  *   - designesy_tokens_score still reads a token file whose server is quiet
  *     for 8 s before it answers. With a signal and no idle timeout of its
  *     own, Node's global agent ends a socket that is quiet for 5 s, so a
@@ -89,9 +128,10 @@
  * its signal, after a throw nothing catches, which fails the last case. Its
  * MCP route, like engine 1.5.4's, passed safeFetch no signal: against
  * either, the three MCP drips are still open at the case deadline, and the
- * source case finds three safeFetch calls and no readUrl. The other cases
- * hold there. Against engine 1.5.4's url-guard, which left the listener
- * registered, only the listener case fails: each read settles as labelled
+ * source case finds three safeFetch calls and no readUrl. Of the cases from
+ * before the MCP read limits, the others hold there. Against engine 1.5.4's
+ * url-guard, which left the listener registered, the listener case is the
+ * only one of those that fails: each read settles as labelled
  * and leaves a listener (two after the redirect). A url-guard that skips the
  * removal at one of its three places leaves the listener after the 999 and
  * corrupt gzip reads (fail), after the five reads that resolve (finish), or
@@ -105,9 +145,28 @@
  * unhandled, or a throw in a timer, fails the last. A route that gives
  * readUrl's safeFetch the signal and no idleTimeoutMs fails the 8 s quiet
  * case at 5 s; main's route, which passed no signal and so kept url-guard's
- * 15 s idle timeout, holds it. The ordinary page and the two MCP reads of a
- * URL that answers are controls: they pin what a change to the transport or
- * the MCP route must keep.
+ * 15 s idle timeout, holds it.
+ *
+ * Against the MCP route from before the read limits, whose readUrl takes no
+ * limit and passes safeFetch no maxBodyBytes, five cases fail: the three
+ * over-limit cases, the gzip Lottie file of exactly 16 MiB, and the source
+ * case. Every control holds. Each identity body past a limit is read whole
+ * and scored or returned, so the tool returns a result, not an error; in
+ * designesy_llms_txt the second identity read is answered from the route's
+ * cache, so no request reaches the server. Each gzip body past a limit, and
+ * the gzip Lottie file of exactly 16 MiB, fails with url-guard's "the
+ * decoded body is over 4194304 bytes". The source case finds a readUrl that
+ * takes no limit. Three changes to the new readUrl each fail cases too. One
+ * that fails a body of exactly its limit (`>=` for `>`) fails the four
+ * exact-limit reads. One that checks the length before the status fails the
+ * 404 control in all three tools. One that checks the length but passes
+ * safeFetch no maxBodyBytes receives each identity body past a limit to its
+ * end and fails each gzip body at url-guard's default, which fails the
+ * three over-limit cases, the gzip Lottie file of exactly 16 MiB and the
+ * source case. The ordinary page, the three identity exact-limit reads,
+ * the 404s, the JSON.parse messages and the two MCP reads of a URL that
+ * answers are controls: they pin what a change to the transport or the MCP
+ * route must keep.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -136,12 +195,21 @@ const MARGIN_S = 2;
 const CASE_DEADLINE_S = 30;
 /** READ_DEADLINE_MS in app/api/mcp/route.ts. */
 const MCP_DEADLINE_S = 15;
+/** The read limit of each place app/api/mcp/route.ts calls readUrl, in bytes (LOTTIE_READ_LIMIT and READ_LIMIT there). */
+const MCP_READ_LIMITS = { cachedFetch: 4 * MiB, designesy_tokens_score: 4 * MiB, designesy_motion_score: 16 * MiB };
+const TOKENS_LIMIT = MCP_READ_LIMITS.designesy_tokens_score;
+const LOTTIE_LIMIT = MCP_READ_LIMITS.designesy_motion_score;
+const DOC_LIMIT = MCP_READ_LIMITS.cachedFetch;
+/** How far past its limit an over-limit body runs. */
+const PAST_LIMIT = MiB;
 /** The deadline the transport-level drip case passes as its own signal. */
 const SIGNAL_DEADLINE_S = 3;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
 const LISTEN_SIGNAL_S = 10;
 /** Node hands a socket's bytes to the response in reads of at most 64 KiB, so this much can arrive past a cap before the check sees it. */
 const ONE_READ = 64 * 1024;
+/** How far a paced body may run ahead of what the client has received. */
+const PACE_WINDOW = 256 * 1024;
 /** How long a destroyed request is watched for bytes that still arrive. */
 const SETTLE_MS = 300;
 
@@ -150,6 +218,7 @@ const TOKENS = JSON.stringify({
   $schema: 'https://www.designtokens.org/schemas/2025.10/format.json',
   color: { ink: { $type: 'color', $value: { colorSpace: 'srgb', components: [0.07, 0.07, 0.07] }, $description: 'Body text.' } },
 });
+const LOTTIE = JSON.stringify({ v: '5.12.2', fr: 60, ip: 0, op: 18, w: 64, h: 64, layers: [], markers: [{ cm: 'reduced-motion', tm: 0, dr: 0 }], meta: { g: 'fetch bounds' } });
 
 /** host + path -> the client side of the last request: body bytes received, and the request. */
 const seen = new Map();
@@ -162,10 +231,16 @@ const toLocal = (real) => ({
     const key = `${opts.hostname}${opts.path}`;
     const o = { ...opts, hostname: '127.0.0.1', port: PORT, headers: { ...(opts.headers || {}), 'x-fetch-bounds-host': opts.hostname } };
     delete o.lookup;
-    const record = { received: 0, req: null };
+    const record = { received: 0, req: null, wake: null };
     seen.set(key, record);
     record.req = http.request(o, (res) => {
-      res.on('data', (c) => { record.received += c.length; });
+      res.on('data', (c) => {
+        record.received += c.length;
+        // A paced body waiting on the client goes on.
+        const wake = record.wake;
+        record.wake = null;
+        if (wake) wake();
+      });
       cb(res);
     });
     return record.req;
@@ -198,7 +273,34 @@ for (let i = 0; i < PATTERN.length; i++) PATTERN[i] = 0x21 + (i % 89);
 /** An earlier read's body: no later read's chunk may reach these bytes. */
 const EARLIER = 'fetch bounds: the body of an earlier read, which no later reader may reach';
 
-// host + path -> what the server sends. Each case below owns its URLs.
+/** `json`, one JSON object, as exactly n bytes: spaces after its opening brace, so a body cut anywhere does not parse. */
+function jsonOfSize(json, n) {
+  const pad = n - Buffer.byteLength(json);
+  assert.ok(pad >= 0, `${json.length} bytes of JSON do not fit in ${n}`);
+  return Buffer.from(`{${' '.repeat(pad)}${json.slice(1)}`);
+}
+
+/** The last line of a document of docOfSize: a document cut anywhere lacks it. */
+const DOC_END = 'The last line of the document.\n';
+/** A text document of exactly n bytes. */
+function docOfSize(n) {
+  const head = '# Read limits\n\n';
+  return Buffer.from(`${head}${'a'.repeat(n - head.length - DOC_END.length - 1)}\n${DOC_END}`);
+}
+
+const TOKENS_AT = jsonOfSize(TOKENS, TOKENS_LIMIT);
+const TOKENS_OVER = jsonOfSize(TOKENS, TOKENS_LIMIT + PAST_LIMIT);
+const LOTTIE_AT = jsonOfSize(LOTTIE, LOTTIE_LIMIT);
+const LOTTIE_OVER = jsonOfSize(LOTTIE, LOTTIE_LIMIT + PAST_LIMIT);
+const DOC_AT = docOfSize(DOC_LIMIT);
+const DOC_OVER = docOfSize(DOC_LIMIT + PAST_LIMIT);
+const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
+const NOT_JSON = 'this is not json';
+
+// host + path -> what the server sends. Each case below owns its URLs, but
+// designesy_llms_txt's: llmsTurn sets what www.designesy.org/llms.txt sends.
+// bytes: sent in 64 KiB pieces; paced: at most PACE_WINDOW ahead of the
+// client; length: with a content-length header.
 const ROUTES = {
   'ok.example.com/': { body: PAGE },
   'big.example.com/ten': { bytes: PATTERN },
@@ -219,11 +321,30 @@ const ROUTES = {
   'listen-budget.example.com/': { bytes: PATTERN.subarray(0, 2 * MiB) },
   'tokens-drip.example.com/tokens.json': { drip: true },
   'motion-drip.example.com/anim.json': { drip: true },
-  'www.designesy.org/llms.txt': { drip: true },
+  'tokens-over.example.com/plain.json': { bytes: TOKENS_OVER, paced: true, type: 'application/json' },
+  'tokens-over.example.com/length.json': { bytes: TOKENS_OVER, paced: true, length: true, type: 'application/json' },
+  'tokens-over.example.com/gzip.json': { bytes: zlib.gzipSync(TOKENS_OVER), encoding: 'gzip', decoded: TOKENS_OVER.length, type: 'application/json' },
+  'tokens-at.example.com/tokens.json': { bytes: TOKENS_AT, type: 'application/json' },
+  'tokens-404.example.com/tokens.json': { status: 404, bytes: TOKENS_OVER, paced: true },
+  'motion-over.example.com/plain.json': { bytes: LOTTIE_OVER, paced: true, type: 'application/json' },
+  'motion-over.example.com/length.json': { bytes: LOTTIE_OVER, paced: true, length: true, type: 'application/json' },
+  'motion-over.example.com/gzip.json': { bytes: zlib.gzipSync(LOTTIE_OVER), encoding: 'gzip', decoded: LOTTIE_OVER.length, type: 'application/json' },
+  'motion-at.example.com/anim.json': { bytes: LOTTIE_AT, type: 'application/json' },
+  'motion-at.example.com/gzip.json': { bytes: zlib.gzipSync(LOTTIE_AT), encoding: 'gzip', decoded: LOTTIE_AT.length, type: 'application/json' },
+  'motion-404.example.com/anim.json': { status: 404, bytes: LOTTIE_OVER, paced: true },
+  'www.designesy.org/contracts/skill': { bytes: DOC_AT, type: 'text/markdown' },
+  'tokens-parse.example.com/not.json': { body: NOT_JSON, type: 'application/json' },
+  'tokens-parse.example.com/bom.json': { bytes: Buffer.concat([BOM, Buffer.from(TOKENS)]), type: 'application/json' },
+  'www.designesy.org/.well-known/agent.json': { body: NOT_JSON, type: 'application/json' },
   'tokens-ok.example.com/tokens.json': { body: TOKENS, type: 'application/json' },
   'tokens-late.example.com/tokens.json': { body: TOKENS, type: 'application/json', delayMs: 8000 },
   'www.designesy.org/llms-full.txt': { body: '# Fetch bounds\n\nA published document that answers at once.\n', type: 'text/plain' },
 };
+const LLMS = 'www.designesy.org/llms.txt';
+const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
+const LLMS_OVER_LENGTH = { bytes: DOC_OVER, paced: true, length: true, type: 'text/plain' };
+const LLMS_OVER_GZIP = { bytes: zlib.gzipSync(DOC_OVER), encoding: 'gzip', decoded: DOC_OVER.length, type: 'text/plain' };
+const LLMS_404 = { status: 404, bytes: DOC_OVER, paced: true };
 
 /** host + path -> what the server managed to send: bytes handed to the socket, and whether the body finished. */
 const sent = new Map();
@@ -245,6 +366,7 @@ const server = http.createServer((req, res) => {
   const headers = { 'content-type': b.type || 'text/html' };
   if (b.location) headers.location = b.location;
   if (b.encoding) headers['content-encoding'] = b.encoding;
+  if (b.length) headers['content-length'] = String(b.bytes.length);
   res.writeHead(b.status || 200, headers);
   if (b.drip) {
     res.flushHeaders();
@@ -258,6 +380,12 @@ const server = http.createServer((req, res) => {
   const pump = () => {
     while (at < b.bytes.length) {
       if (res.destroyed) return;
+      // A paced body waits until the client has received all but PACE_WINDOW of what was written.
+      const client = seen.get(key);
+      if (b.paced && client && at - client.received >= PACE_WINDOW) {
+        client.wake = () => setImmediate(pump);
+        return;
+      }
       const piece = b.bytes.subarray(at, at + ONE_READ);
       at += piece.length;
       stat.written += piece.length;
@@ -334,17 +462,32 @@ function endedAt(s, expect) {
   assert.ok(s >= expect - 0.5, `${s.toFixed(2)} s is under the ${expect} s deadline: something else ended the read`);
 }
 
-/** An MCP tool call that must fail; its error message, whether returned or thrown. */
-async function toolError(tool, args) {
+/** The first 120 characters of a tool's output. */
+const clip = (text) => `${String(text).slice(0, 120)}${String(text).length > 120 ? '...' : ''}`;
+
+/** An MCP tool call: whether it failed, and its error message (returned or thrown) or its payload. */
+async function toolOutcome(tool, args) {
   try {
     const { result, payload } = await h.callTool(tool, args);
     const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    assert.equal(result.isError, true, `${tool} returned a result, not an error: ${text.slice(0, 120)}${text.length > 120 ? '...' : ''}`);
-    return String(payload && payload.error);
+    return { failed: result.isError === true, message: String(payload && payload.error), payload, text };
   } catch (e) {
-    if (e instanceof assert.AssertionError) throw e;
-    return String(e && e.message);
+    return { failed: true, message: String(e && e.message), payload: null, text: '' };
   }
+}
+
+/** An MCP tool call that must fail; its error message, whether returned or thrown. */
+async function toolError(tool, args) {
+  const o = await toolOutcome(tool, args);
+  assert.equal(o.failed, true, `${tool} returned a result, not an error: ${clip(o.text)}`);
+  return o.message;
+}
+
+/** An MCP tool call that must not fail; its payload. */
+async function toolResult(tool, args) {
+  const o = await toolOutcome(tool, args);
+  assert.equal(o.failed, false, `${tool} failed: ${o.message}`);
+  return o.payload;
 }
 
 /** An MCP tool call of a server sending one byte a second: it must end at the route's read deadline with a timeout error. */
@@ -356,6 +499,104 @@ async function mcpDrip(tool, args, key) {
   endedAt(s, MCP_DEADLINE_S);
   assert.equal(seen.get(key).req.destroyed, true, 'the request was not destroyed');
   return `${s.toFixed(2)} s, "${message}", ${seen.get(key).received} bytes received`;
+}
+
+/** The error an MCP read past `limit` bytes fails with. */
+const overLimit = (limit) => new RegExp(`^Fetch failed: the response is over the ${limit / MiB} MiB read limit$`);
+
+/**
+ * designesy_llms_txt reads one URL, so its cases take turns, in the order
+ * they are listed, each setting what that URL serves for its turn. A read
+ * that succeeds is cached and answers every call after it, so the read that
+ * succeeds on a route with no read limit (a body past the limit, read whole)
+ * is the last to take a turn.
+ */
+let llmsQueue = Promise.resolve();
+function llmsTurn(route, work) {
+  const turn = llmsQueue.then(() => {
+    ROUTES[LLMS] = route;
+    return work();
+  });
+  llmsQueue = turn.catch(() => {});
+  return turn;
+}
+
+/**
+ * Asserts an MCP read of `key`, whose body is past the tool's `limit`, failed
+ * with the error that names the limit. For an identity body it also asserts
+ * the read stopped at the limit: at most one socket read past it reached the
+ * client, the request was destroyed, and the server never finished sending.
+ * Says how far the body got.
+ */
+async function mcpOverLimit(tool, args, key, limit) {
+  const route = ROUTES[key];
+  seen.delete(key);
+  const o = await toolOutcome(tool, args);
+  const rec = seen.get(key);
+  assert.ok(rec && rec.req, `no request reached ${key}, so the route answered from its cache`);
+  assert.equal(o.failed, true, `returned a result, not an error, after ${rec.received} of ${route.bytes.length} bytes received: ${clip(o.text)}`);
+  assert.match(o.message, overLimit(limit), `failed with "${o.message}"`);
+  if (route.encoding) {
+    return `"${o.message}"; ${route.bytes.length} ${route.encoding} bytes that decode to ${route.decoded}`;
+  }
+  assert.ok(rec.received <= limit + ONE_READ, `${rec.received} bytes received, more than one ${ONE_READ} byte read past the ${limit} byte limit`);
+  assert.equal(rec.req.destroyed, true, 'the request was not destroyed');
+  await new Promise((r) => setTimeout(r, SETTLE_MS));
+  const s = sent.get(key);
+  assert.equal(s.finished, false, `the server finished sending all ${route.bytes.length} bytes`);
+  return `"${o.message}"; ${rec.received} of ${route.bytes.length} bytes received, server sent ${s.written} before the socket closed`;
+}
+
+/** Runs labelled reads one after another, and fails naming each that failed. */
+async function eachRead(reads) {
+  const out = [];
+  for (const [label, read] of reads) {
+    try {
+      out.push({ wrong: false, text: `${label}: ${await read()}` });
+    } catch (e) {
+      out.push({ wrong: true, text: `${label}: ${String(e && e.message).split('\n')[0]}` });
+    }
+  }
+  const wrong = out.filter((o) => o.wrong);
+  assert.equal(wrong.length, 0, wrong.map((o) => o.text).join('; '));
+  return out.map((o) => o.text).join('; ');
+}
+
+/**
+ * The labelled reads of an over-limit case: each [label, key, route] reads
+ * `key` with `tool` (designesy_llms_txt's url is its own), serving `route`
+ * there first when one is given.
+ */
+function overLimitReads(tool, limit, reads) {
+  return reads.map(([label, key, route]) => [label, () => {
+    if (route) ROUTES[key] = route;
+    return mcpOverLimit(tool, key === LLMS ? {} : { url: `https://${key}` }, key, limit);
+  }]);
+}
+
+/**
+ * Asserts an MCP read of `key`, a body of exactly the tool's limit, came back
+ * whole: the client received every byte sent, and the tool returned a result
+ * that `whole` accepts. (The server's 'finish' can come after the client has
+ * read the last byte, so it is not waited for.)
+ */
+async function mcpAtLimit(tool, args, key, whole) {
+  const route = ROUTES[key];
+  const payload = await toolResult(tool, args);
+  const rec = seen.get(key);
+  assert.ok(rec && rec.req, `no request reached ${key}`);
+  assert.equal(rec.received, route.bytes.length, `${rec.received} of ${route.bytes.length} bytes received`);
+  return `${route.bytes.length} bytes${route.encoding ? ` of ${route.encoding} that decode to ${route.decoded}` : ''} read; ${whole(payload)}`;
+}
+
+/** The message JSON.parse throws for `text`. */
+function parseMessage(text) {
+  try {
+    JSON.parse(text);
+  } catch (e) {
+    return e.message;
+  }
+  throw new Error(`${JSON.stringify(text)} parses`);
 }
 
 // ── Cases ────────────────────────────────────────────────────────────────────
@@ -480,11 +721,65 @@ const CONCURRENT = [
     run: async () => mcpDrip('designesy_motion_score', { url: 'https://motion-drip.example.com/anim.json' }, 'motion-drip.example.com/anim.json'),
   },
   {
+    // designesy_llms_txt's first turn.
     name: `designesy_llms_txt (cachedFetch) on a source sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
-    run: async () => mcpDrip('designesy_llms_txt', {}, 'www.designesy.org/llms.txt'),
+    run: async () => llmsTurn({ drip: true }, () => mcpDrip('designesy_llms_txt', {}, LLMS)),
   },
   {
-    name: "every safeFetch call in the MCP route is readUrl's, which passes the read deadline",
+    // Listed before the over-limit cases: its designesy_llms_txt read is the second turn.
+    name: 'a 404 whose body is 1 MiB past the read limit still fails as "Fetch failed: 404" (tokens, motion, llms_txt)',
+    run: async () => {
+      const is404 = (tool, args, key) => async () => {
+        seen.delete(key);
+        const message = await toolError(tool, args);
+        assert.match(message, /^Fetch failed: 404\b/, `failed with "${message}"`);
+        const rec = seen.get(key);
+        assert.ok(rec, `no request reached ${key}`);
+        return `"${message}", ${rec.received} of ${ROUTES[key].bytes.length} bytes received`;
+      };
+      const llms = llmsTurn(LLMS_404, () => eachRead([['designesy_llms_txt', is404('designesy_llms_txt', {}, LLMS)]]));
+      const others = eachRead([
+        ['designesy_tokens_score', is404('designesy_tokens_score', { url: 'https://tokens-404.example.com/tokens.json' }, 'tokens-404.example.com/tokens.json')],
+        ['designesy_motion_score', is404('designesy_motion_score', { url: 'https://motion-404.example.com/anim.json' }, 'motion-404.example.com/anim.json')],
+      ]);
+      const [a, b] = await Promise.allSettled([others, llms]);
+      const wrong = [a, b].filter((r) => r.status === 'rejected').map((r) => String(r.reason && r.reason.message).split('\n')[0]);
+      assert.equal(wrong.length, 0, wrong.join('; '));
+      return `${a.value}; ${b.value}`;
+    },
+  },
+  {
+    name: `designesy_tokens_score fails on a token file 1 MiB past its ${TOKENS_LIMIT / MiB} MiB read limit, naming the limit`,
+    run: async () => eachRead(overLimitReads('designesy_tokens_score', TOKENS_LIMIT, [
+      ['gzip that decodes past the limit', 'tokens-over.example.com/gzip.json'],
+      ['identity, no content-length', 'tokens-over.example.com/plain.json'],
+      ['identity with content-length', 'tokens-over.example.com/length.json'],
+    ])),
+  },
+  {
+    name: `designesy_motion_score fails on a Lottie file 1 MiB past its ${LOTTIE_LIMIT / MiB} MiB read limit, naming the limit`,
+    run: async () => eachRead(overLimitReads('designesy_motion_score', LOTTIE_LIMIT, [
+      ['gzip that decodes past the limit', 'motion-over.example.com/gzip.json'],
+      ['identity, no content-length', 'motion-over.example.com/plain.json'],
+      ['identity with content-length', 'motion-over.example.com/length.json'],
+    ])),
+  },
+  {
+    // designesy_llms_txt's last turn. On a route with no read limit its
+    // identity reads succeed, and the first is cached, so they come last.
+    name: `designesy_llms_txt (cachedFetch) fails on a document 1 MiB past its ${DOC_LIMIT / MiB} MiB read limit, naming the limit`,
+    run: async () => llmsTurn(null, () => eachRead(overLimitReads('designesy_llms_txt', DOC_LIMIT, [
+      ['gzip that decodes past the limit', LLMS, LLMS_OVER_GZIP],
+      ['identity, no content-length', LLMS, LLMS_OVER],
+      ['identity with content-length', LLMS, LLMS_OVER_LENGTH],
+    ]))),
+  },
+  {
+    name: `designesy_motion_score reads a gzip Lottie file that decodes to exactly its ${LOTTIE_LIMIT / MiB} MiB read limit whole`,
+    run: async () => mcpAtLimit('designesy_motion_score', { url: 'https://motion-at.example.com/gzip.json' }, 'motion-at.example.com/gzip.json', (p) => `score ${p.score}, ${p.layer_count} layer(s)`),
+  },
+  {
+    name: "every safeFetch call in the MCP route is readUrl's, which passes the read deadline and each call site's read limit",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/mcp/route.ts'), 'utf8').replace(/\r\n/g, '\n');
       const calls = [...src.matchAll(/\bsafeFetch\(/g)].map((m) => m.index);
@@ -502,7 +797,79 @@ const CONCURRENT = [
       const ms = src.match(/^const READ_DEADLINE_MS = ([\d_]+);$/m);
       assert.ok(ms, 'no READ_DEADLINE_MS in the MCP route');
       assert.equal(Number(ms[1].replace(/_/g, '')), MCP_DEADLINE_S * 1000, `READ_DEADLINE_MS is ${ms[1]}, not ${MCP_DEADLINE_S} s`);
-      return `1 call, in readUrl; READ_DEADLINE_MS ${ms[1]}`;
+      // The limit: readUrl takes it after the url and hands it to safeFetch.
+      assert.match(fn, /^\nasync function readUrl\(url: string, limit: number, /, `readUrl takes no byte limit after its url: ${fn.split('\n')[1]}`);
+      assert.match(fn, /safeFetch\(url, \{[^}]*(?<![\w.])maxBodyBytes: limit(?=\s*[,}])/, 'readUrl does not pass its limit to safeFetch as maxBodyBytes');
+      // Each call of readUrl, by the function or tool it sits in, with the
+      // byte count of the limit it passes: a constant's or a literal product.
+      const bytesOf = (expr) => {
+        const named = /^[A-Za-z_]\w*$/.test(expr) ? src.match(new RegExp(`^const ${expr} = ([\\d_ *]+);$`, 'm')) : null;
+        const value = named ? named[1] : expr;
+        return /^[\d_]+( *\* *[\d_]+)*$/.test(value) ? value.split('*').reduce((p, x) => p * Number(x.trim().replace(/_/g, '')), 1) : null;
+      };
+      const siteOf = (i) => {
+        const before = src.slice(0, i);
+        const fnAt = [...before.matchAll(/\nasync function (\w+)\(/g)].pop();
+        const toolAt = [...before.matchAll(/registerTool\(\s*'(\w+)'/g)].pop();
+        return toolAt && (!fnAt || toolAt.index > fnAt.index) ? toolAt[1] : fnAt ? fnAt[1] : '(top level)';
+      };
+      const defAt = start + '\nasync function '.length;
+      const found = {};
+      const problems = [];
+      for (const { index } of src.matchAll(/\breadUrl\(/g)) {
+        if (index === defAt) continue;
+        const site = siteOf(index);
+        const arg = src.slice(index).match(/^readUrl\(\s*[^,()]+,\s*([^,(){}]+?)\s*,/);
+        const bytes = arg ? bytesOf(arg[1]) : null;
+        if (bytes === null) problems.push(`the readUrl call in ${site} passes no limit this gate can read`);
+        else if (!(site in MCP_READ_LIMITS)) problems.push(`a readUrl call in ${site}, which has no limit in MCP_READ_LIMITS`);
+        else if (site in found) problems.push(`a second readUrl call in ${site}`);
+        else if (bytes !== MCP_READ_LIMITS[site]) problems.push(`the readUrl call in ${site} passes ${bytes} bytes (${arg[1]}), not ${MCP_READ_LIMITS[site]}`);
+        if (bytes !== null) found[site] = `${bytes / MiB} MiB (${arg[1]})`;
+      }
+      for (const site of Object.keys(MCP_READ_LIMITS)) if (!(site in found)) problems.push(`no readUrl call in ${site}`);
+      assert.equal(problems.length, 0, problems.join('; '));
+      return `1 safeFetch call, in readUrl; READ_DEADLINE_MS ${ms[1]}; limits ${Object.entries(found).map(([s, v]) => `${s} ${v}`).join(', ')}`;
+    },
+  },
+  {
+    name: `designesy_tokens_score reads a token file of exactly its ${TOKENS_LIMIT / MiB} MiB read limit whole`,
+    run: async () => mcpAtLimit('designesy_tokens_score', { url: 'https://tokens-at.example.com/tokens.json' }, 'tokens-at.example.com/tokens.json', (p) => {
+      assert.equal(p.total_tokens, 1, `${p.total_tokens} tokens, not 1`);
+      return `score ${p.score}, ${p.total_tokens} token(s)`;
+    }),
+  },
+  {
+    name: `designesy_motion_score reads a Lottie file of exactly its ${LOTTIE_LIMIT / MiB} MiB read limit whole`,
+    run: async () => mcpAtLimit('designesy_motion_score', { url: 'https://motion-at.example.com/anim.json' }, 'motion-at.example.com/anim.json', (p) => `score ${p.score}, ${p.layer_count} layer(s)`),
+  },
+  {
+    name: `designesy_skill_md (cachedFetch) reads a document of exactly its ${DOC_LIMIT / MiB} MiB read limit whole`,
+    run: async () => mcpAtLimit('designesy_skill_md', {}, 'www.designesy.org/contracts/skill', (p) => {
+      const content = String(p.content);
+      assert.equal(Buffer.byteLength(content), DOC_AT.length, `${Buffer.byteLength(content)} bytes of content, not ${DOC_AT.length}`);
+      assert.ok(content.endsWith(DOC_END), 'the content does not end with the document\'s last line');
+      return `${Buffer.byteLength(content)} bytes of content, ending with its last line`;
+    }),
+  },
+  {
+    name: "a token file or a cachedFetch JSON document that is not JSON fails with JSON.parse's own message, and one that starts with a byte order mark is read",
+    run: async () => {
+      const expected = parseMessage(NOT_JSON);
+      const sameMessage = (tool, args) => async () => {
+        const message = await toolError(tool, args);
+        assert.equal(message, expected, `failed with "${message}", not JSON.parse's "${expected}"`);
+        return `"${message}"`;
+      };
+      return eachRead([
+        ['designesy_tokens_score, not JSON', sameMessage('designesy_tokens_score', { url: 'https://tokens-parse.example.com/not.json' })],
+        ['designesy_agent_json (cachedFetch), not JSON', sameMessage('designesy_agent_json', {})],
+        ['designesy_tokens_score, a byte order mark first', async () => {
+          const p = await toolResult('designesy_tokens_score', { url: 'https://tokens-parse.example.com/bom.json' });
+          assert.equal(p.total_tokens, 1, `${p.total_tokens} tokens, not 1`);
+          return `score ${p.score}, ${p.total_tokens} token(s)`;
+        }],
+      ]);
     },
   },
   {
@@ -583,5 +950,5 @@ if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, and no read leaves a listener on its signal.');
 process.exit(0);
