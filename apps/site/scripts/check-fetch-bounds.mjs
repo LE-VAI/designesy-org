@@ -9,8 +9,9 @@
  * (16 MiB for a Lottie file, 4 MiB for a token file or one of this site's
  * documents), a readiness check whose file is past the readiness route's
  * 4 MiB read limit reports WARN and says the file was not read while a file
- * within it is judged as before, and the MCP tools that read a URL through
- * url-guard still read one that answers.
+ * within it is judged as before, an error or redirect body is held to the
+ * same limit as the read that receives it, and the MCP tools that read a URL
+ * through url-guard still read one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -32,7 +33,11 @@
  * read an identity body of any length whole and judged it, and a probe whose
  * compressed body decoded past that default failed: its check reported a
  * file that answered as not found (FAIL), and a home page that did so failed
- * the whole scan as not fetched. Each hop of a read adds an abort
+ * the whole scan as not fetched. Neither route passed a limit for a body it
+ * does not read: url-guard holds a 3xx, 4xx or 5xx body raw up to
+ * maxBodyBytes, or whole when there is none, so an error page of any length
+ * was received in full before its status was reported, and a redirect's
+ * body before the next hop was requested. Each hop of a read adds an abort
  * listener to the caller's signal, and it stayed there once the read settled.
  * A signal can outlive the read: Node keeps an AbortSignal.timeout that has a
  * listener alive until its timer fires, and the listener kept the read's
@@ -179,6 +184,18 @@
  *     reported before the read limit; and an /llms.txt that starts with two
  *     byte order marks and holds two bytes that are not UTF-8 is r02 PASS
  *     with the length of the text resp.text() gives for it.
+ *   - An error or redirect body is held to the limit of the read that
+ *     receives it. designesy_tokens_score on a 500 whose body is 20 MiB
+ *     fails with "Fetch failed: 500 Internal Server Error", as before, and
+ *     readiness r02 on an /llms.txt that answers 500 with such a body is not
+ *     found (every check as on an empty site), as before; in each, at most
+ *     one socket read past the 4 MiB limit of that body reached the client,
+ *     the request was destroyed, and the server never finished sending. A
+ *     302 whose body is 20 MiB, read by designesy_tokens_score and by
+ *     readiness r02, leads to the next hop once at most one socket read past
+ *     the 4 MiB limit of that body has reached the client and before the
+ *     server has sent all of it (the server records both as the next request
+ *     arrives), and the URL it lands on is read.
  *   - Last: nothing was thrown during the run where no caller could catch it
  *     (an uncaught exception or an unhandled rejection). One thrown before the
  *     first case starts (a module that does not load) ends the run with
@@ -268,8 +285,15 @@
  * starts with two byte order marks, are controls: they hold on the code from
  * before the read limits too.
  *
+ * The four error and redirect body cases fail on the tree from before the
+ * read limits, whose reads passed no maxBodyBytes: each 20 MiB body is
+ * received whole (the 302's before the next hop is requested), while the
+ * tool's error and the r02 verdict are what they are now. A url-guard that
+ * holds only a 2xx body to maxBodyBytes fails the same four cases and the
+ * r10 case, whose 404 home page past the limit is then received whole.
+ *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 17 of the 41 cases fail and every
+ * readiness route from before them), 21 of the 45 cases fail and every
  * control holds.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
@@ -429,6 +453,8 @@ const CODINGS = {
 /** `bytes` sent in `coding` (a CODINGS key), and the length it decodes to. */
 const coded = (coding, bytes, type = 'application/json') => ({ bytes: CODINGS[coding][1](bytes), encoding: CODINGS[coding][0], decoded: bytes.length, type });
 const NOT_JSON = 'this is not json';
+/** The body a 500 or a 302 below carries: 20 MiB, past every read limit. A reader skips such a body, but receives it. */
+const NOISE = Buffer.alloc(20 * MiB, 0x65);
 
 // host + path -> what the server sends. Each case below owns its URLs, but
 // designesy_llms_txt's: llmsTurn sets what www.designesy.org/llms.txt sends.
@@ -485,6 +511,10 @@ const ROUTES = {
   ])),
   'motion-coded.example.com/br-at.json': coded('br', LOTTIE_AT),
   'motion-coded.example.com/br-over.json': coded('br', LOTTIE_PAST_ONE),
+  // A 500 and a 302 whose bodies are 20 MiB (paced), and the token file the 302 leads to.
+  'tokens-500.example.com/tokens.json': { status: 500, bytes: NOISE, paced: true },
+  'tokens-302.example.com/tokens.json': { status: 302, location: 'https://tokens-302-landed.example.com/tokens.json', bytes: NOISE, paced: true },
+  'tokens-302-landed.example.com/tokens.json': { body: TOKENS, type: 'application/json', hopFrom: 'tokens-302.example.com/tokens.json' },
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -547,6 +577,10 @@ const READY_FILES = {
   // An llms.txt reached through a 302, 1 MiB past the limit on the host it lands on.
   'ready-hop.example.com': { '/llms.txt': { status: 302, location: 'https://ready-hop-landed.example.com/llms.txt' } },
   'ready-hop-landed.example.com': { '/llms.txt': { bytes: READY_LLMS_OVER, paced: true, type: 'text/plain' } },
+  // An llms.txt that answers 500 with a 20 MiB body, and one reached through a 302 whose body is 20 MiB.
+  'ready-500.example.com': { '/llms.txt': { status: 500, bytes: NOISE, paced: true, type: 'text/plain' } },
+  'ready-302.example.com': { '/llms.txt': { status: 302, location: 'https://ready-302-landed.example.com/llms.txt', bytes: NOISE, paced: true } },
+  'ready-302-landed.example.com': { '/llms.txt': { body: '# Read limits\n\nA brief reached through a redirect.\n', type: 'text/plain', hopFrom: 'ready-302.example.com/llms.txt' } },
   // An llms.txt that starts with two byte order marks and holds two bytes that are not UTF-8.
   'ready-bom.example.com': { '/llms.txt': { bytes: Buffer.concat([BOM, BOM, Buffer.from('# Read limits\n\n'), Buffer.from([0xff, 0xfe]), Buffer.from('\nA brief.\n')]), type: 'text/plain' } },
   'ready-404.example.com': {
@@ -578,6 +612,13 @@ const server = http.createServer((req, res) => {
   const key = `${req.headers['x-fetch-bounds-host']}${req.url}`;
   const b = ROUTES[key] || { status: 404, body: 'not here' };
   const stat = { written: 0, finished: false };
+  // The next hop of a redirect: how far the redirect's body had got, on
+  // each side, when this request arrived.
+  if (b.hopFrom) {
+    const from = sent.get(b.hopFrom);
+    const client = seen.get(b.hopFrom);
+    Object.assign(stat, { fromWritten: from ? from.written : null, fromFinished: from ? from.finished : null, fromReceived: client ? client.received : null });
+  }
   sent.set(key, stat);
   res.on('error', () => {});
   res.on('finish', () => { stat.finished = true; });
@@ -782,6 +823,22 @@ async function stoppedAtLimit(key, limit) {
   const s = sent.get(key);
   assert.equal(s.finished, false, `the server finished sending all ${total} bytes`);
   return `${rec.received} of ${total} bytes received, server sent ${s.written} before the socket closed`;
+}
+
+/**
+ * Asserts a redirect from `key`, whose 20 MiB body is past the reader's
+ * `limit`, led to `landed` once at most one socket read past the limit of
+ * that body had reached the client, before the server had sent all of it,
+ * and that the read of it stopped there (stoppedAtLimit). The server records
+ * how far the body had got when the next hop's request arrived.
+ */
+async function hopAfterLimit(key, landed, limit) {
+  const at = sent.get(landed);
+  assert.ok(at, `no request reached ${landed}`);
+  const total = ROUTES[key].bytes.length;
+  assert.ok(at.fromReceived !== null && at.fromReceived <= limit + ONE_READ, `${at.fromReceived} bytes of the redirect's ${total} byte body were received before the next hop, more than one ${ONE_READ} byte read past the ${limit} byte limit`);
+  assert.equal(at.fromFinished, false, `the server had sent all ${total} bytes of the redirect's body before the next hop`);
+  return `the next hop came after ${at.fromReceived} of ${total} bytes of the 302's body were received (the server had written ${at.fromWritten}); ${await stoppedAtLimit(key, limit)}`;
 }
 
 /** Runs labelled reads one after another, and fails naming each that failed. */
@@ -1142,6 +1199,29 @@ const CONCURRENT = [
     ]),
   },
   {
+    name: `designesy_tokens_score on a 500 whose body is 20 MiB fails with its status, as before, and the read stops at the ${TOKENS_LIMIT / MiB} MiB read limit of that body`,
+    run: async () => {
+      const key = 'tokens-500.example.com/tokens.json';
+      seen.delete(key);
+      const message = await toolError('designesy_tokens_score', { url: `https://${key}` });
+      assert.equal(message, 'Fetch failed: 500 Internal Server Error', `failed with "${message}"`);
+      assert.ok(seen.get(key), `no request reached ${key}`);
+      return `"${message}"; ${await stoppedAtLimit(key, TOKENS_LIMIT)}`;
+    },
+  },
+  {
+    name: `designesy_tokens_score follows a 302 whose body is 20 MiB once at most one socket read past the ${TOKENS_LIMIT / MiB} MiB read limit of it has arrived, and reads the token file it lands on`,
+    run: async () => {
+      const key = 'tokens-302.example.com/tokens.json';
+      const landed = 'tokens-302-landed.example.com/tokens.json';
+      seen.delete(key);
+      sent.delete(landed);
+      const p = await toolResult('designesy_tokens_score', { url: `https://${key}` });
+      assert.equal(p.total_tokens, 1, `${p.total_tokens} tokens, not 1`);
+      return `score ${p.score}, ${p.total_tokens} token(s); ${await hopAfterLimit(key, landed, TOKENS_LIMIT)}`;
+    },
+  },
+  {
     name: "every safeFetch call in the MCP route is readUrl's, which passes the read deadline and each call site's read limit",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/mcp/route.ts'), 'utf8').replace(/\r\n/g, '\n');
@@ -1302,6 +1382,30 @@ const CONCURRENT = [
       });
       assert.ok(seen.get(landed), `no request reached ${landed}`);
       return `${said}; ${await stoppedAtLimit(landed, READINESS_LIMIT)}`;
+    },
+  },
+  {
+    name: `readiness r02: an llms.txt that answers 500 with a 20 MiB body is not found, as before, and the probe stops at the ${READINESS_LIMIT / MiB} MiB read limit of that body`,
+    run: async () => {
+      const key = 'ready-500.example.com/llms.txt';
+      seen.delete(key);
+      const said = checksAre(await readiness('https://ready-500.example.com/'), {});
+      assert.ok(seen.get(key), `no request reached ${key}`);
+      return `${said}; ${await stoppedAtLimit(key, READINESS_LIMIT)}`;
+    },
+  },
+  {
+    name: `readiness r02 follows a 302 whose body is 20 MiB once at most one socket read past the ${READINESS_LIMIT / MiB} MiB read limit of it has arrived, and reads the llms.txt it lands on`,
+    run: async () => {
+      const key = 'ready-302.example.com/llms.txt';
+      const landed = 'ready-302-landed.example.com/llms.txt';
+      seen.delete(key);
+      sent.delete(landed);
+      const brief = READY_FILES['ready-302-landed.example.com']['/llms.txt'].body;
+      const said = checksAre(await readiness('https://ready-302.example.com/'), {
+        r02: ['PASS', `/llms.txt returns ${brief.length} bytes of agent-facing brief`],
+      });
+      return `${said}; ${await hopAfterLimit(key, landed, READINESS_LIMIT)}`;
     },
   },
   {
