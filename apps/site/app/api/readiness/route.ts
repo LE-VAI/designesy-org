@@ -39,7 +39,47 @@ function rateLimited(ip: string): boolean {
 
 // ── HTTP probing helpers ──────────────────────────────────────────────────────
 
-async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{ ok: boolean; status: number; body?: string }> {
+const MiB = 1024 * 1024;
+
+// Each GET probe, and r04's read of the MCP endpoint, holds at most this many
+// body bytes, given to url-guard as maxBodyBytes and counted after decoding
+// when url-guard decodes the body (a compressed 2xx body). A body longer than
+// the limit is not read: its check reports WARN and says the file was not
+// read, never "not found" for a file that answered ok, and a partial body is
+// never read as if it were whole.
+//
+// 4 MiB. The largest token files measured are 1,674,878 bytes (Primer's light
+// theme) and 1,039,520 bytes (Spectrum's variables.json). The largest of this
+// site's own documents measured 100,907 bytes (/contracts/design-system.json,
+// as its route wrote it on 2026-10-24).
+const READ_LIMIT = 4 * 1024 * 1024;
+
+/** The detail of a check whose file answered with a body longer than READ_LIMIT. */
+function notRead(what: string): string {
+  return `${what} is larger than the ${READ_LIMIT / MiB} MiB read limit and was not read`;
+}
+
+/**
+ * A response's body as text, or null when it is longer than READ_LIMIT.
+ * safeFetch holds at most READ_LIMIT + 1 bytes of it (maxBodyBytes), so a
+ * body that holds more went past the limit. The bytes are decoded by a
+ * Response, as resp.text() decoded them before, so the text is the same.
+ * (TextDecoder would not be: Node 24.15.0's text() drops two leading UTF-8
+ * byte order marks, TextDecoder one.)
+ */
+async function textWithinLimit(resp: Response): Promise<string | null> {
+  const bytes = await resp.arrayBuffer();
+  if (bytes.byteLength > READ_LIMIT) return null;
+  return new Response(bytes).text();
+}
+
+/**
+ * What a probe found. `tooLarge`: a GET whose body is longer than READ_LIMIT,
+ * whatever its status; it has no body, because the body was not read.
+ */
+type Probe = { ok: boolean; status: number; body?: string; tooLarge?: true };
+
+async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<Probe> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -50,8 +90,15 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{
         'Accept': '*/*',
       },
       signal: controller.signal,
+      // A HEAD has no body, and is read as before.
+      maxBodyBytes: method === 'GET' ? READ_LIMIT : undefined,
     });
-    const body = method === 'GET' ? await resp.text() : undefined;
+    if (method !== 'GET') return { ok: resp.ok, status: resp.status, body: undefined };
+    // The limit holds for any status: r10 reads the home page's body whatever
+    // its status. The checks that need an ok response test ok first, so a
+    // large 404 is still "not found".
+    const body = await textWithinLimit(resp);
+    if (body === null) return { ok: resp.ok, status: resp.status, tooLarge: true };
     return { ok: resp.ok, status: resp.status, body };
   } catch {
     return { ok: false, status: 0 };
@@ -60,10 +107,18 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{
   }
 }
 
-async function probePaths(origin: string, paths: string[]): Promise<{ found: boolean; url?: string; status: number; body?: string }> {
+/**
+ * The first of `paths` that answers ok with more than 10 characters. A path
+ * that answers ok with a body longer than READ_LIMIT ends the search: it is
+ * returned with tooLarge and no body, so its check can say it was not read.
+ */
+async function probePaths(origin: string, paths: string[]): Promise<{ found: boolean; url?: string; status: number; body?: string; tooLarge?: true }> {
   for (const path of paths) {
     const url = new URL(path, origin).href;
     const result = await probeUrl(url, 'GET');
+    if (result.ok && result.tooLarge) {
+      return { found: true, url, status: result.status, tooLarge: true };
+    }
     if (result.ok && result.body && result.body.length > 10) {
       return { found: true, url, status: result.status, body: result.body };
     }
@@ -85,6 +140,9 @@ type CheckResult = {
 
 async function checkR01TokenFile(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/tokens.json', '/design-tokens.json', '/contracts/tokens.json', '/export/tokens.json']);
+  if (result.tooLarge) {
+    return { id: 'r01', item: 'Machine-readable token file exposed', category: 'tokens', status: 'WARN', detail: notRead(`Token file at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r01', item: 'Machine-readable token file exposed', category: 'tokens', status: 'FAIL', detail: 'No machine-readable token file detected at common paths' };
   }
@@ -98,6 +156,9 @@ async function checkR01TokenFile(origin: string): Promise<CheckResult> {
 
 async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/llms.txt', '/.well-known/llms.txt']);
+  if (result.tooLarge) {
+    return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'WARN', detail: notRead(`llms.txt at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'FAIL', detail: 'No /llms.txt found: agents have no orientation brief' };
   }
@@ -106,6 +167,9 @@ async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
 
 async function checkR03AgentJson(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/.well-known/agent.json', '/agent.json']);
+  if (result.tooLarge) {
+    return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'WARN', detail: notRead(`agent.json at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'FAIL', detail: 'No /.well-known/agent.json: agents have no discovery endpoint' };
   }
@@ -210,9 +274,13 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
       },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
       signal: AbortSignal.timeout(8000),
+      maxBodyBytes: READ_LIMIT,
     });
     if (resp.ok) {
-      const data = await resp.text();
+      const data = await textWithinLimit(resp);
+      if (data === null) {
+        return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: notRead('The tools/list answer from /api/mcp') };
+      }
       // Streamable HTTP answers as either a single JSON body or an SSE frame
       // (`event: message` / `data: {...}`). The previous test was a substring
       // search for "tools"/"result", which appears in both framings — but it
@@ -244,6 +312,9 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
 
 async function checkR05DesignMd(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/DESIGN.md', '/design.md']);
+  if (result.tooLarge) {
+    return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'WARN', detail: notRead(`DESIGN.md at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md: missing the machine-readable design brief' };
   }
@@ -253,6 +324,9 @@ async function checkR05DesignMd(origin: string): Promise<CheckResult> {
 async function checkR06TokenDescription(origin: string): Promise<CheckResult> {
   // This is checked alongside r01 — if tokens were found, check for $description
   const tokenResult = await probePaths(origin, ['/tokens.json', '/design-tokens.json', '/contracts/tokens.json', '/export/tokens.json']);
+  if (tokenResult.tooLarge) {
+    return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'WARN', detail: notRead(`Token file at ${tokenResult.url}`) };
+  }
   if (!tokenResult.found || !tokenResult.body) {
     return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'FAIL', detail: 'No token file found to check for $description' };
   }
@@ -265,9 +339,15 @@ async function checkR06TokenDescription(origin: string): Promise<CheckResult> {
 
 async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/components.json', '/contracts/components.json', '/component-schema.json']);
+  if (result.tooLarge) {
+    return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: notRead(`Component schema at ${result.url}`) };
+  }
   if (!result.found) {
     // Fallback: check if /open.json or /agent.json mentions components
     const openResult = await probePaths(origin, ['/open.json', '/.well-known/agent.json']);
+    if (openResult.tooLarge) {
+      return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: notRead(`${openResult.url}`) };
+    }
     const mentionsComponents = openResult.body?.includes('component');
     if (mentionsComponents) {
       return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: 'Component documentation found but not machine-readable' };
@@ -278,7 +358,11 @@ async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
 }
 
 async function checkR08Sitemap(origin: string): Promise<CheckResult> {
-  const result = await probeUrl(new URL('/sitemap.xml', origin).href, 'GET');
+  const url = new URL('/sitemap.xml', origin).href;
+  const result = await probeUrl(url, 'GET');
+  if (result.ok && result.tooLarge) {
+    return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'WARN', detail: notRead(`Sitemap at ${url}`) };
+  }
   if (result.ok && result.body && result.body.includes('<urlset')) {
     return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'PASS', detail: '/sitemap.xml found: site is crawlable' };
   }
@@ -286,7 +370,11 @@ async function checkR08Sitemap(origin: string): Promise<CheckResult> {
 }
 
 async function checkR09RobotsTxt(origin: string): Promise<CheckResult> {
-  const result = await probeUrl(new URL('/robots.txt', origin).href, 'GET');
+  const url = new URL('/robots.txt', origin).href;
+  const result = await probeUrl(url, 'GET');
+  if (result.ok && result.tooLarge) {
+    return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'WARN', detail: notRead(`robots.txt at ${url}`) };
+  }
   if (!result.ok || !result.body) {
     return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'FAIL', detail: 'No /robots.txt: crawling rules undefined' };
   }
@@ -297,7 +385,13 @@ async function checkR09RobotsTxt(origin: string): Promise<CheckResult> {
   return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'PASS', detail: '/robots.txt found and allows agent crawling' };
 }
 
-async function checkR10OpenGraph(html: string): Promise<CheckResult> {
+async function checkR10OpenGraph(home: Probe, url: string): Promise<CheckResult> {
+  // The page's body is read whatever its status, as before, so a page longer
+  // than the read limit is reported for any status.
+  if (home.tooLarge) {
+    return { id: 'r10', item: 'Open Graph + Twitter card meta tags', category: 'social', status: 'WARN', detail: notRead(`The page at ${url}`) };
+  }
+  const html = home.body || '';
   const hasOg = /<meta\s+property=["']og:/i.test(html);
   const hasTwitter = /<meta\s+name=["']twitter:/i.test(html);
   if (hasOg && hasTwitter) {
@@ -343,7 +437,7 @@ async function scoreReadinessUncached(targetUrl: string) {
     checkR07ComponentContract(origin),
     checkR08Sitemap(origin),
     checkR09RobotsTxt(origin),
-    checkR10OpenGraph(html),
+    checkR10OpenGraph(homeResult, targetUrl),
   ]);
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
@@ -370,7 +464,16 @@ async function scoreReadinessUncached(targetUrl: string) {
 
 const READINESS_TTL = 60 * 60 * 24; // 24h
 
-const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness'], {
+// The second key part names the result format. A result cached under the old
+// key could be wrong for a site with a file past the read limit: a probe
+// whose gzip, deflate or br body decoded past 4 MiB failed, so its check
+// reported a file that exists as not found, and a home page that did so
+// failed the whole scan as not fetched. Under the old key such a result would
+// still be served after a deploy, until 24 h after it was cached, and then
+// once more, to the request that starts a new scan. Under this key no result
+// cached before the read limit is read. (Next.js 16.4.2 also puts the
+// function's source in the key; this part does not depend on that.)
+const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib'], {
   revalidate: READINESS_TTL,
   tags: ['readiness'],
 });
