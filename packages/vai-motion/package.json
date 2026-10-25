@@ -21,7 +21,6 @@
     "reduced-motion",
     "accessibility",
     "wcag",
-    "waapi",
     "design-tokens",
     "anti-slop",
     "vai",
@@ -48,7 +47,8 @@
     "node": ">=16"
   },
   "scripts": {
-    "demo": "node demo/serve.mjs"
+    "demo": "node demo/serve.mjs",
+    "test": "node --test"
   },
   "private": false
 }

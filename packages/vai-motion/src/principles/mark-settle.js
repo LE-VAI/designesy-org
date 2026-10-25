@@ -13,9 +13,13 @@
 // animate from scale 0.9–0.97, never scale(0); easing is deliberate)
 // Provenance: VAI aesthetic audit 2026-08-09
 // Reduced motion: tier 2 — SOFTEN (≤200ms — the settle still happens,
-// it just happens fast)
+// it just happens fast). There is no blur under reduce: tier 2 is
+// transform and opacity only, as in the CSS layer (filter: none).
 
-import { EASE, resolveDuration } from '../reduced-motion.js';
+import { EASE, prefersReducedMotion, resolveDuration } from '../reduced-motion.js';
+import { readEase } from '../easing.js';
+import { readOptions } from '../options.js';
+import { claim, frames } from '../frames.js';
 
 export const markSettle = {
   name: 'mark-settle',
@@ -30,38 +34,32 @@ export const markSettle = {
   },
 
   // Settle a mark (image, svg, or text element) from blur to sharp.
-  // Uses a temporary class with CSS transitions for the blur, and a
-  // WAAPI animation for the scale+opacity (transform/opacity only).
+  // Blur, scale and opacity follow one eased progress, written on each
+  // animation frame (requestAnimationFrame).
   // @param el    HTMLElement
   // @param opts  { duration, ease, fromScale, fromBlur }
   // @returns Promise<void>
   async settle(el, opts = {}) {
-    const o = { ...this.defaultOptions, ...opts };
+    const o = readOptions(this.defaultOptions, opts);
+    const ease = readEase(o.ease);
     const duration = resolveDuration(this.tier, o.duration);
     if (duration === 0) {
+      claim(el);
       el.style.filter = 'none';
       el.style.opacity = '1';
       return;
     }
-    el.style.filter = `blur(${o.fromBlur}px)`;
+    const blur = prefersReducedMotion() ? 0 : o.fromBlur;
+    el.style.filter = blur > 0 ? `blur(${blur}px)` : 'none';
     el.style.opacity = '0';
     el.style.transform = `scale(${o.fromScale})`;
-    const start = performance.now();
-    await new Promise((resolve) => {
-      const tick = (now) => {
-        const t = Math.min(1, (now - start) / duration);
-        const eased = easeOutCubic(t);
-        el.style.filter = `blur(${o.fromBlur * (1 - eased)}px)`;
-        el.style.opacity = String(eased);
-        el.style.transform = `scale(${o.fromScale + (1 - o.fromScale) * eased})`;
-        if (t < 1) requestAnimationFrame(tick);
-        else resolve();
-      };
-      requestAnimationFrame(tick);
+    await frames(el, performance.now(), duration, (t) => {
+      const eased = ease(t);
+      // An ease that overshoots takes eased past 1, and a negative blur()
+      // is invalid CSS, so it is held at 0. Scale and opacity may overshoot.
+      if (blur > 0) el.style.filter = `blur(${Math.max(0, blur * (1 - eased))}px)`;
+      el.style.opacity = String(eased);
+      el.style.transform = `scale(${o.fromScale + (1 - o.fromScale) * eased})`;
     });
   },
 };
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}

@@ -395,11 +395,11 @@
     "contract_status": "provisional",
     "url": "(inline dtcg_file)",
     "total_tokens": 23,
-    "score": 89,
-    "grade": "B",
-    "pass_count": 7,
+    "score": 100,
+    "grade": "A",
+    "pass_count": 9,
     "fail_count": 0,
-    "warn_count": 2,
+    "warn_count": 0,
     "skip_count": 1,
     "scoring": "PASS=1, WARN=0.5, FAIL=0; SKIP is not scored. Score = points / scored checks x 100. A>=90, B>=80, C>=70, D>=60, F<60.",
     "checks": [
@@ -448,8 +448,8 @@
       {
         "id": "t08",
         "name": "Dimensions use the 2025.10 form { value, unit } in px or rem",
-        "status": "WARN",
-        "detail": "5/5 dimension token(s) are not { value, unit } in px or rem: space.1='4px' (legacy string), space.2='8px' (legacy string), space.3='1rem' (legacy string), radius.$root='8px' (legacy string), radius.pill='999px' (legacy string)"
+        "status": "PASS",
+        "detail": "All 5 dimension token(s) use the 2025.10 form { value, unit } in px or rem"
       },
       {
         "id": "t09",
@@ -460,8 +460,8 @@
       {
         "id": "t10",
         "name": "No deprecated pre-2025.10 patterns (bare hex colors, string or bare number dimensions, a $ref that is not a JSON Pointer)",
-        "status": "WARN",
-        "detail": "5 deprecated pattern(s) found: Dimension token 'space.1' uses the pre-2025.10 string form: '4px' (write { value, unit }); Dimension token 'space.2' uses the pre-2025.10 string form: '8px' (write { value, unit }); Dimension token 'space.3' uses the pre-2025.10 string form: '1rem' (write { value, unit })..."
+        "status": "PASS",
+        "detail": "No deprecated DTCG patterns detected (no bare hex colors, no string or bare number dimensions, no $ref that is not a JSON Pointer)"
       }
     ],
     "provenance": "W3C DTCG 2025.10 CG-FINAL + designesy-core.v0.4.0 §8",
