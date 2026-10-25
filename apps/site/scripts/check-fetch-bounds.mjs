@@ -32,10 +32,13 @@
  * the MCP route's reads did, of 15 s), so the idle timeout of Node's global
  * agent, whose requests it makes, ended a read whose server went quiet
  * before the caller's deadline, with an error the caller did not read as its
- * own timeout: after 5 s on Node 24.15.0, and after 4 s on a connection kept
- * alive from an answer that gave a 5 s Keep-Alive timeout. The MCP route
- * passed no signal for the URLs it reads (cachedFetch, and
- * the url of designesy_tokens_score and designesy_motion_score), so nothing
+ * own timeout: after 5 s on Node 24.15.0, and on a connection kept alive
+ * from an earlier answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s
+ * before that timeout (after 4 s for 5 s, and 1 s for 2 s). page-fetch read
+ * a page's stylesheets one after another with no bound on the whole, so once
+ * each quiet sheet lasted its 8 s, 8 of them held a route past its 60 s. The
+ * MCP route passed no signal for the URLs it reads (cachedFetch, and the url
+ * of designesy_tokens_score and designesy_motion_score), so nothing
  * in the process ended such a read short of the function's maxDuration
  * (300 s, vercel.json). It passed no maxBodyBytes either, so it held an
  * identity body whole however long it was, and a compressed body that
@@ -2277,5 +2280,5 @@ if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and no sooner and an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, a POST carries its body, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline with no idle timeout ending it sooner, page-fetch\'s stylesheets within 20 s, an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, a POST carries its body, and no read leaves a listener on its signal.');
 process.exit(0);

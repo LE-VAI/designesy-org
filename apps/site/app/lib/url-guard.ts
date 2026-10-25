@@ -652,11 +652,12 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         lookup: pinnedLookup as typeof import('node:dns').lookup,
         // With a signal, the caller's signal is the read's only deadline: 0
         // turns off the idle timeout of Node's global agent, which would
-        // otherwise end a read whose server goes quiet before that deadline
-        // (after 5 s on Node 24.15.0, and 4 s on a connection kept alive from
-        // an answer that gave a 5 s Keep-Alive timeout), with an error the
-        // caller does not read as its own timeout. With no signal, 15 s of
-        // quiet ends the read.
+        // otherwise end a read whose server goes quiet before that deadline,
+        // with an error the caller does not read as its own timeout. On Node
+        // 24.15.0 that timeout is 5 s, and on a connection kept alive from an
+        // earlier answer that gave a Keep-Alive timeout of 2 to 5 s it is 1 s
+        // less than that one (4 s for 5 s, 1 s for 2 s). With no signal, 15 s
+        // of quiet ends the read.
         timeout: init?.signal ? 0 : 15000,
       },
       (res) => {
