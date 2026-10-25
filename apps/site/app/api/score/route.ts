@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { recordUsage, scoreClientOf, scoreContractKey } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch, cutByBudget, InvalidStatusError, type ReadBudget } from '../../lib/url-guard';
 import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
@@ -1722,19 +1722,43 @@ function longLinearEasings(css: string): string[] {
 }
 
 /**
- * Group 1 of each match of
- * /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi:
- * the last quoted href in the tag after its first rel=stylesheet.
+ * Group 1, or else group 2, of each match of
+ * /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi.
+ * The first alternative is the pattern before engine 1.5.4: the last quoted
+ * href in the tag after its first rel=stylesheet. The second (engine 1.5.4)
+ * reads a tag that writes href first: the last quoted href in the tag that is
+ * followed by rel=stylesheet before the next `>`.
  */
 function stylesheetLinkMatches(html: string): ScanMatch[] {
   const start = /<link/gi;
   const rel = nextMatchFinder(html, /rel=["']?stylesheet/gi);
+  const rels = matchStarts(html, /rel=["']?stylesheet/gi);
   const hrefs = matchStarts(html, /href=["']/gi);
   const gt = nextMatchFinder(html, />/g);
+  const gtAfterValue = nextMatchFinder(html, />/g);
+  const quote = nextMatchFinder(html, /["']/g);
   const n = html.length;
   const isQuote = (c: number): boolean => c === 34 || c === 39;
   let lastQuote = n - 1;
   while (lastQuote >= 0 && !isQuote(html.charCodeAt(lastQuote))) lastQuote--;
+  // The second alternative, worked out once per href, since it does not
+  // depend on where the tag starts: the value is non-empty and closes at q,
+  // and a rel=stylesheet starts after q and before the first `>` after q.
+  // The greedy [^>]* ends the match with the last such rel.
+  const hrefFirst = hrefs.map((at) => {
+    const v = at + 6;
+    if (!(v < n && !isQuote(html.charCodeAt(v)) && lastQuote > v)) return null;
+    const q = quote(v + 1);
+    const k = lowerBound(rels, Math.min(gtAfterValue(q + 1), n)) - 1;
+    if (k < 0 || rels[k] <= q) return null;
+    return { q, end: rels[k] + (isQuote(html.charCodeAt(rels[k] + 4)) ? 15 : 14) };
+  });
+  // lastViable[i]: the largest k <= i whose href reads by the second alternative, or -1.
+  const lastViable: number[] = [];
+  for (let i = 0, lv = -1; i < hrefs.length; i++) {
+    if (hrefFirst[i]) lv = i;
+    lastViable.push(lv);
+  }
   const out: ScanMatch[] = [];
   let ptr = 0;
   for (let pos = 0; ;) {
@@ -1760,7 +1784,15 @@ function stylesheetLinkMatches(html: string): ScanMatch[] {
       pos = q + 1;
       continue;
     }
-    // Every start before g sees less of the same tag.
+    // No rel before an href: the last href in the tag that rel=stylesheet follows.
+    const k = end > ptr ? lastViable[end - 1] : -1;
+    if (k >= ptr) {
+      const hit = hrefFirst[k] as { q: number; end: number };
+      out.push({ index: m.index, text: html.slice(m.index, hit.end), groups: [html.slice(hrefs[k] + 6, hit.q)] });
+      pos = hit.end;
+      continue;
+    }
+    // Every start before g sees less of the same tag, by either alternative.
     if (g >= n) break;
     pos = g + 1;
   }
@@ -1988,12 +2020,16 @@ function hasMultiStopGradient(value: string): boolean {
 
 // ── Resilient CSS & HTML Fetching ──────────────────────────────────────────
 
+// Engine 1.5.4: Accept-Encoding names the three codings url-guard decodes
+// (gzip, deflate, br). With no Accept-Encoding a server may send any coding
+// (RFC 9110 section 12.5.3), zstd included, which the reader would refuse.
 const BROWSER_HEADERS: Record<string, string> = {
   'User-Agent':
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   Accept:
     'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9',
+  'Accept-Encoding': 'gzip, deflate, br',
   'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124"',
   'Sec-Ch-Ua-Mobile': '?0',
   'Sec-Ch-Ua-Platform': '"Windows"',
@@ -2046,7 +2082,11 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
  * near one. A body longer than its cap is read up to the cap and the outcome
  * says so (htmlTruncated, stylesheetBytesTruncated), as stylesheetsTruncated
  * reports the stylesheet count cap. The stylesheets share one budget, read as
- * they arrive.
+ * they arrive. Since engine 1.5.4 the transport applies the caps and the
+ * budget (maxBodyBytes and budget in url-guard's SafeFetchInit) as each byte
+ * arrives, decoded or not, so a compressed body is decoded only as far as it
+ * can be read, and the page's stylesheets together hold no more than the
+ * budget however many are read at once.
  */
 const MAX_HTML_BYTES = 8 * 1024 * 1024;
 const MAX_STYLESHEET_BYTES = 4 * 1024 * 1024;
@@ -2056,10 +2096,12 @@ const MAX_DESIGN_MD_BYTES = 16 * 1024 * 1024;
 /**
  * A response body as text, as Response.text() decodes it (UTF-8, a leading
  * byte order mark dropped, U+FFFD for a malformed sequence), read only up to
- * `maxBytes`, and up to what is left of `budget` when one is shared.
+ * `maxBytes`. `truncated` is true when the body went past it, or when a
+ * shared budget cut the body in the transport (engine 1.5.4: the budget is
+ * charged there, as bytes arrive, so it is not charged again here).
  */
-async function readCapped(resp: Response, maxBytes: number, budget?: { left: number }): Promise<{ text: string; truncated: boolean }> {
-  if (!resp.body) return { text: '', truncated: false };
+async function readCapped(resp: Response, maxBytes: number): Promise<{ text: string; truncated: boolean }> {
+  if (!resp.body) return { text: '', truncated: cutByBudget(resp) };
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   const parts: string[] = [];
@@ -2069,11 +2111,10 @@ async function readCapped(resp: Response, maxBytes: number, budget?: { left: num
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
-      const room = Math.max(0, Math.min(maxBytes - read, budget ? budget.left : Infinity));
+      const room = Math.max(0, maxBytes - read);
       const chunk = value.byteLength > room ? value.subarray(0, room) : value;
       if (chunk !== value) truncated = true;
       read += chunk.byteLength;
-      if (budget) budget.left -= chunk.byteLength;
       parts.push(decoder.decode(chunk, { stream: true }));
       if (truncated) break;
     }
@@ -2081,27 +2122,40 @@ async function readCapped(resp: Response, maxBytes: number, budget?: { left: num
     if (truncated) await reader.cancel().catch(() => undefined);
   }
   parts.push(decoder.decode());
-  return { text: parts.join(''), truncated };
+  return { text: parts.join(''), truncated: truncated || cutByBudget(resp) };
 }
 
 type FetchOutcome =
-  | { ok: true; text: string; truncated: boolean }
+  /** finalUrl: the URL that answered, after any redirect (engine 1.5.4). */
+  | { ok: true; text: string; truncated: boolean; finalUrl: string }
   | { ok: false; reason: 'http_error' | 'timeout' | 'network' | 'empty_body'; status?: number };
 
-async function fetchCssSingleDetailed(url: string, maxBytes = MAX_STYLESHEET_BYTES, budget?: { left: number }): Promise<FetchOutcome> {
+async function fetchCssSingleDetailed(url: string, maxBytes = MAX_STYLESHEET_BYTES, budget?: ReadBudget): Promise<FetchOutcome> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
+    // maxBodyBytes: safeFetch holds no more than this read will take (one
+    // byte over, so a cut read is still seen as cut), decoded or not.
+    // budget: what the page's stylesheets may still hold between them,
+    // charged as each byte arrives (engine 1.5.4).
     const resp = await safeFetch(url, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
+      maxBodyBytes: maxBytes,
+      budget,
     });
     if (!resp.ok) return { ok: false, reason: 'http_error', status: resp.status };
-    const { text, truncated } = await readCapped(resp, maxBytes, budget);
+    const { text, truncated } = await readCapped(resp, maxBytes);
     if (!text || text.length <= 50) return { ok: false, reason: 'empty_body' };
-    return { ok: true, text, truncated };
+    // A Response built by hand (a test's, say) has url ''.
+    return { ok: true, text, truncated, finalUrl: resp.url || url };
   } catch (e) {
-    const aborted = e instanceof Error && (e.name === 'AbortError' || /abort/i.test(e.message));
+    // A status a Response cannot carry (999, say) is the server answering:
+    // an HTTP error with that status (engine 1.5.4).
+    if (e instanceof InvalidStatusError) return { ok: false, reason: 'http_error', status: e.status };
+    // A timeout is this read's own abort firing, never a word in a message:
+    // a rejection can carry text the server chose.
+    const aborted = controller.signal.aborted || (e instanceof Error && e.name === 'AbortError');
     return { ok: false, reason: aborted ? 'timeout' : 'network' };
   } finally {
     clearTimeout(timeout);
@@ -2156,6 +2210,18 @@ const MAX_STYLESHEETS = 60;
  */
 const STYLESHEET_DEADLINE_MS = 20_000;
 
+/**
+ * How many of a page's stylesheets may decode a compressed body at once
+ * (engine 1.5.4). The sheets are still asked for all at once; a sheet sent
+ * compressed waits, its response paused, for one of these. The bound is on
+ * memory the byte budget does not see: a br decoder keeps a window of up to
+ * 16 MiB however little it emits, so 60 sheets decoding together held about
+ * 1.2 GB (measured on a synthetic page of 60 br sheets, each a few bytes sent
+ * and 20 MiB decoded with a 16 MiB window). Eight hold at most about 128 MiB
+ * of windows.
+ */
+const MAX_DECODING_STYLESHEETS = 8;
+
 type PageOutcome =
   | {
       ok: true;
@@ -2184,6 +2250,9 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 
   let html = '';
   let htmlTruncated = false;
+  // The URL that answered: the candidate that was read, after its redirects.
+  // Its stylesheet hrefs resolve against it (engine 1.5.4), as a browser's do.
+  let pageUrl = targetUrl;
   // Remember WHY each candidate failed. A 403 on every candidate means the site
   // is blocking us — a different fact from a timeout, and the caller needs to
   // tell them apart.
@@ -2191,7 +2260,7 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
 
   for (const candidate of candidateUrls) {
     const outcome = await fetchCssSingleDetailed(candidate, MAX_HTML_BYTES);
-    if (outcome.ok) { html = outcome.text; htmlTruncated = outcome.truncated; break; }
+    if (outcome.ok) { html = outcome.text; htmlTruncated = outcome.truncated; pageUrl = outcome.finalUrl; break; }
     lastFail = outcome;
   }
 
@@ -2221,7 +2290,7 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
   //      parallel), and the cap cost github.com 6.2 points by hiding CSS.
   //   3. Fetch concurrently. THIS is the actual latency fix: sequential makes
   //      latency the SUM of every slow sheet, concurrent makes it the MAX.
-  const allParts = extractCssLinks(html, targetUrl);
+  const allParts = extractCssLinks(html, pageUrl);
   const inlineParts = allParts.filter((p) => !p.startsWith('http'));
   const uniqueExternal = [...new Set(allParts.filter((p) => p.startsWith('http')))];
   const externalParts = uniqueExternal.slice(0, MAX_STYLESHEETS);
@@ -2242,7 +2311,10 @@ async function fetchPageResilient(targetUrl: string): Promise<PageOutcome> {
       ?? setTimeout(() => rej(new Error('stylesheet deadline')), STYLESHEET_DEADLINE_MS),
   );
   // Engine 1.5.1: the sheets share one byte budget as well as the deadline.
-  const budget = { left: MAX_TOTAL_STYLESHEET_BYTES };
+  // Engine 1.5.4: the transport charges it as bytes arrive, so the sheets
+  // fetched at once hold no more than it between them, and at most
+  // MAX_DECODING_STYLESHEETS of them decode at once.
+  const budget: ReadBudget = { left: MAX_TOTAL_STYLESHEET_BYTES, decoders: MAX_DECODING_STYLESHEETS };
   let stylesheetBytesTruncated = false;
   let fetched: string[] = [];
   try {
@@ -6204,6 +6276,7 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
     const resp = await safeFetch(designMdUrl, {
       headers: BROWSER_HEADERS,
       signal: controller.signal,
+      maxBodyBytes: MAX_DESIGN_MD_BYTES,
     });
     clearTimeout(timeout);
     if (!resp.ok) {

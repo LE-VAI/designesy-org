@@ -34,15 +34,18 @@ offline score is an unweighted pass rate over a subset and says so.
 
 from __future__ import annotations
 
+import email.message
+import gzip
 import hashlib
 import json
 import math
 import os
 import re
 import sys
+import zlib
 from collections import Counter, defaultdict
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -327,7 +330,7 @@ class TestScoreLocalImpl:
     PAGE = (
         '<html><head><style>:root{--paper:#fff}</style>'
         '<link rel="stylesheet" href="/a.css">'
-        '<link href="/ignored.css" rel="stylesheet">'
+        '<link href="/href-first.css" rel="stylesheet">'
         '<link rel="stylesheet" href="https://cdn.example.com/b.css">'
         '<link rel="stylesheet" href="/a.css">'
         '</head><body><main><h1>x</h1></main></body></html>'
@@ -336,10 +339,11 @@ class TestScoreLocalImpl:
     def _fake_fetch(self, calls):
         sheets = {
             "https://example.com/a.css": "a{color:red}",
+            "https://example.com/href-first.css": "c{color:green}",
             "https://cdn.example.com/b.css": "b{color:blue}",
         }
 
-        def fetch(url, as_json=True):
+        def fetch(url, as_json=True, max_decoded=None):
             calls.append(url)
             if url == "https://example.com/":
                 return self.PAGE
@@ -359,9 +363,10 @@ class TestScoreLocalImpl:
 
         with patch.object(mcp, "_fetch", self._fake_fetch(calls)), patch.object(mcp, "_offline_result", capture):
             r = mcp._score_local_impl("https://example.com/")
-        # Inline first, then each distinct rel-before-href sheet once, in order.
-        assert seen["css"] == ":root{--paper:#fff}\na{color:red}\nb{color:blue}"
-        assert calls == ["https://example.com/", "https://example.com/a.css", "https://cdn.example.com/b.css"]
+        # Inline first, then each distinct sheet once, in document order: a
+        # tag that writes href before rel=stylesheet is read (engine 1.5.4).
+        assert seen["css"] == ":root{--paper:#fff}\na{color:red}\nc{color:green}\nb{color:blue}"
+        assert calls == ["https://example.com/", "https://example.com/a.css", "https://example.com/href-first.css", "https://cdn.example.com/b.css"]
         assert not any(c.startswith(mcp.BASE_URL) for c in calls)
         assert r["scope"] == "universal"
 
@@ -375,3 +380,154 @@ class TestScoreLocalImpl:
             r = mcp._score_local_impl("https://example.com/")
         by_id = {c["id"]: c for c in r["checks"]}
         assert by_id["v02"]["status"] == by_id["v04"]["status"] == by_id["v21"]["status"] == "MANUAL"
+
+
+class TestFetchLayer:
+    """Engine 1.5.4 in the offline fallback: the page's links resolve against
+    the URL that answered, and a compressed body is decoded or not read.
+
+    urllib.request.urlopen is replaced by a stand-in that answers from a table
+    of example.test URLs: a context manager whose read() gives the bytes sent,
+    with the response's headers and the URL urllib would report after its
+    redirects (geturl)."""
+
+    MiB = 1024 * 1024
+
+    @staticmethod
+    def _urlopen(table, calls):
+        def urlopen(req, timeout=None, context=None):
+            url = req.full_url
+            calls.append(url)
+            if url not in table:
+                raise mcp.urllib.error.HTTPError(url, 404, "Not Found", {}, None)
+            body, headers, final = table[url]
+            resp = MagicMock()
+            resp.read.return_value = body
+            resp.headers = headers
+            resp.geturl.return_value = final or url
+            cm = MagicMock()
+            cm.__enter__.return_value = resp
+            cm.__exit__.return_value = False
+            return cm
+        return urlopen
+
+    def _parts(self, table, url):
+        calls: list[str] = []
+        mcp._cache.clear()
+        mcp._FINAL_URL.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
+        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, calls)):
+            html, css, read = mcp._fetch_page_parts(url)
+        return html, css, read, calls
+
+    def test_a_redirected_page_reads_its_sheets_from_the_host_it_landed_on(self):
+        page = '<html><head><link rel="stylesheet" href="/assets/site.css"><link href="theme.css" rel="stylesheet"></head><body><main><h1>x</h1></main></body></html>'
+        table = {
+            "https://old.example.test/x/": (page.encode(), {}, "https://new.example.test/x/"),
+            "https://new.example.test/assets/site.css": (b":root{--a:#000}", {}, None),
+            "https://new.example.test/x/theme.css": (b":root{--b:#fff}", {}, None),
+            "https://old.example.test/assets/site.css": (b"<!doctype html><p>moved</p>", {}, None),
+        }
+        _html, css, read, calls = self._parts(table, "https://old.example.test/x/")
+        assert css == ":root{--a:#000}\n:root{--b:#fff}"
+        assert read == ["https://old.example.test/x/", "https://new.example.test/assets/site.css", "https://new.example.test/x/theme.css"]
+        assert not any(c.startswith("https://old.example.test/assets/") for c in calls)
+
+    def test_gzip_and_both_deflate_forms_are_decoded(self):
+        sheet = b":root{--paper:#fbfaf7;--ink:#14110f}"
+        raw = zlib.compressobj(9, zlib.DEFLATED, -zlib.MAX_WBITS)
+        raw_deflate = raw.compress(sheet) + raw.flush()
+        assert mcp._decode_content(gzip.compress(sheet), "gzip") == sheet
+        assert mcp._decode_content(gzip.compress(sheet), "X-GZIP") == sheet
+        assert mcp._decode_content(zlib.compress(sheet), "deflate") == sheet
+        assert mcp._decode_content(raw_deflate, "deflate") == sheet
+        assert mcp._decode_content(sheet, None) == sheet
+        assert mcp._decode_content(sheet, "identity") == sheet
+        assert mcp._decode_content(b"", "gzip") == b""
+
+    def test_a_gzip_page_reads_decoded_through_fetch(self):
+        page = '<html><head><style>:root{--paper:#fff}</style></head><body><main><h1>gz</h1></main></body></html>'
+        table = {"https://gz.example.test/": (gzip.compress(page.encode()), {"Content-Encoding": "gzip"}, None)}
+        html, css, _read, _calls = self._parts(table, "https://gz.example.test/")
+        assert html == page
+        assert css == ":root{--paper:#fff}"
+
+    @pytest.mark.parametrize("coding", ["br", "zstd", "compress", "gzip, br", "gzip, gzip"])
+    def test_an_unsupported_or_stacked_coding_is_not_read(self, coding):
+        with pytest.raises(ValueError, match="unsupported Content-Encoding"):
+            mcp._decode_content(b"\x00\x01\x02 not text", coding)
+
+    def test_a_corrupt_or_truncated_stream_is_not_read(self):
+        with pytest.raises(ValueError, match="content decoding failed"):
+            mcp._decode_content(b"plain text that says it is gzip", "gzip")
+        with pytest.raises(ValueError, match="content decoding failed"):
+            mcp._decode_content(b"plain text that says it is deflate", "deflate")
+        with pytest.raises(ValueError, match="truncated"):
+            mcp._decode_content(gzip.compress(b":root{--a:#000}" * 50)[:30], "gzip")
+
+    def test_a_body_that_decodes_past_16_mib_is_not_read(self):
+        bomb = gzip.compress(b"a" * (17 * self.MiB), 9)
+        assert len(bomb) < 64 * 1024
+        with pytest.raises(ValueError, match="over"):
+            mcp._decode_content(bomb, "gzip")
+        assert len(mcp._decode_content(gzip.compress(b"a" * (2 * self.MiB)), "gzip")) == 2 * self.MiB
+
+    def test_a_sheet_that_does_not_decode_is_dropped_and_the_page_still_reads(self):
+        page = '<html><head><link rel="stylesheet" href="/bad.css"><link rel="stylesheet" href="/good.css"></head><body><main><h1>x</h1></main></body></html>'
+        table = {
+            "https://drop.example.test/": (page.encode(), {}, None),
+            "https://drop.example.test/bad.css": (b":root{--bad:#000}", {"Content-Encoding": "br"}, None),
+            "https://drop.example.test/good.css": (gzip.compress(b":root{--good:#fff}"), {"Content-Encoding": "gzip"}, None),
+        }
+        _html, css, read, _calls = self._parts(table, "https://drop.example.test/")
+        assert css == ":root{--good:#fff}"
+        assert read == ["https://drop.example.test/", "https://drop.example.test/good.css"]
+
+    @staticmethod
+    def _two_lines(first, second):
+        """Response headers that carry Content-Encoding on two lines, as a server may send them."""
+        msg = email.message.Message()
+        msg["Content-Encoding"] = first
+        msg["Content-Encoding"] = second
+        return msg
+
+    def test_a_coding_split_over_two_header_lines_is_two_codings_and_is_not_read(self):
+        # The TypeScript copies see Node's joined "gzip, gzip" and refuse it.
+        # Reading only the first line undid one layer and read the rest as text.
+        url = "https://twolines.example.test/a.css"
+        table = {url: (gzip.compress(gzip.compress(b":root{--a:#fff}" * 100)), self._two_lines("gzip", "gzip"), None)}
+        mcp._cache.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
+        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+            with pytest.raises(ValueError, match="unsupported Content-Encoding 'gzip, gzip'"):
+                mcp._fetch(url, as_json=False)
+
+    def test_control_an_unregistered_label_such_as_none_reads_the_body_as_sent(self):
+        page = '<html><head><style>:root{--paper:#fff}</style></head><body><main><h1>none</h1></main></body></html>'
+        table = {"https://none.example.test/": (page.encode(), {"Content-Encoding": "none"}, None)}
+        html, css, _read, _calls = self._parts(table, "https://none.example.test/")
+        assert html == page
+        assert css == ":root{--paper:#fff}"
+
+    def test_a_pages_compressed_sheets_decode_no_more_than_16_mib_between_them(self):
+        # Eight sheets of 3 MiB each once decoded: five fit (15 MiB), the
+        # sixth would pass 16 MiB, and the budget left cannot hold the rest.
+        links = "".join(f'<link rel="stylesheet" href="/s{i}.css">' for i in range(8))
+        page = f"<html><head>{links}</head><body><main><h1>many</h1></main></body></html>"
+        table = {"https://many.example.test/": (page.encode(), {}, None)}
+        for i in range(8):
+            body = f":root{{--s{i}:#000}}/*".encode() + b"a" * (3 * self.MiB - 64) + b"*/"
+            table[f"https://many.example.test/s{i}.css"] = (gzip.compress(body, 6), {"Content-Encoding": "gzip"}, None)
+        _html, _css, read, _calls = self._parts(table, "https://many.example.test/")
+        assert read == ["https://many.example.test/"] + [f"https://many.example.test/s{i}.css" for i in range(5)]
+
+    def test_a_cached_sheet_is_charged_to_the_budget_as_a_fresh_one_is(self):
+        url = "https://cached.example.test/big.css"
+        table = {url: (gzip.compress(b"a" * (10 * self.MiB)), {"Content-Encoding": "gzip"}, None)}
+        mcp._cache.clear()
+        getattr(mcp, "_DECODED_BYTES", {}).clear()
+        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+            assert len(mcp._fetch(url, as_json=False)) == 10 * self.MiB
+            with pytest.raises(ValueError, match="over"):
+                mcp._fetch(url, as_json=False, max_decoded=5 * self.MiB)
+            assert len(mcp._fetch(url, as_json=False, max_decoded=12 * self.MiB)) == 10 * self.MiB

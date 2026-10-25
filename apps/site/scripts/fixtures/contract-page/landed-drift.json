@@ -6,7 +6,7 @@
   "mode": "own-contract",
   "scope": "own-contract",
   "contractVersion": "v0.4.7",
-  "engineVersion": "1.5.3",
+  "engineVersion": "1.5.4",
   "score": 70,
   "grade": "C",
   "fidelity": {
@@ -1633,9 +1633,9 @@
   "tokensExtracted": 227,
   "receipt": {
    "subject": "https://designesy.org/",
-   "retrieved_at": "2026-10-17T15:16:58.459Z",
+   "retrieved_at": "2026-10-24T04:04:06.690Z",
    "contract_version": "v0.4.7",
-   "engine_version": "1.5.3",
+   "engine_version": "1.5.4",
    "scope": "own-contract",
    "digest": "abe9546b7e0c92b6165514da1efb8cc05a699f7f5437721267356a06777a0ea5",
    "verify": {
