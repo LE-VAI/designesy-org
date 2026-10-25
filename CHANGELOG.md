@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 **fast-uri 3.1.9 in the stylelint plugin's development install** (the
 plugin's lockfile and the `overrides` pin in its package.json; no version
-moves). The files the plugin publishes do not change.
+moves). The plugin's published code does not change. Of the files it
+publishes, only package.json changes, in its `overrides` field. npm reads
+that field only from the root package.json of the project it installs, so
+the pin applies to the plugin's own development install and to no project
+that installs the plugin.
 
 ### Security (fast-uri 3.1.9)
 
