@@ -7,8 +7,10 @@
  * returned, every URL the MCP route reads for itself ends at the route's 15 s
  * read deadline and fails once its body is past that read's byte limit
  * (16 MiB for a Lottie file, 4 MiB for a token file or one of this site's
- * documents), and the MCP tools that read a URL through url-guard still read
- * one that answers.
+ * documents), a readiness check whose file is past the readiness route's
+ * 4 MiB read limit reports WARN and says the file was not read while a file
+ * within it is judged as before, and the MCP tools that read a URL through
+ * url-guard still read one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -25,7 +27,12 @@
  * identity body whole however long it was, and a compressed body that
  * decoded past url-guard's default of 4 MiB (DEFAULT_MAX_DECODED_BYTES)
  * failed with "content decoding failed", which names no limit, a gzip Lottie
- * file that decodes to 16 MiB among them. Each hop of a read adds an abort
+ * file that decodes to 16 MiB among them. The readiness route passed no
+ * maxBodyBytes for its GET probes or for r04's read of an MCP endpoint, so it
+ * read an identity body of any length whole and judged it, and a probe whose
+ * compressed body decoded past that default failed: its check reported a
+ * file that answered as not found (FAIL), and a home page that did so failed
+ * the whole scan as not fetched. Each hop of a read adds an abort
  * listener to the caller's signal, and it stayed there once the read settled.
  * A signal can outlive the read: Node keeps an AbortSignal.timeout that has a
  * listener alive until its timer fires, and the listener kept the read's
@@ -35,18 +42,18 @@
  * holds other reads' bytes.
  *
  * HOW IT MEASURES
- * The real URL guard and the real MCP route, loaded through
- * scripts/lib/route-harness.js with realSafeFetch. As in
+ * The real URL guard, the real MCP route and the real readiness route, loaded
+ * through scripts/lib/route-harness.js with realSafeFetch. As in
  * check-score-read-bounds.mjs, two things are swapped, both below the guard:
  * node:dns/promises answers a public address, and node:http(s) connect to a
  * server on 127.0.0.1 that this script runs. The connect wrapper also counts
  * the body bytes that reach the client and keeps the request, so a case can
  * say how far a body got and whether the request was destroyed.
  * getEventListeners (node:events) counts the abort listeners left on a
- * signal. The MCP route is loaded before the first case starts, so no case's
- * time includes its load, and one case reads its source instead of running
- * it. The cases run concurrently, each on its own URLs; the last one runs
- * once the others have settled.
+ * signal. The MCP and readiness routes are loaded before the first case
+ * starts, so no case's time includes their load, and one case for each reads
+ * its source instead of running it. The cases run concurrently, each on its
+ * own URLs; the last one runs once the others have settled.
  *
  * The MCP read limits are stated here (MCP_READ_LIMITS), as the read deadline
  * is (MCP_DEADLINE_S): a route file cannot export them. The bodies of the
@@ -60,6 +67,17 @@
  * minutes and answers later calls from it, so the designesy_llms_txt cases
  * take turns (llmsTurn), in the order they are listed, each setting what that
  * URL serves.
+ *
+ * The readiness read limit is stated here too (READINESS_LIMIT). The
+ * readiness route reads every file from the origin of the URL it scans, so
+ * each readiness case scans a host of its own through the route's POST
+ * handler, and a path the host does not list answers 404: a check whose file
+ * is not listed reports what it reports on a site with none of the files
+ * (EMPTY_SITE). The harness's unstable_cache calls straight through, so no
+ * scan is answered from a cache. The two token checks read /tokens.json at
+ * the same time, so the site where every file is past the limit sends its
+ * bodies unpaced, and its case asserts what the checks report, not where the
+ * reads stopped.
  *
  * WHAT IT ASSERTS
  *   - A 10 MiB body read with maxBodyBytes 1 MiB resolves with exactly its
@@ -115,6 +133,33 @@
  *     for 8 s before it answers. With a signal and no idle timeout of its
  *     own, Node's global agent ends a socket that is quiet for 5 s, so a
  *     read given only the deadline's signal fails there at 5 s.
+ *   - A readiness check whose file is 1 MiB past the 4 MiB read limit is
+ *     WARN, never FAIL or PASS, and its detail names the file and says it is
+ *     larger than the 4 MiB read limit and was not read: r02 for an
+ *     /llms.txt, r08 for a /sitemap.xml and r10 for a home page, each sent
+ *     with no content coding and as gzip that decodes past the limit, r10
+ *     also for a home page that answers 404, and r04 for an MCP endpoint
+ *     whose tools/list answer is past the limit, both ways. For each body
+ *     sent with no content coding, at most one socket read past the limit
+ *     reached the client, the request was destroyed, and the server never
+ *     finished sending. In each scan the other nine checks are as on a site
+ *     with none of the files, and the score, grade and counts follow the
+ *     route's rule (PASS 1, WARN 0.5, FAIL 0; A at 90, B 80, C 70, D 60).
+ *   - On a site where every file the checks read is past the limit, all ten
+ *     checks are WARN with that detail (score 50, F). With no component
+ *     schema, r07 is WARN with it for an /open.json past the limit.
+ *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
+ *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes, a
+ *     HEAD probe none.
+ *   - Readiness controls, which hold on the readiness route from before its
+ *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
+ *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
+ *     gzip /llms.txt that decodes to exactly 4 MiB; a 404 whose body is
+ *     1 MiB past the limit is not found (r02 and r08 FAIL, r04 WARN with its
+ *     HTTP status); an ordinary small site's ten checks (seven PASS, three
+ *     WARN, score 85, B) and those of a site with none of the files (nine
+ *     FAIL, one WARN, score 5, F) are, detail for detail, what the route
+ *     reported before the read limit.
  *   - Last: nothing was thrown during the run where no caller could catch it
  *     (an uncaught exception or an unhandled rejection).
  *
@@ -168,6 +213,28 @@
  * answers are controls: they pin what a change to the transport or the MCP
  * route must keep.
  *
+ * Against the readiness route from before its read limit, which passes
+ * safeFetch no maxBodyBytes, seven cases fail: the four single-file cases
+ * (r02, r08, r10 and r04), the every-file case, the /open.json case and the
+ * readiness source case. The three readiness controls hold. Each identity body
+ * past the limit is read whole and judged: r02, r04, r08 and r10 PASS, r10 for
+ * the 404 home page too. Each gzip body past it fails url-guard's 4 MiB
+ * default, so r02 and r08 are FAIL as not found, r04 is FAIL ("No MCP endpoint
+ * detected at /api/mcp"), and the gzip home page fails the whole scan (HTTP
+ * 502, "Could not fetch the target URL"). On the every-file site all ten
+ * checks PASS, r07 judges the /open.json read whole ("Component documentation
+ * found but not machine-readable"), and the readiness source case finds no
+ * READ_LIMIT. Four changes to the new route each fail cases too. One that
+ * checks the limit only on an ok response, and so hands r10 a 404 page's cut
+ * body, fails the r10 case: r10 is PASS for the cut 404 page. One that fails a
+ * body of exactly the limit (`>=` for `>`) fails the exact-limit control. One
+ * that checks the length but passes safeFetch no maxBodyBytes receives each
+ * identity body past the limit to its end and fails each gzip body at
+ * url-guard's default, which fails the four single-file cases and the
+ * readiness source case. One whose probePaths goes on past a file that is too
+ * large reports it as not found, which fails the r02, every-file and
+ * /open.json cases.
+ *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
  */
@@ -200,6 +267,8 @@ const MCP_READ_LIMITS = { cachedFetch: 4 * MiB, designesy_tokens_score: 4 * MiB,
 const TOKENS_LIMIT = MCP_READ_LIMITS.designesy_tokens_score;
 const LOTTIE_LIMIT = MCP_READ_LIMITS.designesy_motion_score;
 const DOC_LIMIT = MCP_READ_LIMITS.cachedFetch;
+/** READ_LIMIT in app/api/readiness/route.ts, in bytes: what each GET probe and r04's read hold. */
+const READINESS_LIMIT = 4 * MiB;
 /** How far past its limit an over-limit body runs. */
 const PAST_LIMIT = MiB;
 /** The deadline the transport-level drip case passes as its own signal. */
@@ -261,8 +330,9 @@ const h = createHarness({
 });
 const guard = h.load('app/lib/url-guard.ts');
 const { safeFetch } = guard;
-// Load the MCP route before any case starts, so no case's time includes its load.
+// Load the MCP and readiness routes before any case starts, so no case's time includes their load.
 h.load('app/api/mcp/route.ts');
+h.load('app/api/readiness/route.ts');
 
 // ── Bodies ───────────────────────────────────────────────────────────────────
 
@@ -345,6 +415,80 @@ const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
 const LLMS_OVER_LENGTH = { bytes: DOC_OVER, paced: true, length: true, type: 'text/plain' };
 const LLMS_OVER_GZIP = { bytes: zlib.gzipSync(DOC_OVER), encoding: 'gzip', decoded: DOC_OVER.length, type: 'text/plain' };
 const LLMS_404 = { status: 404, bytes: DOC_OVER, paced: true };
+
+// The readiness route reads every file from the origin of the URL it scans,
+// so each readiness site below is a host of its own; a path a site does not
+// list answers 404.
+
+/** `head`, spaces, then `tail`, as exactly n bytes. */
+function textOfSize(head, tail, n) {
+  const pad = n - Buffer.byteLength(head) - Buffer.byteLength(tail);
+  assert.ok(pad >= 0, `${head.length + tail.length} bytes do not fit in ${n}`);
+  return Buffer.from(`${head}${' '.repeat(pad)}${tail}`);
+}
+/** A sitemap of exactly n bytes: r08 passes on it, read whole. */
+const sitemapOfSize = (n) => textOfSize('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n', '<url><loc>https://ready.example.com/</loc></url>\n</urlset>\n', n);
+/** A home page of exactly n bytes with Open Graph and Twitter card tags: r10 passes on it, read whole. */
+const homeOfSize = (n) => textOfSize('<!doctype html><html lang="en"><head><title>Read limits</title><meta property="og:title" content="Read limits"><meta name="twitter:card" content="summary"></head><body>', '<main><h1>Read limits</h1></main></body></html>\n', n);
+/** A tools/list answer with one tool: r04 passes on it, read whole. */
+const MCP_ANSWER = JSON.stringify({ jsonrpc: '2.0', id: 1, result: { tools: [{ name: 'read_limits', inputSchema: { type: 'object' } }] } });
+/** A body each of the ten checks passes on, read whole: a tools/list answer whose text holds what the other nine look for. */
+const EVERY_CHECK = JSON.stringify({ jsonrpc: '2.0', id: 1, result: { tools: [{ name: 'read_limits' }] }, holds: "<urlset> $type $value $description identity component <meta property='og:title'> <meta name='twitter:card'>" });
+const READY_OVER = READINESS_LIMIT + PAST_LIMIT;
+const READY_LLMS_OVER = docOfSize(READY_OVER);
+const READY_SITEMAP_OVER = sitemapOfSize(READY_OVER);
+const READY_HOME_OVER = homeOfSize(READY_OVER);
+const READY_MCP_OVER = jsonOfSize(MCP_ANSWER, READY_OVER);
+const READY_EVERY_OVER = jsonOfSize(EVERY_CHECK, READY_OVER);
+/** A body served as gzip, and the length it decodes to. */
+const gzipped = (bytes, type) => ({ bytes: zlib.gzipSync(bytes), encoding: 'gzip', decoded: bytes.length, type });
+
+const READY_FILES = {
+  // One file 1 MiB past the limit, sent with no content coding (paced) or as gzip.
+  'ready-llms.example.com': { '/llms.txt': { bytes: READY_LLMS_OVER, paced: true, type: 'text/plain' } },
+  'ready-llms-gzip.example.com': { '/llms.txt': gzipped(READY_LLMS_OVER, 'text/plain') },
+  'ready-sitemap.example.com': { '/sitemap.xml': { bytes: READY_SITEMAP_OVER, paced: true, type: 'application/xml' } },
+  'ready-sitemap-gzip.example.com': { '/sitemap.xml': gzipped(READY_SITEMAP_OVER, 'application/xml') },
+  'ready-home.example.com': { '/': { bytes: READY_HOME_OVER, paced: true } },
+  'ready-home-gzip.example.com': { '/': gzipped(READY_HOME_OVER, 'text/html') },
+  'ready-home-404.example.com': { '/': { status: 404, bytes: READY_HOME_OVER, paced: true } },
+  'ready-mcp.example.com': { '/api/mcp': { bytes: READY_MCP_OVER, paced: true, type: 'application/json' } },
+  'ready-mcp-gzip.example.com': { '/api/mcp': gzipped(READY_MCP_OVER, 'application/json') },
+  // Every file each check reads, 1 MiB past the limit (one body, so the two
+  // token checks' reads of /tokens.json are not paced).
+  'ready-all.example.com': Object.fromEntries(['/tokens.json', '/llms.txt', '/.well-known/agent.json', '/api/mcp', '/DESIGN.md', '/components.json', '/sitemap.xml', '/robots.txt', '/']
+    .map((p) => [p, { bytes: READY_EVERY_OVER, type: 'application/json' }])),
+  // r07's second search: no component schema, and /open.json past the limit.
+  'ready-open.example.com': { '/open.json': { bytes: READY_EVERY_OVER, type: 'application/json' } },
+  // Controls: files of exactly the limit, and 404s whose body is past it.
+  'ready-at.example.com': {
+    '/llms.txt': { bytes: docOfSize(READINESS_LIMIT), type: 'text/plain' },
+    '/sitemap.xml': { bytes: sitemapOfSize(READINESS_LIMIT), type: 'application/xml' },
+    '/': { bytes: homeOfSize(READINESS_LIMIT) },
+    '/api/mcp': { bytes: jsonOfSize(MCP_ANSWER, READINESS_LIMIT), type: 'application/json' },
+  },
+  'ready-at-gzip.example.com': { '/llms.txt': gzipped(docOfSize(READINESS_LIMIT), 'text/plain') },
+  'ready-404.example.com': {
+    '/llms.txt': { status: 404, bytes: READY_LLMS_OVER },
+    '/sitemap.xml': { status: 404, bytes: READY_SITEMAP_OVER },
+    '/api/mcp': { status: 404, bytes: READY_MCP_OVER },
+  },
+  // An ordinary small site, whose checks pass or warn by what the files say.
+  'ready-small.example.com': {
+    '/tokens.json': { body: TOKENS, type: 'application/json' },
+    '/llms.txt': { body: '# Read limits\n\nA short brief for agents.\n', type: 'text/plain' },
+    '/.well-known/agent.json': { body: JSON.stringify({ identity: { name: 'Read limits' } }), type: 'application/json' },
+    '/api/mcp': { body: `event: message\ndata: ${JSON.stringify({ jsonrpc: '2.0', id: 1, result: { tools: [{ name: 'a' }, { name: 'b' }] } })}\n\n`, type: 'text/event-stream' },
+    '/DESIGN.md': { body: '# Design\n\nThe design brief.\n', type: 'text/markdown' },
+    '/open.json': { body: JSON.stringify({ components: 'listed on the components page' }), type: 'application/json' },
+    '/sitemap.xml': { body: sitemapOfSize(200).toString(), type: 'application/xml' },
+    '/robots.txt': { body: 'User-agent: *\nDisallow: /\n', type: 'text/plain' },
+    '/': { body: '<!doctype html><html lang="en"><head><title>Read limits</title><meta property="og:title" content="Read limits"></head><body><main><h1>Read limits</h1></main></body></html>' },
+  },
+};
+for (const [host, files] of Object.entries(READY_FILES)) {
+  for (const [p, route] of Object.entries(files)) ROUTES[`${host}${p}`] = route;
+}
 
 /** host + path -> what the server managed to send: bytes handed to the socket, and whether the body finished. */
 const sent = new Map();
@@ -539,12 +683,24 @@ async function mcpOverLimit(tool, args, key, limit) {
   if (route.encoding) {
     return `"${o.message}"; ${route.bytes.length} ${route.encoding} bytes that decode to ${route.decoded}`;
   }
+  return `"${o.message}"; ${await stoppedAtLimit(key, limit)}`;
+}
+
+/**
+ * Asserts the read of `key`, a body sent with no content coding and past
+ * `limit`, stopped at the limit: at most one socket read past it reached the
+ * client, the request was destroyed, and the server never finished sending.
+ * Says how far the body got.
+ */
+async function stoppedAtLimit(key, limit) {
+  const rec = seen.get(key);
+  const total = ROUTES[key].bytes.length;
   assert.ok(rec.received <= limit + ONE_READ, `${rec.received} bytes received, more than one ${ONE_READ} byte read past the ${limit} byte limit`);
   assert.equal(rec.req.destroyed, true, 'the request was not destroyed');
   await new Promise((r) => setTimeout(r, SETTLE_MS));
   const s = sent.get(key);
-  assert.equal(s.finished, false, `the server finished sending all ${route.bytes.length} bytes`);
-  return `"${o.message}"; ${rec.received} of ${route.bytes.length} bytes received, server sent ${s.written} before the socket closed`;
+  assert.equal(s.finished, false, `the server finished sending all ${total} bytes`);
+  return `${rec.received} of ${total} bytes received, server sent ${s.written} before the socket closed`;
 }
 
 /** Runs labelled reads one after another, and fails naming each that failed. */
@@ -597,6 +753,97 @@ function parseMessage(text) {
     return e.message;
   }
   throw new Error(`${JSON.stringify(text)} parses`);
+}
+
+/** The detail of a readiness check whose file is past the read limit, `subject` naming the file. */
+const notReadDetail = (subject) => `${subject} is larger than the ${READINESS_LIMIT / MiB} MiB read limit and was not read`;
+
+/** Each check of a site with none of the files a readiness check reads: [status, detail]. */
+const EMPTY_SITE = {
+  r01: ['FAIL', 'No machine-readable token file detected at common paths'],
+  r02: ['FAIL', 'No /llms.txt found: agents have no orientation brief'],
+  r03: ['FAIL', 'No /.well-known/agent.json: agents have no discovery endpoint'],
+  r04: ['WARN', 'Endpoint exists but did not respond with a tool list (HTTP 404)'],
+  r05: ['FAIL', 'No /DESIGN.md: missing the machine-readable design brief'],
+  r06: ['FAIL', 'No token file found to check for $description'],
+  r07: ['FAIL', 'No machine-readable component contract'],
+  r08: ['FAIL', 'No /sitemap.xml: agents cannot discover pages'],
+  r09: ['FAIL', 'No /robots.txt: crawling rules undefined'],
+  r10: ['FAIL', 'No social meta tags: missing share context'],
+};
+
+/** Each check of ready-small.example.com, as the readiness route reported it before the read limit. */
+const SMALL_SITE = {
+  r01: ['PASS', 'Token file found at https://ready-small.example.com/tokens.json (DTCG format)'],
+  r02: ['PASS', `/llms.txt returns ${READY_FILES['ready-small.example.com']['/llms.txt'].body.length} bytes of agent-facing brief`],
+  r03: ['PASS', '/.well-known/agent.json returns discovery document with identity/authority fields'],
+  r04: ['PASS', 'MCP endpoint at /api/mcp responds to tools/list with 2 tool(s)'],
+  r05: ['PASS', `/DESIGN.md found (${READY_FILES['ready-small.example.com']['/DESIGN.md'].body.length} bytes)`],
+  r06: ['PASS', 'Tokens found with $description metadata'],
+  r07: ['WARN', 'Component documentation found but not machine-readable'],
+  r08: ['PASS', '/sitemap.xml found: site is crawlable'],
+  r09: ['WARN', 'robots.txt found but restricts all agents'],
+  r10: ['WARN', 'Partial social meta (OG or Twitter, not both)'],
+};
+
+/** A readiness scan of `url` through the real route; a scan that does not succeed fails the case, naming its error. */
+async function readiness(url) {
+  const { status, body } = await h.post('app/api/readiness/route.ts', { url });
+  assert.equal(body.ok, true, `the scan failed (HTTP ${status}): ${body.error}`);
+  return body;
+}
+
+/**
+ * Asserts a scan's ten checks: those in `expect` ([status, detail]) as given,
+ * the others as on a site with none of the files (EMPTY_SITE), and the score,
+ * grade and counts as the route's rule makes them (PASS 1, WARN 0.5, FAIL 0;
+ * A at 90, B 80, C 70, D 60). Says what the checks in `expect` reported.
+ */
+function checksAre(scan, expect) {
+  const want = { ...EMPTY_SITE, ...expect };
+  assert.equal(scan.checks.length, 10, `${scan.checks.length} checks, not 10`);
+  const wrong = [];
+  for (const [id, [status, detail]] of Object.entries(want)) {
+    const c = scan.checks.find((x) => x.id === id);
+    if (!c) wrong.push(`no ${id}`);
+    else if (c.status !== status || c.detail !== detail) wrong.push(`${id} is ${c.status} (${c.detail}), not ${status} (${detail})`);
+  }
+  assert.equal(wrong.length, 0, wrong.join('; '));
+  const statuses = Object.values(want).map(([s]) => s);
+  const pass = statuses.filter((s) => s === 'PASS').length;
+  const warn = statuses.filter((s) => s === 'WARN').length;
+  const score = Math.round(((pass + warn * 0.5) / statuses.length) * 100);
+  const grade = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+  const got = { score: scan.score, grade: scan.grade, pass: scan.pass, warn: scan.warn, fail: scan.fail, total: scan.total };
+  assert.deepEqual(got, { score, grade, pass, warn, fail: statuses.length - pass - warn, total: 10 }, `scored ${JSON.stringify(got)}`);
+  const ids = Object.keys(expect);
+  const said = ids.length === 1 ? `${ids[0]} ${scan.checks.find((x) => x.id === ids[0]).status}: "${expect[ids[0]][1]}"` : ids.map((id) => `${id} ${expect[id][0]}`).join(', ');
+  return `${said || 'every check as on an empty site'}; score ${score} ${grade}`;
+}
+
+/**
+ * A readiness scan of `host`, whose `path` is past the read limit: check `id`
+ * is WARN, saying `subject` is larger than the read limit and was not read,
+ * and the other nine are as on an empty site. For a body sent with no content
+ * coding it also asserts the read stopped at the limit (stoppedAtLimit).
+ */
+async function readinessOverLimit(host, path, id, subject) {
+  const key = `${host}${path}`;
+  seen.delete(key);
+  const said = checksAre(await readiness(`https://${host}/`), { [id]: ['WARN', notReadDetail(subject)] });
+  const route = ROUTES[key];
+  assert.ok(seen.get(key), `no request reached ${key}`);
+  if (route.encoding) return `${said}; ${route.bytes.length} ${route.encoding} bytes that decode to ${route.decoded}`;
+  return `${said}; ${await stoppedAtLimit(key, READINESS_LIMIT)}`;
+}
+
+/** Asserts the client received all of `key`'s body. */
+function receivedWhole(key) {
+  const rec = seen.get(key);
+  assert.ok(rec, `no request reached ${key}`);
+  const total = ROUTES[key].bytes.length;
+  assert.equal(rec.received, total, `${rec.received} of ${total} bytes of ${key} received`);
+  return `${total} bytes`;
 }
 
 // ── Cases ────────────────────────────────────────────────────────────────────
@@ -900,6 +1147,111 @@ const CONCURRENT = [
       return `${String(payload.content).length} characters`;
     },
   },
+  {
+    name: `readiness r02: an llms.txt 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, saying it was not read, never FAIL or PASS`,
+    run: async () => eachRead([
+      ['identity', () => readinessOverLimit('ready-llms.example.com', '/llms.txt', 'r02', 'llms.txt at https://ready-llms.example.com/llms.txt')],
+      ['gzip that decodes past the limit', () => readinessOverLimit('ready-llms-gzip.example.com', '/llms.txt', 'r02', 'llms.txt at https://ready-llms-gzip.example.com/llms.txt')],
+    ]),
+  },
+  {
+    name: `readiness r08: a sitemap.xml 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, saying it was not read, never FAIL or PASS`,
+    run: async () => eachRead([
+      ['identity', () => readinessOverLimit('ready-sitemap.example.com', '/sitemap.xml', 'r08', 'Sitemap at https://ready-sitemap.example.com/sitemap.xml')],
+      ['gzip that decodes past the limit', () => readinessOverLimit('ready-sitemap-gzip.example.com', '/sitemap.xml', 'r08', 'Sitemap at https://ready-sitemap-gzip.example.com/sitemap.xml')],
+    ]),
+  },
+  {
+    name: `readiness r10: a home page 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, saying it was not read, whatever its status`,
+    run: async () => eachRead([
+      ['identity', () => readinessOverLimit('ready-home.example.com', '/', 'r10', 'The page at https://ready-home.example.com/')],
+      ['gzip that decodes past the limit', () => readinessOverLimit('ready-home-gzip.example.com', '/', 'r10', 'The page at https://ready-home-gzip.example.com/')],
+      ['a 404 page', () => readinessOverLimit('ready-home-404.example.com', '/', 'r10', 'The page at https://ready-home-404.example.com/')],
+    ]),
+  },
+  {
+    name: `readiness r04: an MCP endpoint answering tools/list with 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, saying it was not read`,
+    run: async () => eachRead([
+      ['identity', () => readinessOverLimit('ready-mcp.example.com', '/api/mcp', 'r04', 'The tools/list answer from /api/mcp')],
+      ['gzip that decodes past the limit', () => readinessOverLimit('ready-mcp-gzip.example.com', '/api/mcp', 'r04', 'The tools/list answer from /api/mcp')],
+    ]),
+  },
+  {
+    name: 'readiness: each of the ten checks is WARN, saying its file was not read, when every file they read is past the read limit',
+    run: async () => {
+      const at = (p) => `https://ready-all.example.com${p}`;
+      return checksAre(await readiness(at('/')), {
+        r01: ['WARN', notReadDetail(`Token file at ${at('/tokens.json')}`)],
+        r02: ['WARN', notReadDetail(`llms.txt at ${at('/llms.txt')}`)],
+        r03: ['WARN', notReadDetail(`agent.json at ${at('/.well-known/agent.json')}`)],
+        r04: ['WARN', notReadDetail('The tools/list answer from /api/mcp')],
+        r05: ['WARN', notReadDetail(`DESIGN.md at ${at('/DESIGN.md')}`)],
+        r06: ['WARN', notReadDetail(`Token file at ${at('/tokens.json')}`)],
+        r07: ['WARN', notReadDetail(`Component schema at ${at('/components.json')}`)],
+        r08: ['WARN', notReadDetail(`Sitemap at ${at('/sitemap.xml')}`)],
+        r09: ['WARN', notReadDetail(`robots.txt at ${at('/robots.txt')}`)],
+        r10: ['WARN', notReadDetail(`The page at ${at('/')}`)],
+      });
+    },
+  },
+  {
+    name: "readiness r07: with no component schema, an /open.json past the read limit is WARN, saying it was not read",
+    run: async () => checksAre(await readiness('https://ready-open.example.com/'), {
+      r07: ['WARN', notReadDetail('https://ready-open.example.com/open.json')],
+    }),
+  },
+  {
+    name: "every safeFetch call in the readiness route passes its READ_LIMIT, 4 MiB, as maxBodyBytes (a HEAD probe passes none)",
+    run: async () => {
+      const src = fs.readFileSync(path.join(APP, 'app/api/readiness/route.ts'), 'utf8').replace(/\r\n/g, '\n');
+      const m = src.match(/^const READ_LIMIT = ([\d_ *]+);$/m);
+      assert.ok(m, 'no READ_LIMIT in the readiness route');
+      const bytes = m[1].split('*').reduce((p, x) => p * Number(x.trim().replace(/_/g, '')), 1);
+      assert.equal(bytes, READINESS_LIMIT, `READ_LIMIT is ${bytes} bytes (${m[1]}), not ${READINESS_LIMIT}`);
+      // Each call's init runs to the first "});" after it.
+      const calls = [...src.matchAll(/\bsafeFetch\(/g)].map(({ index }) => src.slice(index, src.indexOf('});', index)));
+      assert.equal(calls.length, 2, `${calls.length} safeFetch calls in the readiness route, expected 2 (probeUrl and r04)`);
+      const without = calls.filter((c) => !/\bmaxBodyBytes: (?:method === 'GET' \? READ_LIMIT : undefined|READ_LIMIT)(?=\s*[,}])/.test(c));
+      assert.equal(without.length, 0, `${without.length} of 2 safeFetch calls pass no READ_LIMIT as maxBodyBytes: ${without.map((c) => c.split('\n')[0]).join('; ')}`);
+      return `READ_LIMIT ${m[1]}; 2 safeFetch calls, each passing it`;
+    },
+  },
+  {
+    name: `readiness reads an llms.txt, a sitemap, a home page and a tools/list answer of exactly the ${READINESS_LIMIT / MiB} MiB read limit whole, and scores them as before`,
+    run: async () => eachRead([
+      ['identity', async () => {
+        const host = 'ready-at.example.com';
+        const said = checksAre(await readiness(`https://${host}/`), {
+          r02: ['PASS', `/llms.txt returns ${READINESS_LIMIT} bytes of agent-facing brief`],
+          r04: ['PASS', 'MCP endpoint at /api/mcp responds to tools/list with 1 tool(s)'],
+          r08: ['PASS', '/sitemap.xml found: site is crawlable'],
+          r10: ['PASS', 'OG and Twitter card meta tags present'],
+        });
+        return `${said}; ${['/llms.txt', '/api/mcp', '/sitemap.xml', '/'].map((p) => `${p} ${receivedWhole(`${host}${p}`)}`).join(', ')} received`;
+      }],
+      ['gzip that decodes to exactly the limit', async () => {
+        const said = checksAre(await readiness('https://ready-at-gzip.example.com/'), {
+          r02: ['PASS', `/llms.txt returns ${READINESS_LIMIT} bytes of agent-facing brief`],
+        });
+        return `${said}; ${receivedWhole('ready-at-gzip.example.com/llms.txt')} of gzip received`;
+      }],
+    ]),
+  },
+  {
+    name: 'readiness: a 404 whose body is 1 MiB past the read limit is not found, as before (llms.txt, sitemap.xml, MCP endpoint)',
+    run: async () => {
+      const said = checksAre(await readiness('https://ready-404.example.com/'), {});
+      for (const p of ['/llms.txt', '/sitemap.xml', '/api/mcp']) assert.ok(seen.get(`ready-404.example.com${p}`), `no request reached ${p}`);
+      return said;
+    },
+  },
+  {
+    name: "readiness: an ordinary small site's checks, and those of a site with none of the files, are as before",
+    run: async () => eachRead([
+      ['a small site', async () => checksAre(await readiness('https://ready-small.example.com/'), SMALL_SITE)],
+      ['a site with none of the files', async () => checksAre(await readiness('https://ready-empty.example.com/'), {})],
+    ]),
+  },
 ];
 
 /** Run once every concurrent case has settled. */
@@ -950,5 +1302,5 @@ if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, and no read leaves a listener on its signal.');
 process.exit(0);
