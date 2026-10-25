@@ -6,6 +6,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Fetch bounds: a finished read lets go of its signal, and every URL the MCP
+route reads ends at 15 s** (the site: its URL guard and the hosted MCP route;
+no version moves). Two fixes to how the site's server reads a URL, a new gate
+that runs both against a local server, and stricter status cases in the
+fetch-layer gate. No check is added, and no rule, weight, ceiling or score
+moves.
+
+### Fixed (fetch bounds)
+
+- **A read removes its abort listener once it settles.** The URL guard added
+  a listener to the caller's signal for each hop of a read and left it there
+  once the read had resolved or failed. Node keeps an `AbortSignal.timeout`
+  that has a listener alive until its timer fires, so the listener kept the
+  read's request and the body it read in memory until then. Readiness r04
+  (an 8 s `AbortSignal.timeout`) and the MCP route's reads (below) pass such
+  a signal. A read now removes the listener as it resolves, as it fails, and
+  when its request errors. An abort ends a read as before.
+- **Every URL the MCP route reads ends at 15 s.** The `url` of
+  `designesy_tokens_score` and `designesy_motion_score`, and the designesy.org
+  documents the seven read-only tools serve, were read with no signal. The
+  URL guard's own 15 s timeout fires only when the socket goes quiet, so a
+  server sending one byte a second held a call open until the function's
+  300 s limit. Each read now ends 15 s after it starts, DNS checks and
+  redirects included, with the error `Fetch timed out after 15 s`. A timeout
+  is told by the read's own signal or the abort's name, never by the words of
+  an error. 15 s is the idle timeout's own figure, so a server that stops
+  answering is given up on no later than before. Each tool keeps its result
+  and error shapes.
+
+### Not changed (fetch bounds)
+
+- The engine, its checks, their rules, weights and ceilings, and every score.
+- The byte caps, which are engine 1.5.4's: the readiness and MCP reads still
+  set none of their own.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
+  published.
+
+### Gates (fetch bounds)
+
+- `check-fetch-bounds.mjs` (new, in the build and in CI after Fetch layer)
+  runs the real URL guard and MCP route against a local server, 13 cases in
+  about 16 s. A 10 MiB body read with `maxBodyBytes` 1 MiB comes back as its
+  first 1 MiB + 1 bytes, with the request destroyed before the server has
+  sent it all, and a body of exactly the cap comes back whole. A reader's
+  chunk holds only its own bytes. A caller's 3 s signal ends a read of a
+  server sending one byte a second. No listener is left on the signal after
+  eight kinds of read: whole, cut at the cap, redirected, failed, a 999
+  status, gzip, corrupt gzip, and cut by a shared budget. Against a server
+  sending one byte a second, `designesy_tokens_score`,
+  `designesy_motion_score` and `designesy_llms_txt` each end at 15 s. The
+  route's only `safeFetch` call is the one that passes the deadline, and two
+  tools still read a server that answers. The last case fails on any
+  uncaught exception or unhandled rejection.
+- `check-fetch-layer.mjs`: the 204, 205 and 304 cases also require a null
+  body within 1 s. A new case sends a 999 status and holds the connection
+  open: the read must reject with `InvalidStatusError` within 2 s, before
+  its 5 s signal, and the connection must close. An unhandled rejection is
+  recorded against the case that is running, under any
+  `--unhandled-rejections` mode. Before, a case that left one passed under
+  `warn`. The gate has 54 cases. Run against main before engine 1.5.4 with
+  `--flip`, every rule case fails and the six controls hold.
+- `check-own-contract.mjs` checks the message for a 257 KB contract read
+  whole ("This contract is 257 KB. Scoring reads contracts up to 256 KB.
+  Remove unused tokens or score part of it."), where it checked only the
+  413.
+
 **Engine 1.5.4: the engine reads the page the site served, decoded** (the
 site; npm `@designesy/score` 0.9.3 runs engine 1.5.2 until its next release,
 and the PyPI offline engine follows in the next designesy-mcp release). Three
