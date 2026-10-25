@@ -6,6 +6,149 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Read limits: each URL the MCP route reads for itself, and each URL the
+readiness route reads, has a byte limit of its own, 16 MiB for a Lottie
+file and 4 MiB for everything else, and a body past it is reported as too
+large, never read in part** (the site: the hosted MCP route and the
+readiness route; no version moves). Each read passes its limit to the URL
+guard, which holds at most one byte past it, counted after decoding when it
+decodes the body, and ends the request there. No check is added, and no
+rule, weight or grade boundary moves. A result changes only for a file past
+its limit.
+
+### Fixed (read limits)
+
+- **The MCP route holds each URL it reads for itself to a byte limit.**
+  The `url` of `designesy_motion_score` is held to 16 MiB. Two public
+  Lottie files measured 8,873,709 bytes (lottie-ios
+  `Tests/Samples/Issues/issue_1403.json`, which embeds images) and
+  4,713,147 bytes (lottie-web `test/animations/monster.json`, vector only).
+  The `url` of `designesy_tokens_score`, and the seven documents the
+  read-only tools read from this site (the catalog, the contract, the
+  design review kit, SKILL.md, agent.json, llms.txt and llms-full.txt), are
+  held to 4 MiB. The largest token files measured are 1,674,878 bytes
+  (Primer's light theme) and 1,039,520 bytes (Spectrum's `variables.json`),
+  and the largest of the seven documents measured 100,907 bytes
+  (`/contracts/design-system.json`). An ok response past its limit fails
+  the tool, in its existing error shape, with `Fetch failed: the response
+  is over the 16 MiB read limit` (`4 MiB` for the others). The status is
+  checked first, so a 404 with a large body still fails with `Fetch failed:
+  404 Not Found` (followed by `for <url>` in the read-only tools). Before,
+  the route set no limit: a body sent with no content coding was held whole
+  however long it was (a 17 MiB Lottie file and a 5 MiB token file were
+  read and scored), and a gzip, deflate or br body that decoded past the
+  URL guard's 4 MiB default failed with `content decoding failed (gzip):
+  the decoded body is over 4194304 bytes`, which names no limit. A gzip
+  Lottie file that decodes to 16 MiB is now read.
+- **Each readiness probe holds 4 MiB.** Every probe (the page scanned, the
+  token file paths, llms.txt, agent.json, DESIGN.md, the component schema
+  paths and r07's fallback to `/open.json` and agent.json, sitemap.xml and
+  robots.txt) and r04's read of a tools/list answer are held to 4 MiB, for
+  the token files and documents measured above. A file past it is
+  not read: its check reports WARN, with the detail `<file> is larger than
+  the 4 MiB read limit and was not read`. The file is named as `Token file
+  at <url>` (r01 and r06), `llms.txt at <url>` (r02), `agent.json at <url>`
+  (r03), `The tools/list answer from /api/mcp` (r04), `DESIGN.md at <url>`
+  (r05), `Component schema at <url>` or the fallback's URL (r07), `Sitemap
+  at <url>` (r08), `robots.txt at <url>` (r09) and `The page at <url>`
+  (r10). A check that tries several paths stops at the first one that
+  answers ok past the limit. A 404 is still not found: the checks that
+  need an ok response test it first, and r04 still reports the status of a
+  response that is not ok. r10 reads the page's body whatever its status,
+  as before, so a page past the limit is WARN for any status. Before, a
+  body sent with no content coding was read whole and judged (a 5 MiB
+  llms.txt, sitemap.xml, home page and tools/list answer each passed), and
+  a gzip, deflate or br body that decoded past 4 MiB failed its read: r02
+  and r08 reported FAIL as not found, r04 reported FAIL (`No MCP endpoint
+  detected at /api/mcp`), and a page scanned that did so failed the whole
+  scan (HTTP 502, `Could not fetch the target URL`).
+- **A body is read once.** The MCP route decodes the bytes with
+  TextDecoder. For every body measured (not JSON, empty, cut, invalid
+  UTF-8, one UTF-8 or UTF-16 byte order mark) the text, and the JSON.parse
+  result or error, are those `res.text()` and `res.json()` gave on Node
+  24.15.0. A body that starts with two UTF-8 byte order marks no longer
+  parses: `res.text()` dropped both, TextDecoder drops one. The readiness
+  route decodes the bytes with a Response, as `resp.text()` did, so each
+  check reads the same text.
+- **A readiness result cached before this change is not served.** The
+  readiness route keeps each result for 24 h, keyed by
+  `designesy-readiness` and the URL. A result cached before could be wrong
+  for a site with a file past the limit: a compressed file that decoded
+  past 4 MiB was reported as not found, and a file sent with no content
+  coding was judged from a body past the limit. The key gains a second
+  part, `read-limit-4mib`, so each URL is scanned again on its first
+  request after the deploy. Under the old key, such a result would have
+  been served until 24 h after it was cached, and once more, to the
+  request that starts the new scan.
+
+### Not changed (read limits)
+
+- The seven tools that call the site's own API (score, drift, readiness,
+  guardrails, monitor, compare and report). Those calls are not made
+  through the URL guard and have no byte limit of their own, as before.
+  `designesy_readiness_score` and `designesy_report` return the readiness
+  route's result, so for a site with a file past the limit they show its
+  WARN.
+- The report route's cache. `/api/report` keeps each report for 24 h under
+  a key this change does not alter, and a report holds the readiness
+  result it was made with. A report cached before the deploy is still
+  served: for a site with a file past the limit, its readiness part shows
+  the verdicts from before the limit until the report is made again, 24 h
+  after it was cached (it is served once more, to the request that starts
+  the new run). For a site with no file past the limit, the read limits
+  change nothing in it.
+- The MCP route's 5-minute cache. It keeps a document only once it has
+  been read whole, and the seven documents measured 100,907 bytes or less,
+  so nothing it holds is past a limit.
+- Every result for a file within its limit. A file of exactly the limit is
+  read whole, and the ten readiness checks of a small site, and of a site
+  with none of the files, match those from before the limit, detail for
+  detail.
+- The score, drift, guardrails, monitor and compare routes and their caps
+  (8 MiB of HTML, 4 MiB of one stylesheet, 16 MiB of a `/DESIGN.md`).
+- The PyPI server's `designesy_tokens_score` and `designesy_motion_score`,
+  which read the URL themselves.
+- The readiness contract (0.1.1), its weights (PASS 1, WARN 0.5, FAIL 0)
+  and its grade boundaries. Its check list gives no WARN for r02, r05 and
+  r08; each can now WARN, for a file past the limit only.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
+  published.
+
+### Gates (read limits)
+
+- `check-fetch-bounds.mjs` runs 33 cases (14 before these limits), in
+  17 to 20 s over 3 runs, in the build and in CI after Fetch layer as
+  before.
+  `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
+  `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the
+  limit with the message above, sent with no content coding (with and
+  without a content-length) and as gzip that decodes past it. For each body
+  sent with no content coding, at most one 64 KiB socket read past the
+  limit reached the client (4,259,833 and 4,259,840 of 5,242,880 bytes;
+  16,842,745 and 16,842,752 of 17,825,792), the request was destroyed and
+  the server had not finished sending. `designesy_motion_score` reads a
+  gzip Lottie file that decodes to exactly 16 MiB. An llms.txt (r02), a
+  sitemap.xml (r08) and a home page (r10), each 1 MiB past the limit with
+  no content coding and as gzip, a home page that answers 404 with such a
+  body, and a tools/list answer past the limit (r04, both ways) are WARN
+  with the detail above. On a site where every file is past the limit, all
+  ten checks are WARN (score 50, F), and an `/open.json` past the limit is
+  r07 WARN. Two source cases require each `safeFetch` call's limit, in the
+  MCP route and in the readiness route.
+- Controls: a file of exactly each limit is read whole, and so is a gzip
+  llms.txt that decodes to exactly 4 MiB; a 404 whose body is past the
+  limit still fails as `Fetch failed: 404` in the three tools, and in
+  readiness r02 and r08 are FAIL and r04 is WARN with HTTP 404, as before;
+  a body that is not JSON fails with JSON.parse's own message; a small
+  site and a site with none of the files score as before, detail for
+  detail.
+- Run against the site from before the read limits, 12 of the 33 cases
+  fail (the ten rule cases and the two source cases) and every control
+  holds. Measured on Node 24.15.0 on Windows, with a peak of 413 to 484 MiB
+  of memory (maxRSS at exit, over 3 runs). CI runs Node 22 on Linux, where
+  the byte counts above were not measured.
+
 **Fetch bounds: a finished read lets go of its signal, every URL the MCP
 route reads for itself ends at 15 s, and the URL guard copies a body fewer
 times** (the site: its URL guard and the hosted MCP route; no version
@@ -151,10 +294,11 @@ score route's byte caps.
   more stylesheets once it is spent. A
   linked contract is decoded at most one byte past its 256 KB limit, and a
   larger one is `contract_too_large` (413) however it was sent. A read
-  that sets no cap of its own (the readiness and MCP reads) fails past
-  4 MiB decoded. The npm engine and the Python offline engine fail a body
-  past 16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
-  between them: a compressed sheet past what is left is left out.
+  that sets no cap of its own fails past 4 MiB decoded (the readiness and
+  MCP reads set none until Read limits, above). The npm engine and the
+  Python offline engine fail a body past 16 MiB decoded, and a page's
+  stylesheets decode no more than 16 MiB between them: a compressed sheet
+  past what is left is left out.
 - **A body that does not decode is not read.** A corrupt or truncated
   stream, a registered coding the engine does not decode (zstd or
   compress, say), or more than one coding is a failed read: a page that
