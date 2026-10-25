@@ -53,10 +53,11 @@ const MiB = 1024 * 1024;
 // and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
 // dist/json/variables.json). The largest of the seven documents the MCP
 // route reads from this site measured 100,907 bytes
-// (/contracts/design-system.json, as its route wrote it). This site's home
-// page, which a scan of it reads, measured 392,045 bytes, and its /changelog
-// page 460,417 bytes. Each size was measured with no content coding on
-// 2026-10-25.
+// (/contracts/design-system.json, as its route wrote it). Each size was
+// measured with no content coding on 2026-10-25. This site's home page, which
+// a scan of it reads, measured 392,045 bytes, and its largest page,
+// /changelog, 466,664 bytes, at 16:41 -04:00 that day, before the read limits
+// were deployed. A deploy can change the size of either page.
 const READ_LIMIT = 4 * 1024 * 1024;
 
 /** The detail of a check whose file answered with a body longer than READ_LIMIT. */
@@ -81,7 +82,8 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<P
         'Accept': '*/*',
       },
       signal: controller.signal,
-      // A HEAD has no body, and is read as before.
+      // A HEAD has no body, and is read as before. No check sends one: every
+      // probeUrl call passes 'GET'.
       maxBodyBytes: method === 'GET' ? READ_LIMIT : undefined,
     });
     if (method !== 'GET') return { ok: resp.ok, status: resp.status, body: undefined };

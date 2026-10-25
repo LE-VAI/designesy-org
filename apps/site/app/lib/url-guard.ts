@@ -495,7 +495,10 @@ export function cutByBudget(resp: Response): boolean {
  * A body as the text resp.text() gives for it, or null when it holds more
  * than `limit` bytes. Read through safeFetch with maxBodyBytes set to
  * `limit`, a body longer than the limit holds limit + 1 bytes, so null says
- * it went past the limit. The chunks are read as they are, with no copy, by
+ * it went past the limit. The limit counts bytes: the text of a body cut at
+ * it can hold fewer characters than the limit (a third as many, for a body
+ * of three-byte UTF-8 characters), so the text's length cannot say whether
+ * the body was cut. The chunks are read as they are, with no copy, by
  * a default reader, which the byte stream pinnedFetch builds takes as any
  * stream does, and only a body within the limit is decoded: a Response
  * built on those chunks decodes them, as the response's own text() would,
