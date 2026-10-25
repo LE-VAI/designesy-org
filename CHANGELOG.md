@@ -328,11 +328,12 @@ changed are the ones this entry sets.
   text is the one `res.text()` gave for the same bytes, so `JSON.parse` of
   it gives what `res.json()` gave, its error message included, and a token
   file that starts with two UTF-8 byte order marks is read as before (on
-  Node 24.15.0, `res.text()` drops both). A body within its limit peaks at
-  twice its size in memory, as with `res.text()`: measured on Node 24.15.0
-  with a 16 MiB body in a Response built as the URL guard builds one, the
-  ArrayBuffer memory held once the text was read was 32 MiB with this read
-  and with `res.text()`.
+  Node 24.15.0, `res.text()` drops both). A body within its limit is held
+  as two copies of its bytes while its text is made, and the text is held
+  besides them, as with `res.text()`. Measured on Node 24.15.0 with a
+  16 MiB body in a Response built as the URL guard builds one, with this
+  read and with `res.text()` alike: ArrayBuffer memory went from 16 MiB to
+  32 MiB as the text was read, and the 16 MiB text was held outside it.
 - **A readiness result cached before this change is not served.** The
   readiness route keeps each result for 24 h, keyed by
   `designesy-readiness` and the URL. A result cached before could be wrong
@@ -367,9 +368,10 @@ changed are the ones this entry sets.
 - How a request is sent and how long a quiet server is waited for. The URL
   guard still sends no request body, so r04's tools/list POST reaches an
   endpoint with an empty body, as before. The MCP route's reads still pass
-  a 15 s idle timeout, and every other read that passes a signal of its
-  own still has none from the URL guard, so Node's agent ends its socket
-  after 5 s quiet, as before.
+  a 15 s idle timeout. Every other read that passes a signal of its own
+  still gets no idle timeout from the URL guard: Node's agent gives its
+  socket a 5 s idle timeout, and the URL guard ends the read when that
+  fires, as before.
 - The MCP route's 5-minute cache. It keeps a document only once it has
   been read whole, and the seven documents measured 100,907 bytes or less,
   so nothing it holds is past a limit.
@@ -393,8 +395,8 @@ changed are the ones this entry sets.
 
 ### Gates (read limits)
 
-- `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in 17.0
-  to 17.1 s over 6 runs, in the build and in CI after Fetch layer as
+- `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in
+  16.95 to 18.43 s over 7 runs, in the build and in CI after Fetch layer as
   before. `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
   `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the
   limit with the message above, sent with no content coding (with and
@@ -447,16 +449,17 @@ changed are the ones this entry sets.
   two and holds bytes that are not UTF-8 as `resp.text()` reads it; a small
   site and a site with none of the files score as before, detail for
   detail.
-- Run against the site from before the read limits (cdb58534), 24 of the
-  48 cases fail (21 rule cases and the three source cases) and every
-  control holds. With the URL guard changed to drop the limit after a
+- Run against the site from before the read limits (main at #396,
+  e7d27b52), 24 of the 48 cases fail (21 rule cases and the three source
+  cases) and every control holds. With the URL guard changed to drop the limit after a
   redirect's first hop, the three redirect cases fail; with it changed to
   hold only a 2xx body to the limit, the five error and redirect body
   cases and the r10 case fail. With the readiness route changed so that a
   check stops only at the first path of its list, the later-path case
   fails; with r09 changed to report a robots.txt past the limit whatever
   its status, the 404 control fails. Measured on Node 24.15.0 on Windows,
-  with a peak of 495 to 546 MiB of memory (maxRSS at exit, over 6 runs).
+  with a peak of 0.5 to 0.6 GiB of memory (maxRSS at exit: 507 to 598 MiB
+  over the 7 runs above; it moves from run to run).
   CI runs Node 22 on Linux, where the byte counts and times above were not
   measured.
 - The gate exits 1 and prints the error when it throws before its first
@@ -561,6 +564,89 @@ moves.
   Remove unused tokens or score part of it."), where it checked only the
   413.
 
+**`designesy_guardrails` writes dimensions in the DTCG 2025.10 form** (the
+hosted `/api/guardrails`, which the hosted and the PyPI `designesy_guardrails`
+both call; no engine, npm or PyPI release). The token file it emits wrote
+each dimension, and each shadow's four lengths, as a string (`"4px"`,
+`"0px"`). A 2025.10 dimension is `{ value, unit }` with `px` or `rem` (Format
+Module 8.2), so the format's JSON Schema rejected those tokens. Tokens
+contract 0.1.3 WARNs on the dimension tokens in t08 and t10; it does not read
+a shadow's lengths, so strings there did not lower the score.
+
+Caveat: `@designesy/stylelint-plugin-dtcg-tokens` 0.2.2, the version on
+npm, reads a `{ value, unit }` dimension as no CSS value, so with this
+token file its `no-magic-number` rule still flags a length such as `8px`
+but neither fixes it nor names a token. The plugin's source in this
+repository now reads the object form (its CHANGELOG, Unreleased); npm
+users get that from the first plugin release after 0.2.2.
+
+Caveat: the plugin matches a CSS length to a token by its text, and this
+token file writes each number as JavaScript prints it (`1.50` as `1.5`,
+`.75` as `0.75`). Where a site's `:root` and its rules both write
+`1.50rem`, `4.0px` or `010px`, the plugin mapped those spellings with the
+string form; with this file and the plugin's source here it maps `1.5rem`,
+`4px` and `10px` instead (and `0.75rem` to a token written `.75rem`). Two
+tokens that hold one length in different spellings, such as `1rem` and
+`1.0rem`, now read the same. Where both are in the group a property
+expects (two `--space-*` tokens for `padding`), `no-magic-number` reports
+`1rem` as ambiguous and leaves it as written, where it used to fix it to
+the token that held `1rem`; where only one of them is, `1rem` maps to that
+one. All 88 dimension strings the previous emitter wrote for the pages
+www.designesy.org served on 2026-10-21 were already written as JavaScript
+prints their numbers.
+
+### Fixed (guardrails)
+
+- **Dimensions and shadow lengths are `{ value, unit }`.** `"4px"` is now
+  `{ "value": 4, "unit": "px" }`, a unitless `0` on a length name is
+  `{ "value": 0, "unit": "px" }`, and a shadow's `offsetX`, `offsetY`, `blur`
+  and `spread` take the same form. A length in any other unit (`em`, `%`,
+  `vw`, `pt`) is not converted and stays verbatim in
+  `$extensions.designesy.css`, as before. A relative unit's size depends on an
+  element, a font or a viewport the file does not describe. Of the absolute
+  units, `in` and `pc` convert to px exactly, but `pt`, `cm`, `mm` and `Q`
+  mostly do not (`1pt` is 1.333...px); all of them are kept as written, so
+  every unit other than px and rem follows one rule.
+- On the test site in `apps/site/scripts/fixtures/mcp-accuracy.json` the
+  emitted file scores 100 (A) on both servers, where it scored 89 (B). Checked
+  against the official 2025.10 JSON Schema, 1 of its 23 tokens fails, where 8
+  did: `{muted.$root}`, an alias to a group's `$root` token, which the format
+  allows and the schema's reference pattern rejects
+  ([design-tokens/community-group#448](https://github.com/design-tokens/community-group/issues/448)).
+- On the pages www.designesy.org served on 2026-10-21 the emitted file
+  scores 100, where it scored 89: t08 reported 89 of 89 dimension tokens not
+  in `{ value, unit }` form (88 legacy strings, and `grid.gutter`, an alias,
+  `{space.16}`, to one of them), and t10 counted the 88 strings. The full
+  result, as the tool returns it, grows from 122,763 to 133,479 characters.
+- `/export/dtcg` takes the shadow objects from the shared parser
+  (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
+  byte.
+- **A result cached before the deploy is not served.** The hosted route keeps
+  each URL's result for 24 hours (`unstable_cache`, `revalidate: 86400`). Its
+  cache key now has a second part naming the result's format,
+  `dtcg-objects-1`, so the first request for each URL after the deploy
+  computes a new result. The rest of the key, the name
+  `designesy-guardrails` and the cached function's source text, need not
+  change when only the token file does, and `/api/admin/purge` clears the
+  `score` tag only; without the new part, a result cached in the string form
+  could have been served until it was 24 hours old, and after that until a
+  background refresh replaced it.
+
+### Gates (guardrails)
+
+- `scripts/check-mcp-accuracy.js` (guardrails-dtcg) fails on a dimension or a
+  shadow length that is not `{ value, unit }` in px or rem, and on any WARN
+  from the tokens validator, where it failed only on a FAIL. It also probes
+  what the test site does not hold: a unitless 0 on a length name must
+  become 0px, and a unitless 4 there must stay a number; lengths in em, %,
+  vw and pt on their own, and a shadow with an em length, must stay CSS;
+  and `parseDimension` must not type `2em`, `50%`, `10vw`, `12pt` or a
+  unitless `1`. Run against the previous emitter, guardrails-dtcg reports 6
+  findings.
+- `guardrails-emitted.json` and its golden row are regenerated, and
+  `test/test_tokens_score.py` scores that file itself and expects no WARN and
+  no FAIL, where it read the golden for no FAIL.
+
 **Engine 1.5.4: the engine reads the page the site served, decoded** (the
 site; npm `@designesy/score` 0.9.3 runs engine 1.5.2 until its next release,
 and the PyPI offline engine follows in the next designesy-mcp release). Three
@@ -610,10 +696,9 @@ score route's byte caps.
   larger one is `contract_too_large` (413) however it was sent. A read
   that sets no cap of its own fails past 4 MiB decoded (the readiness reads
   and the URLs the MCP route reads for itself set none until Read limits,
-  above). The npm engine and the
-  Python offline engine fail a body past 16 MiB decoded, and a page's
-  stylesheets decode no more than 16 MiB between them: a compressed sheet
-  past what is left is left out.
+  above). The npm engine and the Python offline engine fail a body past
+  16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
+  between them: a compressed sheet past what is left is left out.
 - **A body that does not decode is not read.** A corrupt or truncated
   stream, a registered coding the engine does not decode (zstd or
   compress, say), or more than one coding is a failed read: a page that
