@@ -413,15 +413,13 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   budget stops holds what was left of it, and cutByBudget(response) is true.
  *   A read that fails gives back what it was charged. With `decoders` set, a
  *   decoded body also waits for one of them, and gives it back when it ends.
- * - `idleTimeoutMs`: how long the socket may stay quiet before the read
- *   fails. Without a signal it is 15 s. With a signal and no idleTimeoutMs
- *   none is set here, and Node's global agent ends a socket that is quiet
- *   for 5 s (its default since Node 19).
  *
  * A `body` is a string, sent as UTF-8, or bytes, and is sent with its length;
- * any other kind of body is refused with a TypeError.
+ * any other kind of body is refused with a TypeError. A read given a `signal`
+ * has no deadline but that signal: no idle timeout is set on its socket. A
+ * read given none fails once its socket has been quiet for 15 s.
  */
-export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget; idleTimeoutMs?: number };
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
 
 /**
  * The most bytes a decoded body may reach when the caller passes no
@@ -649,7 +647,14 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         method,
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
-        timeout: init?.idleTimeoutMs ?? (init?.signal ? undefined : 15000),
+        // With a signal, the caller's signal is the read's only deadline: 0
+        // turns off the idle timeout of Node's global agent, which would
+        // otherwise end a read whose server goes quiet before that deadline
+        // (after 5 s on Node 24.15.0, and 4 s on a connection kept alive from
+        // an answer that gave a 5 s Keep-Alive timeout), with an error the
+        // caller does not read as its own timeout. With no signal, 15 s of
+        // quiet ends the read.
+        timeout: init?.signal ? 0 : 15000,
       },
       (res) => {
         const status = res.statusCode || 0;
