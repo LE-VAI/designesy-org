@@ -828,7 +828,16 @@ async function emitGuardrailsUncached(targetUrl: string) {
 
 const GUARDRAILS_TTL = 60 * 60 * 24; // 24h
 
-const emitGuardrails = unstable_cache(emitGuardrailsUncached, ['designesy-guardrails'], {
+// The second key part names the shape of the cached result. unstable_cache
+// keys an entry by the function's source text, these parts and the URL. A
+// change to what the function returns can leave its text as it was, so a
+// result cached before a deploy would be served in its old shape for up to a
+// day, and past that until a background refresh lands. Changing this part
+// starts every URL from an empty entry. 'dtcg-objects-1': the token file
+// writes dimensions and shadow lengths as { value, unit } (see CHANGELOG).
+const GUARDRAILS_RESULT_FORMAT = 'dtcg-objects-1';
+
+const emitGuardrails = unstable_cache(emitGuardrailsUncached, ['designesy-guardrails', GUARDRAILS_RESULT_FORMAT], {
   revalidate: GUARDRAILS_TTL,
   tags: ['guardrails'],
 });

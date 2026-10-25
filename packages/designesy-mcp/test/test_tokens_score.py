@@ -539,10 +539,14 @@ class TestGolden:
         doc = json.loads((FIXTURES / name).read_text(encoding="utf-8"))
         assert mcp._tokens_score(doc, _contract(), INLINE) == golden[name]
 
-    def test_the_guardrails_file_has_no_fail(self):
-        """The DTCG file designesy_guardrails emits passes this validator."""
-        golden = json.loads(GOLDEN.read_text(encoding="utf-8"))["guardrails-emitted.json"]
-        assert golden["fail_count"] == 0, [c for c in golden["checks"] if c["status"] == "FAIL"]
+    def test_the_guardrails_file_has_no_warn_and_no_fail(self):
+        """The DTCG file designesy_guardrails emits passes this validator. Its
+        dimensions were strings ("4px"), a WARN in t08 and t10; they are now
+        { value, unit }. Scored here, not read from the golden."""
+        doc = json.loads((FIXTURES / "guardrails-emitted.json").read_text(encoding="utf-8"))
+        result = mcp._tokens_score(doc, _contract(), INLINE)
+        assert result["fail_count"] == 0 and result["warn_count"] == 0, result["checks"]
+        assert result["score"] == 100
 
     def test_the_tool_returns_the_scorer_output(self):
         doc = json.loads((FIXTURES / "valid.json").read_text(encoding="utf-8"))

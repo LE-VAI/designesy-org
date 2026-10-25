@@ -104,6 +104,89 @@ moves.
   Remove unused tokens or score part of it."), where it checked only the
   413.
 
+**`designesy_guardrails` writes dimensions in the DTCG 2025.10 form** (the
+hosted `/api/guardrails`, which the hosted and the PyPI `designesy_guardrails`
+both call; no engine, npm or PyPI release). The token file it emits wrote
+each dimension, and each shadow's four lengths, as a string (`"4px"`,
+`"0px"`). A 2025.10 dimension is `{ value, unit }` with `px` or `rem` (Format
+Module 8.2), so the format's JSON Schema rejected those tokens. Tokens
+contract 0.1.3 WARNs on the dimension tokens in t08 and t10; it does not read
+a shadow's lengths, so strings there did not lower the score.
+
+Caveat: `@designesy/stylelint-plugin-dtcg-tokens` 0.2.2, the version on
+npm, reads a `{ value, unit }` dimension as no CSS value, so with this
+token file its `no-magic-number` rule still flags a length such as `8px`
+but neither fixes it nor names a token. The plugin's source in this
+repository now reads the object form (its CHANGELOG, Unreleased); npm
+users get that from the first plugin release after 0.2.2.
+
+Caveat: the plugin matches a CSS length to a token by its text, and this
+token file writes each number as JavaScript prints it (`1.50` as `1.5`,
+`.75` as `0.75`). Where a site's `:root` and its rules both write
+`1.50rem`, `4.0px` or `010px`, the plugin mapped those spellings with the
+string form; with this file and the plugin's source here it maps `1.5rem`,
+`4px` and `10px` instead (and `0.75rem` to a token written `.75rem`). Two
+tokens that hold one length in different spellings, such as `1rem` and
+`1.0rem`, now read the same. Where both are in the group a property
+expects (two `--space-*` tokens for `padding`), `no-magic-number` reports
+`1rem` as ambiguous and leaves it as written, where it used to fix it to
+the token that held `1rem`; where only one of them is, `1rem` maps to that
+one. All 88 dimension strings the previous emitter wrote for the pages
+www.designesy.org served on 2026-10-21 were already written as JavaScript
+prints their numbers.
+
+### Fixed (guardrails)
+
+- **Dimensions and shadow lengths are `{ value, unit }`.** `"4px"` is now
+  `{ "value": 4, "unit": "px" }`, a unitless `0` on a length name is
+  `{ "value": 0, "unit": "px" }`, and a shadow's `offsetX`, `offsetY`, `blur`
+  and `spread` take the same form. A length in any other unit (`em`, `%`,
+  `vw`, `pt`) is not converted and stays verbatim in
+  `$extensions.designesy.css`, as before. A relative unit's size depends on an
+  element, a font or a viewport the file does not describe. Of the absolute
+  units, `in` and `pc` convert to px exactly, but `pt`, `cm`, `mm` and `Q`
+  mostly do not (`1pt` is 1.333...px); all of them are kept as written, so
+  every unit other than px and rem follows one rule.
+- On the test site in `apps/site/scripts/fixtures/mcp-accuracy.json` the
+  emitted file scores 100 (A) on both servers, where it scored 89 (B). Checked
+  against the official 2025.10 JSON Schema, 1 of its 23 tokens fails, where 8
+  did: `{muted.$root}`, an alias to a group's `$root` token, which the format
+  allows and the schema's reference pattern rejects
+  ([design-tokens/community-group#448](https://github.com/design-tokens/community-group/issues/448)).
+- On the pages www.designesy.org served on 2026-10-21 the emitted file
+  scores 100, where it scored 89: t08 reported 89 of 89 dimension tokens not
+  in `{ value, unit }` form (88 legacy strings, and `grid.gutter`, an alias,
+  `{space.16}`, to one of them), and t10 counted the 88 strings. The full
+  result, as the tool returns it, grows from 122,763 to 133,479 characters.
+- `/export/dtcg` takes the shadow objects from the shared parser
+  (`apps/site/app/lib/dtcg.ts`) as they are. Its output is unchanged, byte for
+  byte.
+- **A result cached before the deploy is not served.** The hosted route keeps
+  each URL's result for 24 hours (`unstable_cache`, `revalidate: 86400`). Its
+  cache key now has a second part naming the result's format,
+  `dtcg-objects-1`, so the first request for each URL after the deploy
+  computes a new result. The rest of the key, the name
+  `designesy-guardrails` and the cached function's source text, need not
+  change when only the token file does, and `/api/admin/purge` clears the
+  `score` tag only; without the new part, a result cached in the string form
+  could have been served until it was 24 hours old, and after that until a
+  background refresh replaced it.
+
+### Gates (guardrails)
+
+- `scripts/check-mcp-accuracy.js` (guardrails-dtcg) fails on a dimension or a
+  shadow length that is not `{ value, unit }` in px or rem, and on any WARN
+  from the tokens validator, where it failed only on a FAIL. It also probes
+  what the test site does not hold: a unitless 0 on a length name must
+  become 0px, and a unitless 4 there must stay a number; lengths in em, %,
+  vw and pt on their own, and a shadow with an em length, must stay CSS;
+  and `parseDimension` must not type `2em`, `50%`, `10vw`, `12pt` or a
+  unitless `1`. Run against the previous emitter, guardrails-dtcg reports 6
+  findings.
+- `guardrails-emitted.json` and its golden row are regenerated, and
+  `test/test_tokens_score.py` scores that file itself and expects no WARN and
+  no FAIL, where it read the golden for no FAIL.
+
 **Engine 1.5.4: the engine reads the page the site served, decoded** (the
 site; npm `@designesy/score` 0.9.3 runs engine 1.5.2 until its next release,
 and the PyPI offline engine follows in the next designesy-mcp release). Three
