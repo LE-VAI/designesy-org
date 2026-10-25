@@ -634,6 +634,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'Designesy monitor contract v0.1.4',
   },
 
+  // ── Monitor contract v0.1.5: alert email is retired, m10 is not scored ──
+  {
+    version: 'monitor v0.1.5',
+    date: '2026-10-23',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Monitor contract 0.1.5: alert email is retired, and m10 is not scored',
+    description:
+      'alert_delivery changed: alerts come back in the result (alerts[]), and the monitor sends no email under any setting. An email field in a request, of any type, is accepted and ignored, and no address is returned. m10 (alert delivered) is N/A on every run and is not scored; the ids m01 to m10 stay. The history a request carries is checked for shape and bounds (a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS, FAIL, WARN or SKIP, string lengths, at most 12 checks a run, at most 1000 runs, and a body of at most 512 KB), and a malformed history is refused with a 400 that names the field. Only what a check reads is required (each run\'s score, token count and checks, and each check\'s id and status), so a run trimmed to those is still answered. Before, a history of [{}] crashed the route, and a non-numeric score such as "x" broke the m03, m04 and m07 deltas.',
+    rationale:
+      'Rules changed: m10 and the scoring. m10 passed on every run unless a send was tried and failed, so leaving it out takes a PASS out of the score: a stable site moves from 90 (A) to 89 (B) on its third run or later and from 95 to 94 on its second, and a first run stays at 100. No check is added or removed.',
+    source: 'Designesy monitor contract v0.1.5',
+  },
+
   // ── Compare contract v0.1.1: the editorial pass, versioned ──
   {
     version: 'compare v0.1.1',
@@ -777,6 +791,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'engine 1.5.2 entry in CHANGELOG.md; CSS Fonts 4 (the font shorthand); the design-system contract type scale (12.8px floor)',
   },
 
+  // ── v0.4.7 (engine 1.5.4): the engine reads the page the site served ──
+  {
+    version: 'v0.4.7 · engine 1.5.4',
+    date: '2026-10-24',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Engine 1.5.4: the engine reads the page the site served, decoded',
+    description:
+      "Three fixes to how a page and its stylesheets are fetched, in every copy of the fetch code. A stylesheet href resolves against the URL that answered, after a redirect or a fallback www. or http:// address. It resolved against the URL given, so a page that had moved had its sheets asked of the host it moved away from. A body sent with Content-Encoding gzip, deflate or br is decoded before it is read, within the read's byte cap and a byte budget a page's stylesheets share, and the site's and the npm engine's requests name those three codings in Accept-Encoding. The offline Python engine asks for identity and decodes gzip and deflate only. A body that does not decode is left unread, and an error page keeps its status. A link that writes its href before rel=stylesheet is read.",
+    rationale:
+      'A score describes the page a browser shows. Compressed bytes, or an HTML page fetched in place of a stylesheet, gave the checks nothing to read. No check, rule, weight or ceiling changed: a score moves only for a page reached through a redirect or a fallback address, served compressed, or linking a stylesheet with its href first.',
+    source: 'engine 1.5.4 entry in CHANGELOG.md; RFC 9110 section 12.5.3',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',
@@ -827,6 +855,7 @@ const VERSIONS: { version: string; date: string; checks: number; title: string; 
   { version: 'v0.4.6 · engine 1.5.0', date: '2026-10-14', checks: 45, title: 'Your own contract', summary: 'POST /api/score takes your own DESIGN.md or DTCG file and answers with contract fidelity and a baseline, never blended. Requests without a contract are unchanged. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.5.1', date: '2026-10-15', checks: 45, title: 'Linear-time matching', summary: 'Every pattern that read a page now reads each run once and returns what it returned, so scoring time grows in step with the page. The rule parser and the hosted reads are bounded. The contract is unchanged.' },
   { version: 'v0.4.6 · engine 1.5.2', date: '2026-10-15', checks: 45, title: 'v46 reads the font shorthand', summary: 'v46 takes the size from font: as well as font-size, so a sub-floor size set through the shorthand is listed, and it reads a sheet in linear time. No score moves. The contract is unchanged.' },
+  { version: 'v0.4.7 · engine 1.5.4', date: '2026-10-24', checks: 45, title: 'Pages read as served', summary: 'Stylesheet links resolve against the URL that answered, compressed bodies are decoded within the read caps and a page budget, and links that write href first are read. No check, weight or ceiling moved. The contract is unchanged.' },
 ];
 
 const CHANGE_COLORS: Record<string, string> = {

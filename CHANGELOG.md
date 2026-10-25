@@ -6,10 +6,236 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Engine 1.5.4: the engine reads the page the site served, decoded** (the
+site; npm `@designesy/score` 0.9.3 runs engine 1.5.2 until its next release,
+and the PyPI offline engine follows in the next designesy-mcp release). Three
+defects in how a page and its stylesheets were fetched are fixed in every copy
+of the fetch code: the score route (universal and own-contract mode), the
+drift, guardrails, monitor and compare routes, the npm engine and the Python
+offline engine. No check is added, and no rule, weight or ceiling moves. A
+score moves only for a page reached through a redirect or a fallback address,
+served compressed, or linking a stylesheet with its href first; in the npm
+engine, also for a page linking a stylesheet that answers with an error; in
+the drift, guardrails, monitor and compare routes, also for a page past the
+score route's byte caps.
+
+### Fixed (engine 1.5.4)
+
+- **A stylesheet href resolves against the URL that answered.** It resolved
+  against the URL the engine was asked to score. A page reached through a
+  redirect, or through the `www.` or `http://` candidate when the address
+  given did not answer, had a relative href such as `/assets/site.css`
+  fetched from the host it was not served from, which can answer with an
+  HTML page that was then read as CSS. The base is now the URL of the
+  response that was read, after every redirect, as a browser resolves it.
+- **A compressed body is decoded.** A body sent with `Content-Encoding`
+  gzip (or x-gzip), deflate (zlib-wrapped or raw) or br was read as its
+  compressed bytes, whether the request asked for it or not, so its CSS or
+  HTML never reached the checks. It is now decoded before it is read. The
+  hosted routes and the npm engine ask for the page, its stylesheets and,
+  where they read it, `/DESIGN.md` with `Accept-Encoding: gzip, deflate,
+  br`: with no
+  `Accept-Encoding` a server may choose any coding (RFC 9110 section
+  12.5.3), including ones the engine cannot decode. The Python offline
+  engine still asks for identity and decodes gzip and deflate with the
+  standard library. A label no registry defines (`none`, `utf-8`) leaves
+  a body as it was sent, as identity does and as a browser reads it.
+- **Decoding is bounded, for one read and for a page.** What a read holds
+  is counted as it arrives, decoded or not, so neither one body a few
+  kilobytes long on the wire nor many of them can expand past what the
+  engine reads. In the score route a read is held to its own byte cap
+  (8 MiB of HTML, 4 MiB of one stylesheet, 16 MiB of a `/DESIGN.md`), and a
+  page's stylesheets, asked for at once, share one 16 MiB budget and decode
+  at most eight at a time (a br decoder keeps a window of up to 16 MiB
+  however little it emits); a read that reaches a cap still says so
+  (`DOCUMENT_CAP:` in contract mode). The drift, guardrails, monitor and
+  compare routes read a page with the same caps and budget, and ask for no
+  more stylesheets once it is spent. A
+  linked contract is decoded at most one byte past its 256 KB limit, and a
+  larger one is `contract_too_large` (413) however it was sent. A read
+  that sets no cap of its own (the readiness and MCP reads) fails past
+  4 MiB decoded. The npm engine and the Python offline engine fail a body
+  past 16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
+  between them: a compressed sheet past what is left is left out.
+- **A body that does not decode is not read.** A corrupt or truncated
+  stream, a registered coding the engine does not decode (zstd or
+  compress, say), or more than one coding is a failed read: a page that
+  does not decode is unreachable with reason `network`, and a stylesheet
+  that does not decode is left out and not counted as fetched. The hosted
+  transport decodes only a 2xx body, and the npm engine only a body below
+  status 400 (the bodies it reads), so an error page keeps its status: a
+  404 stays `http_error`. br is not decoded by the Python offline engine,
+  whose standard library has no br decoder, and a coding sent on two
+  header lines counts as two codings there, as in the other copies. When a
+  coded stream ends before its response does (bytes after it, or a
+  connection held open), the decoded body is read and the connection is
+  closed.
+- **A `<link>` with its href before `rel=stylesheet` is read.**
+  `<link href="/a.css" rel="stylesheet">` was skipped, because the pattern
+  needed rel first. A tag that writes rel first is read exactly as before.
+- **The npm engine leaves out a stylesheet that answers with an error.** A
+  404 or 500 sheet's body (an HTML page, or compressed bytes it does not
+  decode) was added to the CSS. It is left out, as the hosted route leaves
+  it out.
+- The drift, guardrails, monitor and compare routes held four identical
+  copies of the page fetch. They now share one, `app/lib/page-fetch.ts`,
+  with the score route's scanners.
+- A 204, 205 or 304 answer made the hosted transport throw an uncaught
+  error inside its socket handler (a `Response` with a non-null body), and
+  the read stayed open until its timeout. It now resolves with no body. A
+  status a `Response` cannot carry (outside 200 to 599, such as 999) threw
+  the same way; it is now an `http_error` with that status at once, and a
+  stylesheet that answers with one is left out without holding the others.
+- A read that times out is told from one that fails by the read's own
+  abort, never by the words of an error, which can carry text the server
+  sent.
+
+### Not changed (engine 1.5.4)
+
+- The subject of a score is the URL given: scope detection, the result's
+  URL and the `/DESIGN.md` probe use it, not the URL a redirect led to.
+- `<base href>` and unquoted hrefs are still not read.
+- The checks, their rules, weights and ceilings, and the response shapes.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10; nothing is published.
+
+### Gates (engine 1.5.4)
+
+- `check-fetch-layer.mjs` (new, in the build and in CI after Score read
+  bounds) runs the real routes and URL guard against a local server on
+  `*.example.test` hosts with bodies built at run time: the transport (each
+  coding, the caps, a shared budget and its decoders, a decompression bomb,
+  each refusal, an unregistered label, a stream that ends before its
+  response, a 999 status, the null-body statuses), `POST /api/score` in
+  universal and own-contract mode (60 compressed stylesheets at once, with
+  the bytes the decoders produce and the decoders open at once counted),
+  the four other routes, and the shared link scanner. Run
+  against main's source with `--flip`, every rule case fails and every
+  control holds.
+- `packages/score/test/engine-1-5-4.test.mjs`: 12 rule tests that fail on
+  main's package engine (1.5.2 in `@designesy/score` 0.9.3) and 5 controls
+  that pass on both.
+- `linear-scan` (TypeScript and Python) holds the link scanner to the
+  pattern with both orders, on 10,000 generated inputs, and, on every
+  fixture page, to the 1.5.1 pattern: no fixture page writes href first.
+  The Python offline engine gains 15 fetch-layer tests.
+- The corpus, the offline golden and the contract-page records change only
+  in their version fields (and `retrieved_at`).
+
+**Monitor contract 0.1.5: monitor alert email is retired, and scores move.**
+`/api/monitor` sends no email under any setting; alerts come back in the result
+(`alerts[]`), as `/monitor` shows them. m10 is no longer scored, so a stable
+site moves from 90 (A) to 89 (B) on its third run or later.
+
+### Removed
+
+- **Monitor alert email.** The send code, `app/lib/monitor-email.ts`, the `resend`
+  import and the `resend` dependency are gone from apps/site, so no setting can
+  make `/api/monitor` send mail, `MONITOR_EMAIL_ENABLED=true` included. Nothing
+  in the site reads that variable now. The Continuity waitlist still sends its
+  notices through Resend's HTTP API with `RESEND_API_KEY`, unchanged.
+- `emailAlert` is gone from the monitor result, and with it the one-hour
+  cooldown and the address check.
+
+### Changed
+
+- **m10 is N/A on every run and is not scored.** Its detail says alerts are
+  returned in the response and email delivery was retired; the ids m01 to m10
+  stay. m10 passed on every run unless a send was tried and failed, so leaving
+  it out takes a PASS out of the score: a stable site moves from 90 (A) to 89
+  (B) on its third run or later and from 95 to 94 on its second; a first run
+  stays at 100.
+- **An `email` field is accepted and ignored.** An address, `5` or `null` returns
+  200, and no address appears in the result. designesy-mcp 1.13.10 and earlier
+  forward `email` when given; the field has no effect, so they keep working.
+- **`/monitor` has no email field.** It sends no address, and on load it removes
+  an address an earlier version saved in the browser (`designesy:monitor-email`).
+  Its formula reads `÷ scored checks` (it said `÷ 10`, which a SKIP made wrong),
+  m10 is labelled "Alert email", and the engine bar has no email field type.
+  When the engine refuses the runs the browser stored for a URL (a 400 naming
+  `history`, or a 413), the error offers "Clear this history", since every
+  later run of that URL would send the same runs.
+- **The hosted `designesy_monitor_score` is read-only.** `readOnlyHint` and
+  `idempotentHint` are true, and its title is "Monitor drift over time". The
+  handler forwards no `email`; the parameter is described as deprecated and
+  ignored. Its `history` argument takes the route's schema, so a SKIP check is
+  accepted, the same bounds apply, and a run needs only the fields the checks
+  read (it required every field). Its description listed m01 as "schedule
+  registered" (m01's name until 0.1.2) and said results are cached ~24h per
+  URL; it now says "history supplied" and that the cache is per URL and history.
+- The monitor contract (0.1.5) rewrites `alert_delivery`, the m10 row, the
+  scoring line and the email open question; `/changelog` has the entry, and
+  `/docs/mcp`, `/contracts/monitor`, `/monitor` and both READMEs follow. The repo
+  README says all 17 tools are read-only.
+- `apps/site/.env.example` drops `MONITOR_EMAIL_ENABLED` and says the Resend key
+  is for waitlist notices only.
+
+### Fixed
+
+- **A malformed request is a 400 that names the field.** `app/lib/monitor-history.ts`
+  holds one bounds-only schema, which the route and the hosted tool share: types,
+  a score from 0 to 100, a grade from A to F, drift check ids d01 to d12, PASS,
+  FAIL, WARN or SKIP, string lengths, at most 12 checks a run and at most 1000
+  runs. It does not recompute a run's score from its checks, so runs stored by an
+  earlier engine stay valid. Only what a check reads is required: each run's
+  `score`, `tokensExtracted` and `checks`, and each check's `id` and `status`.
+  The `timestamp`, `grade`, `item`, `category` and `detail` are checked when
+  present, so a run trimmed to the required fields is still answered. Each
+  array's length is checked before its elements, and parsing stops at the
+  first run that fails, so a refused body carries the issues of one run at
+  most. A body over 512 KB is a 413 and is never held whole: a Content-Length
+  past the limit is refused before the body is read, and any other body stops
+  being read at the first chunk past it. Before, an `email` such as `5`, a
+  `url` such as `5`, a body of `null` and `history: [{}]` crashed the route,
+  and a non-numeric `score` such as `"x"` made the m03, m04 and m07 deltas
+  NaN. A `history` that is a string, a number, a boolean or an object was read
+  as no history; it is now a 400. `null` still means no history.
+
+### Tests
+
+- `check-mcp-accuracy`'s `monitor-no-mail` replaces `monitor-mail-off`: with
+  `MONITOR_EMAIL_ENABLED="true"`, a Resend key set and Resend's API answered
+  inside the harness, a run that raises an alert sends nothing; an `email` given
+  as an address, `5` or `null` returns 200 with no address in the result; m10 is
+  SKIP and the score leaves it out; the hosted handler posts no `email`, is
+  annotated read-only and takes the route's history schema; each malformed
+  request is a 400 naming its field, and the schema builds at most 64 issues
+  for it, among them a run of 30,000 empty checks and a 512 KB history of empty
+  runs; a run trimmed to the fields the checks read and a `null` history
+  return 200; and a 600 KB body, or a Content-Length past 512 KB, is a 413. The
+  route harness no longer stubs the `resend` module.
+
+**designesy-mcp, next release: `designesy_monitor_score` is read-only** (PyPI
+and the MCP registry; not yet released). Until then, designesy-mcp 1.13.10
+forwards `email` to `/api/monitor`, which ignores it.
+
+### Changed (designesy-mcp, next release)
+
+- `designesy_monitor_score` forwards no `email`; the parameter stays in the
+  schema, described as deprecated and ignored, so older callers keep working.
+  `readOnlyHint` and `idempotentHint` are true, as on the hosted endpoint, and
+  the title is "Monitor drift over time".
+- Its description says alerts come back in `alerts[]` and no email is sent,
+  lists m01 as "history supplied", drops `emailAlert`, and says the cache is per
+  URL and history. Its history schema accepts SKIP, caps the array at 1000
+  runs and a run's checks at 12, and marks as required what the engine
+  requires: each run's `score`, `tokensExtracted` and `checks`, and each
+  check's `id` and `status`.
+- The SAFETY docstring, the annotation notes, and the README summary and
+  Safety section say every tool is read-only; the README tools table and the
+  pyproject summary drop their email clauses.
+- `test_tool_annotations.py` asserts that every tool is read-only, that the
+  monitor forwards no `email` (an address or `5`), that its description
+  names no Resend key and lists m01 as "history supplied", and that the README
+  offers no email alert and names neither Resend nor `MONITOR_EMAIL_ENABLED`.
+
 **Monitor contract 0.1.4: drift-alert email is off unless the server
 switches it on.** `/api/monitor` and the hosted `designesy_monitor_score`
 mailed an alert to whatever address a request named, and nothing confirmed
 that the address's owner had asked for it.
+Superseded by 0.1.5 above: the switch, the escaping, `monitor-mail-off`, the
+per-request m10 and the `/monitor` email field went with the sending, and m10
+is N/A (SKIP) on every run. The entries below record 0.1.4 as it was built.
 
 ### Security
 
@@ -18,8 +244,8 @@ that the address's owner had asked for it.
   `RESEND_API_KEY` is set. It is off unless set to exactly `true`. With it
   off, a request that names an email and raises an alert gets
   `emailAlert.off: true` and no mail, and the per-hour cooldown is not
-  touched. Setting the switch alone brings back the old sending, with the
-  HTML escaped, so it stays unset until recipients can opt in.
+  touched. Setting the switch alone brought back the old sending, with the
+  HTML escaped; 0.1.5 removes the sending, so no setting does now.
 - **Every value the alert email's HTML interpolates is escaped.** The host,
   the grade, both scores, the alert texts and the URL pass through
   `escapeHtml`.
@@ -46,16 +272,13 @@ that the address's owner had asked for it.
   alert is delivered, held back by the cooldown or surfaced in-UI, warns when
   a send fails, and never fails (it said in-UI only was a WARN). The
   `designesy_monitor_score` description, its `email` parameter, `/docs/mcp`
-  and the designesy-mcp README's Safety section name the switch as well.
+  and the designesy-mcp README's Safety section named the switch until 0.1.5.
 - `/contracts/monitor` no longer offers an email alert in its description.
 
 ### Not changed
 
-- The PyPI server's text still names only `RESEND_API_KEY`: the
-  `designesy_monitor_score` description and `email` parameter, the safety and
-  annotation comments, and the pyproject description. That server forwards to
-  this site's `/api/monitor`, so it sends no mail while the switch is off. Its
-  text, and the README on PyPI, follow in the next designesy-mcp release.
+- The PyPI server's text named only `RESEND_API_KEY`. It is rewritten here,
+  and reaches PyPI with the next designesy-mcp release.
 
 **The public leaderboard is withdrawn** (the site; decided 2026-10-23). With
 this change, the site's pages and APIs publish no ranked list of sites and no

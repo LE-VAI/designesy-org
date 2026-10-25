@@ -39,6 +39,13 @@
  * a finding's rule are written below as the patterns and the lastIndexOf
  * reads they stand for, and held to the one-pass helpers the engine runs, on
  * the same inputs and to the same 100 KB budget.
+ *
+ * ENGINE 1.5.4
+ * A <link> that writes href before rel=stylesheet is read. The reference for
+ * stylesheetLinkMatches is the 1.5.1 pattern with a second alternative for
+ * that order; the first alternative still decides every tag it matched, and
+ * on every fixture page the helper returns what the 1.5.1 pattern returned
+ * (none of them writes href first), which a test below holds.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -423,6 +430,13 @@ function v46SelectorBefore(css, at) {
 }
 
 // ── The reference: each old pattern as the engine ran it ─────────────────────
+
+/**
+ * stylesheetLinkMatches's reference from engine 1.5.4: the 1.5.1 pattern
+ * (rel before href) as the first alternative, href before rel as the second.
+ */
+const LINK_1_5_1 = /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi;
+const LINK_1_5_4 = /<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi;
 
 /** The matches of a global regex, as the helpers report them. */
 function execAll(re, s) {
@@ -991,11 +1005,18 @@ const SITES = [
     alphabet: ['<style', '</style>', '>', '<', 'x', ' ', 'a{}'],
   },
   {
+    // Engine 1.5.4: the reference is the combined pattern, with group 1 or
+    // else group 2 (href before rel) as the one group the helper reports.
     id: 'stylesheet <link> hrefs', alerts: [],
-    old: (s) => execAll(/<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi, s),
+    old: (s) => execAll(LINK_1_5_4, s).map((m) => ({ ...m, groups: [m.groups[0] ?? m.groups[1]] })),
     neu: (s) => E.stylesheetLinkMatches(s),
-    samples: ['<link rel="stylesheet" href="a.css">', "<link href=\"x\" rel=stylesheet href='b.css'>"],
-    alphabet: ['<link', '<LINK', ' ', 'rel=', 'rel="stylesheet"', "rel='stylesheet'", 'rel=stylesheet', 'stylesheet', 'href=', 'href="', "href='", 'a.css', '"', "'", '>', 'x'],
+    samples: [
+      '<link rel="stylesheet" href="a.css">', "<link href=\"x\" rel=stylesheet href='b.css'>",
+      '<link href="a.css" rel="stylesheet">', "<LINK HREF='c.css' REL=stylesheet>", '<link href="x>y" rel=stylesheet>',
+      '<link href="a" href="b" rel=stylesheet href="c">', "<link href=\"a.css\" media=\"print\" rel='stylesheet' >",
+    ],
+    long: [["<link href='a' ", "href='a' ", ''], ['', "<link href='a' ", ''], ['<link ', 'href="a.css" ', ' rel="stylesheet">']],
+    alphabet: ['<link', '<LINK', ' ', 'rel=', 'rel="stylesheet"', "rel='stylesheet'", 'rel=stylesheet', 'stylesheet', 'href=', 'href="', "href='", 'a.css', '"', "'", '>', 'x', ' rel="stylesheet">', 'href="a.css" '],
   },
   {
     id: 'script, style, template and comment strip', alerts: [],
@@ -1302,6 +1323,16 @@ describe('linear scanning: every rewritten pattern returns what it returned', ()
     const missing = [];
     for (let a = 5; a <= 55; a++) if (!covered.has(a)) missing.push(a);
     assert.deepEqual(missing, [], `alerts with no site: ${missing.join(', ')}`);
+  });
+
+  it('engine 1.5.4: on every fixture page the link helper returns what the 1.5.1 pattern returned', () => {
+    let links = 0;
+    for (const [name, html] of pages) {
+      const before = execAll(LINK_1_5_1, html);
+      assert.deepEqual(E.stylesheetLinkMatches(html), before, name);
+      links += before.length;
+    }
+    assert.ok(links > 0, 'no fixture page links a stylesheet, so the comparison proves nothing');
   });
 
   for (const site of SITES) {

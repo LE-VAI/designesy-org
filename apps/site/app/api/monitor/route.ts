@@ -20,26 +20,24 @@
 //   m08 token-set mutation (tokens added/removed/renamed since baseline)
 //   m09 contract version (the design contract version this run is scored
 //       against: CONTRACT_VERSION, the value /api/score reports as contractVersion)
-//   m10 alert delivered (email via Resend when alerts fire + email provided +
-//        email alerts switched on + key set; falls back to in-UI surfacing
-//        otherwise)
+//   m10 alert delivered (SKIP on every run since monitor contract 0.1.5, and not
+//        scored: alerts are returned in the response, and the monitor sends no email)
 //
-// Email alerting (v0.2.0): When the POST body includes an `email` field,
-// MONITOR_EMAIL_ENABLED is "true" AND the RESEND_API_KEY environment variable
-// is set, the monitor sends an HTML alert email to that address when any alert
-// condition fires. MONITOR_EMAIL_ENABLED is off unless exactly "true" (lib/monitor-email):
-// nothing confirms that the address's owner asked for the mail. Otherwise
-// alerts are surfaced in-UI only (graceful degradation).
+// Alerts: every alert condition that fires is listed in the response's `alerts`.
+// Email delivery was retired in monitor contract 0.1.5 (CHANGELOG): this route
+// sends no mail under any setting, accepts an `email` field of any type and
+// ignores it, and returns no address. The body is checked for shape and bounds
+// first (lib/monitor-history).
 //
 // Contract: /contracts/monitor.json (designesy.monitor; the version is lib/monitor-contract's)
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
-import { Resend } from 'resend';
+import { normalizeInputUrl, isValidUrl } from '../../lib/url-guard';
+import { fetchPageResilient } from '../../lib/page-fetch';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
 import { clientKey } from '../../lib/rate-limit';
-import { escapeHtml, monitorEmailOn } from '../../lib/monitor-email';
+import { MONITOR_BODY_MAX_BYTES, M10_RETIRED_DETAIL, monitorRequestSchema, requestProblem, type PriorRun } from '../../lib/monitor-history';
 
 // ── URL utilities (shared hardened guard — see app/lib/url-guard.ts) ──────────
 // Imported above. Closes IPv6 loopback/link-local/ULA, cloud metadata
@@ -65,121 +63,7 @@ function rateLimited(ip: string): boolean {
   return false;
 }
 
-// ── Email alert cooldown ────────────────────────────────────────────────────
-// Prevents the same (URL + email) pair from receiving more than one alert
-// email per hour. Without this, every monitor request that has alerts fires
-// a fresh email — a cron poll or a user refreshing the page would spam the
-// inbox with identical notifications. The cooldown is content-aware: if the
-// alert *set* changes (new violations, different score), the email fires
-// immediately even within the cooldown window.
-
-const EMAIL_COOLDOWN = 60 * 60 * 1000; // 1 hour
-const emailLog = new Map<string, { time: number; alertHash: string }>();
-
-function emailOnCooldown(url: string, email: string, alerts: string[]): boolean {
-  const key = `${url}::${email}`;
-  const now = Date.now();
-  const alertHash = alerts.join('|||');
-  const entry = emailLog.get(key);
-  if (entry && now - entry.time < EMAIL_COOLDOWN) {
-    // Same alert set within cooldown → suppress
-    if (entry.alertHash === alertHash) return true;
-    // Different alert set within cooldown → allow (something changed)
-  }
-  emailLog.set(key, { time: now, alertHash });
-  return false;
-}
-
-// ── Email address check ─────────────────────────────────────────────────────
-// The address comes from the request body, so its length is checked before the
-// pattern runs: the pattern backtracks on a long run of "x." segments with no
-// valid ending (2.3 s at 100,000 characters in Node 24), and no deliverable
-// address is longer than 254 characters (RFC 5321's 256-octet path, less the
-// angle brackets).
-const EMAIL_MAX_LENGTH = 254;
-
-function isEmailAddress(email: string): boolean {
-  return email.length <= EMAIL_MAX_LENGTH && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-// ── Fetching (mirrors drift/score routes) ─────────────────────────────────────
-
-const BROWSER_HEADERS: Record<string, string> = {
-  'User-Agent':
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9',
-  'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124"',
-  'Sec-Ch-Ua-Mobile': '?0',
-  'Sec-Ch-Ua-Platform': '"Windows"',
-  'Sec-Fetch-Dest': 'document',
-  'Sec-Fetch-Mode': 'navigate',
-  'Sec-Fetch-Site': 'none',
-};
-
-function extractCssLinks(html: string, baseUrl: string): string[] {
-  const links: string[] = [];
-  const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  let m;
-  while ((m = styleRe.exec(html)) !== null) {
-    links.push(m[1]);
-  }
-  const linkRe = /<link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi;
-  while ((m = linkRe.exec(html)) !== null) {
-    try {
-      links.push(new URL(m[1], baseUrl).href);
-    } catch {
-      // ignore malformed
-    }
-  }
-  return links;
-}
-
-async function fetchText(url: string): Promise<string> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
-  try {
-    const resp = await safeFetch(url, {
-      headers: BROWSER_HEADERS,
-      signal: controller.signal,
-    });
-    if (!resp.ok) return '';
-    return await resp.text();
-  } catch {
-    return '';
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
-  let html = '';
-  try {
-    const parsed = new URL(targetUrl);
-    const candidates = [
-      targetUrl,
-      !parsed.hostname.startsWith('www.') ? `https://www.${parsed.hostname}${parsed.pathname}` : '',
-    ].filter(Boolean);
-    for (const c of candidates) {
-      html = await fetchText(c);
-      if (html && html.length > 50) break;
-    }
-  } catch {
-    // fall through
-  }
-  if (!html) return { html: '', css: '' };
-  const parts = extractCssLinks(html, targetUrl);
-  const cssParts: string[] = [];
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      const ext = await fetchText(part);
-      if (ext) cssParts.push(ext);
-    } else {
-      cssParts.push(part);
-    }
-  }
-  return { html, css: cssParts.join('\n') };
-}
+// ── Fetching: app/lib/page-fetch.ts, shared by drift, guardrails, monitor and compare ──
 
 import {
   runDriftChecks,
@@ -231,6 +115,15 @@ type Snapshot = {
   checks: DriftCheckResult[];
 };
 
+// What the monitor checks read from a run: this run's snapshot, or an earlier
+// run as the request carries it (lib/monitor-history requires only these).
+type Run = {
+  timestamp?: string;
+  score: number;
+  tokensExtracted: number;
+  checks: { id: string; status: string }[];
+};
+
 type MonitorResponse = {
   ok: boolean;
   url?: string;
@@ -241,12 +134,11 @@ type MonitorResponse = {
   fail?: number;
   total?: number;
   currentSnapshot?: Snapshot;
-  baseline?: Snapshot | null;
-  previous?: Snapshot | null;
+  baseline?: PriorRun | null;
+  previous?: PriorRun | null;
   driftChecks?: DriftCheckResult[];
   monitorChecks?: MonitorCheckResult[];
   alerts?: string[];
-  emailAlert?: EmailAlert;
   error?: string;
 };
 
@@ -303,7 +195,7 @@ function createSnapshot(timestamp: string, checks: DriftCheckResult[], tokensExt
 // watched"), but this route schedules nothing and stores nothing: the caller
 // supplies the earlier runs. It now says what the run had to compare against,
 // and a first run, with nothing to compare, is not scored.
-function checkM01HistorySupplied(history: Snapshot[]): MonitorCheckResult {
+function checkM01HistorySupplied(history: Run[]): MonitorCheckResult {
   if (history.length === 0) {
     return { id: 'm01', item: 'History supplied', status: 'SKIP', detail: 'No history: drift needs a previous run. This run is the baseline; pass it back as history next time.' };
   }
@@ -320,7 +212,7 @@ const CADENCE_DAYS = { daily: 1, weekly: 7, monthly: 30 } as const;
 type Cadence = keyof typeof CADENCE_DAYS;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function checkM02LastRunFresh(history: Snapshot[], cadence: Cadence, now: number): MonitorCheckResult {
+function checkM02LastRunFresh(history: Run[], cadence: Cadence, now: number): MonitorCheckResult {
   const item = 'Last run fresh';
   if (history.length === 0) {
     return { id: 'm02', item, status: 'SKIP', detail: 'No earlier run: freshness is measured from the newest run in the history you pass.' };
@@ -342,7 +234,7 @@ function checkM02LastRunFresh(history: Snapshot[], cadence: Cadence, now: number
   return { id: 'm02', item, status: 'FAIL', detail: `Previous run ${ago} ago, more than two ${cadence} windows: the watch may have stopped` };
 }
 
-function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
+function checkM03DriftDelta(current: Snapshot, baseline: Run | null): MonitorCheckResult {
   if (!baseline) {
     return { id: 'm03', item: 'Drift delta vs baseline', status: 'PASS', detail: 'No baseline yet: this is the first run (baseline established)' };
   }
@@ -356,7 +248,7 @@ function checkM03DriftDelta(current: Snapshot, baseline: Snapshot | null): Monit
   return { id: 'm03', item: 'Drift delta vs baseline', status: 'WARN', detail: `Score ${current.score} vs baseline ${baseline.score}: slipped ${Math.abs(delta)} points` };
 }
 
-function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
+function checkM04TrendSlope(history: Run[]): MonitorCheckResult {
   if (history.length < 3) {
     return { id: 'm04', item: 'Drift trend slope', status: 'PASS', detail: `Insufficient data for trend (${history.length} run${history.length === 1 ? '' : 's'}: need 3 for slope)` };
   }
@@ -371,7 +263,7 @@ function checkM04TrendSlope(history: Snapshot[]): MonitorCheckResult {
   return { id: 'm04', item: 'Drift trend slope', status: 'WARN', detail: `Trend flat over last 3 runs (${slope >= 0 ? '+' : ''}${slope} points)` };
 }
 
-function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
+function checkM05NewViolations(current: Snapshot, previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm05', item: 'New violations since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
@@ -386,7 +278,7 @@ function checkM05NewViolations(current: Snapshot, previous: Snapshot | null): Mo
   return { id: 'm05', item: 'New violations since last run', status: 'WARN', detail: `${newFails.length} check newly failed: ${newFails.map((c) => c.id).join(', ')}` };
 }
 
-function checkM06Resolved(current: Snapshot, previous: Snapshot | null): MonitorCheckResult {
+function checkM06Resolved(current: Snapshot, previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm06', item: 'Resolved since last run', status: 'PASS', detail: 'No previous run to compare: baseline established' };
   }
@@ -404,7 +296,7 @@ function checkM06Resolved(current: Snapshot, previous: Snapshot | null): Monitor
   return { id: 'm06', item: 'Resolved since last run', status: 'WARN', detail: 'No checks resolved since the previous run' };
 }
 
-function checkM07ScoreDegradation(current: Snapshot, previous: Snapshot | null, threshold = 5): MonitorCheckResult {
+function checkM07ScoreDegradation(current: Snapshot, previous: Run | null, threshold = 5): MonitorCheckResult {
   if (!previous) {
     return { id: 'm07', item: 'Score degradation threshold', status: 'PASS', detail: 'No previous run: threshold check starts now' };
   }
@@ -418,7 +310,7 @@ function checkM07ScoreDegradation(current: Snapshot, previous: Snapshot | null, 
   return { id: 'm07', item: 'Score degradation threshold', status: 'WARN', detail: `Score dropped ${drop} points (within threshold of ${threshold})` };
 }
 
-function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): MonitorCheckResult {
+function checkM08TokenMutation(current: Snapshot, baseline: Run | null): MonitorCheckResult {
   if (!baseline) {
     return { id: 'm08', item: 'Token-set mutation', status: 'PASS', detail: 'No baseline: token set recorded as initial state' };
   }
@@ -444,160 +336,23 @@ function checkM08TokenMutation(current: Snapshot, baseline: Snapshot | null): Mo
 // the same page.
 // Snapshots do not record a contract version yet, so a run with history says
 // so instead of comparing.
-function checkM09ContractVersion(previous: Snapshot | null): MonitorCheckResult {
+function checkM09ContractVersion(previous: Run | null): MonitorCheckResult {
   if (!previous) {
     return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} recorded as baseline` };
   }
   return { id: 'm09', item: 'Contract version drift', status: 'PASS', detail: `Contract version ${CONTRACT_VERSION} detected: version history comparison requires v0.2` };
 }
 
-// `off` is set when an alert fired, an email was given and email alerts are
-// switched off, so nothing was sent (lib/monitor-email).
-type EmailAlert = { attempted: boolean; delivered: boolean; off?: boolean; recipient?: string; fromAddress?: string; error?: string };
-
-// mailOn is false when email alerts are switched off on this server. The cached
-// run builds m10 without it, so POST rebuilds m10 on every request.
-function checkM10AlertDelivered(alerts: string[], emailAlert?: EmailAlert, mailOn = true): MonitorCheckResult {
-  if (alerts.length === 0) {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: 'No alert condition triggered: no alert needed' };
-  }
-  if (emailAlert?.delivered) {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} delivered to ${emailAlert.recipient} via email${emailAlert.fromAddress ? ` (from ${emailAlert.fromAddress})` : ''}` };
-  }
-  if (emailAlert?.fromAddress === 'suppressed (cooldown)') {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} active: email suppressed (1-hour cooldown, same alert set already delivered)` };
-  }
-  if (emailAlert?.attempted && !emailAlert.delivered) {
-    return { id: 'm10', item: 'Alert delivered', status: 'WARN', detail: `${alerts.length} alert${alerts.length === 1 ? '' : 's'} surfaced in-UI: email delivery failed (${emailAlert.error || 'unknown error'})` };
-  }
-  if (emailAlert?.off || !mailOn) {
-    return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI: email alerts are off on this server${emailAlert?.off ? ', so no email was sent' : ''}` };
-  }
-  // No email provided or no Resend key — alerts surfaced in-UI only
-  return { id: 'm10', item: 'Alert delivered', status: 'PASS', detail: `${alerts.length} alert condition${alerts.length === 1 ? '' : 's'} surfaced in-UI (add an email address to get drift alerts by mail)` };
-}
-
-// ── Email alerting via Resend ────────────────────────────────────────────────
-// Sends an HTML alert email when drift alerts fire. Requires:
-//   1. An `email` field in the POST body (the recipient)
-//   2. MONITOR_EMAIL_ENABLED set to exactly "true" (lib/monitor-email)
-//   3. RESEND_API_KEY environment variable (set in Vercel project settings)
-// Without all three, alerts are surfaced in-UI only (graceful degradation).
-// Every value the HTML body interpolates is escaped: the history snapshots
-// come from the request.
-
-async function sendAlertEmail(
-  targetUrl: string,
-  email: string,
-  alerts: string[],
-  currentSnapshot: Snapshot,
-  previous: Snapshot | null,
-): Promise<EmailAlert> {
-  if (!monitorEmailOn()) {
-    return { attempted: false, delivered: false, off: true };
-  }
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return { attempted: false, delivered: false };
-  }
-  if (!email || !isEmailAddress(email)) {
-    return { attempted: false, delivered: false };
-  }
-
-  try {
-    const resend = new Resend(apiKey);
-    const host = (() => { try { return new URL(targetUrl).hostname; } catch { return targetUrl; } })();
-    // A previous score that is not a finite number is reported as missing.
-    const prevScore = typeof previous?.score === 'number' && Number.isFinite(previous.score) ? previous.score : null;
-    const scoreDelta = prevScore === null ? 0 : currentSnapshot.score - prevScore;
-    const deltaStr = scoreDelta >= 0 ? `+${scoreDelta}` : `${scoreDelta}`;
-    const e = escapeHtml;
-
-    const subject = `[Designesy] Drift alert for ${host}: ${currentSnapshot.grade}/${currentSnapshot.score}`;
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background:#0a0a0c;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#ffffff;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;padding:2rem 1rem;">
-    <tr>
-      <td style="padding-bottom:1.5rem;">
-        <h1 style="margin:0 0 0.25rem;font-size:1.5rem;font-weight:700;color:#ffffff;">Designesy Drift Alert</h1>
-        <p style="margin:0;font-size:0.85rem;color:#999999;">${e(host)} · ${e(new Date().toLocaleString('en-US'))}</p>
-      </td>
-    </tr>
-    <tr>
-      <td style="background:#16161b;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:1.5rem;margin-bottom:1rem;">
-        <p style="margin:0 0 0.5rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Score</p>
-        <p style="margin:0;font-size:2rem;font-weight:700;color:${currentSnapshot.score >= 70 ? '#4ade80' : currentSnapshot.score >= 50 ? '#facc15' : '#f87171'};">${e(currentSnapshot.grade)} · ${e(currentSnapshot.score)}/100</p>
-        <p style="margin:0.5rem 0 0;font-size:0.85rem;color:#b8b8b8;">${previous ? (prevScore === null ? 'Previous: no score recorded' : `Previous: ${e(prevScore)}/100 (${e(deltaStr)} points)`) : 'First run: baseline established'}</p>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:1rem 0;">
-        <p style="margin:0 0 0.75rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#999999;">Alerts (${e(alerts.length)})</p>
-        ${alerts.map((a) => `<p style="margin:0.25rem 0;padding:0.75rem 1rem;background:rgba(248,113,113,0.08);border-left:3px solid #f87171;border-radius:4px;font-size:0.85rem;color:#ffffff;line-height:1.5;">${e(a)}</p>`).join('')}
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:1.5rem 0;">
-        <a href="https://www.designesy.org/monitor?url=${e(encodeURIComponent(targetUrl))}" style="display:inline-block;padding:0.75rem 1.5rem;background:#0A94FF;color:#010102;text-decoration:none;border-radius:6px;font-size:0.9rem;font-weight:600;">View full report →</a>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding-top:2rem;border-top:1px solid rgba(255,255,255,0.06);">
-        <p style="margin:0;font-size:0.75rem;color:#999999;line-height:1.6;">You received this email because a monitor run for ${e(targetUrl)} on designesy.org was requested with this address for alerts. Nothing is scheduled: each run is one request, compared with the earlier runs sent with it. This alert was triggered by a score degradation, new violations, or token-set mutation detected during that run.</p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-    // Try the branded sending address first; fall back to Resend's shared
-    // onboarding address when the custom domain isn't verified yet. This lets
-    // email alerting ship immediately and upgrade automatically once DNS
-    // verification completes — no feature flag, no redeploy.
-    const brandedFrom = 'Designesy Monitor <monitor@designesy.org>';
-    const fallbackFrom = 'Designesy Monitor <onboarding@resend.dev>';
-
-    const { error: brandedError } = await resend.emails.send({
-      from: brandedFrom,
-      to: email,
-      subject,
-      html,
-    });
-
-    if (!brandedError) {
-      return { attempted: true, delivered: true, recipient: email, fromAddress: 'monitor@designesy.org' };
-    }
-
-    // Branded send failed (domain not verified, 422) — retry via the shared
-    // Resend onboarding address so alerts still reach the inbox.
-    if (brandedError.message.includes('not verified') || brandedError.message.includes('422') || brandedError.message.includes('domain')) {
-      const { error: fallbackError } = await resend.emails.send({
-        from: fallbackFrom,
-        to: email,
-        subject,
-        html,
-      });
-      if (!fallbackError) {
-        return { attempted: true, delivered: true, recipient: email, fromAddress: 'onboarding@resend.dev' };
-      }
-      return { attempted: true, delivered: false, recipient: email, fromAddress: 'fallback-failed', error: `branded: ${brandedError.message}; fallback: ${fallbackError.message}` };
-    }
-
-    return { attempted: true, delivered: false, recipient: email, error: brandedError.message };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown error';
-    return { attempted: true, delivered: false, recipient: email, error: msg };
-  }
+// m10 is not scored since monitor contract 0.1.5: alerts are returned in the
+// response and email delivery was retired, so m10 has nothing left to measure.
+// The id stays so m01-m10 keep their meaning.
+function checkM10AlertDelivered(): MonitorCheckResult {
+  return { id: 'm10', item: 'Alert delivered', status: 'SKIP', detail: M10_RETIRED_DETAIL };
 }
 
 // ── Main scoring function ────────────────────────────────────────────────────
 
-async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Promise<MonitorResponse> {
+async function scoreMonitorUncached(targetUrl: string, history: PriorRun[]): Promise<MonitorResponse> {
   const { html, css } = await fetchPageResilient(targetUrl);
 
   if (!html && !css) {
@@ -661,7 +416,7 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   if (m07.status === 'FAIL') alerts.push(m07.detail);
   if (m08.status === 'FAIL') alerts.push(m08.detail);
 
-  const m10 = checkM10AlertDelivered(alerts);
+  const m10 = checkM10AlertDelivered();
 
   const monitorChecks: MonitorCheckResult[] = [m01, m02, m03, m04, m05, m06, m07, m08, m09, m10];
 
@@ -678,11 +433,11 @@ async function scoreMonitorUncached(targetUrl: string, history: Snapshot[]): Pro
   };
 }
 
-// Monitor score = governance health, not design quality. A SKIP (m01 and m02
-// on a first run) is not scored, as in every other Designesy score. POST calls
-// this again after it replaces m02 and m10, so the score always matches the
-// checks it is returned with (until 0.1.3 an m10 that changed after the cache
-// left the cached score and counts in place). Line comments, as in the rest of
+// Monitor score = governance health, not design quality. A SKIP (m10 on every
+// run, m01 and m02 on a first run) is not scored, as in every other Designesy
+// score. POST calls this again after it replaces m02, so the score always
+// matches the checks it is returned with (until 0.1.3 an m10 that changed after
+// the cache left the cached score and counts in place). Line comments, as in the rest of
 // this file: the drift-agreement gates strip block comments with a regex, and
 // the Accept header's any-type wildcard would open one that a block comment
 // here closes.
@@ -704,6 +459,35 @@ const scoreMonitor = unstable_cache(scoreMonitorUncached, ['designesy-monitor'],
   tags: ['monitor'],
 });
 
+// ── Request body ─────────────────────────────────────────────────────────────
+
+// The body as text, as Request.text() decodes it (UTF-8, a leading byte order
+// mark dropped, U+FFFD for a malformed sequence), or null when it is larger
+// than maxBytes. A Content-Length over the limit is refused before a byte is
+// read, and a body without one stops being read at the first chunk past the
+// limit, so an oversized body is never held whole.
+async function readBodyCapped(request: Request, maxBytes: number): Promise<string | null> {
+  const declared = Number(request.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) return null;
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let read = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    read += value.byteLength;
+    if (read > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    parts.push(decoder.decode(value, { stream: true }));
+  }
+  parts.push(decoder.decode());
+  return parts.join('');
+}
+
 // ── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
@@ -715,30 +499,49 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { url?: string; history?: Snapshot[]; email?: string; cadence?: unknown };
+  // The body is read up to the limit before it is parsed (readBodyCapped). The
+  // checks read only the first run in the history (m03, m08) and the last two
+  // (m04; m02, m05, m06, m07 and m09 read the last), so a caller near the limit
+  // can send those.
+  const noStore = { 'Cache-Control': 'no-store' };
+  let raw: string | null;
   try {
-    body = await request.json();
+    raw = await readBodyCapped(request, MONITOR_BODY_MAX_BYTES);
   } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400, headers: noStore });
+  }
+  if (raw === null) {
     return NextResponse.json(
-      { ok: false, error: 'Invalid JSON body.' },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      { ok: false, error: 'Request body is larger than 512 KB. The checks compare against only the first run in the history and the last two, so send those.' },
+      { status: 413, headers: noStore },
     );
   }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400, headers: noStore });
+  }
+  // Shape and bounds (lib/monitor-history): a malformed field is a 400 that
+  // names it. An `email` of any type is accepted and never read. The schema
+  // checks each array's length before its elements; anything it throws is
+  // still a 400 naming the body, not a 500.
+  let checked: ReturnType<typeof monitorRequestSchema.safeParse>;
+  try {
+    checked = monitorRequestSchema.safeParse(parsed);
+  } catch {
+    return NextResponse.json({ ok: false, path: 'body', error: 'body: the request could not be checked.' }, { status: 400, headers: noStore });
+  }
+  if (!checked.success) {
+    return NextResponse.json({ ok: false, ...requestProblem(checked.error) }, { status: 400, headers: noStore });
+  }
+  const body = checked.data;
 
-  const targetUrl = normalizeInputUrl(body.url || '');
+  const targetUrl = normalizeInputUrl(body.url ?? '');
   if (!isValidUrl(targetUrl)) {
     return NextResponse.json(
       { ok: false, error: 'Invalid URL. Provide a public http(s) URL.' },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } },
-    );
-  }
-
-  // Validate email if provided
-  const email = body.email?.trim();
-  if (email && !isEmailAddress(email)) {
-    return NextResponse.json(
-      { ok: false, error: 'Invalid email address.' },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      { status: 400, headers: noStore },
     );
   }
 
@@ -746,51 +549,18 @@ export async function POST(request: Request) {
   if (!Object.prototype.hasOwnProperty.call(CADENCE_DAYS, cadenceRaw)) {
     return NextResponse.json(
       { ok: false, error: 'cadence must be daily, weekly or monthly.' },
-      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+      { status: 400, headers: noStore },
     );
   }
   const cadence = cadenceRaw as Cadence;
 
-  const history = Array.isArray(body.history) ? body.history : [];
+  const history: PriorRun[] = body.history ?? [];
   const result = await scoreMonitor(targetUrl, history);
 
   // m02 is time-dependent, so it is measured now, not read from the cache.
   if (result.ok && result.monitorChecks) {
     const i = result.monitorChecks.findIndex((c) => c.id === 'm02');
     if (i >= 0) result.monitorChecks[i] = checkM02LastRunFresh(history, cadence, Date.now());
-  }
-
-  // Send email alert after the cached result returns (outside cache so
-  // the email param doesn't pollute the cache key). A per-URL+email cooldown
-  // prevents identical alerts from spamming the inbox on repeated requests —
-  // the email only fires if the alert set changed or the cooldown has elapsed.
-  // With email alerts switched off nothing is sent and the cooldown is not
-  // touched.
-  const mailOn = monitorEmailOn();
-  if (result.ok && result.alerts && result.alerts.length > 0 && email && result.currentSnapshot) {
-    if (!mailOn) {
-      result.emailAlert = { attempted: false, delivered: false, off: true };
-    } else if (emailOnCooldown(targetUrl, email, result.alerts)) {
-      result.emailAlert = { attempted: false, delivered: false, fromAddress: 'suppressed (cooldown)' };
-    } else {
-      const emailResult = await sendAlertEmail(
-        targetUrl,
-        email,
-        result.alerts,
-        result.currentSnapshot,
-        result.previous ?? null,
-      );
-      result.emailAlert = emailResult;
-    }
-  }
-
-  // m10 reflects this request's email delivery status and whether email
-  // alerts are on, neither of which the cached run knows.
-  if (result.ok && result.monitorChecks) {
-    const m10Index = result.monitorChecks.findIndex((c) => c.id === 'm10');
-    if (m10Index >= 0) {
-      result.monitorChecks[m10Index] = checkM10AlertDelivered(result.alerts ?? [], result.emailAlert, mailOn);
-    }
   }
 
   if (result.ok && result.monitorChecks) Object.assign(result, tallyMonitor(result.monitorChecks));

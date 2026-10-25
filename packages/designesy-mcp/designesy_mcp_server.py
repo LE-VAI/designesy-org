@@ -2,8 +2,7 @@
 """
 designesy_mcp_server — stdio MCP server exposing designesy.org's design
 intelligence infrastructure as native agent tools and resources. Every tool
-reads only, except designesy_monitor_score, which can send an alert email (see
-SAFETY below).
+only reads (see SAFETY below).
 
 Zero external dependencies (stdlib only). Implements the MCP JSON-RPC 2.0
 protocol over stdio (initialize, tools/list, tools/call, resources/list,
@@ -33,16 +32,16 @@ PROVENANCE:
     The server caches responses with a 5-minute TTL. No local files are read.
 
 SAFETY:
-    Read-only with one exception. designesy_monitor_score posts to
-    designesy.org's /api/monitor, which sends a drift-alert email through
-    Resend when the caller passes `email`, an alert fires, and the server has
-    a Resend key configured. Every other tool only reads: the document tools
-    fetch designesy.org exports, and the scoring tools fetch the URLs the
-    caller supplies, directly or through designesy.org's engines. The server
-    writes no local files and reads no credentials. TOOL_ANNOTATIONS records
-    each tool's hints. Every certificate is verified unless the operator sets
-    DESIGNESY_INSECURE_TLS=1, which covers a caller's URL only, and no
-    browser is used unless the operator sets DESIGNESY_CDP_URL.
+    Read-only. The document tools fetch designesy.org exports, and the
+    scoring tools fetch the URLs the caller supplies, directly or through
+    designesy.org's engines. designesy_monitor_score sends no email: its
+    `email` argument is deprecated and ignored, and this server does not
+    forward it (designesy.org retired monitor email in monitor contract
+    0.1.5). The server writes no local files and reads no credentials.
+    TOOL_ANNOTATIONS records each tool's hints. Every certificate is verified
+    unless the operator sets DESIGNESY_INSECURE_TLS=1, which covers a
+    caller's URL only, and no browser is used unless the operator sets
+    DESIGNESY_CDP_URL.
 """
 from __future__ import annotations
 
@@ -54,6 +53,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
+import zlib
 from typing import Any
 
 SERVER_NAME = "designesy-mcp-server"
@@ -180,12 +180,91 @@ def _validate_url(url: str) -> None:
             raise ValueError(f"Blocked: private/reserved IP '{host}'")
 
 
-def _fetch(url: str, as_json: bool = True) -> Any:
-    """Fetch a URL with in-memory caching. Returns parsed JSON or text."""
+# The URL that answered each fetched URL, after urllib's redirects.
+_FINAL_URL: dict[str, str] = {}
+
+# How many bytes each fetched URL's body decoded to (0 when it was not
+# compressed), so a cached body is charged to a page's budget as a fresh one is.
+_DECODED_BYTES: dict[str, int] = {}
+
+# The most bytes one compressed body may decode to (engine 1.5.4), and the most
+# a page's stylesheets may decode to between them (_fetch_page_parts shares one
+# budget of this size). Past it the read fails: a body of a few kilobytes can
+# decode to gigabytes. 16 MiB is the largest cap the hosted engine sets on one
+# document, and its stylesheet total.
+_MAX_DECODED_BYTES = 16 * 1024 * 1024
+
+# Codings in the IANA HTTP Content Coding Registry that transform the body and
+# that this port does not decode (br has no standard-library decoder). A label
+# no registry defines (none, utf-8, binary) leaves the body as it was sent, as a
+# browser reads it.
+_UNDECODED_CODINGS = frozenset({"br", "aes128gcm", "compress", "x-compress", "dcb", "dcz", "exi", "pack200-gzip", "zstd"})
+
+
+def _header_values(headers: Any, name: str) -> str | None:
+    """Every line of a repeated header, joined with ", " as Node joins them."""
+    get_all = getattr(headers, "get_all", None)
+    if callable(get_all):
+        values = [v for v in (get_all(name) or []) if isinstance(v, str)]
+        return ", ".join(values) if values else None
+    value = headers.get(name) if headers is not None else None
+    return value if isinstance(value, str) else None
+
+
+def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
+    """`raw` with its Content-Encoding undone, as the live engine reads it.
+
+    The request asks for identity, but a server may compress anyway. gzip
+    (x-gzip too) and deflate (zlib-wrapped, or raw as some servers send it,
+    told apart by the zlib header) are decoded with the standard library, up
+    to `limit` bytes (at most _MAX_DECODED_BYTES). identity and labels no
+    registry defines leave the body as sent. br has no decoder in the standard
+    library and this package has no dependencies, so a br body fails, as do
+    zstd and the other registered codings in _UNDECODED_CODINGS, more than one
+    coding, a corrupt or truncated stream and a body that decodes past the
+    limit: ValueError, never compressed bytes read as text.
+    """
+    codings = ["gzip" if c == "x-gzip" else c for c in (c.strip().lower() for c in (encoding or "").split(","))]
+    codings = [c for c in codings if c in ("gzip", "deflate") or c in _UNDECODED_CODINGS]
+    if not codings:
+        return raw
+    if len(codings) > 1:
+        raise ValueError(f"content decoding failed: unsupported Content-Encoding {', '.join(codings)!r}")
+    coding = codings[0]
+    if coding == "gzip":
+        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    elif coding == "deflate":
+        wrapped = len(raw) >= 2 and (raw[0] & 0x0F) == 8 and (raw[0] >> 4) <= 7 and ((raw[0] << 8) | raw[1]) % 31 == 0
+        d = zlib.decompressobj(zlib.MAX_WBITS if wrapped else -zlib.MAX_WBITS)
+    else:
+        raise ValueError(f"content decoding failed: unsupported Content-Encoding {coding!r}")
+    if not raw:
+        return raw
+    limit = max(0, min(limit, _MAX_DECODED_BYTES))
+    try:
+        out = d.decompress(raw, limit + 1)
+    except zlib.error as exc:
+        raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
+    if len(out) > limit or d.unconsumed_tail:
+        raise ValueError(f"content decoding failed ({coding}): the decoded body is over {limit} bytes")
+    if not d.eof:
+        raise ValueError(f"content decoding failed ({coding}): the stream is truncated")
+    return out
+
+
+def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> Any:
+    """Fetch a URL with in-memory caching. Returns parsed JSON or text.
+
+    `max_decoded` bounds what a compressed body may decode to (a page's
+    remaining stylesheet budget); a cached body that decoded past it fails the
+    same way, ValueError.
+    """
     _validate_url(url)
     now = time.time()
     cached = _cache.get(url)
     if cached and (now - cached[0]) < CACHE_TTL:
+        if max_decoded is not None and _DECODED_BYTES.get(url, 0) > max_decoded:
+            raise ValueError(f"content decoding failed: the decoded body is over {max_decoded} bytes")
         return cached[1]
 
     # Merge browser headers with per-call Accept override.
@@ -204,7 +283,16 @@ def _fetch(url: str, as_json: bool = True) -> Any:
         opener = urllib.request.urlopen(req, timeout=15, context=_unverified_ssl_context())
         verified = False
     with opener as resp:
-        body = resp.read().decode("utf-8")
+        # urllib follows redirects; the page's own links resolve against the
+        # URL that answered (engine 1.5.4), so it is kept beside the body.
+        final = resp.geturl()
+        _FINAL_URL[url] = final if isinstance(final, str) and final else url
+        # Every Content-Encoding line: a coding split over two lines is two codings.
+        coding = _header_values(resp.headers, "Content-Encoding")
+        raw = resp.read()
+        decoded = _decode_content(raw, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
+        _DECODED_BYTES[url] = len(decoded) if decoded is not raw else 0
+        body = decoded.decode("utf-8")
 
     if as_json:
         data = json.loads(body)
@@ -509,7 +597,7 @@ from urllib.parse import urljoin, urlparse
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
 # writes, so neither can claim a version the port does not match.
-OFFLINE_ENGINE_MIRRORS = "1.5.3"
+OFFLINE_ENGINE_MIRRORS = "1.5.4"
 OFFLINE_CONTRACT_VERSION = "v0.4.7"
 
 # The live engine's checks that this engine does not run, in the live engine's
@@ -1070,16 +1158,44 @@ def _style_elements(html: str) -> list[_Scan]:
 
 
 def _stylesheet_link_matches(html: str) -> list[_Scan]:
-    """Matches of <link[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']
-    (gi): group 1 is the last quoted href in the tag after its first
-    rel=stylesheet."""
+    """Group 1, or else group 2, of each match of
+    <link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)
+    (gi). The first alternative is the pattern before engine 1.5.4: the last
+    quoted href in the tag after its first rel=stylesheet. The second (engine
+    1.5.4) reads a tag that writes href first: the last quoted href in the tag
+    that is followed by rel=stylesheet before the next `>`."""
     start = _js_re("<link", "gi")
     rel = _next_match_finder(html, _js_re("rel=[\"']?stylesheet", "gi"))
+    rels = _match_starts(html, _js_re("rel=[\"']?stylesheet", "gi"))
     hrefs = _match_starts(html, _js_re("href=[\"']", "gi"))
     gt = _next_char_finder(html, ">")
+    gt_after_value = _next_char_finder(html, ">")
     quote = _js_re("[\"']")
     n = len(html)
     last_quote = max(html.rfind('"'), html.rfind("'"))
+
+    # The second alternative, worked out once per href, since it does not
+    # depend on where the tag starts: the value is non-empty and closes at q,
+    # and a rel=stylesheet starts after q and before the first `>` after q.
+    # The greedy [^>]* ends the match with the last such rel.
+    def href_first_at(at: int) -> "tuple[int, int] | None":
+        v = at + 6
+        if not (v < n and html[v] not in "\"'" and last_quote > v):
+            return None
+        q = quote.search(html, v + 1).start()
+        k = bisect_left(rels, int(min(gt_after_value(q + 1), n))) - 1
+        if k < 0 or rels[k] <= q:
+            return None
+        return (q, rels[k] + (15 if html[rels[k] + 4] in "\"'" else 14))
+
+    href_first = [href_first_at(at) for at in hrefs]
+    # last_viable[i]: the largest k <= i whose href reads by the second alternative, or -1.
+    last_viable: list[int] = []
+    lv = -1
+    for i, hit in enumerate(href_first):
+        if hit is not None:
+            lv = i
+        last_viable.append(lv)
     out: list[_Scan] = []
     ptr = 0
     pos = 0
@@ -1104,7 +1220,14 @@ def _stylesheet_link_matches(html: str) -> list[_Scan]:
             out.append(_Scan(m.start(), html[m.start():q + 1], (html[h + 6:q],)))
             pos = q + 1
             continue
-        # Every start before g sees less of the same tag.
+        # No rel before an href: the last href in the tag that rel=stylesheet follows.
+        k = last_viable[end - 1] if end > ptr else -1
+        if k >= ptr:
+            q, e = href_first[k]
+            out.append(_Scan(m.start(), html[m.start():e], (html[hrefs[k] + 6:q],)))
+            pos = e
+            continue
+        # Every start before g sees less of the same tag, by either alternative.
         if g >= n:
             break
         pos = g + 1
@@ -1510,8 +1633,9 @@ def _relative_color_match(args: str) -> tuple[str, str, str | None] | None:
 def _extract_css_parts(html: str, base_url: str) -> list[str]:
     """route.ts extractCssLinks: inline <style> bodies, then stylesheet URLs.
 
-    The link pattern needs rel before href, as the live engine's does; a page
-    that writes href first has that sheet ignored by both engines alike.
+    A <link> is a stylesheet with rel=stylesheet before or after its href
+    (engine 1.5.4; before it, href first was ignored by both engines alike).
+    `base_url` is the URL the page was read from.
     """
     parts = [m.groups[0] for m in _style_elements(html)]
     for m in _stylesheet_link_matches(html):
@@ -1527,19 +1651,25 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal. The third item lists the URLs read:
-    the page, then each sheet that loaded.
+    fails to load is dropped, not fatal. The sheets decode no more than
+    _MAX_DECODED_BYTES between them (engine 1.5.4), as the npm engine's do: a
+    compressed sheet past what is left fails. The third item lists the URLs
+    read: the page, then each sheet that loaded.
     """
     html = _fetch(url, as_json=False)
     read = [url]
-    parts = _extract_css_parts(html, url)
+    # Hrefs resolve against the URL that answered, after redirects (engine
+    # 1.5.4), as a browser resolves them.
+    parts = _extract_css_parts(html, _FINAL_URL.get(url, url))
     css_parts = [p for p in parts if not p.startswith("http")]
     external = list(dict.fromkeys(p for p in parts if p.startswith("http")))
+    budget = _MAX_DECODED_BYTES
     for href in external[:_MAX_STYLESHEETS]:
         try:
-            text = _fetch(href, as_json=False)
+            text = _fetch(href, as_json=False, max_decoded=budget)
         except Exception:
             continue
+        budget -= _DECODED_BYTES.get(href, 0)
         read.append(href)
         if text:
             css_parts.append(text)
@@ -3995,26 +4125,29 @@ TOOLS = [
             "Score a URL for continuous design-drift governance — the "
             "temporal layer over the drift radar. Re-runs the 12 drift "
             "checks (d01-d12) on the URL and computes 10 monitor checks "
-            "(m01-m10): schedule registered, last run fresh, drift "
+            "(m01-m10): history supplied, last run fresh, drift "
             "delta vs baseline, trend slope (3-run trajectory), new "
             "violations since last run, resolved since last run (the "
             "healing signal), score degradation threshold, token-set "
             "mutation, contract version drift, and alert delivered. "
-            "When alerts fire and an email address is provided, sends "
-            "an HTML drift-alert email via Resend (requires "
-            "RESEND_API_KEY env var). Pass a history array of prior "
-            "snapshots to compute deltas; omit it for a first-run "
-            "baseline. Use this to watch a design system over time — "
+            "Alerts come back in the result as alerts[]. No email is "
+            "sent: email delivery was retired, so m10 is SKIP on every "
+            "run and is not scored, and the email argument is deprecated "
+            "and ignored. Pass a history array of prior snapshots to "
+            "compute deltas; omit it for a first-run baseline. The "
+            "engine refuses a malformed history, more than 1000 runs, or "
+            "a request over 512 KB (HTTP 400 or 413). Use this to watch "
+            "a design system over time — "
             "'weekly audits at cents per report' (Into Design Systems "
             "2026). When NOT to use: for a single point-in-time drift "
             "check, use designesy_drift_score; for design-contract "
             "scoring, use designesy_score. Executable — fetches the "
             "URL, extracts CSS + :root tokens, runs checks, computes "
             "deltas. No browser needed. Returns JSON: { ok, url, score "
-            "(0-100, governance health), grade (A-F), pass, warn, fail, "
-            "total, currentSnapshot, baseline, previous, driftChecks, "
-            "monitorChecks, alerts, emailAlert }. Results cached ~24h "
-            "server-side per URL."
+            "(0-100, governance health; SKIP is not scored), grade (A-F), "
+            "pass, warn, fail, total, currentSnapshot, baseline, previous, "
+            "driftChecks, monitorChecks, alerts }. Results cached ~24h "
+            "server-side per URL and history."
         ),
         "inputSchema": {
             "type": "object",
@@ -4025,10 +4158,11 @@ TOOLS = [
                 },
                 "email": {
                     "type": "string",
-                    "description": "Email address to receive drift alerts. When alerts fire AND this is provided AND RESEND_API_KEY is set, an HTML alert email is sent. Optional — without it, alerts surface in-UI only.",
+                    "description": "Deprecated and ignored: email delivery was retired, so this server does not forward it and no email is sent. Alerts come back in the result as alerts[].",
                 },
                 "history": {
                     "type": "array",
+                    "maxItems": 1000,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -4038,18 +4172,23 @@ TOOLS = [
                             "tokensExtracted": {"type": "number"},
                             "checks": {
                                 "type": "array",
+                                "maxItems": 12,
                                 "items": {
                                     "type": "object",
                                     "properties": {
                                         "id": {"type": "string"},
                                         "item": {"type": "string"},
                                         "category": {"type": "string"},
-                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN"]},
+                                        "status": {"type": "string", "enum": ["PASS", "FAIL", "WARN", "SKIP"]},
                                         "detail": {"type": "string"},
                                     },
+                                    "required": ["id", "status"],
                                 },
                             },
                         },
+                        # What the engine's checks read; /api/monitor
+                        # refuses a run without them (HTTP 400).
+                        "required": ["score", "tokensExtracted", "checks"],
                     },
                     "description": "Prior snapshots for delta computation. Omit for a first-run baseline.",
                 },
@@ -4181,12 +4320,13 @@ TOOLS = [
 #   closes it; neither probe uses a tab it did not open. That leaves nothing
 #   behind, so the tool stays read-only. The other scoring tools post to the
 #   designesy.org engines, which fetch the url. Open world.
-# - designesy_monitor_score posts to /api/monitor, which sends a drift-alert
-#   email through Resend when the caller passes `email`, an alert fires (one
-#   needs a non-empty `history`), the server has RESEND_API_KEY set, and that
-#   instance has not sent the same alert set for that url and address within
-#   the hour. Sending mail is additive, so destructiveHint is False; a repeated
-#   call can send another email, so idempotentHint is False.
+# - designesy_monitor_score posts the url and history to /api/monitor, which
+#   fetches the url and compares it with the history. It sends no email: the
+#   site retired monitor email in monitor contract 0.1.5, and this server
+#   forwards no `email`. The route keeps only its 24-hour result cache and a
+#   per-caller rate-limit count, as every engine route does, so a repeated
+#   call has no effect beyond that count: readOnlyHint and idempotentHint
+#   are True.
 
 TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_catalog": {"title": "List Designesy packages", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
@@ -4203,7 +4343,7 @@ TOOL_ANNOTATIONS: dict[str, dict[str, Any]] = {
     "designesy_drift_score": {"title": "Score UI drift", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_readiness_score": {"title": "Score AI readiness", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_guardrails": {"title": "Generate build-contract bundle", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
-    "designesy_monitor_score": {"title": "Monitor drift with email alerts", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True},
+    "designesy_monitor_score": {"title": "Monitor drift over time", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_compare": {"title": "Compare two design systems", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
     "designesy_report": {"title": "Build composite design report", "readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": True},
 }
@@ -5377,7 +5517,7 @@ def _post_api(endpoint: str, body: dict[str, Any]) -> dict[str, Any]:
     """POST to a designesy.org API endpoint and return the JSON result.
 
     The certificate is always verified: DESIGNESY_INSECURE_TLS covers a
-    caller's URL only, and this body can carry a monitor email address.
+    caller's URL only, never designesy.org's engines.
     """
     url = f"{BASE_URL}/api/{endpoint}"
     data = json.dumps(body).encode("utf-8")
@@ -5428,15 +5568,15 @@ def _guardrails_impl(url: str | None = None, parts: Any = None) -> dict[str, Any
 
 def _monitor_score_impl(
     url: str | None = None,
-    email: str | None = None,
     history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """Proxy to /api/monitor — continuous drift governance."""
+    """Proxy to /api/monitor — continuous drift governance.
+
+    No email is forwarded: monitor email was retired, and the tool's `email`
+    argument is accepted and ignored.
+    """
     target = url or f"{BASE_URL}/"
-    body: dict[str, Any] = {"url": target, "history": history or []}
-    if email:
-        body["email"] = email
-    return _post_api("monitor", body)
+    return _post_api("monitor", {"url": target, "history": history or []})
 
 
 def _compare_impl(url_a: str, url_b: str) -> dict[str, Any]:
@@ -5604,7 +5744,6 @@ def _dispatch(name: str, args: dict[str, Any]) -> dict[str, Any] | str:
     elif name == "designesy_monitor_score":
         return _monitor_score_impl(
             url=args.get("url"),
-            email=args.get("email"),
             history=args.get("history"),
         )
     elif name == "designesy_compare":
