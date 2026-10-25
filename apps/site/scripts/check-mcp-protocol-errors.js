@@ -92,7 +92,8 @@
  *                          writes each control character as an escape; and cuts
  *                          each issue to 160 characters (one of 160 is kept, one
  *                          of 161 is cut), never inside a character or an escape,
- *                          also when the text holds an earlier escape
+ *                          also when the text holds an earlier escape, and with a
+ *                          "\u" the client wrote treated as an escape's start
  *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
  *                          (2,000 issues; the check prints the answer's size with
  *                          and without the rewrite) is answered -32602; a failed
@@ -847,6 +848,15 @@ async function messageText() {
       name: 'issue-cut-second-escape',
       list: issueList([[['params', `${'k'.repeat(10)}\n${'k'.repeat(131)}\n${'k'.repeat(40)}`]]]),
       want: `Invalid params for tools/list: params.${'k'.repeat(10)}${escaped(0x0a)}${'k'.repeat(131)}…`,
+    },
+    // A "\u" the client wrote is treated as the start of an escape too. Here
+    // two of them start at the 158th and 160th units: the cut keeps 159
+    // units, so an escape at the 158th would be split, and the first "\u" is
+    // dropped although the second, which the cut drops anyway, comes later.
+    {
+      name: 'issue-cut-client-backslash-u',
+      list: issueList([[['params', `${'k'.repeat(150)}\\u\\u${'k'.repeat(40)}`]]]),
+      want: `Invalid params for tools/list: params.${'k'.repeat(150)}…`,
     },
   ];
   for (const c of cases) {
