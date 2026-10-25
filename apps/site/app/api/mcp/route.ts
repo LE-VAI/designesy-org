@@ -36,7 +36,7 @@ import { after } from 'next/server';
 import { recordUsage, toolCallNames } from '../../lib/usage';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
-import { safeFetch } from '../../lib/url-guard';
+import { safeFetch, textWithin } from '../../lib/url-guard';
 import { monitorHistorySchema } from '../../lib/monitor-history';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
@@ -112,17 +112,14 @@ async function readUrl(url: string, limit: number, headers: Record<string, strin
   }
   if (!res.ok) return { ok: false, status: res.status, statusText: res.statusText };
   // safeFetch holds at most limit + 1 bytes, so a body that holds more than
-  // the limit went past it. The bytes are read once. TextDecoder decodes them
-  // as UTF-8 and drops one leading byte order mark, as res.text() and
-  // res.json() did, so JSON.parse of the text fails with the message
-  // res.json() gave. Node 24.15.0's res.text() also dropped a second byte
-  // order mark; TextDecoder keeps it, so a body that starts with two no
-  // longer parses.
-  const bytes = await res.arrayBuffer();
-  if (bytes.byteLength > limit) {
+  // the limit went past it (textWithin, url-guard). A body within it is the
+  // text res.text() gave, so JSON.parse of it gives what res.json() gave,
+  // its error message included.
+  const text = await textWithin(res, limit);
+  if (text === null) {
     throw new Error(`Fetch failed: the response is over the ${limit / MiB} MiB read limit`);
   }
-  return { ok: true, text: new TextDecoder().decode(bytes) };
+  return { ok: true, text };
 }
 
 async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown> {

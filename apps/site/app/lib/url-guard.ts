@@ -482,6 +482,40 @@ export function cutByBudget(resp: Response): boolean {
   return CUT_BY_BUDGET.has(resp);
 }
 
+/**
+ * A body as the text resp.text() gives for it, or null when it holds more
+ * than `limit` bytes. Read through safeFetch with maxBodyBytes set to
+ * `limit`, a body longer than the limit holds limit + 1 bytes, so null says
+ * it went past the limit. The chunks are read as they are, with no copy, by
+ * a default reader, which the byte stream pinnedFetch builds takes as any
+ * stream does, and only a body within the limit is decoded: a Response
+ * built on those chunks decodes them, as the response's own text() would,
+ * so the text, and the byte order marks dropped from its start, are the
+ * same. The body peaks at twice its size in memory, as in resp.text();
+ * reading it with arrayBuffer() first would add a third copy.
+ */
+export async function textWithin(resp: Response, limit: number): Promise<string | null> {
+  const chunks: Uint8Array[] = [];
+  let held = 0;
+  const reader = resp.body?.getReader();
+  if (reader) {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      held += value.byteLength;
+    }
+  }
+  if (held > limit) return null;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const c of chunks) controller.enqueue(c);
+      controller.close();
+    },
+  });
+  return new Response(body).text();
+}
+
 /** A decoding failure. Its message never decides how a caller classifies it. */
 function decodingError(detail: string): Error {
   const err = new Error(`content decoding failed${detail}`);

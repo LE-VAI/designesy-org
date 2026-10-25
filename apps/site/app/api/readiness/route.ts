@@ -10,7 +10,7 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch, textWithin } from '../../lib/url-guard';
 import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
@@ -60,20 +60,6 @@ function notRead(what: string): string {
 }
 
 /**
- * A response's body as text, or null when it is longer than READ_LIMIT.
- * safeFetch holds at most READ_LIMIT + 1 bytes of it (maxBodyBytes), so a
- * body that holds more went past the limit. The bytes are decoded by a
- * Response, as resp.text() decoded them before, so the text is the same.
- * (TextDecoder would not be: Node 24.15.0's text() drops two leading UTF-8
- * byte order marks, TextDecoder one.)
- */
-async function textWithinLimit(resp: Response): Promise<string | null> {
-  const bytes = await resp.arrayBuffer();
-  if (bytes.byteLength > READ_LIMIT) return null;
-  return new Response(bytes).text();
-}
-
-/**
  * What a probe found. `tooLarge`: a GET whose body is longer than READ_LIMIT,
  * whatever its status; it has no body, because the body was not read.
  */
@@ -97,7 +83,7 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<P
     // The limit holds for any status: r10 reads the home page's body whatever
     // its status. The checks that need an ok response test ok first, so a
     // large 404 is still "not found".
-    const body = await textWithinLimit(resp);
+    const body = await textWithin(resp, READ_LIMIT);
     if (body === null) return { ok: resp.ok, status: resp.status, tooLarge: true };
     return { ok: resp.ok, status: resp.status, body };
   } catch {
@@ -277,7 +263,7 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
       maxBodyBytes: READ_LIMIT,
     });
     if (resp.ok) {
-      const data = await textWithinLimit(resp);
+      const data = await textWithin(resp, READ_LIMIT);
       if (data === null) {
         return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: notRead('The tools/list answer from /api/mcp') };
       }

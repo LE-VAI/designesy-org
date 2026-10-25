@@ -133,6 +133,9 @@
  *     for 8 s before it answers. With a signal and no idle timeout of its
  *     own, Node's global agent ends a socket that is quiet for 5 s, so a
  *     read given only the deadline's signal fails there at 5 s.
+ *   - A token file that starts with two byte order marks is read, or fails,
+ *     as res.json() reads or fails on the same bytes (on Node 24.15.0 it is
+ *     read). This holds on the route from before the read limits.
  *   - A readiness check whose file is 1 MiB past the 4 MiB read limit is
  *     WARN, never FAIL or PASS, and its detail names the file and says it is
  *     larger than the 4 MiB read limit and was not read: r02 for an
@@ -159,7 +162,9 @@
  *     HTTP status); an ordinary small site's ten checks (seven PASS, three
  *     WARN, score 85, B) and those of a site with none of the files (nine
  *     FAIL, one WARN, score 5, F) are, detail for detail, what the route
- *     reported before the read limit.
+ *     reported before the read limit; and an /llms.txt that starts with two
+ *     byte order marks and holds two bytes that are not UTF-8 is r02 PASS
+ *     with the length of the text resp.text() gives for it.
  *   - Last: nothing was thrown during the run where no caller could catch it
  *     (an uncaught exception or an unhandled rejection). One thrown before the
  *     first case starts (a module that does not load) ends the run with
@@ -422,6 +427,7 @@ const ROUTES = {
   'www.designesy.org/contracts/skill': { bytes: DOC_AT, type: 'text/markdown' },
   'tokens-parse.example.com/not.json': { body: NOT_JSON, type: 'application/json' },
   'tokens-parse.example.com/bom.json': { bytes: Buffer.concat([BOM, Buffer.from(TOKENS)]), type: 'application/json' },
+  'tokens-parse.example.com/two-boms.json': { bytes: Buffer.concat([BOM, BOM, Buffer.from(TOKENS)]), type: 'application/json' },
   'www.designesy.org/.well-known/agent.json': { body: NOT_JSON, type: 'application/json' },
   'tokens-ok.example.com/tokens.json': { body: TOKENS, type: 'application/json' },
   'tokens-late.example.com/tokens.json': { body: TOKENS, type: 'application/json', delayMs: 8000 },
@@ -485,6 +491,8 @@ const READY_FILES = {
     '/api/mcp': { bytes: jsonOfSize(MCP_ANSWER, READINESS_LIMIT), type: 'application/json' },
   },
   'ready-at-gzip.example.com': { '/llms.txt': gzipped(docOfSize(READINESS_LIMIT), 'text/plain') },
+  // An llms.txt that starts with two byte order marks and holds two bytes that are not UTF-8.
+  'ready-bom.example.com': { '/llms.txt': { bytes: Buffer.concat([BOM, BOM, Buffer.from('# Read limits\n\n'), Buffer.from([0xff, 0xfe]), Buffer.from('\nA brief.\n')]), type: 'text/plain' } },
   'ready-404.example.com': {
     '/llms.txt': { status: 404, bytes: READY_LLMS_OVER },
     '/sitemap.xml': { status: 404, bytes: READY_SITEMAP_OVER },
@@ -1137,6 +1145,28 @@ const CONCURRENT = [
     },
   },
   {
+    name: 'designesy_tokens_score reads a token file that starts with two byte order marks as res.json() reads it',
+    run: async () => {
+      const key = 'tokens-parse.example.com/two-boms.json';
+      // What res.json() gives for these bytes on this Node: a value, or JSON.parse's error.
+      let want;
+      try {
+        want = { ok: true, value: await new Response(ROUTES[key].bytes).json() };
+      } catch (e) {
+        want = { ok: false, message: e.message };
+      }
+      const o = await toolOutcome('designesy_tokens_score', { url: `https://${key}` });
+      if (want.ok) {
+        assert.equal(o.failed, false, `failed with "${o.message}", where res.json() reads the file`);
+        assert.equal(o.payload.total_tokens, 1, `${o.payload.total_tokens} tokens, not 1`);
+        return `read, as res.json() reads it: score ${o.payload.score}, ${o.payload.total_tokens} token(s)`;
+      }
+      assert.equal(o.failed, true, `returned a result, where res.json() fails with "${want.message}"`);
+      assert.equal(o.message, want.message, `failed with "${o.message}", not res.json()'s "${want.message}"`);
+      return `failed as res.json() fails: "${o.message}"`;
+    },
+  },
+  {
     name: 'designesy_tokens_score still reads a token file that answers',
     run: async () => {
       const { result, payload } = await h.callTool('designesy_tokens_score', { url: 'https://tokens-ok.example.com/tokens.json' });
@@ -1260,6 +1290,15 @@ const CONCURRENT = [
       const said = checksAre(await readiness('https://ready-404.example.com/'), {});
       for (const p of ['/llms.txt', '/sitemap.xml', '/api/mcp']) assert.ok(seen.get(`ready-404.example.com${p}`), `no request reached ${p}`);
       return said;
+    },
+  },
+  {
+    name: 'readiness reads a body as resp.text() reads it: an llms.txt that starts with two byte order marks and holds bytes that are not UTF-8',
+    run: async () => {
+      const text = await new Response(READY_FILES['ready-bom.example.com']['/llms.txt'].bytes).text();
+      return checksAre(await readiness('https://ready-bom.example.com/'), {
+        r02: ['PASS', `/llms.txt returns ${text.length} bytes of agent-facing brief`],
+      });
     },
   },
   {

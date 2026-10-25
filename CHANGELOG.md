@@ -62,14 +62,18 @@ its limit.
   and r08 reported FAIL as not found, r04 reported FAIL (`No MCP endpoint
   detected at /api/mcp`), and a page scanned that did so failed the whole
   scan (HTTP 502, `Could not fetch the target URL`).
-- **A body is read once.** The MCP route decodes the bytes with
-  TextDecoder. For every body measured (not JSON, empty, cut, invalid
-  UTF-8, one UTF-8 or UTF-16 byte order mark) the text, and the JSON.parse
-  result or error, are those `res.text()` and `res.json()` gave on Node
-  24.15.0. A body that starts with two UTF-8 byte order marks no longer
-  parses: `res.text()` dropped both, TextDecoder drops one. The readiness
-  route decodes the bytes with a Response, as `resp.text()` did, so each
-  check reads the same text.
+- **A body is read once, and decoded as before.** Each read takes the
+  body's chunks as the URL guard hands them over, with no copy, compares
+  their length with its limit, and gives a body within it to a Response,
+  whose `text()` decodes it. In the MCP route and the readiness route the
+  text is the one `res.text()` gave for the same bytes, so `JSON.parse` of
+  it gives what `res.json()` gave, its error message included, and a token
+  file that starts with two UTF-8 byte order marks is read as before (on
+  Node 24.15.0, `res.text()` drops both). A body within its limit peaks at
+  twice its size in memory, as with `res.text()`: measured on Node 24.15.0
+  with a 16 MiB body in a Response built as the URL guard builds one, the
+  peak of ArrayBuffer memory was 32 MiB with this read and with
+  `res.text()`.
 - **A readiness result cached before this change is not served.** The
   readiness route keeps each result for 24 h, keyed by
   `designesy-readiness` and the URL. A result cached before could be wrong
