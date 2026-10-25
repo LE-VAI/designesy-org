@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * mcp-protocol-errors gate — a request whose params fail the MCP schema is
+ * mcp-protocol-errors gate: a request whose params fail the MCP schema is
  * answered -32602 Invalid params with a short message naming the field, and a
  * 2026-07-28 request may leave out clientInfo.
  *
@@ -46,7 +46,12 @@
  *                          argument (the tools page lists "Input validation errors"
  *                          under tool execution errors)
  *   modern-clientInfo-optional  2026-07-28 server/discover and tools/list without
- *                          io.modelcontextprotocol/clientInfo get a result
+ *                          io.modelcontextprotocol/clientInfo get a result, and the
+ *                          shim passes them on as modern (X-MCP-Shim:
+ *                          passthrough-modern); a 2026-07-28 header on a body with
+ *                          no envelope, or with one that lacks clientCapabilities
+ *                          or protocolVersion, is still downgraded
+ *                          (downgraded-to-legacy)
  *   valid-unchanged        valid requests and ordinary errors answer, byte for
  *                          byte, what they answer with the rewrite switched off:
  *                          status, headers and body. Not applicable (SKIP) on a
@@ -65,16 +70,18 @@
  *                          another field or with bytes that are not UTF-8
  *   detection              each of the four conditions in mcp-invalid-params.ts is
  *                          enforced on its own, in both framings: a failed check is
- *                          rewritten (alone; in a batch, first or second; with its
- *                          "error" member's name written with an escape; with error
- *                          data, which is kept; after leading whitespace), and a
+ *                          rewritten (alone; in a batch, first or second; two in
+ *                          one batch; with its "error" member's name written with
+ *                          an escape; with error data, which is kept; after
+ *                          leading whitespace), and a
  *                          payload that differs from it in one condition only
  *                          passes unchanged (results holding an error-shaped
  *                          object, or with an id that reads as an "error" member to
  *                          a scan that ends a string at an escaped quote or takes a
  *                          value for a name, none of which is parsed; another error
  *                          code; a message whose text before the list is not a
- *                          request label, such as a result check's; an empty list;
+ *                          request label, such as a result check's, or holds one
+ *                          after other text or before more text; an empty list;
  *                          a list with an issue outside params). A rewritten answer
  *                          keeps its status and headers, and no content-length that
  *                          is not its new body's
@@ -83,17 +90,20 @@
  *                          issue as stated in mcp-invalid-params.ts (a missing
  *                          field, an invalid one, a record called an object);
  *                          writes each control character as an escape; and cuts
- *                          each issue to 160 characters, never inside a character
- *                          or an escape
+ *                          each issue to 160 characters (one of 160 is kept, one
+ *                          of 161 is cut), never inside a character or an escape,
+ *                          also when the text holds an earlier escape
  *   frame-bound            an initialize whose clientInfo.icons holds 2,000 numbers
  *                          (2,000 issues; the check prints the answer's size with
  *                          and without the rewrite) is answered -32602; a failed
  *                          check of exactly FRAME_BOUND bytes is rewritten in both
  *                          framings and one byte more passes unchanged; a JSON body
- *                          over the bound is handed back before its end arrives;
- *                          a line longer than the bound goes out before its
- *                          newline arrives; and after a result line longer than
- *                          the bound, the rest of it goes out as it arrives and
+ *                          over the bound is handed back before its end arrives,
+ *                          and the copy read for the rewrite is cancelled, so
+ *                          cancelling the answer cancels its source; a line longer
+ *                          than the bound goes out before its newline arrives; and
+ *                          after a result line longer than the bound, each of three
+ *                          later chunks of it goes out before the next is sent, and
  *                          the failed check on the next line is rewritten
  *
  * --app <dir> runs the checks against another checkout's apps/site; that is how
@@ -322,21 +332,46 @@ async function toolArguments() {
   return { findings, measured: text ? `isError result: "${short(text)}"` : undefined };
 }
 
+/** The X-MCP-Shim header of an answer: how the route's compatibility shim classed the request. */
+const shimOf = (answer) => (answer.headers.find(([name]) => name === 'x-mcp-shim') || [])[1] || null;
+
 async function modernClientInfoOptional() {
   const findings = [];
   const registry = harness.load('app/lib/mcp-tool-registry.ts');
+  // Without clientInfo, the envelope is whole: the shim passes it on as modern.
   const discover = await send(harness, modern(1, 'server/discover', {}, { clientInfo: false }));
   const d = discover.status === 200 && messages(discover)[0];
-  if (!d || !d.result || !Array.isArray(d.result.supportedVersions) || !d.result.supportedVersions.includes(MODERN)) {
-    findings.push({ id: 'modern-clientInfo-optional:server-discover', why: `server/discover without clientInfo answered HTTP ${discover.status}: ${short(discover.text)}` });
+  if (!d || !d.result || !Array.isArray(d.result.supportedVersions) || !d.result.supportedVersions.includes(MODERN) || shimOf(discover) !== 'passthrough-modern') {
+    findings.push({ id: 'modern-clientInfo-optional:server-discover', why: `server/discover without clientInfo answered HTTP ${discover.status}, X-MCP-Shim ${shimOf(discover)}: ${short(discover.text)}` });
   }
   const list = await send(harness, modern(2, 'tools/list', {}, { clientInfo: false }));
   const l = list.status === 200 && messages(list)[0];
   const count = l && l.result && Array.isArray(l.result.tools) ? l.result.tools.length : -1;
-  if (count !== registry.MCP_TOOL_NAMES.length) {
-    findings.push({ id: 'modern-clientInfo-optional:tools-list', why: `tools/list without clientInfo answered HTTP ${list.status} with ${count} tool(s), expected ${registry.MCP_TOOL_NAMES.length}: ${short(list.text)}` });
+  if (count !== registry.MCP_TOOL_NAMES.length || shimOf(list) !== 'passthrough-modern') {
+    findings.push({ id: 'modern-clientInfo-optional:tools-list', why: `tools/list without clientInfo answered HTTP ${list.status}, X-MCP-Shim ${shimOf(list)}, with ${count} tool(s), expected ${registry.MCP_TOOL_NAMES.length}: ${short(list.text)}` });
   }
-  return { findings, measured: findings.length ? undefined : `server/discover and tools/list (${count} tools) answered without clientInfo` };
+  // The envelope test still requires its two keys: a 2026-07-28 header on a
+  // body with no envelope, or with an envelope that lacks either key, is
+  // downgraded. (valid-unchanged compares with this same route, so it cannot
+  // see the shim change.)
+  const P = 'io.modelcontextprotocol/protocolVersion';
+  const C = 'io.modelcontextprotocol/clientCapabilities';
+  const header = { 'mcp-protocol-version': MODERN, 'mcp-method': 'tools/list' };
+  const downgrades = [
+    ['no-envelope', {}],
+    ['no-clientCapabilities', { _meta: { [P]: MODERN, 'io.modelcontextprotocol/clientInfo': CLIENT } }],
+    ['no-protocolVersion', { _meta: { [C]: {}, 'io.modelcontextprotocol/clientInfo': CLIENT } }],
+  ];
+  for (const [name, params] of downgrades) {
+    const answer = await send(harness, { body: { jsonrpc: '2.0', id: 3, method: 'tools/list', params }, headers: header });
+    if (shimOf(answer) !== 'downgraded-to-legacy') {
+      findings.push({ id: `modern-clientInfo-optional:shim-${name}`, why: `a 2026-07-28 header with ${name.replace(/-/g, ' ')} was not downgraded: X-MCP-Shim ${shimOf(answer)}, HTTP ${answer.status}` });
+    }
+  }
+  return {
+    findings,
+    measured: findings.length ? undefined : `server/discover and tools/list (${count} tools) answered without clientInfo, passed on as modern; ${downgrades.length} incomplete envelopes downgraded`,
+  };
 }
 
 async function validUnchanged() {
@@ -641,6 +676,13 @@ async function detection() {
     // and every message of the batch is examined, not only the first.
     { name: 'batch', frame: [failedCheck, beside], rewritten: true },
     { name: 'batch-second', frame: [beside, failedCheck], rewritten: true },
+    // Two failed checks in one batch: both are rewritten, not only the first.
+    {
+      name: 'batch-two-failed',
+      frame: [failedCheck, { ...failedCheck, id: 8 }],
+      requestBody: JSON.stringify([7, 8].map((id) => ({ jsonrpc: '2.0', id, method: 'tools/list', params: { cursor: 5 } }))),
+      rewritten: true,
+    },
     // 1: a member name written with an escape can read "error", so it is parsed
     // to be sure; here it does.
     { name: 'escaped-name', frame: failedCheck, text: JSON.stringify(failedCheck).replace('"error":', '"\\u0065rror":'), rewritten: true },
@@ -662,6 +704,10 @@ async function detection() {
     // label of a failed result check; and an empty list, which names no issue.
     { name: 'other-label', frame: errorFrame(-32603, `Upstream answered 400: ${list}`) },
     { name: 'result-label', frame: errorFrame(-32603, `Invalid tools/call result: ${list}`) },
+    // A request label counts only as the whole text before the list: not after
+    // other text, nor with more text after it.
+    { name: 'label-not-at-start', frame: errorFrame(-32603, `Upstream said: Invalid tools/list request: ${list}`) },
+    { name: 'label-then-text', frame: errorFrame(-32603, `Invalid tools/list request: see below ${list}`) },
     { name: 'empty-list', frame: errorFrame(-32603, '[]') },
     // 4: an issue outside params, alone or beside one under params.
     { name: 'outside-params', frame: errorFrame(-32603, issueList([[['cursor']]])) },
@@ -670,7 +716,7 @@ async function detection() {
   for (const c of cases) {
     const payload = c.text || JSON.stringify(c.frame);
     const expected = c.rewritten ? JSON.stringify(answered(c.frame)) : payload;
-    const got = await throughBothFramings(lib, payload, TOOLS_LIST_7, c.line);
+    const got = await throughBothFramings(lib, payload, c.requestBody || TOOLS_LIST_7, c.line);
     const what = c.rewritten ? `rewritten to ${expected}` : 'unchanged';
     if (got.json.payload !== expected || (!c.rewritten && !got.json.same)) {
       findings.push({ id: `detection:${c.name}:json`, why: `expected ${what}${c.rewritten ? '' : ' (the same Response)'}, got ${short(got.json.payload)}` });
@@ -778,6 +824,10 @@ async function messageText() {
     // A path can carry a key the client chose: each issue is cut to 160
     // characters, the ellipsis included.
     { name: 'issue-cut', list: issueList([[['params', 'k'.repeat(200)]]]), want: `Invalid params for tools/list: params.${'k'.repeat(152)}…` },
+    // The bound itself: an issue of exactly 160 characters is kept whole, and
+    // one of 161 is cut to 159 and the ellipsis.
+    { name: 'issue-160', list: issueList([[['params', 'k'.repeat(119)]]]), want: `Invalid params for tools/list: params.${'k'.repeat(119)}: expected string, received number` },
+    { name: 'issue-161', list: issueList([[['params', 'k'.repeat(120)]]]), want: `Invalid params for tools/list: params.${'k'.repeat(120)}: expected string, received numb…` },
     // Never inside a character: here the issue's 159th UTF-16 unit, the last
     // one a cut keeps, is the first of the two that make up U+1F39B, so the
     // whole character goes.
@@ -790,6 +840,14 @@ async function messageText() {
     // one unit earlier, they end at the 159th and the escape is kept whole.
     { name: 'issue-cut-escape', list: issueList([[['params', `${'k'.repeat(147)}\n${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(147)}…` },
     { name: 'issue-cut-escape-whole', list: issueList([[['params', `${'k'.repeat(146)}\n${'k'.repeat(40)}`]]]), want: `Invalid params for tools/list: params.${'k'.repeat(146)}${escaped(0x0a)}…` },
+    // With an earlier escape in the text too, the one the cut would split is
+    // still the one dropped: the 18th to 23rd units are kept, the 155th to
+    // 160th go.
+    {
+      name: 'issue-cut-second-escape',
+      list: issueList([[['params', `${'k'.repeat(10)}\n${'k'.repeat(131)}\n${'k'.repeat(40)}`]]]),
+      want: `Invalid params for tools/list: params.${'k'.repeat(10)}${escaped(0x0a)}${'k'.repeat(131)}…`,
+    },
   ];
   for (const c of cases) {
     const frame = errorFrame(-32603, c.list);
@@ -873,6 +931,25 @@ async function frameBound() {
     release();
     if (back !== res) findings.push({ id: 'frame-bound:json-over-bound', why: back ? 'a JSON body one byte over the bound came back as a new Response, not the one passed in' : 'a JSON body over the bound was read on past the bound: no answer before the rest arrived' });
     if (back) await back.arrayBuffer();
+
+    // Nor is the body kept whole: the copy that was read is cancelled once it
+    // passes the bound. The copy and the answer share one source, which is
+    // cancelled only when both are, so cancelling the answer must cancel the
+    // source. A copy left open would keep every later chunk of the body.
+    let cancelled = false;
+    const open = new Response(new ReadableStream({
+      start(c) {
+        for (const p of pieces(over, KIB64)) c.enqueue(p);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    const kept = await within(lib.answerInvalidParams(open, TOOLS_LIST_7));
+    if (kept === open) {
+      await within(open.body.cancel().catch(() => {}));
+      if (!cancelled) findings.push({ id: 'frame-bound:json-over-bound-copy', why: 'cancelling a JSON answer over the bound did not cancel its source: the copy read for the rewrite was left open, keeping the rest of the body' });
+    }
   }
 
   // An event-stream line of exactly the bound (newline included) is rewritten
@@ -929,38 +1006,48 @@ async function frameBound() {
   // After a line passes the bound, the rest of it goes out as it arrives, and
   // the next line is examined again. The source sends a result line longer than
   // the bound in 64 KiB chunks, the bound falling inside the last of them, and
-  // waits; then one more chunk of that line, and waits; then the rest of it and
-  // an event whose line is a failed check. Each read is bounded.
+  // waits; then three more chunks of that line, one at a time, each only after
+  // the one before has come out; then the rest of it and an event whose line is
+  // a failed check. Each read is bounded.
   {
-    const result = { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: 'x'.repeat(FRAME_BOUND + 4 * KIB64) }] } };
+    const result = { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: 'x'.repeat(FRAME_BOUND + 8 * KIB64) }] } };
     const failed = errorFrame(-32603, issueList([[['params', 'cursor']]]));
     const answered = { ...failed, error: { code: -32602, message: 'Invalid params for tools/list: params.cursor: expected string, received number' } };
     const stream = (second) => Buffer.from(enc.encode(`event: message\ndata: ${JSON.stringify(result)}\n\nevent: message\ndata: ${JSON.stringify(second)}\n\n`));
     const sent = stream(failed);
     const passes = 'event: message\n'.length + FRAME_BOUND; // the line's first byte over the bound
     const crossed = (Math.floor(passes / KIB64) + 1) * KIB64; // the end of the chunk it falls in
-    const more = crossed + KIB64; // still inside the line
+    const steps = [1, 2, 3].map((k) => crossed + k * KIB64); // the ends of the next three chunks, still inside the line
     const releases = [];
-    const gates = [0, 1].map(() => new Promise((r) => releases.push(r)));
+    // One gate before each of the three chunks, and one before the rest.
+    const gates = [...steps, sent.length].map(() => new Promise((r) => releases.push(r)));
     const res = new Response(new ReadableStream({
       async start(c) {
         for (const p of pieces(sent.subarray(0, crossed), KIB64)) c.enqueue(p);
-        await gates[0];
-        c.enqueue(sent.subarray(crossed, more));
-        await gates[1];
-        c.enqueue(sent.subarray(more));
+        let at = crossed;
+        for (let k = 0; k < steps.length; k++) {
+          await gates[k];
+          c.enqueue(sent.subarray(at, steps[k]));
+          at = steps[k];
+        }
+        await gates[steps.length];
+        c.enqueue(sent.subarray(at));
         c.close();
       },
     }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
     const out = await within(lib.answerInvalidParams(res, TOOLS_LIST_7));
     const reader = out && out.body ? patientReader(out.body) : null;
-    const throughBound = reader ? await reader.until(crossed) : false;
-    releases[0]();
-    const asItCame = throughBound && (await reader.until(more));
+    // The chunk that was held: 0 is the one the bound falls in, k the k-th after it.
+    let held = reader && (await reader.until(crossed)) ? -1 : 0;
+    for (let k = 0; k < steps.length; k++) {
+      releases[k]();
+      if (held < 0 && !(await reader.until(steps[k]))) held = k + 1;
+    }
     const before = reader ? reader.size : 0;
-    releases[1]();
-    if (!asItCame) {
-      findings.push({ id: 'frame-bound:after-bound-held', why: `${before} of the first ${more} bytes came out before the rest of the line was sent: after the line passed the bound, its next chunk was held` });
+    releases[steps.length]();
+    if (held >= 0) {
+      const what = held === 0 ? 'the chunk the bound falls in' : `chunk ${held} of the ${steps.length} sent after the bound, each only after the one before came out,`;
+      findings.push({ id: 'frame-bound:after-bound-held', why: `${before} bytes came out before the rest of the line was sent: ${what} was held, though the line had passed the bound` });
     }
     if (reader) {
       const all = await reader.rest();
@@ -973,9 +1060,9 @@ async function frameBound() {
   if (!findings.length) {
     notes.push(
       `at ${FRAME_BOUND} bytes rewritten and at ${FRAME_BOUND + 1} unchanged, in both framings`,
-      'a longer JSON body handed back before its end arrived',
+      'a longer JSON body handed back before its end arrived, its copy cancelled',
       'a longer line sent on before its newline arrived',
-      'after a longer result line, the rest of it sent on as it arrived and the failed check on the next line rewritten',
+      'after a longer result line, each of 3 later chunks of it sent on before the next was sent, and the failed check on the next line rewritten',
     );
   }
   return { findings, measured: notes.join('; ') };
