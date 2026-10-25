@@ -833,6 +833,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'read limits entry in CHANGELOG.md',
   },
 
+  // ── v0.4.7 (engine 1.5.4): a POST carries its body, and a read ends at its deadline ──
+  {
+    version: 'v0.4.7 · engine 1.5.4',
+    date: '2026-10-25',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Requests and deadlines: a POST through the URL guard carries its body, and a read given a deadline ends at that deadline and no sooner',
+    description:
+      'The URL guard ended each request without writing the body its caller passed. Readiness r04 is the only caller that passes one, so its tools/list POST reached every endpoint empty, and an endpoint that reads the request, as one built with mcp-handler does, answered 400: r04 reported WARN for an endpoint that lists its tools. The guard now sends a string or byte body with its length, and on such an endpoint r04 moves from WARN to PASS, reached directly or through a 307 or 308, which raises the readiness score by 5. A redirect is followed as fetch follows one: a 303, or a 301 or 302 to a POST, becomes a GET with no body, which such an endpoint answers 405, so r04 stays WARN there. A read given a deadline now ends at that deadline and no sooner. Node\'s global agent ended a socket that was quiet for 5 s, or 4 s on a connection kept alive from an answer that gave a 5 s Keep-Alive timeout, so a readiness probe, r04, a page or stylesheet read by the score, drift, guardrails, monitor or compare route, and a contract URL in contract mode, each with an 8 s deadline, failed at about 5 s when its server went quiet. Such a file or page is now read: a check that reported it as not found judges it, and a page that was unreachable is scored. One whose server stays quiet past 8 s still fails, and the score route now says the request timed out, where it said the request failed at the network level.',
+    rationale:
+      'r04 asks an endpoint for its tool list, so the request has to carry the question, and a read ends at the deadline its caller set. No check, rule, weight or grade boundary changed and no version moves. The score route\'s /DESIGN.md read has a deadline of its own of 5 s, so it moves only on a connection kept alive from such an answer, and the MCP route\'s reads, which had a 15 s idle timeout of their own, end at their 15 s deadline as before. This site\'s own r04 is answered in-process, as before.',
+    source: 'requests and deadlines entry in CHANGELOG.md',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',
