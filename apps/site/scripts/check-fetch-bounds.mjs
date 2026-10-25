@@ -72,6 +72,10 @@
  *     READ_DEADLINE_MS is 15 s.
  *   - designesy_tokens_score still reads a token file that answers, and
  *     designesy_llms_full_txt (cachedFetch) a document that answers.
+ *   - designesy_tokens_score still reads a token file whose server is quiet
+ *     for 8 s before it answers. With a signal and no idle timeout of its
+ *     own, Node's global agent ends a socket that is quiet for 5 s, so a
+ *     read given only the deadline's signal fails there at 5 s.
  *   - Last: nothing was thrown during the run where no caller could catch it
  *     (an uncaught exception or an unhandled rejection).
  *
@@ -98,9 +102,12 @@
  * uncopied puts the 9 byte and the 101 byte chunks in the shared pool,
  * beside the earlier read's body; one that never listens to the caller's
  * signal leaves the drip open at the case deadline; and a rejection left
- * unhandled, or a throw in a timer, fails the last. The ordinary page and
- * the two MCP reads of a URL that answers are controls: they pin what a
- * change to the transport or the MCP route must keep.
+ * unhandled, or a throw in a timer, fails the last. A route that gives
+ * readUrl's safeFetch the signal and no idleTimeoutMs fails the 8 s quiet
+ * case at 5 s; main's route, which passed no signal and so kept url-guard's
+ * 15 s idle timeout, holds it. The ordinary page and the two MCP reads of a
+ * URL that answers are controls: they pin what a change to the transport or
+ * the MCP route must keep.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -214,6 +221,7 @@ const ROUTES = {
   'motion-drip.example.com/anim.json': { drip: true },
   'www.designesy.org/llms.txt': { drip: true },
   'tokens-ok.example.com/tokens.json': { body: TOKENS, type: 'application/json' },
+  'tokens-late.example.com/tokens.json': { body: TOKENS, type: 'application/json', delayMs: 8000 },
   'www.designesy.org/llms-full.txt': { body: '# Fetch bounds\n\nA published document that answers at once.\n', type: 'text/plain' },
 };
 
@@ -229,6 +237,11 @@ const server = http.createServer((req, res) => {
   res.on('finish', () => { stat.finished = true; });
   // A read that fails: the connection closes before any answer.
   if (b.reset) return req.socket.destroy();
+  // A server that is quiet before it answers, well inside the read deadline.
+  if (b.delayMs) {
+    setTimeout(() => { res.writeHead(200, { 'content-type': b.type }); res.end(b.body); }, b.delayMs);
+    return;
+  }
   const headers = { 'content-type': b.type || 'text/html' };
   if (b.location) headers.location = b.location;
   if (b.encoding) headers['content-encoding'] = b.encoding;
@@ -499,6 +512,16 @@ const CONCURRENT = [
       assert.notEqual(result.isError, true, `returned an error: ${payload && payload.error}`);
       assert.equal(typeof payload.score, 'number');
       return `score ${payload.score}, ${payload.total_tokens} token(s)`;
+    },
+  },
+  {
+    name: 'designesy_tokens_score still reads a token file whose server is quiet for 8 s before it answers',
+    run: async () => {
+      const t0 = performance.now();
+      const { result, payload } = await h.callTool('designesy_tokens_score', { url: 'https://tokens-late.example.com/tokens.json' });
+      const s = (performance.now() - t0) / 1000;
+      assert.notEqual(result.isError, true, `returned an error after ${s.toFixed(2)} s: ${payload && payload.error}`);
+      return `score ${payload.score} after ${s.toFixed(2)} s`;
     },
   },
   {

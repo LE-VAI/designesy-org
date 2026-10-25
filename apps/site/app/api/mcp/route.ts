@@ -60,8 +60,10 @@ const cache = new Map<string, { ts: number; data: unknown }>();
 // redirect hops and DNS checks included. url-guard's own 15 s timeout ends a
 // read only when its socket goes quiet, so a server sending one byte a second
 // held a call open with nothing in this process to end it short of the
-// function's maxDuration (300 s, vercel.json). 15 s is that same figure, so a
-// server that stops answering is given up on no later than before.
+// function's maxDuration (300 s, vercel.json). With a signal and no idle
+// timeout of its own, Node's global agent ends a socket that is quiet for
+// 5 s, so readUrl passes this same figure as the idle timeout too: a server
+// that pauses, or stops answering, is waited for as long as before.
 const READ_DEADLINE_MS = 15_000;
 
 /**
@@ -71,7 +73,7 @@ const READ_DEADLINE_MS = 15_000;
 async function readUrl(url: string, headers: Record<string, string>): Promise<Response> {
   const signal = AbortSignal.timeout(READ_DEADLINE_MS);
   try {
-    return await safeFetch(url, { headers, signal });
+    return await safeFetch(url, { headers, signal, idleTimeoutMs: READ_DEADLINE_MS });
   } catch (e) {
     // A timeout is this read's own deadline firing, never a word in a
     // message: a rejection can carry text the server chose.

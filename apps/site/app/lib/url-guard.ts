@@ -411,8 +411,12 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   budget stops holds what was left of it, and cutByBudget(response) is true.
  *   A read that fails gives back what it was charged. With `decoders` set, a
  *   decoded body also waits for one of them, and gives it back when it ends.
+ * - `idleTimeoutMs`: how long the socket may stay quiet before the read
+ *   fails. Without a signal it is 15 s. With a signal and no idleTimeoutMs
+ *   none is set here, and Node's global agent ends a socket that is quiet
+ *   for 5 s (its default since Node 19).
  */
-export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget; idleTimeoutMs?: number };
 
 /**
  * The most bytes a decoded body may reach when the caller passes no
@@ -589,7 +593,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         method,
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
-        timeout: init?.signal ? undefined : 15000,
+        timeout: init?.idleTimeoutMs ?? (init?.signal ? undefined : 15000),
       },
       (res) => {
         const status = res.statusCode || 0;
