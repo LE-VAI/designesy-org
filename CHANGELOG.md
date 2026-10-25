@@ -270,14 +270,15 @@ of 2 to 5 s, 1 s less than that one.
 ### Gates (requests and deadlines)
 
 - `check-fetch-bounds.mjs` runs 65 cases (53 before this change), in about
-  27 to 30 s over 3 runs, with a peak of about 0.7 GiB of memory (maxRSS at
-  exit), on Node 24.15.0 on Windows. Both move from run to run, and other
-  work kept the CPU busy (sampled at 92 to 100%). A POST through the guard
-  carries its 46-byte body with `Content-Length: 46`; after a 307 or 308 the
-  URL it lands on receives the same POST, and after a 301, 302 or 303 a GET
-  with no body and none of the headers that describe one, while a header
-  that describes no body is kept; a PUT is repeated after a 302 and becomes
-  a GET after a 303; and a HEAD stays a HEAD through a 303. A string of 3
+  24 to 26 s over 5 runs, with a peak of about 0.7 GiB of memory (maxRSS at
+  exit), on Node 24.15.0 on Windows. Both move from run to run and with
+  other work on the machine: the CPU was sampled at 53 to 73%, and at 92 to
+  100% the gate took 27 to 30 s. A POST through the guard carries its
+  46-byte body with `Content-Length: 46`; after a 307 or 308 the URL it
+  lands on receives the same POST, and after a 301, 302 or 303 a GET with no
+  body and none of the headers that describe one, while a header that
+  describes no body is kept; a PUT is repeated after a 302 and becomes a GET
+  after a 303; and a HEAD stays a HEAD through a 303. A string of 3
   characters and 9 bytes arrives as 9 bytes with `Content-Length: 9`, and a
   view of part of a buffer as only the bytes it views; URLSearchParams, and
   a body on a GET or a HEAD, are refused with a TypeError, with no DNS query

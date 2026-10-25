@@ -1606,15 +1606,19 @@ const CONCURRENT = [
   {
     name: 'every read the site makes through safeFetch passes a signal that a timer fires',
     run: async () => {
+      // The app directory is read with fs.promises, a file at a time, since
+      // the other cases run at the same time. Read synchronously, its 475
+      // files once held this case and each case started before it for about
+      // 15 s on a busy machine, past the deadlines of the timed ones.
       const files = [];
-      const walk = (dir) => {
-        for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const walk = async (dir) => {
+        for (const e of await fs.promises.readdir(dir, { withFileTypes: true })) {
           const p = path.join(dir, e.name);
-          if (e.isDirectory()) walk(p);
+          if (e.isDirectory()) await walk(p);
           else if (/\.tsx?$/.test(e.name)) files.push(p);
         }
       };
-      walk(path.join(APP, 'app'));
+      await walk(path.join(APP, 'app'));
       // The text of a call's arguments, from `open` (just past its "(") to the
       // ")" that closes it, past brackets and quoted strings.
       const argsOf = (src, open) => {
@@ -1646,7 +1650,7 @@ const CONCURRENT = [
       for (const file of files) {
         const rel = path.relative(APP, file).split(path.sep).join('/');
         if (rel === 'app/lib/url-guard.ts') continue;
-        const src = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+        const src = (await fs.promises.readFile(file, 'utf8')).replace(/\r\n/g, '\n');
         // fetchContract reads a contract URL through the fetcher it is handed, url-guard's safeFetch.
         const call = rel === 'app/lib/own-contract/fetch-contract.ts' ? /\bfetcher\(/g : /\bsafeFetch\(/g;
         for (const { index, 0: name } of src.matchAll(call)) {
