@@ -163,7 +163,7 @@ changed are the ones this entry sets.
 ### Gates (read limits)
 
 - `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in
-  16.95 to 18.43 s over 6 runs, in the build and in CI after Fetch layer as
+  16.95 to 18.43 s over 7 runs, in the build and in CI after Fetch layer as
   before. `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
   `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the
   limit with the message above, sent with no content coding (with and
@@ -225,8 +225,8 @@ changed are the ones this entry sets.
   check stops only at the first path of its list, the later-path case
   fails; with r09 changed to report a robots.txt past the limit whatever
   its status, the 404 control fails. Measured on Node 24.15.0 on Windows,
-  with a peak of about 0.5 GiB of memory (maxRSS at exit: 507 to 571 MiB
-  over the 6 runs above; it moves from run to run).
+  with a peak of 0.5 to 0.6 GiB of memory (maxRSS at exit: 507 to 598 MiB
+  over the 7 runs above; it moves from run to run).
   CI runs Node 22 on Linux, where the byte counts and times above were not
   measured.
 - The gate exits 1 and prints the error when it throws before its first
