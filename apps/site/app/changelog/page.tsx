@@ -805,15 +805,15 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'engine 1.5.4 entry in CHANGELOG.md; RFC 9110 section 12.5.3',
   },
 
-  // ── v0.4.7 (engine 1.5.4): a read lets go of its signal, MCP reads end at 15 s ──
+  // ── v0.4.7 (engine 1.5.4): a read lets go of its signal, the MCP route's own reads end at 15 s ──
   {
     version: 'v0.4.7 · engine 1.5.4',
-    date: '2026-10-24',
+    date: '2026-10-25',
     dimension: 'verification',
     change: 'modified',
     title: 'Fetch bounds: a finished read lets go of its signal, and every URL the MCP route reads for itself ends at 15 s',
     description:
-      'Three changes to how the site\'s server reads a URL. A read removes the abort listener it adds to its caller\'s signal once it resolves, fails or its request errors. It left the listener there, and Node keeps an AbortSignal.timeout that has a listener alive until its timer fires, so the read\'s request and body stayed in memory until then; readiness r04 and the MCP route\'s reads pass such a signal. Every URL the MCP route reads for itself now ends 15 s after it starts, DNS checks and redirects included, with the error "Fetch timed out after 15 s": the url of designesy_tokens_score and designesy_motion_score, and the designesy.org documents the seven read-only tools serve. The URL guard\'s own 15 s timeout fires only when the socket goes quiet, so a server sending one byte a second held a call open until the function\'s 300 s limit. A body the URL guard reads now peaks at twice its size in memory, not four times: the guard joins its chunks once, into a buffer of the body\'s own size, and hands a reader that buffer, where the Response copied the bytes it was given.',
+      'Three changes to how the site\'s server reads a URL. A read removes the abort listener it adds to its caller\'s signal once it resolves, fails or its request errors. It left the listener there, and Node keeps an AbortSignal.timeout that has a listener alive until its timer fires, so the read\'s request and body stayed in memory until then; readiness r04 and the MCP route\'s reads pass such a signal. Every URL the MCP route reads for itself now ends 15 s after it starts, DNS checks and redirects included, with the error "Fetch timed out after 15 s": the url of designesy_tokens_score and designesy_motion_score, and the designesy.org documents the seven read-only tools serve. The URL guard\'s own 15 s timeout fires only when the socket goes quiet, so a server sending one byte a second kept a call open with nothing to end it before the function\'s 300 s limit; these reads keep that 15 s idle timeout as well, so a server that pauses is waited for as long as before. The guard now joins a body\'s chunks once, into a buffer of the body\'s own size, and hands a reader that buffer, where the Response copied the bytes it was given: on Node 24.15.0, one read of an 8 MiB body peaks at 16 MiB with the score route\'s reader, down from 32, and at 24 MiB with an arrayBuffer() read, down from 32.',
     rationale:
       'A read that has settled leaves nothing on its caller\'s signal, and no URL the MCP route reads for itself can hold a call open past 15 s. No check, rule, weight or ceiling changed, no score moves and no version moves; each tool keeps its result and error shapes. A new gate, check-fetch-bounds, runs the real URL guard and MCP route against a local server, with hosts that send one byte a second, and the fetch-layer gate now times the 204, 205 and 304 reads and a 999 status on a connection held open.',
     source: 'fetch bounds entry in CHANGELOG.md',

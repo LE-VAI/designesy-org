@@ -209,8 +209,8 @@ const h = createHarness({
 // process; it is recorded instead, and the case it hangs fails at its deadline.
 // A rejection no caller handles is recorded the same way, whatever
 // --unhandled-rejections says: without this listener only throw (the
-// default) and strict raise it as an exception, and under warn or none it
-// would fail no case.
+// default) and strict raise it as an exception, and under warn,
+// warn-with-error-code or none it would fail no case.
 const uncaught = [];
 process.on('uncaughtException', (e) => uncaught.push(String(e && e.message)));
 process.on('unhandledRejection', (e) => uncaught.push(`unhandled rejection: ${String(e?.message ?? e)}`));
