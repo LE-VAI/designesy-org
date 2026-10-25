@@ -66,14 +66,42 @@ const cache = new Map<string, { ts: number; data: unknown }>();
 // that pauses, or stops answering, is waited for as long as before.
 const READ_DEADLINE_MS = 15_000;
 
+const MiB = 1024 * 1024;
+
+// Each of those reads also holds at most its own number of body bytes, given
+// to url-guard as maxBodyBytes and counted after decoding when the body is
+// compressed. A body longer than its limit fails the read with an error that
+// names the limit: it is never read in part as if it were whole.
+//
+// 16 MiB for the url of designesy_motion_score. Two public Lottie files
+// measured 8,873,709 bytes (lottie-ios Tests/Samples/Issues/issue_1403.json,
+// which embeds images) and 4,713,147 bytes (lottie-web
+// test/animations/monster.json, vector only), each on its repository's
+// master branch on 2026-10-24.
+const LOTTIE_READ_LIMIT = 16 * 1024 * 1024;
+// 4 MiB for the url of designesy_tokens_score and for every cachedFetch
+// read. The largest token files measured are 1,674,878 bytes (Primer's light
+// theme) and 1,039,520 bytes (Spectrum's variables.json). The largest of the
+// seven documents cachedFetch reads from this site measured 100,907 bytes
+// (/contracts/design-system.json, as its route wrote it on 2026-10-24).
+const READ_LIMIT = 4 * 1024 * 1024;
+
+/** What readUrl returns: an ok response's body as text, or the status of a response that is not ok. */
+type UrlRead = { ok: true; text: string } | { ok: false; status: number; statusText: string };
+
 /**
  * url-guard's safeFetch (connection-level IP-pinned + URL/DNS guarded), ended
- * at READ_DEADLINE_MS. A read past it fails as a timeout, not as "aborted".
+ * at READ_DEADLINE_MS and held to `limit` body bytes. A read past the
+ * deadline fails as a timeout, not as "aborted". An ok response whose body
+ * is longer than `limit` fails as over the limit. A response that is not ok
+ * returns its status and no body, so a large error page still reports its
+ * status.
  */
-async function readUrl(url: string, headers: Record<string, string>): Promise<Response> {
+async function readUrl(url: string, limit: number, headers: Record<string, string>): Promise<UrlRead> {
   const signal = AbortSignal.timeout(READ_DEADLINE_MS);
+  let res: Response;
   try {
-    return await safeFetch(url, { headers, signal, idleTimeoutMs: READ_DEADLINE_MS });
+    res = await safeFetch(url, { headers, signal, idleTimeoutMs: READ_DEADLINE_MS, maxBodyBytes: limit });
   } catch (e) {
     // A timeout is this read's own deadline firing, never a word in a
     // message: a rejection can carry text the server chose.
@@ -82,6 +110,19 @@ async function readUrl(url: string, headers: Record<string, string>): Promise<Re
     }
     throw e;
   }
+  if (!res.ok) return { ok: false, status: res.status, statusText: res.statusText };
+  // safeFetch holds at most limit + 1 bytes, so a body that holds more than
+  // the limit went past it. The bytes are read once. TextDecoder decodes them
+  // as UTF-8 and drops one leading byte order mark, as res.text() and
+  // res.json() did, so JSON.parse of the text fails with the message
+  // res.json() gave. Node 24.15.0's res.text() also dropped a second byte
+  // order mark; TextDecoder keeps it, so a body that starts with two no
+  // longer parses.
+  const bytes = await res.arrayBuffer();
+  if (bytes.byteLength > limit) {
+    throw new Error(`Fetch failed: the response is over the ${limit / MiB} MiB read limit`);
+  }
+  return { ok: true, text: new TextDecoder().decode(bytes) };
 }
 
 async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown> {
@@ -91,16 +132,16 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
     return cached.data;
   }
 
-  const res = await readUrl(url, {
+  const read = await readUrl(url, READ_LIMIT, {
     'Accept': asJson ? 'application/json' : 'text/plain, */*',
     'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)`,
   });
 
-  if (!res.ok) {
-    throw new Error(`Fetch failed: ${res.status} ${res.statusText} for ${url}`);
+  if (!read.ok) {
+    throw new Error(`Fetch failed: ${read.status} ${read.statusText} for ${url}`);
   }
 
-  const data = asJson ? await res.json() : await res.text();
+  const data = asJson ? JSON.parse(read.text) : read.text;
   cache.set(url, { ts: now, data });
   return data;
 }
@@ -408,10 +449,10 @@ const handler = createMcpHandler(
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch with the read deadline (readUrl above).
-            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
-            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
-            tokenData = await res.json();
+            // SSRF-safe fetch with the read deadline and the 4 MiB read limit (readUrl above).
+            const read = await readUrl(url, READ_LIMIT, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
+            if (!read.ok) return failure(`Fetch failed: ${read.status} ${read.statusText}`);
+            tokenData = JSON.parse(read.text);
           } catch (e) {
             return failure(e instanceof Error ? e.message : String(e));
           }
@@ -603,10 +644,10 @@ test(${titleJs}, async ({ page }) => {
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch with the read deadline (readUrl above).
-            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
-            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
-            lottieData = await res.json();
+            // SSRF-safe fetch with the read deadline and the 16 MiB read limit (readUrl above).
+            const read = await readUrl(url, LOTTIE_READ_LIMIT, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
+            if (!read.ok) return failure(`Fetch failed: ${read.status} ${read.statusText}`);
+            lottieData = JSON.parse(read.text);
           } catch (e) {
             return failure(e instanceof Error ? e.message : String(e));
           }
