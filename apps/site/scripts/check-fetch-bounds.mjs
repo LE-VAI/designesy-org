@@ -67,25 +67,25 @@
  * through scripts/lib/route-harness.js with realSafeFetch. As in
  * check-score-read-bounds.mjs, two things are swapped, both below the guard:
  * node:dns/promises answers a public address, and records each host it is
- * asked about (looked), and node:http(s) connect to a server on 127.0.0.1
- * that this script runs. The connect wrapper also counts
- * the body bytes that reach the client and keeps the request, so a case can
- * say how far a body got and whether the request was destroyed. The server
- * reads each request's body before it answers, and records the method, the
- * headers that describe a body, one header that does not, and the body
- * (asked), so a case can say what a request carried. One host is answered
- * by an MCP endpoint built with mcp-handler, the package the site's MCP
- * route serves its tools with, resolved from the app checked or else from
- * this checkout. The
- * keep-alive case's host has a server of its own, on its own port, so the
- * connection Node's agent keeps alive from its first answer is taken by no
- * other case's request.
- * getEventListeners (node:events) counts the abort listeners left on a
- * signal. The MCP, readiness and score routes and page-fetch are loaded
- * before the first case starts, so no case's time includes their load, and
- * one case each for the MCP and readiness routes reads its source instead of
- * running it. The cases run concurrently, each on its own URLs; the last one
- * runs once the others have settled.
+ * asked about (looked), and node:http(s) connect to a server on 127.0.0.1 that
+ * this script runs. The connect wrapper also counts the body bytes that reach
+ * the client, keeps the request, and records when the request was made and
+ * when its headers arrived (seen), so a case can say how far a body got,
+ * whether the request was destroyed, when a read was asked for and how long
+ * its server stayed quiet. The server reads each request's body before it
+ * answers, and records the method, the headers that describe a body, one
+ * header that does not, and the body (asked), so a case can say what a request
+ * carried. One host is answered by an MCP endpoint built with mcp-handler, the
+ * package the site's MCP route serves its tools with, resolved from the app
+ * checked or else from this checkout. The keep-alive case's host has a server
+ * of its own, on its own port, so the connection Node's agent keeps alive from
+ * its first answer is taken by no other case's request. getEventListeners
+ * (node:events) counts the abort listeners left on a signal. The MCP,
+ * readiness and score routes and page-fetch are loaded before the first case
+ * starts, so no case's time includes their load, and one case each for the MCP
+ * and readiness routes reads its source instead of running it. The cases run
+ * concurrently, each on its own URLs; the last one runs once the others have
+ * settled.
  *
  * The MCP read limits are stated here (MCP_READ_LIMITS), as the read deadline
  * is (MCP_DEADLINE_S): a route file cannot export them. The bodies of the
@@ -132,14 +132,14 @@
  *     status, as a gzip body, as a corrupt gzip body, and cut by a shared
  *     budget. Between them they reach every place the transport settles a
  *     read other than an abort.
- *   - A POST carries its body: a 46 byte tools/list request reaches the
- *     server with content-length 46. After a 307 or a 308 the URL it lands
- *     on receives the same POST; after a 301, a 302 or a 303 it receives a
- *     GET with no body and none of the headers that describe one
- *     (content-type, content-language and content-location), while a header
- *     that describes no body is kept. A PUT is repeated, its body included,
- *     after a 302, and becomes such a GET after a 303. Each is as fetch
- *     follows that redirect.
+ *   - A POST carries its body: a 46 byte tools/list request reaches the server
+ *     with content-length 46. After a 307 or a 308 the URL it lands on
+ *     receives the same POST; after a 301, a 302 or a 303 it receives a GET
+ *     with no body and none of the headers that describe one (content-type,
+ *     content-language and content-location), while a header that describes no
+ *     body is kept. A PUT is repeated, its body included, after a 302, and
+ *     becomes such a GET after a 303. A HEAD stays a HEAD through a 303, its
+ *     headers kept. Each is as fetch follows that redirect.
  *   - A request body is sent as its bytes, with their count as its
  *     content-length: a string past ASCII (3 characters, 9 bytes), an
  *     ArrayBuffer, and a view of part of a buffer (only the bytes it views).
@@ -161,8 +161,11 @@
  *     connection of its own. designesy_tokens_score on a server that sends
  *     its headers and then nothing ends at the 15 s read deadline with the
  *     route's timeout error, its request destroyed.
- *   - A read given no signal fails once its server has sent nothing for
- *     15 s, with "SSRF guard: fetch timeout", its request destroyed.
+ *   - A read given no signal fails once its server has sent nothing for 15 s
+ *     since its headers arrived, with "SSRF guard: fetch timeout", its request
+ *     destroyed. The 15 s are timed from their arrival, where the server's
+ *     quiet starts: with the other cases running at once, the headers can take
+ *     more than a second to arrive.
  *   - Every safeFetch call in the site's app directory (url-guard's own
  *     aside), and fetchContract's call of the fetcher it is handed, passes a
  *     signal that a timer fires: an AbortSignal.timeout, or the signal of an
@@ -256,18 +259,23 @@
  *     which it answers 405, and r04 is WARN with that status. The same
  *     endpoint answers a tools/list POST that carries no body with 400.
  *   - Each caller whose signal ends at 8 s reads a server that sends nothing
- *     for 6 s before it answers: readiness r02 is PASS for such an
- *     /llms.txt, the score route scores such a page, and page-fetch (the
- *     drift, guardrails, monitor and compare routes' page read) reads it.
- *     The score route reports a page that sends its headers and then
- *     nothing, on both of its candidate URLs, as unreachable because the
- *     request timed out, at 2 x 8 s.
+ *     for 6 s before it answers: readiness r02 is PASS for such an /llms.txt,
+ *     the score route scores such a page, and page-fetch (the drift,
+ *     guardrails, monitor and compare routes' page read) reads it. The score
+ *     route reports a page at a www. URL that sends its headers and then
+ *     nothing on both of its candidate URLs (that URL and its http:// address)
+ *     as unreachable because the request timed out, at 2 x 8 s.
  *   - page-fetch reads a page's stylesheets one after another, and asks for
- *     none once 20 s have passed since it asked for the first. On a page
- *     whose first sheet answers at once, whose next three send their
- *     headers and then nothing, and whose fifth answers at once, its read
- *     ends at 20 s with the first sheet's CSS, and the fifth is never asked
- *     for.
+ *     none once 20 s have passed since it asked for the first. On a page that
+ *     is quiet for 2 s before it answers, whose first sheet answers at once,
+ *     whose next three send their headers and then nothing, and whose fifth
+ *     answers at once, it asks for each quiet sheet as the one before it ends,
+ *     at about 0, 8 and 16 s after it asked for the first, its read ends 20 s
+ *     after that with the first sheet's CSS, and the fifth is never asked for.
+ *     Each time is taken from when the first sheet was asked for, which the
+ *     phase is timed from. On a page whose second sheet sends its headers and
+ *     then nothing and whose others answer at once, it ends that sheet at its
+ *     8 s deadline and reads the four others.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes.
  *     (probeUrl's passes it for a GET; every probe the checks make is one.)
@@ -445,27 +453,26 @@
  * carried 'request-body-deadline', naming each of the six, and on one whose
  * compare cache alone lacks it.
  *
- * Against the tree from before the requests and deadline cases, eight of
- * them fail: the sheet phase case (below), the POST case (each URL
- * receives a POST with 0 body bytes), the body kinds case (below), the
- * mcp-handler r04 case (WARN with HTTP 400, also through the 307 and the
- * 302), the 6 s mid-body case (it ends at 5 s
- * with "SSRF guard: fetch timeout"), the keep-alive case (at 4 s after the
- * 5 s Keep-Alive timeout and at 1 s after the 2 s one), the 8 s callers case
- * (r02 is FAIL, the score route reports the page unreachable and page-fetch
- * reads nothing) and the silent page case (unreachable at about 10 s,
- * because the request failed at the network level). Its MCP route passed
- * its 15 s deadline as an idle timeout too, so the silent MCP case holds
- * there; with that taken out, the silent MCP case and the 8 s quiet case
- * fail at 5 s. A url-guard that leaves the agent's idle timeout on for a
- * read given a signal fails the 6 s mid-body, keep-alive, silent MCP, 8 s
- * quiet, 8 s callers and silent page cases. One that follows every redirect
- * with the caller's method and body fails the POST case after the 301, the
- * 302 and the 303 (and the PUT after the 303), and the r04 case through the
- * 302. The POST case also
- * fails against a url-guard that keeps content-language and
- * content-location on the GET, one that makes a PUT a GET after a 302, one
- * that makes a 308 a GET, and one that repeats a POST after a 301.
+ * Against the tree from before the requests and deadline cases, nine of them
+ * fail: the two sheet cases (below), the POST case (each URL receives a POST
+ * with 0 body bytes), the body kinds case (below), the mcp-handler r04 case
+ * (WARN with HTTP 400, also through the 307 and the 302), the 6 s mid-body
+ * case (it ends at about 5 s with "SSRF guard: fetch timeout"), the keep-alive
+ * case (at 4 s after the 5 s Keep-Alive timeout and at 1 s after the 2 s one),
+ * the 8 s callers case (r02 is FAIL, the score route reports the page
+ * unreachable and page-fetch reads nothing) and the silent page case
+ * (unreachable at about 10 s, because the request failed at the network
+ * level). Its MCP route passed its 15 s deadline as an idle timeout too, so
+ * the silent MCP case holds there; with that taken out, the silent MCP case
+ * and the 8 s quiet case fail at about 5 s. A url-guard that leaves the
+ * agent's idle timeout on for a read given a signal fails the 6 s mid-body,
+ * keep-alive, silent MCP, 8 s quiet, 8 s callers and silent page cases. One
+ * that follows every redirect with the caller's method and body fails the POST
+ * case after the 301, the 302 and the 303 (and the PUT after the 303), and the
+ * r04 case through the 302. The POST case also fails against a url-guard that
+ * keeps content-language and content-location on the GET, one that makes a PUT
+ * a GET after a 302, one that makes a 308 a GET, one that repeats a POST after
+ * a 301, and one that makes a HEAD a GET after a 303.
  *
  * On that tree each body of the body kinds case arrives with content-length
  * 0, and URLSearchParams, a body on a GET and a body on a HEAD are each sent
@@ -480,10 +487,20 @@
  * it.
  *
  * The sheet phase case fails on every tree before page-fetch bounded its
- * stylesheets: on the tree before that bound, the three quiet sheets take
- * 8 s each and the fifth is read after 24.62 s; on the tree before this
- * change, where the agent ended each quiet sheet at 5 s, it is read after
- * 15.40 s.
+ * stylesheets: on the tree before that bound, where each quiet sheet lasts its
+ * 8 s, the fifth is asked for about 24 s after the first and read; on the tree
+ * before this change, where the agent ended each quiet sheet at 5 s, about
+ * 15 s after it. The one quiet sheet case fails on the tree before this
+ * change, where that sheet ends at about 5 s, and holds on the tree before the
+ * bound. Four changes to page-fetch each fail cases too. One whose sheets have
+ * no 8 s deadline of their own, only the phase's, fails both: in the sheet
+ * phase case the third sheet is never asked for, and in the one quiet sheet
+ * case none of the three sheets after the quiet one is read. One that times
+ * the phase from before the page read fails the sheet phase case, which then
+ * ends about 18 s after the first sheet is asked for. One whose phase does not
+ * end the sheet being read fails it at about 24 s, and one that asks for
+ * sheets once the phase is over fails it by asking for the fifth at 20 s and
+ * reading it.
  *
  * The no-signal case and the call-site case hold on the trees from before
  * this change and from before the read limits, where each of those reads
@@ -494,10 +511,10 @@
  * abort it, fails the call-site case.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 35 of the 64 cases fail and every
- * control holds: the 27 the read limits make fail there (24 rule cases and
- * 3 source cases, the cache key case among them) and the eight requests and
- * deadline cases above.
+ * readiness route from before them), 36 of the 65 cases fail and every control
+ * holds: the 27 the read limits make fail there (24 rule cases and 3 source
+ * cases, the cache key case among them) and the nine requests and deadline
+ * cases above.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -559,6 +576,10 @@ const SHEET_PHASE_S = 20;
 /** The sheets of the sheet phase case: the first and the last answer at once, the three between send their headers and then nothing. */
 const SHEET_FIRST = '.first-sheet { color: rgb(17, 17, 17); }';
 const SHEET_LAST = '.last-sheet { color: rgb(34, 34, 34); }';
+/** How long the sheet phase case's page is quiet before it answers: the phase is timed from the first sheet, after the page. */
+const SHEETS_PAGE_QUIET_S = 2;
+/** The sheets of the one quiet sheet case, s0, s2, s3 and s4, which answer at once; s1 sends its headers and then nothing. */
+const ONE_QUIET_SHEETS = [0, 2, 3, 4].map((i) => [i, `.sheet-${i} { color: rgb(${i}, ${i}, ${i}); }`]);
 const SHEETS_PAGE = `<!doctype html><html lang="en"><head><title>Sheets</title>${[0, 1, 2, 3, 4].map((i) => `<link rel="stylesheet" href="/s${i}.css">`).join('')}</head><body><main><h1>Sheets</h1><p>A page whose sheets are slow.</p></main></body></html>`;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
 const LISTEN_SIGNAL_S = 10;
@@ -576,7 +597,11 @@ const TOKENS = JSON.stringify({
 });
 const LOTTIE = JSON.stringify({ v: '5.12.2', fr: 60, ip: 0, op: 18, w: 64, h: 64, layers: [], markers: [{ cm: 'reduced-motion', tm: 0, dr: 0 }], meta: { g: 'fetch bounds' } });
 
-/** host + path -> the client side of the last request: body bytes received, and the request. */
+/**
+ * host + path -> the client side of the last request: body bytes received,
+ * the request, when it was asked for (at) and when its headers arrived
+ * (headersAt), each from performance.now().
+ */
 const seen = new Map();
 
 /** Hosts answered by a server of their own (KEEP_ALIVE_PORT), so no other case's request takes the connection it keeps alive. */
@@ -591,9 +616,10 @@ const toLocal = (real) => ({
     const port = KEEP_ALIVE_HOSTS.has(opts.hostname) ? KEEP_ALIVE_PORT : PORT;
     const o = { ...opts, hostname: '127.0.0.1', port, headers: { ...(opts.headers || {}), 'x-fetch-bounds-host': opts.hostname } };
     delete o.lookup;
-    const record = { received: 0, req: null, wake: null };
+    const record = { received: 0, req: null, wake: null, at: performance.now(), headersAt: null };
     seen.set(key, record);
     record.req = http.request(o, (res) => {
+      record.headersAt = performance.now();
       res.on('data', (c) => {
         record.received += c.length;
         // A paced body waiting on the client goes on.
@@ -801,6 +827,9 @@ const ROUTES = {
   'post-landed-301.example.com/rpc': { body: 'ok', type: 'text/plain' },
   'post-308.example.com/rpc': { status: 308, location: 'https://post-landed-308.example.com/rpc' },
   'post-landed-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A HEAD through a 303, which stays a HEAD.
+  'head-303.example.com/rpc': { status: 303, location: 'https://head-landed-303.example.com/rpc' },
+  'head-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
   // A PUT through a 302, which repeats it, and through a 303, which makes it a GET.
   'put-302.example.com/rpc': { status: 302, location: 'https://put-landed-302.example.com/rpc' },
   'put-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
@@ -825,12 +854,18 @@ const ROUTES = {
   'page-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
   // A page that sends its headers and then nothing, on both of the score route's candidate URLs (https and http).
   'www.score-silent.example.com/': { silent: true, type: 'text/html' },
-  // A page that answers at once, linking five sheets: the first and the last
-  // answer at once, the three between send their headers and then nothing.
-  'www.sheets-phase.example.com/': { body: SHEETS_PAGE, type: 'text/html' },
+  // A page quiet for SHEETS_PAGE_QUIET_S before it answers, linking five
+  // sheets: the first and the last answer at once, the three between send
+  // their headers and then nothing.
+  'www.sheets-phase.example.com/': { body: SHEETS_PAGE, type: 'text/html', delayMs: SHEETS_PAGE_QUIET_S * 1000 },
   'www.sheets-phase.example.com/s0.css': { body: SHEET_FIRST, type: 'text/css' },
   ...Object.fromEntries([1, 2, 3].map((i) => [`www.sheets-phase.example.com/s${i}.css`, { silent: true, type: 'text/css' }])),
   'www.sheets-phase.example.com/s4.css': { body: SHEET_LAST, type: 'text/css' },
+  // A page that answers at once, linking the same five sheets: the second
+  // sends its headers and then nothing, and the others answer at once.
+  'www.sheet-one-quiet.example.com/': { body: SHEETS_PAGE, type: 'text/html' },
+  'www.sheet-one-quiet.example.com/s1.css': { silent: true, type: 'text/css' },
+  ...Object.fromEntries(ONE_QUIET_SHEETS.map(([i, css]) => [`www.sheet-one-quiet.example.com/s${i}.css`, { body: css, type: 'text/css' }])),
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -1555,10 +1590,17 @@ const CONCURRENT = [
     run: async () => {
       const key = 'nosignal-silent.example.com/';
       const { err, s } = await timedRejection(safeFetch(`https://${key}`));
+      const end = performance.now();
       assert.equal(err.message, 'SSRF guard: fetch timeout', `ended with ${err.name}: ${err.message}`);
-      endedAt(s, NO_SIGNAL_IDLE_S);
-      assert.equal(seen.get(key).req.destroyed, true, 'the request was not destroyed');
-      return `${s.toFixed(2)} s, "${err.message}"`;
+      // The server goes quiet once it has sent the headers, so the idle
+      // timeout is timed from their arrival. With the other cases running at
+      // once, they can take seconds to arrive after the call.
+      const rec = seen.get(key);
+      assert.ok(rec.headersAt, `the headers never arrived (ended after ${s.toFixed(2)} s)`);
+      const quiet = (end - rec.headersAt) / 1000;
+      endedAt(quiet, NO_SIGNAL_IDLE_S);
+      assert.equal(rec.req.destroyed, true, 'the request was not destroyed');
+      return `${quiet.toFixed(2)} s after the headers arrived (${s.toFixed(2)} s after the call), "${err.message}"`;
     },
   },
   {
@@ -1659,7 +1701,7 @@ const CONCURRENT = [
     },
   },
   {
-    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, and a PUT is repeated after a 302 and made a GET by a 303',
+    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, a PUT is repeated after a 302 and made a GET by a 303, and a HEAD stays a HEAD through a 303',
     run: async () => {
       const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
       // Content-Type, Content-Language and Content-Location describe the body; X-Kept does not.
@@ -1667,6 +1709,8 @@ const CONCURRENT = [
       const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', language: 'en', place: '/rpc', kept: 'kept', body };
       const put = { ...posted, method: 'PUT' };
       const got = { method: 'GET', length: undefined, type: undefined, language: undefined, place: undefined, kept: 'kept', body: '' };
+      // A HEAD is sent with no body, and a 303 repeats it as it is.
+      const headed = { ...posted, method: 'HEAD', length: undefined, body: '' };
       return eachRead([
         ['no redirect', 'POST', 'post-direct.example.com/rpc', 'post-direct.example.com/rpc', posted],
         ['after a 307', 'POST', 'post-307.example.com/rpc', 'post-landed-307.example.com/rpc', posted],
@@ -1676,8 +1720,9 @@ const CONCURRENT = [
         ['after a 303', 'POST', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
         ['a PUT after a 302', 'PUT', 'put-302.example.com/rpc', 'put-landed-302.example.com/rpc', put],
         ['a PUT after a 303', 'PUT', 'put-303.example.com/rpc', 'put-landed-303.example.com/rpc', got],
+        ['a HEAD after a 303', 'HEAD', 'head-303.example.com/rpc', 'head-landed-303.example.com/rpc', headed],
       ].map(([label, method, key, landed, want]) => [label, async () => {
-        const resp = await resolution(safeFetch(`https://${key}`, { method, headers, body }));
+        const resp = await resolution(safeFetch(`https://${key}`, method === 'HEAD' ? { method, headers } : { method, headers, body }));
         assert.equal(resp.status, 200, `HTTP ${resp.status}`);
         const a = asked.get(landed);
         assert.ok(a, `no request reached ${landed}`);
@@ -2237,21 +2282,50 @@ const CONCURRENT = [
     },
   },
   {
-    name: `page-fetch asks for no stylesheet once ${SHEET_PHASE_S} s have passed since its first, so three sheets that send their headers and then nothing end its read at ${SHEET_PHASE_S} s, and the sheet after them is not read`,
+    name: `page-fetch asks for no stylesheet once ${SHEET_PHASE_S} s have passed since it asked for its first: three sheets that send their headers and then nothing, each asked for as the one before ends, end its read ${SHEET_PHASE_S} s after it, on a page quiet for ${SHEETS_PAGE_QUIET_S} s, and the sheet after them is never asked for`,
     run: async () => {
+      const host = 'www.sheets-phase.example.com';
       const t0 = performance.now();
-      const page = await fetchPageResilient('https://www.sheets-phase.example.com/');
-      const s = (performance.now() - t0) / 1000;
+      const page = await fetchPageResilient(`https://${host}/`);
+      const end = performance.now();
       assert.equal(page.html, SHEETS_PAGE, `${page.html.length} of ${SHEETS_PAGE.length} bytes of the page`);
       assert.ok(page.css.includes(SHEET_FIRST), `the first sheet is not in the CSS read: ${JSON.stringify(page.css)}`);
-      const last = seen.has('www.sheets-phase.example.com/s4.css');
-      assert.ok(!last && !page.css.includes(SHEET_LAST), `the sheet after the quiet ones was ${last ? 'asked for' : 'not asked for'} after ${s.toFixed(2)} s, and is ${page.css.includes(SHEET_LAST) ? '' : 'not '}in the CSS read`);
-      endedAt(s, SHEET_PHASE_S);
-      return `${s.toFixed(2)} s; the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for`;
+      // Times are from when the first sheet was asked for, where the phase starts.
+      const first = seen.get(`${host}/s0.css`);
+      assert.ok(first, 'the first sheet was not asked for');
+      const since = (t) => (t - first.at) / 1000;
+      const last = seen.get(`${host}/s4.css`);
+      assert.ok(!last && !page.css.includes(SHEET_LAST), `the sheet after the quiet ones was ${last ? `asked for ${since(last.at).toFixed(2)} s after the first` : 'not asked for'}, and is ${page.css.includes(SHEET_LAST) ? '' : 'not '}in the CSS read`);
+      const asked = [1, 2, 3].map((i) => {
+        const r = seen.get(`${host}/s${i}.css`);
+        assert.ok(r, `sheet ${i + 1} was not asked for: the read ended ${since(end).toFixed(2)} s after the first was asked for`);
+        const at = since(r.at);
+        const want = (i - 1) * CALLER_DEADLINE_S;
+        assert.ok(at >= want - 0.5 && at <= want + MARGIN_S, `sheet ${i + 1} was asked for ${at.toFixed(2)} s after the first, not at about ${want} s`);
+        return at.toFixed(2);
+      });
+      endedAt(since(end), SHEET_PHASE_S);
+      return `the quiet sheets were asked for ${asked.join(', ')} s after the first, and the read ended ${since(end).toFixed(2)} s after it (${((end - t0) / 1000).toFixed(2)} s after the call); the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for`;
     },
   },
   {
-    name: `the score route reports a page that sends its headers and then nothing as unreachable because the request timed out, after ${CALLER_DEADLINE_S} s on each of its two candidate URLs`,
+    name: `page-fetch ends a sheet that sends its headers and then nothing at its ${CALLER_DEADLINE_S} s deadline, and reads each sheet after it`,
+    run: async () => {
+      const host = 'www.sheet-one-quiet.example.com';
+      const page = await fetchPageResilient(`https://${host}/`);
+      const end = performance.now();
+      assert.equal(page.html, SHEETS_PAGE, `${page.html.length} of ${SHEETS_PAGE.length} bytes of the page`);
+      const missing = ONE_QUIET_SHEETS.filter(([, css]) => !page.css.includes(css)).map(([i]) => `s${i}.css`);
+      const first = seen.get(`${host}/s0.css`);
+      assert.ok(first, 'the first sheet was not asked for');
+      const ended = (end - first.at) / 1000;
+      assert.equal(missing.length, 0, `${missing.join(', ')} not in the CSS read, which ended ${ended.toFixed(2)} s after the first sheet was asked for`);
+      endedAt(ended, CALLER_DEADLINE_S);
+      return `the four sheets that answer are in the CSS read (${page.css.length} bytes), which ended ${ended.toFixed(2)} s after the first sheet was asked for`;
+    },
+  },
+  {
+    name: `the score route reports a page at a www. URL that sends its headers and then nothing as unreachable because the request timed out, after ${CALLER_DEADLINE_S} s on each of its two candidate URLs (that URL and its http:// address)`,
     run: async () => {
       const t0 = performance.now();
       const r = await h.post('app/api/score/route.ts', { url: 'https://www.score-silent.example.com/' });

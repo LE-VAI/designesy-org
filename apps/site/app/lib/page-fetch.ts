@@ -211,9 +211,10 @@ const READ_DEADLINE_MS = 8000;
  * after another, each with READ_DEADLINE_MS, so with no bound on the whole a
  * page linking many sheets whose server stays quiet held a route for 8 s a
  * sheet, past the 60 s each of the four routes may run once it links 8 such
- * sheets. Once this has passed no more sheets are asked for, and the last one
- * asked for has only what was left of it. A sheet not read by then is left
- * out, as one that cannot be read is.
+ * sheets. One timer, started as the first sheet is asked for, ends the
+ * phase: once it has fired no more sheets are asked for, and it ends the
+ * sheet being read. A sheet not read by then is left out, as one that
+ * cannot be read is.
  */
 const STYLESHEET_DEADLINE_MS = 20_000;
 
@@ -239,11 +240,14 @@ export function extractCssLinks(html: string, baseUrl: string): string[] {
  * the URL that answered (resp.url, after redirects; a Response built by hand
  * has url ''), or '' and the URL asked for when the read failed. `budget`,
  * when given, is shared with the other reads of the same page. The read
- * ends after `deadlineMs`.
+ * ends after READ_DEADLINE_MS, or when `phase` is aborted, if that comes
+ * first.
  */
-async function fetchText(url: string, maxBytes: number, budget?: ReadBudget, deadlineMs = READ_DEADLINE_MS): Promise<{ text: string; url: string }> {
+async function fetchText(url: string, maxBytes: number, budget?: ReadBudget, phase?: AbortSignal): Promise<{ text: string; url: string }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), deadlineMs);
+  const timeout = setTimeout(() => controller.abort(), READ_DEADLINE_MS);
+  const endPhase = () => controller.abort();
+  phase?.addEventListener('abort', endPhase, { once: true });
   try {
     // safeFetch holds at most maxBytes + 1 bytes of the body, and charges
     // the shared budget as they arrive.
@@ -260,6 +264,7 @@ async function fetchText(url: string, maxBytes: number, budget?: ReadBudget, dea
     return { text: '', url };
   } finally {
     clearTimeout(timeout);
+    phase?.removeEventListener('abort', endPhase);
   }
 }
 
@@ -294,21 +299,28 @@ export async function fetchPageResilient(targetUrl: string): Promise<{ html: str
   const parts = extractCssLinks(html, pageUrl);
   const cssParts: string[] = [];
   const budget: ReadBudget = { left: MAX_TOTAL_STYLESHEET_BYTES };
-  let phaseEnd = 0;
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      // A spent budget holds no byte of any later sheet.
-      if (budget.left <= 0) continue;
-      // The phase's deadline starts with the first sheet asked for; past it,
-      // no sheet is asked for, and one asked for near it has what is left.
-      if (!phaseEnd) phaseEnd = Date.now() + STYLESHEET_DEADLINE_MS;
-      const left = phaseEnd - Date.now();
-      if (left <= 0) continue;
-      const ext = (await fetchText(part, MAX_STYLESHEET_BYTES, budget, Math.min(READ_DEADLINE_MS, left))).text;
-      if (ext) cssParts.push(ext);
-    } else {
-      cssParts.push(part);
+  // The phase's timer starts as the first sheet is asked for, and its signal
+  // alone says whether the phase is over. A timer can fire a millisecond
+  // before Date.now() reaches the end it was set for, so a loop that compared
+  // the time with that end could ask for one more sheet once the timer that
+  // ended the last one had fired.
+  const phase = new AbortController();
+  let phaseTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    for (const part of parts) {
+      if (part.startsWith('http')) {
+        // A spent budget holds no byte of any later sheet.
+        if (budget.left <= 0) continue;
+        if (phase.signal.aborted) continue;
+        if (!phaseTimer) phaseTimer = setTimeout(() => phase.abort(), STYLESHEET_DEADLINE_MS);
+        const ext = (await fetchText(part, MAX_STYLESHEET_BYTES, budget, phase.signal)).text;
+        if (ext) cssParts.push(ext);
+      } else {
+        cssParts.push(part);
+      }
     }
+  } finally {
+    clearTimeout(phaseTimer);
   }
   return { html, css: cssParts.join('\n') };
 }
