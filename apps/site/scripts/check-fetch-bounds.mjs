@@ -173,6 +173,9 @@
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes, a
  *     HEAD probe none.
+ *   - The readiness route's cache and the report route's (which keeps the
+ *     readiness result each report was made with) carry the key part
+ *     'read-limit-4mib' in their unstable_cache keys.
  *   - Readiness controls, which hold on the readiness route from before its
  *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
  *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
@@ -292,8 +295,12 @@
  * holds only a 2xx body to maxBodyBytes fails the same four cases and the
  * r10 case, whose 404 home page past the limit is then received whole.
  *
+ * The cache key case fails on the tree from before the read limits, whose
+ * readiness and report caches carry no such part, and on one whose report
+ * cache alone lacks it.
+ *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 21 of the 45 cases fail and every
+ * readiness route from before them), 22 of the 46 cases fail and every
  * control holds.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
@@ -330,6 +337,8 @@ const LOTTIE_LIMIT = MCP_READ_LIMITS.designesy_motion_score;
 const DOC_LIMIT = MCP_READ_LIMITS.cachedFetch;
 /** READ_LIMIT in app/api/readiness/route.ts, in bytes: what each GET probe and r04's read hold. */
 const READINESS_LIMIT = 4 * MiB;
+/** The key part the readiness and report routes' caches carry since the read limits, so no result cached before them is read. */
+const CACHE_KEY_PART = 'read-limit-4mib';
 /** How far past its limit an over-limit body runs. */
 const PAST_LIMIT = MiB;
 /** The deadline the transport-level drip case passes as its own signal. */
@@ -1468,6 +1477,22 @@ const CONCURRENT = [
       const without = calls.filter((c) => !/\bmaxBodyBytes: (?:method === 'GET' \? READ_LIMIT : undefined|READ_LIMIT)(?=\s*[,}])/.test(c));
       assert.equal(without.length, 0, `${without.length} of 2 safeFetch calls pass no READ_LIMIT as maxBodyBytes: ${without.map((c) => c.split('\n')[0]).join('; ')}`);
       return `READ_LIMIT ${m[1]}; 2 safeFetch calls, each passing it`;
+    },
+  },
+  {
+    name: "the readiness and report caches carry the read limit in their keys, so no result cached before it is read",
+    run: async () => {
+      const keys = [];
+      for (const [route, fn] of [['app/api/readiness/route.ts', 'scoreReadinessUncached'], ['app/api/report/route.ts', 'runReportUncached']]) {
+        const src = fs.readFileSync(path.join(APP, route), 'utf8');
+        const at = src.indexOf(`unstable_cache(${fn}, [`);
+        assert.ok(at >= 0, `no unstable_cache(${fn}, [...]) in ${route}`);
+        const list = src.slice(at, src.indexOf(']', at));
+        const parts = [...list.matchAll(/'([^']*)'/g)].map((x) => x[1]);
+        assert.ok(parts.includes(CACHE_KEY_PART), `${route} caches ${fn} under [${parts.join(', ')}], with no '${CACHE_KEY_PART}'`);
+        keys.push(`${route}: [${parts.join(', ')}]`);
+      }
+      return keys.join('; ');
     },
   },
   {
