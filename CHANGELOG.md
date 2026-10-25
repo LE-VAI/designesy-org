@@ -79,10 +79,11 @@ alive, below).
   report holds a readiness result and a drift result). Their keys gain the
   part `request-body-deadline` (readiness and report after
   `read-limit-4mib`), so each URL is scanned again on its first request
-  after the deploy. None of the six cached functions is edited by this
-  change, so the function's source, which Next.js 16.4.2 puts in the key,
-  would not have kept an older result out. The score route's cache is
-  keyed by the deployment's commit, as before.
+  after the deploy (in guardrails, after `dtcg-objects-1`, the part the
+  Guardrails entry below gives it). None of the six cached functions is
+  edited by this change, so the function's source, which Next.js 16.4.2
+  puts in the key, would not have kept an older result out. The score
+  route's cache is keyed by the deployment's commit, as before.
 
 ### Results that can move (requests and deadlines)
 
@@ -164,6 +165,66 @@ of 2 to 5 s, 1 s less than that one.
   5.02 s), so the result can move either way. A page whose stylesheets take
   more than 20 s in all now has those not read by then left out, where
   they were read however long they took.
+- **A report, and what passes these results along.** A report's composite
+  is its score times 0.5, plus its drift score times 0.3, plus its
+  readiness score times 0.2, rounded, so the composite, its grade and the
+  report's rp checks move with the results above: r04 moving from WARN to
+  PASS raises a report's composite by 1. A report whose page the score
+  route could not read gives no grade, and now gives one where the score
+  route reads that page: for the late site in the next item, the report
+  was HTTP 502 after 15.1 s and is now composite 66 (D) after 42.2 s. The
+  hosted MCP route's tools that call these routes, the published
+  designesy-mcp package's (next item) and the live badge, which shows the
+  score route's result, pass the same results along.
+- **How long a run lasts against a server that is quiet, slow or late, and
+  what the published designesy-mcp package returns for it.** designesy-mcp
+  1.13.10 waits 20 s for `/api/score` and 30 s for each of the readiness,
+  drift, guardrails, monitor, compare and report routes. Past that, its
+  `designesy_score` returns `the call failed after the request was sent:
+  TimeoutError: timed out`, and its other six tools that call these routes
+  return `Tool execution failed: timed out`. That was measured with the
+  package's own code on Python 3.10.9, against a local server that answered
+  after 21 s and after 31 s; an answer after 19 s and after 29 s was
+  returned as the route gave it. Each figure below is the mean of three
+  runs through the route harness (two for the compare run with the URL
+  given quiet), which agreed within 0.1 s; for drift, guardrails and
+  monitor it is drift's, and the other two were within 0.1 s of it. For
+  quiet and slow, the server answers at once the page a route needs, and
+  for every other request it is quiet (it sends its headers and then
+  nothing) or sends one byte a second. For late, it answers every request
+  7 s after it arrives (4.5 s for `/DESIGN.md`), the page included, and
+  each other file as 404, so a check tries each of its paths. Each answer
+  closes its connection.
+  - Readiness, with the page at the URL given: quiet 25.2 s, now 40.1 s;
+    slow 40.1 s, as before; late 5.1 s (HTTP 502), now 42.2 s.
+  - Score, with the URL given and its www. host quiet, slow or late (404)
+    and the page, with one stylesheet, at its http:// address: quiet
+    20.1 s, now 29.0 s; slow 29.0 s, as before; late 15.1 s (unreachable),
+    now 32.7 s (68.2, D).
+  - Drift, guardrails and monitor, with the URL given quiet, slow or late
+    (404) and the page, with 8 stylesheets, at its www. host: quiet 45.2 s,
+    now 28.0 s; slow 72.1 s, past their 60 s limit, now 28.1 s; late
+    10.1 s (HTTP 502), now 34.1 s.
+  - Compare, which reads two such sites and then scores each through the
+    score route: quiet 60.2 s, now 49.1 s; slow 93.1 s, now 49.1 s; late
+    10.1 s (HTTP 502), now 59.7 s. With the URL given quiet and every
+    other request late, it was 10.1 s (HTTP 502) and is now 61.6 s, past
+    its 60 s limit.
+  - Report, which runs score, drift and readiness at once, with the page,
+    with 8 stylesheets, at the URL given: quiet 40.2 s, now 40.1 s; slow
+    64.1 s, past its 60 s limit, now 40.2 s; late 15.1 s (HTTP 502), now
+    42.2 s.
+
+  So against such a server, the package's `designesy_readiness_score`,
+  `designesy_score` and `designesy_report` can now return its timeout
+  error where they returned the route's answer (readiness, quiet: 40.1 s
+  for its 30 s; score, late: 32.7 s for its 20 s). Its drift, guardrails
+  and monitor tools can return the route's answer where they timed out
+  (quiet: 28.0 s, where it was 45.2 s), and a late server now outlasts the
+  wait of all seven. Against a server that sends one byte a second, the
+  readiness, score, compare and report runs outlasted the package's wait
+  before this change too. Nothing in the package is edited. The hosted MCP
+  route's tools set no timeout of their own on these calls.
 
 ### Not changed (requests and deadlines)
 
@@ -181,14 +242,16 @@ of 2 to 5 s, 1 s less than that one.
 - The longest a read lasts. Each still ends at its deadline at the latest,
   which a server sending one byte a second already reached. A read whose
   server stays quiet now lasts until its deadline, where it ended at the
-  agent's timeout, so a run against such a server takes longer. A
-  readiness scan of a site that answers its page at once and sends its
-  headers and then nothing for every other file took 40.03 s, where it
-  took 25.05 s (r07 tries five paths, one after another; the route's limit
-  is 60 s). A score of a site that does so for every URL took 24.01 s,
-  where it took 15.04 s (three candidate URLs; the limit is 120 s). Each
-  was measured once. A drift, guardrails, monitor or compare run is held
-  within its 60 s by page-fetch's 20 s for the stylesheets (above).
+  agent's timeout, so a readiness or score run against such a server takes
+  longer, and a run against a server that answers late now completes
+  (Results that can move, above). The reads of a readiness run end within
+  48 s (the page's 8 s, then r07's five paths of 8 s, one after another)
+  and those of a score run within 37 s, or 40 s with a linked contract, as
+  before. Those of a drift, guardrails or monitor run end within 36 s (two
+  candidate page URLs of 8 s, then 20 s of stylesheets), where nothing
+  bounded them short of the routes' 60 s limit. A compare run reads its two
+  sites at once and then scores each through the score route, so it can
+  still reach its 60 s limit, as it could before.
 - Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
   1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
   published.
