@@ -20,8 +20,8 @@ that installs the plugin.
   pulls it in through stylelint 16.26.1, table 6.9.0 and ajv 8.20.0, which
   asks for `^3.0.1`. GitHub's advisory database lists 3.1.9 as the first
   3.x release that fixes GHSA-w74x-v6f9-j3xg and GHSA-wjr9-j795-jxcr
-  (medium) and GHSA-xhq7-xmqj-769h and GHSA-333x-w4r6-6crp (low). For three
-  of them the affected 3.x range starts at 3.0.0, and for
+  (moderate) and GHSA-xhq7-xmqj-769h and GHSA-333x-w4r6-6crp (low). For
+  three of them the affected 3.x range starts at 3.0.0, and for
   GHSA-wjr9-j795-jxcr it starts at 3.1.3. All four include 3.1.8.
 - **The `overrides` pin moves with the lockfile.** The plugin's package.json
   pins fast-uri to an exact version, and `npm ci` refuses a lockfile that
