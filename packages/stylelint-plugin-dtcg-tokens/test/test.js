@@ -720,3 +720,76 @@ describe('stylelint plugin', () => {
       `stylelint fixed CSS doesn't match expected.\nActual: ${JSON.stringify(actualDecls, null, 2)}\nExpected: ${JSON.stringify(expectedDecls, null, 2)}`);
   });
 });
+
+// ── DTCG 2025.10 { value, unit } dimensions and durations ──────────────────────
+
+describe('2025.10 { value, unit } dimensions and durations', () => {
+  const OBJECT_TOKENS = join(FIXTURES, 'tokens-dimension-objects.json');
+  const FIXABLE = '.x { padding: 16px; border-radius: 16px; font-size: 16px; margin: 2.5rem; transition-duration: 150ms; }';
+  const FIXED = '.x { padding: var(--space-md); border-radius: var(--radius-lg); font-size: var(--font-size-md); margin: var(--space-2xl); transition-duration: var(--duration-fast); }';
+
+  test('flatten to the CSS length or time they hold', async () => {
+    const flat = flattenTokens(JSON.parse(await readFile(OBJECT_TOKENS, 'utf8')));
+    assert.equal(flat.get('--space-md')?.value, '16px');
+    assert.equal(flat.get('--space-2xl')?.value, '2.5rem');
+    assert.equal(flat.get('--duration-fast')?.value, '150ms');
+    assert.equal(flat.get('--duration-slow')?.value, '0.4s');
+  });
+
+  test('flatten to the same values as the string form in tokens.json', async () => {
+    const objects = flattenTokens(JSON.parse(await readFile(OBJECT_TOKENS, 'utf8')));
+    const strings = flattenTokens(JSON.parse(await readFile(join(FIXTURES, 'tokens.json'), 'utf8')));
+    let compared = 0;
+    for (const [name, token] of strings) {
+      if (token.type !== 'dimension' && token.type !== 'duration') continue;
+      assert.equal(objects.get(name)?.value, token.value, name);
+      compared++;
+    }
+    assert.equal(compared, 13);
+  });
+
+  test('a string and an object holding the same length both map to it', () => {
+    const flat = flattenTokens({
+      space: {
+        a: { $type: 'dimension', $value: '8px' },
+        b: { $type: 'dimension', $value: { value: 8, unit: 'px' } },
+      },
+    });
+    assert.equal(flat.get('--space-a')?.value, '8px');
+    assert.equal(flat.get('--space-b')?.value, '8px');
+    assert.deepEqual(buildReverseMap(flat).get('8px')?.map((t) => t.name), ['--space-a', '--space-b']);
+  });
+
+  test('resolveToken finds object-form tokens from CSS values', async () => {
+    const reverseMap = buildReverseMap(flattenTokens(JSON.parse(await readFile(OBJECT_TOKENS, 'utf8'))));
+    assert.equal(resolveToken('16px', 'padding', reverseMap, false).token?.name, '--space-md');
+    assert.equal(resolveToken('16px', 'border-radius', reverseMap, false).token?.name, '--radius-lg');
+    assert.equal(resolveToken('2.5rem', 'margin', reverseMap, false).token?.name, '--space-2xl');
+    assert.equal(resolveToken('150ms', 'transition-duration', reverseMap, false).token?.name, '--duration-fast');
+    const ambiguous = resolveToken('4px', 'border', reverseMap, false);
+    assert.deepEqual(ambiguous.ambiguous?.map((t) => t.name).sort(), ['--radius-sm', '--space-xs']);
+  });
+
+  test('PostCSS fix replaces lengths and times with object-form tokens', async () => {
+    const postcss = (await import('postcss')).default;
+    const result = await postcss([
+      dtcgTokenCheck({ tokensFile: OBJECT_TOKENS, fix: true }),
+    ]).process(FIXABLE, { from: 'test.css' });
+    assert.equal(result.css, FIXED);
+    assert.equal(result.warnings().length, 0, `expected no warnings, got: ${result.warnings().map((w) => w.text).join('; ')}`);
+  });
+
+  test('stylelint --fix replaces lengths and times with object-form tokens', async () => {
+    const stylelint = (await import('stylelint')).default;
+    const results = await stylelint.lint({
+      code: FIXABLE,
+      fix: true,
+      config: {
+        plugins: [join(__dirname, '..', 'dist', 'index.js')],
+        rules: { 'designesy/no-magic-number': [true, { tokensFile: OBJECT_TOKENS }] },
+      },
+    });
+    assert.ok(!results.errored, `expected no errors after fix: ${JSON.stringify(results.results[0]?.warnings)}`);
+    assert.equal(results.code, FIXED);
+  });
+});

@@ -194,6 +194,17 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-fetch-layer.mjs
 
+      # A response body stops at the cap its caller names while it is still
+      # arriving, the caller's signal ends a read of a server that sends one
+      # byte a second, no read leaves a listener on that signal once it
+      # settles, a reader's chunk holds only its own bytes, every URL the MCP
+      # route reads for itself ends at its 15 s read deadline, and the MCP
+      # tools still read a URL that answers (the real URL guard and MCP route
+      # against a local server).
+      - name: Fetch bounds
+        if: ${{ !cancelled() }}
+        run: node scripts/check-fetch-bounds.mjs
+
       # /score/contract's sentences are built from the result, never typed:
       # problems in field order, the verdict leads, the request-error card,
       # the steps (app/score/contract/copy.ts).
@@ -521,17 +532,20 @@ jobs:
       - name: Retired literals, every package
         run: node scripts/check-retired-literals-packages.js
 
-  # Both @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens have
-  # test suites that only ran at publish time. This job runs them on every PR
-  # so a broken test can't merge. The pretest hook runs `npm run build`
-  # automatically before `npm test`.
+  # @designesy/tokens and @designesy/stylelint-plugin-dtcg-tokens had test
+  # suites that only ran at publish time. This job runs them, and @vai/motion's
+  # timing and easing tests, on every PR. Test tokens and Test
+  # stylelint-plugin-dtcg-tokens are required checks on main, so a broken test
+  # there can't merge; Test vai-motion is not a required check yet. In the two
+  # TypeScript packages the pretest hook runs `npm run build` before
+  # `npm test`; @vai/motion is plain ES modules and has no build step.
   test-packages:
     name: Test ${{ matrix.package }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       matrix:
-        package: [tokens, stylelint-plugin-dtcg-tokens]
+        package: [tokens, stylelint-plugin-dtcg-tokens, vai-motion]
 
     steps:
       - name: Checkout

@@ -35,6 +35,8 @@ const DTCG_PROPERTY_KEYS = new Set([
  * Extract a usable string value from a DTCG $value.
  * DTCG values can be:
  *   - string: "#ff0000", "16px", "400ms"
+ *   - dimension or duration object (the 2025.10 form):
+ *     { value: 16, unit: "px" } → "16px", { value: 150, unit: "ms" } → "150ms"
  *   - object: { colorSpace: "oklch", components: [0.7, 0.2, 0.1], alpha: 1 }
  *   - array: [{ color: ..., position: 0 }, ...] (gradient/stroke stops)
  *   - reference: "{path.to.token}" (alias)
@@ -49,6 +51,11 @@ function extractValue(value: unknown): string {
   }
   if (value !== null && typeof value === 'object') {
     const obj = value as Record<string, unknown>;
+    // Dimension or duration: { value, unit } is the CSS length or time a
+    // stylesheet writes, so "16px" in CSS finds the token that holds it.
+    if (typeof obj.value === 'number' && typeof obj.unit === 'string') {
+      return `${obj.value}${obj.unit}`;
+    }
     // Structured color: { colorSpace, components, alpha }
     if ('colorSpace' in obj && 'components' in obj) {
       const cs = String(obj.colorSpace);

@@ -93,6 +93,8 @@ node scripts/check-focus-visibility.js --base http://127.0.0.1:3422 --channel ch
 
 `packages/cli` and `packages/lab-builder` are not in the pull request matrix yet. If you change them, run `npm ci && npm test` there (for `packages/cli`, run `npm run build` before `npm test`).
 
+**Test vai-motion** runs on every pull request but is not a required check yet. If you change `packages/vai-motion`, run `npm ci && npm test` there (no build step; Node 18.13 or later).
+
 ## Changes that must be made in two places
 
 **The scoring engine.** The engine exists as two hand-maintained copies:
