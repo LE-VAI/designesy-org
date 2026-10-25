@@ -12,8 +12,9 @@
  * within it is judged as before, an error or redirect body is held to the
  * same limit as the read that receives it, a request's body reaches its
  * server and a redirect is followed with the method and body fetch would
- * use, a read given a signal ends at that signal alone, and the MCP tools
- * that read a URL through url-guard still read one that answers.
+ * use, a read given a signal ends at that signal alone, page-fetch asks
+ * for no stylesheet once 20 s have passed since its first, and the MCP
+ * tools that read a URL through url-guard still read one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -246,6 +247,12 @@
  *     The score route reports a page that sends its headers and then
  *     nothing, on both of its candidate URLs, as unreachable because the
  *     request timed out, at 2 x 8 s.
+ *   - page-fetch reads a page's stylesheets one after another, and asks for
+ *     none once 20 s have passed since it asked for the first. On a page
+ *     whose first sheet answers at once, whose next three send their
+ *     headers and then nothing, and whose fifth answers at once, its read
+ *     ends at 20 s with the first sheet's CSS, and the fifth is never asked
+ *     for.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes, a
  *     HEAD probe none.
@@ -392,8 +399,8 @@
  * readiness and report caches carry no such part, and on one whose report
  * cache alone lacks it.
  *
- * Against the tree from before the requests and deadline cases, seven of
- * them fail: the POST case (each URL receives a POST with 0 body bytes), the
+ * Against the tree from before the requests and deadline cases, eight of
+ * them fail: the sheet phase case (below), the POST case (each URL receives a POST with 0 body bytes), the
  * body kinds case (below), the mcp-handler r04 case (WARN with HTTP 400,
  * also through the 307 and the 302), the 6 s mid-body case (it ends at 5 s
  * with "SSRF guard: fetch timeout"), the keep-alive case (at 4 s after the
@@ -425,6 +432,12 @@
  * hop is requested, and one that sends a body with a GET or HEAD each fail
  * it.
  *
+ * The sheet phase case fails on every tree before page-fetch bounded its
+ * stylesheets: on the tree before that bound, the three quiet sheets take
+ * 8 s each and the fifth is read after 24.62 s; on the tree before this
+ * change, where the agent ended each quiet sheet at 5 s, it is read after
+ * 15.40 s.
+ *
  * The no-signal case and the call-site case hold on the trees from before
  * this change and from before the read limits, where each of those reads
  * had its timer and a read given no signal had the same 15 s idle timeout;
@@ -434,9 +447,9 @@
  * abort it, fails the call-site case.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 31 of the 58 cases fail and every
- * control holds: the 24 the read limits make fail there, and the seven
- * above.
+ * readiness route from before them), 32 of the 59 cases fail and every
+ * control holds: the 24 the read limits make fail there, the seven above,
+ * and the sheet phase case.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -491,6 +504,12 @@ const KEEP_ALIVE_SIGNAL_S = 5;
 const NO_SIGNAL_IDLE_S = 15;
 /** The deadline of the readiness probes, the score route's page read and page-fetch's (an 8 s abort in each). */
 const CALLER_DEADLINE_S = 8;
+/** page-fetch's STYLESHEET_DEADLINE_MS: how long a page's stylesheets may take in all. */
+const SHEET_PHASE_S = 20;
+/** The sheets of the sheet phase case: the first and the last answer at once, the three between send their headers and then nothing. */
+const SHEET_FIRST = '.first-sheet { color: rgb(17, 17, 17); }';
+const SHEET_LAST = '.last-sheet { color: rgb(34, 34, 34); }';
+const SHEETS_PAGE = `<!doctype html><html lang="en"><head><title>Sheets</title>${[0, 1, 2, 3, 4].map((i) => `<link rel="stylesheet" href="/s${i}.css">`).join('')}</head><body><main><h1>Sheets</h1><p>A page whose sheets are slow.</p></main></body></html>`;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
 const LISTEN_SIGNAL_S = 10;
 /** Node hands a socket's bytes to the response in reads of at most 64 KiB, so this much can arrive past a cap before the check sees it. */
@@ -724,6 +743,12 @@ const ROUTES = {
   'page-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
   // A page that sends its headers and then nothing, on both of the score route's candidate URLs (https and http).
   'www.score-silent.example.com/': { silent: true, type: 'text/html' },
+  // A page that answers at once, linking five sheets: the first and the last
+  // answer at once, the three between send their headers and then nothing.
+  'www.sheets-phase.example.com/': { body: SHEETS_PAGE, type: 'text/html' },
+  'www.sheets-phase.example.com/s0.css': { body: SHEET_FIRST, type: 'text/css' },
+  ...Object.fromEntries([1, 2, 3].map((i) => [`www.sheets-phase.example.com/s${i}.css`, { silent: true, type: 'text/css' }])),
+  'www.sheets-phase.example.com/s4.css': { body: SHEET_LAST, type: 'text/css' },
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -2076,6 +2101,20 @@ const CONCURRENT = [
           return `${page.html.length} bytes of the page, after ${s.toFixed(2)} s`;
         }],
       ]);
+    },
+  },
+  {
+    name: `page-fetch asks for no stylesheet once ${SHEET_PHASE_S} s have passed since its first, so three sheets that send their headers and then nothing end its read at ${SHEET_PHASE_S} s, and the sheet after them is not read`,
+    run: async () => {
+      const t0 = performance.now();
+      const page = await fetchPageResilient('https://www.sheets-phase.example.com/');
+      const s = (performance.now() - t0) / 1000;
+      assert.equal(page.html, SHEETS_PAGE, `${page.html.length} of ${SHEETS_PAGE.length} bytes of the page`);
+      assert.ok(page.css.includes(SHEET_FIRST), `the first sheet is not in the CSS read: ${JSON.stringify(page.css)}`);
+      const last = seen.has('www.sheets-phase.example.com/s4.css');
+      assert.ok(!last && !page.css.includes(SHEET_LAST), `the sheet after the quiet ones was ${last ? 'asked for' : 'not asked for'} after ${s.toFixed(2)} s, and is ${page.css.includes(SHEET_LAST) ? '' : 'not '}in the CSS read`);
+      endedAt(s, SHEET_PHASE_S);
+      return `${s.toFixed(2)} s; the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for`;
     },
   },
   {
