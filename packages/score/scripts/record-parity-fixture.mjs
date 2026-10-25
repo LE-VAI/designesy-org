@@ -40,14 +40,18 @@ const NETWORK_DEPENDENT = new Set(['v02', 'v04', 'v21', 'v37']);
 
 console.log(`Recording parity fixture from ${url} ...`);
 
-const html = await (await fetch(url, { redirect: 'follow' })).text();
-const hrefs = [...html.matchAll(/<link[^>]+rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']/gi)].map((m) => m[1]);
+const page = await fetch(url, { redirect: 'follow' });
+const html = await page.text();
+// As the engine reads links from 1.5.4: rel before href or href before rel,
+// each resolved against the URL that answered, after redirects.
+const base = page.url || url;
+const hrefs = [...html.matchAll(/<link(?:[^>]*rel=["']?stylesheet["']?[^>]*href=["']([^"']+)["']|[^>]*href=["']([^"']+)["'][^>]*rel=["']?stylesheet)/gi)].map((m) => m[1] ?? m[2]);
 let css = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n');
 
 let fetched = 0;
 for (const h of hrefs.slice(0, 6)) {
   try {
-    const r = await fetch(new URL(h, url).href);
+    const r = await fetch(new URL(h, base).href);
     if (r.ok) {
       css += '\n' + (await r.text());
       fetched++;
