@@ -61,10 +61,11 @@ export function motionPreference() {
 
 // Resolve a duration given the user's motion preference and the principle's tier.
 // tier 1 → 0 (removed), tier 2 → softened ≤200ms, tier 3 → full duration.
+// Softening never lengthens a motion: 0 stays 0 and 100 stays 100.
 export function resolveDuration(tier, duration) {
   if (!prefersReducedMotion()) return duration;
   if (tier === 'tier1') return 0;
-  if (tier === 'tier2') return Math.min(SOFTENED[durationKey(duration)] ?? 200, 200);
+  if (tier === 'tier2') return Math.min(duration, SOFTENED[durationKey(duration)] ?? 200, 200);
   return duration; // tier 3 — keep
 }
 
