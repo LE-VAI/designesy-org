@@ -62,13 +62,14 @@
  * The real URL guard, the real MCP route and the real readiness route, loaded
  * through scripts/lib/route-harness.js with realSafeFetch. As in
  * check-score-read-bounds.mjs, two things are swapped, both below the guard:
- * node:dns/promises answers a public address, and node:http(s) connect to a
- * server on 127.0.0.1 that this script runs. The connect wrapper also counts
+ * node:dns/promises answers a public address, and records each host it is
+ * asked about (looked), and node:http(s) connect to a server on 127.0.0.1
+ * that this script runs. The connect wrapper also counts
  * the body bytes that reach the client and keeps the request, so a case can
  * say how far a body got and whether the request was destroyed. The server
  * reads each request's body before it answers, and records the method, the
- * content-length and content-type headers and the body (asked), so a case
- * can say what a request carried. One host is answered by an MCP endpoint
+ * headers that describe a body, one header that does not, and the body
+ * (asked), so a case can say what a request carried. One host is answered by an MCP endpoint
  * built with mcp-handler, the package the site's MCP route serves its tools
  * with, resolved from the app checked or else from this checkout. The
  * keep-alive case's host has a server of its own, on its own port, so the
@@ -130,6 +131,12 @@
  *     server with content-length 46. After a 307 the URL it lands on receives
  *     the same POST; after a 302 or a 303 it receives a GET with no body and
  *     no content-type, as fetch follows those redirects.
+ *   - A request body is sent as its bytes, with their count as its
+ *     content-length: a string past ASCII (3 characters, 9 bytes), an
+ *     ArrayBuffer, and a view of part of a buffer (only the bytes it views).
+ *     A body of another kind (URLSearchParams), and a body on a GET or a
+ *     HEAD, is refused with a TypeError before its host is looked up, and
+ *     no request is made.
  *   - A server that sends one byte a second is ended by the caller's 3 s
  *     signal at its deadline, with an AbortError, and the request is
  *     destroyed. Each MCP read of such a server (designesy_tokens_score,
@@ -372,25 +379,38 @@
  * readiness and report caches carry no such part, and on one whose report
  * cache alone lacks it.
  *
- * Against the tree from before the requests and deadline cases, six of them
- * fail: the POST case (each URL receives a POST with 0 body bytes), the
+ * Against the tree from before the requests and deadline cases, seven of
+ * them fail: the POST case (each URL receives a POST with 0 body bytes), the
  * mcp-handler r04 case (WARN with HTTP 400, also through the 307 and the
  * 302), the 6 s mid-body case (it ends at 5 s with "SSRF guard: fetch
  * timeout"), the keep-alive case (at 4 s), the 8 s callers case (r02 is
  * FAIL, the score route reports the page unreachable and page-fetch reads
- * nothing) and the silent page case (unreachable at about 10 s, because the
- * request failed at the network level). Its MCP route passed its 15 s
- * deadline as an idle timeout too, so the silent MCP case holds there; with
- * that taken out, the silent MCP case and the 8 s quiet case fail at 5 s. A
- * url-guard that leaves the agent's idle timeout on for a read given a
+ * nothing), the silent page case (unreachable at about 10 s, because the
+ * request failed at the network level) and the body kinds case (below). Its
+ * MCP route passed its 15 s deadline as an idle timeout too, so the silent
+ * MCP case holds there; with that taken out, the silent MCP case and the 8 s
+ * quiet case fail at 5 s. A url-guard that leaves the agent's idle timeout on for a read given a
  * signal fails the 6 s mid-body, keep-alive, silent MCP, 8 s quiet, 8 s
  * callers and silent page cases. One that follows every redirect with the
  * caller's method and body fails the POST case after the 302 and the 303,
  * and the r04 case through the 302.
  *
+ * On that tree each body of the body kinds case arrives with content-length
+ * 0, and URLSearchParams, a body on a GET and a body on a HEAD are each sent
+ * (HTTP 404, as the server lists none of those URLs). Against the tree that
+ * merged the read limits into this change, before the guard checked a body
+ * ahead of the DNS check, it fails on the three refusals:
+ * URLSearchParams is refused only after its host is looked up, and the GET
+ * and the HEAD are sent with their body. A url-guard that counts a string
+ * body's length in characters, one that sends the whole buffer behind a
+ * view, one that sends a URLSearchParams body as no body, one that checks
+ * the body only as each hop is requested, and one that sends a body with a
+ * GET or HEAD each fail it.
+ *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 30 of the 55 cases fail and every
- * control holds: the 24 the read limits make fail there, and the six above.
+ * readiness route from before them), 31 of the 56 cases fail and every
+ * control holds: the 24 the read limits make fail there, and the seven
+ * above.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -486,7 +506,12 @@ const toLocal = (real) => ({
     return record.req;
   },
 });
-const lookup = async () => [{ address: '93.184.215.14', family: 4 }];
+/** Every host the guard's DNS check was asked about. */
+const looked = new Set();
+const lookup = async (hostname) => {
+  looked.add(hostname);
+  return [{ address: '93.184.215.14', family: 4 }];
+};
 
 /**
  * Errors thrown where no caller could catch them (in a stream listener, say):
@@ -640,6 +665,10 @@ const ROUTES = {
   'post-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
   'post-303.example.com/rpc': { status: 303, location: 'https://post-landed-303.example.com/rpc' },
   'post-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // Bodies of each kind the guard sends.
+  'body-kinds.example.com/text': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/buffer': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/view': { body: 'ok', type: 'text/plain' },
   // Servers that go quiet: mid-body, after the headers for good, and before
   // the headers on a connection an earlier answer kept alive.
   'quiet.example.com/': { bytes: Buffer.from(PAGE), length: true, pause: QUIET_S * 1000 },
@@ -769,7 +798,11 @@ for (const [host, files] of Object.entries(READY_FILES)) {
 
 /** host + path -> what the server managed to send: bytes handed to the socket, and whether the body finished. */
 const sent = new Map();
-/** host + path -> what the last request carried: its method, its content-length and content-type headers, and its body. */
+/**
+ * host + path -> what the last request carried: its method, its
+ * content-length, content-type, content-language and content-location
+ * headers, an x-kept header that describes no body, and its body.
+ */
 const asked = new Map();
 
 // An MCP endpoint built with mcp-handler, the package app/api/mcp/route.ts
@@ -824,7 +857,15 @@ const handle = (req, res) => {
   req.on('data', (c) => chunks.push(c));
   req.on('end', () => {
     const requestBody = Buffer.concat(chunks);
-    asked.set(key, { method: req.method, length: req.headers['content-length'], type: req.headers['content-type'], body: requestBody });
+    asked.set(key, {
+      method: req.method,
+      length: req.headers['content-length'],
+      type: req.headers['content-type'],
+      language: req.headers['content-language'],
+      place: req.headers['content-location'],
+      kept: req.headers['x-kept'],
+      body: requestBody,
+    });
     answer(b, key, host, req, res, stat, requestBody);
   });
 };
@@ -1402,6 +1443,42 @@ const CONCURRENT = [
         assert.deepEqual(carried, want, `${landed} received ${JSON.stringify(carried)}`);
         return `${landed} received a ${a.method} with ${a.body.length} body bytes${a.length ? ` (content-length ${a.length})` : ''}`;
       }]));
+    },
+  },
+  {
+    name: 'a request body is sent as its bytes, with their count as its length: a string past ASCII, an ArrayBuffer and a view of part of one; a body of another kind, or one on a GET or HEAD, is refused with a TypeError before its host is looked up',
+    run: async () => {
+      // 2 + 3 + 4 bytes in UTF-8, 9 in all; a length counted in characters is 3 (4 in UTF-16 units).
+      const text = String.fromCodePoint(0xe9, 0x6f22, 0x1f600);
+      const plain = Buffer.from('{"kind":"ArrayBuffer"}');
+      const buffer = plain.buffer.slice(plain.byteOffset, plain.byteOffset + plain.length);
+      // A view whose buffer holds bytes on each side of it, which are not sent.
+      const whole = new TextEncoder().encode('skip{"kind":"a view of part of a buffer"}skip');
+      const view = whole.subarray(4, whole.length - 4);
+      const sends = (label, key, body, bytes) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', body }));
+        assert.equal(resp.status, 200, `HTTP ${resp.status}`);
+        const a = asked.get(key);
+        assert.ok(a, `no request reached ${key}`);
+        assert.equal(a.length, String(bytes.length), `content-length ${a.length} for a body of ${bytes.length} bytes`);
+        assert.equal(Buffer.compare(a.body, bytes), 0, `${key} received ${JSON.stringify(a.body.toString())}, not ${JSON.stringify(bytes.toString())}`);
+        return `${a.body.length} body bytes, content-length ${a.length}`;
+      }];
+      const refuses = (label, host, init) => [label, async () => {
+        const err = await rejection(safeFetch(`https://${host}/`, init));
+        assert.equal(err.name, 'TypeError', `rejected with ${err.name}: ${err.message}`);
+        assert.equal(looked.has(host), false, `${host} was looked up before the refusal (${err.message})`);
+        assert.equal(seen.has(`${host}/`), false, `a request reached ${host}`);
+        return `TypeError "${err.message}", no DNS query and no request`;
+      }];
+      return eachRead([
+        sends('a string past ASCII', 'body-kinds.example.com/text', text, Buffer.from(text, 'utf8')),
+        sends('an ArrayBuffer', 'body-kinds.example.com/buffer', buffer, plain),
+        sends('a view of part of a buffer', 'body-kinds.example.com/view', view, Buffer.from(view)),
+        refuses('URLSearchParams', 'refused-params.example.com', { method: 'POST', body: new URLSearchParams({ kind: 'form' }) }),
+        refuses('a body on a GET', 'refused-get.example.com', { method: 'GET', body: 'x' }),
+        refuses('a body on a HEAD', 'refused-head.example.com', { method: 'HEAD', body: 'x' }),
+      ]);
     },
   },
   {

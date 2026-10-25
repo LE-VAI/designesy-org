@@ -298,8 +298,12 @@ function isPrivateAddress(addr: string): boolean {
 // treat as a failed fetch. A 2xx body is decoded as its Content-Encoding says
 // (point 5 at the top of this file); `maxBodyBytes` and `budget` bound what is
 // held. A request body (a string or bytes) is sent with its length, and a
-// redirect is followed with the method and body fetch would use
-// (redirectedInit).
+// 301, 302, 303, 307 or 308 is followed with the method and body fetch would
+// use (redirectedInit). Two things differ from fetch: a 300 or 304 that
+// carries a Location is followed too, repeating the request, where fetch
+// returns it; and every header the caller passes is sent on every hop, to
+// another origin too, where fetch drops Authorization, Proxy-Authorization
+// and Cookie there.
 
 const MAX_REDIRECTS = 5;
 
@@ -415,9 +419,11 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   decoded body also waits for one of them, and gives it back when it ends.
  *
  * A `body` is a string, sent as UTF-8, or bytes, and is sent with its length;
- * any other kind of body is refused with a TypeError. A read given a `signal`
- * has no deadline but that signal: no idle timeout is set on its socket. A
- * read given none fails once its socket has been quiet for 15 s.
+ * any other kind of body, and a body on a GET or HEAD, is refused with a
+ * TypeError before the URL is checked or its host resolved (bodyBytes). A
+ * read given a `signal` has no deadline but that signal: no idle timeout is
+ * set on its socket. A read given none fails once its socket has been quiet
+ * for 15 s.
  */
 export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
 
@@ -622,19 +628,16 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     }
     const method = init?.method || 'GET';
     const maxBodyBytes = init?.maxBodyBytes;
-    // The request's body, sent with its length: a string (as UTF-8) or
-    // bytes. fetch takes other kinds of body too; this refuses them rather
-    // than send a request without its body.
-    const sentBody = init?.body;
-    let payload: Buffer | null = null;
-    if (sentBody != null) {
-      if (typeof sentBody === 'string') payload = Buffer.from(sentBody, 'utf8');
-      else if (sentBody instanceof ArrayBuffer) payload = Buffer.from(sentBody);
-      else if (ArrayBuffer.isView(sentBody)) payload = Buffer.from(sentBody.buffer, sentBody.byteOffset, sentBody.byteLength);
-      else {
-        reject(new TypeError('safeFetch sends a string or byte body only'));
-        return;
-      }
+    // The request's body, sent with its length. safeFetch has already
+    // refused a body it cannot send, before the URL's DNS check.
+    let payload: Buffer | null;
+    try {
+      payload = bodyBytes(init);
+    } catch (e) {
+      reject(e as Error);
+      return;
+    }
+    if (payload) {
       for (const k of Object.keys(headers)) if (k.toLowerCase() === 'content-length') delete headers[k];
       headers['content-length'] = String(payload.length);
     }
@@ -887,14 +890,34 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   });
 }
 
+/**
+ * A request's body as the bytes sent: a string as UTF-8, or bytes (an
+ * ArrayBuffer, or a view of one, only the bytes it views). fetch takes other
+ * kinds of body too (a Blob, FormData, URLSearchParams or a stream); this
+ * refuses them with a TypeError rather than send a request without its body,
+ * and refuses a body on a GET or HEAD, as fetch does.
+ */
+function bodyBytes(init: SafeFetchInit | undefined): Buffer | null {
+  const body = init?.body;
+  if (body == null) return null;
+  const method = (init?.method || 'GET').toUpperCase();
+  if (method === 'GET' || method === 'HEAD') throw new TypeError(`safeFetch sends no body with a ${method}`);
+  if (typeof body === 'string') return Buffer.from(body, 'utf8');
+  if (body instanceof ArrayBuffer) return Buffer.from(body);
+  if (ArrayBuffer.isView(body)) return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  throw new TypeError('safeFetch sends a string or byte body only');
+}
+
 /** The headers that describe a request's body, dropped when a redirect turns the request into a GET. */
 const BODY_HEADERS = new Set(['content-encoding', 'content-language', 'content-location', 'content-type', 'content-length']);
 
 /**
- * The request a redirect leads to, as fetch follows one: a 303 (to any
- * method but GET or HEAD), or a 301 or 302 to a POST, becomes a GET with no
- * body and none of the headers that describe one. Any other redirect
- * (307 and 308 among them) repeats the request, its body included.
+ * The request a redirect leads to, with the method and body fetch would use:
+ * a 303 (to any method but GET or HEAD), or a 301 or 302 to a POST, becomes
+ * a GET with no body and none of the headers that describe one. A 307 or 308,
+ * and a 301 or 302 to any other method, repeats the request, its body
+ * included. So does a 300 or 304 with a Location, which fetch does not
+ * follow (see the note above MAX_REDIRECTS).
  */
 function redirectedInit(init: SafeFetchInit | undefined, status: number): SafeFetchInit | undefined {
   const method = (init?.method || 'GET').toUpperCase();
@@ -955,6 +978,10 @@ function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefine
 // read past the caller's deadline.
 export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   const signal = init?.signal ?? undefined;
+  // A body this cannot send is refused first, before the URL is checked or
+  // its host resolved, so the error is the same whatever the URL, and no
+  // DNS query is made for a request that will not be sent.
+  bodyBytes(init);
   let currentUrl = url;
   let hopInit = init;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
