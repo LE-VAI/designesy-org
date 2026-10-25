@@ -55,6 +55,33 @@ const BASE_URL = 'https://www.designesy.org';
 const CACHE_TTL = 300_000; // 5 minutes in ms
 const cache = new Map<string, { ts: number; data: unknown }>();
 
+// Every URL this server reads for itself (cachedFetch below, and the url of
+// designesy_tokens_score and designesy_motion_score) ends within this long,
+// redirect hops and DNS checks included. url-guard's own 15 s timeout ends a
+// read only when its socket goes quiet, so a server sending one byte a second
+// held a call open with nothing in this process to end it short of the
+// function's maxDuration (300 s, vercel.json). 15 s is that same figure, so a
+// server that stops answering is given up on no later than before.
+const READ_DEADLINE_MS = 15_000;
+
+/**
+ * url-guard's safeFetch (connection-level IP-pinned + URL/DNS guarded), ended
+ * at READ_DEADLINE_MS. A read past it fails as a timeout, not as "aborted".
+ */
+async function readUrl(url: string, headers: Record<string, string>): Promise<Response> {
+  const signal = AbortSignal.timeout(READ_DEADLINE_MS);
+  try {
+    return await safeFetch(url, { headers, signal });
+  } catch (e) {
+    // A timeout is this read's own deadline firing, never a word in a
+    // message: a rejection can carry text the server chose.
+    if (signal.aborted || (e instanceof Error && e.name === 'AbortError')) {
+      throw new Error(`Fetch timed out after ${READ_DEADLINE_MS / 1000} s`);
+    }
+    throw e;
+  }
+}
+
 async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown> {
   const now = Date.now();
   const cached = cache.get(url);
@@ -62,13 +89,9 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
     return cached.data;
   }
 
-  // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded (shared by
-  // the URL-fetching MCP tools).
-  const res = await safeFetch(url, {
-    headers: {
-      'Accept': asJson ? 'application/json' : 'text/plain, */*',
-      'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)`,
-    },
+  const res = await readUrl(url, {
+    'Accept': asJson ? 'application/json' : 'text/plain, */*',
+    'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)`,
   });
 
   if (!res.ok) {
@@ -383,10 +406,8 @@ const handler = createMcpHandler(
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
-            const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
-            });
+            // SSRF-safe fetch with the read deadline (readUrl above).
+            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
             if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
             tokenData = await res.json();
           } catch (e) {
@@ -580,10 +601,8 @@ test(${titleJs}, async ({ page }) => {
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch: connection-level IP-pinned + URL/DNS guarded.
-            const res = await safeFetch(url, {
-              headers: { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` },
-            });
+            // SSRF-safe fetch with the read deadline (readUrl above).
+            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
             if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
             lottieData = await res.json();
           } catch (e) {

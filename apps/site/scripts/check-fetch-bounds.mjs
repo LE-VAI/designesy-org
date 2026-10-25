@@ -4,8 +4,9 @@
  * cap its caller names while the body is still arriving, a caller's signal
  * ends a read at its deadline however slowly the server sends and keeps no
  * listener once the read settles, a reader's chunk holds only the bytes
- * returned, and the MCP tools that read a URL through url-guard still read
- * one that answers.
+ * returned, every URL the MCP route reads for itself ends at the route's 15 s
+ * read deadline, and the MCP tools that read a URL through url-guard still
+ * read one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -15,13 +16,17 @@
  * 15 s timeout is a socket idle timeout, set only when the caller passes no
  * signal, so a server that sends one byte a second and never stops never
  * trips it: read with no cap, that body ends at the caller's signal or not at
- * all. Each hop of a read adds an abort listener to the caller's signal, and
- * it stayed there once the read settled. A signal can outlive the read: Node
- * keeps an AbortSignal.timeout that has a listener alive until its timer
- * fires, and the listener kept the read's request and the body it read
- * reachable until then. The Response is built from the bytes Buffer.concat
- * joins. Handed to a reader uncopied, a body under 4 KiB would sit in Node's
- * shared 8 KiB pool, whose buffer also holds other reads' bytes.
+ * all. The MCP route passed no signal for the URLs it reads (cachedFetch, and
+ * the url of designesy_tokens_score and designesy_motion_score), so nothing
+ * in the process ended such a read short of the function's maxDuration
+ * (300 s, vercel.json). Each hop of a read adds an abort listener to the
+ * caller's signal, and it stayed there once the read settled. A signal can
+ * outlive the read: Node keeps an AbortSignal.timeout that has a listener
+ * alive until its timer fires, and the listener kept the read's request and
+ * the body it read reachable until then. The Response is built from the
+ * bytes Buffer.concat joins. Handed to a reader uncopied, a body under 4 KiB
+ * would sit in Node's shared 8 KiB pool, whose buffer also holds other reads'
+ * bytes.
  *
  * HOW IT MEASURES
  * The real URL guard and the real MCP route, loaded through
@@ -33,8 +38,9 @@
  * say how far a body got and whether the request was destroyed.
  * getEventListeners (node:events) counts the abort listeners left on a
  * signal. The MCP route is loaded before the first case starts, so no case's
- * time includes its load. The cases run concurrently, each on its own host
- * names; the last one runs once the others have settled.
+ * time includes its load, and one case reads its source instead of running
+ * it. The cases run concurrently, each on its own host names; the last one
+ * runs once the others have settled.
  *
  * WHAT IT ASSERTS
  *   - A 10 MiB body read with maxBodyBytes 1 MiB resolves with exactly its
@@ -57,7 +63,13 @@
  *     read other than an abort.
  *   - A server that sends one byte a second is ended by the caller's 3 s
  *     signal at its deadline, with an AbortError, and the request is
- *     destroyed.
+ *     destroyed. Each MCP read of such a server (designesy_tokens_score,
+ *     designesy_motion_score, and designesy_llms_txt through cachedFetch)
+ *     ends at the route's 15 s read deadline with an error saying the fetch
+ *     timed out after 15 s, and its request is destroyed.
+ *   - Every safeFetch call in the MCP route is the one in readUrl, which
+ *     passes it a signal from AbortSignal.timeout(READ_DEADLINE_MS), and
+ *     READ_DEADLINE_MS is 15 s.
  *   - designesy_tokens_score still reads a token file that answers, and
  *     designesy_llms_full_txt (cachedFetch) a document that answers.
  *   - Last: nothing was thrown during the run where no caller could catch it
@@ -70,9 +82,12 @@
  * finds no cutByBudget. The listener case fails there too: every read but
  * the 999 leaves a listener (two after the redirect), and the cap, budget,
  * gzip, corrupt gzip and 999 reads settle some other way, the 999 only at
- * its signal, after a throw nothing catches, which fails the last case. The
- * other cases hold there. Against engine 1.5.4's url-guard, which left the
- * listener registered, only that case fails: each read settles as labelled
+ * its signal, after a throw nothing catches, which fails the last case. Its
+ * MCP route, like engine 1.5.4's, passed safeFetch no signal: against
+ * either, the three MCP drips are still open at the case deadline, and the
+ * source case finds three safeFetch calls and no readUrl. The other cases
+ * hold there. Against engine 1.5.4's url-guard, which left the listener
+ * registered, only the listener case fails: each read settles as labelled
  * and leaves a listener (two after the redirect). A url-guard that skips the
  * removal at one of its three places leaves the listener after the 999 and
  * corrupt gzip reads (fail), after the five reads that resolve (finish), or
@@ -84,8 +99,8 @@
  * beside the earlier read's body; one that never listens to the caller's
  * signal leaves the drip open at the case deadline; and a rejection left
  * unhandled, or a throw in a timer, fails the last. The ordinary page and
- * the two MCP cases are controls: they pin what a change to the transport or
- * the MCP route must keep.
+ * the two MCP reads of a URL that answers are controls: they pin what a
+ * change to the transport or the MCP route must keep.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -93,6 +108,7 @@
 
 import assert from 'node:assert/strict';
 import { getEventListeners } from 'node:events';
+import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import path from 'node:path';
@@ -111,6 +127,8 @@ const MiB = 1024 * 1024;
 const MARGIN_S = 2;
 /** A case still open this long after it started has no bound at all. */
 const CASE_DEADLINE_S = 30;
+/** READ_DEADLINE_MS in app/api/mcp/route.ts. */
+const MCP_DEADLINE_S = 15;
 /** The deadline the transport-level drip case passes as its own signal. */
 const SIGNAL_DEADLINE_S = 3;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
@@ -192,6 +210,9 @@ const ROUTES = {
   'listen-gzip.example.com/': { bytes: zlib.gzipSync(PAGE), encoding: 'gzip' },
   'listen-corrupt.example.com/': { bytes: Buffer.from('this body says it is gzip and it is not'), encoding: 'gzip' },
   'listen-budget.example.com/': { bytes: PATTERN.subarray(0, 2 * MiB) },
+  'tokens-drip.example.com/tokens.json': { drip: true },
+  'motion-drip.example.com/anim.json': { drip: true },
+  'www.designesy.org/llms.txt': { drip: true },
   'tokens-ok.example.com/tokens.json': { body: TOKENS, type: 'application/json' },
   'www.designesy.org/llms-full.txt': { body: '# Fetch bounds\n\nA published document that answers at once.\n', type: 'text/plain' },
 };
@@ -300,9 +321,33 @@ function endedAt(s, expect) {
   assert.ok(s >= expect - 0.5, `${s.toFixed(2)} s is under the ${expect} s deadline: something else ended the read`);
 }
 
+/** An MCP tool call that must fail; its error message, whether returned or thrown. */
+async function toolError(tool, args) {
+  try {
+    const { result, payload } = await h.callTool(tool, args);
+    const text = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    assert.equal(result.isError, true, `${tool} returned a result, not an error: ${text.slice(0, 120)}${text.length > 120 ? '...' : ''}`);
+    return String(payload && payload.error);
+  } catch (e) {
+    if (e instanceof assert.AssertionError) throw e;
+    return String(e && e.message);
+  }
+}
+
+/** An MCP tool call of a server sending one byte a second: it must end at the route's read deadline with a timeout error. */
+async function mcpDrip(tool, args, key) {
+  const t0 = performance.now();
+  const message = await toolError(tool, args);
+  const s = (performance.now() - t0) / 1000;
+  assert.match(message, new RegExp(`timed out after ${MCP_DEADLINE_S} s`), `ended with "${message}"`);
+  endedAt(s, MCP_DEADLINE_S);
+  assert.equal(seen.get(key).req.destroyed, true, 'the request was not destroyed');
+  return `${s.toFixed(2)} s, "${message}", ${seen.get(key).received} bytes received`;
+}
+
 // ── Cases ────────────────────────────────────────────────────────────────────
 
-/** Run together; the timed one measures its own deadline. */
+/** Run together; each timed one measures its own deadline. */
 const CONCURRENT = [
   {
     name: 'a 10 MiB body read with maxBodyBytes 1 MiB comes back as its first 1 MiB + 1 bytes, and the request is destroyed',
@@ -414,6 +459,40 @@ const CONCURRENT = [
     },
   },
   {
+    name: `designesy_tokens_score on a URL sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
+    run: async () => mcpDrip('designesy_tokens_score', { url: 'https://tokens-drip.example.com/tokens.json' }, 'tokens-drip.example.com/tokens.json'),
+  },
+  {
+    name: `designesy_motion_score on a URL sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
+    run: async () => mcpDrip('designesy_motion_score', { url: 'https://motion-drip.example.com/anim.json' }, 'motion-drip.example.com/anim.json'),
+  },
+  {
+    name: `designesy_llms_txt (cachedFetch) on a source sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
+    run: async () => mcpDrip('designesy_llms_txt', {}, 'www.designesy.org/llms.txt'),
+  },
+  {
+    name: "every safeFetch call in the MCP route is readUrl's, which passes the read deadline",
+    run: async () => {
+      const src = fs.readFileSync(path.join(APP, 'app/api/mcp/route.ts'), 'utf8').replace(/\r\n/g, '\n');
+      const calls = [...src.matchAll(/\bsafeFetch\(/g)].map((m) => m.index);
+      const start = src.indexOf('\nasync function readUrl(');
+      assert.ok(start >= 0, `no readUrl in the MCP route, which has ${calls.length} safeFetch call(s)`);
+      // readUrl is a top-level function: it ends at the first closing brace
+      // on a line of its own.
+      const end = src.indexOf('\n}\n', start);
+      const outside = calls.filter((i) => i < start || i > end);
+      assert.equal(outside.length, 0, `${outside.length} of ${calls.length} safeFetch calls in the MCP route are outside readUrl`);
+      assert.equal(calls.length, 1, `${calls.length} safeFetch calls in readUrl, expected 1`);
+      const fn = src.slice(start, end);
+      assert.match(fn, /const signal = AbortSignal\.timeout\(READ_DEADLINE_MS\);/, 'readUrl makes no AbortSignal.timeout(READ_DEADLINE_MS)');
+      assert.match(fn, /safeFetch\(url, \{[^}]*(?<![\w.])signal(?=\s*[,}])/, 'readUrl does not pass that signal to safeFetch');
+      const ms = src.match(/^const READ_DEADLINE_MS = ([\d_]+);$/m);
+      assert.ok(ms, 'no READ_DEADLINE_MS in the MCP route');
+      assert.equal(Number(ms[1].replace(/_/g, '')), MCP_DEADLINE_S * 1000, `READ_DEADLINE_MS is ${ms[1]}, not ${MCP_DEADLINE_S} s`);
+      return `1 call, in readUrl; READ_DEADLINE_MS ${ms[1]}`;
+    },
+  },
+  {
     name: 'designesy_tokens_score still reads a token file that answers',
     run: async () => {
       const { result, payload } = await h.callTool('designesy_tokens_score', { url: 'https://tokens-ok.example.com/tokens.json' });
@@ -481,5 +560,5 @@ if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s, and no read leaves a listener on its signal.');
 process.exit(0);
