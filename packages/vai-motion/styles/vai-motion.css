@@ -16,8 +16,9 @@
   position: relative;
 }
 /* The trace line: a horizontal rule that draws itself via scaleX.
-   Bind the width to the JS-driven progress var; JS-free usage can
-   override --vai-trace-progress with a CSS animation. */
+   waveformTrace.drawLine() sets --vai-trace-progress along its ease, and
+   adds vai-waveform--done once the line is drawn. Without JS, add
+   vai-waveform--css (below), which animates the line's transform. */
 .vai-waveform::after {
   content: '';
   position: absolute;
