@@ -77,13 +77,14 @@ alive, below).
   report, drift, guardrails, monitor and compare routes keep each result
   for 24 h, and this change moves results each of them keeps (below; a
   report holds a readiness result and a drift result). Their keys gain the
-  part `request-body-deadline` (readiness and report after
-  `read-limit-4mib`), so each URL is scanned again on its first request
-  after the deploy (in guardrails, after `dtcg-objects-1`, the part the
-  Guardrails entry below gives it). None of the six cached functions is
-  edited by this change, so the function's source, which Next.js 16.4.2
-  puts in the key, would not have kept an older result out. The score
-  route's cache is keyed by the deployment's commit, as before.
+  part `request-body-deadline`, so each URL is scanned again on its first
+  request after the deploy. It comes after `read-limit-4mib` in the
+  readiness and report keys, and after `dtcg-objects-1`, the part the
+  Guardrails entry below gives it, in the guardrails key. None of the six
+  cached functions is edited by this change, so the function's source,
+  which Next.js 16.4.2 puts in the key, would not have kept an older result
+  out. The score route's cache is keyed by the deployment's commit, as
+  before.
 
 ### Results that can move (requests and deadlines)
 
