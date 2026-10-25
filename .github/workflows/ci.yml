@@ -233,6 +233,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-results-language.mjs
 
+      # Muting sound plays the toggle cue to its end before cuelume is turned
+      # off, and sound turned back on inside that cue stays on (the real
+      # sound preference hook, app/lib/use-sound.tsx, with cuelume, React and
+      # the clock stood in for).
+      - name: Sound mute cue
+        if: ${{ !cancelled() }}
+        run: node scripts/check-sound-mute.mjs
+
       - name: Generate markdown
         if: ${{ !cancelled() }}
         run: node scripts/generate-markdown.js

@@ -6,6 +6,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The sound switch plays its whole cue when it mutes** (the site; no
+version moves). Turning sound off plays cuelume's toggle cue and then turns
+cuelume off. From cuelume 0.2.6, `setEnabled(false)` fades whatever is
+still sounding within 15 ms, and the sound preference hook
+(`app/lib/use-sound.tsx`) called it in the same click, so on cuelume 0.2.8
+the cue that confirms a mute was cut to a click. No check, rule, weight or
+score moves.
+
+### Fixed (sound mute cue)
+
+- **A mute waits for the toggle cue before it turns cuelume off.** The wait
+  is read from the recipe cuelume ships (its `cuelume/themes` export): each
+  layer of the default theme's toggle cue starts at its offset, swells over
+  its attack and falls 60 dB over its decay. The wait ends with the longest
+  layer at any emphasis, 38.5 ms, rounded up to 39 ms. The cue as the site
+  plays it, at normal emphasis, lasts 34.9 ms.
+- **Sound turned back on inside the wait stays on.** Turning sound on, and
+  the preference a page applies when it loads, cancel a mute that is still
+  waiting, so cuelume and the switch agree. The switch, `html[data-audio]`
+  and the stored preference change in the click, as before.
+
+### Not changed (sound mute cue)
+
+- Turning sound on: cuelume is turned on before the cue plays, as before.
+- A mute made before the page's audio has started. cuelume starts audio
+  and then plays the cue. The wait counts from the click, so a start that
+  takes longer than 39 ms leaves the cue unheard, as before this change,
+  and a quicker one shortens it.
+- cuelume stays 0.2.8, and the binder still plays `tick` on the first
+  pointerdown to start audio.
+
+Caveat: the 15 ms fade and the length of the cue were read from cuelume's
+source, and the wait was checked with a stand-in for cuelume. Neither was
+listened to in a browser.
+
+### Gates (sound mute cue)
+
+- `check-sound-mute.mjs` (new, in the build and in CI after Results
+  language) loads the real hook with cuelume, React and the clock stood in
+  for, 2 cases. A mute turns cuelume off no earlier than the end of the
+  34.9 ms cue and no later than 39 ms after the click. Sound turned back
+  on 10 ms into the cue stays on, and cuelume is never told to turn off.
+  Against the hook before this change both cases fail, because cuelume is
+  turned off 0 ms into the cue. With the lines that cancel a waiting mute
+  removed, the second case fails.
+
 **Fetch bounds: a finished read lets go of its signal, every URL the MCP
 route reads for itself ends at 15 s, and the URL guard copies a body fewer
 times** (the site: its URL guard and the hosted MCP route; no version

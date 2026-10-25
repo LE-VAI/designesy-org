@@ -819,6 +819,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'fetch bounds entry in CHANGELOG.md',
   },
 
+  // ── Site: the mute cue plays to its end ──
+  {
+    version: 'v0.4.7',
+    date: '2026-10-25',
+    dimension: 'acoustics',
+    change: 'modified',
+    title: 'The sound switch plays its whole cue when it mutes',
+    description:
+      'Turning sound off plays the toggle cue and then turns the cuelume sound engine off. From cuelume 0.2.6, turning the engine off fades whatever is still sounding within 15 ms, and the site turned it off in the same click, so on cuelume 0.2.8 the cue that confirms a mute was cut to a click. The site now waits for the cue before it turns the engine off. The wait is 39 ms: the end of the longest layer of the cue, read from the recipe cuelume ships and rounded up to a whole millisecond. The cue as the site plays it lasts 34.9 ms. Turning sound back on inside the wait cancels the mute, so the engine stays on and the switch says on. The switch, the html data-audio attribute and the stored preference change in the click, as before.',
+    rationale:
+      'A sound switch confirms each change with a cue, and the mute cue was cut short. No check, rule, weight or ceiling changed, no score moves and no version moves. A new gate, check-sound-mute, runs the real sound preference hook with cuelume, React and the clock stood in for.',
+    source: 'sound mute cue entry in CHANGELOG.md; cuelume 0.2.8 (src/audio/output.ts and src/sounds/recipes.ts)',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',
