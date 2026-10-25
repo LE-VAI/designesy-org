@@ -1,0 +1,29 @@
+{
+  "$schema": "https://www.designtokens.org/schemas/2025.10/format.json",
+  "$description": "The dimension and duration tokens of tokens.json in the 2025.10 { value, unit } form, plus a rem dimension and a duration in seconds.",
+  "space": {
+    "xs": { "$type": "dimension", "$value": { "value": 4, "unit": "px" } },
+    "sm": { "$type": "dimension", "$value": { "value": 8, "unit": "px" } },
+    "md": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } },
+    "lg": { "$type": "dimension", "$value": { "value": 24, "unit": "px" } },
+    "xl": { "$type": "dimension", "$value": { "value": 32, "unit": "px" } },
+    "2xl": { "$type": "dimension", "$value": { "value": 2.5, "unit": "rem" } }
+  },
+  "radius": {
+    "sm": { "$type": "dimension", "$value": { "value": 4, "unit": "px" } },
+    "md": { "$type": "dimension", "$value": { "value": 8, "unit": "px" } },
+    "lg": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } }
+  },
+  "font": {
+    "size": {
+      "sm": { "$type": "dimension", "$value": { "value": 14, "unit": "px" } },
+      "md": { "$type": "dimension", "$value": { "value": 16, "unit": "px" } },
+      "lg": { "$type": "dimension", "$value": { "value": 20, "unit": "px" } }
+    }
+  },
+  "duration": {
+    "fast": { "$type": "duration", "$value": { "value": 150, "unit": "ms" } },
+    "normal": { "$type": "duration", "$value": { "value": 250, "unit": "ms" } },
+    "slow": { "$type": "duration", "$value": { "value": 0.4, "unit": "s" } }
+  }
+}

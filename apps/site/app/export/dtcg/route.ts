@@ -180,16 +180,13 @@ export function GET() {
   // three shadows ("shadow[0] must be an object"); until 1.13.8 the object
   // still held the CSS color string and lengths such as "0" and "1px". The
   // shorthand is read by the parser designesy_guardrails uses (app/lib/
-  // dtcg.ts); spread is absent from it, so it is 0, the CSS default.
+  // dtcg.ts), which returns the color and the four lengths in their DTCG form;
+  // spread is absent from it, so it is 0, the CSS default.
   const shadowGroup: Record<string, { $value: unknown; $type: string }> = {};
   for (const [key, spec] of Object.entries(shadows)) {
     const parsed = parseShadow(spec.value);
     if (!parsed) throw new Error(`/export/dtcg: shadow.${key} is ${JSON.stringify(spec.value)}, which does not parse as one CSS shadow.`);
-    const length = (field: string) => dimension(`shadow.${key}.${field}`, String(parsed[field]));
-    shadowGroup[key] = {
-      $value: { color: parsed.color, offsetX: length('offsetX'), offsetY: length('offsetY'), blur: length('blur'), spread: length('spread') },
-      $type: 'shadow',
-    };
+    shadowGroup[key] = { $value: parsed, $type: 'shadow' };
   }
   if (Object.keys(shadowGroup).length > 0) dtcg.shadow = shadowGroup;
 
