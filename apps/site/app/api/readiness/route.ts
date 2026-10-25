@@ -81,7 +81,8 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<P
         'Accept': '*/*',
       },
       signal: controller.signal,
-      // A HEAD has no body, and is read as before.
+      // A HEAD has no body, and is read as before. No check sends one: every
+      // probeUrl call passes 'GET'.
       maxBodyBytes: method === 'GET' ? READ_LIMIT : undefined,
     });
     if (method !== 'GET') return { ok: resp.ok, status: resp.status, body: undefined };
