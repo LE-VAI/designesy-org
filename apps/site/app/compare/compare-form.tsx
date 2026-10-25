@@ -196,8 +196,8 @@ export function CompareForm({ initialA, initialB, registry }: { initialA: string
             {rows.map((e, i) => (
               <tr key={`${e.token}-${i}`}>
                 <td>{e.token}</td>
-                <td><Swatch value={e.valueA} />{e.valueA} <span className="eg-quiet">{e.contrastA}:1</span></td>
-                <td><Swatch value={e.valueB} />{e.valueB} <span className="eg-quiet">{e.contrastB}:1</span></td>
+                <td><Swatch value={e.valueA} />{`${e.valueA} `}<span className="eg-quiet">{e.contrastA}:1</span></td>
+                <td><Swatch value={e.valueB} />{`${e.valueB} `}<span className="eg-quiet">{e.contrastB}:1</span></td>
                 <td className={`is-num ${e.drift > 0 ? 'eg-delta-up' : e.drift < 0 ? 'eg-delta-down' : ''}`}>{signed(e.drift)}</td>
               </tr>
             ))}
