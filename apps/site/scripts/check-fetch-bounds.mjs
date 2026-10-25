@@ -23,10 +23,10 @@
  * caller's signal, and it stayed there once the read settled. A signal can
  * outlive the read: Node keeps an AbortSignal.timeout that has a listener
  * alive until its timer fires, and the listener kept the read's request and
- * the body it read reachable until then. The Response is built from the
- * bytes Buffer.concat joins. Handed to a reader uncopied, a body under 4 KiB
- * would sit in Node's shared 8 KiB pool, whose buffer also holds other reads'
- * bytes.
+ * the body it read reachable until then. The Response reads the body as one
+ * chunk the transport joins, uncopied. Joined by Buffer.concat, a body under
+ * 4 KiB would sit in Node's shared 8 KiB pool, whose buffer also holds other
+ * reads' bytes.
  *
  * HOW IT MEASURES
  * The real URL guard and the real MCP route, loaded through

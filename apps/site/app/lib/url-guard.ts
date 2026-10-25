@@ -660,7 +660,21 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
               rsHeaders.delete('content-encoding');
               rsHeaders.delete('content-length');
             }
-            r = new Response(NULL_BODY_STATUS.has(status) ? null : Buffer.concat(out), {
+            // The chunks are joined once and let go. The Response reads the
+            // joined bytes from a stream, as one chunk: given the bytes
+            // directly, it would copy them again and keep its copy after the
+            // body is read.
+            let body: ReadableStream<Uint8Array> | null = null;
+            if (!NULL_BODY_STATUS.has(status)) {
+              const bytes = joinOwned(out);
+              body = new ReadableStream<Uint8Array>({
+                start(controller) {
+                  if (bytes.byteLength > 0) controller.enqueue(bytes);
+                  controller.close();
+                },
+              });
+            }
+            r = new Response(body, {
               status,
               statusText: res.statusMessage || '',
               headers: rsHeaders,
@@ -802,6 +816,25 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     }
     req.end();
   });
+}
+
+/**
+ * The chunks joined into one Uint8Array whose buffer holds exactly their
+ * bytes. A reader can reach the whole `buffer` behind the chunk it gets, and
+ * Buffer.concat takes a result under 4 KiB from Node's shared 8 KiB pool,
+ * which also holds other allocations' bytes, other reads' bodies among them.
+ * A buffer of the body's own size holds nothing else.
+ */
+function joinOwned(chunks: Buffer[]): Uint8Array {
+  let total = 0;
+  for (const c of chunks) total += c.byteLength;
+  const bytes = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  return bytes;
 }
 
 /** The error an aborted read rejects with; callers classify it by its name, AbortError. */
