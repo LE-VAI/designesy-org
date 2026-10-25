@@ -299,11 +299,11 @@ function isPrivateAddress(addr: string): boolean {
 // (point 5 at the top of this file); `maxBodyBytes` and `budget` bound what is
 // held. A request body (a string or bytes) is sent with its length, and a
 // 301, 302, 303, 307 or 308 is followed with the method and body fetch would
-// use (redirectedInit). Two things differ from fetch: a 300 or 304 that
-// carries a Location is followed too, repeating the request, where fetch
-// returns it; and every header the caller passes is sent on every hop, to
-// another origin too, where fetch drops Authorization, Proxy-Authorization
-// and Cookie there.
+// use (redirectedInit). Two things differ from fetch: any other 3xx that
+// carries a Location (300, 304, 305, 306, or 309 to 399) is followed too,
+// repeating the request and its body, where fetch returns it; and every
+// header the caller passes is sent on every hop, to another origin too,
+// where fetch drops Authorization, Proxy-Authorization and Cookie there.
 
 const MAX_REDIRECTS = 5;
 
@@ -923,8 +923,9 @@ const BODY_HEADERS = new Set(['content-encoding', 'content-language', 'content-l
  * a 303 (to any method but GET or HEAD), or a 301 or 302 to a POST, becomes
  * a GET with no body and none of the headers that describe one. A 307 or 308,
  * and a 301 or 302 to any other method, repeats the request, its body
- * included. So does a 300 or 304 with a Location, which fetch does not
- * follow (see the note above MAX_REDIRECTS).
+ * included. So does any other 3xx with a Location (300, 304, 305, 306, or
+ * 309 to 399), which fetch does not follow (see the note above
+ * MAX_REDIRECTS).
  */
 function redirectedInit(init: SafeFetchInit | undefined, status: number): SafeFetchInit | undefined {
   const method = (init?.method || 'GET').toUpperCase();

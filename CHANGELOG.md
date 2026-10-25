@@ -34,14 +34,15 @@ alive, below).
 - **A 301, 302, 303, 307 or 308 is followed with the method and body fetch
   would use.** A 303 to any method but GET or HEAD, and a 301 or 302 to a
   POST, become a GET with no body and none of the headers that describe one
-  (Content-Type, Content-Language and Content-Location among them). A 307
-  or 308, and a 301 or 302 to any other method, send the request again,
-  its body included. Before, every hop repeated the caller's method with no
-  body. Two things still differ from fetch, as before: a 300 or 304 that
-  carries a Location is followed, repeating the request, where fetch
-  returns it, and every header the caller passes is sent on every hop, to
-  another origin too, where fetch drops Authorization, Proxy-Authorization
-  and Cookie. No caller of the guard sends any of those three.
+  (Content-Type, Content-Language and Content-Location among them). A 307 or
+  308, and a 301 or 302 to any other method, send the request again, its
+  body included. Before, every hop repeated the caller's method with no
+  body. Two things still differ from fetch. Any other 3xx that carries a
+  Location (300, 304, 305, 306, or 309 to 399) is followed, as before, where
+  fetch returns it, and the request is repeated, now with its body. Every
+  header the caller passes is sent on every hop, to another origin too, as
+  before, where fetch drops Authorization, Proxy-Authorization and Cookie.
+  No caller of the guard sends any of those three.
 - **A quiet server no longer ends a read before its deadline.** With a
   signal, the URL guard set no timeout of its own, so the idle timeout of
   Node's global agent, whose requests it makes, applied. It ends a socket
@@ -77,17 +78,16 @@ alive, below).
   first. A page-fetch read now ends within 36 s: two candidate page URLs of
   8 s each, then the sheets.
 - **A result cached before this change is not served.** The readiness,
-  report, drift, guardrails, monitor and compare routes keep each result
-  for 24 h, and this change moves results each of them keeps (below; a
-  report holds a readiness result and a drift result). Their keys gain the
-  part `request-body-deadline`, so each URL is scanned again on its first
-  request after the deploy. It comes after `read-limit-4mib` in the
+  report, drift, guardrails, monitor and compare routes keep each result for
+  24 h, and this change moves results each of them keeps (below; a report
+  holds a score result, a readiness result and a drift result). Their keys
+  gain the part `request-body-deadline`, so each URL is scanned again on its
+  first request after the deploy. It comes after `read-limit-4mib` in the
   readiness and report keys, and after `dtcg-objects-1`, the part the
   Guardrails entry below gives it, in the guardrails key. None of the six
-  cached functions is edited by this change, so the function's source,
-  which Next.js 16.4.2 puts in the key, would not have kept an older result
-  out. The score route's cache is keyed by the deployment's commit, as
-  before.
+  cached functions is edited by this change, so the function's source, which
+  Next.js 16.4.2 puts in the key, would not have kept an older result out.
+  The score route's cache is keyed by the deployment's commit, as before.
 
 ### Results that can move (requests and deadlines)
 
@@ -136,14 +136,14 @@ of 2 to 5 s, 1 s less than that one.
   stylesheet is now part of the CSS the score reads, where it was left out,
   so the score can move either way. Such a contract is now read, where it
   was `CONTRACT_URL_UNREACHABLE`.
-- **Score results, for a server that stays quiet past 8 s.** The page,
-  sheet or contract still fails, now as a timeout. A page that sends its
-  headers and then nothing on both of its candidate URLs is unreachable
-  with `the request timed out` after 16.04 s, where it said `the request
-  failed at the network level` after 10.10 s. A contract URL that does so
-  is `CONTRACT_URL_UNREACHABLE` with why `timeout` after 8.01 s, where it
-  was why `network` after 5.02 s (two runs on each tree, the same both
-  times).
+- **Score results, for a server that stays quiet past 8 s.** The page, sheet
+  or contract still fails, now as a timeout. A page at a www. URL that sends
+  its headers and then nothing on both of its candidate URLs (that URL and
+  its http:// address) is unreachable with `the request timed out` after
+  16.04 s, where it said `the request failed at the network level` after
+  10.10 s. A contract URL that does so is `CONTRACT_URL_UNREACHABLE` with
+  why `timeout` after 8.01 s, where it was why `network` after 5.02 s (two
+  runs on each tree, the same both times).
 - **The score route's `/DESIGN.md` (v37), on a connection kept alive.** Its
   own deadline is 5 s, as long as the agent's timeout on a new connection,
   so a server quiet for 5 s still ends it, and v37 is SKIP (`could not
@@ -169,15 +169,22 @@ of 2 to 5 s, 1 s less than that one.
   5.02 s), so the result can move either way. A page whose stylesheets take
   more than 20 s in all now has those not read by then left out, where
   they were read however long they took.
-- **A report, and what passes these results along.** A report's composite
-  is its score times 0.5, plus its drift score times 0.3, plus its
-  readiness score times 0.2, rounded, so the composite, its grade and the
-  report's rp checks move with the results above: r04 moving from WARN to
-  PASS raises a report's composite by 1. A report whose page the score
-  route could not read gives no grade, and now gives one where the score
-  route reads that page: for the late site in the next item, the report
-  was HTTP 502 after 15.1 s and is now composite 66 (D) after 42.2 s. The
-  hosted MCP route's tools that call these routes, the published
+- **A report, and what passes these results along.** When all three engines
+  return a score, a report's composite is its score times 0.5, plus its
+  drift score times 0.3, plus its readiness score times 0.2, rounded, so the
+  composite, its grade and the report's rp checks move with the results
+  above. r04 moving from WARN to PASS, which raises the readiness score by
+  5, then raises the composite by 1, or by 2 where floating point puts the
+  sum before the move just under a half, so that it rounds down: 52 of the
+  2,022,020 combinations of a score from 0 to 100 in steps of 0.1, a drift
+  score from 0 to 100 and a readiness score from 0 to 95 in steps of 5. When
+  an engine returns no score, the route weighs the others again, and the
+  same move raises the composite by 1 or 2 (score 0.7 and readiness 0.3), by
+  2 (drift 0.6 and readiness 0.4) or by 5 (readiness alone). A report whose
+  page the score route could not read gives no grade, and now gives one
+  where the score route reads that page: for the late site in the next item,
+  the report was HTTP 502 after 15.1 s and is now composite 66 (D) after
+  42.2 s. The hosted MCP route's tools that call these routes, the published
   designesy-mcp package's (next item) and the live badge, which shows the
   score route's result, pass the same results along.
 - **How long a run lasts against a server that is quiet, slow or late, and
@@ -239,7 +246,7 @@ of 2 to 5 s, 1 s less than that one.
   every quiet read first. Against a server that sends its headers and then
   nothing, 58 of 58 `designesy_tokens_score` reads ended at 15.000 to
   15.005 s with `Fetch timed out after 15 s`, as they do now, and a token
-  file whose server is quiet for 8 s is still read (8.06 s).
+  file whose server is quiet for 8 s is still read, after about 8 s.
 - What a GET carries: every read of the MCP route and of the score, drift,
   guardrails, monitor and compare routes, and every readiness probe but
   r04's, sends the request it sent before.
