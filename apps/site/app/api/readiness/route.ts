@@ -476,7 +476,15 @@ const READINESS_TTL = 60 * 60 * 24; // 24h
 // whatever the framework does with the source; without both, such a result
 // would be served until 24 h after it was cached and once more, to the
 // request that starts a new scan.
-const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib'], {
+//
+// The third part keeps out every result cached before the URL guard sent
+// a request's body and stopped ending a read given a deadline early: r04
+// was WARN (HTTP 400) for an MCP endpoint that reads its request, and a
+// probe whose server was quiet for between Node's idle timeout (5 s, or as
+// little as 1 s on a kept-alive connection) and its 8 s deadline was read
+// as not found. scoreReadinessUncached is unchanged by that work, so its
+// source does not keep such a result out.
+const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib', 'request-body-deadline'], {
   revalidate: READINESS_TTL,
   tags: ['readiness'],
 });

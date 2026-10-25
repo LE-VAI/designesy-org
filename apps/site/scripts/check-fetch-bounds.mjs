@@ -258,7 +258,10 @@
  *     HEAD probe none.
  *   - The readiness route's cache and the report route's (which keeps the
  *     readiness result each report was made with) carry the key part
- *     'read-limit-4mib' in their unstable_cache keys.
+ *     'read-limit-4mib' in their unstable_cache keys. They, and the drift,
+ *     guardrails, monitor and compare routes' caches, carry the key part
+ *     'request-body-deadline', since the request body and deadline work
+ *     moves results each of them keeps.
  *   - Readiness controls, which hold on the readiness route from before its
  *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
  *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
@@ -397,7 +400,9 @@
  *
  * The cache key case fails on the tree from before the read limits, whose
  * readiness and report caches carry no such part, and on one whose report
- * cache alone lacks it.
+ * cache alone lacks it. It fails too on the tree before the six caches
+ * carried 'request-body-deadline', naming each of the six, and on one whose
+ * compare cache alone lacks it.
  *
  * Against the tree from before the requests and deadline cases, eight of
  * them fail: the sheet phase case (below), the POST case (each URL receives a POST with 0 body bytes), the
@@ -448,8 +453,8 @@
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
  * readiness route from before them), 32 of the 59 cases fail and every
- * control holds: the 24 the read limits make fail there, the seven above,
- * and the sheet phase case.
+ * control holds: the 24 the read limits make fail there (the cache key case
+ * among them), the seven above, and the sheet phase case.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -487,6 +492,8 @@ const DOC_LIMIT = MCP_READ_LIMITS.cachedFetch;
 const READINESS_LIMIT = 4 * MiB;
 /** The key part the readiness and report routes' caches carry since the read limits, so no result cached before them is read. */
 const CACHE_KEY_PART = 'read-limit-4mib';
+/** The key part each cache whose results the request body and deadline work moves carries, so no result cached before it is read. */
+const REQUEST_KEY_PART = 'request-body-deadline';
 /** How far past its limit an over-limit body runs. */
 const PAST_LIMIT = MiB;
 /** The deadline the transport-level drip case passes as its own signal. */
@@ -2147,18 +2154,28 @@ const CONCURRENT = [
     },
   },
   {
-    name: "the readiness and report caches carry the read limit in their keys, so no result cached before it is read",
+    name: "the readiness and report caches carry the read limit in their keys, and they and the drift, guardrails, monitor and compare caches the request body and deadline work, so no result cached before either is read",
     run: async () => {
       const keys = [];
-      for (const [route, fn] of [['app/api/readiness/route.ts', 'scoreReadinessUncached'], ['app/api/report/route.ts', 'runReportUncached']]) {
+      const wrong = [];
+      for (const [route, fn, parts] of [
+        ['app/api/readiness/route.ts', 'scoreReadinessUncached', [CACHE_KEY_PART, REQUEST_KEY_PART]],
+        ['app/api/report/route.ts', 'runReportUncached', [CACHE_KEY_PART, REQUEST_KEY_PART]],
+        ['app/api/drift/route.ts', 'scoreDriftUncached', [REQUEST_KEY_PART]],
+        ['app/api/guardrails/route.ts', 'emitGuardrailsUncached', [REQUEST_KEY_PART]],
+        ['app/api/monitor/route.ts', 'scoreMonitorUncached', [REQUEST_KEY_PART]],
+        ['app/api/compare/route.ts', 'scoreCompareUncached', [REQUEST_KEY_PART]],
+      ]) {
         const src = fs.readFileSync(path.join(APP, route), 'utf8');
         const at = src.indexOf(`unstable_cache(${fn}, [`);
         assert.ok(at >= 0, `no unstable_cache(${fn}, [...]) in ${route}`);
         const list = src.slice(at, src.indexOf(']', at));
-        const parts = [...list.matchAll(/'([^']*)'/g)].map((x) => x[1]);
-        assert.ok(parts.includes(CACHE_KEY_PART), `${route} caches ${fn} under [${parts.join(', ')}], with no '${CACHE_KEY_PART}'`);
-        keys.push(`${route}: [${parts.join(', ')}]`);
+        const have = [...list.matchAll(/'([^']*)'/g)].map((x) => x[1]);
+        const missing = parts.filter((p) => !have.includes(p));
+        if (missing.length) wrong.push(`${route} caches ${fn} under [${have.join(', ')}], with no '${missing.join("', '")}'`);
+        keys.push(`${route}: [${have.join(', ')}]`);
       }
+      assert.equal(wrong.length, 0, wrong.join('; '));
       return keys.join('; ');
     },
   },

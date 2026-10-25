@@ -426,7 +426,13 @@ const REPORT_TTL = 60 * 60 * 24; // 24h
 // made before the limit from being served: without this part it would be
 // served until 24 h after it was cached and once more, to the request that
 // starts a new run. Under this key no report cached before the limit is read.
-const runReport = unstable_cache(runReportUncached, ['designesy-report', 'read-limit-4mib'], {
+// The third part does the same for the request body and deadline work, which
+// moves readiness results (r04 for an MCP endpoint that reads its request,
+// and a probe whose server is quiet before its deadline) and drift results
+// (a page or stylesheet whose server is quiet before its deadline, and a
+// page's stylesheets, now read for at most 20 s in all), both of which a
+// report holds.
+const runReport = unstable_cache(runReportUncached, ['designesy-report', 'read-limit-4mib', 'request-body-deadline'], {
   revalidate: REPORT_TTL,
   tags: ['report'],
 });

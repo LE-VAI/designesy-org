@@ -828,7 +828,15 @@ async function emitGuardrailsUncached(targetUrl: string) {
 
 const GUARDRAILS_TTL = 60 * 60 * 24; // 24h
 
-const emitGuardrails = unstable_cache(emitGuardrailsUncached, ['designesy-guardrails'], {
+// The key part request-body-deadline keeps out every result cached before
+// the URL guard stopped ending a read given a deadline early and page-fetch
+// bounded a page's stylesheets to 20 s in all. Before, a page or stylesheet
+// whose server was quiet for between Node's idle timeout (5 s, or as little
+// as 1 s on a kept-alive connection) and its 8 s deadline was not read, and
+// a page's stylesheets were read however long they took. The cached
+// function is unchanged by that work, so its source, which Next.js 16.4.2
+// puts in the key, does not keep such a result out.
+const emitGuardrails = unstable_cache(emitGuardrailsUncached, ['designesy-guardrails', 'request-body-deadline'], {
   revalidate: GUARDRAILS_TTL,
   tags: ['guardrails'],
 });
