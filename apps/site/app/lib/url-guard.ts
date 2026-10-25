@@ -667,11 +667,14 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
             // The chunks are joined once and let go. The Response reads the
             // joined bytes from a stream, as one chunk: given the bytes
             // directly, it would copy them again and keep its copy after the
-            // body is read.
+            // body is read. A byte stream, as a Response's own body is, so
+            // clone() and tee() give each branch its own copy of the chunk
+            // and a BYOB reader works.
             let body: ReadableStream<Uint8Array> | null = null;
             if (!NULL_BODY_STATUS.has(status)) {
               const bytes = joinOwned(out);
-              body = new ReadableStream<Uint8Array>({
+              body = new ReadableStream({
+                type: 'bytes',
                 start(controller) {
                   if (bytes.byteLength > 0) controller.enqueue(bytes);
                   controller.close();
@@ -827,9 +830,11 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
  * bytes. A reader can reach the whole `buffer` behind the chunk it gets, and
  * Buffer.concat takes a result under 4 KiB from Node's shared 8 KiB pool,
  * which also holds other allocations' bytes, other reads' bodies among them.
- * A buffer of the body's own size holds nothing else.
+ * A buffer of the body's own size holds nothing else. A byte stream also
+ * takes the buffer over when the chunk is enqueued, which a pooled buffer
+ * refuses.
  */
-function joinOwned(chunks: Buffer[]): Uint8Array {
+function joinOwned(chunks: Buffer[]): Uint8Array<ArrayBuffer> {
   let total = 0;
   for (const c of chunks) total += c.byteLength;
   const bytes = new Uint8Array(total);
