@@ -113,7 +113,19 @@
  *     finished sending. A gzip body that decodes to 1 MiB past the limit
  *     fails the same way in each of the three.
  *   - designesy_motion_score reads a gzip Lottie file that decodes to exactly
- *     16 MiB whole.
+ *     16 MiB whole, also when it is reached through a 302.
+ *   - A read is held to its limit on the URL a redirect lands on: a token
+ *     file reached through a 302 and 1 MiB past the 4 MiB limit fails
+ *     naming the limit, and at most one socket read past the limit reached
+ *     the client on the URL it landed on, the request was destroyed, and the
+ *     server never finished sending.
+ *   - Each coding is held to the limit after decoding: designesy_tokens_score
+ *     fails, naming the limit, on a deflate (zlib-wrapped and raw) or br
+ *     token file that decodes to one byte past 4 MiB, and
+ *     designesy_motion_score reads a br Lottie file that decodes to exactly
+ *     16 MiB whole and fails on one that decodes to one byte past it. A
+ *     control: a deflate (both kinds) or br token file that decodes to
+ *     exactly 4 MiB is read whole, as it was before the read limits.
  *   - Every safeFetch call in the MCP route is the one in readUrl, which
  *     passes it a signal from AbortSignal.timeout(READ_DEADLINE_MS) and its
  *     limit as maxBodyBytes, and READ_DEADLINE_MS is 15 s. readUrl is called
@@ -142,7 +154,9 @@
  *     /llms.txt, r08 for a /sitemap.xml and r10 for a home page, each sent
  *     with no content coding and as gzip that decodes past the limit, r10
  *     also for a home page that answers 404, and r04 for an MCP endpoint
- *     whose tools/list answer is past the limit, both ways. For each body
+ *     whose tools/list answer is past the limit, both ways, and r02 for an
+ *     /llms.txt reached through a 302, held to the limit on the URL it lands
+ *     on. For each body
  *     sent with no content coding, at most one socket read past the limit
  *     reached the client, the request was destroyed, and the server never
  *     finished sending. In each scan the other nine checks are as on a site
@@ -241,6 +255,22 @@
  * readiness source case. One whose probePaths goes on past a file that is too
  * large reports it as not found, which fails the r02, every-file and
  * /open.json cases.
+ *
+ * A url-guard that drops maxBodyBytes after the first hop of a redirect fails
+ * the three redirect cases: the token file and the llms.txt are read to
+ * their end on the URL they land on (the verdicts stay right, since each
+ * route compares the length), and the gzip Lottie file fails at the 4 MiB
+ * default. The deflate and br cases past a limit, and the br Lottie file of
+ * exactly 16 MiB, fail on a route that passes no limit of its own, as the
+ * gzip ones do. A readUrl that decodes a body with TextDecoder fails the
+ * case of a token file that starts with two byte order marks. The deflate
+ * and br token files of exactly 4 MiB, and the readiness llms.txt that
+ * starts with two byte order marks, are controls: they hold on the code from
+ * before the read limits too.
+ *
+ * Run against the tree from before the read limits (url-guard, MCP route and
+ * readiness route from before them), 17 of the 41 cases fail and every
+ * control holds.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -387,6 +417,17 @@ const LOTTIE_OVER = jsonOfSize(LOTTIE, LOTTIE_LIMIT + PAST_LIMIT);
 const DOC_AT = docOfSize(DOC_LIMIT);
 const DOC_OVER = docOfSize(DOC_LIMIT + PAST_LIMIT);
 const BOM = Buffer.from([0xef, 0xbb, 0xbf]);
+/** One byte past each limit, decoded. */
+const TOKENS_PAST_ONE = jsonOfSize(TOKENS, TOKENS_LIMIT + 1);
+const LOTTIE_PAST_ONE = jsonOfSize(LOTTIE, LOTTIE_LIMIT + 1);
+/** Each content coding a case below sends: its Content-Encoding and its encoder. Raw deflate is sent as deflate, as some servers send it. */
+const CODINGS = {
+  deflate: ['deflate', (b) => zlib.deflateSync(b)],
+  raw: ['deflate', (b) => zlib.deflateRawSync(b)],
+  br: ['br', (b) => zlib.brotliCompressSync(b, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } })],
+};
+/** `bytes` sent in `coding` (a CODINGS key), and the length it decodes to. */
+const coded = (coding, bytes, type = 'application/json') => ({ bytes: CODINGS[coding][1](bytes), encoding: CODINGS[coding][0], decoded: bytes.length, type });
 const NOT_JSON = 'this is not json';
 
 // host + path -> what the server sends. Each case below owns its URLs, but
@@ -432,6 +473,18 @@ const ROUTES = {
   'tokens-ok.example.com/tokens.json': { body: TOKENS, type: 'application/json' },
   'tokens-late.example.com/tokens.json': { body: TOKENS, type: 'application/json', delayMs: 8000 },
   'www.designesy.org/llms-full.txt': { body: '# Fetch bounds\n\nA published document that answers at once.\n', type: 'text/plain' },
+  // A 302 to a body past the limit, sent with no content coding, and to a gzip Lottie file of exactly the limit.
+  'tokens-hop.example.com/tokens.json': { status: 302, location: 'https://tokens-hop-landed.example.com/tokens.json' },
+  'tokens-hop-landed.example.com/tokens.json': { bytes: TOKENS_OVER, paced: true, type: 'application/json' },
+  'motion-hop.example.com/anim.json': { status: 302, location: 'https://motion-hop-landed.example.com/gzip.json' },
+  'motion-hop-landed.example.com/gzip.json': { bytes: zlib.gzipSync(LOTTIE_AT), encoding: 'gzip', decoded: LOTTIE_AT.length, type: 'application/json' },
+  // deflate (zlib and raw) and br bodies of exactly each limit and one byte past it, decoded.
+  ...Object.fromEntries(Object.keys(CODINGS).flatMap((c) => [
+    [`tokens-coded.example.com/${c}-at.json`, coded(c, TOKENS_AT)],
+    [`tokens-coded.example.com/${c}-over.json`, coded(c, TOKENS_PAST_ONE)],
+  ])),
+  'motion-coded.example.com/br-at.json': coded('br', LOTTIE_AT),
+  'motion-coded.example.com/br-over.json': coded('br', LOTTIE_PAST_ONE),
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -491,6 +544,9 @@ const READY_FILES = {
     '/api/mcp': { bytes: jsonOfSize(MCP_ANSWER, READINESS_LIMIT), type: 'application/json' },
   },
   'ready-at-gzip.example.com': { '/llms.txt': gzipped(docOfSize(READINESS_LIMIT), 'text/plain') },
+  // An llms.txt reached through a 302, 1 MiB past the limit on the host it lands on.
+  'ready-hop.example.com': { '/llms.txt': { status: 302, location: 'https://ready-hop-landed.example.com/llms.txt' } },
+  'ready-hop-landed.example.com': { '/llms.txt': { bytes: READY_LLMS_OVER, paced: true, type: 'text/plain' } },
   // An llms.txt that starts with two byte order marks and holds two bytes that are not UTF-8.
   'ready-bom.example.com': { '/llms.txt': { bytes: Buffer.concat([BOM, BOM, Buffer.from('# Read limits\n\n'), Buffer.from([0xff, 0xfe]), Buffer.from('\nA brief.\n')]), type: 'text/plain' } },
   'ready-404.example.com': {
@@ -1051,6 +1107,41 @@ const CONCURRENT = [
     run: async () => mcpAtLimit('designesy_motion_score', { url: 'https://motion-at.example.com/gzip.json' }, 'motion-at.example.com/gzip.json', (p) => `score ${p.score}, ${p.layer_count} layer(s)`),
   },
   {
+    name: `designesy_tokens_score fails on a token file reached through a 302 and 1 MiB past its ${TOKENS_LIMIT / MiB} MiB read limit, and the read stops at the limit on the URL it lands on`,
+    run: async () => {
+      const landed = 'tokens-hop-landed.example.com/tokens.json';
+      seen.delete(landed);
+      const o = await toolOutcome('designesy_tokens_score', { url: 'https://tokens-hop.example.com/tokens.json' });
+      const rec = seen.get(landed);
+      assert.ok(rec && rec.req, `no request reached ${landed}`);
+      assert.equal(o.failed, true, `returned a result, not an error, after ${rec.received} of ${ROUTES[landed].bytes.length} bytes received: ${clip(o.text)}`);
+      assert.match(o.message, overLimit(TOKENS_LIMIT), `failed with "${o.message}"`);
+      return `"${o.message}"; ${await stoppedAtLimit(landed, TOKENS_LIMIT)}`;
+    },
+  },
+  {
+    name: `designesy_motion_score reads a gzip Lottie file reached through a 302 that decodes to exactly its ${LOTTIE_LIMIT / MiB} MiB read limit whole`,
+    run: async () => mcpAtLimit('designesy_motion_score', { url: 'https://motion-hop.example.com/anim.json' }, 'motion-hop-landed.example.com/gzip.json', (p) => `score ${p.score}, ${p.layer_count} layer(s)`),
+  },
+  {
+    name: `designesy_tokens_score fails on a deflate (zlib and raw) or br token file that decodes to one byte past its ${TOKENS_LIMIT / MiB} MiB read limit, naming the limit`,
+    run: async () => eachRead(Object.keys(CODINGS).map((c) => [c, () => mcpOverLimit('designesy_tokens_score', { url: `https://tokens-coded.example.com/${c}-over.json` }, `tokens-coded.example.com/${c}-over.json`, TOKENS_LIMIT)])),
+  },
+  {
+    name: `designesy_tokens_score reads a deflate (zlib and raw) or br token file that decodes to exactly its ${TOKENS_LIMIT / MiB} MiB read limit whole`,
+    run: async () => eachRead(Object.keys(CODINGS).map((c) => [c, () => mcpAtLimit('designesy_tokens_score', { url: `https://tokens-coded.example.com/${c}-at.json` }, `tokens-coded.example.com/${c}-at.json`, (p) => {
+      assert.equal(p.total_tokens, 1, `${p.total_tokens} tokens, not 1`);
+      return `score ${p.score}, ${p.total_tokens} token(s)`;
+    })])),
+  },
+  {
+    name: `designesy_motion_score reads a br Lottie file that decodes to exactly its ${LOTTIE_LIMIT / MiB} MiB read limit whole, and fails on one that decodes to one byte past it, naming the limit`,
+    run: async () => eachRead([
+      ['exactly the limit', () => mcpAtLimit('designesy_motion_score', { url: 'https://motion-coded.example.com/br-at.json' }, 'motion-coded.example.com/br-at.json', (p) => `score ${p.score}, ${p.layer_count} layer(s)`)],
+      ['one byte past it', () => mcpOverLimit('designesy_motion_score', { url: 'https://motion-coded.example.com/br-over.json' }, 'motion-coded.example.com/br-over.json', LOTTIE_LIMIT)],
+    ]),
+  },
+  {
     name: "every safeFetch call in the MCP route is readUrl's, which passes the read deadline and each call site's read limit",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/mcp/route.ts'), 'utf8').replace(/\r\n/g, '\n');
@@ -1200,6 +1291,18 @@ const CONCURRENT = [
       ['identity', () => readinessOverLimit('ready-llms.example.com', '/llms.txt', 'r02', 'llms.txt at https://ready-llms.example.com/llms.txt')],
       ['gzip that decodes past the limit', () => readinessOverLimit('ready-llms-gzip.example.com', '/llms.txt', 'r02', 'llms.txt at https://ready-llms-gzip.example.com/llms.txt')],
     ]),
+  },
+  {
+    name: `readiness r02: an llms.txt reached through a 302 and 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, and its read stops at the limit on the URL it lands on`,
+    run: async () => {
+      const landed = 'ready-hop-landed.example.com/llms.txt';
+      seen.delete(landed);
+      const said = checksAre(await readiness('https://ready-hop.example.com/'), {
+        r02: ['WARN', notReadDetail('llms.txt at https://ready-hop.example.com/llms.txt')],
+      });
+      assert.ok(seen.get(landed), `no request reached ${landed}`);
+      return `${said}; ${await stoppedAtLimit(landed, READINESS_LIMIT)}`;
+    },
   },
   {
     name: `readiness r08: a sitemap.xml 1 MiB past the ${READINESS_LIMIT / MiB} MiB read limit is WARN, saying it was not read, never FAIL or PASS`,
