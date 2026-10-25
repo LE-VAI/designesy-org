@@ -491,8 +491,11 @@ export function cutByBudget(resp: Response): boolean {
  * stream does, and only a body within the limit is decoded: a Response
  * built on those chunks decodes them, as the response's own text() would,
  * so the text, and the byte order marks dropped from its start, are the
- * same. The body peaks at twice its size in memory, as in resp.text();
- * reading it with arrayBuffer() first would add a third copy.
+ * same. As in resp.text(), the body's bytes are held twice while the text
+ * is made, and the text is held besides them: for a 16 MiB body on Node
+ * 24.15.0, ArrayBuffer memory went from 16 to 32 MiB with either, and the
+ * 16 MiB text was held outside it. Reading the body with arrayBuffer()
+ * first and then a Response's text() took ArrayBuffer memory to 64 MiB.
  */
 export async function textWithin(resp: Response, limit: number): Promise<string | null> {
   const chunks: Uint8Array[] = [];

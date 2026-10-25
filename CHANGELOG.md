@@ -95,11 +95,12 @@ changed are the ones this entry sets.
   text is the one `res.text()` gave for the same bytes, so `JSON.parse` of
   it gives what `res.json()` gave, its error message included, and a token
   file that starts with two UTF-8 byte order marks is read as before (on
-  Node 24.15.0, `res.text()` drops both). A body within its limit peaks at
-  twice its size in memory, as with `res.text()`: measured on Node 24.15.0
-  with a 16 MiB body in a Response built as the URL guard builds one, the
-  ArrayBuffer memory held once the text was read was 32 MiB with this read
-  and with `res.text()`.
+  Node 24.15.0, `res.text()` drops both). A body within its limit is held
+  as two copies of its bytes while its text is made, and the text is held
+  besides them, as with `res.text()`. Measured on Node 24.15.0 with a
+  16 MiB body in a Response built as the URL guard builds one, with this
+  read and with `res.text()` alike: ArrayBuffer memory went from 16 MiB to
+  32 MiB as the text was read, and the 16 MiB text was held outside it.
 - **A readiness result cached before this change is not served.** The
   readiness route keeps each result for 24 h, keyed by
   `designesy-readiness` and the URL. A result cached before could be wrong
@@ -134,9 +135,10 @@ changed are the ones this entry sets.
 - How a request is sent and how long a quiet server is waited for. The URL
   guard still sends no request body, so r04's tools/list POST reaches an
   endpoint with an empty body, as before. The MCP route's reads still pass
-  a 15 s idle timeout, and every other read that passes a signal of its
-  own still has none from the URL guard, so Node's agent ends its socket
-  after 5 s quiet, as before.
+  a 15 s idle timeout. Every other read that passes a signal of its own
+  still gets no idle timeout from the URL guard: Node's agent gives its
+  socket a 5 s idle timeout, and the URL guard ends the read when that
+  fires, as before.
 - The MCP route's 5-minute cache. It keeps a document only once it has
   been read whole, and the seven documents measured 100,907 bytes or less,
   so nothing it holds is past a limit.
@@ -160,8 +162,8 @@ changed are the ones this entry sets.
 
 ### Gates (read limits)
 
-- `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in 17.0
-  to 17.1 s over 6 runs, in the build and in CI after Fetch layer as
+- `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in
+  16.95 to 18.43 s over 6 runs, in the build and in CI after Fetch layer as
   before. `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
   `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the
   limit with the message above, sent with no content coding (with and
@@ -223,7 +225,8 @@ changed are the ones this entry sets.
   check stops only at the first path of its list, the later-path case
   fails; with r09 changed to report a robots.txt past the limit whatever
   its status, the 404 control fails. Measured on Node 24.15.0 on Windows,
-  with a peak of 495 to 546 MiB of memory (maxRSS at exit, over 6 runs).
+  with a peak of about 0.5 GiB of memory (maxRSS at exit: 507 to 571 MiB
+  over the 6 runs above; it moves from run to run).
   CI runs Node 22 on Linux, where the byte counts and times above were not
   measured.
 - The gate exits 1 and prints the error when it throws before its first
@@ -460,10 +463,9 @@ score route's byte caps.
   larger one is `contract_too_large` (413) however it was sent. A read
   that sets no cap of its own fails past 4 MiB decoded (the readiness reads
   and the URLs the MCP route reads for itself set none until Read limits,
-  above). The npm engine and the
-  Python offline engine fail a body past 16 MiB decoded, and a page's
-  stylesheets decode no more than 16 MiB between them: a compressed sheet
-  past what is left is left out.
+  above). The npm engine and the Python offline engine fail a body past
+  16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
+  between them: a compressed sheet past what is left is left out.
 - **A body that does not decode is not read.** A corrupt or truncated
   stream, a registered coding the engine does not decode (zstd or
   compress, say), or more than one coding is a failed read: a page that
