@@ -55,12 +55,15 @@ step changes.
 
 - `test/css.test.js` (new, 11 tests) reads `styles/vai-motion.css` with a
   small cascade reader written in the test, in four settings: full and
-  reduced motion, each with and without `sibling-index()`. The reader
-  throws on a selector, condition or value it cannot read. Three of the
-  tests check the reader on small sheets of its own, and one reads every
-  rule of the stylesheet with it. On main's stylesheet 5 of the 11 fail:
-  the two waveform tests, and the three stagger tests on delays and
-  order. The other 6 pass there too.
+  reduced motion, each with and without `sibling-index()`. The reader throws
+  on a selector or `@supports` condition it does not know, on a property it
+  neither reads nor lists as one no test reads, and on a value of a property
+  it reads whose form it does not know. The values of the listed properties
+  no test reads, such as `position` and `inset`, are not checked. Three of
+  the tests check the reader on small sheets of its own, and one reads every
+  rule and declaration of the stylesheet with it. On main's stylesheet 5 of
+  the 11 fail: the two waveform tests, and the three stagger tests on delays
+  and order. The other 6 pass there too.
 - `npm test` in `packages/vai-motion`: 69 of 69 pass on Node 24.15.0 (11
   CSS, 19 easing, 39 timing).
 - In a real browser, through Playwright, with 12 children: Chromium 153

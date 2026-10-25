@@ -1,13 +1,17 @@
 // @vai/motion - tests for the CSS layer (styles/vai-motion.css).
 //
 // Node has no CSS engine, so this file carries a small reader for the part
-// of CSS the stylesheet uses: plain rules, @media, @supports and
-// @keyframes; class selectors, the child combinator with * and
-// :nth-child(An+B), and ::before and ::after. For one element it applies
-// the cascade (!important, then specificity, then source order) and reads
-// the value a browser computes. A selector, condition or value outside that
-// part throws, so a rule the reader cannot read fails the suite instead of
-// being skipped. The reader is checked on its own small sheets first.
+// of CSS the stylesheet uses: plain rules, @media (prefers-reduced-motion:
+// reduce), @supports on animation-delay with a time, and @keyframes; class
+// selectors, the child combinator with * and :nth-child(An+B), and
+// ::before and ::after. For one element it applies the cascade
+// (!important, then specificity, then source order) and reads the value a
+// browser computes. It throws on a selector or condition outside that
+// part, on a property on neither of its two lists (READ, the ones it
+// reads, and NOT_READ, the ones no test reads), and on a value of a READ
+// property whose form it does not know. So a rule outside that part fails
+// the suite instead of being skipped. The values of NOT_READ properties
+// are not checked. The reader is checked on its own small sheets first.
 //
 // Each test runs twice where it matters: in a browser with sibling-index()
 // (Chrome 138, Safari 26.2, Firefox 154 and later) and in one without it,
@@ -75,7 +79,9 @@ function parseDecls(body) {
     if (colon === -1) throw new Error(`unread declaration: ${d}`);
     const raw = d.slice(colon + 1).trim();
     const important = /\s*!important$/.test(raw);
-    return { prop: d.slice(0, colon).trim(), value: raw.replace(/\s*!important$/, ''), important };
+    const decl = { prop: d.slice(0, colon).trim(), value: raw.replace(/\s*!important$/, ''), important };
+    checkDecl(decl);
+    return decl;
   });
 }
 
@@ -113,10 +119,15 @@ function parses(value, env) {
   return env.siblingIndex || !value.includes('sibling-index(');
 }
 
+// @supports (prop: value) holds where a browser parses value for prop. The
+// reader knows one such property, animation-delay, whose value must read as
+// a time in every setting. Any other property or value throws.
 function conditionHolds(prelude, env) {
   if (prelude === '@media (prefers-reduced-motion: reduce)') return env.reduce;
   const m = prelude.match(/^@supports (not )?\(([\w-]+): (.+)\)$/);
-  if (m && !/\b(and|or)\b/.test(m[3])) return Boolean(m[1]) !== parses(m[3], env);
+  if (m && !/\b(and|or)\b/.test(m[3]) && m[2] === 'animation-delay' && isTime(m[3])) {
+    return Boolean(m[1]) !== parses(m[3], env);
+  }
   throw new Error(`unknown condition: ${prelude}`);
 }
 
@@ -226,6 +237,60 @@ function expandAnimation(value) {
   if (times[0]) out['animation-duration'] = times[0];
   if (times[1]) out['animation-delay'] = times[1];
   return out;
+}
+
+function isTime(value) {
+  try {
+    toMs(value, { index: 1 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// The properties the stylesheet sets. The reader reads the READ ones, and
+// each maps to a check of a value's form. No test reads the NOT_READ ones
+// (a custom property, and layout and paint), and their values are not
+// checked. Any other property throws.
+const READ = {
+  animation: (v) => Boolean(expandAnimation(v)),
+  'animation-name': (v) => /^[a-z_-][\w-]*$/i.test(v),
+  'animation-duration': isTime,
+  'animation-delay': isTime,
+  'animation-timing-function': (v) => TIMING_WORDS.includes(v) || /^(cubic-bezier|steps)\([^()]*\)$/.test(v),
+  'animation-iteration-count': (v) => v === 'infinite' || /^(\d*\.)?\d+$/.test(v),
+  'animation-fill-mode': (v) => ['none', 'forwards', 'backwards', 'both'].includes(v),
+  'animation-direction': (v) => ['normal', 'reverse', 'alternate', 'alternate-reverse'].includes(v),
+  'animation-play-state': (v) => ['running', 'paused'].includes(v),
+  // The transform and filter functions the stylesheet uses. A var() may
+  // stand for an argument.
+  transform: (v) => v === 'none' || /^((scale|scaleX|translate)\(([^()]|var\([^()]*\))*\)\s*)+$/.test(v),
+  filter: (v) => v === 'none' || /^(blur\([^()]*\)\s*)+$/.test(v),
+  opacity: (v) => /^(\d*\.)?\d+$/.test(v),
+};
+const NOT_READ = [
+  '--vai-trace-progress',
+  'content',
+  'position',
+  'left',
+  'bottom',
+  'inset',
+  'width',
+  'height',
+  'z-index',
+  'display',
+  'isolation',
+  'pointer-events',
+  'background',
+  'background-image',
+  'transform-origin',
+];
+
+function checkDecl({ prop, value }) {
+  if (NOT_READ.includes(prop)) return;
+  if (!Object.hasOwn(READ, prop)) throw new Error(`unread property: ${prop}`);
+  if (['inherit', 'initial', 'unset'].includes(value)) return;
+  if (!READ[prop](value)) throw new Error(`unread value: ${prop}: ${value}`);
 }
 
 // Reads a stylesheet and answers "what does this element compute for prop"
@@ -375,7 +440,7 @@ test('reader: sibling-index() in calc(), @supports, and a dropped declaration', 
   assert.deepEqual([1, 2, 3, 10].map((n) => without.ms(kid(n), 'animation-delay')), [100, 700, 700, 700]);
 });
 
-test('reader: a pseudo-element inherits from its element, and unread selectors throw', () => {
+test('reader: a pseudo-element inherits from its element, and an unread selector, condition, property or value throws', () => {
   const css = `.a { animation: x 1s; } .a::after { animation: inherit; } .b::after { transform: scaleX(0); }`;
   const r = reader(css, { reduce: false, siblingIndex: true });
   const after = { classes: ['a', 'b'], pseudo: '::after', index: 1, parent: { classes: [] } };
@@ -384,17 +449,40 @@ test('reader: a pseudo-element inherits from its element, and unread selectors t
   assert.equal(r.get({ ...after, pseudo: null }, 'transform'), 'none');
   assert.throws(() => parseSelector('.a .b'), /unsupported selector/);
   assert.throws(() => parseSelector('div.a'), /unsupported selector/);
-  assert.throws(() => conditionHolds('@media (min-width: 1px)', ENVS[0]), /unknown condition/);
+  for (const env of ENVS) {
+    for (const prelude of [
+      '@media (min-width: 1px)',
+      '@supports not (animation-dlay: calc(sibling-index() * 1s))',
+      '@supports not (color: calc(sibling-index() * 1s))',
+      '@supports not (animation-delay: calc(sibling-index() * 1))',
+      '@supports not (animation-delay: var(--d))',
+    ]) {
+      assert.throws(() => conditionHolds(prelude, env), /unknown condition/, `${prelude} (${label(env)})`);
+    }
+  }
+  assert.throws(() => parseDecls('animation-timeline: view()'), /unread property/);
+  for (const decl of [
+    'animation-name: x y',
+    'animation-delay: var(--d)',
+    'animation-duration: 1',
+    'animation-direction: backwards',
+    'transform: rotate(1turn)',
+    'filter: none blur',
+    'opacity: 50%',
+  ]) {
+    assert.throws(() => parseDecls(decl), /unread value/, decl);
+  }
+  assert.throws(() => parseDecls('animation: x 1s 2px'), /unread animation token/);
 });
 
-test('reader: reads every rule, selector and condition in styles/vai-motion.css', () => {
+test('reader: reads every rule, selector, condition and declaration in styles/vai-motion.css', () => {
   for (const env of ENVS) {
     const r = reader(SHEET, env);
     assert.ok(r.rules.length > 0);
     for (const rule of r.rules) {
       for (const c of rule.conditions) conditionHolds(c, env);
       for (const s of rule.selectors) parseSelector(s);
-      for (const d of rule.decls) if (d.prop === 'animation') expandAnimation(d.value);
+      for (const d of rule.decls) checkDecl(d);
     }
     for (const rule of r.rules) {
       for (const d of rule.decls) {
@@ -432,6 +520,8 @@ test('waveform: at full motion only the line draws, once, at the JS defaults', (
     assert.equal(flat(r.get(line, 'animation-timing-function')), flat(EASE.default));
     assert.equal(r.get(line, 'animation-iteration-count'), '1');
     assert.equal(r.get(line, 'animation-fill-mode'), 'both');
+    assert.equal(r.get(line, 'animation-direction'), 'normal', 'the line draws backwards');
+    assert.equal(r.get(line, 'animation-play-state'), 'running', 'the line does not run');
     assert.equal(r.ms(line, 'animation-delay'), 0);
     const draw = r.keyframes['vai-waveform-draw'];
     assert.equal(flat(draw.from.transform), 'scaleX(0)');
@@ -468,7 +558,7 @@ test('stagger: no child starts before the children ahead of it', () => {
   }
 });
 
-test('stagger: every child keeps the declared ease and duration', () => {
+test('stagger: every child runs forward once, with the declared ease and duration', () => {
   for (const env of ENVS.filter((e) => !e.reduce)) {
     const r = reader(SHEET, env);
     for (const c of [...CHILDREN, { ...child(1), classes: ['vai-block-settle'], parent: { classes: [] } }]) {
@@ -476,7 +566,10 @@ test('stagger: every child keeps the declared ease and duration', () => {
       assert.equal(r.ms(c, 'animation-duration'), blockSettle.defaultOptions.duration);
       assert.equal(flat(r.get(c, 'animation-timing-function')), flat(blockSettle.defaultOptions.ease));
       assert.equal(flat(r.get(c, 'animation-timing-function')), flat(EASE.out));
+      assert.equal(r.get(c, 'animation-iteration-count'), '1');
       assert.equal(r.get(c, 'animation-fill-mode'), 'both');
+      assert.equal(r.get(c, 'animation-direction'), 'normal', `child ${c.index} runs backwards`);
+      assert.equal(r.get(c, 'animation-play-state'), 'running', `child ${c.index} does not run`);
     }
   }
 });
