@@ -82,7 +82,9 @@
  * scan is answered from a cache. The two token checks read /tokens.json at
  * the same time, so the site where every file is past the limit sends its
  * bodies unpaced, and its case asserts what the checks report, not where the
- * reads stopped.
+ * reads stopped. The later-path sites send their token files, which both
+ * token checks read, and r07's fallback agent.json, which r03 reads too,
+ * unpaced for the same reason.
  *
  * WHAT IT ASSERTS
  *   - A 10 MiB body read with maxBodyBytes 1 MiB resolves with exactly its
@@ -170,6 +172,17 @@
  *   - On a site where every file the checks read is past the limit, all ten
  *     checks are WARN with that detail (score 50, F). With no component
  *     schema, r07 is WARN with it for an /open.json past the limit.
+ *   - A check that tries several paths stops at the first one that answers
+ *     ok past the limit, wherever it is in the list. With every path before
+ *     it answering 404, a file past the limit at the second path of each
+ *     list (r01, r02, r03, r05, r06 and r07), at the third (r01, r06 and
+ *     r07), at the fourth (r01 and r06), and at the second path of r07's
+ *     fallback (/.well-known/agent.json, which is r03's first) is WARN with
+ *     that detail, naming that path, and the other checks are as on a site
+ *     with none of the files. For each of those files that only one check
+ *     reads, sent with no content coding, at most one socket read past the
+ *     limit reached the client, the request was destroyed, and the server
+ *     never finished sending.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes, a
  *     HEAD probe none.
@@ -180,20 +193,21 @@
  *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
  *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
  *     gzip /llms.txt that decodes to exactly 4 MiB; a 404 whose body is
- *     1 MiB past the limit is not found (r02 and r08 FAIL, r04 WARN with its
- *     HTTP status); an ordinary small site's ten checks (seven PASS, three
+ *     1 MiB past the limit is not found (r02, r08 and r09 FAIL, r04 WARN with
+ *     its HTTP status); an ordinary small site's ten checks (seven PASS, three
  *     WARN, score 85, B) and those of a site with none of the files (nine
  *     FAIL, one WARN, score 5, F) are, detail for detail, what the route
  *     reported before the read limit; and an /llms.txt that starts with two
  *     byte order marks and holds two bytes that are not UTF-8 is r02 PASS
  *     with the length of the text resp.text() gives for it.
  *   - An error or redirect body is held to the limit of the read that
- *     receives it. designesy_tokens_score on a 500 whose body is 20 MiB
- *     fails with "Fetch failed: 500 Internal Server Error", as before, and
- *     readiness r02 on an /llms.txt that answers 500 with such a body is not
- *     found (every check as on an empty site), as before; in each, at most
- *     one socket read past the 4 MiB limit of that body reached the client,
- *     the request was destroyed, and the server never finished sending. A
+ *     receives it. designesy_tokens_score (4 MiB) and designesy_motion_score
+ *     (16 MiB) on a 500 whose body is 20 MiB each fail with "Fetch failed:
+ *     500 Internal Server Error", as before, and readiness r02 on an
+ *     /llms.txt that answers 500 with such a body is not found (every check
+ *     as on an empty site), as before; in each, at most one socket read past
+ *     the limit of that read reached the client, the request was destroyed,
+ *     and the server never finished sending. A
  *     302 whose body is 20 MiB, read by designesy_tokens_score and by
  *     readiness r02, leads to the next hop once at most one socket read past
  *     the 4 MiB limit of that body has reached the client and before the
@@ -234,47 +248,64 @@
  * 15 s idle timeout, holds it.
  *
  * Against the MCP route from before the read limits, whose readUrl takes no
- * limit and passes safeFetch no maxBodyBytes, five cases fail: the three
- * over-limit cases, the gzip Lottie file of exactly 16 MiB, and the source
- * case. Every control holds. Each identity body past a limit is read whole
- * and scored or returned, so the tool returns a result, not an error; in
- * designesy_llms_txt the second identity read is answered from the route's
- * cache, so no request reaches the server. Each gzip body past a limit, and
- * the gzip Lottie file of exactly 16 MiB, fails with url-guard's "the
- * decoded body is over 4194304 bytes". The source case finds a readUrl that
- * takes no limit. Three changes to the new readUrl each fail cases too. One
- * that fails a body of exactly its limit (`>=` for `>`) fails the four
- * exact-limit reads. One that checks the length before the status fails the
- * 404 control in all three tools. One that checks the length but passes
- * safeFetch no maxBodyBytes receives each identity body past a limit to its
- * end and fails each gzip body at url-guard's default, which fails the
- * three over-limit cases, the gzip Lottie file of exactly 16 MiB and the
- * source case. The ordinary page, the three identity exact-limit reads,
+ * limit and passes safeFetch no maxBodyBytes, with the rest of the tree as
+ * it is, 12 cases fail: the three over-limit cases, the gzip Lottie file of
+ * exactly 16 MiB, the two 302 cases (the token file past the limit and the
+ * gzip Lottie file of exactly 16 MiB), the deflate and br token files past
+ * the limit, the br Lottie files, the two 500 cases, the 302 whose body is
+ * 20 MiB, and the source case. Every control holds. Each identity body past
+ * a limit is read whole and scored or returned, so the tool returns a
+ * result, not an error; in designesy_llms_txt the second identity read is
+ * answered from the route's cache, so no request reaches the server. Each
+ * compressed body past a limit, and each compressed Lottie file of exactly
+ * 16 MiB, fails with url-guard's "the decoded body is over 4194304 bytes".
+ * Each 20 MiB error or redirect body is received whole. The source case
+ * finds a readUrl that takes no limit. Two changes to the new readUrl each
+ * fail cases too. One that checks the length before the status fails the
+ * 404 control in all three tools and the two 500 cases, each with the
+ * over-limit message in place of the status. One that checks the length but
+ * passes safeFetch no maxBodyBytes fails the same 12 cases as the route from
+ * before the limits. A textWithin (url-guard, shared by both routes) that
+ * fails a body of exactly its limit (`>=` for `>`) fails the eight cases
+ * that read a body of exactly a limit: seven MCP reads and the readiness
+ * exact-limit control. The ordinary page, the three identity exact-limit reads,
  * the 404s, the JSON.parse messages and the two MCP reads of a URL that
  * answers are controls: they pin what a change to the transport or the MCP
  * route must keep.
  *
  * Against the readiness route from before its read limit, which passes
- * safeFetch no maxBodyBytes, seven cases fail: the four single-file cases
- * (r02, r08, r10 and r04), the every-file case, the /open.json case and the
- * readiness source case. The three readiness controls hold. Each identity body
- * past the limit is read whole and judged: r02, r04, r08 and r10 PASS, r10 for
- * the 404 home page too. Each gzip body past it fails url-guard's 4 MiB
- * default, so r02 and r08 are FAIL as not found, r04 is FAIL ("No MCP endpoint
- * detected at /api/mcp"), and the gzip home page fails the whole scan (HTTP
- * 502, "Could not fetch the target URL"). On the every-file site all ten
- * checks PASS, r07 judges the /open.json read whole ("Component documentation
- * found but not machine-readable"), and the readiness source case finds no
- * READ_LIMIT. Four changes to the new route each fail cases too. One that
+ * safeFetch no maxBodyBytes, with the rest of the tree as it is, 12 cases
+ * fail: the four single-file cases (r02, r08, r10 and r04), the r02 302
+ * case, the every-file case, the /open.json case, the later-path case, the
+ * r02 500 case, the r02 302 whose body is 20 MiB, the readiness source case
+ * and the cache key case. The four readiness controls hold: the files of
+ * exactly the limit, the 404s past the limit, the llms.txt that starts with
+ * two byte order marks, and the small and empty sites. Each identity body
+ * past the limit is read whole and judged: r02, r04, r08 and r10 PASS, r10
+ * for the 404 home page too, and on the later-path sites each file is PASS,
+ * but for r07's fallback agent.json, which is WARN ("Component documentation
+ * found but not machine-readable"). Each gzip body past it fails url-guard's
+ * 4 MiB default, so r02 and r08 are FAIL as not found, r04 is FAIL ("No MCP
+ * endpoint detected at /api/mcp"), and the gzip home page fails the whole
+ * scan (HTTP 502, "Could not fetch the target URL"). On the every-file site
+ * all ten checks PASS, r07 judges the /open.json read whole ("Component
+ * documentation found but not machine-readable"), each 20 MiB error or
+ * redirect body is received whole, and the readiness source case finds no
+ * READ_LIMIT. Five changes to the new route each fail cases too. One that
  * checks the limit only on an ok response, and so hands r10 a 404 page's cut
- * body, fails the r10 case: r10 is PASS for the cut 404 page. One that fails a
- * body of exactly the limit (`>=` for `>`) fails the exact-limit control. One
- * that checks the length but passes safeFetch no maxBodyBytes receives each
+ * body, fails the r10 case: r10 is PASS for the cut 404 page. One that
+ * checks the length but passes safeFetch no maxBodyBytes receives each
  * identity body past the limit to its end and fails each gzip body at
- * url-guard's default, which fails the four single-file cases and the
- * readiness source case. One whose probePaths goes on past a file that is too
- * large reports it as not found, which fails the r02, every-file and
- * /open.json cases.
+ * url-guard's default, which fails nine cases: the four single-file cases,
+ * the r02 302 case, the r02 500 case, the r02 302 whose body is 20 MiB, the
+ * later-path case and the readiness source case. One whose probePaths goes
+ * on past a file that is too large reports it as not found, which fails five
+ * cases: r02, r02 302, every-file, /open.json and later-path. One whose
+ * probePaths stops only at the first path of a list (`result.ok &&
+ * result.tooLarge && path === paths[0]`) fails the later-path case alone. One
+ * whose r09 reports a robots.txt past the limit whatever its status (`if
+ * (result.tooLarge)`) fails the 404 control alone: r09 is WARN for a
+ * robots.txt that answers 404.
  *
  * A url-guard that drops maxBodyBytes after the first hop of a redirect fails
  * the three redirect cases: the token file and the llms.txt are read to
@@ -288,11 +319,11 @@
  * starts with two byte order marks, are controls: they hold on the code from
  * before the read limits too.
  *
- * The four error and redirect body cases fail on the tree from before the
+ * The five error and redirect body cases fail on the tree from before the
  * read limits, whose reads passed no maxBodyBytes: each 20 MiB body is
- * received whole (the 302's before the next hop is requested), while the
+ * received whole (the 302's before the next hop is requested), while each
  * tool's error and the r02 verdict are what they are now. A url-guard that
- * holds only a 2xx body to maxBodyBytes fails the same four cases and the
+ * holds only a 2xx body to maxBodyBytes fails the same five cases and the
  * r10 case, whose 404 home page past the limit is then received whole.
  *
  * The cache key case fails on the tree from before the read limits, whose
@@ -300,7 +331,7 @@
  * cache alone lacks it.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 22 of the 46 cases fail and every
+ * readiness route from before them), 24 of the 48 cases fail and every
  * control holds.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
@@ -520,8 +551,10 @@ const ROUTES = {
   ])),
   'motion-coded.example.com/br-at.json': coded('br', LOTTIE_AT),
   'motion-coded.example.com/br-over.json': coded('br', LOTTIE_PAST_ONE),
-  // A 500 and a 302 whose bodies are 20 MiB (paced), and the token file the 302 leads to.
+  // A 500 for each tool that reads a URL, and a 302, each with a 20 MiB body
+  // (paced), and the token file the 302 leads to.
   'tokens-500.example.com/tokens.json': { status: 500, bytes: NOISE, paced: true },
+  'motion-500.example.com/anim.json': { status: 500, bytes: NOISE, paced: true },
   'tokens-302.example.com/tokens.json': { status: 302, location: 'https://tokens-302-landed.example.com/tokens.json', bytes: NOISE, paced: true },
   'tokens-302-landed.example.com/tokens.json': { body: TOKENS, type: 'application/json', hopFrom: 'tokens-302.example.com/tokens.json' },
 };
@@ -575,6 +608,24 @@ const READY_FILES = {
     .map((p) => [p, { bytes: READY_EVERY_OVER, type: 'application/json' }])),
   // r07's second search: no component schema, and /open.json past the limit.
   'ready-open.example.com': { '/open.json': { bytes: READY_EVERY_OVER, type: 'application/json' } },
+  // A file past the limit at each later path a check tries, every path before
+  // it answering 404: the second path of each list, the third, the fourth, and
+  // the second of r07's fallback (/.well-known/agent.json, which r03 reads
+  // first). A file only one check reads is paced; the token files, which r01
+  // and r06 both read, and the fallback's agent.json are not.
+  'ready-second.example.com': {
+    '/design-tokens.json': { bytes: READY_EVERY_OVER, type: 'application/json' },
+    '/.well-known/llms.txt': { bytes: READY_LLMS_OVER, paced: true, type: 'text/plain' },
+    '/agent.json': { bytes: READY_EVERY_OVER, paced: true, type: 'application/json' },
+    '/design.md': { bytes: READY_LLMS_OVER, paced: true, type: 'text/markdown' },
+    '/contracts/components.json': { bytes: READY_EVERY_OVER, paced: true, type: 'application/json' },
+  },
+  'ready-third.example.com': {
+    '/contracts/tokens.json': { bytes: READY_EVERY_OVER, type: 'application/json' },
+    '/component-schema.json': { bytes: READY_EVERY_OVER, paced: true, type: 'application/json' },
+  },
+  'ready-fourth.example.com': { '/export/tokens.json': { bytes: READY_EVERY_OVER, type: 'application/json' } },
+  'ready-fallback.example.com': { '/.well-known/agent.json': { bytes: READY_EVERY_OVER, type: 'application/json' } },
   // Controls: files of exactly the limit, and 404s whose body is past it.
   'ready-at.example.com': {
     '/llms.txt': { bytes: docOfSize(READINESS_LIMIT), type: 'text/plain' },
@@ -595,6 +646,7 @@ const READY_FILES = {
   'ready-404.example.com': {
     '/llms.txt': { status: 404, bytes: READY_LLMS_OVER },
     '/sitemap.xml': { status: 404, bytes: READY_SITEMAP_OVER },
+    '/robots.txt': { status: 404, bytes: READY_LLMS_OVER, type: 'text/plain' },
     '/api/mcp': { status: 404, bytes: READY_MCP_OVER },
   },
   // An ordinary small site, whose checks pass or warn by what the files say.
@@ -1219,6 +1271,17 @@ const CONCURRENT = [
     },
   },
   {
+    name: `designesy_motion_score on a 500 whose body is 20 MiB fails with its status, as before, and the read stops at the ${LOTTIE_LIMIT / MiB} MiB read limit of that body`,
+    run: async () => {
+      const key = 'motion-500.example.com/anim.json';
+      seen.delete(key);
+      const message = await toolError('designesy_motion_score', { url: `https://${key}` });
+      assert.equal(message, 'Fetch failed: 500 Internal Server Error', `failed with "${message}"`);
+      assert.ok(seen.get(key), `no request reached ${key}`);
+      return `"${message}"; ${await stoppedAtLimit(key, LOTTIE_LIMIT)}`;
+    },
+  },
+  {
     name: `designesy_tokens_score follows a 302 whose body is 20 MiB once at most one socket read past the ${TOKENS_LIMIT / MiB} MiB read limit of it has arrived, and reads the token file it lands on`,
     run: async () => {
       const key = 'tokens-302.example.com/tokens.json';
@@ -1464,6 +1527,47 @@ const CONCURRENT = [
     }),
   },
   {
+    name: `readiness: a check that tries several paths stops at a later path that answers past the ${READINESS_LIMIT / MiB} MiB read limit, and is WARN naming that path, never FAIL`,
+    run: async () => {
+      // [label, host, { check: [how its detail names the file, path] }].
+      const sites = [
+        ['the second path of each list', 'ready-second.example.com', {
+          r01: ['Token file at ', '/design-tokens.json'],
+          r02: ['llms.txt at ', '/.well-known/llms.txt'],
+          r03: ['agent.json at ', '/agent.json'],
+          r05: ['DESIGN.md at ', '/design.md'],
+          r06: ['Token file at ', '/design-tokens.json'],
+          r07: ['Component schema at ', '/contracts/components.json'],
+        }],
+        ['the third', 'ready-third.example.com', {
+          r01: ['Token file at ', '/contracts/tokens.json'],
+          r06: ['Token file at ', '/contracts/tokens.json'],
+          r07: ['Component schema at ', '/component-schema.json'],
+        }],
+        ['the fourth', 'ready-fourth.example.com', {
+          r01: ['Token file at ', '/export/tokens.json'],
+          r06: ['Token file at ', '/export/tokens.json'],
+        }],
+        ["the second of r07's fallback, which r03 reads first", 'ready-fallback.example.com', {
+          r03: ['agent.json at ', '/.well-known/agent.json'],
+          r07: ['', '/.well-known/agent.json'],
+        }],
+      ];
+      return eachRead(sites.map(([label, host, files]) => [label, async () => {
+        const paced = Object.keys(READY_FILES[host]).filter((p) => READY_FILES[host][p].paced);
+        for (const p of paced) seen.delete(`${host}${p}`);
+        const expect = Object.fromEntries(Object.entries(files).map(([id, [subject, p]]) => [id, ['WARN', notReadDetail(`${subject}https://${host}${p}`)]]));
+        const said = checksAre(await readiness(`https://${host}/`), expect);
+        const stops = [];
+        for (const p of paced) {
+          assert.ok(seen.get(`${host}${p}`), `no request reached ${host}${p}`);
+          stops.push(`${p}: ${await stoppedAtLimit(`${host}${p}`, READINESS_LIMIT)}`);
+        }
+        return [said, ...stops].join('; ');
+      }]));
+    },
+  },
+  {
     name: "every safeFetch call in the readiness route passes its READ_LIMIT, 4 MiB, as maxBodyBytes (a HEAD probe passes none)",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/readiness/route.ts'), 'utf8').replace(/\r\n/g, '\n');
@@ -1517,10 +1621,10 @@ const CONCURRENT = [
     ]),
   },
   {
-    name: 'readiness: a 404 whose body is 1 MiB past the read limit is not found, as before (llms.txt, sitemap.xml, MCP endpoint)',
+    name: 'readiness: a 404 whose body is 1 MiB past the read limit is not found, as before (llms.txt, sitemap.xml, robots.txt, MCP endpoint)',
     run: async () => {
       const said = checksAre(await readiness('https://ready-404.example.com/'), {});
-      for (const p of ['/llms.txt', '/sitemap.xml', '/api/mcp']) assert.ok(seen.get(`ready-404.example.com${p}`), `no request reached ${p}`);
+      for (const p of ['/llms.txt', '/sitemap.xml', '/robots.txt', '/api/mcp']) assert.ok(seen.get(`ready-404.example.com${p}`), `no request reached ${p}`);
       return said;
     },
   },
