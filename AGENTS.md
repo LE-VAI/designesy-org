@@ -50,7 +50,10 @@ sources → principles → contracts → tools → systems → better designed w
   neighbouring text or string (`Fixes <span>`, `` {` ${value}`} ``). In
   inline content, a `{' '}` (or a lone space between two children) beside
   text can be dropped from a name computed from content: links, buttons,
-  summaries, headings, table headers. Between two elements it is safe.
+  summaries, headings, table headers and cells, a label's control. In a
+  flex or grid container Chrome keeps it, and the gate flags it there too.
+  Between two host elements (`<span>`, `<b>`) it is safe; a component that
+  returns text, such as a number in a fragment, counts as text.
 
 ## Contract Versions
 
