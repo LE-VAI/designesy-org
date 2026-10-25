@@ -408,9 +408,10 @@
  * compare cache alone lacks it.
  *
  * Against the tree from before the requests and deadline cases, eight of
- * them fail: the sheet phase case (below), the POST case (each URL receives a POST with 0 body bytes), the
- * body kinds case (below), the mcp-handler r04 case (WARN with HTTP 400,
- * also through the 307 and the 302), the 6 s mid-body case (it ends at 5 s
+ * them fail: the sheet phase case (below), the POST case (each URL
+ * receives a POST with 0 body bytes), the body kinds case (below), the
+ * mcp-handler r04 case (WARN with HTTP 400, also through the 307 and the
+ * 302), the 6 s mid-body case (it ends at 5 s
  * with "SSRF guard: fetch timeout"), the keep-alive case (at 4 s after the
  * 5 s Keep-Alive timeout and at 1 s after the 2 s one), the 8 s callers case
  * (r02 is FAIL, the score route reports the page unreachable and page-fetch
@@ -2172,8 +2173,15 @@ const CONCURRENT = [
         const src = fs.readFileSync(path.join(APP, route), 'utf8');
         const at = src.indexOf(`unstable_cache(${fn}, [`);
         assert.ok(at >= 0, `no unstable_cache(${fn}, [...]) in ${route}`);
-        const list = src.slice(at, src.indexOf(']', at));
-        const have = [...list.matchAll(/'([^']*)'/g)].map((x) => x[1]);
+        const list = src.slice(at + `unstable_cache(${fn}, [`.length, src.indexOf(']', at));
+        // A part is a string, or a constant the file sets to one (the
+        // guardrails route's GUARDRAILS_RESULT_FORMAT, say).
+        const have = list.split(',').map((x) => x.trim()).filter(Boolean).map((x) => {
+          const lit = x.match(/^'([^']*)'$/);
+          if (lit) return lit[1];
+          const def = src.match(new RegExp(`^const ${x} = '([^']*)';$`, 'm'));
+          return def ? def[1] : x;
+        });
         const missing = parts.filter((p) => !have.includes(p));
         if (missing.length) wrong.push(`${route} caches ${fn} under [${have.join(', ')}], with no '${missing.join("', '")}'`);
         keys.push(`${route}: [${have.join(', ')}]`);
