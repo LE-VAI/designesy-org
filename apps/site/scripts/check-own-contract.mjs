@@ -675,6 +675,7 @@ await check('over 256 KB, declared or read: 413 contract_too_large', async () =>
   assert.equal(declared.status, 413);
   const read = await fetchMod.fetchContract('https://example.com/x', respond('y'.repeat(257 * 1024), { headers: { 'content-type': 'text/plain' } }));
   assert.equal(read.status, 413);
+  assert.equal(read.problem.message, 'This contract is 257 KB. Scoring reads contracts up to 256 KB. Remove unused tokens or score part of it.');
 });
 await check('a stalled contract URL aborts at the timeout (8 s by default)', async () => {
   assert.equal(limits.CONTRACT_FETCH_TIMEOUT_MS, 8000);

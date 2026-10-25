@@ -22,7 +22,8 @@
  * to a server on 127.0.0.1 that this script runs, keyed by the host name the
  * guard asked for. Every host is an *.example.test name and every body is
  * built here at run time. The server logs each request, so a case can assert
- * what was never asked for.
+ * what was never asked for. An exception or a rejection that no caller
+ * catches fails the case running when it arrives.
  *
  * WHAT IT ASSERTS
  *   1. Transport: contentCodingOf; safeFetch's resp.url is the last hop; each
@@ -32,9 +33,10 @@
  *      a failed read gives its bytes back; a corrupt, truncated, registered
  *      but undecoded or stacked coding rejects, and an unregistered label
  *      reads as identity; the connection closes when a coded stream ends
- *      before the response does; a status outside 200-599 rejects at once; an
- *      error status keeps its raw body; 204, 205, 304, HEAD and an empty gzip
- *      body resolve.
+ *      before the response does; a status outside 200-599 rejects at once,
+ *      also when its body never ends, and that connection closes; an error
+ *      status keeps its raw body; 204, 205 and 304 resolve at once with a
+ *      null body; HEAD and an empty gzip body resolve.
  *   2. POST /api/score, universal mode: a redirected page's sheets come from
  *      the host that answered; the www. candidate likewise; a gzip page is
  *      read; a corrupt page is unreachable with reason network, and one whose
@@ -205,8 +207,13 @@ const h = createHarness({
 
 // A throw inside a socket handler (the 204 Response defect) would end the
 // process; it is recorded instead, and the case it hangs fails at its deadline.
+// A rejection no caller handles is recorded the same way, whatever
+// --unhandled-rejections says: without this listener only throw (the
+// default) and strict raise it as an exception, and under warn,
+// warn-with-error-code or none it would fail no case.
 const uncaught = [];
 process.on('uncaughtException', (e) => uncaught.push(String(e && e.message)));
+process.on('unhandledRejection', (e) => uncaught.push(`unhandled rejection: ${String(e?.message ?? e)}`));
 
 const requested = (host, p) => LOG.some((l) => l.host === host && (p === undefined || l.path === p));
 const post = (file, body) => h.post(file, body, { 'x-forwarded-for': '203.0.113.9' });
@@ -416,6 +423,21 @@ rule('a 999 answer rejects at once with its status, instead of leaving the read 
   assert.equal(err.status, 999);
   assert.ok(Date.now() - t0 < 2000, `took ${Date.now() - t0} ms`);
 });
+// The body above ends at once, so a status refused only once the body ends
+// would pass it. This one never ends: only a refusal as the headers arrive
+// ends the read before the reader's 5 s abort.
+held('status.fl.example.test/nines-held', 999, { 'content-type': 'text/plain' }, 'Request denied, on a connection held open');
+rule('a 999 answer whose body never ends rejects at once with its status, and its connection is closed', async () => {
+  const { InvalidStatusError } = guard();
+  const t0 = Date.now();
+  const err = await rejects(fetchT('https://status.fl.example.test/nines-held', { signal: AbortSignal.timeout(5000) }), /invalid HTTP status 999/);
+  const ms = Date.now() - t0;
+  assert.equal(typeof InvalidStatusError, 'function', 'url-guard exports no InvalidStatusError');
+  assert.ok(err instanceof InvalidStatusError);
+  assert.equal(err.status, 999);
+  assert.ok(ms < 2000, `took ${ms} ms`);
+  assert.ok(await isClosed('status.fl.example.test/nines-held'), 'the connection is still open after the read rejected');
+});
 
 route('label.fl.example.test/none', 200, { 'content-type': 'text/css', 'content-encoding': 'none' }, SHEET);
 control('a body labelled Content-Encoding: none reads as sent, as main read it', async () => {
@@ -447,9 +469,13 @@ control('an error status keeps its raw body and its Content-Encoding header', as
   assert.equal(r.headers.get('content-encoding'), 'gzip');
 });
 for (const [p, status] of [['no-content', 204], ['reset', 205], ['not-modified', 304]]) {
-  rule(`a ${status} answer resolves with no body (a non-null body made new Response throw)`, async () => {
+  rule(`a ${status} answer resolves at once with a null body (a non-null body made new Response throw)`, async () => {
+    const t0 = Date.now();
     const r = await fetchT(`https://status.fl.example.test/${p}`);
+    const ms = Date.now() - t0;
     assert.equal(r.status, status);
+    assert.equal(r.body, null, `HTTP ${status} came back with a body`);
+    assert.ok(ms < 1000, `took ${ms} ms`);
     assert.equal(await r.text(), '');
   });
 }

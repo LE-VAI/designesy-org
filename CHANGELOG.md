@@ -6,6 +6,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Fetch bounds: a finished read lets go of its signal, every URL the MCP
+route reads for itself ends at 15 s, and the URL guard copies a body fewer
+times** (the site: its URL guard and the hosted MCP route; no version
+moves). Three changes to how the site's server reads a URL, a new gate that
+runs them against a local server, and stricter status cases in the
+fetch-layer gate. No check is added, and no rule, weight, ceiling or score
+moves.
+
+### Fixed (fetch bounds)
+
+- **A read removes its abort listener once it settles.** The URL guard added
+  a listener to the caller's signal for each hop of a read and left it there
+  once the read had resolved or failed. Node keeps an `AbortSignal.timeout`
+  that has a listener alive until its timer fires, so the listener kept the
+  read's request and the body it read in memory until then. Readiness r04
+  (an 8 s `AbortSignal.timeout`) and the MCP route's reads (below) pass such
+  a signal. A read now removes the listener as it resolves, as it fails, and
+  when its request errors. An abort ends a read as before.
+- **Every URL the MCP route reads for itself ends at 15 s.** The `url` of
+  `designesy_tokens_score` and `designesy_motion_score`, and the designesy.org
+  documents the seven read-only tools serve, were read with no signal. The
+  URL guard's own 15 s timeout fires only when the socket goes quiet, so a
+  server sending one byte a second kept a call open with nothing to end it
+  before the function's 300 s limit (`maxDuration` in `vercel.json`). Each
+  read now ends 15 s after it starts, DNS checks and redirects included,
+  with the error `Fetch timed out after 15 s`, and a read that takes longer
+  in all fails even while its server keeps sending. A timeout is told by the
+  read's own signal or the abort's name, never by the words of an error.
+  With a signal and no idle timeout of its own, Node's global agent ends a
+  socket that is quiet for 5 s (its default since Node 19), so these reads
+  also pass the URL guard a 15 s idle timeout: a server that pauses, or
+  stops answering, is waited for as long as before. Each tool keeps its
+  result and error shapes.
+- **The URL guard copies a body fewer times.** The guard joined a body's
+  chunks with `Buffer.concat` and built the Response from those bytes, and a
+  Response copies bytes it is given: in Node 24, one built from an 8 MiB
+  Buffer holds 16 MiB after a GC. The guard now joins the chunks once, into
+  a buffer of the body's own size, and gives the Response a byte stream
+  that hands a reader that buffer itself. Measured on Node 24.15.0 with one
+  identity read whose cap is the body's size, the peak with the score
+  route's reader falls from 16 to 8 MiB for a 4 MiB body and from 32 to
+  16 MiB for an 8 MiB body, and with an `arrayBuffer()` read from 16 to
+  12 MiB and from 32 to 24 MiB. A caller that keeps the Response after the
+  score route's reader has read it no longer holds a copy of the body
+  beside the text. Once the caller lets the Response go, both versions hold
+  only the text. A reader sees the Response as before: `clone()` and
+  `tee()` give each branch its own chunk, and a BYOB reader works.
+
+### Not changed (fetch bounds)
+
+- The engine, its checks, their rules, weights and ceilings, and every score.
+- Byte limits. The MCP and readiness reads still set none of their own, so
+  a 2xx body sent without a content coding is read whole within the
+  deadline and a 2xx gzip, deflate or brotli body is refused past engine
+  1.5.4's 4 MiB decoded. An error body is held whole and undecoded, and a
+  redirect's body is received in full before the next hop is requested.
+- The seven tools that call the site's own API (score, drift, readiness,
+  guardrails, monitor, compare and report). Those calls are not made through
+  the URL guard and have no deadline of their own, as before.
+- Every other read that passes a signal of its own still has no idle
+  timeout from the URL guard, so Node's agent ends its socket after 5 s
+  quiet, as before.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
+  published.
+
+### Gates (fetch bounds)
+
+- `check-fetch-bounds.mjs` (new, in the build and in CI after Fetch layer)
+  runs the real URL guard and MCP route against a local server, 14 cases in
+  about 16 s. A 10 MiB body read with `maxBodyBytes` 1 MiB comes back as its
+  first 1 MiB + 1 bytes, with the request destroyed before the server has
+  sent it all, and a body of exactly the cap comes back whole. A reader's
+  chunk holds only its own bytes. A caller's 3 s signal ends a read of a
+  server sending one byte a second. No listener is left on the signal after
+  eight kinds of read: whole, cut at the cap, redirected, failed, a 999
+  status, gzip, corrupt gzip, and cut by a shared budget. Against a server
+  sending one byte a second, `designesy_tokens_score`,
+  `designesy_motion_score` and `designesy_llms_txt` each end at 15 s. The
+  route's only `safeFetch` call is the one that passes the deadline, two
+  tools still read a server that answers, and `designesy_tokens_score`
+  still reads a token file whose server is quiet for 8 s before it answers.
+  The last case fails on any uncaught exception or unhandled rejection.
+- `check-fetch-layer.mjs`: the 204, 205 and 304 cases also require a null
+  body within 1 s. A new case sends a 999 status and holds the connection
+  open: the read must reject with `InvalidStatusError` within 2 s, before
+  its 5 s signal, and the connection must close. An unhandled rejection is
+  recorded against the case that is running, under any
+  `--unhandled-rejections` mode. Before, a case that left one passed under
+  `warn`, `warn-with-error-code` or `none`. The gate has 54 cases. Run
+  against main before engine 1.5.4 with `--flip`, the 48 rule cases fail and
+  the six controls hold; one rule case fails there only because
+  `app/lib/page-fetch.ts` does not exist yet.
+- `check-own-contract.mjs` checks the message for a 257 KB contract read
+  whole ("This contract is 257 KB. Scoring reads contracts up to 256 KB.
+  Remove unused tokens or score part of it."), where it checked only the
+  413.
+
 **`designesy_guardrails` writes dimensions in the DTCG 2025.10 form** (the
 hosted `/api/guardrails`, which the hosted and the PyPI `designesy_guardrails`
 both call; no engine, npm or PyPI release). The token file it emits wrote

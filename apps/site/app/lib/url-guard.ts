@@ -411,8 +411,12 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   budget stops holds what was left of it, and cutByBudget(response) is true.
  *   A read that fails gives back what it was charged. With `decoders` set, a
  *   decoded body also waits for one of them, and gives it back when it ends.
+ * - `idleTimeoutMs`: how long the socket may stay quiet before the read
+ *   fails. Without a signal it is 15 s. With a signal and no idleTimeoutMs
+ *   none is set here, and Node's global agent ends a socket that is quiet
+ *   for 5 s (its default since Node 19).
  */
-export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget; idleTimeoutMs?: number };
 
 /**
  * The most bytes a decoded body may reach when the caller passes no
@@ -545,9 +549,21 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
       decoder?.destroy();
       giveBackSlot();
     };
+    // The listener this call adds to the caller's signal, below. Once the
+    // request is made, the read settles in finish, in fail or in the
+    // request's 'error' handler, which each remove it as they settle it, or
+    // on an abort in onAbort. A signal can outlive the read (Node keeps an
+    // AbortSignal.timeout that has a listener alive until its timer fires),
+    // and a listener left on it keeps the request and the body it read
+    // reachable until then.
+    let onAbort: (() => void) | undefined;
+    const stopListening = () => {
+      if (onAbort) signal?.removeEventListener?.('abort', onAbort);
+    };
     const fail = (e: Error) => {
       if (settled) return;
       settled = true;
+      stopListening();
       release();
       decoder?.destroy();
       req.destroy();
@@ -577,7 +593,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         method,
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
-        timeout: init?.signal ? undefined : 15000,
+        timeout: init?.idleTimeoutMs ?? (init?.signal ? undefined : 15000),
       },
       (res) => {
         const status = res.statusCode || 0;
@@ -648,7 +664,24 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
               rsHeaders.delete('content-encoding');
               rsHeaders.delete('content-length');
             }
-            r = new Response(NULL_BODY_STATUS.has(status) ? null : Buffer.concat(out), {
+            // The chunks are joined once and let go. The Response reads the
+            // joined bytes from a stream, as one chunk: given the bytes
+            // directly, it would copy them again and keep its copy after the
+            // body is read. A byte stream, as a Response's own body is, so
+            // clone() and tee() give each branch its own copy of the chunk
+            // and a BYOB reader works.
+            let body: ReadableStream<Uint8Array> | null = null;
+            if (!NULL_BODY_STATUS.has(status)) {
+              const bytes = joinOwned(out);
+              body = new ReadableStream({
+                type: 'bytes',
+                start(controller) {
+                  if (bytes.byteLength > 0) controller.enqueue(bytes);
+                  controller.close();
+                },
+              });
+            }
+            r = new Response(body, {
               status,
               statusText: res.statusMessage || '',
               headers: rsHeaders,
@@ -663,6 +696,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
           // hop's Response, so this makes resp.url the URL that answered.
           Object.defineProperty(r, 'url', { value: url, enumerable: true });
           if (cut) CUT_BY_BUDGET.add(r);
+          stopListening();
           resolve(r);
           // The body is complete or cut. A decoder ends with its coded stream,
           // which can come before the response does (bytes after it, or a
@@ -759,6 +793,7 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     req.on('error', (e) => {
       if (settled) return;
       settled = true;
+      stopListening();
       release();
       decoder?.destroy();
       reject(e as Error);
@@ -768,7 +803,14 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     // reliably surface as an 'error' on the response stream, and a caller
     // awaiting this must not outlive its own deadline.
     if (signal && typeof signal.addEventListener === 'function') {
-      const onAbort = () => {
+      // An abort settles the read here, not through fail: onAbort lets go of
+      // the bytes held, gives back what the read was charged and destroys
+      // the decoder and the request before it rejects, and { once: true }
+      // removes it as it fires. A read that rejects before this point (a
+      // signal that had already fired, a URL that does not parse, a request
+      // http.request or https.request refuses to make, such as one with a
+      // newline in a header value) never adds it.
+      onAbort = () => {
         const err = abortedError();
         const wasSettled = settled;
         settled = true;
@@ -777,12 +819,31 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         req.destroy(err);
         if (!wasSettled) reject(err);
       };
-      // Left registered once the call settles: the signal belongs to this one
-      // read, and a late abort then only destroys a finished request.
       signal.addEventListener('abort', onAbort, { once: true });
     }
     req.end();
   });
+}
+
+/**
+ * The chunks joined into one Uint8Array whose buffer holds exactly their
+ * bytes. A reader can reach the whole `buffer` behind the chunk it gets, and
+ * Buffer.concat takes a result under 4 KiB from Node's shared 8 KiB pool,
+ * which also holds other allocations' bytes, other reads' bodies among them.
+ * A buffer of the body's own size holds nothing else. A byte stream also
+ * takes the buffer over when the chunk is enqueued, which a pooled buffer
+ * refuses.
+ */
+function joinOwned(chunks: Buffer[]): Uint8Array<ArrayBuffer> {
+  let total = 0;
+  for (const c of chunks) total += c.byteLength;
+  const bytes = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  return bytes;
 }
 
 /** The error an aborted read rejects with; callers classify it by its name, AbortError. */
