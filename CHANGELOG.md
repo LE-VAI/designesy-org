@@ -216,9 +216,9 @@ changed are the ones this entry sets.
   two and holds bytes that are not UTF-8 as `resp.text()` reads it; a small
   site and a site with none of the files score as before, detail for
   detail.
-- Run against the site from before the read limits (cdb58534), 24 of the
-  48 cases fail (21 rule cases and the three source cases) and every
-  control holds. With the URL guard changed to drop the limit after a
+- Run against the site from before the read limits (main at #396,
+  e7d27b52), 24 of the 48 cases fail (21 rule cases and the three source
+  cases) and every control holds. With the URL guard changed to drop the limit after a
   redirect's first hop, the three redirect cases fail; with it changed to
   hold only a 2xx body to the limit, the five error and redirect body
   cases and the r10 case fail. With the readiness route changed so that a
