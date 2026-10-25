@@ -20,12 +20,19 @@ score moves.
   is read from the recipe cuelume ships (its `cuelume/themes` export): each
   layer of the default theme's toggle cue starts at its offset, swells over
   its attack and falls 60 dB over its decay. The wait ends with the longest
-  layer at any emphasis, 38.5 ms, rounded up to 39 ms. The cue as the site
-  plays it, at normal emphasis, lasts 34.9 ms.
-- **Sound turned back on inside the wait stays on.** Turning sound on, and
-  the preference a page applies when it loads, cancel a mute that is still
-  waiting, so cuelume and the switch agree. The switch, `html[data-audio]`
-  and the stored preference change in the click, as before.
+  layer in that recipe, 38.5 ms at its recipe length, rounded up to 39 ms.
+  That layer plays only at strong emphasis. The cue as the site plays it,
+  at normal emphasis, lasts 34.9 ms (29.8 ms at subtle emphasis). Strong
+  emphasis also makes every layer 1.2 times longer, so a strong play would
+  last 46.0 ms and be cut at 39 ms. The site plays none.
+- **Sound turned back on inside the wait stays on.** Turning sound on
+  cancels a mute that is still waiting, so cuelume and the switch agree.
+  The switch, `html[data-audio]` and the stored preference change in the
+  click, as before.
+- **A second sound control leaves a waiting mute to finish.** The switch on
+  the Acoustics and Poise lab pages and the senses menu each keep their own
+  state. One that mounts within 39 ms of a mute reads the stored "off" and
+  leaves the waiting mute in place, so the cue is not cut.
 
 ### Not changed (sound mute cue)
 
@@ -37,20 +44,28 @@ score moves.
 - cuelume stays 0.2.8, and the binder still plays `tick` on the first
   pointerdown to start audio.
 
-Caveat: the 15 ms fade and the length of the cue were read from cuelume's
-source, and the wait was checked with a stand-in for cuelume. Neither was
-listened to in a browser.
+Caveats: for the 39 ms after a mute, cuelume is still on for every cue. A
+cue that starts inside them still sounds while the switch says off, such as
+the hover cue of the next row in the senses menu when the pointer gets there
+that fast. A cue already sounding at the click, such as the tap cue a touch
+screen plays for the row itself, plays on for up to 39 ms. Before this
+change both faded within 15 ms of the click. The 15 ms fade and the length
+of the cue were read from cuelume's source, and the wait was checked with a
+stand-in for cuelume. Neither was listened to in a browser.
 
 ### Gates (sound mute cue)
 
 - `check-sound-mute.mjs` (new, in the build and in CI after Results
   language) loads the real hook with cuelume, React and the clock stood in
-  for, 2 cases. A mute turns cuelume off no earlier than the end of the
-  34.9 ms cue and no later than 39 ms after the click. Sound turned back
-  on 10 ms into the cue stays on, and cuelume is never told to turn off.
-  Against the hook before this change both cases fail, because cuelume is
-  turned off 0 ms into the cue. With the lines that cancel a waiting mute
-  removed, the second case fails.
+  for, 4 cases. A mute turns cuelume off no earlier than the end of the
+  34.9 ms cue and no later than 39 ms after the click, and sound turned on
+  a second later plays its cue. Sound turned back on 10 ms into the cue
+  stays on, and cuelume is never told to turn off. A second control that
+  mounts 10 ms into the cue says off and leaves the cue uncut. With every
+  layer of the toggle cue ringing twice as long in the recipe the hook
+  loads, the wait grows to 76 ms for a 68.8 ms cue, so a fixed wait fails.
+  Against the hook before this change all 4 cases fail, because cuelume is
+  turned off 0 ms into the cue.
 
 **Fetch bounds: a finished read lets go of its signal, every URL the MCP
 route reads for itself ends at 15 s, and the URL guard copies a body fewer
