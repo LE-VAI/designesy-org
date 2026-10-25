@@ -23,8 +23,11 @@ type CueLayer = { attack: number; decay: number; offset?: number };
  * recipe for it (the cuelume/themes export, default theme, the one this
  * site plays). A layer starts at its offset, swells over its attack and
  * falls 60 dB over its decay; the cue lasts until its last layer has
- * fallen. Every layer counts, the one only strong emphasis plays included,
- * so this is an upper bound for the normal emphasis the site plays.
+ * fallen. Every layer counts at its recipe length, the one only strong
+ * emphasis plays included, so this is an upper bound for the subtle and
+ * normal emphasis. The site plays normal. Strong emphasis also makes every
+ * layer 1.2 times longer (cuelume's EMPHASIS table), so a strong play would
+ * outlast this wait and be cut.
  */
 export const TOGGLE_CUE_MS = Math.ceil(
   1000 *
@@ -42,11 +45,15 @@ let pendingMute: ReturnType<typeof setTimeout> | null = null;
 /**
  * Turn cuelume on or off. From cuelume 0.2.6, setEnabled(false) fades
  * whatever is still sounding within 15 ms, so a mute that confirms itself
- * with the toggle cue waits TOGGLE_CUE_MS before it turns cuelume off. Any
- * later call cancels a mute that is still waiting, so sound turned back on
- * inside the wait stays on and the switch and the sound agree.
+ * with the toggle cue waits TOGGLE_CUE_MS before it turns cuelume off.
+ * Turning sound on cancels a mute that is still waiting, so sound turned
+ * back on inside the wait stays on and the switch and the sound agree. A
+ * plain "off" while a mute waits (a second sound control mounting and
+ * applying the stored preference) leaves that mute to finish: cuelume goes
+ * off when the cue ends either way, and the cue is not cut.
  */
 function applyToCuelume(on: boolean, afterCue = false) {
+  if (!on && !afterCue && pendingMute !== null) return;
   if (pendingMute !== null) {
     clearTimeout(pendingMute);
     pendingMute = null;
