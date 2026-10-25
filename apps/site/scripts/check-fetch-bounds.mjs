@@ -161,7 +161,9 @@
  *     FAIL, one WARN, score 5, F) are, detail for detail, what the route
  *     reported before the read limit.
  *   - Last: nothing was thrown during the run where no caller could catch it
- *     (an uncaught exception or an unhandled rejection).
+ *     (an uncaught exception or an unhandled rejection). One thrown before the
+ *     first case starts (a module that does not load) ends the run with
+ *     exit 1 and prints it.
  *
  * PROVING IT CAN FAIL
  * --app <dir> runs the gate against another apps/site directory. Against a
@@ -317,10 +319,25 @@ const toLocal = (real) => ({
 });
 const lookup = async () => [{ address: '93.184.215.14', family: 4 }];
 
-/** Errors thrown where no caller could catch them (in a stream listener, say): the last case fails on any. */
+/**
+ * Errors thrown where no caller could catch them (in a stream listener, say):
+ * the last case fails on any. One that arrives before the cases start (a
+ * module that does not load, say) ends the run at once with exit 1. These
+ * listeners take such an error from Node, which would otherwise print it and
+ * exit 1 itself, so without that a run that never reached a case exited 0.
+ */
 const uncaught = [];
-process.on('uncaughtException', (e) => { uncaught.push(`uncaught ${e && e.name}: ${e && e.message}`); });
-process.on('unhandledRejection', (e) => { uncaught.push(`unhandled rejection ${e && e.name}: ${e && e.message}`); });
+let casesStarted = false;
+const onUncaught = (kind) => (e) => {
+  const text = `${kind} ${e && e.name}: ${e && e.message}`;
+  if (!casesStarted) {
+    console.error(`Fetch bounds: ${text}, before any case ran.`);
+    process.exit(1);
+  }
+  uncaught.push(text);
+};
+process.on('uncaughtException', onUncaught('uncaught'));
+process.on('unhandledRejection', onUncaught('unhandled rejection'));
 
 const h = createHarness({
   app: APP,
@@ -1284,6 +1301,7 @@ async function runCase(c) {
 }
 
 console.log(`Fetch bounds (${path.relative(process.cwd(), APP) || '.'}, node ${process.version}, margin ${MARGIN_S} s, case deadline ${CASE_DEADLINE_S} s)`);
+casesStarted = true;
 const results = await Promise.all(CONCURRENT.map(runCase));
 results.push(await runCase(LAST));
 
