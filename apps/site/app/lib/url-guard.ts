@@ -297,7 +297,9 @@ function isPrivateAddress(addr: string): boolean {
 // validation or DNS resolution, throws an Error — callers should catch and
 // treat as a failed fetch. A 2xx body is decoded as its Content-Encoding says
 // (point 5 at the top of this file); `maxBodyBytes` and `budget` bound what is
-// held.
+// held. A request body (a string or bytes) is sent with its length, and a
+// redirect is followed with the method and body fetch would use
+// (redirectedInit).
 
 const MAX_REDIRECTS = 5;
 
@@ -415,6 +417,9 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   fails. Without a signal it is 15 s. With a signal and no idleTimeoutMs
  *   none is set here, and Node's global agent ends a socket that is quiet
  *   for 5 s (its default since Node 19).
+ *
+ * A `body` is a string, sent as UTF-8, or bytes, and is sent with its length;
+ * any other kind of body is refused with a TypeError.
  */
 export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget; idleTimeoutMs?: number };
 
@@ -539,8 +544,9 @@ function decoderFor(coding: ContentCoding, head: Buffer): Transform {
 }
 
 /**
- * HTTP(S) GET with connection-level IP pinning. Returns a WHATWG `Response` so
- * it is a drop-in replacement for `fetch(url, { redirect: 'manual' })`.
+ * An HTTP(S) request with connection-level IP pinning. Returns a WHATWG
+ * `Response` so it is a drop-in replacement for
+ * `fetch(url, { redirect: 'manual' })`.
  *
  * The connection is made through node:http(s) with the `pinnedLookup` above, so
  * the socket can only ever reach a validated public IP — DNS rebinding (TOCTOU)
@@ -618,6 +624,22 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     }
     const method = init?.method || 'GET';
     const maxBodyBytes = init?.maxBodyBytes;
+    // The request's body, sent with its length: a string (as UTF-8) or
+    // bytes. fetch takes other kinds of body too; this refuses them rather
+    // than send a request without its body.
+    const sentBody = init?.body;
+    let payload: Buffer | null = null;
+    if (sentBody != null) {
+      if (typeof sentBody === 'string') payload = Buffer.from(sentBody, 'utf8');
+      else if (sentBody instanceof ArrayBuffer) payload = Buffer.from(sentBody);
+      else if (ArrayBuffer.isView(sentBody)) payload = Buffer.from(sentBody.buffer, sentBody.byteOffset, sentBody.byteLength);
+      else {
+        reject(new TypeError('safeFetch sends a string or byte body only'));
+        return;
+      }
+      for (const k of Object.keys(headers)) if (k.toLowerCase() === 'content-length') delete headers[k];
+      headers['content-length'] = String(payload.length);
+    }
     const reqFn = isHttps ? https.request : http.request;
     const req = reqFn(
       {
@@ -855,8 +877,29 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
       };
       signal.addEventListener('abort', onAbort, { once: true });
     }
-    req.end();
+    if (payload) req.end(payload);
+    else req.end();
   });
+}
+
+/** The headers that describe a request's body, dropped when a redirect turns the request into a GET. */
+const BODY_HEADERS = new Set(['content-encoding', 'content-language', 'content-location', 'content-type', 'content-length']);
+
+/**
+ * The request a redirect leads to, as fetch follows one: a 303 (to any
+ * method but GET or HEAD), or a 301 or 302 to a POST, becomes a GET with no
+ * body and none of the headers that describe one. Any other redirect
+ * (307 and 308 among them) repeats the request, its body included.
+ */
+function redirectedInit(init: SafeFetchInit | undefined, status: number): SafeFetchInit | undefined {
+  const method = (init?.method || 'GET').toUpperCase();
+  const toGet = (status === 303 && method !== 'GET' && method !== 'HEAD') || ((status === 301 || status === 302) && method === 'POST');
+  if (!toGet) return init;
+  const headers: Record<string, string> = {};
+  for (const [k, v] of Object.entries(init?.headers ?? {})) {
+    if (!BODY_HEADERS.has(k.toLowerCase())) headers[k] = v;
+  }
+  return { ...init, method: 'GET', body: undefined, headers };
 }
 
 /**
@@ -908,6 +951,7 @@ function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefine
 export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   const signal = init?.signal ?? undefined;
   let currentUrl = url;
+  let hopInit = init;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     if (signal?.aborted) throw abortedError();
     // Validate URL structure (scheme, hostname string, encoded IPs).
@@ -925,13 +969,14 @@ export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Resp
     // Connection-level pinned fetch (node:http(s) with IP-pinned lookup), so a
     // DNS-rebinding TOCTOU cannot insert a private IP after validation. Returns
     // the Response with redirect left 'manual' — the loop below follows 3xx.
-    const resp = await pinnedFetch(currentUrl, init);
+    const resp = await pinnedFetch(currentUrl, hopInit);
     // Not a redirect — return the response (success, 4xx, 5xx, etc.)
     if (resp.status < 300 || resp.status >= 400) return resp;
     // 3xx redirect — extract Location header and resolve against current URL.
     const location = resp.headers.get('location');
     if (!location) return resp; // 3xx with no Location — return as-is
     currentUrl = new URL(location, currentUrl).href;
+    hopInit = redirectedInit(hopInit, resp.status);
     // Loop continues — next iteration validates the new URL + DNS.
   }
   // Exceeded MAX_REDIRECTS — treat as error (matches redirect: 'follow' which

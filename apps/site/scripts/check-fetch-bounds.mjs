@@ -10,8 +10,10 @@
  * documents), a readiness check whose file is past the readiness route's
  * 4 MiB read limit reports WARN and says the file was not read while a file
  * within it is judged as before, an error or redirect body is held to the
- * same limit as the read that receives it, and the MCP tools that read a URL
- * through url-guard still read one that answers.
+ * same limit as the read that receives it, a request's body reaches its
+ * server and a redirect is followed with the method and body fetch would
+ * use, and the MCP tools that read a URL through url-guard still read one
+ * that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -21,7 +23,11 @@
  * 15 s timeout is a socket idle timeout, set only when the caller passes no
  * signal, so a server that sends one byte a second and never stops never
  * trips it: read with no cap, that body ends at the caller's signal or not at
- * all. The MCP route passed no signal for the URLs it reads (cachedFetch, and
+ * all. The transport ended each request without writing the body its caller
+ * passed, so a POST reached its server empty, readiness r04's tools/list
+ * request among them, which an endpoint built with mcp-handler answers with
+ * 400, and each redirect hop repeated the caller's method. The MCP route
+ * passed no signal for the URLs it reads (cachedFetch, and
  * the url of designesy_tokens_score and designesy_motion_score), so nothing
  * in the process ended such a read short of the function's maxDuration
  * (300 s, vercel.json). It passed no maxBodyBytes either, so it held an
@@ -53,7 +59,12 @@
  * node:dns/promises answers a public address, and node:http(s) connect to a
  * server on 127.0.0.1 that this script runs. The connect wrapper also counts
  * the body bytes that reach the client and keeps the request, so a case can
- * say how far a body got and whether the request was destroyed.
+ * say how far a body got and whether the request was destroyed. The server
+ * reads each request's body before it answers, and records the method, the
+ * content-length and content-type headers and the body (asked), so a case
+ * can say what a request carried. One host is answered by an MCP endpoint
+ * built with mcp-handler, the package the site's MCP route serves its tools
+ * with, resolved from the app checked or else from this checkout.
  * getEventListeners (node:events) counts the abort listeners left on a
  * signal. The MCP and readiness routes are loaded before the first case
  * starts, so no case's time includes their load, and one case for each reads
@@ -103,6 +114,10 @@
  *     status, as a gzip body, as a corrupt gzip body, and cut by a shared
  *     budget. Between them they reach every place the transport settles a
  *     read other than an abort.
+ *   - A POST carries its body: a 46 byte tools/list request reaches the
+ *     server with content-length 46. After a 307 the URL it lands on receives
+ *     the same POST; after a 302 or a 303 it receives a GET with no body and
+ *     no content-type, as fetch follows those redirects.
  *   - A server that sends one byte a second is ended by the caller's 3 s
  *     signal at its deadline, with an AbortError, and the request is
  *     destroyed. Each MCP read of such a server (designesy_tokens_score,
@@ -170,6 +185,11 @@
  *   - On a site where every file the checks read is past the limit, all ten
  *     checks are WARN with that detail (score 50, F). With no component
  *     schema, r07 is WARN with it for an /open.json past the limit.
+ *   - Readiness r04 on the mcp-handler endpoint is PASS with its one tool,
+ *     and the endpoint received the 46 byte request; reached through a 307,
+ *     r04 is PASS the same way. Through a 302 the endpoint receives a GET,
+ *     which it answers 405, and r04 is WARN with that status. The same
+ *     endpoint answers a tools/list POST that carries no body with 400.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes, a
  *     HEAD probe none.
@@ -299,9 +319,15 @@
  * readiness and report caches carry no such part, and on one whose report
  * cache alone lacks it.
  *
+ * Against the tree from before the requests cases, both fail: the POST case
+ * (each URL receives a POST with 0 body bytes) and the mcp-handler r04 case
+ * (WARN with HTTP 400, also through the 307 and the 302). A url-guard that
+ * follows every redirect with the caller's method and body fails the POST
+ * case after the 302 and the 303, and the r04 case through the 302.
+ *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 22 of the 46 cases fail and every
- * control holds.
+ * readiness route from before them), 24 of the 48 cases fail and every
+ * control holds: the 22 the read limits make fail there, and the two above.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -524,6 +550,14 @@ const ROUTES = {
   'tokens-500.example.com/tokens.json': { status: 500, bytes: NOISE, paced: true },
   'tokens-302.example.com/tokens.json': { status: 302, location: 'https://tokens-302-landed.example.com/tokens.json', bytes: NOISE, paced: true },
   'tokens-302-landed.example.com/tokens.json': { body: TOKENS, type: 'application/json', hopFrom: 'tokens-302.example.com/tokens.json' },
+  // A POST, sent straight and through each kind of redirect, and the URLs it lands on.
+  'post-direct.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-307.example.com/rpc': { status: 307, location: 'https://post-landed-307.example.com/rpc' },
+  'post-landed-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-302.example.com/rpc': { status: 302, location: 'https://post-landed-302.example.com/rpc' },
+  'post-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-303.example.com/rpc': { status: 303, location: 'https://post-landed-303.example.com/rpc' },
+  'post-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -590,6 +624,11 @@ const READY_FILES = {
   'ready-500.example.com': { '/llms.txt': { status: 500, bytes: NOISE, paced: true, type: 'text/plain' } },
   'ready-302.example.com': { '/llms.txt': { status: 302, location: 'https://ready-302-landed.example.com/llms.txt', bytes: NOISE, paced: true } },
   'ready-302-landed.example.com': { '/llms.txt': { body: '# Read limits\n\nA brief reached through a redirect.\n', type: 'text/plain', hopFrom: 'ready-302.example.com/llms.txt' } },
+  // An MCP endpoint built with mcp-handler (mcpEndpoint, below), which reads the request it is sent.
+  'ready-mcp-handler.example.com': { '/api/mcp': { mcp: true } },
+  // Sites whose /api/mcp redirects to that endpoint with a 307 and with a 302.
+  'ready-mcp-307.example.com': { '/api/mcp': { status: 307, location: 'https://ready-mcp-handler.example.com/api/mcp' } },
+  'ready-mcp-302.example.com': { '/api/mcp': { status: 302, location: 'https://ready-mcp-handler.example.com/api/mcp' } },
   // An llms.txt that starts with two byte order marks and holds two bytes that are not UTF-8.
   'ready-bom.example.com': { '/llms.txt': { bytes: Buffer.concat([BOM, BOM, Buffer.from('# Read limits\n\n'), Buffer.from([0xff, 0xfe]), Buffer.from('\nA brief.\n')]), type: 'text/plain' } },
   'ready-404.example.com': {
@@ -616,9 +655,42 @@ for (const [host, files] of Object.entries(READY_FILES)) {
 
 /** host + path -> what the server managed to send: bytes handed to the socket, and whether the body finished. */
 const sent = new Map();
+/** host + path -> what the last request carried: its method, its content-length and content-type headers, and its body. */
+const asked = new Map();
 
-const server = http.createServer((req, res) => {
-  const key = `${req.headers['x-fetch-bounds-host']}${req.url}`;
+// An MCP endpoint built with mcp-handler, the package app/api/mcp/route.ts
+// serves its tools with, listing one tool. It reads the request it is sent:
+// a tools/list POST with no body is answered 400. The package resolves from
+// the app checked, then from this checkout, as the harness's packages do.
+const fromApp = createRequire(path.join(APP, 'package.json'));
+const appRequire = (spec) => {
+  try {
+    return fromApp(spec);
+  } catch (e) {
+    if (e && e.code === 'MODULE_NOT_FOUND') return require(spec);
+    throw e;
+  }
+};
+const { z } = appRequire('zod');
+const mcpEndpoint = appRequire('mcp-handler').createMcpHandler((mcp) => {
+  mcp.registerTool('read_limits', { description: 'A tool the fetch bounds gate lists.', inputSchema: z.object({}) }, async () => ({ content: [{ type: 'text', text: 'ok' }] }));
+}, { serverInfo: { name: 'fetch-bounds', version: '1.0.0' } });
+
+/** Answers a request on the endpoint above. */
+async function answerMcp(host, req, res, body) {
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string' && k !== 'x-fetch-bounds-host') headers.set(k, v);
+  const r = await mcpEndpoint(new Request(`https://${host}${req.url}`, { method: req.method, headers, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body }));
+  const text = await r.text();
+  res.writeHead(r.status, { 'content-type': r.headers.get('content-type') || 'text/plain' });
+  res.end(text);
+}
+
+// What a request found when it arrived is recorded then; it is answered once
+// its body has been read, and the body is recorded in `asked`.
+const handle = (req, res) => {
+  const host = req.headers['x-fetch-bounds-host'];
+  const key = `${host}${req.url}`;
   const b = ROUTES[key] || { status: 404, body: 'not here' };
   const stat = { written: 0, finished: false };
   // The next hop of a redirect: how far the redirect's body had got, on
@@ -631,8 +703,19 @@ const server = http.createServer((req, res) => {
   sent.set(key, stat);
   res.on('error', () => {});
   res.on('finish', () => { stat.finished = true; });
+  const chunks = [];
+  req.on('data', (c) => chunks.push(c));
+  req.on('end', () => {
+    const requestBody = Buffer.concat(chunks);
+    asked.set(key, { method: req.method, length: req.headers['content-length'], type: req.headers['content-type'], body: requestBody });
+    answer(b, key, host, req, res, stat, requestBody);
+  });
+};
+
+function answer(b, key, host, req, res, stat, requestBody) {
   // A read that fails: the connection closes before any answer.
   if (b.reset) return req.socket.destroy();
+  if (b.mcp) return answerMcp(host, req, res, requestBody);
   // A server that is quiet before it answers, well inside the read deadline.
   if (b.delayMs) {
     setTimeout(() => { res.writeHead(200, { 'content-type': b.type }); res.end(b.body); }, b.delayMs);
@@ -672,7 +755,9 @@ const server = http.createServer((req, res) => {
     res.end();
   };
   pump();
-});
+}
+
+const server = http.createServer(handle);
 server.requestTimeout = 0;
 server.headersTimeout = 0;
 server.keepAliveTimeout = 0;
@@ -1107,6 +1192,29 @@ const CONCURRENT = [
     },
   },
   {
+    name: 'a POST carries its body, with its length; a 307 sends it again, and a 302 or a 303 is followed with a GET that carries none',
+    run: async () => {
+      const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      const init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body };
+      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', body };
+      const got = { method: 'GET', length: undefined, type: undefined, body: '' };
+      return eachRead([
+        ['no redirect', 'post-direct.example.com/rpc', 'post-direct.example.com/rpc', posted],
+        ['after a 307', 'post-307.example.com/rpc', 'post-landed-307.example.com/rpc', posted],
+        ['after a 302', 'post-302.example.com/rpc', 'post-landed-302.example.com/rpc', got],
+        ['after a 303', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
+      ].map(([label, key, landed, want]) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, init));
+        assert.equal(resp.status, 200, `HTTP ${resp.status}`);
+        const a = asked.get(landed);
+        assert.ok(a, `no request reached ${landed}`);
+        const carried = { method: a.method, length: a.length, type: a.type, body: a.body.toString() };
+        assert.deepEqual(carried, want, `${landed} received ${JSON.stringify(carried)}`);
+        return `${landed} received a ${a.method} with ${a.body.length} body bytes${a.length ? ` (content-length ${a.length})` : ''}`;
+      }]));
+    },
+  },
+  {
     name: `designesy_tokens_score on a URL sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
     run: async () => mcpDrip('designesy_tokens_score', { url: 'https://tokens-drip.example.com/tokens.json' }, 'tokens-drip.example.com/tokens.json'),
   },
@@ -1464,6 +1572,32 @@ const CONCURRENT = [
     }),
   },
   {
+    name: 'readiness r04: an MCP endpoint built with mcp-handler, which answers a tools/list POST with no body with 400, is PASS with its one tool, also through a 307; through a 302 it is sent a GET, which it answers 405',
+    run: async () => {
+      const key = 'ready-mcp-handler.example.com/api/mcp';
+      const pass = ['PASS', 'MCP endpoint at /api/mcp responds to tools/list with 1 tool(s)'];
+      // A scan of `host`: r04 as `r04`, and what the endpoint received.
+      const scan = (host, r04) => async () => {
+        asked.delete(key);
+        const said = checksAre(await readiness(`https://${host}/`), { r04 });
+        const a = asked.get(key);
+        assert.ok(a, `no request reached ${key}`);
+        return `${said}; the endpoint received a ${a.method} with ${a.body.length} body bytes`;
+      };
+      return eachRead([
+        // The endpoint reads its request: one sent with no body is refused.
+        ['a tools/list POST with no body', async () => {
+          const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' } }));
+          assert.equal(resp.status, 400, `HTTP ${resp.status}`);
+          return `HTTP ${resp.status}`;
+        }],
+        ['readiness r04', scan('ready-mcp-handler.example.com', pass)],
+        ['through a 307', scan('ready-mcp-307.example.com', pass)],
+        ['through a 302', scan('ready-mcp-302.example.com', ['WARN', 'Endpoint exists but did not respond with a tool list (HTTP 405)'])],
+      ]);
+    },
+  },
+  {
     name: "every safeFetch call in the readiness route passes its READ_LIMIT, 4 MiB, as maxBodyBytes (a HEAD probe passes none)",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/readiness/route.ts'), 'utf8').replace(/\r\n/g, '\n');
@@ -1591,5 +1725,5 @@ if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, a POST carries its body, and no read leaves a listener on its signal.');
 process.exit(0);
