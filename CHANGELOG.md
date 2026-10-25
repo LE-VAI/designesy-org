@@ -8,16 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 **Read limits: each URL the MCP route reads for itself, and each URL the
 readiness route reads, has a byte limit of its own, 16 MiB for a Lottie
-file and 4 MiB for everything else, and a body past it is reported as too
-large, never read in part** (the site: the hosted MCP route, the readiness
-route and the report route's cache; no version moves). Each read passes its
-limit to the URL guard, which holds at most one byte past it, counted after
-decoding when it decodes the body, and ends the request there. An error or
-redirect body is held to the same limit. No check is added, and no rule,
-weight or grade boundary moves. A result changes only for a file past its
-limit. The Fetch bounds entry below describes these reads before the
-limits: the byte limits it lists as not changed are the ones this entry
-sets.
+file and 4 MiB for everything else; an ok response past it is reported as
+too large, and no body past it is read in part** (the site: the hosted MCP
+route, the readiness route and the report route's cache; no version moves).
+Each read passes its limit to the URL guard, which holds at most one byte
+past it, counted after decoding when it decodes the body, and ends the
+request there. An error or redirect body is held to the same limit. No
+check is added, and no rule, weight or grade boundary moves. A result
+changes only for a file past its limit. The Fetch bounds entry below
+describes these reads before the limits: the byte limits it lists as not
+changed are the ones this entry sets.
 
 ### Fixed (read limits)
 
@@ -52,7 +52,7 @@ sets.
   paths and r07's fallback to `/open.json` and agent.json, sitemap.xml and
   robots.txt) and r04's read of a tools/list answer are held to 4 MiB, for
   the token files and documents measured above. A scan of this site reads
-  its home page too, which measured 392,061 bytes, and its largest page
+  its home page too, which measured 392,045 bytes, and its largest page
   measured, `/changelog`, 460,417 bytes. A file past the limit is not read:
   its check reports WARN, with the detail `<file> is larger than the 4 MiB
   read limit and was not read`. The file is named as `Token file at <url>`
@@ -77,12 +77,17 @@ sets.
   limit, so such a body was received whole: a 500 whose body is 20 MiB
   arrived in full (20,971,520 bytes) before its status was reported, and a
   302's 20 MiB body before the next hop was requested. Now at most one 64
-  KiB socket read past the limit arrives (4,259,833 of the 20,971,520 bytes,
-  measured), the request is destroyed, and the next hop follows. The results
-  are as before: `designesy_tokens_score` still fails with `Fetch failed:
-  500 Internal Server Error`, readiness r02 still reports an llms.txt that
-  answers 500 as not found, and the 302 is still followed to the file it
-  names.
+  KiB socket read past the read's limit arrives, the request is destroyed,
+  and the next hop follows. Of such a 20 MiB body, a read with a 4 MiB
+  limit received 4,259,833 bytes, and `designesy_motion_score`, whose limit
+  is 16 MiB, received 16,842,745 of a 500 (Node 24.15.0 on Windows). The
+  MCP tools' errors are as before: `designesy_tokens_score` and
+  `designesy_motion_score` still fail with `Fetch failed: 500 Internal
+  Server Error`. So are the readiness checks that need an ok response: r02
+  still reports an llms.txt that answers 500 as not found. The 302 is still
+  followed to the file it names. r10, which reads the page scanned whatever
+  its status, is now WARN for an error page past the limit, which it read
+  whole and judged before.
 - **A body is read once, and decoded as before.** Each read takes the
   body's chunks as the URL guard hands them over, with no copy, compares
   their length with its limit, and gives a body within it to a Response,
@@ -155,8 +160,8 @@ sets.
 
 ### Gates (read limits)
 
-- `check-fetch-bounds.mjs` runs 46 cases (14 before these limits), in 17.0
-  to 17.7 s over 6 runs, in the build and in CI after Fetch layer as
+- `check-fetch-bounds.mjs` runs 48 cases (14 before these limits), in 17.0
+  to 17.1 s over 6 runs, in the build and in CI after Fetch layer as
   before. `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
   `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the
   limit with the message above, sent with no content coding (with and
@@ -178,14 +183,21 @@ sets.
   302 and past the limit, whose read stops at the limit on the URL it
   lands on (4,259,833 bytes), are WARN with the detail above. On a site
   where every file is past the limit, all ten checks are WARN (score 50,
-  F), and an `/open.json` past the limit is r07 WARN. Two source cases
-  require each `safeFetch` call's limit, in the MCP route and in the
-  readiness route.
+  F), and an `/open.json` past the limit is r07 WARN. A file past the limit
+  at a later path of a check's list, with each path before it answering
+  404, is WARN naming that path: the second path of each list (r01, r02,
+  r03, r05, r06 and r07), the third (r01, r06 and r07), the fourth (r01
+  and r06) and the second path of r07's fallback; for each such file that
+  one check reads, 4,259,833 of 5,242,880 bytes reached the client. Two
+  source cases require each `safeFetch` call's limit, in the MCP route and
+  in the readiness route.
 - Error and redirect bodies: `designesy_tokens_score` on a 500 whose body
   is 20 MiB fails with `Fetch failed: 500 Internal Server Error`, and
   readiness r02 on an llms.txt that answers 500 with such a body is not
   found; in each, 4,259,833 of 20,971,520 bytes reached the client and the
-  server had not finished. A 302 whose body is 20 MiB, read by
+  server had not finished. `designesy_motion_score` on such a 500 fails
+  the same way, and 16,842,745 of its 20,971,520 bytes reached the client,
+  for its 16 MiB limit. A 302 whose body is 20 MiB, read by
   `designesy_tokens_score` and by readiness r02, leads to the next hop
   once 4,259,833 bytes of it have reached the client (the server had
   written 4,521,984 and had not finished as the next request arrived), and
@@ -195,21 +207,28 @@ sets.
   llms.txt that decodes to exactly 4 MiB and a deflate (both kinds) or br
   token file that decodes to exactly 4 MiB; a 404 whose body is past the
   limit still fails as `Fetch failed: 404` in the three tools, and in
-  readiness r02 and r08 are FAIL and r04 is WARN with HTTP 404, as before;
-  a body that is not JSON fails with JSON.parse's own message; a token
-  file that starts with two UTF-8 byte order marks is read as `res.json()`
-  reads it, and readiness reads an llms.txt that starts with two and holds
-  bytes that are not UTF-8 as `resp.text()` reads it; a small site and a
-  site with none of the files score as before, detail for detail.
-- Run against the site from before the read limits (cdb58534), 22 of the
-  46 cases fail (19 rule cases and the three source cases) and every
+  readiness r02, r08 and r09 are FAIL and r04 is WARN with HTTP 404, as
+  before; a body that is not JSON fails with JSON.parse's own message; a
+  token file that starts with two UTF-8 byte order marks is read as
+  `res.json()` reads it, and readiness reads an llms.txt that starts with
+  two and holds bytes that are not UTF-8 as `resp.text()` reads it; a small
+  site and a site with none of the files score as before, detail for
+  detail.
+- Run against the site from before the read limits (cdb58534), 24 of the
+  48 cases fail (21 rule cases and the three source cases) and every
   control holds. With the URL guard changed to drop the limit after a
   redirect's first hop, the three redirect cases fail; with it changed to
-  hold only a 2xx body to the limit, the four error and redirect body
-  cases and the r10 case fail. Measured on Node 24.15.0 on Windows, with a
-  peak of 493 to 565 MiB of memory (maxRSS at exit, over 6 runs). CI runs
-  Node 22 on Linux, where the byte counts and times above were not
+  hold only a 2xx body to the limit, the five error and redirect body
+  cases and the r10 case fail. With the readiness route changed so that a
+  check stops only at the first path of its list, the later-path case
+  fails; with r09 changed to report a robots.txt past the limit whatever
+  its status, the 404 control fails. Measured on Node 24.15.0 on Windows,
+  with a peak of 495 to 546 MiB of memory (maxRSS at exit, over 6 runs).
+  CI runs Node 22 on Linux, where the byte counts and times above were not
   measured.
+- The gate exits 1 and prints the error when it throws before its first
+  case runs (a module that cannot be loaded, say). Before, it printed
+  nothing and exited 0.
 
 **Fetch bounds: a finished read lets go of its signal, every URL the MCP
 route reads for itself ends at 15 s, and the URL guard copies a body fewer

@@ -70,14 +70,15 @@ const MiB = 1024 * 1024;
 
 // Each of those reads also holds at most its own number of body bytes, given
 // to url-guard as maxBodyBytes and counted after decoding when the body is
-// compressed. A body longer than its limit fails the read with an error that
-// names the limit: it is never read in part as if it were whole.
+// compressed. An ok response whose body is longer than its limit fails the
+// read with an error that names the limit, and a response that is not ok
+// reports its status, so no body is read in part as if it were whole.
 //
 // 16 MiB for the url of designesy_motion_score. Two public Lottie files
 // measured 8,873,709 bytes (lottie-ios Tests/Samples/Issues/issue_1403.json,
 // which embeds images) and 4,713,147 bytes (lottie-web
 // test/animations/monster.json, vector only), each on its repository's
-// master branch on 2026-10-24.
+// master branch on 2026-10-25.
 const LOTTIE_READ_LIMIT = 16 * 1024 * 1024;
 // 4 MiB for the url of designesy_tokens_score and for every cachedFetch
 // read. The largest token files measured are 1,674,878 bytes
@@ -85,7 +86,7 @@ const LOTTIE_READ_LIMIT = 16 * 1024 * 1024;
 // and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
 // dist/json/variables.json). The largest of the seven documents cachedFetch
 // reads from this site measured 100,907 bytes (/contracts/design-system.json,
-// as its route wrote it on 2026-10-24).
+// as its route wrote it on 2026-10-25).
 const READ_LIMIT = 4 * 1024 * 1024;
 
 /** What readUrl returns: an ok response's body as text, or the status of a response that is not ok. */

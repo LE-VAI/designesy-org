@@ -53,9 +53,9 @@ const MiB = 1024 * 1024;
 // and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
 // dist/json/variables.json). The largest of the seven documents the MCP
 // route reads from this site measured 100,907 bytes
-// (/contracts/design-system.json, as its route wrote it on 2026-10-24). This
-// site's home page, which a scan of it reads, measured 392,061 bytes, and
-// its /changelog page 460,417 bytes, each served with no content coding on
+// (/contracts/design-system.json, as its route wrote it). This site's home
+// page, which a scan of it reads, measured 392,045 bytes, and its /changelog
+// page 460,417 bytes. Each size was measured with no content coding on
 // 2026-10-25.
 const READ_LIMIT = 4 * 1024 * 1024;
 
