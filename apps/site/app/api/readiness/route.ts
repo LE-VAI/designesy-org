@@ -192,15 +192,16 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   //
   // KNOWN REMAINING, and it is NOT this header: when the site scores its OWN
   // origin, this probe reports 400 (or 401 against a *.vercel.app alias).
-  // That is a self-request-path artifact, not a conformance failure — the same
-  // request from outside Vercel returns 200 with the full tool list, and a
-  // third-party origin that lacks an MCP endpoint is correctly reported as
-  // 404/405. Vercel serves deployment-protected and loopback self-requests
-  // differently from external ones. Do not "fix" this by loosening the Accept
-  // header again; the header is now correct and the external behaviour is
-  // proven. If it is to be closed, it needs the self-case to skip the probe or
-  // resolve through the public hostname, which is a routing decision rather
-  // than a header one.
+  // That was read as a self-request-path artifact, not a conformance failure:
+  // the tools/list request sent from outside Vercel returns 200 with the full
+  // tool list, and a third-party origin that lacks an MCP endpoint is
+  // correctly reported as 404/405. Vercel serves deployment-protected and
+  // loopback self-requests differently from external ones. The probe's
+  // request was not the one sent from outside, though: see SELF-CASE below.
+  // Do not "fix" this by loosening the Accept header again; the header is now
+  // correct and the external behaviour is proven. If it is to be closed, it
+  // needs the self-case to skip the probe or resolve through the public
+  // hostname, which is a routing decision rather than a header one.
   //
   // Same defect class as d06 (which counted var() spellings as distinct
   // families): a check measuring the target's conformance to the adapter's
@@ -208,21 +209,30 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   // SELF-CASE: verify locally instead of over the network.
   //
   // When the target IS this deployment, the probe POSTs to /api/mcp on its own
-  // origin. That arrives as an internal subrequest and is rejected with 400,
-  // while the byte-identical request from outside returns 200 with the full
-  // tool list. Isolated by comparison:
+  // origin. That arrives as an internal subrequest and was answered 400,
+  // while the tools/list request sent from outside returns 200 with the full
+  // tool list. Compared:
   //
   //   POST /api/mcp from outside                -> 200 (tools listed)
   //   POST /api/mcp from inside the deployment  -> 400
   //   GET  /api/score      from inside          -> 200 (self-score works)
   //   GET  /api/guardrails from inside          -> 200 (self-score works)
   //
-  // So it is specific to POSTing this SDK-backed route from inside itself, not
-  // a general self-fetch failure and not the Accept header (#102 fixed that and
-  // it is verified). Guessing further at the bundled SDK's internal request
-  // normalisation is a poor use of effort when the check's actual question —
-  // "does this endpoint answer tools/list with a tool list?" — can be answered
-  // without a network hop at all.
+  // So it was read as specific to POSTing this SDK-backed route from inside
+  // itself, not a general self-fetch failure and not the Accept header (#102
+  // fixed that and it is verified). Guessing further at the bundled SDK's
+  // internal request normalisation is a poor use of effort when the check's
+  // actual question ("does this endpoint answer tools/list with a tool
+  // list?") can be answered without a network hop at all.
+  //
+  // The two POSTs were not the same request. url-guard used to end every
+  // request without writing its body, so this probe's tools/list POST reached
+  // every endpoint, this deployment's included, with an empty body, while the
+  // one sent from outside carried it. An endpoint built with mcp-handler, the
+  // package this site's MCP route uses, answers a tools/list POST with no
+  // body with 400 (measured locally by check-fetch-bounds.mjs). url-guard now
+  // sends the body. Whether the missing body is the whole of the 400 above
+  // was not measured on the deployment; the self-case stands either way.
   //
   // The honest way to skip a probe is to answer its question from the source of
   // truth, not to assume PASS. mcp-handler registers the tools this route
@@ -468,7 +478,15 @@ const READINESS_TTL = 60 * 60 * 24; // 24h
 // whatever the framework does with the source; without both, such a result
 // would be served until 24 h after it was cached and once more, to the
 // request that starts a new scan.
-const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib'], {
+//
+// The third part keeps out every result cached before the URL guard sent
+// a request's body and stopped ending a read given a deadline early: r04
+// was WARN (HTTP 400) for an MCP endpoint that reads its request, and a
+// probe whose server was quiet for between Node's idle timeout (5 s, or as
+// little as 1 s on a kept-alive connection) and its 8 s deadline was read
+// as not found. scoreReadinessUncached is unchanged by that work, so its
+// source does not keep such a result out.
+const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib', 'request-body-deadline'], {
   revalidate: READINESS_TTL,
   tags: ['readiness'],
 });

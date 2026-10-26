@@ -10,8 +10,11 @@
  * documents), a readiness check whose file is past the readiness route's
  * 4 MiB read limit reports WARN and says the file was not read while a file
  * within it is judged as before, an error or redirect body is held to the
- * same limit as the read that receives it, and the MCP tools that read a URL
- * through url-guard still read one that answers.
+ * same limit as the read that receives it, a request's body reaches its
+ * server and a redirect is followed with the method and body fetch would
+ * use, a read given a signal ends at that signal alone, page-fetch asks
+ * for no stylesheet once 20 s have passed since its first, and the MCP
+ * tools that read a URL through url-guard still read one that answers.
  *
  * WHY THIS EXISTS
  * safeFetch holds a body in memory whole before it returns. With maxBodyBytes
@@ -21,8 +24,25 @@
  * 15 s timeout is a socket idle timeout, set only when the caller passes no
  * signal, so a server that sends one byte a second and never stops never
  * trips it: read with no cap, that body ends at the caller's signal or not at
- * all. The MCP route passed no signal for the URLs it reads (cachedFetch, and
- * the url of designesy_tokens_score and designesy_motion_score), so nothing
+ * all. The transport ended each request without writing the body its caller
+ * passed, so a POST reached its server empty, readiness r04's tools/list
+ * request among them, which an endpoint built with mcp-handler answers with
+ * 400, and each redirect hop repeated the caller's method. With a signal, it
+ * set no timeout of its own unless the caller passed an idle timeout (only
+ * the MCP route's reads did, of 15 s), so the socket kept the idle timeout
+ * that Node's global agent, whose requests it makes, gives it: 5 s on Node
+ * 24.15.0, and on a connection kept alive from an earlier answer that gave
+ * a Keep-Alive timeout of 2 to 5 s, 1 s less than that timeout (4 s for
+ * 5 s, and 1 s for 2 s). For a socket a request holds, the agent only sets
+ * it (it ends a socket only while that waits unused in its pool). When it
+ * fires, the request emits 'timeout', and the transport's own handler for
+ * that event ended a read whose server went quiet that long before the
+ * caller's deadline, with an error the caller did not read as its own
+ * timeout. page-fetch read
+ * a page's stylesheets one after another with no bound on the whole, so once
+ * each quiet sheet lasted its 8 s, 8 of them held a route past its 60 s. The
+ * MCP route passed no signal for the URLs it reads (cachedFetch, and the url
+ * of designesy_tokens_score and designesy_motion_score), so nothing
  * in the process ended such a read short of the function's maxDuration
  * (300 s, vercel.json). It passed no maxBodyBytes either, so it held an
  * identity body whole however long it was, and a compressed body that
@@ -50,15 +70,30 @@
  * The real URL guard, the real MCP route and the real readiness route, loaded
  * through scripts/lib/route-harness.js with realSafeFetch. As in
  * check-score-read-bounds.mjs, two things are swapped, both below the guard:
- * node:dns/promises answers a public address, and node:http(s) connect to a
- * server on 127.0.0.1 that this script runs. The connect wrapper also counts
- * the body bytes that reach the client and keeps the request, so a case can
- * say how far a body got and whether the request was destroyed.
- * getEventListeners (node:events) counts the abort listeners left on a
- * signal. The MCP and readiness routes are loaded before the first case
- * starts, so no case's time includes their load, and one case for each reads
- * its source instead of running it. The cases run concurrently, each on its
- * own URLs; the last one runs once the others have settled.
+ * node:dns/promises answers a public address (but 127.0.0.1 for the two
+ * private-*.example.com hosts, and an IPv4 address as itself, as dns.lookup
+ * does), and records each host it is asked about (looked), and node:http(s)
+ * connect to a server on 127.0.0.1 that this script runs. Every request is
+ * plain http, an https URL's too, and the wrapper drops the guard's pinned
+ * lookup, so no case runs pinnedLookup. The connect wrapper also counts the
+ * body bytes that reach the client, keeps the request, and records when the
+ * request was made and when its headers arrived (seen), so a case can say
+ * how far a body got, whether the request was destroyed, when a read was
+ * asked for and how long its server stayed quiet. The server reads each
+ * request's body before it answers, and records the method, the headers
+ * that describe a body, one header that does not, how many content-length
+ * headers came, and the body (asked), so a case can say what a request
+ * carried. One host is answered by an MCP endpoint built with mcp-handler, the
+ * package the site's MCP route serves its tools with, resolved from the app
+ * checked or else from this checkout. The keep-alive case's host has a server
+ * of its own, on its own port, so the connection Node's agent keeps alive from
+ * its first answer is taken by no other case's request. getEventListeners
+ * (node:events) counts the abort listeners left on a signal. The MCP,
+ * readiness and score routes and page-fetch are loaded before the first case
+ * starts, so no case's time includes their load, and one case each for the MCP
+ * and readiness routes reads its source instead of running it. The cases run
+ * concurrently, each on its own URLs; the last one runs once the others have
+ * settled.
  *
  * The MCP read limits are stated here (MCP_READ_LIMITS), as the read deadline
  * is (MCP_DEADLINE_S): a route file cannot export them. The bodies of the
@@ -105,12 +140,52 @@
  *     status, as a gzip body, as a corrupt gzip body, and cut by a shared
  *     budget. Between them they reach every place the transport settles a
  *     read other than an abort.
+ *   - A POST carries its body: a 46 byte tools/list request reaches the server
+ *     with content-length 46. After a 307 or a 308 the URL it lands on
+ *     receives the same POST; after a 301, a 302 or a 303 it receives a GET
+ *     with no body and none of the headers that describe one (content-type,
+ *     content-encoding, content-language and content-location), while a
+ *     header that describes no body is kept. A 307 after a 303 repeats that
+ *     GET, with no body. A PUT is repeated, its body included, after a 302,
+ *     and becomes such a GET after a 303. A HEAD stays a HEAD through a 303,
+ *     its headers kept. Each is as fetch follows that redirect.
+ *   - Each hop of a redirect is checked as the first is. A POST sent through
+ *     a 307 or a 308 to a host whose DNS answer is 127.0.0.1 is refused at
+ *     that hop's DNS check, after its host is looked up, and one sent to
+ *     http://169.254.169.254/ (the cloud metadata address) at that hop's URL
+ *     check, before any lookup; neither target is asked.
+ *   - A request body is sent as its bytes, with their count as its
+ *     content-length: a string past ASCII (3 characters, 9 bytes), an
+ *     ArrayBuffer, and a view of part of a buffer (only the bytes it views).
+ *     A content-length the caller passes is replaced by the true one, sent
+ *     once. A body of another kind (URLSearchParams), and a body on a GET, a
+ *     HEAD or a request that names no method (a GET), is refused with a
+ *     TypeError before its host is looked up, and no request is made.
  *   - A server that sends one byte a second is ended by the caller's 3 s
  *     signal at its deadline, with an AbortError, and the request is
  *     destroyed. Each MCP read of such a server (designesy_tokens_score,
  *     designesy_motion_score, and designesy_llms_txt through cachedFetch)
  *     ends at the route's 15 s read deadline with an error saying the fetch
  *     timed out after 15 s, and its request is destroyed.
+ *   - A read given a signal ends at that signal alone. A server that sends
+ *     nothing for 6 s mid-body is read whole by a caller whose signal ends
+ *     at 12 s. On a connection kept alive from an answer that gave a 5 s
+ *     Keep-Alive timeout, a server that sends nothing for 4.5 s before it
+ *     answers is read by a caller whose signal ends at 5 s, and so is one
+ *     quiet for 1.5 s after an answer that gave 2 s; neither read opens a
+ *     connection of its own. designesy_tokens_score on a server that sends
+ *     its headers and then nothing ends at the 15 s read deadline with the
+ *     route's timeout error, its request destroyed.
+ *   - A read given no signal fails once its server has sent nothing for 15 s
+ *     since its headers arrived, with "SSRF guard: fetch timeout", its request
+ *     destroyed. The 15 s are timed from their arrival, where the server's
+ *     quiet starts: with the other cases running at once, the headers can take
+ *     more than a second to arrive.
+ *   - Every safeFetch call in the site's app directory (url-guard's own
+ *     aside), and fetchContract's call of the fetcher it is handed, passes a
+ *     signal that a timer fires: an AbortSignal.timeout, or the signal of an
+ *     AbortController that a setTimeout in the same function aborts. These
+ *     are the seven reads a route makes through the guard.
  *   - Each MCP read of a body 1 MiB past its limit fails with "Fetch failed:
  *     the response is over the N MiB read limit": designesy_tokens_score
  *     (4 MiB), designesy_motion_score (16 MiB) and designesy_llms_txt
@@ -159,9 +234,9 @@
  *     token file that answers, and designesy_llms_full_txt (cachedFetch) a
  *     document that answers.
  *   - designesy_tokens_score still reads a token file whose server is quiet
- *     for 8 s before it answers. With a signal and no idle timeout of its
- *     own, Node's global agent ends a socket that is quiet for 5 s, so a
- *     read given only the deadline's signal fails there at 5 s.
+ *     for 8 s before it answers. The read passes its 15 s deadline's signal
+ *     and no idle timeout, so url-guard turns off the 5 s idle timeout
+ *     Node's agent gives the socket, and the deadline is the read's only one.
  *   - A token file that starts with two byte order marks is read, or fails,
  *     as res.json() reads or fails on the same bytes (on Node 24.15.0 it is
  *     read). This holds on the route from before the read limits.
@@ -195,12 +270,42 @@
  *     reads, sent with no content coding, at most one socket read past the
  *     limit reached the client, the request was destroyed, and the server
  *     never finished sending.
+ *   - Readiness r04 on the mcp-handler endpoint is PASS with its one tool,
+ *     and the endpoint received the 46 byte request; reached through a 307,
+ *     r04 is PASS the same way. Through a 302 the endpoint receives a GET,
+ *     which it answers 405, and r04 is WARN with that status. The same
+ *     endpoint answers a tools/list POST that carries no body with 400.
+ *   - Each caller whose signal ends at 8 s reads a server that sends nothing
+ *     for 6 s before it answers: readiness r02 is PASS for such an /llms.txt,
+ *     the score route scores such a page, and page-fetch (the drift,
+ *     guardrails, monitor and compare routes' page read) reads it. The score
+ *     route reports a page at a www. URL that sends its headers and then
+ *     nothing on both of its candidate URLs (that URL and its http:// address)
+ *     as unreachable because the request timed out, at 2 x 8 s.
+ *   - page-fetch reads a page's stylesheets one after another, and asks for
+ *     none once 20 s have passed since it asked for the first. On a page that
+ *     is quiet for 2 s before it answers, whose first sheet answers at once,
+ *     whose next three send their headers and then nothing, and whose fifth
+ *     answers at once, it asks for each quiet sheet as the one before it ends,
+ *     at about 0, 8 and 16 s after it asked for the first, its read ends 20 s
+ *     after that with the first sheet's CSS, and the fifth is never asked for.
+ *     Each time is taken from when the first sheet was asked for, which the
+ *     phase is timed from. Those times hold the phase only to within their
+ *     margins, so the case also reads page-fetch's STYLESHEET_DEADLINE_MS,
+ *     which must be 20 s. On a page whose second sheet sends its headers and
+ *     then nothing and whose others answer at once, it ends that sheet at its
+ *     8 s deadline and reads the four others.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
  *     safeFetch calls (probeUrl's and r04's) passes it as maxBodyBytes.
  *     (probeUrl's passes it for a GET; every probe the checks make is one.)
  *   - The readiness route's cache and the report route's (which keeps the
  *     readiness result each report was made with) carry the key part
- *     'read-limit-4mib' in their unstable_cache keys.
+ *     'read-limit-4mib' in their unstable_cache keys. They, and the drift,
+ *     guardrails, monitor and compare routes' caches, carry the key part
+ *     'request-body-deadline', since the request body and deadline work
+ *     moves results each of them keeps. The score route's cache (scoreUrl)
+ *     is keyed by the deployment's commit (VERCEL_GIT_COMMIT_SHA), so a
+ *     deploy starts it clean.
  *   - Readiness controls, which hold on the readiness route from before its
  *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
  *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
@@ -255,10 +360,9 @@
  * uncopied puts the 9 byte and the 101 byte chunks in the shared pool,
  * beside the earlier read's body; one that never listens to the caller's
  * signal leaves the drip open at the case deadline; and a rejection left
- * unhandled, or a throw in a timer, fails the last. A route that gives
- * readUrl's safeFetch the signal and no idleTimeoutMs fails the 8 s quiet
- * case at 5 s; main's route, which passed no signal and so kept url-guard's
- * 15 s idle timeout, holds it.
+ * unhandled, or a throw in a timer, fails the last. main's MCP route, which
+ * passed no signal and so kept url-guard's 15 s idle timeout, holds the 8 s
+ * quiet case.
  *
  * Against the MCP route from before the read limits, whose readUrl takes no
  * limit and passes safeFetch no maxBodyBytes, with the rest of the tree as
@@ -366,11 +470,95 @@
  *
  * The cache key case fails on the tree from before the read limits, whose
  * readiness and report caches carry no such part, and on one whose report
- * cache alone lacks it.
+ * cache alone lacks it. It fails too on the tree before the six caches
+ * carried 'request-body-deadline', naming each of the six, and on one whose
+ * compare cache alone lacks it.
+ *
+ * Against the tree from before the requests and deadline cases, nine of them
+ * fail: the two sheet cases (below), the POST case (each URL receives a POST
+ * with 0 body bytes), the body kinds case (below), the mcp-handler r04 case
+ * (WARN with HTTP 400, also through the 307 and the 302), the 6 s mid-body
+ * case (it ends at about 5 s with "SSRF guard: fetch timeout"), the keep-alive
+ * case (at 4 s after the 5 s Keep-Alive timeout and at 1 s after the 2 s one),
+ * the 8 s callers case (r02 is FAIL, the score route reports the page
+ * unreachable and page-fetch reads nothing) and the silent page case
+ * (unreachable at about 10 s, because the request failed at the network
+ * level). Its MCP route passed its 15 s deadline as an idle timeout too, so
+ * the silent MCP case holds there; with that taken out, the silent MCP case
+ * and the 8 s quiet case fail at about 5 s. A url-guard that leaves the
+ * agent's idle timeout on for a read given a signal fails the 6 s mid-body,
+ * keep-alive, silent MCP, 8 s quiet, 8 s callers and silent page cases. One
+ * that follows every redirect with the caller's method and body fails the POST
+ * case after the 301, the 302 and the 303 (and the PUT after the 303), and the
+ * r04 case through the 302. The POST case also fails against a url-guard that
+ * keeps content-language and content-location on the GET, one that makes a PUT
+ * a GET after a 302, one that makes a 308 a GET, one that repeats a POST after
+ * a 301, and one that makes a HEAD a GET after a 303. One that keeps
+ * content-encoding on the GET fails it after the 301, the 302 and the 303,
+ * and one that works out each hop's request from the caller's, not from the
+ * hop before, sends the POST and its body again after the 303 and the 307.
+ *
+ * The hop case holds on that tree and on the tree from before the read
+ * limits: it pins, for a later change, what the guard already did on each
+ * hop. A url-guard that runs the DNS check on the first hop only lets the
+ * 307 and the 308 reach the hosts that resolve to 127.0.0.1; one that runs
+ * the URL check on the first hop only looks the metadata address up and
+ * refuses it with the DNS check's error; and one that runs neither after
+ * the first hop reaches all four. Each of the three passes the gate as it
+ * stood before the hop case.
+ *
+ * On that tree each body of the body kinds case arrives with content-length
+ * 0, the one whose caller passed a content-length of 999 is sent with that
+ * header and no body and fails at the 15 s idle timeout, and URLSearchParams,
+ * a body on a GET, a body on a HEAD and a body with no method are each sent
+ * (HTTP 404, as the server lists none of those URLs). Against the tree that
+ * merged the read limits into this change, before the guard checked a body
+ * ahead of the DNS check, it fails on the three refusals: URLSearchParams
+ * is refused only after its host is looked up, and the GET and the HEAD are
+ * sent with their body. A url-guard that counts a string body's length in
+ * characters, one that sends the whole buffer behind a view, one that sends
+ * a URLSearchParams body as no body, one that checks the body only as each
+ * hop is requested, one that sends a body with a GET or HEAD, and one that
+ * takes a request that names no method as a POST each fail it. The guard
+ * both drops a content-length its caller passes and sets the true one, and
+ * Node would set it from the body too, so a url-guard without either one
+ * still sends the true length, once, and holds the case; one without both
+ * sends the caller's 999 and fails it at the 15 s idle timeout.
+ *
+ * The sheet phase case fails on every tree before page-fetch bounded its
+ * stylesheets: on the tree before that bound, where each quiet sheet lasts its
+ * 8 s, the fifth is asked for about 24 s after the first and read; on the tree
+ * before this change, where url-guard ended each quiet sheet at 5 s, when
+ * the agent's idle timeout fired, about 15 s after it. The one quiet sheet
+ * case fails on the tree before this change, where that sheet ends at about
+ * 5 s, and holds on the tree before the bound. Four changes to page-fetch
+ * each fail cases too. One whose sheets have no 8 s deadline of their own,
+ * only the phase's, fails both: in the sheet phase case the third sheet is
+ * never asked for, and in the one quiet sheet case none of the three sheets
+ * after the quiet one is read. One that times
+ * the phase from before the page read fails the sheet phase case, which then
+ * ends about 18 s after the first sheet is asked for. One whose phase does not
+ * end the sheet being read fails it at about 24 s, and one that asks for
+ * sheets once the phase is over fails it by asking for the fifth at 20 s and
+ * reading it. A page-fetch whose phase is 21.8 s or 19.6 s asks for and ends
+ * its sheets within the case's margins, and fails it on its
+ * STYLESHEET_DEADLINE_MS alone.
+ *
+ * A score route whose cache key holds no commit fails the cache key case.
+ *
+ * The no-signal case and the call-site case hold on the trees from before
+ * this change and from before the read limits, where each of those reads
+ * had its timer and a read given no signal had the same 15 s idle timeout;
+ * they pin both for a later change. A url-guard that sets no idle timeout
+ * on any read leaves the no-signal read open at the case deadline, and a
+ * page-fetch whose fetchText passes no signal, or whose timer does not
+ * abort it, fails the call-site case.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 27 of the 53 cases fail and every
- * control holds.
+ * readiness route from before them), 36 of the 66 cases fail and every control
+ * holds: the 27 the read limits make fail there (24 rule cases and 3 source
+ * cases, the cache key case among them) and the nine requests and deadline
+ * cases above.
  *
  * Usage:  node scripts/check-fetch-bounds.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -408,10 +596,36 @@ const DOC_LIMIT = MCP_READ_LIMITS.cachedFetch;
 const READINESS_LIMIT = 4 * MiB;
 /** The key part the readiness and report routes' caches carry since the read limits, so no result cached before them is read. */
 const CACHE_KEY_PART = 'read-limit-4mib';
+/** The key part each cache whose results the request body and deadline work moves carries, so no result cached before it is read. */
+const REQUEST_KEY_PART = 'request-body-deadline';
 /** How far past its limit an over-limit body runs. */
 const PAST_LIMIT = MiB;
 /** The deadline the transport-level drip case passes as its own signal. */
 const SIGNAL_DEADLINE_S = 3;
+/** How long the quiet case's server sends nothing mid-body: longer than the 5 s idle timeout of Node's global agent. */
+const QUIET_S = 6;
+/**
+ * The keep-alive case: each [Keep-Alive timeout its first answer gives, how
+ * long its second is quiet], and the signal of each read. Node's agent then
+ * gives the socket an idle timeout 1 s less than that timeout (4 s for 5,
+ * and 1 s for 2), on which url-guard ended the read before this change.
+ */
+const KEEP_ALIVE = [[5, 4.5], [2, 1.5]];
+const KEEP_ALIVE_SIGNAL_S = 5;
+/** url-guard's idle timeout for a read given no signal. */
+const NO_SIGNAL_IDLE_S = 15;
+/** The deadline of the readiness probes, the score route's page read and page-fetch's (an 8 s abort in each). */
+const CALLER_DEADLINE_S = 8;
+/** page-fetch's STYLESHEET_DEADLINE_MS: how long a page's stylesheets may take in all. */
+const SHEET_PHASE_S = 20;
+/** The sheets of the sheet phase case: the first and the last answer at once, the three between send their headers and then nothing. */
+const SHEET_FIRST = '.first-sheet { color: rgb(17, 17, 17); }';
+const SHEET_LAST = '.last-sheet { color: rgb(34, 34, 34); }';
+/** How long the sheet phase case's page is quiet before it answers: the phase is timed from the first sheet, after the page. */
+const SHEETS_PAGE_QUIET_S = 2;
+/** The sheets of the one quiet sheet case, s0, s2, s3 and s4, which answer at once; s1 sends its headers and then nothing. */
+const ONE_QUIET_SHEETS = [0, 2, 3, 4].map((i) => [i, `.sheet-${i} { color: rgb(${i}, ${i}, ${i}); }`]);
+const SHEETS_PAGE = `<!doctype html><html lang="en"><head><title>Sheets</title>${[0, 1, 2, 3, 4].map((i) => `<link rel="stylesheet" href="/s${i}.css">`).join('')}</head><body><main><h1>Sheets</h1><p>A page whose sheets are slow.</p></main></body></html>`;
 /** The listener case's signals: they outlive each read, and end one that never settles before the case deadline. */
 const LISTEN_SIGNAL_S = 10;
 /** Node hands a socket's bytes to the response in reads of at most 64 KiB, so this much can arrive past a cap before the check sees it. */
@@ -428,8 +642,15 @@ const TOKENS = JSON.stringify({
 });
 const LOTTIE = JSON.stringify({ v: '5.12.2', fr: 60, ip: 0, op: 18, w: 64, h: 64, layers: [], markers: [{ cm: 'reduced-motion', tm: 0, dr: 0 }], meta: { g: 'fetch bounds' } });
 
-/** host + path -> the client side of the last request: body bytes received, and the request. */
+/**
+ * host + path -> the client side of the last request: body bytes received,
+ * the request, when it was asked for (at) and when its headers arrived
+ * (headersAt), each from performance.now().
+ */
 const seen = new Map();
+
+/** Hosts answered by a server of their own (KEEP_ALIVE_PORT), so no other case's request takes the connection it keeps alive. */
+const KEEP_ALIVE_HOSTS = new Set(['keepalive.example.com']);
 
 // The guard's sockets reach the local server; every other option (the
 // method, the headers, the timeout, the signal handling) is the guard's own.
@@ -437,11 +658,13 @@ const toLocal = (real) => ({
   ...real,
   request(opts, cb) {
     const key = `${opts.hostname}${opts.path}`;
-    const o = { ...opts, hostname: '127.0.0.1', port: PORT, headers: { ...(opts.headers || {}), 'x-fetch-bounds-host': opts.hostname } };
+    const port = KEEP_ALIVE_HOSTS.has(opts.hostname) ? KEEP_ALIVE_PORT : PORT;
+    const o = { ...opts, hostname: '127.0.0.1', port, headers: { ...(opts.headers || {}), 'x-fetch-bounds-host': opts.hostname } };
     delete o.lookup;
-    const record = { received: 0, req: null, wake: null };
+    const record = { received: 0, req: null, wake: null, at: performance.now(), headersAt: null };
     seen.set(key, record);
     record.req = http.request(o, (res) => {
+      record.headersAt = performance.now();
       res.on('data', (c) => {
         record.received += c.length;
         // A paced body waiting on the client goes on.
@@ -454,7 +677,17 @@ const toLocal = (real) => ({
     return record.req;
   },
 });
-const lookup = async () => [{ address: '93.184.215.14', family: 4 }];
+/** Hosts whose DNS answer is a loopback address: a redirect's targets, which the guard must refuse at that hop. */
+const PRIVATE_HOSTS = new Set(['private-307.example.com', 'private-308.example.com']);
+/** Every host the guard's DNS check was asked about. */
+const looked = new Set();
+const lookup = async (hostname) => {
+  looked.add(hostname);
+  // An IPv4 address resolves to itself, as dns.lookup gives it.
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return [{ address: hostname, family: 4 }];
+  if (PRIVATE_HOSTS.has(hostname)) return [{ address: '127.0.0.1', family: 4 }];
+  return [{ address: '93.184.215.14', family: 4 }];
+};
 
 /**
  * Errors thrown where no caller could catch them (in a stream listener, say):
@@ -476,17 +709,22 @@ const onUncaught = (kind) => (e) => {
 process.on('uncaughtException', onUncaught('uncaught'));
 process.on('unhandledRejection', onUncaught('unhandled rejection'));
 
+// The score route imports the DESIGN.md linter, an ES module, which the
+// harness hands it as check-score-read-bounds.mjs does.
+const { lint } = await import('@google/design.md/linter');
 const h = createHarness({
   app: APP,
   realSafeFetch: true,
   lookup,
-  stubs: { 'node:http': toLocal(http), 'node:https': toLocal(https) },
+  stubs: { 'node:http': toLocal(http), 'node:https': toLocal(https), '@google/design.md/linter': { lint } },
 });
 const guard = h.load('app/lib/url-guard.ts');
 const { safeFetch } = guard;
-// Load the MCP and readiness routes before any case starts, so no case's time includes their load.
+// Load the routes and page-fetch before any case starts, so no case's time includes their load.
 h.load('app/api/mcp/route.ts');
 h.load('app/api/readiness/route.ts');
+h.load('app/api/score/route.ts');
+const { fetchPageResilient } = h.load('app/lib/page-fetch.ts');
 
 // ── Bodies ───────────────────────────────────────────────────────────────────
 
@@ -627,6 +865,73 @@ const ROUTES = {
   'motion-500.example.com/anim.json': { status: 500, bytes: NOISE, paced: true },
   'tokens-302.example.com/tokens.json': { status: 302, location: 'https://tokens-302-landed.example.com/tokens.json', bytes: NOISE, paced: true },
   'tokens-302-landed.example.com/tokens.json': { body: TOKENS, type: 'application/json', hopFrom: 'tokens-302.example.com/tokens.json' },
+  // A POST, sent straight and through each kind of redirect, and the URLs it lands on.
+  'post-direct.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-307.example.com/rpc': { status: 307, location: 'https://post-landed-307.example.com/rpc' },
+  'post-landed-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-302.example.com/rpc': { status: 302, location: 'https://post-landed-302.example.com/rpc' },
+  'post-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-303.example.com/rpc': { status: 303, location: 'https://post-landed-303.example.com/rpc' },
+  'post-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-301.example.com/rpc': { status: 301, location: 'https://post-landed-301.example.com/rpc' },
+  'post-landed-301.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-308.example.com/rpc': { status: 308, location: 'https://post-landed-308.example.com/rpc' },
+  'post-landed-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A POST through a 303 and then a 307: the 307 repeats the GET the 303 made.
+  'post-303-307.example.com/rpc': { status: 303, location: 'https://post-mid-303-307.example.com/rpc' },
+  'post-mid-303-307.example.com/rpc': { status: 307, location: 'https://post-landed-303-307.example.com/rpc' },
+  'post-landed-303-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A POST through a 307 or a 308 to a host whose DNS answer is 127.0.0.1,
+  // and to the cloud metadata address. The targets are listed so that a
+  // request that reached one would be answered, and seen.
+  'post-private-307.example.com/rpc': { status: 307, location: 'https://private-307.example.com/rpc' },
+  'post-private-308.example.com/rpc': { status: 308, location: 'https://private-308.example.com/rpc' },
+  'private-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'private-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-metadata-307.example.com/rpc': { status: 307, location: 'http://169.254.169.254/latest/meta-data/307' },
+  'post-metadata-308.example.com/rpc': { status: 308, location: 'http://169.254.169.254/latest/meta-data/308' },
+  '169.254.169.254/latest/meta-data/307': { body: 'ok', type: 'text/plain' },
+  '169.254.169.254/latest/meta-data/308': { body: 'ok', type: 'text/plain' },
+  // A HEAD through a 303, which stays a HEAD.
+  'head-303.example.com/rpc': { status: 303, location: 'https://head-landed-303.example.com/rpc' },
+  'head-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A PUT through a 302, which repeats it, and through a 303, which makes it a GET.
+  'put-302.example.com/rpc': { status: 302, location: 'https://put-landed-302.example.com/rpc' },
+  'put-landed-302.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'put-303.example.com/rpc': { status: 303, location: 'https://put-landed-303.example.com/rpc' },
+  'put-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // Bodies of each kind the guard sends.
+  'body-kinds.example.com/text': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/buffer': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/view': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/length': { body: 'ok', type: 'text/plain' },
+  // Servers that go quiet: mid-body, after the headers for good, and before
+  // the headers on a connection an earlier answer kept alive.
+  'quiet.example.com/': { bytes: Buffer.from(PAGE), length: true, pause: QUIET_S * 1000 },
+  'tokens-silent.example.com/tokens.json': { silent: true, type: 'application/json' },
+  ...Object.fromEntries(KEEP_ALIVE.flatMap(([hint, quiet]) => [
+    [`keepalive.example.com/first-${hint}`, { body: 'the first answer', type: 'text/plain', keepAlive: hint }],
+    [`keepalive.example.com/quiet-${hint}`, { body: PAGE, type: 'text/html', delayMs: quiet * 1000 }],
+  ])),
+  // Headers, and then nothing, read with no signal.
+  'nosignal-silent.example.com/': { silent: true, type: 'text/plain' },
+  // A page whose server is quiet for QUIET_S before it answers, for the score route and for page-fetch.
+  'score-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
+  'page-quiet.example.com/': { body: PAGE, type: 'text/html', delayMs: QUIET_S * 1000 },
+  // A page that sends its headers and then nothing, on both of the score route's candidate URLs (https and http).
+  'www.score-silent.example.com/': { silent: true, type: 'text/html' },
+  // A page quiet for SHEETS_PAGE_QUIET_S before it answers, linking five
+  // sheets: the first and the last answer at once, the three between send
+  // their headers and then nothing.
+  'www.sheets-phase.example.com/': { body: SHEETS_PAGE, type: 'text/html', delayMs: SHEETS_PAGE_QUIET_S * 1000 },
+  'www.sheets-phase.example.com/s0.css': { body: SHEET_FIRST, type: 'text/css' },
+  ...Object.fromEntries([1, 2, 3].map((i) => [`www.sheets-phase.example.com/s${i}.css`, { silent: true, type: 'text/css' }])),
+  'www.sheets-phase.example.com/s4.css': { body: SHEET_LAST, type: 'text/css' },
+  // A page that answers at once, linking the same five sheets: the second
+  // sends its headers and then nothing, and the others answer at once.
+  'www.sheet-one-quiet.example.com/': { body: SHEETS_PAGE, type: 'text/html' },
+  'www.sheet-one-quiet.example.com/s1.css': { silent: true, type: 'text/css' },
+  ...Object.fromEntries(ONE_QUIET_SHEETS.map(([i, css]) => [`www.sheet-one-quiet.example.com/s${i}.css`, { body: css, type: 'text/css' }])),
 };
 const LLMS = 'www.designesy.org/llms.txt';
 const LLMS_OVER = { bytes: DOC_OVER, paced: true, type: 'text/plain' };
@@ -719,6 +1024,13 @@ const READY_FILES = {
   'ready-500.example.com': { '/llms.txt': { status: 500, bytes: NOISE, paced: true, type: 'text/plain' } },
   'ready-302.example.com': { '/llms.txt': { status: 302, location: 'https://ready-302-landed.example.com/llms.txt', bytes: NOISE, paced: true } },
   'ready-302-landed.example.com': { '/llms.txt': { body: '# Read limits\n\nA brief reached through a redirect.\n', type: 'text/plain', hopFrom: 'ready-302.example.com/llms.txt' } },
+  // An MCP endpoint built with mcp-handler (mcpEndpoint, below), which reads the request it is sent.
+  'ready-mcp-handler.example.com': { '/api/mcp': { mcp: true } },
+  // Sites whose /api/mcp redirects to that endpoint with a 307 and with a 302.
+  'ready-mcp-307.example.com': { '/api/mcp': { status: 307, location: 'https://ready-mcp-handler.example.com/api/mcp' } },
+  'ready-mcp-302.example.com': { '/api/mcp': { status: 302, location: 'https://ready-mcp-handler.example.com/api/mcp' } },
+  // An llms.txt whose server is quiet for QUIET_S before it answers.
+  'ready-quiet.example.com': { '/llms.txt': { body: '# Read limits\n\nA brief sent after a quiet start.\n', type: 'text/plain', delayMs: QUIET_S * 1000 } },
   // An llms.txt that starts with two byte order marks and holds two bytes that are not UTF-8.
   'ready-bom.example.com': { '/llms.txt': { bytes: Buffer.concat([BOM, BOM, Buffer.from('# Read limits\n\n'), Buffer.from([0xff, 0xfe]), Buffer.from('\nA brief.\n')]), type: 'text/plain' } },
   'ready-404.example.com': {
@@ -746,9 +1058,50 @@ for (const [host, files] of Object.entries(READY_FILES)) {
 
 /** host + path -> what the server managed to send: bytes handed to the socket, and whether the body finished. */
 const sent = new Map();
+/**
+ * host + path -> what the last request carried: its method, its
+ * content-length, content-type, content-encoding, content-language and
+ * content-location headers, how many content-length headers it sent, an
+ * x-kept header that describes no body, and its body.
+ */
+const asked = new Map();
 
-const server = http.createServer((req, res) => {
-  const key = `${req.headers['x-fetch-bounds-host']}${req.url}`;
+// An MCP endpoint built with mcp-handler, the package app/api/mcp/route.ts
+// serves its tools with, listing one tool. It reads the request it is sent:
+// a tools/list POST with no body is answered 400. The package resolves from
+// the app checked, then from this checkout, as the harness's packages do.
+const fromApp = createRequire(path.join(APP, 'package.json'));
+const appRequire = (spec) => {
+  try {
+    return fromApp(spec);
+  } catch (e) {
+    if (e && e.code === 'MODULE_NOT_FOUND') return require(spec);
+    throw e;
+  }
+};
+const { z } = appRequire('zod');
+const mcpEndpoint = appRequire('mcp-handler').createMcpHandler((mcp) => {
+  mcp.registerTool('read_limits', { description: 'A tool the fetch bounds gate lists.', inputSchema: z.object({}) }, async () => ({ content: [{ type: 'text', text: 'ok' }] }));
+}, { serverInfo: { name: 'fetch-bounds', version: '1.0.0' } });
+
+/** Answers a request on the endpoint above. */
+async function answerMcp(host, req, res, body) {
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers)) if (typeof v === 'string' && k !== 'x-fetch-bounds-host') headers.set(k, v);
+  const r = await mcpEndpoint(new Request(`https://${host}${req.url}`, { method: req.method, headers, body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body }));
+  const text = await r.text();
+  res.writeHead(r.status, { 'content-type': r.headers.get('content-type') || 'text/plain' });
+  res.end(text);
+}
+
+/** The connections the keep-alive case's server has accepted. */
+let keepAliveConnections = 0;
+
+// What a request found when it arrived is recorded then; it is answered once
+// its body has been read, and the body is recorded in `asked`.
+const handle = (req, res) => {
+  const host = req.headers['x-fetch-bounds-host'];
+  const key = `${host}${req.url}`;
   const b = ROUTES[key] || { status: 404, body: 'not here' };
   const stat = { written: 0, finished: false };
   // The next hop of a redirect: how far the redirect's body had got, on
@@ -761,18 +1114,51 @@ const server = http.createServer((req, res) => {
   sent.set(key, stat);
   res.on('error', () => {});
   res.on('finish', () => { stat.finished = true; });
+  const chunks = [];
+  req.on('data', (c) => chunks.push(c));
+  req.on('end', () => {
+    const requestBody = Buffer.concat(chunks);
+    asked.set(key, {
+      method: req.method,
+      length: req.headers['content-length'],
+      lengths: req.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === 'content-length').length,
+      type: req.headers['content-type'],
+      encoding: req.headers['content-encoding'],
+      language: req.headers['content-language'],
+      place: req.headers['content-location'],
+      kept: req.headers['x-kept'],
+      body: requestBody,
+    });
+    answer(b, key, host, req, res, stat, requestBody);
+  });
+};
+
+function answer(b, key, host, req, res, stat, requestBody) {
   // A read that fails: the connection closes before any answer.
   if (b.reset) return req.socket.destroy();
+  if (b.mcp) return answerMcp(host, req, res, requestBody);
   // A server that is quiet before it answers, well inside the read deadline.
   if (b.delayMs) {
-    setTimeout(() => { res.writeHead(200, { 'content-type': b.type }); res.end(b.body); }, b.delayMs);
+    const t = setTimeout(() => { res.writeHead(200, { 'content-type': b.type }); res.end(b.body); }, b.delayMs);
+    res.on('close', () => clearTimeout(t));
     return;
   }
   const headers = { 'content-type': b.type || 'text/html' };
   if (b.location) headers.location = b.location;
   if (b.encoding) headers['content-encoding'] = b.encoding;
   if (b.length) headers['content-length'] = String(b.bytes.length);
+  // The Keep-Alive timeout a server gives, which Node's agent reads when it keeps the connection.
+  if (b.keepAlive) headers['keep-alive'] = `timeout=${b.keepAlive}`;
   res.writeHead(b.status || 200, headers);
+  // Headers, and then nothing: the connection stays open until the client closes it.
+  if (b.silent) return res.flushHeaders();
+  // The first 16 bytes, nothing for `pause` ms, then the rest.
+  if (b.pause) {
+    res.write(b.bytes.subarray(0, 16));
+    const t = setTimeout(() => res.end(b.bytes.subarray(16)), b.pause);
+    res.on('close', () => clearTimeout(t));
+    return;
+  }
   if (b.drip) {
     res.flushHeaders();
     const t = setInterval(() => { stat.written += 1; res.write('a'); }, 1000);
@@ -802,12 +1188,22 @@ const server = http.createServer((req, res) => {
     res.end();
   };
   pump();
-});
-server.requestTimeout = 0;
-server.headersTimeout = 0;
-server.keepAliveTimeout = 0;
+}
+
+const server = http.createServer(handle);
+const keepAliveServer = http.createServer(handle);
+keepAliveServer.on('connection', () => { keepAliveConnections += 1; });
+for (const s of [server, keepAliveServer]) {
+  s.requestTimeout = 0;
+  s.headersTimeout = 0;
+  // No Keep-Alive timeout of the server's own, so it closes no connection
+  // and names none but the one a route gives.
+  s.keepAliveTimeout = 0;
+}
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
+await new Promise((r) => keepAliveServer.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
+const KEEP_ALIVE_PORT = keepAliveServer.address().port;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -852,6 +1248,15 @@ async function heldToCap(key, cap, resp) {
   const s = sent.get(key);
   assert.equal(s.finished, false, `the server finished sending all ${ROUTES[key].bytes.length} bytes`);
   return `${body.length} bytes returned; ${atResolve} of ${ROUTES[key].bytes.length} received (${atResolve - cap} past the cap), server sent ${s.written} before the socket closed`;
+}
+
+/** How a read settled: the text of the Response `work` resolves with, or the error it rejects with. */
+async function settledRead(work) {
+  try {
+    return { text: await (await work).text() };
+  } catch (e) {
+    return { err: e };
+  }
 }
 
 /** The time, in seconds, `work` takes to reject, and the error. */
@@ -983,13 +1388,26 @@ async function hopAfterLimit(key, landed, limit) {
 /** Runs labelled reads one after another, and fails naming each that failed. */
 async function eachRead(reads) {
   const out = [];
-  for (const [label, read] of reads) {
-    try {
-      out.push({ wrong: false, text: `${label}: ${await read()}` });
-    } catch (e) {
-      out.push({ wrong: true, text: `${label}: ${String(e && e.message).split('\n')[0]}` });
-    }
+  for (const [label, read] of reads) out.push(await labelled(label, read));
+  return reported(out);
+}
+
+/** Runs labelled reads at the same time, and fails naming each that failed. */
+async function readsTogether(reads) {
+  return reported(await Promise.all(reads.map(([label, read]) => labelled(label, read))));
+}
+
+/** A labelled read's outcome: what it says, or the first line of the error that failed it. */
+async function labelled(label, read) {
+  try {
+    return { wrong: false, text: `${label}: ${await read()}` };
+  } catch (e) {
+    return { wrong: true, text: `${label}: ${String(e && e.message).split('\n')[0]}` };
   }
+}
+
+/** The labelled outcomes, joined; fails naming each that failed. */
+function reported(out) {
   const wrong = out.filter((o) => o.wrong);
   assert.equal(wrong.length, 0, wrong.map((o) => o.text).join('; '));
   return out.map((o) => o.text).join('; ');
@@ -1235,6 +1653,223 @@ const CONCURRENT = [
       assert.equal(rec.req.destroyed, true, 'the request was not destroyed');
       return `${s.toFixed(2)} s, ${rec.received} bytes received`;
     },
+  },
+  {
+    name: `a read given no signal fails once its server has sent nothing for ${NO_SIGNAL_IDLE_S} s`,
+    run: async () => {
+      const key = 'nosignal-silent.example.com/';
+      const { err, s } = await timedRejection(safeFetch(`https://${key}`));
+      const end = performance.now();
+      assert.equal(err.message, 'SSRF guard: fetch timeout', `ended with ${err.name}: ${err.message}`);
+      // The server goes quiet once it has sent the headers, so the idle
+      // timeout is timed from their arrival. With the other cases running at
+      // once, they can take seconds to arrive after the call.
+      const rec = seen.get(key);
+      assert.ok(rec.headersAt, `the headers never arrived (ended after ${s.toFixed(2)} s)`);
+      const quiet = (end - rec.headersAt) / 1000;
+      endedAt(quiet, NO_SIGNAL_IDLE_S);
+      assert.equal(rec.req.destroyed, true, 'the request was not destroyed');
+      return `${quiet.toFixed(2)} s after the headers arrived (${s.toFixed(2)} s after the call), "${err.message}"`;
+    },
+  },
+  {
+    name: 'every read the site makes through safeFetch passes a signal that a timer fires',
+    run: async () => {
+      // The app directory is read with fs.promises, a file at a time, since
+      // the other cases run at the same time. Read synchronously, its 475
+      // files once held this case and each case started before it for about
+      // 15 s on a busy machine, past the deadlines of the timed ones.
+      const files = [];
+      const walk = async (dir) => {
+        for (const e of await fs.promises.readdir(dir, { withFileTypes: true })) {
+          const p = path.join(dir, e.name);
+          if (e.isDirectory()) await walk(p);
+          else if (/\.tsx?$/.test(e.name)) files.push(p);
+        }
+      };
+      await walk(path.join(APP, 'app'));
+      // The text of a call's arguments, from `open` (just past its "(") to the
+      // ")" that closes it, past brackets and quoted strings.
+      const argsOf = (src, open) => {
+        let depth = 0;
+        for (let k = open; k < src.length; k++) {
+          const ch = src[k];
+          if (ch === "'" || ch === '"' || ch === '`') {
+            for (k++; k < src.length && src[k] !== ch; k++) if (src[k] === '\\') k++;
+          } else if ('([{'.includes(ch)) depth++;
+          else if (')]}'.includes(ch)) {
+            if (depth === 0) return src.slice(open, k);
+            depth--;
+          }
+        }
+        return src.slice(open);
+      };
+      // How `expr`, a call's signal, is fired, read from `fn` (its function up to the call), or null.
+      const firedBy = (expr, fn) => {
+        if (/^AbortSignal\.timeout\(/.test(expr)) return 'AbortSignal.timeout';
+        if (new RegExp(`\\bconst ${expr} = AbortSignal\\.timeout\\(`).test(fn)) return `${expr}, an AbortSignal.timeout`;
+        const c = /^(\w+)\.signal$/.exec(expr);
+        if (!c) return null;
+        const made = new RegExp(`\\bconst ${c[1]} = new AbortController\\(\\)`).test(fn);
+        const timed = new RegExp(`setTimeout\\(\\(\\) => (?:\\{[^}]*\\b${c[1]}\\.abort\\(\\)|${c[1]}\\.abort\\(\\))`).test(fn);
+        return made && timed ? `${expr}, aborted by a setTimeout` : null;
+      };
+      const found = [];
+      const wrong = [];
+      for (const file of files) {
+        const rel = path.relative(APP, file).split(path.sep).join('/');
+        if (rel === 'app/lib/url-guard.ts') continue;
+        const src = (await fs.promises.readFile(file, 'utf8')).replace(/\r\n/g, '\n');
+        // fetchContract reads a contract URL through the fetcher it is handed, url-guard's safeFetch.
+        const call = rel === 'app/lib/own-contract/fetch-contract.ts' ? /\bfetcher\(/g : /\bsafeFetch\(/g;
+        for (const { index, 0: name } of src.matchAll(call)) {
+          const before = src.slice(0, index);
+          if (/^\s*(?:\/\/|\/?\*)/.test(before.slice(before.lastIndexOf('\n') + 1))) continue;
+          const starts = [...before.matchAll(/^(?:export )?(?:async )?function (\w+)/gm)];
+          const fn = starts.length ? starts[starts.length - 1] : null;
+          const where = `${rel}:${before.split('\n').length} (${fn ? fn[1] : 'top level'})`;
+          const m = /\bsignal\b(?:\s*:\s*([\w.]+(?:\([^)]*\))?))?/.exec(argsOf(src, index + name.length));
+          const expr = m ? m[1] || 'signal' : null;
+          const how = expr && firedBy(expr, fn ? src.slice(fn.index, index) : '');
+          if (how) found.push(`${where}: ${how}`);
+          else wrong.push(`${where}: ${expr ? `${expr}, which no timer fires` : 'no signal'}`);
+        }
+      }
+      assert.equal(wrong.length, 0, wrong.join('; '));
+      assert.ok(found.length > 0, 'no safeFetch call found');
+      return `${found.length} calls: ${found.join('; ')}`;
+    },
+  },
+  {
+    name: `a server that goes quiet for ${QUIET_S} s mid-body is read whole by a caller whose signal ends at ${2 * QUIET_S} s`,
+    run: async () => {
+      const t0 = performance.now();
+      const read = await settledRead(safeFetch('https://quiet.example.com/', { signal: AbortSignal.timeout(2 * QUIET_S * 1000) }));
+      const s = (performance.now() - t0) / 1000;
+      assert.ok(read.text !== undefined, `ended at ${s.toFixed(2)} s with ${read.err && read.err.name}: ${read.err && read.err.message}`);
+      assert.equal(read.text, PAGE, `${read.text.length} of ${PAGE.length} bytes, not the page`);
+      assert.ok(s >= QUIET_S - 0.5, `${s.toFixed(2)} s: read before the server's ${QUIET_S} s pause ended`);
+      return `${s.toFixed(2)} s, ${read.text.length} bytes`;
+    },
+  },
+  {
+    name: `on a connection kept alive from an answer that gave a Keep-Alive timeout of ${KEEP_ALIVE.map(([hint]) => hint).join(' s or ')} s, a server that sends nothing for 0.5 s less than that before it answers is read by a caller whose signal ends at ${KEEP_ALIVE_SIGNAL_S} s`,
+    run: async () => {
+      const signal = () => AbortSignal.timeout(KEEP_ALIVE_SIGNAL_S * 1000);
+      return eachRead(KEEP_ALIVE.map(([hint, quiet]) => [`a ${hint} s Keep-Alive timeout, ${quiet} s quiet`, async () => {
+        const first = await resolution(safeFetch(`https://keepalive.example.com/first-${hint}`, { signal: signal() }));
+        assert.equal(await first.text(), 'the first answer');
+        // Node's agent keeps the connection once the answer has ended.
+        await new Promise((r) => setTimeout(r, SETTLE_MS));
+        const connections = keepAliveConnections;
+        const t0 = performance.now();
+        const read = await settledRead(safeFetch(`https://keepalive.example.com/quiet-${hint}`, { signal: signal() }));
+        const s = (performance.now() - t0) / 1000;
+        assert.equal(keepAliveConnections, connections, `the second read opened ${keepAliveConnections - connections} connection(s) of its own, so it did not use the one kept alive`);
+        assert.ok(read.text !== undefined, `ended at ${s.toFixed(2)} s with ${read.err && read.err.name}: ${read.err && read.err.message}`);
+        assert.equal(read.text, PAGE, `${read.text.length} of ${PAGE.length} bytes, not the page`);
+        assert.ok(s >= quiet - 0.5, `${s.toFixed(2)} s: read before the server's ${quiet} s quiet ended`);
+        return `${s.toFixed(2)} s, ${read.text.length} bytes, on the connection the first answer kept alive`;
+      }]));
+    },
+  },
+  {
+    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, a 307 after a 303 repeats that GET, a PUT is repeated after a 302 and made a GET by a 303, and a HEAD stays a HEAD through a 303',
+    run: async () => {
+      const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      // Content-Type, Content-Encoding, Content-Language and Content-Location describe the body; X-Kept does not.
+      const headers = { 'Content-Type': 'application/json', 'Content-Encoding': 'identity', 'Content-Language': 'en', 'Content-Location': '/rpc', 'X-Kept': 'kept' };
+      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', encoding: 'identity', language: 'en', place: '/rpc', kept: 'kept', body };
+      const put = { ...posted, method: 'PUT' };
+      const got = { method: 'GET', length: undefined, type: undefined, encoding: undefined, language: undefined, place: undefined, kept: 'kept', body: '' };
+      // A HEAD is sent with no body, and a 303 repeats it as it is.
+      const headed = { ...posted, method: 'HEAD', length: undefined, body: '' };
+      return eachRead([
+        ['no redirect', 'POST', 'post-direct.example.com/rpc', 'post-direct.example.com/rpc', posted],
+        ['after a 307', 'POST', 'post-307.example.com/rpc', 'post-landed-307.example.com/rpc', posted],
+        ['after a 308', 'POST', 'post-308.example.com/rpc', 'post-landed-308.example.com/rpc', posted],
+        ['after a 301', 'POST', 'post-301.example.com/rpc', 'post-landed-301.example.com/rpc', got],
+        ['after a 302', 'POST', 'post-302.example.com/rpc', 'post-landed-302.example.com/rpc', got],
+        ['after a 303', 'POST', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
+        ['after a 303 and then a 307', 'POST', 'post-303-307.example.com/rpc', 'post-landed-303-307.example.com/rpc', got],
+        ['a PUT after a 302', 'PUT', 'put-302.example.com/rpc', 'put-landed-302.example.com/rpc', put],
+        ['a PUT after a 303', 'PUT', 'put-303.example.com/rpc', 'put-landed-303.example.com/rpc', got],
+        ['a HEAD after a 303', 'HEAD', 'head-303.example.com/rpc', 'head-landed-303.example.com/rpc', headed],
+      ].map(([label, method, key, landed, want]) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, method === 'HEAD' ? { method, headers } : { method, headers, body }));
+        assert.equal(resp.status, 200, `HTTP ${resp.status}`);
+        const a = asked.get(landed);
+        assert.ok(a, `no request reached ${landed}`);
+        const carried = { method: a.method, length: a.length, type: a.type, encoding: a.encoding, language: a.language, place: a.place, kept: a.kept, body: a.body.toString() };
+        assert.deepEqual(carried, want, `${landed} received ${JSON.stringify(carried)}`);
+        return `${landed} received a ${a.method} with ${a.body.length} body bytes${a.length ? ` (content-length ${a.length})` : ''}`;
+      }]));
+    },
+  },
+  {
+    name: 'each hop of a redirect is checked as the first is: a POST sent through a 307 or a 308 to a host whose DNS answer is 127.0.0.1, or to the cloud metadata address, is refused at that hop, and neither target is asked',
+    run: async () => {
+      const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      // [label, the host posted to, the hop's host, the URL it leads to, the error, whether the hop's host is looked up].
+      return eachRead([
+        ['a 307 to a host that resolves to 127.0.0.1', 'post-private-307.example.com', 'private-307.example.com', 'private-307.example.com/rpc', 'SSRF guard: blocked DNS resolution for private-307.example.com (resolves to private/internal IP)', true],
+        ['a 308 to a host that resolves to 127.0.0.1', 'post-private-308.example.com', 'private-308.example.com', 'private-308.example.com/rpc', 'SSRF guard: blocked DNS resolution for private-308.example.com (resolves to private/internal IP)', true],
+        ['a 307 to the metadata address', 'post-metadata-307.example.com', '169.254.169.254', '169.254.169.254/latest/meta-data/307', 'SSRF guard: blocked URL http://169.254.169.254/latest/meta-data/307', false],
+        ['a 308 to the metadata address', 'post-metadata-308.example.com', '169.254.169.254', '169.254.169.254/latest/meta-data/308', 'SSRF guard: blocked URL http://169.254.169.254/latest/meta-data/308', false],
+      ].map(([label, host, target, targetKey, message, lookedUp]) => [label, async () => {
+        const err = await rejection(safeFetch(`https://${host}/rpc`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }));
+        assert.equal(err.message, message, `rejected with ${err.name}: ${err.message}`);
+        assert.ok(asked.get(`${host}/rpc`), `the first hop, ${host}/rpc, was not asked`);
+        assert.equal(seen.has(targetKey), false, `a request reached ${targetKey}`);
+        assert.equal(looked.has(target), lookedUp, `${target} was ${lookedUp ? 'not ' : ''}looked up`);
+        return `"${err.message}"; ${target} ${lookedUp ? 'looked up' : 'not looked up'}, and ${targetKey} not asked`;
+      }]));
+    },
+  },
+  {
+    name: "a request body is sent as its bytes, with their count as its length: a string past ASCII, an ArrayBuffer and a view of part of one, and a caller's own content-length is replaced, sent once; a body of another kind, or one on a GET, a HEAD or a request that names no method, is refused with a TypeError before its host is looked up",
+    run: async () => {
+      // 2 + 3 + 4 bytes in UTF-8, 9 in all; a length counted in characters is 3 (4 in UTF-16 units).
+      const text = String.fromCodePoint(0xe9, 0x6f22, 0x1f600);
+      const plain = Buffer.from('{"kind":"ArrayBuffer"}');
+      const buffer = plain.buffer.slice(plain.byteOffset, plain.byteOffset + plain.length);
+      // A view whose buffer holds bytes on each side of it, which are not sent.
+      const whole = new TextEncoder().encode('skip{"kind":"a view of part of a buffer"}skip');
+      const view = whole.subarray(4, whole.length - 4);
+      const sends = (label, key, body, bytes, headers) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', body, ...(headers ? { headers } : {}) }));
+        assert.equal(resp.status, 200, `HTTP ${resp.status}`);
+        const a = asked.get(key);
+        assert.ok(a, `no request reached ${key}`);
+        assert.equal(a.lengths, 1, `${a.lengths} content-length headers`);
+        assert.equal(a.length, String(bytes.length), `content-length ${a.length} for a body of ${bytes.length} bytes`);
+        assert.equal(Buffer.compare(a.body, bytes), 0, `${key} received ${JSON.stringify(a.body.toString())}, not ${JSON.stringify(bytes.toString())}`);
+        return `${a.body.length} body bytes, content-length ${a.length}`;
+      }];
+      const refuses = (label, host, init) => [label, async () => {
+        const err = await rejection(safeFetch(`https://${host}/`, init));
+        assert.equal(err.name, 'TypeError', `rejected with ${err.name}: ${err.message}`);
+        assert.equal(looked.has(host), false, `${host} was looked up before the refusal (${err.message})`);
+        assert.equal(seen.has(`${host}/`), false, `a request reached ${host}`);
+        return `TypeError "${err.message}", no DNS query and no request`;
+      }];
+      return eachRead([
+        sends('a string past ASCII', 'body-kinds.example.com/text', text, Buffer.from(text, 'utf8')),
+        sends('an ArrayBuffer', 'body-kinds.example.com/buffer', buffer, plain),
+        sends('a view of part of a buffer', 'body-kinds.example.com/view', view, Buffer.from(view)),
+        // A caller's Content-Length that is wrong, which the guard replaces.
+        sends("a caller's wrong Content-Length", 'body-kinds.example.com/length', 'five!', Buffer.from('five!'), { 'Content-Length': '999' }),
+        refuses('URLSearchParams', 'refused-params.example.com', { method: 'POST', body: new URLSearchParams({ kind: 'form' }) }),
+        refuses('a body on a GET', 'refused-get.example.com', { method: 'GET', body: 'x' }),
+        refuses('a body on a HEAD', 'refused-head.example.com', { method: 'HEAD', body: 'x' }),
+        // No method is a GET, as it is for fetch.
+        refuses('a body with no method', 'refused-nomethod.example.com', { body: 'x' }),
+      ]);
+    },
+  },
+  {
+    name: `designesy_tokens_score on a URL that sends its headers and then nothing ends at the ${MCP_DEADLINE_S} s read deadline`,
+    run: async () => mcpDrip('designesy_tokens_score', { url: 'https://tokens-silent.example.com/tokens.json' }, 'tokens-silent.example.com/tokens.json'),
   },
   {
     name: `designesy_tokens_score on a URL sending one byte a second ends at the ${MCP_DEADLINE_S} s read deadline`,
@@ -1689,6 +2324,125 @@ const CONCURRENT = [
     },
   },
   {
+    name: 'readiness r04: an MCP endpoint built with mcp-handler, which answers a tools/list POST with no body with 400, is PASS with its one tool, also through a 307; through a 302 it is sent a GET, which it answers 405',
+    run: async () => {
+      const key = 'ready-mcp-handler.example.com/api/mcp';
+      const pass = ['PASS', 'MCP endpoint at /api/mcp responds to tools/list with 1 tool(s)'];
+      // A scan of `host`: r04 as `r04`, and what the endpoint received.
+      const scan = (host, r04) => async () => {
+        asked.delete(key);
+        const said = checksAre(await readiness(`https://${host}/`), { r04 });
+        const a = asked.get(key);
+        assert.ok(a, `no request reached ${key}`);
+        return `${said}; the endpoint received a ${a.method} with ${a.body.length} body bytes`;
+      };
+      return eachRead([
+        // The endpoint reads its request: one sent with no body is refused.
+        ['a tools/list POST with no body', async () => {
+          const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' } }));
+          assert.equal(resp.status, 400, `HTTP ${resp.status}`);
+          return `HTTP ${resp.status}`;
+        }],
+        ['readiness r04', scan('ready-mcp-handler.example.com', pass)],
+        ['through a 307', scan('ready-mcp-307.example.com', pass)],
+        ['through a 302', scan('ready-mcp-302.example.com', ['WARN', 'Endpoint exists but did not respond with a tool list (HTTP 405)'])],
+      ]);
+    },
+  },
+  {
+    name: `a server that sends nothing for ${QUIET_S} s before it answers is read by each caller whose signal ends at ${CALLER_DEADLINE_S} s: readiness r02 is PASS, the score route scores the page and page-fetch reads it`,
+    run: async () => {
+      const timed = async (work) => {
+        const t0 = performance.now();
+        const out = await work();
+        return { out, s: (performance.now() - t0) / 1000 };
+      };
+      return readsTogether([
+        ['readiness r02', async () => {
+          const brief = READY_FILES['ready-quiet.example.com']['/llms.txt'].body;
+          const { out, s } = await timed(async () => checksAre(await readiness('https://ready-quiet.example.com/'), {
+            r02: ['PASS', `/llms.txt returns ${brief.length} bytes of agent-facing brief`],
+          }));
+          return `${out}, after ${s.toFixed(2)} s`;
+        }],
+        ['the score route', async () => {
+          const { out: r, s } = await timed(() => h.post('app/api/score/route.ts', { url: 'https://score-quiet.example.com/' }));
+          assert.equal(r.status, 200, `HTTP ${r.status}: ${r.body && r.body.error}`);
+          assert.notEqual(r.body.unreachable, true, `unreachable after ${s.toFixed(2)} s: ${r.body.unreachableDetail}`);
+          assert.equal(typeof r.body.score, 'number', `score ${r.body.score}`);
+          return `score ${r.body.score} ${r.body.grade}, after ${s.toFixed(2)} s`;
+        }],
+        ['page-fetch', async () => {
+          const { out: page, s } = await timed(() => fetchPageResilient('https://page-quiet.example.com/'));
+          assert.equal(page.html, PAGE, `${page.html.length} of ${PAGE.length} bytes of the page after ${s.toFixed(2)} s`);
+          return `${page.html.length} bytes of the page, after ${s.toFixed(2)} s`;
+        }],
+      ]);
+    },
+  },
+  {
+    name: `page-fetch asks for no stylesheet once ${SHEET_PHASE_S} s have passed since it asked for its first: three sheets that send their headers and then nothing, each asked for as the one before ends, end its read ${SHEET_PHASE_S} s after it, on a page quiet for ${SHEETS_PAGE_QUIET_S} s, and the sheet after them is never asked for`,
+    run: async () => {
+      const host = 'www.sheets-phase.example.com';
+      const t0 = performance.now();
+      const page = await fetchPageResilient(`https://${host}/`);
+      const end = performance.now();
+      assert.equal(page.html, SHEETS_PAGE, `${page.html.length} of ${SHEETS_PAGE.length} bytes of the page`);
+      assert.ok(page.css.includes(SHEET_FIRST), `the first sheet is not in the CSS read: ${JSON.stringify(page.css)}`);
+      // Times are from when the first sheet was asked for, where the phase starts.
+      const first = seen.get(`${host}/s0.css`);
+      assert.ok(first, 'the first sheet was not asked for');
+      const since = (t) => (t - first.at) / 1000;
+      const last = seen.get(`${host}/s4.css`);
+      assert.ok(!last && !page.css.includes(SHEET_LAST), `the sheet after the quiet ones was ${last ? `asked for ${since(last.at).toFixed(2)} s after the first` : 'not asked for'}, and is ${page.css.includes(SHEET_LAST) ? '' : 'not '}in the CSS read`);
+      const asked = [1, 2, 3].map((i) => {
+        const r = seen.get(`${host}/s${i}.css`);
+        assert.ok(r, `sheet ${i + 1} was not asked for: the read ended ${since(end).toFixed(2)} s after the first was asked for`);
+        const at = since(r.at);
+        const want = (i - 1) * CALLER_DEADLINE_S;
+        assert.ok(at >= want - 0.5 && at <= want + MARGIN_S, `sheet ${i + 1} was asked for ${at.toFixed(2)} s after the first, not at about ${want} s`);
+        return at.toFixed(2);
+      });
+      endedAt(since(end), SHEET_PHASE_S);
+      // The times above hold the phase only to within their margins; its
+      // length is page-fetch's STYLESHEET_DEADLINE_MS.
+      const src = (await fs.promises.readFile(path.join(APP, 'app/lib/page-fetch.ts'), 'utf8')).replace(/\r\n/g, '\n');
+      const m = src.match(/^const STYLESHEET_DEADLINE_MS = ([\d_]+);$/m);
+      assert.ok(m, 'no STYLESHEET_DEADLINE_MS in page-fetch');
+      assert.equal(Number(m[1].replace(/_/g, '')), SHEET_PHASE_S * 1000, `STYLESHEET_DEADLINE_MS is ${m[1]}, not ${SHEET_PHASE_S * 1000}`);
+      return `the quiet sheets were asked for ${asked.join(', ')} s after the first, and the read ended ${since(end).toFixed(2)} s after it (${((end - t0) / 1000).toFixed(2)} s after the call); the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for; STYLESHEET_DEADLINE_MS ${m[1]}`;
+    },
+  },
+  {
+    name: `page-fetch ends a sheet that sends its headers and then nothing at its ${CALLER_DEADLINE_S} s deadline, and reads each sheet after it`,
+    run: async () => {
+      const host = 'www.sheet-one-quiet.example.com';
+      const page = await fetchPageResilient(`https://${host}/`);
+      const end = performance.now();
+      assert.equal(page.html, SHEETS_PAGE, `${page.html.length} of ${SHEETS_PAGE.length} bytes of the page`);
+      const missing = ONE_QUIET_SHEETS.filter(([, css]) => !page.css.includes(css)).map(([i]) => `s${i}.css`);
+      const first = seen.get(`${host}/s0.css`);
+      assert.ok(first, 'the first sheet was not asked for');
+      const ended = (end - first.at) / 1000;
+      assert.equal(missing.length, 0, `${missing.join(', ')} not in the CSS read, which ended ${ended.toFixed(2)} s after the first sheet was asked for`);
+      endedAt(ended, CALLER_DEADLINE_S);
+      return `the four sheets that answer are in the CSS read (${page.css.length} bytes), which ended ${ended.toFixed(2)} s after the first sheet was asked for`;
+    },
+  },
+  {
+    name: `the score route reports a page at a www. URL that sends its headers and then nothing as unreachable because the request timed out, after ${CALLER_DEADLINE_S} s on each of its two candidate URLs (that URL and its http:// address)`,
+    run: async () => {
+      const t0 = performance.now();
+      const r = await h.post('app/api/score/route.ts', { url: 'https://www.score-silent.example.com/' });
+      const s = (performance.now() - t0) / 1000;
+      assert.equal(r.status, 200, `HTTP ${r.status}: ${r.body && r.body.error}`);
+      assert.equal(r.body.unreachable, true, `scored after ${s.toFixed(2)} s: ${r.body.score}`);
+      assert.equal(r.body.unreachableReason, 'timeout', `${r.body.unreachableReason} after ${s.toFixed(2)} s: ${r.body.unreachableDetail}`);
+      endedAt(s, 2 * CALLER_DEADLINE_S);
+      return `${s.toFixed(2)} s, unreachable (${r.body.unreachableReason}): "${r.body.unreachableDetail}"`;
+    },
+  },
+  {
     name: "every safeFetch call in the readiness route passes its READ_LIMIT, 4 MiB, as maxBodyBytes",
     run: async () => {
       const src = fs.readFileSync(path.join(APP, 'app/api/readiness/route.ts'), 'utf8').replace(/\r\n/g, '\n');
@@ -1705,18 +2459,44 @@ const CONCURRENT = [
     },
   },
   {
-    name: "the readiness and report caches carry the read limit in their keys, so no result cached before it is read",
+    name: "the readiness and report caches carry the read limit in their keys, and they and the drift, guardrails, monitor and compare caches the request body and deadline work, so no result cached before either is read; the score route's cache is keyed by the deployment's commit",
     run: async () => {
       const keys = [];
-      for (const [route, fn] of [['app/api/readiness/route.ts', 'scoreReadinessUncached'], ['app/api/report/route.ts', 'runReportUncached']]) {
+      const wrong = [];
+      for (const [route, fn, parts] of [
+        ['app/api/readiness/route.ts', 'scoreReadinessUncached', [CACHE_KEY_PART, REQUEST_KEY_PART]],
+        ['app/api/report/route.ts', 'runReportUncached', [CACHE_KEY_PART, REQUEST_KEY_PART]],
+        ['app/api/drift/route.ts', 'scoreDriftUncached', [REQUEST_KEY_PART]],
+        ['app/api/guardrails/route.ts', 'emitGuardrailsUncached', [REQUEST_KEY_PART]],
+        ['app/api/monitor/route.ts', 'scoreMonitorUncached', [REQUEST_KEY_PART]],
+        ['app/api/compare/route.ts', 'scoreCompareUncached', [REQUEST_KEY_PART]],
+      ]) {
         const src = fs.readFileSync(path.join(APP, route), 'utf8');
         const at = src.indexOf(`unstable_cache(${fn}, [`);
         assert.ok(at >= 0, `no unstable_cache(${fn}, [...]) in ${route}`);
-        const list = src.slice(at, src.indexOf(']', at));
-        const parts = [...list.matchAll(/'([^']*)'/g)].map((x) => x[1]);
-        assert.ok(parts.includes(CACHE_KEY_PART), `${route} caches ${fn} under [${parts.join(', ')}], with no '${CACHE_KEY_PART}'`);
-        keys.push(`${route}: [${parts.join(', ')}]`);
+        const list = src.slice(at + `unstable_cache(${fn}, [`.length, src.indexOf(']', at));
+        // A part is a string, or a constant the file sets to one (the
+        // guardrails route's GUARDRAILS_RESULT_FORMAT, say).
+        const have = list.split(',').map((x) => x.trim()).filter(Boolean).map((x) => {
+          const lit = x.match(/^'([^']*)'$/);
+          if (lit) return lit[1];
+          const def = src.match(new RegExp(`^const ${x} = '([^']*)';$`, 'm'));
+          return def ? def[1] : x;
+        });
+        const missing = parts.filter((p) => !have.includes(p));
+        if (missing.length) wrong.push(`${route} caches ${fn} under [${have.join(', ')}], with no '${missing.join("', '")}'`);
+        keys.push(`${route}: [${have.join(', ')}]`);
       }
+      // The score route's key holds the deployment's commit, so a deploy
+      // starts that cache clean: its wrapper's source, which Next.js puts in
+      // the key too, does not change from one deploy to the next.
+      const score = fs.readFileSync(path.join(APP, 'app/api/score/route.ts'), 'utf8').replace(/\r\n/g, '\n');
+      const at = score.indexOf('export const scoreUrl = unstable_cache(');
+      const key = at >= 0 ? score.slice(at).match(/^\s*\[([^\]\n]*)\],$/m) : null;
+      if (!key) wrong.push('no unstable_cache key for scoreUrl in app/api/score/route.ts');
+      else if (!/\bprocess\.env\.VERCEL_GIT_COMMIT_SHA\b/.test(key[1])) wrong.push(`app/api/score/route.ts caches scoreUrl under [${key[1]}], with no VERCEL_GIT_COMMIT_SHA`);
+      if (key) keys.push(`app/api/score/route.ts: [${key[1]}]`);
+      assert.equal(wrong.length, 0, wrong.join('; '));
       return keys.join('; ');
     },
   },
@@ -1825,13 +2605,15 @@ for (const { c, detail, error, s } of results) {
   console.log(`  ${why ? 'FAIL' : 'ok  '}  ${s.toFixed(2).padStart(6)} s  ${c.name}\n                   ${why || detail}`);
 }
 
-server.closeAllConnections();
-server.close();
+for (const s of [server, keepAliveServer]) {
+  s.closeAllConnections();
+  s.close();
+}
 const total = results.length;
 console.log(`\n${total - failures.length} passed, ${failures.length} failed`);
 if (failures.length) {
   console.log(`Fetch bounds: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline and an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, and no read leaves a listener on its signal.');
+console.log('Fetch bounds: a body stops at its cap as it arrives, a read at its caller\'s deadline with no idle timeout ending it sooner, page-fetch\'s stylesheets within 20 s, an MCP read at the route\'s deadline and its own byte limit, a readiness check whose file is past the read limit says so, a POST carries its body, and no read leaves a listener on its signal.');
 process.exit(0);
