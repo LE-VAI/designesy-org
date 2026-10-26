@@ -6,6 +6,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**fast-uri 3.1.9 in the stylelint plugin's development install** (the
+plugin's lockfile and the `overrides` pin in its package.json, and an
+unused fast-uri pin in the site's package.json; no version moves). The plugin's published code does not change. Of the files it
+publishes, only package.json changes, in its `overrides` field. npm reads
+that field only from the root package.json of the project it installs, so
+the pin applies to the plugin's own development install and to no project
+that installs the plugin.
+
+### Security (fast-uri 3.1.9)
+
+- **fast-uri moves from 3.1.8 to 3.1.9.** The plugin's development install
+  pulls it in through stylelint 16.26.1, table 6.9.0 and ajv 8.20.0, which
+  asks for `^3.0.1`. GitHub's advisory database lists 3.1.9 as the first
+  3.x release that fixes GHSA-w74x-v6f9-j3xg and GHSA-wjr9-j795-jxcr
+  (moderate) and GHSA-xhq7-xmqj-769h and GHSA-333x-w4r6-6crp (low). For
+  three of them the affected 3.x range starts at 3.0.0, and for
+  GHSA-wjr9-j795-jxcr it starts at 3.1.3. All four include 3.1.8.
+- **The `overrides` pin moves with the lockfile.** The plugin's package.json
+  pins fast-uri to an exact version, and `npm ci` refuses a lockfile that
+  holds 3.1.9 while the pin says 3.1.8, with the error
+  `Missing: fast-uri@3.1.8 from lock file`. In the lockfile only fast-uri's
+  version, resolved URL and integrity change. No other package moves.
+- The lockfile serves the plugin's own development install and its CI job.
+  The published package declares no dependencies, and a project that
+  installs it resolves stylelint's dependencies through its own lockfile.
+- **The site's unused fast-uri pin is removed.** apps/site/package.json
+  pinned fast-uri to 3.1.6, which is inside the affected range of all four
+  advisories, while nothing the site installs depends on fast-uri:
+  apps/site/package-lock.json has no fast-uri entry. Without the pin,
+  `npm install --package-lock-only --ignore-scripts` leaves that lockfile
+  byte for byte the same. The pin installed nothing, and would have
+  brought in 3.1.6 if a later dependency asked for fast-uri.
+
+### Gates (fast-uri 3.1.9)
+
+- In packages/stylelint-plugin-dtcg-tokens with npm 11.12.1 on Node
+  24.15.0, on main and on this branch: `npm ci` installs 120 packages on
+  both. `npm audit` reports 2 moderate vulnerabilities on main (fast-uri,
+  and ajv through it) and 0 on this branch. `npm test` passes 68 of 68
+  tests on both.
+- In apps/site on this branch: `npm ci` exits 0 and `npm ls fast-uri`
+  lists nothing.
+
 **Fetch bounds: a finished read lets go of its signal, every URL the MCP
 route reads for itself ends at 15 s, and the URL guard copies a body fewer
 times** (the site: its URL guard and the hosted MCP route; no version
