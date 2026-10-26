@@ -85,7 +85,7 @@ export function ReadinessForm({ initialUrl, registry }: { initialUrl: string; re
               </div>
               <div>
                 <dt>Partial <span className="eg-ref-where">warn</span></dt>
-                <dd>It answers, but in a shape an agent reads poorly.</dd>
+                <dd>It answers, but in a shape an agent reads poorly, or it is larger than the 4 MiB read limit and is not read.</dd>
               </div>
               <div>
                 <dt>Missing <span className="eg-ref-where">fail</span></dt>

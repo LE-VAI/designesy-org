@@ -819,6 +819,20 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'fetch bounds entry in CHANGELOG.md',
   },
 
+  // ── v0.4.7 (engine 1.5.4): each URL the MCP route reads for itself and each readiness read has a byte limit ──
+  {
+    version: 'v0.4.7 · engine 1.5.4',
+    date: '2026-10-25',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Read limits: each URL the MCP route reads for itself and each URL the readiness checks read holds 4 MiB, or 16 MiB for a Lottie file',
+    description:
+      'Each URL the hosted MCP route reads for itself, and each URL the readiness checks read, now passes the URL guard a byte limit of its own, counted after decoding when a 2xx body is compressed and as sent for any other body, and the guard ends the request one byte past it. The url of designesy_motion_score is held to 16 MiB. The url of designesy_tokens_score, the seven documents the read-only tools read from this site, every readiness probe and r04\'s read of a tools/list answer are held to 4 MiB. Past its limit, an MCP read fails with "Fetch failed: the response is over the 16 MiB read limit" (4 MiB for the others), and a readiness check reports WARN with a detail that names the file and says it is larger than the 4 MiB read limit and was not read. The status is read first, so a 404 with a large body still fails as "Fetch failed: 404" in the MCP tools and is still judged as a 404 by the readiness checks that need an ok response. An error or redirect body is held to the same limit: of a 500 or a 302 whose body is 20 MiB, a read with a 4 MiB limit now receives 4,259,833 bytes, and designesy_motion_score, whose limit is 16 MiB, receives 16,842,745 of such a 500 (Node 24.15.0 on Windows), where all 20,971,520 arrived before. The MCP tools\' errors, the verdicts of the readiness checks that need an ok response, and the next hop are as before. r10, which reads the page scanned whatever its status, is WARN for an error page past the limit. Before, a body sent with no content coding was read whole however long it was, and a compressed body that decoded past 4 MiB failed: in the MCP tools with an error that named no limit, and in readiness as a file not found or, for the page scanned, a scan that could not fetch it. So a gzip, deflate or br Lottie file that decodes to more than 4 MiB and at most 16 MiB, which failed before, is now read and scored.',
+    rationale:
+      'A tool or a check reads a file whole or says it did not read it. The limits sit above the largest files measured: Lottie files of 8,873,709 and 4,713,147 bytes, token files of 1,674,878 bytes (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json) and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0, dist/json/variables.json), the seven documents the read-only tools read from this site at 100,907 bytes or less, and this site\'s home page at 392,045 bytes. No check, rule, weight or grade boundary changed and no version moves. A result changes only for a file past its limit, and for a compressed Lottie file that decodes to more than 4 MiB and at most 16 MiB, which is now scored. Readiness results and reports are cached under new keys, so none made before the limit is served.',
+    source: 'read limits entry in CHANGELOG.md',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',

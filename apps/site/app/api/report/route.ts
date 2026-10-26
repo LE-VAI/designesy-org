@@ -414,7 +414,19 @@ async function runReportUncached(targetUrl: string): Promise<ReportResponse> {
 
 const REPORT_TTL = 60 * 60 * 24; // 24h
 
-const runReport = unstable_cache(runReportUncached, ['designesy-report'], {
+// The second key part names the result format. A report holds the readiness
+// result it was made with: its readiness part, the readiness checks among its
+// checks, and the composite score, which counts the readiness score (at 0.2
+// when all three engines answer).
+// The readiness route's results changed with its 4 MiB read limit: a site with
+// a file past it is WARN for that file, where a compressed file that decoded
+// past 4 MiB was reported as not found and a file sent with no content coding
+// was judged from a body past the limit. runReportUncached is unchanged, so its
+// source, which Next.js 16.4.2 also puts in the key, does not keep a report
+// made before the limit from being served: without this part it would be
+// served until 24 h after it was cached and once more, to the request that
+// starts a new run. Under this key no report cached before the limit is read.
+const runReport = unstable_cache(runReportUncached, ['designesy-report', 'read-limit-4mib'], {
   revalidate: REPORT_TTL,
   tags: ['report'],
 });

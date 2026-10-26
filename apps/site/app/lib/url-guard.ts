@@ -482,6 +482,47 @@ export function cutByBudget(resp: Response): boolean {
   return CUT_BY_BUDGET.has(resp);
 }
 
+/**
+ * A body as the text resp.text() gives for it, or null when it holds more
+ * than `limit` bytes. Read through safeFetch with maxBodyBytes set to
+ * `limit`, a body longer than the limit holds limit + 1 bytes, so null says
+ * it went past the limit. The limit counts bytes: the text of a body cut at
+ * it can hold fewer characters than the limit (a third as many, for a body
+ * of three-byte UTF-8 characters), so the text's length cannot say whether
+ * the body was cut. The chunks are read as they are, with no copy, by
+ * a default reader, which the byte stream pinnedFetch builds takes as any
+ * stream does, and only a body within the limit is decoded: a Response
+ * built on those chunks decodes them, as the response's own text() would,
+ * so the text, and the byte order marks dropped from its start, are the
+ * same. As in resp.text(), the body's bytes are held twice while the text
+ * is made, and the text is held besides them: for a 16 MiB body on Node
+ * 24.15.0, ArrayBuffer memory went from 16 to 32 MiB with either, and the
+ * 16 MiB text was held outside it. Reading the body with arrayBuffer()
+ * first and then a Response's text() took ArrayBuffer memory to 64 MiB or
+ * more: 64 to 96 MiB over the runs measured, one fresh process each.
+ */
+export async function textWithin(resp: Response, limit: number): Promise<string | null> {
+  const chunks: Uint8Array[] = [];
+  let held = 0;
+  const reader = resp.body?.getReader();
+  if (reader) {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      held += value.byteLength;
+    }
+  }
+  if (held > limit) return null;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const c of chunks) controller.enqueue(c);
+      controller.close();
+    },
+  });
+  return new Response(body).text();
+}
+
 /** A decoding failure. Its message never decides how a caller classifies it. */
 function decodingError(detail: string): Error {
   const err = new Error(`content decoding failed${detail}`);

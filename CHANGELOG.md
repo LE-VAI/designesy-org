@@ -6,6 +6,258 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Read limits: each URL the MCP route reads for itself, and each URL the
+readiness route reads, has a byte limit of its own, 16 MiB for a Lottie
+file and 4 MiB for everything else; an ok response past it is reported as
+too large, and no body past it is read in part** (the site: the hosted MCP
+route, the readiness route and the report route's cache; no version moves).
+Each read passes its limit to the URL guard, which holds at most one byte
+past it, counted after decoding when it decodes the body, and ends the
+request there. An error or redirect body is held to the same limit. No
+check is added, and no rule, weight or grade boundary moves. A result
+changes only for a file past its limit, and for a gzip, deflate or br
+Lottie file that decodes to more than 4 MiB and at most 16 MiB, which
+failed before and is now read and scored. The Fetch bounds entry below
+describes these reads before the limits: the byte limits it lists as not
+changed are the ones this entry sets.
+
+### Fixed (read limits)
+
+- **The MCP route holds each URL it reads for itself to a byte limit.**
+  The `url` of `designesy_motion_score` is held to 16 MiB. Two public
+  Lottie files measured 8,873,709 bytes (lottie-ios
+  `Tests/Samples/Issues/issue_1403.json`, which embeds images) and
+  4,713,147 bytes (lottie-web `test/animations/monster.json`, vector only).
+  The `url` of `designesy_tokens_score`, and the seven documents the
+  read-only tools read from this site (the catalog, the contract, the
+  design review kit, SKILL.md, agent.json, llms.txt and llms-full.txt), are
+  held to 4 MiB. The largest token files measured are 1,674,878 bytes
+  (`@primer/primitives` 11.10.0,
+  `dist/styleLint/functional/themes/light.json`) and 1,039,520 bytes
+  (`@adobe/spectrum-tokens` 15.6.0, `dist/json/variables.json`), and the
+  largest of the seven documents measured 100,907 bytes
+  (`/contracts/design-system.json`; the other six 6,821 to 34,049 bytes).
+  Each size was measured with no content coding on 2026-10-25. An ok
+  response past its limit fails the tool, in its existing error shape,
+  with `Fetch failed: the response is over the 16 MiB read limit` (`4 MiB`
+  for the others). The status is checked first, so a 404 with a large body
+  still fails with `Fetch failed: 404 Not Found` (followed by `for <url>`
+  in the read-only tools). Before, the route set no limit: a body sent
+  with no content coding was held whole however long it was (a 17 MiB
+  Lottie file and a 5 MiB token file were read and scored), and a gzip,
+  deflate or br body that decoded past the URL guard's 4 MiB default
+  failed with `content decoding failed (gzip): the decoded body is over
+  4194304 bytes`, which names no limit. A gzip, deflate or br Lottie file
+  that decodes to more than 4 MiB and at most 16 MiB is now read and
+  scored.
+- **Each readiness probe holds 4 MiB.** Every probe (the page scanned, the
+  token file paths, llms.txt, agent.json, DESIGN.md, the component schema
+  paths and r07's fallback to `/open.json` and agent.json, sitemap.xml and
+  robots.txt) and r04's read of a tools/list answer are held to 4 MiB, for
+  the token files and documents measured above. A scan of this site reads
+  its home page too. Measured with no content coding at 16:41 -04:00 on
+  2026-10-25, after #396 was deployed and before this entry was, the home
+  page held 392,045 bytes, and the largest of the 94 pages in the sitemap,
+  `/changelog`, 466,664 bytes; a deploy can change both sizes. A file past
+  the limit is not read: its check reports WARN, with the detail `<file> is
+  larger than the 4 MiB read limit and was not read`. The file is named as
+  `Token file at <url>` (r01 and r06), `llms.txt at <url>` (r02),
+  `agent.json at <url>` (r03), `The tools/list answer from /api/mcp` (r04),
+  `DESIGN.md at <url>` (r05), `Component schema at <url>` or the fallback's
+  URL (r07), `Sitemap at <url>` (r08), `robots.txt at <url>` (r09) and `The
+  page at <url>` (r10). A check that tries several paths stops at the first
+  one that answers ok past the limit. A 404 is still not found: the checks
+  that need an ok response test it first, and r04 still reports the status
+  of a response that is not ok. r10 reads the page's body whatever its
+  status, as before, so a page past the limit is WARN for any status.
+  Before, a body sent with no content coding was read whole and judged (a
+  5 MiB llms.txt, sitemap.xml, home page and tools/list answer each passed),
+  and a gzip, deflate or br body that decoded past 4 MiB failed its read:
+  r02 and r08 reported FAIL as not found, r04 reported FAIL (`No MCP
+  endpoint detected at /api/mcp`), and a page scanned that did so failed the
+  whole scan (HTTP 502, `Could not fetch the target URL`).
+- **An error or redirect body is held to the same limit.** The URL guard
+  keeps a 3xx, 4xx or 5xx body raw, undecoded, up to the read's limit and
+  one byte past it, then ends the request. Before, these reads passed no
+  limit, so such a body was received whole: a 500 whose body is 20 MiB
+  arrived in full (20,971,520 bytes) before its status was reported, and a
+  302's 20 MiB body before the next hop was requested. Now at most one 64
+  KiB socket read past the read's limit arrives, the request is destroyed,
+  and the next hop follows. Of such a 20 MiB body, a read with a 4 MiB
+  limit received 4,259,833 bytes, and `designesy_motion_score`, whose limit
+  is 16 MiB, received 16,842,745 of a 500 (Node 24.15.0 on Windows). The
+  MCP tools' errors are as before: `designesy_tokens_score` and
+  `designesy_motion_score` still fail with `Fetch failed: 500 Internal
+  Server Error`. So are the readiness checks that need an ok response: r02
+  still reports an llms.txt that answers 500 as not found. The 302 is still
+  followed to the file it names. r10, which reads the page scanned whatever
+  its status, is now WARN for an error page past the limit, which it read
+  whole and judged before.
+- **A body is read once, and decoded as before.** Each read takes the
+  body's chunks as the URL guard hands them over, with no copy, compares
+  their length with its limit, and gives a body within it to a Response,
+  whose `text()` decodes it. In the MCP route and the readiness route the
+  text is the one `res.text()` gave for the same bytes, so `JSON.parse` of
+  it gives what `res.json()` gave, its error message included, and a token
+  file that starts with two UTF-8 byte order marks is read as before (on
+  Node 24.15.0, `res.text()` drops both). A body within its limit is held
+  as two copies of its bytes while its text is made, and the text is held
+  besides them, as with `res.text()`. Measured on Node 24.15.0 with a
+  16 MiB body in a Response built as the URL guard builds one, with this
+  read and with `res.text()` alike: ArrayBuffer memory went from 16 MiB to
+  32 MiB as the text was read, and the 16 MiB text was held outside it.
+- **A readiness result cached before this change is not served.** The
+  readiness route keeps each result for 24 h, keyed by
+  `designesy-readiness` and the URL. A result cached before could be wrong
+  for a site with a file past the limit: a compressed file that decoded
+  past 4 MiB was reported as not found, and a file sent with no content
+  coding was judged from a body past the limit. The key gains a second
+  part, `read-limit-4mib`, so each URL is scanned again on its first
+  request after the deploy. Next.js 16.4.2 also puts the cached function's
+  source in the key, and this change edits that function, so on that
+  version no result cached before would be read under the old key either;
+  the new part keeps that true whatever the framework does with the source.
+- **A report cached before this change is not served.** `/api/report`
+  keeps each report for 24 h, keyed by `designesy-report` and the URL, and
+  a report holds the readiness result it was made with: its readiness
+  part, the readiness checks among its checks, and the composite score.
+  The function it caches is unchanged, so its source in the key did not
+  keep an older report from being served: for a site with a file past the
+  limit, its readiness part would have shown the verdicts from before the
+  limit until 24 h after it was cached, and once more, to the request that
+  starts the new run. The key gains the same second part,
+  `read-limit-4mib`, so each URL is reported again on its first request
+  after the deploy.
+
+### Not changed (read limits)
+
+- The seven tools that call the site's own API (score, drift, readiness,
+  guardrails, monitor, compare and report). Those calls are not made
+  through the URL guard and have no byte limit of their own, as before.
+  `designesy_readiness_score` and `designesy_report` return the readiness
+  and report routes' results, so for a site with a file past the limit
+  they show its WARN.
+- How a request is sent and how long a quiet server is waited for. The URL
+  guard still sends no request body, so r04's tools/list POST reaches an
+  endpoint with an empty body, as before. The MCP route's reads still pass
+  a 15 s idle timeout. Every other read that passes a signal of its own
+  still gets no idle timeout from the URL guard: Node's agent gives its
+  socket a 5 s idle timeout, and the URL guard ends the read when that
+  fires, as before.
+- The MCP route's 5-minute cache. It keeps a document only once it has
+  been read whole, and the seven documents measured 100,907 bytes or less,
+  so nothing it holds is past a limit.
+- Every result for a file within its limit, except a gzip, deflate or br
+  Lottie file that decodes to more than 4 MiB and at most 16 MiB (above).
+  A file of exactly the limit is read whole, and the ten readiness checks
+  of a small site, and of a site with none of the files, match those from
+  before the limit, detail for detail.
+- The score, drift, guardrails, monitor and compare routes and their caps
+  (8 MiB of HTML, 4 MiB of one stylesheet and 16 MiB of stylesheets in
+  all; the score route also 16 MiB of a `/DESIGN.md`).
+- The PyPI server's `designesy_tokens_score` and `designesy_motion_score`,
+  which read the URL themselves.
+- The readiness contract (0.1.1), its weights (PASS 1, WARN 0.5, FAIL 0)
+  and its grade boundaries. Its check list gives no WARN for r02, r03, r05
+  and r08. r02, r05 and r08 can now WARN, for a file past the limit only;
+  r03, which already could for missing fields, can also for a file past
+  the limit.
+- Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
+  1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
+  published.
+
+### Gates (read limits)
+
+- `check-fetch-bounds.mjs` runs 53 cases (14 before these limits), in 20.13
+  to 25.13 s over 7 runs, with other work keeping the CPU busy (sampled at
+  100%; the gate as it was with 48 cases took 20.31 to 21.08 s over 3 runs
+  there), in the build and in CI after Fetch layer as before.
+  `designesy_tokens_score` and `designesy_llms_txt` (4 MiB) and
+  `designesy_motion_score` (16 MiB) each fail on a body 1 MiB past the limit
+  with the message above, sent with no content coding (with and without a
+  content-length) and as gzip that decodes past it. For each body sent with
+  no content coding, at most one 64 KiB socket read past the limit reached
+  the client (4,259,833 and 4,259,840 of 5,242,880 bytes; 16,842,745 and
+  16,842,752 of 17,825,792), the request was destroyed and the server had
+  not finished sending. A token file reached through a 302 and 1 MiB past
+  the limit fails the same way, and its read stops at the limit on the URL
+  it lands on (4,259,833 of 5,242,880 bytes). A deflate (zlib-wrapped and
+  raw) or br token file that decodes to one byte past 4 MiB fails naming the
+  limit. `designesy_motion_score` reads a gzip Lottie file that decodes to
+  exactly 16 MiB, also through a 302, and a deflate one and a br one that
+  each decode to exactly 16 MiB, and fails on a br one that decodes to one
+  byte past it. Each limit counts bytes: a token file and an llms.txt of
+  three-byte UTF-8 characters, 1 MiB past the 4 MiB limit, whose text holds
+  about a third as many characters as they have bytes (1,747,768 for the
+  5,242,880 byte token file), fail in `designesy_tokens_score` and
+  `designesy_llms_txt` naming the limit, and an llms.txt (r02) and a
+  tools/list answer (r04) of such characters are WARN with the detail above;
+  each read stops at the limit. An llms.txt (r02), a sitemap.xml (r08) and a
+  home page (r10), each 1 MiB past the limit with no content coding and as
+  gzip, a home page that answers 404 with such a body, a tools/list answer
+  past the limit (r04, both ways), and an llms.txt reached through a 302 and
+  past the limit, whose read stops at the limit on the URL it lands on
+  (4,259,833 bytes), are WARN with the detail above. On a site where every
+  file is past the limit, all ten checks are WARN (score 50, F), and an
+  `/open.json` past the limit is r07 WARN. A file past the limit at a later
+  path of a check's list, with each path before it answering 404, is WARN
+  naming that path: the second path of each list (r01, r02, r03, r05, r06
+  and r07), the third (r01, r06 and r07), the fourth (r01 and r06) and the
+  second path of r07's fallback; for each such file that one check reads,
+  4,259,833 of 5,242,880 bytes reached the client. Two source cases require
+  each `safeFetch` call's limit, in the MCP route and in the readiness
+  route.
+- Error and redirect bodies: `designesy_tokens_score` on a 500 whose body
+  is 20 MiB fails with `Fetch failed: 500 Internal Server Error`, and
+  readiness r02 on an llms.txt that answers 500 with such a body is not
+  found; in each, 4,259,833 of 20,971,520 bytes reached the client and the
+  server had not finished. `designesy_motion_score` on such a 500 fails
+  the same way, and 16,842,745 of its 20,971,520 bytes reached the client,
+  for its 16 MiB limit. A 302 whose body is 20 MiB, read by
+  `designesy_tokens_score` and by readiness r02, leads to the next hop
+  once 4,259,833 bytes of it have reached the client (the server had
+  written 4,521,984 and had not finished as the next request arrived), and
+  the file it lands on is read. A source case requires `read-limit-4mib`
+  in the readiness and report cache keys.
+- Controls: a file of exactly each limit is read whole, and so are a gzip
+  llms.txt that decodes to exactly 4 MiB, a deflate (both kinds) or br token
+  file that decodes to exactly 4 MiB, and a token file and an llms.txt of
+  three-byte characters of exactly 4 MiB (r02 PASS, giving the length of its
+  text, 1,398,134 characters); a 404 whose body is past the limit still
+  fails as `Fetch failed: 404` in the three tools, and in readiness r02, r08
+  and r09 are FAIL and r04 is WARN with HTTP 404, as before; a 302 with no
+  Location whose body is a token file or a Lottie file still fails as `Fetch
+  failed: 302 Found` in `designesy_tokens_score` and
+  `designesy_motion_score`; a body that is not JSON fails with JSON.parse's
+  own message; a token file that starts with two UTF-8 byte order marks is
+  read as `res.json()` reads it, and readiness reads an llms.txt that starts
+  with two and holds bytes that are not UTF-8 as `resp.text()` reads it; a
+  small site and a site with none of the files score as before, detail for
+  detail.
+- Run against the site from before the read limits (main at #396, e7d27b52),
+  27 of the 53 cases fail (24 rule cases and the three source cases) and
+  every control holds. With the URL guard changed to drop the limit after a
+  redirect's first hop, the three redirect cases fail; with it changed to
+  hold only a 2xx body to the limit, the five error and redirect body cases
+  and the r10 case fail. With the MCP route's read changed to compare the
+  length of its text with the limit, in place of the bytes held, the MCP
+  three-byte case fails: the token file fails with JSON.parse's message for
+  the cut body, and `designesy_llms_txt` returns the cut document. With the
+  readiness route's two reads changed the same way, the readiness three-byte
+  case fails: r02 is PASS, judged from the cut body, and r04 is WARN as an
+  endpoint that gave no tool list. With the MCP route's read changed to
+  report the status only for a 4xx or 5xx, the 302 control fails: each tool
+  scores the file the 302 carries. With the readiness route changed so that
+  a check stops only at the first path of its list, the later-path case
+  fails; with r09 changed to report a robots.txt past the limit whatever its
+  status, the 404 control fails. Measured on Node 24.15.0 on Windows, with a
+  peak of about 0.5 to 0.6 GiB of memory (maxRSS at exit; it moves from run
+  to run). CI runs Node 22 on Linux, where the byte counts and times above
+  were not measured.
+- The gate exits 1 and prints the error when it throws before its first
+  case runs (a module that cannot be loaded, say). Before, it printed
+  nothing and exited 0.
+
 **fast-uri 3.1.9 in the stylelint plugin's development install** (the
 plugin's lockfile and the `overrides` pin in its package.json, and an
 unused fast-uri pin in the site's package.json; no version moves). The plugin's published code does not change. Of the files it
@@ -277,9 +529,10 @@ score route's byte caps.
   more stylesheets once it is spent. A
   linked contract is decoded at most one byte past its 256 KB limit, and a
   larger one is `contract_too_large` (413) however it was sent. A read
-  that sets no cap of its own (the readiness and MCP reads) fails past
-  4 MiB decoded. The npm engine and the Python offline engine fail a body
-  past 16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
+  that sets no cap of its own fails past 4 MiB decoded (the readiness reads
+  and the URLs the MCP route reads for itself set none until Read limits,
+  above). The npm engine and the Python offline engine fail a body past
+  16 MiB decoded, and a page's stylesheets decode no more than 16 MiB
   between them: a compressed sheet past what is left is left out.
 - **A body that does not decode is not read.** A corrupt or truncated
   stream, a registered coding the engine does not decode (zstd or
