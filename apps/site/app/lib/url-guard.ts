@@ -661,9 +661,11 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         lookup: pinnedLookup as typeof import('node:dns').lookup,
         // With a signal, the caller's signal is the read's only deadline: 0
         // turns off the idle timeout Node's global agent gives the socket.
-        // That timeout ends nothing by itself: it makes the request emit
-        // 'timeout', and the handler below ends the read, with an error the
-        // caller does not read as its own timeout. Left on, it would end a
+        // For a socket a request holds, that timeout ends nothing by itself:
+        // it makes the request emit 'timeout', and the handler below ends the
+        // read, with an error the caller does not read as its own timeout.
+        // (The agent does end a socket that waits unused in its pool, kept
+        // alive for a later request, once it fires.) Left on, it would end a
         // read whose server goes quiet before the caller's deadline. On Node
         // 24.15.0 it is 5 s, and on a connection kept alive from an earlier
         // answer that gave a Keep-Alive timeout of 2 to 5 s it is 1 s less
@@ -863,8 +865,8 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         res.on('error', (e) => fail(e as Error));
       },
     );
-    // The socket's idle timeout (the request's `timeout` above) fired. Node
-    // only emits this; the read ends here.
+    // The socket's idle timeout (the request's `timeout` above) fired. For a
+    // socket a request holds, Node only emits this; the read ends here.
     req.on('timeout', () => {
       req.destroy(new Error('SSRF guard: fetch timeout'));
     });

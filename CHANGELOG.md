@@ -50,24 +50,28 @@ its socket (5 s, and less on a connection kept alive, below).
   gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that timeout, so
   4 s for 5 s, which Node's own HTTP server gives by default, and 1 s for
   2 s (measured on Node 24.15.0; an answer that gives 1 s is not kept
-  alive). The agent only sets that timeout. When it fires, the request
-  emits a `timeout` event, and the URL guard's handler for that event ended
-  the read with `SSRF guard: fetch timeout`, an error no caller reads as its
-  own timeout. So a server that went quiet that long, before it answered or
-  partway through its body, ended the read early. Against a server that
-  sends its headers and then nothing for 9 s, on Node 24.15.0: a request
-  through the agent with no handler for that event sees it fire at 5.01 s
-  and still reads the body, after 9.01 s; the URL guard as it was before
-  this change, given a 12 s signal, fails at 5.01 s; and the same guard
-  with only that handler taken out reads the body after 9.01 s. For a read
-  given a signal, the guard now sets the socket's idle timeout to 0, which
-  turns it off, so the event does not fire and the signal is the read's
-  only deadline. A read whose server is quiet for between the agent's
-  timeout and its deadline now completes, and one whose server stays quiet
-  ends at its deadline, as a timeout. A read given no signal still has a
-  15 s idle timeout, and the handler still ends it after 15 s of quiet; no
-  route makes one. The MCP route's reads no longer pass the URL guard an
-  idle timeout of their own (below).
+  alive). For a socket a read is using, the agent only sets that timeout;
+  it ends a socket itself only while the socket waits unused in its pool,
+  kept alive for a later request. When it fires on a read's socket, the
+  request emits a `timeout` event, and the URL guard's handler for that
+  event ended the read with `SSRF guard: fetch timeout`, an error no caller
+  reads as its own timeout. So a server that went quiet that long, before
+  it answered or partway through its body, ended the read early. Against a
+  server that sends its headers and then nothing for 9 s, on Node 24.15.0:
+  a request through the agent with no handler for that event sees it fire
+  at 5.01 s and still reads the body, after 9.01 s; the URL guard as it was
+  before this change, given a 12 s signal, fails at 5.01 s; and the same
+  guard with only that handler taken out reads the body after 9.01 s. A
+  socket left unused in the agent's pool with a 5 s idle timeout is closed
+  by the agent 5 s after its answer ends. For a read given a signal, the
+  guard now sets the socket's idle timeout to 0, which turns it off, so the
+  event does not fire and the signal is the read's only deadline. A read
+  whose server is quiet for between the agent's timeout and its deadline
+  now completes, and one whose server stays quiet ends at its deadline, as
+  a timeout. A read given no signal still has a 15 s idle timeout, and the
+  handler still ends it after 15 s of quiet; no route makes one. The MCP
+  route's reads no longer pass the URL guard an idle timeout of their own
+  (below).
 - **page-fetch reads a page's stylesheets for at most 20 s in all.** The
   drift, guardrails, monitor and compare routes read a page's stylesheets
   through page-fetch, one after another, each with an 8 s deadline, and
