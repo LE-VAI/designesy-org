@@ -60,10 +60,11 @@ const cache = new Map<string, { ts: number; data: unknown }>();
 // redirect hops and DNS checks included. url-guard's own 15 s timeout, on a
 // read given no signal, ends it only when its socket goes quiet, so a server
 // sending one byte a second held a call open with nothing in this process to
-// end it short of the function's maxDuration (300 s, vercel.json). url-guard
-// sets no idle timeout on a read given a signal, so a server that pauses, or
-// stops answering, is waited for until this deadline, and given up on with
-// this route's timeout error.
+// end it short of the function's maxDuration (300 s, vercel.json). For a
+// read given a signal, url-guard turns off the idle timeout Node's agent
+// gives its socket (5 s on Node 24.15.0), on which url-guard itself would
+// end the read, so a server that pauses, or stops answering, is waited for
+// until this deadline, and given up on with this route's timeout error.
 const READ_DEADLINE_MS = 15_000;
 
 const MiB = 1024 * 1024;

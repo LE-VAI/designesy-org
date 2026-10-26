@@ -13,9 +13,9 @@ readiness route, the hosted MCP route and six route caches; no version
 moves). No check is added, and no rule, weight or grade boundary moves. The
 Read limits and Fetch bounds entries below describe these reads before this
 change: the URL guard sent no request body, and a read given a deadline
-also had an idle timeout, 15 s for the MCP route's reads and for every
-other the idle timeout of Node's agent (5 s, and less on a connection kept
-alive, below).
+also had an idle timeout, on which the URL guard ended it: 15 s for the
+MCP route's reads, and for every other the idle timeout Node's agent gives
+its socket (5 s, and less on a connection kept alive, below).
 
 ### Fixed (requests and deadlines)
 
@@ -44,22 +44,30 @@ alive, below).
   before, where fetch drops Authorization, Proxy-Authorization and Cookie.
   No caller of the guard sends any of those three.
 - **A quiet server no longer ends a read before its deadline.** With a
-  signal, the URL guard set no timeout of its own, so the idle timeout of
-  Node's global agent, whose requests it makes, applied. It ends a socket
-  that is quiet for 5 s (its default since Node 19). On a connection kept
-  alive from an earlier answer that gave a Keep-Alive timeout of 2 to 5 s,
-  it ends the socket 1 s before that timeout: after 4 s for 5 s, which
-  Node's own HTTP server gives by default, and after 1 s for 2 s (measured
-  on Node 24.15.0; an answer that gives 1 s is not kept alive). A server
-  that went quiet that long, before it answered or partway through its
-  body, ended the read early with `SSRF guard: fetch timeout`, an error no
-  caller reads as its own timeout. The guard now turns that idle timeout
-  off for a read given a signal, so the signal is the read's only deadline.
-  A read whose server is quiet for between the agent's timeout and its
-  deadline now completes, and one whose server stays quiet ends at its
-  deadline, as a timeout. A read given no signal still fails after 15 s of
-  quiet; no route makes one. The MCP route's reads no longer pass the URL
-  guard an idle timeout of their own (below).
+  signal, the URL guard set no timeout of its own, so the socket kept the
+  idle timeout that Node's global agent, whose requests the guard makes,
+  gives it: 5 s, and on a connection kept alive from an earlier answer that
+  gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that timeout, so
+  4 s for 5 s, which Node's own HTTP server gives by default, and 1 s for
+  2 s (measured on Node 24.15.0; an answer that gives 1 s is not kept
+  alive). The agent only sets that timeout. When it fires, the request
+  emits a `timeout` event, and the URL guard's handler for that event ended
+  the read with `SSRF guard: fetch timeout`, an error no caller reads as its
+  own timeout. So a server that went quiet that long, before it answered or
+  partway through its body, ended the read early. Against a server that
+  sends its headers and then nothing for 9 s, on Node 24.15.0: a request
+  through the agent with no handler for that event sees it fire at 5.01 s
+  and still reads the body, after 9.01 s; the URL guard as it was before
+  this change, given a 12 s signal, fails at 5.01 s; and the same guard
+  with only that handler taken out reads the body after 9.01 s. For a read
+  given a signal, the guard now sets the socket's idle timeout to 0, which
+  turns it off, so the event does not fire and the signal is the read's
+  only deadline. A read whose server is quiet for between the agent's
+  timeout and its deadline now completes, and one whose server stays quiet
+  ends at its deadline, as a timeout. A read given no signal still has a
+  15 s idle timeout, and the handler still ends it after 15 s of quiet; no
+  route makes one. The MCP route's reads no longer pass the URL guard an
+  idle timeout of their own (below).
 - **page-fetch reads a page's stylesheets for at most 20 s in all.** The
   drift, guardrails, monitor and compare routes read a page's stylesheets
   through page-fetch, one after another, each with an 8 s deadline, and
@@ -92,9 +100,9 @@ alive, below).
 ### Results that can move (requests and deadlines)
 
 Each figure below was measured on Node 24.15.0, against a server on the
-same machine. "The agent's timeout" is the idle timeout above: 5 s, or on a
-connection kept alive from an earlier answer that gave a Keep-Alive timeout
-of 2 to 5 s, 1 s less than that one.
+same machine. "The agent's timeout" is the idle timeout above, on which the
+URL guard ended a read: 5 s, or on a connection kept alive from an earlier
+answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
 
 - **Readiness r04, for an endpoint that reads its request.** On an endpoint
   built with mcp-handler 2.3.0 that lists one tool, r04 moves from WARN
@@ -659,11 +667,12 @@ moves.
   with the error `Fetch timed out after 15 s`, and a read that takes longer
   in all fails even while its server keeps sending. A timeout is told by the
   read's own signal or the abort's name, never by the words of an error.
-  With a signal and no idle timeout of its own, Node's global agent ends a
-  socket that is quiet for 5 s (its default since Node 19), so these reads
-  also pass the URL guard a 15 s idle timeout: a server that pauses, or
-  stops answering, is waited for as long as before. Each tool keeps its
-  result and error shapes.
+  With a signal and no idle timeout of its own, the read's socket keeps the
+  idle timeout Node's global agent gives it, 5 s on Node 24.15.0, and the
+  URL guard ends the read with `SSRF guard: fetch timeout` once that fires,
+  so these reads also pass the URL guard a 15 s idle timeout: a server that
+  pauses, or stops answering, is waited for as long as before. Each tool
+  keeps its result and error shapes.
 - **The URL guard copies a body fewer times.** The guard joined a body's
   chunks with `Buffer.concat` and built the Response from those bytes, and a
   Response copies bytes it is given: in Node 24, one built from an 8 MiB
@@ -690,9 +699,10 @@ moves.
 - The seven tools that call the site's own API (score, drift, readiness,
   guardrails, monitor, compare and report). Those calls are not made through
   the URL guard and have no deadline of their own, as before.
-- Every other read that passes a signal of its own still has no idle
-  timeout from the URL guard, so Node's agent ends its socket after 5 s
-  quiet, as before.
+- Every other read that passes a signal of its own still sets no idle
+  timeout in the URL guard, so its socket keeps the agent's 5 s idle
+  timeout, and the URL guard ends the read once its server has been quiet
+  that long, as before.
 - Package versions. `@designesy/score` stays 0.9.3 and designesy-mcp
   1.13.10, the hosted `/api/mcp` still reports 1.13.10, and nothing is
   published.

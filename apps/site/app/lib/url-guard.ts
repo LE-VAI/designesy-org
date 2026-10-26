@@ -421,9 +421,11 @@ function giveBackDecoder(budget: ReadBudget): void {
  * A `body` is a string, sent as UTF-8, or bytes, and is sent with its length;
  * any other kind of body, and a body on a GET or HEAD, is refused with a
  * TypeError before the URL is checked or its host resolved (bodyBytes). A
- * read given a `signal` has no deadline but that signal: no idle timeout is
- * set on its socket. A read given none fails once its socket has been quiet
- * for 15 s.
+ * read given a `signal` has no deadline but that signal: the guard turns off
+ * the idle timeout Node's agent gives its socket (5 s on Node 24.15.0), so
+ * the request's 'timeout' event, on which the guard ends a read, never
+ * fires. A read given none has a 15 s idle timeout, and fails with "SSRF
+ * guard: fetch timeout" once its socket has been quiet that long.
  */
 export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
 
@@ -658,13 +660,15 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
         // With a signal, the caller's signal is the read's only deadline: 0
-        // turns off the idle timeout of Node's global agent, which would
-        // otherwise end a read whose server goes quiet before that deadline,
-        // with an error the caller does not read as its own timeout. On Node
-        // 24.15.0 that timeout is 5 s, and on a connection kept alive from an
-        // earlier answer that gave a Keep-Alive timeout of 2 to 5 s it is 1 s
-        // less than that one (4 s for 5 s, 1 s for 2 s). With no signal, 15 s
-        // of quiet ends the read.
+        // turns off the idle timeout Node's global agent gives the socket.
+        // That timeout ends nothing by itself: it makes the request emit
+        // 'timeout', and the handler below ends the read, with an error the
+        // caller does not read as its own timeout. Left on, it would end a
+        // read whose server goes quiet before the caller's deadline. On Node
+        // 24.15.0 it is 5 s, and on a connection kept alive from an earlier
+        // answer that gave a Keep-Alive timeout of 2 to 5 s it is 1 s less
+        // than that one (4 s for 5 s, 1 s for 2 s). With no signal it is
+        // 15 s, and the handler ends the read after 15 s of quiet.
         timeout: init?.signal ? 0 : 15000,
       },
       (res) => {
@@ -859,6 +863,8 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         res.on('error', (e) => fail(e as Error));
       },
     );
+    // The socket's idle timeout (the request's `timeout` above) fired. Node
+    // only emits this; the read ends here.
     req.on('timeout', () => {
       req.destroy(new Error('SSRF guard: fetch timeout'));
     });

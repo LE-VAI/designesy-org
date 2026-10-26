@@ -29,12 +29,14 @@
  * request among them, which an endpoint built with mcp-handler answers with
  * 400, and each redirect hop repeated the caller's method. With a signal, it
  * set no timeout of its own unless the caller passed an idle timeout (only
- * the MCP route's reads did, of 15 s), so the idle timeout of Node's global
- * agent, whose requests it makes, ended a read whose server went quiet
- * before the caller's deadline, with an error the caller did not read as its
- * own timeout: after 5 s on Node 24.15.0, and on a connection kept alive
- * from an earlier answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s
- * before that timeout (after 4 s for 5 s, and 1 s for 2 s). page-fetch read
+ * the MCP route's reads did, of 15 s), so the socket kept the idle timeout
+ * that Node's global agent, whose requests it makes, gives it: 5 s on Node
+ * 24.15.0, and on a connection kept alive from an earlier answer that gave
+ * a Keep-Alive timeout of 2 to 5 s, 1 s less than that timeout (4 s for
+ * 5 s, and 1 s for 2 s). The agent only sets it. When it fires, the request
+ * emits 'timeout', and the transport's own handler for that event ended a
+ * read whose server went quiet that long before the caller's deadline, with
+ * an error the caller did not read as its own timeout. page-fetch read
  * a page's stylesheets one after another with no bound on the whole, so once
  * each quiet sheet lasted its 8 s, 8 of them held a route past its 60 s. The
  * MCP route passed no signal for the URLs it reads (cachedFetch, and the url
@@ -219,7 +221,9 @@
  *     token file that answers, and designesy_llms_full_txt (cachedFetch) a
  *     document that answers.
  *   - designesy_tokens_score still reads a token file whose server is quiet
- *     for 8 s before it answers.
+ *     for 8 s before it answers. The read passes its 15 s deadline's signal
+ *     and no idle timeout, so url-guard turns off the 5 s idle timeout
+ *     Node's agent gives the socket, and the deadline is the read's only one.
  *   - A token file that starts with two byte order marks is read, or fails,
  *     as res.json() reads or fails on the same bytes (on Node 24.15.0 it is
  *     read). This holds on the route from before the read limits.
@@ -489,13 +493,14 @@
  * The sheet phase case fails on every tree before page-fetch bounded its
  * stylesheets: on the tree before that bound, where each quiet sheet lasts its
  * 8 s, the fifth is asked for about 24 s after the first and read; on the tree
- * before this change, where the agent ended each quiet sheet at 5 s, about
- * 15 s after it. The one quiet sheet case fails on the tree before this
- * change, where that sheet ends at about 5 s, and holds on the tree before the
- * bound. Four changes to page-fetch each fail cases too. One whose sheets have
- * no 8 s deadline of their own, only the phase's, fails both: in the sheet
- * phase case the third sheet is never asked for, and in the one quiet sheet
- * case none of the three sheets after the quiet one is read. One that times
+ * before this change, where url-guard ended each quiet sheet at 5 s, when
+ * the agent's idle timeout fired, about 15 s after it. The one quiet sheet
+ * case fails on the tree before this change, where that sheet ends at about
+ * 5 s, and holds on the tree before the bound. Four changes to page-fetch
+ * each fail cases too. One whose sheets have no 8 s deadline of their own,
+ * only the phase's, fails both: in the sheet phase case the third sheet is
+ * never asked for, and in the one quiet sheet case none of the three sheets
+ * after the quiet one is read. One that times
  * the phase from before the page read fails the sheet phase case, which then
  * ends about 18 s after the first sheet is asked for. One whose phase does not
  * end the sheet being read fails it at about 24 s, and one that asks for
@@ -563,7 +568,8 @@ const QUIET_S = 6;
 /**
  * The keep-alive case: each [Keep-Alive timeout its first answer gives, how
  * long its second is quiet], and the signal of each read. Node's agent then
- * ends a quiet socket 1 s before that timeout: after 4 s for 5, and 1 s for 2.
+ * gives the socket an idle timeout 1 s less than that timeout (4 s for 5,
+ * and 1 s for 2), on which url-guard ended the read before this change.
  */
 const KEEP_ALIVE = [[5, 4.5], [2, 1.5]];
 const KEEP_ALIVE_SIGNAL_S = 5;
