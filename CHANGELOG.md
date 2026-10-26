@@ -34,15 +34,18 @@ its socket (5 s, and less on a connection kept alive, below).
 - **A 301, 302, 303, 307 or 308 is followed with the method and body fetch
   would use.** A 303 to any method but GET or HEAD, and a 301 or 302 to a
   POST, become a GET with no body and none of the headers that describe one
-  (Content-Type, Content-Language and Content-Location among them). A 307 or
-  308, and a 301 or 302 to any other method, send the request again, its
-  body included. Before, every hop repeated the caller's method with no
-  body. Two things still differ from fetch. Any other 3xx that carries a
-  Location (300, 304, 305, 306, or 309 to 399) is followed, as before, where
-  fetch returns it, and the request is repeated, now with its body. Every
-  header the caller passes is sent on every hop, to another origin too, as
-  before, where fetch drops Authorization, Proxy-Authorization and Cookie.
-  No caller of the guard sends any of those three.
+  (Content-Type, Content-Encoding, Content-Language and Content-Location
+  among them), and a 307 or 308 after that repeats the GET. A 307 or 308,
+  and a 301 or 302 to any other method, send the request again, its body
+  included. Before, every hop repeated the caller's method with no body.
+  Each hop's URL and DNS answer are checked as the first hop's are, as
+  before, so a body is never sent to a host the guard refuses. Two things
+  still differ from fetch. Any other 3xx that carries a Location (300, 304,
+  305, 306, or 309 to 399) is followed, as before, where fetch returns it,
+  and the request is repeated, now with its body. Every header the caller
+  passes is sent on every hop, to another origin too, as before, where
+  fetch drops Authorization, Proxy-Authorization and Cookie. No caller of
+  the guard sends any of those three.
 - **A quiet server no longer ends a read before its deadline.** With a
   signal, the URL guard set no timeout of its own, so the socket kept the
   idle timeout that Node's global agent, whose requests the guard makes,
@@ -60,7 +63,7 @@ its socket (5 s, and less on a connection kept alive, below).
   server that sends its headers and then nothing for 9 s, on Node 24.15.0:
   a request through the agent with no handler for that event sees it fire
   at 5.01 s and still reads the body, after 9.01 s; the URL guard as it was
-  before this change, given a 12 s signal, fails at 5.01 s; and the same
+  before this change, given a 12 s signal, fails at 5.00 s; and the same
   guard with only that handler taken out reads the body after 9.01 s. A
   socket left unused in the agent's pool with a 5 s idle timeout is closed
   by the agent 5 s after its answer ends. For a read given a signal, the
@@ -77,18 +80,19 @@ its socket (5 s, and less on a connection kept alive, below).
   through page-fetch, one after another, each with an 8 s deadline, and
   nothing bounded the whole. Once a quiet sheet lasted its full 8 s, a page
   that answers at once and links 8 stylesheets whose server sends its
-  headers and then nothing held the drift route for 64.28 s, past the 60 s
-  each of those routes may run; before this change it took about 40 s
-  (40.32 s and 39.06 s in 2 runs). page-fetch now asks for no stylesheet
-  once 20 s have passed since it asked for the first, as the score route's
-  stylesheet phase ends at 20 s, and the end of those 20 s also ends the
-  sheet being read. One timer, started as the first sheet is asked for,
-  marks that end, and no sheet is asked for once it has fired. A sheet not
-  read by then is left out, as one that cannot be read is. The same drift
-  run now takes about 20 s (20.04 and 20.06 s in 2 runs through the route
-  harness), and asks for 3 of the 8 sheets, about 0, 8 and 16 s after the
-  first. A page-fetch read now ends within 36 s: two candidate page URLs of
-  8 s each, then the sheets.
+  headers and then nothing held the drift route for 64.04 s, asking for
+  all 8 sheets 8 s apart, past the 60 s each of those routes may run (this
+  change with its 20 s bound raised to 1,000 s, through the route
+  harness); before this change it took 40.23 s, the 8 sheets 5 s apart.
+  page-fetch now asks for no stylesheet once 20 s have passed since it
+  asked for the first, as the score route's stylesheet phase ends at 20 s,
+  and the end of those 20 s also ends the sheet being read. One timer,
+  started as the first sheet is asked for, marks that end, and no sheet is
+  asked for once it has fired. A sheet not read by then is left out, as
+  one that cannot be read is. The same drift run now takes 20.10 s, and
+  asks for 3 of the 8 sheets, at 0.00, 8.00 and 16.00 s after the first. A
+  page-fetch read now ends within 36 s: two candidate page URLs of 8 s
+  each, then the sheets.
 - **A result cached before this change is not served.** The readiness,
   report, drift, guardrails, monitor and compare routes keep each result for
   24 h, and this change moves results each of them keeps (below; a report
@@ -99,14 +103,17 @@ its socket (5 s, and less on a connection kept alive, below).
   Guardrails entry below gives it, in the guardrails key. None of the six
   cached functions is edited by this change, so the function's source, which
   Next.js 16.4.2 puts in the key, would not have kept an older result out.
-  The score route's cache is keyed by the deployment's commit, as before.
+  The score route's cache is keyed by the deployment's commit, as before,
+  so a deploy starts it clean; the gate now checks that part too.
 
 ### Results that can move (requests and deadlines)
 
-Each figure below was measured on Node 24.15.0, against a server on the
-same machine. "The agent's timeout" is the idle timeout above, on which the
-URL guard ended a read: 5 s, or on a connection kept alive from an earlier
-answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
+Each figure below was measured on Node 24.15.0 on Windows, through the
+route harness, against a server on the same machine, on this change's
+tree and on the tree before it. "The agent's timeout" is the idle timeout
+above, on which the URL guard ended a read: 5 s, or on a connection kept
+alive from an earlier answer that gave a Keep-Alive timeout of 2 to 5 s,
+1 s less than that one.
 
 - **Readiness r04, for an endpoint that reads its request.** On an endpoint
   built with mcp-handler 2.3.0 that lists one tool, r04 moves from WARN
@@ -129,56 +136,62 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   as not found (FAIL, and for r04 `No MCP endpoint detected at /api/mcp`)
   or, for a check that tries several paths, went on to the next path. A
   page scanned whose server does so is now read, where the scan failed
-  (HTTP 502, `Could not fetch the target URL`). An llms.txt whose server is
-  quiet for 6 s before it answers is r02 PASS after 6.14 s, where it was
-  FAIL. A file whose server stays quiet past 8 s is reported as before.
+  (HTTP 502, `Could not fetch the target URL`). A scan whose llms.txt has a
+  server quiet for 6 s before it answers gives r02 PASS after 6.01 s, where
+  it gave r02 FAIL after 5.02 s. A file whose server stays quiet past 8 s
+  is reported as before.
 - **Score results, for a page, stylesheet or contract whose server is quiet
   for between the agent's timeout and 8 s.** The score route reads each
   candidate page URL (the URL given, its www. host and its http:// address,
   one after another), each stylesheet, and in contract mode the contract
   URL, with an 8 s deadline each. Such a page is now scored, where the URL
   was unreachable with `the request failed at the network level`: a page
-  quiet for 6 s before it answers scores 68.4 (D) after 6.07 s, where it
-  was unreachable after 10.04 s. When the URL given is quiet that long and
+  quiet for 6 s before it answers scores 68.4 (D) after 6.03 s, where it
+  was unreachable after 10.01 s. When the URL given is quiet that long and
   a later candidate answers, the page scored is now the URL given's, where
   it was the later candidate's, so the score can move either way: with the
   URL given quiet for 6 s before it answers one page and its www. host
   answering another at once, the score was the www. page's 78.5 (C) after
-  5.05 s, and is now the URL given's 58.1 (F) after 6.04 s. Such a
+  5.03 s, and is now the URL given's 58.1 (F) after 6.02 s. Such a
   stylesheet is now part of the CSS the score reads, where it was left out,
   so the score can move either way: a page whose one stylesheet is quiet
   for 6 s before it answers scored 68.4 (D) after 5.03 s, without that
-  sheet, and now scores 80 (B) after 6.05 s. Such a contract is now read
-  (after 6.02 s for one quiet for 6 s), where it was
+  sheet, and now scores 80 (B) after 6.02 s. Such a contract is now read
+  (after 6.00 s for one quiet for 6 s), where it was
   `CONTRACT_URL_UNREACHABLE` with why `network` (after 5.00 s).
 - **Score results, for a server that stays quiet past 8 s.** The page, sheet
   or contract still fails, now as a timeout. A page at a www. URL that sends
   its headers and then nothing on both of its candidate URLs (that URL and
   its http:// address) is unreachable with `the request timed out` after
-  16.04 s, where it said `the request failed at the network level` after
-  10.10 s. A contract URL that does so is `CONTRACT_URL_UNREACHABLE` with
-  why `timeout` after 8.01 s, where it was why `network` after 5.02 s (two
-  runs on each tree, the same both times).
+  16.00 s, where it said `the request failed at the network level` after
+  10.01 s. A contract URL that does so is `CONTRACT_URL_UNREACHABLE` with
+  why `timeout` after 8.00 s, where it was why `network` after 5.00 s.
 - **The score route's `/DESIGN.md` (v37), on a connection kept alive.** Its
   own deadline is 5 s, as long as the agent's timeout on a new connection,
   so a server quiet for 5 s still ends it, and v37 is SKIP (`could not
   fetch /DESIGN.md`), as before. It is read from the host of the URL given
   once the page and its stylesheets have been read, so it can go over a
   connection kept alive from one of their answers, where the agent's
-  timeout was shorter. A quiet start between that timeout and 5 s is now
-  waited out, and v37 judges the file where it was SKIP. Through the URL
-  guard with a 5 s deadline: after an answer that gave a 5 s Keep-Alive
-  timeout, a server quiet for 4.5 s is read after 4.52 s, where the read
-  failed after 4.00 s; after one that gave 2 s, a server quiet for 1.5 s is
-  read after 1.50 s, where it failed after 1.00 s.
+  timeout was shorter. That holds only while the connection is still kept:
+  the agent ends a connection left unused in its pool once that same
+  shorter timeout has passed since its last answer, and `/DESIGN.md` asked
+  for later opens a new one, whose timeout is the 5 s again. On a kept
+  connection, a quiet start between that timeout and 5 s is now waited
+  out, and v37 judges the file where it was SKIP. Through the URL guard
+  alone with a 5 s deadline, on the connection an earlier answer kept:
+  after an answer that gave a 5 s Keep-Alive timeout, a server quiet for
+  4.5 s is read after 4.50 s, where the read failed after 4.00 s; after one
+  that gave 2 s, a server quiet for 1.5 s is read after 1.50 s, where it
+  failed after 1.00 s. The score route's own `/DESIGN.md` read on such a
+  connection was not run.
 - **The drift, guardrails, monitor and compare routes.** They read the page
   (the URL given, then its www. host) and each stylesheet through
   page-fetch, with an 8 s deadline each. Such a page whose server is quiet
   for between the agent's timeout and 8 s is now read, where the route
   answered `Could not fetch the target URL` (compare: `Could not fetch URL
   A` or `B`, or either), and such a stylesheet is now part of the CSS read.
-  page-fetch reads a page quiet for 6 s before it answers after 6.06 s,
-  where it read nothing after 5.05 s. When the URL given is quiet that long
+  page-fetch reads a page quiet for 6 s before it answers after 6.00 s,
+  where it read nothing after 5.01 s. When the URL given is quiet that long
   and its www. host answers, page-fetch now reads the URL given's page
   (after 6.02 s in the case above), where it read the www. page (after
   5.02 s), so the result can move either way. A page whose stylesheets take
@@ -199,7 +212,7 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   page the score route could not read gives no grade, and now gives one
   where the score route reads that page: for the late site in the next item,
   the report was HTTP 502 after 15.1 s and is now composite 66 (D) after
-  42.2 s. The hosted MCP route's tools that call these routes, the published
+  42.1 s. The hosted MCP route's tools that call these routes, the published
   designesy-mcp package's (next item) and the live badge, which shows the
   score route's result, pass the same results along.
 - **How long a run lasts against a server that is quiet, slow or late, and
@@ -209,12 +222,15 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   `designesy_score` returns `the call failed after the request was sent:
   TimeoutError: timed out`, and its other six tools that call these routes
   return `Tool execution failed: timed out`. That was measured with the
-  package's own code on Python 3.10.9, against a local server that answered
-  after 21 s and after 31 s; an answer after 19 s and after 29 s was
-  returned as the route gave it. Each figure below is the mean of three
-  runs through the route harness (two for the compare run with the URL
-  given quiet), which agreed within 0.1 s; for drift, guardrails and
-  monitor it is drift's, and the other two were within 0.1 s of it. For
+  package's server file as released in 1.13.10, on Python 3.10.9, for all
+  seven tools, against a local server that answered after 21 s and after
+  31 s; an answer after 19 s and after 29 s was returned as the route gave
+  it. Each figure below is the mean of 3 runs on this change's tree and of
+  2 on the tree before it, through the route harness. The runs of one
+  route on one tree agreed within 0.02 s; an earlier set of runs, on a
+  machine busier with other work, spread by up to 0.49 s. For drift,
+  guardrails and monitor the figure is drift's, and the other two were
+  within 0.01 s of it. For
   quiet and slow, the server answers at once the page a route needs, and
   for every other request it is quiet (it sends its headers and then
   nothing) or sends one byte a second. For late, it answers every request
@@ -222,31 +238,31 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   each other file as 404, so a check tries each of its paths. Each answer
   closes its connection.
   - Readiness, with the page at the URL given: quiet 25.2 s, now 40.1 s;
-    slow 40.1 s, as before; late 5.1 s (HTTP 502), now 42.2 s.
+    slow 40.1 s, as before; late 5.0 s (HTTP 502), now 42.1 s.
   - Score, with the URL given and its www. host quiet, slow or late (404)
     and the page, with one stylesheet, at its http:// address: quiet
     20.1 s, now 29.0 s; slow 29.0 s, as before; late 15.1 s (unreachable),
-    now 32.7 s (68.2, D).
+    now 32.6 s (68.2, D).
   - Drift, guardrails and monitor, with the URL given quiet, slow or late
-    (404) and the page, with 8 stylesheets, at its www. host: quiet 45.2 s,
-    now 28.0 s; slow 72.1 s, past their 60 s limit, now 28.1 s; late
+    (404) and the page, with 8 stylesheets, at its www. host: quiet 45.1 s,
+    now 28.0 s; slow 72.0 s, past their 60 s limit, now 28.0 s; late
     10.1 s (HTTP 502), now 34.1 s.
   - Compare, which reads two such sites and then scores each through the
-    score route: quiet 60.2 s, now 49.1 s; slow 93.1 s, now 49.1 s; late
-    10.1 s (HTTP 502), now 59.7 s. With the URL given quiet and every
+    score route: quiet 60.1 s, now 49.0 s; slow 93.1 s, now 49.1 s; late
+    10.1 s (HTTP 502), now 59.6 s. With the URL given quiet and every
     other request late, it was 10.1 s (HTTP 502) and is now 61.6 s, past
     its 60 s limit.
   - Report, which runs score, drift and readiness at once, with the page,
-    with 8 stylesheets, at the URL given: quiet 40.2 s, now 40.1 s; slow
-    64.1 s, past its 60 s limit, now 40.2 s; late 15.1 s (HTTP 502), now
-    42.2 s.
+    with 8 stylesheets, at the URL given: quiet 40.2 s before and 40.1 s
+    now; slow 64.1 s, past its 60 s limit, now 40.1 s; late 15.1 s
+    (HTTP 502), now 42.1 s.
 
   So against such a server, the package's `designesy_readiness_score`,
   `designesy_score` and `designesy_report` can now return its timeout
   error where they returned the route's answer (readiness, quiet: 40.1 s
-  for its 30 s; score, late: 32.7 s for its 20 s). Its drift, guardrails
+  for its 30 s; score, late: 32.6 s for its 20 s). Its drift, guardrails
   and monitor tools can return the route's answer where they timed out
-  (quiet: 28.0 s, where it was 45.2 s), and a late server now outlasts the
+  (quiet: 28.0 s, where it was 45.1 s), and a late server now outlasts the
   wait of all seven. Against a server that sends one byte a second, the
   readiness, score, compare and report runs outlasted the package's wait
   before this change too. Nothing in the package is edited. The hosted MCP
@@ -259,9 +275,10 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   gone: the deadline's timer starts before the request and the idle timer
   only once the socket is quiet, so with both at 15 s the deadline ended
   every quiet read first. Against a server that sends its headers and then
-  nothing, 58 of 58 `designesy_tokens_score` reads ended at 15.000 to
-  15.005 s with `Fetch timed out after 15 s`, as they do now, and a token
-  file whose server is quiet for 8 s is still read, after about 8 s.
+  nothing, a `designesy_tokens_score` read ends at 15.00 s with `Fetch
+  timed out after 15 s`, as it did, and a token file whose server is quiet
+  for 8 s is still read, after 8.08 to 8.10 s (the gate's two cases, in
+  each of 3 runs on this change's tree).
 - What a GET carries: every read of the MCP route and of the score, drift,
   guardrails, monitor and compare routes, and every readiness probe but
   r04's, sends the request it sent before.
@@ -284,22 +301,28 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
 
 ### Gates (requests and deadlines)
 
-- `check-fetch-bounds.mjs` runs 65 cases (53 before this change), in about
-  24 to 26 s over 5 runs, with a peak of about 0.7 GiB of memory (maxRSS at
-  exit), on Node 24.15.0 on Windows. Both move from run to run and with
-  other work on the machine: the CPU was sampled at 53 to 73%, and at 92 to
-  100% the gate took 27 to 30 s. A POST through the guard carries its
-  46-byte body with `Content-Length: 46`; after a 307 or 308 the URL it
-  lands on receives the same POST, and after a 301, 302 or 303 a GET with no
-  body and none of the headers that describe one, while a header that
-  describes no body is kept; a PUT is repeated after a 302 and becomes a GET
-  after a 303; and a HEAD stays a HEAD through a 303. A string of 3
-  characters and 9 bytes arrives as 9 bytes with `Content-Length: 9`, and a
-  view of part of a buffer as only the bytes it views; URLSearchParams, and
-  a body on a GET or a HEAD, are refused with a TypeError, with no DNS query
-  and no request. Readiness r04 on an endpoint built with mcp-handler is
-  PASS with its one tool, also through a 307, and WARN with HTTP 405 through
-  a 302; the same endpoint answers a tools/list POST with no body with 400.
+- `check-fetch-bounds.mjs` runs 66 cases (53 before this change), in 24.10
+  to 24.30 s over 3 runs in a fresh clone of this change's tree, with a peak
+  of 735 to 745 MiB of memory (maxRSS at exit), on Node 24.15.0 on Windows.
+  Both move from run to run and with other work on the machine. A POST
+  through the guard carries its 46-byte body with `Content-Length: 46`;
+  after a 307 or 308 the URL it lands on receives the same POST, and after
+  a 301, 302 or 303 a GET with no body and none of the headers that
+  describe one (Content-Encoding among them), while a header that describes
+  no body is kept; a 307 after a 303 repeats that GET; a PUT is repeated
+  after a 302 and becomes a GET after a 303; and a HEAD stays a HEAD through
+  a 303. Each hop is checked as the first is: a POST sent through a 307 or
+  a 308 to a host whose DNS answer is 127.0.0.1 is refused at that hop's DNS
+  check, and one sent to `http://169.254.169.254/` at its URL check, before
+  any lookup, and neither target is asked. A string of 3 characters and 9
+  bytes arrives as 9 bytes with `Content-Length: 9`, a view of part of a
+  buffer as only the bytes it views, and a body whose caller passed a wrong
+  Content-Length with the true one, sent once; URLSearchParams, and a body
+  on a GET, a HEAD or a request that names no method, are refused with a
+  TypeError, with no DNS query and no request. Readiness r04 on an
+  endpoint built with mcp-handler is PASS with its one tool, also through a
+  307, and WARN with HTTP 405 through a 302; the same endpoint answers a
+  tools/list POST with no body with 400.
   A server that sends nothing for 6 s partway through its body is read whole
   by a caller whose deadline is 12 s; on a connection kept alive from an
   answer that gave a 5 s Keep-Alive timeout, one quiet for 4.5 s is read by
@@ -317,17 +340,23 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   once, whose next three send their headers and then nothing and whose fifth
   answers at once, asks for the three quiet ones about 0, 8 and 16 s after
   it asked for the first, ends 20 s after that with the first sheet's CSS,
-  and never asks for the fifth. On a page whose second stylesheet does so
-  and whose others answer at once, it ends that sheet at 8 s and reads the
-  four others. The cache key case also asserts `request-body-deadline` in
-  all six keys, and lists the guardrails key's `dtcg-objects-1` part.
-- On the tree before this change, 55 of the 65 cases pass, in each of
-  2 runs. Nine of the 12 new cases fail: each URL receives a POST with 0
-  body bytes, each body of the body kinds case arrives with
-  `Content-Length: 0`, and URLSearchParams and the GET and HEAD bodies are
-  sent; r04 is WARN with HTTP 400 (directly and through the 307 and the
-  302); the 6 s read ends at about 5 s with `SSRF guard: fetch timeout`, and
-  the kept-alive ones at 4 s and 1 s; r02 is FAIL, the score route reports
+  and never asks for the fifth, and page-fetch's STYLESHEET_DEADLINE_MS is
+  20 s, which the times alone hold only to within their margins. On a page
+  whose second stylesheet does so and whose others answer at once, it ends
+  that sheet at 8 s and reads the four others. The cache key case also
+  asserts `request-body-deadline` in all six keys, lists the guardrails
+  key's `dtcg-objects-1` part, and asserts that the score route's key holds
+  the deployment's commit (`VERCEL_GIT_COMMIT_SHA`).
+- On the tree before this change, 56 of the 66 cases pass, in each of
+  2 runs. Nine of the 13 new cases fail: each URL receives a POST with 0
+  body bytes; in the body kinds case the string, the ArrayBuffer and the
+  view arrive with `Content-Length: 0`, the body whose caller passed a
+  wrong Content-Length is sent with that header and no body and fails at
+  the 15 s idle timeout, and URLSearchParams and the GET, HEAD and
+  no-method bodies are sent; r04 is WARN with HTTP 400 (directly and
+  through the 307 and the 302); the 6 s read ends at about 5 s with
+  `SSRF guard: fetch timeout`, and the kept-alive ones at 4 s and 1 s;
+  r02 is FAIL, the score route reports
   the quiet page unreachable and page-fetch reads nothing; the silent page
   is unreachable because the request failed at the network level; page-fetch
   asks for the fifth stylesheet about 15 s after the first and reads it; and
@@ -335,17 +364,24 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   key case fails too, naming all six keys. The `designesy_tokens_score` case
   holds there, because that tree's MCP route passed its 15 s deadline as an
   idle timeout too; with that taken out, it fails at about 5 s, and so does
-  the 8 s token-file case. The no-signal and call-site cases hold there:
-  they pin what was already true for a later change, and each fails against
-  a change made to break it.
+  the 8 s token-file case. The no-signal, call-site and hop cases hold
+  there: they pin what was already true for a later change, and each fails
+  against a change made to break it. A URL guard that runs the DNS check,
+  the URL check, or both on the first hop only fails the hop case, and
+  passes the gate as it was before that case.
 - A page-fetch whose stylesheets have no 8 s deadline of their own, only the
   20 s of the phase, fails both stylesheet cases: it never asks for the
   third sheet of the first, and reads none of the sheets after the quiet one
   in the second. One that times the phase from before the page read, one
   whose phase does not end the sheet being read, and one that asks for
-  sheets once the phase is over each fail the first. A URL guard that makes
-  a HEAD a GET after a 303 fails the POST case.
-- Against main at #396, from before the read limits, 36 of the 65 cases
+  sheets once the phase is over each fail the first, and so does one whose
+  phase is 21.8 s or 19.6 s, on its STYLESHEET_DEADLINE_MS alone. A URL
+  guard that makes a HEAD a GET after a 303 fails the POST case, and so do
+  one that keeps Content-Encoding on the GET and one that works out each
+  hop's request from the caller's, not from the hop before. One that reads
+  a request with no method as a POST fails the body kinds case. A score
+  route whose cache key holds no commit fails the cache key case.
+- Against main at #396, from before the read limits, 36 of the 66 cases
   fail, in each of 2 runs, and every control holds: the 27 the read limits
   make fail there (24 rule cases and 3 source cases, the cache key case
   among them) and the nine new cases that fail on the tree before this
