@@ -498,7 +498,8 @@ export function cutByBudget(resp: Response): boolean {
  * is made, and the text is held besides them: for a 16 MiB body on Node
  * 24.15.0, ArrayBuffer memory went from 16 to 32 MiB with either, and the
  * 16 MiB text was held outside it. Reading the body with arrayBuffer()
- * first and then a Response's text() took ArrayBuffer memory to 64 MiB.
+ * first and then a Response's text() took ArrayBuffer memory to 64 MiB or
+ * more: 64 to 96 MiB over the runs measured, one fresh process each.
  */
 export async function textWithin(resp: Response, limit: number): Promise<string | null> {
   const chunks: Uint8Array[] = [];
