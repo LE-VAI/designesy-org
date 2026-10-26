@@ -33,10 +33,12 @@
  * that Node's global agent, whose requests it makes, gives it: 5 s on Node
  * 24.15.0, and on a connection kept alive from an earlier answer that gave
  * a Keep-Alive timeout of 2 to 5 s, 1 s less than that timeout (4 s for
- * 5 s, and 1 s for 2 s). The agent only sets it. When it fires, the request
- * emits 'timeout', and the transport's own handler for that event ended a
- * read whose server went quiet that long before the caller's deadline, with
- * an error the caller did not read as its own timeout. page-fetch read
+ * 5 s, and 1 s for 2 s). For a socket a request holds, the agent only sets
+ * it (it ends a socket only while that waits unused in its pool). When it
+ * fires, the request emits 'timeout', and the transport's own handler for
+ * that event ended a read whose server went quiet that long before the
+ * caller's deadline, with an error the caller did not read as its own
+ * timeout. page-fetch read
  * a page's stylesheets one after another with no bound on the whole, so once
  * each quiet sheet lasted its 8 s, 8 of them held a route past its 60 s. The
  * MCP route passed no signal for the URLs it reads (cachedFetch, and the url
@@ -68,15 +70,19 @@
  * The real URL guard, the real MCP route and the real readiness route, loaded
  * through scripts/lib/route-harness.js with realSafeFetch. As in
  * check-score-read-bounds.mjs, two things are swapped, both below the guard:
- * node:dns/promises answers a public address, and records each host it is
- * asked about (looked), and node:http(s) connect to a server on 127.0.0.1 that
- * this script runs. The connect wrapper also counts the body bytes that reach
- * the client, keeps the request, and records when the request was made and
- * when its headers arrived (seen), so a case can say how far a body got,
- * whether the request was destroyed, when a read was asked for and how long
- * its server stayed quiet. The server reads each request's body before it
- * answers, and records the method, the headers that describe a body, one
- * header that does not, and the body (asked), so a case can say what a request
+ * node:dns/promises answers a public address (but 127.0.0.1 for the two
+ * private-*.example.com hosts, and an IPv4 address as itself, as dns.lookup
+ * does), and records each host it is asked about (looked), and node:http(s)
+ * connect to a server on 127.0.0.1 that this script runs. Every request is
+ * plain http, an https URL's too, and the wrapper drops the guard's pinned
+ * lookup, so no case runs pinnedLookup. The connect wrapper also counts the
+ * body bytes that reach the client, keeps the request, and records when the
+ * request was made and when its headers arrived (seen), so a case can say
+ * how far a body got, whether the request was destroyed, when a read was
+ * asked for and how long its server stayed quiet. The server reads each
+ * request's body before it answers, and records the method, the headers
+ * that describe a body, one header that does not, how many content-length
+ * headers came, and the body (asked), so a case can say what a request
  * carried. One host is answered by an MCP endpoint built with mcp-handler, the
  * package the site's MCP route serves its tools with, resolved from the app
  * checked or else from this checkout. The keep-alive case's host has a server
@@ -138,16 +144,23 @@
  *     with content-length 46. After a 307 or a 308 the URL it lands on
  *     receives the same POST; after a 301, a 302 or a 303 it receives a GET
  *     with no body and none of the headers that describe one (content-type,
- *     content-language and content-location), while a header that describes no
- *     body is kept. A PUT is repeated, its body included, after a 302, and
- *     becomes such a GET after a 303. A HEAD stays a HEAD through a 303, its
- *     headers kept. Each is as fetch follows that redirect.
+ *     content-encoding, content-language and content-location), while a
+ *     header that describes no body is kept. A 307 after a 303 repeats that
+ *     GET, with no body. A PUT is repeated, its body included, after a 302,
+ *     and becomes such a GET after a 303. A HEAD stays a HEAD through a 303,
+ *     its headers kept. Each is as fetch follows that redirect.
+ *   - Each hop of a redirect is checked as the first is. A POST sent through
+ *     a 307 or a 308 to a host whose DNS answer is 127.0.0.1 is refused at
+ *     that hop's DNS check, after its host is looked up, and one sent to
+ *     http://169.254.169.254/ (the cloud metadata address) at that hop's URL
+ *     check, before any lookup; neither target is asked.
  *   - A request body is sent as its bytes, with their count as its
  *     content-length: a string past ASCII (3 characters, 9 bytes), an
  *     ArrayBuffer, and a view of part of a buffer (only the bytes it views).
- *     A body of another kind (URLSearchParams), and a body on a GET or a
- *     HEAD, is refused with a TypeError before its host is looked up, and
- *     no request is made.
+ *     A content-length the caller passes is replaced by the true one, sent
+ *     once. A body of another kind (URLSearchParams), and a body on a GET, a
+ *     HEAD or a request that names no method (a GET), is refused with a
+ *     TypeError before its host is looked up, and no request is made.
  *   - A server that sends one byte a second is ended by the caller's 3 s
  *     signal at its deadline, with an AbortError, and the request is
  *     destroyed. Each MCP read of such a server (designesy_tokens_score,
@@ -277,7 +290,9 @@
  *     at about 0, 8 and 16 s after it asked for the first, its read ends 20 s
  *     after that with the first sheet's CSS, and the fifth is never asked for.
  *     Each time is taken from when the first sheet was asked for, which the
- *     phase is timed from. On a page whose second sheet sends its headers and
+ *     phase is timed from. Those times hold the phase only to within their
+ *     margins, so the case also reads page-fetch's STYLESHEET_DEADLINE_MS,
+ *     which must be 20 s. On a page whose second sheet sends its headers and
  *     then nothing and whose others answer at once, it ends that sheet at its
  *     8 s deadline and reads the four others.
  *   - The readiness route's READ_LIMIT is 4 MiB, and each of its two
@@ -288,7 +303,9 @@
  *     'read-limit-4mib' in their unstable_cache keys. They, and the drift,
  *     guardrails, monitor and compare routes' caches, carry the key part
  *     'request-body-deadline', since the request body and deadline work
- *     moves results each of them keeps.
+ *     moves results each of them keeps. The score route's cache (scoreUrl)
+ *     is keyed by the deployment's commit (VERCEL_GIT_COMMIT_SHA), so a
+ *     deploy starts it clean.
  *   - Readiness controls, which hold on the readiness route from before its
  *     read limit too: an /llms.txt, a /sitemap.xml, a home page and a
  *     tools/list answer of exactly 4 MiB are read whole and PASS, as is a
@@ -476,10 +493,24 @@
  * r04 case through the 302. The POST case also fails against a url-guard that
  * keeps content-language and content-location on the GET, one that makes a PUT
  * a GET after a 302, one that makes a 308 a GET, one that repeats a POST after
- * a 301, and one that makes a HEAD a GET after a 303.
+ * a 301, and one that makes a HEAD a GET after a 303. One that keeps
+ * content-encoding on the GET fails it after the 301, the 302 and the 303,
+ * and one that works out each hop's request from the caller's, not from the
+ * hop before, sends the POST and its body again after the 303 and the 307.
+ *
+ * The hop case holds on that tree and on the tree from before the read
+ * limits: it pins, for a later change, what the guard already did on each
+ * hop. A url-guard that runs the DNS check on the first hop only lets the
+ * 307 and the 308 reach the hosts that resolve to 127.0.0.1; one that runs
+ * the URL check on the first hop only looks the metadata address up and
+ * refuses it with the DNS check's error; and one that runs neither after
+ * the first hop reaches all four. Each of the three passes the gate as it
+ * stood before the hop case.
  *
  * On that tree each body of the body kinds case arrives with content-length
- * 0, and URLSearchParams, a body on a GET and a body on a HEAD are each sent
+ * 0, the one whose caller passed a content-length of 999 is sent with that
+ * header and no body and fails at the 15 s idle timeout, and URLSearchParams,
+ * a body on a GET, a body on a HEAD and a body with no method are each sent
  * (HTTP 404, as the server lists none of those URLs). Against the tree that
  * merged the read limits into this change, before the guard checked a body
  * ahead of the DNS check, it fails on the three refusals: URLSearchParams
@@ -487,8 +518,12 @@
  * sent with their body. A url-guard that counts a string body's length in
  * characters, one that sends the whole buffer behind a view, one that sends
  * a URLSearchParams body as no body, one that checks the body only as each
- * hop is requested, and one that sends a body with a GET or HEAD each fail
- * it.
+ * hop is requested, one that sends a body with a GET or HEAD, and one that
+ * takes a request that names no method as a POST each fail it. The guard
+ * both drops a content-length its caller passes and sets the true one, and
+ * Node would set it from the body too, so a url-guard without either one
+ * still sends the true length, once, and holds the case; one without both
+ * sends the caller's 999 and fails it at the 15 s idle timeout.
  *
  * The sheet phase case fails on every tree before page-fetch bounded its
  * stylesheets: on the tree before that bound, where each quiet sheet lasts its
@@ -505,7 +540,11 @@
  * ends about 18 s after the first sheet is asked for. One whose phase does not
  * end the sheet being read fails it at about 24 s, and one that asks for
  * sheets once the phase is over fails it by asking for the fifth at 20 s and
- * reading it.
+ * reading it. A page-fetch whose phase is 21.8 s or 19.6 s asks for and ends
+ * its sheets within the case's margins, and fails it on its
+ * STYLESHEET_DEADLINE_MS alone.
+ *
+ * A score route whose cache key holds no commit fails the cache key case.
  *
  * The no-signal case and the call-site case hold on the trees from before
  * this change and from before the read limits, where each of those reads
@@ -516,7 +555,7 @@
  * abort it, fails the call-site case.
  *
  * Run against the tree from before the read limits (url-guard, MCP route and
- * readiness route from before them), 36 of the 65 cases fail and every control
+ * readiness route from before them), 36 of the 66 cases fail and every control
  * holds: the 27 the read limits make fail there (24 rule cases and 3 source
  * cases, the cache key case among them) and the nine requests and deadline
  * cases above.
@@ -638,10 +677,15 @@ const toLocal = (real) => ({
     return record.req;
   },
 });
+/** Hosts whose DNS answer is a loopback address: a redirect's targets, which the guard must refuse at that hop. */
+const PRIVATE_HOSTS = new Set(['private-307.example.com', 'private-308.example.com']);
 /** Every host the guard's DNS check was asked about. */
 const looked = new Set();
 const lookup = async (hostname) => {
   looked.add(hostname);
+  // An IPv4 address resolves to itself, as dns.lookup gives it.
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return [{ address: hostname, family: 4 }];
+  if (PRIVATE_HOSTS.has(hostname)) return [{ address: '127.0.0.1', family: 4 }];
   return [{ address: '93.184.215.14', family: 4 }];
 };
 
@@ -833,6 +877,21 @@ const ROUTES = {
   'post-landed-301.example.com/rpc': { body: 'ok', type: 'text/plain' },
   'post-308.example.com/rpc': { status: 308, location: 'https://post-landed-308.example.com/rpc' },
   'post-landed-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A POST through a 303 and then a 307: the 307 repeats the GET the 303 made.
+  'post-303-307.example.com/rpc': { status: 303, location: 'https://post-mid-303-307.example.com/rpc' },
+  'post-mid-303-307.example.com/rpc': { status: 307, location: 'https://post-landed-303-307.example.com/rpc' },
+  'post-landed-303-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  // A POST through a 307 or a 308 to a host whose DNS answer is 127.0.0.1,
+  // and to the cloud metadata address. The targets are listed so that a
+  // request that reached one would be answered, and seen.
+  'post-private-307.example.com/rpc': { status: 307, location: 'https://private-307.example.com/rpc' },
+  'post-private-308.example.com/rpc': { status: 308, location: 'https://private-308.example.com/rpc' },
+  'private-307.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'private-308.example.com/rpc': { body: 'ok', type: 'text/plain' },
+  'post-metadata-307.example.com/rpc': { status: 307, location: 'http://169.254.169.254/latest/meta-data/307' },
+  'post-metadata-308.example.com/rpc': { status: 308, location: 'http://169.254.169.254/latest/meta-data/308' },
+  '169.254.169.254/latest/meta-data/307': { body: 'ok', type: 'text/plain' },
+  '169.254.169.254/latest/meta-data/308': { body: 'ok', type: 'text/plain' },
   // A HEAD through a 303, which stays a HEAD.
   'head-303.example.com/rpc': { status: 303, location: 'https://head-landed-303.example.com/rpc' },
   'head-landed-303.example.com/rpc': { body: 'ok', type: 'text/plain' },
@@ -845,6 +904,7 @@ const ROUTES = {
   'body-kinds.example.com/text': { body: 'ok', type: 'text/plain' },
   'body-kinds.example.com/buffer': { body: 'ok', type: 'text/plain' },
   'body-kinds.example.com/view': { body: 'ok', type: 'text/plain' },
+  'body-kinds.example.com/length': { body: 'ok', type: 'text/plain' },
   // Servers that go quiet: mid-body, after the headers for good, and before
   // the headers on a connection an earlier answer kept alive.
   'quiet.example.com/': { bytes: Buffer.from(PAGE), length: true, pause: QUIET_S * 1000 },
@@ -1000,8 +1060,9 @@ for (const [host, files] of Object.entries(READY_FILES)) {
 const sent = new Map();
 /**
  * host + path -> what the last request carried: its method, its
- * content-length, content-type, content-language and content-location
- * headers, an x-kept header that describes no body, and its body.
+ * content-length, content-type, content-encoding, content-language and
+ * content-location headers, how many content-length headers it sent, an
+ * x-kept header that describes no body, and its body.
  */
 const asked = new Map();
 
@@ -1060,7 +1121,9 @@ const handle = (req, res) => {
     asked.set(key, {
       method: req.method,
       length: req.headers['content-length'],
+      lengths: req.rawHeaders.filter((v, i) => i % 2 === 0 && v.toLowerCase() === 'content-length').length,
       type: req.headers['content-type'],
+      encoding: req.headers['content-encoding'],
       language: req.headers['content-language'],
       place: req.headers['content-location'],
       kept: req.headers['x-kept'],
@@ -1711,14 +1774,14 @@ const CONCURRENT = [
     },
   },
   {
-    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, a PUT is repeated after a 302 and made a GET by a 303, and a HEAD stays a HEAD through a 303',
+    name: 'a POST carries its body, with its length; a 307 or 308 sends it again, a 301, 302 or 303 is followed with a GET that carries none and none of the headers that describe one, a 307 after a 303 repeats that GET, a PUT is repeated after a 302 and made a GET by a 303, and a HEAD stays a HEAD through a 303',
     run: async () => {
       const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-      // Content-Type, Content-Language and Content-Location describe the body; X-Kept does not.
-      const headers = { 'Content-Type': 'application/json', 'Content-Language': 'en', 'Content-Location': '/rpc', 'X-Kept': 'kept' };
-      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', language: 'en', place: '/rpc', kept: 'kept', body };
+      // Content-Type, Content-Encoding, Content-Language and Content-Location describe the body; X-Kept does not.
+      const headers = { 'Content-Type': 'application/json', 'Content-Encoding': 'identity', 'Content-Language': 'en', 'Content-Location': '/rpc', 'X-Kept': 'kept' };
+      const posted = { method: 'POST', length: String(Buffer.byteLength(body)), type: 'application/json', encoding: 'identity', language: 'en', place: '/rpc', kept: 'kept', body };
       const put = { ...posted, method: 'PUT' };
-      const got = { method: 'GET', length: undefined, type: undefined, language: undefined, place: undefined, kept: 'kept', body: '' };
+      const got = { method: 'GET', length: undefined, type: undefined, encoding: undefined, language: undefined, place: undefined, kept: 'kept', body: '' };
       // A HEAD is sent with no body, and a 303 repeats it as it is.
       const headed = { ...posted, method: 'HEAD', length: undefined, body: '' };
       return eachRead([
@@ -1728,6 +1791,7 @@ const CONCURRENT = [
         ['after a 301', 'POST', 'post-301.example.com/rpc', 'post-landed-301.example.com/rpc', got],
         ['after a 302', 'POST', 'post-302.example.com/rpc', 'post-landed-302.example.com/rpc', got],
         ['after a 303', 'POST', 'post-303.example.com/rpc', 'post-landed-303.example.com/rpc', got],
+        ['after a 303 and then a 307', 'POST', 'post-303-307.example.com/rpc', 'post-landed-303-307.example.com/rpc', got],
         ['a PUT after a 302', 'PUT', 'put-302.example.com/rpc', 'put-landed-302.example.com/rpc', put],
         ['a PUT after a 303', 'PUT', 'put-303.example.com/rpc', 'put-landed-303.example.com/rpc', got],
         ['a HEAD after a 303', 'HEAD', 'head-303.example.com/rpc', 'head-landed-303.example.com/rpc', headed],
@@ -1736,14 +1800,34 @@ const CONCURRENT = [
         assert.equal(resp.status, 200, `HTTP ${resp.status}`);
         const a = asked.get(landed);
         assert.ok(a, `no request reached ${landed}`);
-        const carried = { method: a.method, length: a.length, type: a.type, language: a.language, place: a.place, kept: a.kept, body: a.body.toString() };
+        const carried = { method: a.method, length: a.length, type: a.type, encoding: a.encoding, language: a.language, place: a.place, kept: a.kept, body: a.body.toString() };
         assert.deepEqual(carried, want, `${landed} received ${JSON.stringify(carried)}`);
         return `${landed} received a ${a.method} with ${a.body.length} body bytes${a.length ? ` (content-length ${a.length})` : ''}`;
       }]));
     },
   },
   {
-    name: 'a request body is sent as its bytes, with their count as its length: a string past ASCII, an ArrayBuffer and a view of part of one; a body of another kind, or one on a GET or HEAD, is refused with a TypeError before its host is looked up',
+    name: 'each hop of a redirect is checked as the first is: a POST sent through a 307 or a 308 to a host whose DNS answer is 127.0.0.1, or to the cloud metadata address, is refused at that hop, and neither target is asked',
+    run: async () => {
+      const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+      // [label, the host posted to, the hop's host, the URL it leads to, the error, whether the hop's host is looked up].
+      return eachRead([
+        ['a 307 to a host that resolves to 127.0.0.1', 'post-private-307.example.com', 'private-307.example.com', 'private-307.example.com/rpc', 'SSRF guard: blocked DNS resolution for private-307.example.com (resolves to private/internal IP)', true],
+        ['a 308 to a host that resolves to 127.0.0.1', 'post-private-308.example.com', 'private-308.example.com', 'private-308.example.com/rpc', 'SSRF guard: blocked DNS resolution for private-308.example.com (resolves to private/internal IP)', true],
+        ['a 307 to the metadata address', 'post-metadata-307.example.com', '169.254.169.254', '169.254.169.254/latest/meta-data/307', 'SSRF guard: blocked URL http://169.254.169.254/latest/meta-data/307', false],
+        ['a 308 to the metadata address', 'post-metadata-308.example.com', '169.254.169.254', '169.254.169.254/latest/meta-data/308', 'SSRF guard: blocked URL http://169.254.169.254/latest/meta-data/308', false],
+      ].map(([label, host, target, targetKey, message, lookedUp]) => [label, async () => {
+        const err = await rejection(safeFetch(`https://${host}/rpc`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }));
+        assert.equal(err.message, message, `rejected with ${err.name}: ${err.message}`);
+        assert.ok(asked.get(`${host}/rpc`), `the first hop, ${host}/rpc, was not asked`);
+        assert.equal(seen.has(targetKey), false, `a request reached ${targetKey}`);
+        assert.equal(looked.has(target), lookedUp, `${target} was ${lookedUp ? 'not ' : ''}looked up`);
+        return `"${err.message}"; ${target} ${lookedUp ? 'looked up' : 'not looked up'}, and ${targetKey} not asked`;
+      }]));
+    },
+  },
+  {
+    name: "a request body is sent as its bytes, with their count as its length: a string past ASCII, an ArrayBuffer and a view of part of one, and a caller's own content-length is replaced, sent once; a body of another kind, or one on a GET, a HEAD or a request that names no method, is refused with a TypeError before its host is looked up",
     run: async () => {
       // 2 + 3 + 4 bytes in UTF-8, 9 in all; a length counted in characters is 3 (4 in UTF-16 units).
       const text = String.fromCodePoint(0xe9, 0x6f22, 0x1f600);
@@ -1752,11 +1836,12 @@ const CONCURRENT = [
       // A view whose buffer holds bytes on each side of it, which are not sent.
       const whole = new TextEncoder().encode('skip{"kind":"a view of part of a buffer"}skip');
       const view = whole.subarray(4, whole.length - 4);
-      const sends = (label, key, body, bytes) => [label, async () => {
-        const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', body }));
+      const sends = (label, key, body, bytes, headers) => [label, async () => {
+        const resp = await resolution(safeFetch(`https://${key}`, { method: 'POST', body, ...(headers ? { headers } : {}) }));
         assert.equal(resp.status, 200, `HTTP ${resp.status}`);
         const a = asked.get(key);
         assert.ok(a, `no request reached ${key}`);
+        assert.equal(a.lengths, 1, `${a.lengths} content-length headers`);
         assert.equal(a.length, String(bytes.length), `content-length ${a.length} for a body of ${bytes.length} bytes`);
         assert.equal(Buffer.compare(a.body, bytes), 0, `${key} received ${JSON.stringify(a.body.toString())}, not ${JSON.stringify(bytes.toString())}`);
         return `${a.body.length} body bytes, content-length ${a.length}`;
@@ -1772,9 +1857,13 @@ const CONCURRENT = [
         sends('a string past ASCII', 'body-kinds.example.com/text', text, Buffer.from(text, 'utf8')),
         sends('an ArrayBuffer', 'body-kinds.example.com/buffer', buffer, plain),
         sends('a view of part of a buffer', 'body-kinds.example.com/view', view, Buffer.from(view)),
+        // A caller's Content-Length that is wrong, which the guard replaces.
+        sends("a caller's wrong Content-Length", 'body-kinds.example.com/length', 'five!', Buffer.from('five!'), { 'Content-Length': '999' }),
         refuses('URLSearchParams', 'refused-params.example.com', { method: 'POST', body: new URLSearchParams({ kind: 'form' }) }),
         refuses('a body on a GET', 'refused-get.example.com', { method: 'GET', body: 'x' }),
         refuses('a body on a HEAD', 'refused-head.example.com', { method: 'HEAD', body: 'x' }),
+        // No method is a GET, as it is for fetch.
+        refuses('a body with no method', 'refused-nomethod.example.com', { body: 'x' }),
       ]);
     },
   },
@@ -2315,7 +2404,13 @@ const CONCURRENT = [
         return at.toFixed(2);
       });
       endedAt(since(end), SHEET_PHASE_S);
-      return `the quiet sheets were asked for ${asked.join(', ')} s after the first, and the read ended ${since(end).toFixed(2)} s after it (${((end - t0) / 1000).toFixed(2)} s after the call); the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for`;
+      // The times above hold the phase only to within their margins; its
+      // length is page-fetch's STYLESHEET_DEADLINE_MS.
+      const src = (await fs.promises.readFile(path.join(APP, 'app/lib/page-fetch.ts'), 'utf8')).replace(/\r\n/g, '\n');
+      const m = src.match(/^const STYLESHEET_DEADLINE_MS = ([\d_]+);$/m);
+      assert.ok(m, 'no STYLESHEET_DEADLINE_MS in page-fetch');
+      assert.equal(Number(m[1].replace(/_/g, '')), SHEET_PHASE_S * 1000, `STYLESHEET_DEADLINE_MS is ${m[1]}, not ${SHEET_PHASE_S * 1000}`);
+      return `the quiet sheets were asked for ${asked.join(', ')} s after the first, and the read ended ${since(end).toFixed(2)} s after it (${((end - t0) / 1000).toFixed(2)} s after the call); the CSS read is the first sheet's ${page.css.length} bytes, and the last sheet was not asked for; STYLESHEET_DEADLINE_MS ${m[1]}`;
     },
   },
   {
@@ -2364,7 +2459,7 @@ const CONCURRENT = [
     },
   },
   {
-    name: "the readiness and report caches carry the read limit in their keys, and they and the drift, guardrails, monitor and compare caches the request body and deadline work, so no result cached before either is read",
+    name: "the readiness and report caches carry the read limit in their keys, and they and the drift, guardrails, monitor and compare caches the request body and deadline work, so no result cached before either is read; the score route's cache is keyed by the deployment's commit",
     run: async () => {
       const keys = [];
       const wrong = [];
@@ -2392,6 +2487,15 @@ const CONCURRENT = [
         if (missing.length) wrong.push(`${route} caches ${fn} under [${have.join(', ')}], with no '${missing.join("', '")}'`);
         keys.push(`${route}: [${have.join(', ')}]`);
       }
+      // The score route's key holds the deployment's commit, so a deploy
+      // starts that cache clean: its wrapper's source, which Next.js puts in
+      // the key too, does not change from one deploy to the next.
+      const score = fs.readFileSync(path.join(APP, 'app/api/score/route.ts'), 'utf8').replace(/\r\n/g, '\n');
+      const at = score.indexOf('export const scoreUrl = unstable_cache(');
+      const key = at >= 0 ? score.slice(at).match(/^\s*\[([^\]\n]*)\],$/m) : null;
+      if (!key) wrong.push('no unstable_cache key for scoreUrl in app/api/score/route.ts');
+      else if (!/\bprocess\.env\.VERCEL_GIT_COMMIT_SHA\b/.test(key[1])) wrong.push(`app/api/score/route.ts caches scoreUrl under [${key[1]}], with no VERCEL_GIT_COMMIT_SHA`);
+      if (key) keys.push(`app/api/score/route.ts: [${key[1]}]`);
       assert.equal(wrong.length, 0, wrong.join('; '));
       return keys.join('; ');
     },
