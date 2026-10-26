@@ -124,6 +124,13 @@ const FADE_QUICK = 150; // starting or stopping: within the 200ms reduced-motion
 // Below it the type is too small to read, and the stage rests resolved.
 const FIT_MIN = 0.75;
 
+// The settle (narrow, pinned): where a step comes to rest, how close a stop
+// must be to one, and when a scroll counts as stopped.
+const SETTLE_GAP = 8; // px between the stage's fade and the settled step's numeral
+const SETTLE_REACH = 0.5; // of a step's spacing: farther than this, the page stays where it stopped
+const SETTLE_IDLE = 180; // ms without a scroll event
+const SETTLE_LAPSE = 1000; // ms an input waits for the scroll it should cause
+
 const LABEL = `Demo on a generic page, inspected in four steps. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. The v03 failure caps the grade at B: ${PASS} pass, ${WARN} warn, ${FAIL} fail, grade B.`;
 
 /** A numbered pin, as drawn on the page and repeated in the log. */
@@ -218,21 +225,38 @@ export function InspectSequence() {
      * Wide: a one-pixel band across the middle of the viewport; the step whose
      * block crosses it is on stage.
      *
-     * Narrow: the stage is pinned over the top of the screen, and a step's
-     * heading must stay readable for as long as that step is on stage. Before,
-     * a step lit at a fixed line (68% down) with its text centred in a 46vh
-     * block, so for the last third of each step its own heading sat under the
-     * pinned stage (measured at 390x844, 2026-10-03). Now, from the stage's
-     * real bottom edge S and the readable region R below it:
-     *   - the trigger is the step HEADING crossing L = S + 0.6R, and
-     *   - steps are spaced 0.6R apart,
-     * so the active heading travels from L up to exactly S before the next
-     * heading reaches L and takes over. Works scrolling either way: the last
-     * heading to touch the band wins.
-     * The last heading has no successor, so the pin ends when it reaches S:
-     * the section's content box stops --ix-pin-end short of the list's end
-     * (the list runs on into the padding; home-inspect.css), and at release
-     * the step-four heading sits on S under the graded stage.
+     * Narrow: the stage is pinned over the top of the screen, and a step must
+     * stay readable, numeral to last line, for as long as it is on stage.
+     * Before, a step lit at a fixed line (68% down) with its text centred in a
+     * 46vh block, so for the last third of each step its own heading sat under
+     * the pinned stage (measured at 390x844, 2026-10-03). From the stage's
+     * real bottom edge S, the readable region R = H - S below it, and the
+     * stage's own fade F (the 1.5rem gradient under it; text in it is half
+     * gone), E = S + F is the first line a step can be read from:
+     *   - steps are spaced D = 0.6R apart (their min-height), and
+     *   - the trigger is the step's BLOCK crossing L = E + D,
+     * so the active step's block travels from L up to exactly E before the
+     * next block reaches L and takes over, and the step just read fades out
+     * there (home-inspect.css) instead of sliding under the fade lit. The
+     * heading used to be the trigger, so the numeral above it went under the
+     * stage, and the heading into the fade, while the step was still lit.
+     * Works scrolling either way: the last block to touch the band wins.
+     * The last step has no successor, so the pin ends when its block reaches
+     * E + SETTLE_GAP: the section's content box stops --ix-pin-end short of
+     * the list's end (the list runs on into the padding; home-inspect.css),
+     * and at release step four sits whole under the graded stage, as a
+     * settled step does. (It released with its heading on S, under the fade,
+     * and its numeral under the stage, and they scrolled away like that.)
+     *
+     * H is the large viewport's height (100lvh), not innerHeight. On a phone
+     * innerHeight changes as the address bar slides in and out on the first
+     * scrolls; the geometry built on it changed with it, every step moved by
+     * up to 3 x 0.6 of the bar's height under the reader's finger, and at
+     * some sizes the stage unpinned or pinned mid-scroll (390 wide: unpinned
+     * at 750 tall, pinned at 844; measured 2026-10-15). The large viewport
+     * does not change with the bar, so neither does the layout: a resize that
+     * changes innerHeight alone re-aims the observers (their band is measured
+     * from the viewport's bottom) and touches nothing else.
      *
      * Where R cannot hold a step's text plus that travel (a short tablet
      * window), the specimen is first fitted: --ix-fit scales its type until
@@ -245,10 +269,10 @@ export function InspectSequence() {
      * Which of the two is read from --ix-mode, which the CSS sets in the same
      * container query that switches the layout, so CSS and JS cannot disagree.
      *
-     * The view timelines take the same band. Narrow, the observer watches the
-     * heading but the timeline's subject is the whole step, which starts o
-     * pixels above it, so the timeline's line sits o pixels higher. These are
-     * static writes, on setup and resize only, never per frame.
+     * The view timelines take the same band: their subject is the step's
+     * block, as the observer's is, and the band's bottom inset is written as
+     * calc(100% - ...) so it follows the viewport's height without a write.
+     * These are static writes, on setup and resize only, never per frame.
      */
     const canvas = root.querySelector<HTMLElement>('.inspect-canvas');
     const list = root.querySelector<HTMLElement>('.inspect-steps');
@@ -257,6 +281,22 @@ export function InspectSequence() {
     let watched: Element[] = steps;
     // The narrow stage is pinned over the list (setup decides).
     let pinned = false;
+    let edge = 0; // E, in viewport px while the stage is stuck
+    let spacing = 0; // D
+    let built = { w: 0, h: 0 }; // the viewport setup last laid out for
+
+    /** The large viewport's height: a phone's height with its address bar
+     *  hidden, innerHeight everywhere else. */
+    const viewportH = () => {
+      if (typeof CSS === 'undefined' || !CSS.supports('height', '100lvh')) return window.innerHeight;
+      const probe = document.createElement('div');
+      probe.setAttribute('data-ix-viewport', '');
+      probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none';
+      document.body.appendChild(probe);
+      const h = probe.getBoundingClientRect().height;
+      probe.remove();
+      return h || window.innerHeight;
+    };
 
     /**
      * The observer can only report a crossing it sees, and a jump (Home, an
@@ -279,8 +319,8 @@ export function InspectSequence() {
      *     stage covers the top of the screen, so a lit step can be "in view"
      *     and still unreadable under it: after a jump at 768 (1700 to 1950)
      *     step two stayed lit while only step three's copy could be read
-     *     (judged 2026-10-03). The band there is exact, the active heading
-     *     travels from L up to the stage's edge, so the last heading at or
+     *     (judged 2026-10-03). The band there is exact, the active block
+     *     travels from L up to the readable edge E, so the last block at or
      *     above L is the step a reader can see, in either direction.
      */
     const fromGeometry = () => {
@@ -312,14 +352,40 @@ export function InspectSequence() {
       requestAnimationFrame(() => requestAnimationFrame(() => root.removeAttribute('data-ix-snap')));
     };
 
+    /** (Re)build the observers on the current band and viewport. */
+    const observe = () => {
+      io?.disconnect();
+      ends?.disconnect();
+      io = ends = null;
+      if (root.dataset.pin === 'off') return;
+      const vh = window.innerHeight;
+      if (!pinned) line = vh / 2;
+      const band = pinned ? `-${line}px 0px -${Math.max(0, vh - line - 1)}px 0px` : '-50% 0px -50% 0px';
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) if (e.isIntersecting) setStep(e.target);
+        },
+        { rootMargin: band, threshold: 0 }
+      );
+      watched.forEach((t) => io!.observe(t));
+      if (list) {
+        ends = new IntersectionObserver(
+          ([e]) => {
+            if (e.isIntersecting || auto) return;
+            show(e.boundingClientRect.top > line ? '1' : String(steps.length));
+          },
+          { rootMargin: band, threshold: 0 }
+        );
+        ends.observe(list);
+      }
+    };
+
     const setup = () => {
       io?.disconnect();
       ends?.disconnect();
       const narrow = !!stage && getComputedStyle(stage).getPropertyValue('--ix-mode').trim() === 'narrow';
-      const vh = window.innerHeight;
-      let band = '-50% 0px -50% 0px';
-      let targets: Element[] = steps;
-      line = vh / 2;
+      const vh = viewportH();
+      built = { w: window.innerWidth, h: vh };
       for (const p of ['--ix-step-h', '--ix-band-start', '--ix-band-end', '--ix-pin-end', '--ix-fit']) {
         root.style.removeProperty(p);
       }
@@ -370,44 +436,24 @@ export function InspectSequence() {
           return;
         }
         pinned = true;
-        const R = vh - S;
-        const L = Math.round(S + 0.6 * R);
-        root.style.setProperty('--ix-step-h', `${Math.round(0.6 * R)}px`);
-        band = `-${L}px 0px -${Math.max(0, vh - L - 1)}px 0px`;
-        line = L;
-        targets = steps.map((s) => s.querySelector('.inspect-step-title') ?? s);
-        const first = steps[0];
-        const head = first?.querySelector('.inspect-step-title');
-        const o = first && head ? head.getBoundingClientRect().top - first.getBoundingClientRect().top : 0;
-        const tl = Math.round(L - o);
-        root.style.setProperty('--ix-band-start', `${tl}px`);
-        root.style.setProperty('--ix-band-end', `${Math.max(0, vh - tl - 1)}px`);
-        // The pin's early end: from the last heading to the list's end (read
-        // after --ix-step-h has laid the list out).
-        const last = targets[targets.length - 1];
+        const F = parseFloat(getComputedStyle(stage, '::after').height) || 0;
+        spacing = Math.round(0.6 * (vh - S));
+        edge = Math.round(S + F);
+        line = edge + spacing;
+        root.style.setProperty('--ix-step-h', `${spacing}px`);
+        root.style.setProperty('--ix-band-start', `${line}px`);
+        root.style.setProperty('--ix-band-end', `calc(100% - ${line + 1}px)`);
+        // The pin's early end: from the last block, less the fade and the
+        // settle gap, to the list's end (read after --ix-step-h has laid the
+        // list out).
+        const last = steps[steps.length - 1];
         if (list && last) {
-          const end = list.getBoundingClientRect().bottom - last.getBoundingClientRect().top;
+          const end = list.getBoundingClientRect().bottom - last.getBoundingClientRect().top + F + SETTLE_GAP;
           root.style.setProperty('--ix-pin-end', `${Math.max(0, Math.round(end))}px`);
         }
       }
-      io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) if (e.isIntersecting) setStep(e.target);
-        },
-        { rootMargin: band, threshold: 0 }
-      );
-      targets.forEach((t) => io!.observe(t));
-      watched = targets;
-      if (list) {
-        ends = new IntersectionObserver(
-          ([e]) => {
-            if (e.isIntersecting || auto) return;
-            show(e.boundingClientRect.top > line ? '1' : String(steps.length));
-          },
-          { rootMargin: band, threshold: 0 }
-        );
-        ends.observe(list);
-      }
+      watched = steps;
+      observe();
       // Back from resting resolved: the observer reports only crossings, so
       // take the step from the geometry once.
       if (wasOff && !auto) show(String(fromGeometry()));
@@ -419,10 +465,19 @@ export function InspectSequence() {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(setup);
     };
+    // innerHeight alone changed (a phone's address bar): same layout, the
+    // observers re-aimed. Anything else lays the section out again.
+    const onResize = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        if (window.innerWidth === built.w && viewportH() === built.h) observe();
+        else setup();
+      });
+    };
     setup();
     sync();
     root.toggleAttribute('data-ix-armed', true);
-    window.addEventListener('resize', schedule);
+    window.addEventListener('resize', onResize);
     window.addEventListener('scrollend', resync, { passive: true });
     const ro = typeof ResizeObserver !== 'undefined' && stage ? new ResizeObserver(schedule) : null;
     if (ro && stage) ro.observe(stage);
@@ -439,6 +494,110 @@ export function InspectSequence() {
     rm.addEventListener('change', sync);
     const mo = new MutationObserver(sync);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion'] });
+
+    /**
+     * The settle (narrow, pinned). Scrolling stays free; when a reader's
+     * scroll stops near a step, the page eases the last few pixels so that
+     * step rests whole just under the stage, its numeral SETTLE_GAP below the
+     * fade: the place every step passes through on its turn, and where step
+     * four releases. Without it a stop could leave the lit step low with an
+     * empty band above it, or the step just read half faded at the stage's
+     * edge.
+     *
+     * Only after the reader's own input (wheel, touch, a scrolling key), so a
+     * jump, find-in-page or this settle's own scroll never sets one off; not
+     * while a finger is down; only toward a step ahead in the direction of
+     * travel, or back onto one passed by no more than the gap (which never
+     * changes the lit step), and only within SETTLE_REACH of it. So a short
+     * scroll stays where it stopped, and the page never pulls a reader back
+     * against the way they were going. Never in calm (reduced motion, or the
+     * site's motion toggle), never while the play loop runs.
+     */
+    // The direction of travel is the page's last movement in the gesture,
+    // else the input's own (a wheel's delta, the key, the finger's travel):
+    // a passive listener can run after the scroll it caused, so a one-notch
+    // wheel can arrive with the page already still. No direction, no settle.
+    // An input that moves nothing (a wheel at the page's end, a key in a
+    // field) lapses after SETTLE_LAPSE, so it cannot arm a later jump.
+    let armed = false;
+    let touching = false;
+    let touchY = 0;
+    let lastY = 0;
+    let dir = 0; // 1: the page moved down the document, -1: up
+    let idle = 0;
+    const disarm = () => {
+      idle = 0;
+      if (touching) return;
+      armed = false;
+      dir = 0;
+    };
+    const arm = (hint: number) => {
+      if (!armed) {
+        armed = true;
+        lastY = window.scrollY;
+      }
+      if (hint) dir = hint;
+      clearTimeout(idle);
+      idle = window.setTimeout(disarm, SETTLE_LAPSE);
+    };
+    const settle = () => {
+      idle = 0;
+      if (touching || !armed) return;
+      armed = false;
+      const d = dir;
+      dir = 0;
+      if (!d || !pinned || auto || root.hasAttribute('data-ix-calm')) return;
+      let best: number | null = null;
+      for (const li of steps) {
+        // scrollBy(delta) brings this step's numeral to E + SETTLE_GAP.
+        const delta = li.getBoundingClientRect().top - (edge + SETTLE_GAP);
+        if (d * delta < -SETTLE_GAP || Math.abs(delta) > spacing * SETTLE_REACH) continue;
+        if (best === null || Math.abs(delta) < Math.abs(best)) best = delta;
+      }
+      if (best !== null && Math.abs(best) >= 2) window.scrollBy({ top: best, behavior: 'smooth' });
+    };
+    const onScroll = () => {
+      if (!armed) return;
+      clearTimeout(idle);
+      // Away from the section, the gesture just runs out.
+      if (!root.hasAttribute('data-ix-active')) {
+        idle = window.setTimeout(disarm, SETTLE_IDLE);
+        return;
+      }
+      const y = window.scrollY;
+      if (y !== lastY) {
+        dir = Math.sign(y - lastY);
+        lastY = y;
+      }
+      idle = window.setTimeout(settle, SETTLE_IDLE);
+    };
+    const onWheel = (e: WheelEvent) => arm(Math.sign(e.deltaY));
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.defaultPrevented || el?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el?.tagName ?? '')) return;
+      const k = e.key;
+      if (k === 'PageDown' || k === 'ArrowDown' || k === 'End' || (k === ' ' && !e.shiftKey)) arm(1);
+      else if (k === 'PageUp' || k === 'ArrowUp' || k === 'Home' || (k === ' ' && e.shiftKey)) arm(-1);
+    };
+    const onTouch = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (e.type === 'touchstart') {
+        touching = true;
+        touchY = t ? t.clientY : 0;
+        arm(0);
+        return;
+      }
+      touching = e.touches.length > 0;
+      // A finger travelling up the screen moves the page down the document.
+      arm(t ? Math.sign(touchY - t.clientY) : 0);
+      if (!touching) onScroll();
+    };
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('touchstart', onTouch, { passive: true });
+    window.addEventListener('touchend', onTouch, { passive: true });
+    window.addEventListener('touchcancel', onTouch, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     // --- Play on request ---------------------------------------------------
     let timers: number[] = [];
@@ -540,8 +699,15 @@ export function InspectSequence() {
       mo.disconnect();
       rm.removeEventListener('change', sync);
       cancelAnimationFrame(raf);
-      window.removeEventListener('resize', schedule);
+      clearTimeout(idle);
+      window.removeEventListener('resize', onResize);
       window.removeEventListener('scrollend', resync);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('touchstart', onTouch);
+      window.removeEventListener('touchend', onTouch);
+      window.removeEventListener('touchcancel', onTouch);
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
