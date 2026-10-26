@@ -142,8 +142,11 @@ answer that gave a Keep-Alive timeout of 2 to 5 s, 1 s less than that one.
   answering another at once, the score was the www. page's 78.5 (C) after
   5.05 s, and is now the URL given's 58.1 (F) after 6.04 s. Such a
   stylesheet is now part of the CSS the score reads, where it was left out,
-  so the score can move either way. Such a contract is now read, where it
-  was `CONTRACT_URL_UNREACHABLE`.
+  so the score can move either way: a page whose one stylesheet is quiet
+  for 6 s before it answers scored 68.4 (D) after 5.03 s, without that
+  sheet, and now scores 80 (B) after 6.05 s. Such a contract is now read
+  (after 6.02 s for one quiet for 6 s), where it was
+  `CONTRACT_URL_UNREACHABLE` with why `network` (after 5.00 s).
 - **Score results, for a server that stays quiet past 8 s.** The page, sheet
   or contract still fails, now as a timeout. A page at a www. URL that sends
   its headers and then nothing on both of its candidate URLs (that URL and
