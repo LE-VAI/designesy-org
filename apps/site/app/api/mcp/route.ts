@@ -36,7 +36,7 @@ import { after } from 'next/server';
 import { recordUsage, toolCallNames } from '../../lib/usage';
 import { z } from 'zod';
 import { buildReportAppHtml } from '../../lib/report-app-html';
-import { safeFetch } from '../../lib/url-guard';
+import { safeFetch, textWithin } from '../../lib/url-guard';
 import { monitorHistorySchema } from '../../lib/monitor-history';
 import { ENGINE_CHECK_COUNT } from '../../lib/check-definitions';
 import { mcpToolDisplay } from '../../lib/mcp-tool-registry';
@@ -57,23 +57,58 @@ const cache = new Map<string, { ts: number; data: unknown }>();
 
 // Every URL this server reads for itself (cachedFetch below, and the url of
 // designesy_tokens_score and designesy_motion_score) ends within this long,
-// redirect hops and DNS checks included. url-guard's own 15 s timeout ends a
-// read only when its socket goes quiet, so a server sending one byte a second
-// held a call open with nothing in this process to end it short of the
-// function's maxDuration (300 s, vercel.json). With a signal and no idle
-// timeout of its own, Node's global agent ends a socket that is quiet for
-// 5 s, so readUrl passes this same figure as the idle timeout too: a server
-// that pauses, or stops answering, is waited for as long as before.
+// redirect hops and DNS checks included. url-guard's own 15 s timeout, on a
+// read given no signal, ends it only when its socket goes quiet, so a server
+// sending one byte a second held a call open with nothing in this process to
+// end it short of the function's maxDuration (300 s, vercel.json). For a
+// read given a signal, url-guard turns off the idle timeout Node's agent
+// gives its socket (5 s on Node 24.15.0), on which url-guard itself would
+// end the read, so a server that pauses, or stops answering, is waited for
+// until this deadline, and given up on with this route's timeout error.
 const READ_DEADLINE_MS = 15_000;
+
+const MiB = 1024 * 1024;
+
+// Each of those reads also holds at most its own number of body bytes, given
+// to url-guard as maxBodyBytes and counted after decoding when url-guard
+// decodes the body (a compressed 2xx body). An ok response whose body is
+// longer than its limit fails the read with an error that names the limit,
+// and a response that is not ok reports its status, so no body is read in
+// part as if it were whole.
+//
+// 16 MiB for the url of designesy_motion_score. Two public Lottie files
+// measured 8,873,709 bytes (lottie-ios Tests/Samples/Issues/issue_1403.json,
+// which embeds images) and 4,713,147 bytes (lottie-web
+// test/animations/monster.json, vector only), each on its repository's
+// master branch. Each size was measured with no content coding on
+// 2026-10-25.
+const LOTTIE_READ_LIMIT = 16 * 1024 * 1024;
+// 4 MiB for the url of designesy_tokens_score and for every cachedFetch
+// read. The largest token files measured are 1,674,878 bytes
+// (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json)
+// and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
+// dist/json/variables.json). The largest of the seven documents cachedFetch
+// reads from this site measured 100,907 bytes (/contracts/design-system.json,
+// as its route wrote it). Each size was measured with no content coding on
+// 2026-10-25.
+const READ_LIMIT = 4 * 1024 * 1024;
+
+/** What readUrl returns: an ok response's body as text, or the status of a response that is not ok. */
+type UrlRead = { ok: true; text: string } | { ok: false; status: number; statusText: string };
 
 /**
  * url-guard's safeFetch (connection-level IP-pinned + URL/DNS guarded), ended
- * at READ_DEADLINE_MS. A read past it fails as a timeout, not as "aborted".
+ * at READ_DEADLINE_MS and held to `limit` body bytes. A read past the
+ * deadline fails as a timeout, not as "aborted". An ok response whose body
+ * is longer than `limit` fails as over the limit. A response that is not ok
+ * returns its status and no body, so a large error page still reports its
+ * status.
  */
-async function readUrl(url: string, headers: Record<string, string>): Promise<Response> {
+async function readUrl(url: string, limit: number, headers: Record<string, string>): Promise<UrlRead> {
   const signal = AbortSignal.timeout(READ_DEADLINE_MS);
+  let res: Response;
   try {
-    return await safeFetch(url, { headers, signal, idleTimeoutMs: READ_DEADLINE_MS });
+    res = await safeFetch(url, { headers, signal, maxBodyBytes: limit });
   } catch (e) {
     // A timeout is this read's own deadline firing, never a word in a
     // message: a rejection can carry text the server chose.
@@ -82,6 +117,16 @@ async function readUrl(url: string, headers: Record<string, string>): Promise<Re
     }
     throw e;
   }
+  if (!res.ok) return { ok: false, status: res.status, statusText: res.statusText };
+  // safeFetch holds at most limit + 1 bytes, so a body that holds more than
+  // the limit went past it (textWithin, url-guard). A body within it is the
+  // text res.text() gave, so JSON.parse of it gives what res.json() gave,
+  // its error message included.
+  const text = await textWithin(res, limit);
+  if (text === null) {
+    throw new Error(`Fetch failed: the response is over the ${limit / MiB} MiB read limit`);
+  }
+  return { ok: true, text };
 }
 
 async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown> {
@@ -91,16 +136,16 @@ async function cachedFetch(url: string, asJson: boolean = true): Promise<unknown
     return cached.data;
   }
 
-  const res = await readUrl(url, {
+  const read = await readUrl(url, READ_LIMIT, {
     'Accept': asJson ? 'application/json' : 'text/plain, */*',
     'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION} (https://www.designesy.org)`,
   });
 
-  if (!res.ok) {
-    throw new Error(`Fetch failed: ${res.status} ${res.statusText} for ${url}`);
+  if (!read.ok) {
+    throw new Error(`Fetch failed: ${read.status} ${read.statusText} for ${url}`);
   }
 
-  const data = asJson ? await res.json() : await res.text();
+  const data = asJson ? JSON.parse(read.text) : read.text;
   cache.set(url, { ts: now, data });
   return data;
 }
@@ -389,7 +434,7 @@ const handler = createMcpHandler(
         ...mcpToolDisplay('designesy_tokens_score'),
         description: 'Validate a design token file against the W3C Design Tokens Community Group (DTCG) 2025.10 Final Community Group Report (the spec\'s first stable version, published Oct 28 2025 as a Candidate Recommendation and considered stable). Returns 10 conformance checks (t01-t10) with PASS, FAIL, WARN or SKIP. Use this to verify a tokens.json (or any DTCG token export) is structurally correct: $type (direct or inherited) present, one $value or $ref per token (a JSON Pointer $ref must resolve), structured colors (colorSpace + components rather than bare hex), dimensions in the 2025.10 { value, unit } form, and a $schema pointer to designtokens.org (a Designesy policy: DTCG does not require $schema). With 84% of teams now using design tokens (zeroheight Design Systems Report 2025, up from 56% in 2024) and the spec finally stable, every adopting team needs a validator. When NOT to use: for scoring a whole live site (not just its token file), use designesy_score. Executable: fetches the URL or parses the raw JSON you provide, runs 10 checks server-side. No browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, total_tokens, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (t01-t10), name, status (PASS, FAIL, WARN or SKIP), detail}], provenance, validator_note }. Pass url to fetch a remote token file, or dtcg_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
-          url: z.string().optional().describe('URL to a DTCG token file (JSON). The tool fetches and validates it.'),
+          url: z.string().optional().describe('URL to a DTCG token file (JSON) of up to 4 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.'),
           dtcg_file: z.string().optional().describe('Raw DTCG token JSON string to validate (alternative to url).'),
         }),
       },
@@ -408,10 +453,10 @@ const handler = createMcpHandler(
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch with the read deadline (readUrl above).
-            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
-            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
-            tokenData = await res.json();
+            // SSRF-safe fetch with the read deadline and the 4 MiB read limit (readUrl above).
+            const read = await readUrl(url, READ_LIMIT, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
+            if (!read.ok) return failure(`Fetch failed: ${read.status} ${read.statusText}`);
+            tokenData = JSON.parse(read.text);
           } catch (e) {
             return failure(e instanceof Error ? e.message : String(e));
           }
@@ -584,7 +629,7 @@ test(${titleJs}, async ({ page }) => {
         ...mcpToolDisplay('designesy_motion_score'),
         description: 'Validate one Lottie animation file against the Designesy motion contract: its ten checks (m01-m10), drawn from the Lottie spec v1.0.1 and the Designesy §16 Ten Non-Negotiable Motion Standards. Each check returns PASS, FAIL, WARN or SKIP under the contract\'s own name for its id: m01 the schema\'s top-level animation object (layer contents are not validated, so a clean file returns SKIP, not PASS), m02 the required fields (v, fr, ip, op, w, h, layers), m03 no deprecated 4.x Bodymovin version, m04 a markers array, m05 a meta object, m06 a reduced-motion path (a marker or slot named for it, or a meta note of an external prefers-reduced-motion wrapper), m07 keyframe easing (linear, ease and ease-in curves fail), m08 duration within 300 ms (longer returns WARN, since a justification cannot be read from a file), m09 layout-property animation and m10 keyboard-initiated motion (both SKIP: they concern the page that embeds the file). Use this to check that a motion asset is well formed and carries reduced-motion support. When NOT to use: for the motion CSS of a whole site, use designesy_score. Executable: fetches the URL or parses the inline JSON; no browser needed. Score: PASS=1, WARN=0.5, FAIL=0, SKIP is not scored; points / scored checks x 100. Returns JSON: { contract_id, contract_version, contract_status, url, lottie_version, layer_count, score (0-100), grade (A-F), pass_count, fail_count, warn_count, skip_count, scoring, checks[{id (m01-m10), name, status (PASS, FAIL, WARN or SKIP), detail}], ten_non_negotiable, provenance, validator_note }. Pass url to fetch a remote Lottie file, or lottie_file to validate an inline JSON string. Provide exactly one.',
         inputSchema: z.object({
-          url: z.string().optional().describe('URL to a Lottie JSON file. The tool fetches and validates it.'),
+          url: z.string().optional().describe('URL to a Lottie JSON file of up to 16 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.'),
           lottie_file: z.string().optional().describe('Raw Lottie JSON string to validate (alternative to url).'),
         }),
       },
@@ -603,10 +648,10 @@ test(${titleJs}, async ({ page }) => {
           }
         } else if (url) {
           try {
-            // SSRF-safe fetch with the read deadline (readUrl above).
-            const res = await readUrl(url, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
-            if (!res.ok) return failure(`Fetch failed: ${res.status} ${res.statusText}`);
-            lottieData = await res.json();
+            // SSRF-safe fetch with the read deadline and the 16 MiB read limit (readUrl above).
+            const read = await readUrl(url, LOTTIE_READ_LIMIT, { 'Accept': 'application/json', 'User-Agent': `designesy-mcp/${MCP_SERVER_VERSION}` });
+            if (!read.ok) return failure(`Fetch failed: ${read.status} ${read.statusText}`);
+            lottieData = JSON.parse(read.text);
           } catch (e) {
             return failure(e instanceof Error ? e.message : String(e));
           }
