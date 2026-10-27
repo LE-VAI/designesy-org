@@ -814,7 +814,7 @@ export default function MethodologyPage() {
                     stack="rows"
                     rows={SLOP_RULES.map((r) => [
                       <span key="r">
-                        <code>{r.id}</code> {r.name}
+                        <code>{r.id}</code>{` ${r.name}`}
                       </span>,
                       r.pattern,
                       r.sev,
@@ -845,7 +845,7 @@ export default function MethodologyPage() {
                     head={['Credit', 'Detection', 'Points']}
                     rows={ORIGINALITY.map((o) => [
                       <span key="o">
-                        <code>{o.id}</code> {o.name}
+                        <code>{o.id}</code>{` ${o.name}`}
                       </span>,
                       o.detection,
                       o.points,
@@ -871,7 +871,7 @@ export default function MethodologyPage() {
                     numeric={[1]}
                     rows={CEILINGS.map((c) => [
                       <span key="c">
-                        <code>{c.id}</code> {c.name}
+                        <code>{c.id}</code>{` ${c.name}`}
                       </span>,
                       c.cap,
                       c.why,
@@ -947,8 +947,8 @@ export default function MethodologyPage() {
                   <summary>
                     <span className="dx-study-title">Sensitivity</span>
                     <span className="dx-study-line">
-                      {KNOBS.length} perturbations; {TOP_CALL?.name} moves the most grades ({TOP_CALL?.flips} of{' '}
-                      {SENSITIVITY.sites})
+                      {KNOBS.length} perturbations; {TOP_CALL?.name} moves the most grades
+                      ({TOP_CALL?.flips} of {SENSITIVITY.sites})
                     </span>
                   </summary>
                   <div className="dx-study-body">
@@ -1000,8 +1000,8 @@ export default function MethodologyPage() {
                   <summary>
                     <span className="dx-study-title">Version diff</span>
                     <span className="dx-study-line">
-                      v0.3.0 to v0.4.0: {SCORE_DIFF.summary.gradeFlips} of {SCORE_DIFF.summary.sites} grades moved, mean change{' '}
-                      {fmt(SCORE_DIFF.summary.meanDelta)}
+                      v0.3.0 to v0.4.0: {SCORE_DIFF.summary.gradeFlips} of {SCORE_DIFF.summary.sites} grades moved, mean
+                      change {fmt(SCORE_DIFF.summary.meanDelta)}
                     </span>
                   </summary>
                   <div className="dx-study-body">
@@ -1074,8 +1074,8 @@ export default function MethodologyPage() {
                     <summary>
                       <span className="dx-group-name">{label(k)}</span>
                       <span className="dx-group-meta">
-                        weight {CATEGORY_WEIGHTS[k]} · {checksIn(k).length} {checksIn(k).length === 1 ? 'check' : 'checks'} ·{' '}
-                        {scoredIn(k)} scored
+                        weight {CATEGORY_WEIGHTS[k]} · {checksIn(k).length}
+                        {checksIn(k).length === 1 ? ' check' : ' checks'} · {scoredIn(k)} scored
                       </span>
                     </summary>
                     <div className="dx-group-body">
