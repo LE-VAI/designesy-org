@@ -6,6 +6,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**@vai/motion's CSS layer: the CSS waveform draw stops under reduced motion,
+and the CSS stagger starts its children as `settleAll` starts its blocks**
+(`packages/vai-motion/styles/vai-motion.css`; `@vai/motion` stays 0.1.0 and
+is not published). Two defects in the stylesheet, which the earlier
+`@vai/motion` timing fixes left as they were. No ease, duration or stagger
+step changes.
+
+### Fixed (vai-motion CSS layer)
+
+- **`.vai-waveform--css` stops under reduced motion.** The draw animation
+  sat on the element itself, and its `::after` line took it with
+  `animation: inherit`. The reduced-motion block removed it from the line
+  only, so for a user who asks for less motion the element, its content
+  included, still scaled on x from 0 to 1 about its centre over 600 ms:
+  `scaleX(0.872893)` at 300 ms in Chromium 153 and in Firefox 135. The
+  animation is now on the line alone. Under reduced motion nothing on the
+  element moves, and the line is drawn at once, as before.
+- **At full motion only the line draws.** This follows from the fix above.
+  The line runs `EASE.default` over 600 ms, as `waveformTrace.drawLine`
+  does, and the element and its content stay still. Before, the element
+  scaled with the line, so the line's length on screen was the square of
+  its eased progress: at most 0.25 of the element's width short of the
+  declared curve, at 120 ms. An element with `vai-waveform--css` and not
+  `vai-waveform` has no line, and now does not move.
+- **The CSS stagger matches `settleAll`.** Child n started at n × 80 ms, so
+  the first child waited 80 ms, and children 9 and later had no delay and
+  started first, at 0 ms. Child n now starts at (n - 1) × 80 ms, as
+  `settleAll` starts block n - 1, from `calc((sibling-index() - 1) * 0.08s)`.
+  A browser without `sibling-index()` (Chrome before 138, Safari before
+  26.2, Firefox before 154) drops that declaration and takes `:nth-child`
+  steps instead: the same delays up to child 9, at 640 ms, and 640 ms for
+  every later child, so no child starts before one ahead of it.
+
+### Not changed (vai-motion CSS layer)
+
+- Every ease and duration. The line draws in 600 ms at
+  `cubic-bezier(0.22, 0.61, 0.36, 1)`, the blocks settle in 600 ms at
+  `cubic-bezier(0.23, 1, 0.32, 1)`, the stagger step is 80 ms, and under
+  reduced motion the blocks settle in 200 ms with no delay.
+- The JS layer (`src/`), and the field-breath, mark-settle and grain-shift
+  rules.
+- The stagger step cannot be set from CSS: there is no custom property for
+  it, as before.
+- The package version. `@vai/motion` stays 0.1.0, and nothing is published.
+
+### Gates (vai-motion CSS layer)
+
+- `test/css.test.js` (new, 11 tests) reads `styles/vai-motion.css` with a
+  small cascade reader written in the test, in four settings: full and
+  reduced motion, each with and without `sibling-index()`. The reader throws
+  on a selector or `@supports` condition it does not know, on a property it
+  neither reads nor lists as one no test reads, and on a value of a property
+  it reads whose form it does not know. The values of the listed properties
+  no test reads, such as `position` and `inset`, are not checked. Three of
+  the tests check the reader on small sheets of its own, and one reads every
+  rule and declaration of the stylesheet with it. On main's stylesheet 5 of
+  the 11 fail: the two waveform tests, and the three stagger tests on delays
+  and order. The other 6 pass there too.
+- `npm test` in `packages/vai-motion`: 69 of 69 pass on Node 24.15.0 (11
+  CSS, 19 easing, 39 timing).
+- In a real browser, through Playwright, with 12 children: Chromium 153
+  (with `sibling-index()`) starts them at 0 to 880 ms in 80 ms steps, and
+  Chromium 134 and Firefox 135 (without it) at 0 to 640 ms, then 640 ms for
+  children 10 to 12. Main's stylesheet starts them at 80 to 640 ms and then
+  0 ms in all three. Under reduced motion every child starts at 0 ms and
+  runs 200 ms on both stylesheets.
+
 **Requests and deadlines: a POST through the URL guard carries its body,
 so readiness r04 sends its tools/list request, and a quiet server no longer
 ends a read before its deadline** (the site: its URL guard, page-fetch, the
