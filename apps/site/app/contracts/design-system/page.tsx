@@ -324,8 +324,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Poise{' '}
-            <span className="ds-adopted">adopted in v{c.interaction.adopted_in}</span>
+            Poise <span className="ds-adopted">adopted in v{c.interaction.adopted_in}</span>
           </h2>
           <div className="definition">
             <p>
@@ -348,8 +347,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Takt{' '}
-            <span className="ds-adopted">adopted in v{c.takt.adopted_in}</span>
+            Takt <span className="ds-adopted">adopted in v{c.takt.adopted_in}</span>
           </h2>
           <div className="definition">
             <p>
@@ -367,8 +365,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Cadence{' '}
-            <span className="ds-adopted">adopted in v{c.cadence.adopted_in}</span>
+            Cadence <span className="ds-adopted">adopted in v{c.cadence.adopted_in}</span>
           </h2>
           <div className="definition">
             <p>
@@ -389,8 +386,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Acoustics{' '}
-            <span className="ds-adopted">adopted in v{c.acoustic.adopted_in}</span>
+            Acoustics <span className="ds-adopted">adopted in v{c.acoustic.adopted_in}</span>
           </h2>
           <div className="definition">
             <p>
@@ -408,8 +404,7 @@ export default function DesignSystemContractPage() {
 
         <section className="doctrine-section fade-up">
           <h2 className="doctrine-heading">
-            Copywriting{' '}
-            <span className="ds-adopted">adopted in v{c.copywriting.adopted_in}</span>
+            Copywriting <span className="ds-adopted">adopted in v{c.copywriting.adopted_in}</span>
           </h2>
           <div className="definition">
             <p>

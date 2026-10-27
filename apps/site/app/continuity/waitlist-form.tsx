@@ -139,8 +139,7 @@ export function ContinuityWaitlistForm() {
 
       <div className="waitlist-field">
         <label htmlFor="note">
-          What should stay continuous?{' '}
-          <span className="waitlist-optional">Optional</span>
+          What should stay continuous? <span className="waitlist-optional">Optional</span>
         </label>
         <textarea
           id="note"

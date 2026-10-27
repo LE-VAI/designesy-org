@@ -10,7 +10,7 @@
 
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch, textWithin } from '../../lib/url-guard';
 import { clientKey } from '../../lib/rate-limit';
 
 export const runtime = 'nodejs';
@@ -39,7 +39,39 @@ function rateLimited(ip: string): boolean {
 
 // ── HTTP probing helpers ──────────────────────────────────────────────────────
 
-async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{ ok: boolean; status: number; body?: string }> {
+const MiB = 1024 * 1024;
+
+// Each GET probe, and r04's read of the MCP endpoint, holds at most this many
+// body bytes, given to url-guard as maxBodyBytes and counted after decoding
+// when url-guard decodes the body (a compressed 2xx body). A body longer than
+// the limit is not read: its check reports WARN and says the file was not
+// read, never "not found" for a file that answered ok, and a partial body is
+// never read as if it were whole.
+//
+// 4 MiB. The largest token files measured are 1,674,878 bytes
+// (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json)
+// and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0,
+// dist/json/variables.json). The largest of the seven documents the MCP
+// route reads from this site measured 100,907 bytes
+// (/contracts/design-system.json, as its route wrote it). Each size was
+// measured with no content coding on 2026-10-25. This site's home page, which
+// a scan of it reads, measured 392,045 bytes, and its largest page,
+// /changelog, 466,664 bytes, at 16:41 -04:00 that day, before the read limits
+// were deployed. A deploy can change the size of either page.
+const READ_LIMIT = 4 * 1024 * 1024;
+
+/** The detail of a check whose file answered with a body longer than READ_LIMIT. */
+function notRead(what: string): string {
+  return `${what} is larger than the ${READ_LIMIT / MiB} MiB read limit and was not read`;
+}
+
+/**
+ * What a probe found. `tooLarge`: a GET whose body is longer than READ_LIMIT,
+ * whatever its status; it has no body, because the body was not read.
+ */
+type Probe = { ok: boolean; status: number; body?: string; tooLarge?: true };
+
+async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<Probe> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
@@ -50,8 +82,16 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{
         'Accept': '*/*',
       },
       signal: controller.signal,
+      // A HEAD has no body, and is read as before. No check sends one: every
+      // probeUrl call passes 'GET'.
+      maxBodyBytes: method === 'GET' ? READ_LIMIT : undefined,
     });
-    const body = method === 'GET' ? await resp.text() : undefined;
+    if (method !== 'GET') return { ok: resp.ok, status: resp.status, body: undefined };
+    // The limit holds for any status: r10 reads the home page's body whatever
+    // its status. The checks that need an ok response test ok first, so a
+    // large 404 is still "not found".
+    const body = await textWithin(resp, READ_LIMIT);
+    if (body === null) return { ok: resp.ok, status: resp.status, tooLarge: true };
     return { ok: resp.ok, status: resp.status, body };
   } catch {
     return { ok: false, status: 0 };
@@ -60,10 +100,18 @@ async function probeUrl(url: string, method: 'HEAD' | 'GET' = 'HEAD'): Promise<{
   }
 }
 
-async function probePaths(origin: string, paths: string[]): Promise<{ found: boolean; url?: string; status: number; body?: string }> {
+/**
+ * The first of `paths` that answers ok with more than 10 characters. A path
+ * that answers ok with a body longer than READ_LIMIT ends the search: it is
+ * returned with tooLarge and no body, so its check can say it was not read.
+ */
+async function probePaths(origin: string, paths: string[]): Promise<{ found: boolean; url?: string; status: number; body?: string; tooLarge?: true }> {
   for (const path of paths) {
     const url = new URL(path, origin).href;
     const result = await probeUrl(url, 'GET');
+    if (result.ok && result.tooLarge) {
+      return { found: true, url, status: result.status, tooLarge: true };
+    }
     if (result.ok && result.body && result.body.length > 10) {
       return { found: true, url, status: result.status, body: result.body };
     }
@@ -85,6 +133,9 @@ type CheckResult = {
 
 async function checkR01TokenFile(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/tokens.json', '/design-tokens.json', '/contracts/tokens.json', '/export/tokens.json']);
+  if (result.tooLarge) {
+    return { id: 'r01', item: 'Machine-readable token file exposed', category: 'tokens', status: 'WARN', detail: notRead(`Token file at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r01', item: 'Machine-readable token file exposed', category: 'tokens', status: 'FAIL', detail: 'No machine-readable token file detected at common paths' };
   }
@@ -98,6 +149,9 @@ async function checkR01TokenFile(origin: string): Promise<CheckResult> {
 
 async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/llms.txt', '/.well-known/llms.txt']);
+  if (result.tooLarge) {
+    return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'WARN', detail: notRead(`llms.txt at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r02', item: 'llms.txt present', category: 'discovery', status: 'FAIL', detail: 'No /llms.txt found: agents have no orientation brief' };
   }
@@ -106,6 +160,9 @@ async function checkR02LlmsTxt(origin: string): Promise<CheckResult> {
 
 async function checkR03AgentJson(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/.well-known/agent.json', '/agent.json']);
+  if (result.tooLarge) {
+    return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'WARN', detail: notRead(`agent.json at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r03', item: 'agent.json present', category: 'discovery', status: 'FAIL', detail: 'No /.well-known/agent.json: agents have no discovery endpoint' };
   }
@@ -135,15 +192,16 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   //
   // KNOWN REMAINING, and it is NOT this header: when the site scores its OWN
   // origin, this probe reports 400 (or 401 against a *.vercel.app alias).
-  // That is a self-request-path artifact, not a conformance failure — the same
-  // request from outside Vercel returns 200 with the full tool list, and a
-  // third-party origin that lacks an MCP endpoint is correctly reported as
-  // 404/405. Vercel serves deployment-protected and loopback self-requests
-  // differently from external ones. Do not "fix" this by loosening the Accept
-  // header again; the header is now correct and the external behaviour is
-  // proven. If it is to be closed, it needs the self-case to skip the probe or
-  // resolve through the public hostname, which is a routing decision rather
-  // than a header one.
+  // That was read as a self-request-path artifact, not a conformance failure:
+  // the tools/list request sent from outside Vercel returns 200 with the full
+  // tool list, and a third-party origin that lacks an MCP endpoint is
+  // correctly reported as 404/405. Vercel serves deployment-protected and
+  // loopback self-requests differently from external ones. The probe's
+  // request was not the one sent from outside, though: see SELF-CASE below.
+  // Do not "fix" this by loosening the Accept header again; the header is now
+  // correct and the external behaviour is proven. If it is to be closed, it
+  // needs the self-case to skip the probe or resolve through the public
+  // hostname, which is a routing decision rather than a header one.
   //
   // Same defect class as d06 (which counted var() spellings as distinct
   // families): a check measuring the target's conformance to the adapter's
@@ -151,21 +209,30 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
   // SELF-CASE: verify locally instead of over the network.
   //
   // When the target IS this deployment, the probe POSTs to /api/mcp on its own
-  // origin. That arrives as an internal subrequest and is rejected with 400,
-  // while the byte-identical request from outside returns 200 with the full
-  // tool list. Isolated by comparison:
+  // origin. That arrives as an internal subrequest and was answered 400,
+  // while the tools/list request sent from outside returns 200 with the full
+  // tool list. Compared:
   //
   //   POST /api/mcp from outside                -> 200 (tools listed)
   //   POST /api/mcp from inside the deployment  -> 400
   //   GET  /api/score      from inside          -> 200 (self-score works)
   //   GET  /api/guardrails from inside          -> 200 (self-score works)
   //
-  // So it is specific to POSTing this SDK-backed route from inside itself, not
-  // a general self-fetch failure and not the Accept header (#102 fixed that and
-  // it is verified). Guessing further at the bundled SDK's internal request
-  // normalisation is a poor use of effort when the check's actual question —
-  // "does this endpoint answer tools/list with a tool list?" — can be answered
-  // without a network hop at all.
+  // So it was read as specific to POSTing this SDK-backed route from inside
+  // itself, not a general self-fetch failure and not the Accept header (#102
+  // fixed that and it is verified). Guessing further at the bundled SDK's
+  // internal request normalisation is a poor use of effort when the check's
+  // actual question ("does this endpoint answer tools/list with a tool
+  // list?") can be answered without a network hop at all.
+  //
+  // The two POSTs were not the same request. url-guard used to end every
+  // request without writing its body, so this probe's tools/list POST reached
+  // every endpoint, this deployment's included, with an empty body, while the
+  // one sent from outside carried it. An endpoint built with mcp-handler, the
+  // package this site's MCP route uses, answers a tools/list POST with no
+  // body with 400 (measured locally by check-fetch-bounds.mjs). url-guard now
+  // sends the body. Whether the missing body is the whole of the 400 above
+  // was not measured on the deployment; the self-case stands either way.
   //
   // The honest way to skip a probe is to answer its question from the source of
   // truth, not to assume PASS. mcp-handler registers the tools this route
@@ -210,9 +277,13 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
       },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
       signal: AbortSignal.timeout(8000),
+      maxBodyBytes: READ_LIMIT,
     });
     if (resp.ok) {
-      const data = await resp.text();
+      const data = await textWithin(resp, READ_LIMIT);
+      if (data === null) {
+        return { id: 'r04', item: 'MCP endpoint responds to tools/list', category: 'mcp', status: 'WARN', detail: notRead('The tools/list answer from /api/mcp') };
+      }
       // Streamable HTTP answers as either a single JSON body or an SSE frame
       // (`event: message` / `data: {...}`). The previous test was a substring
       // search for "tools"/"result", which appears in both framings — but it
@@ -244,6 +315,9 @@ async function checkR04McpEndpoint(origin: string): Promise<CheckResult> {
 
 async function checkR05DesignMd(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/DESIGN.md', '/design.md']);
+  if (result.tooLarge) {
+    return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'WARN', detail: notRead(`DESIGN.md at ${result.url}`) };
+  }
   if (!result.found) {
     return { id: 'r05', item: 'DESIGN.md present (the DESIGN.md format)', category: 'discovery', status: 'FAIL', detail: 'No /DESIGN.md: missing the machine-readable design brief' };
   }
@@ -253,6 +327,9 @@ async function checkR05DesignMd(origin: string): Promise<CheckResult> {
 async function checkR06TokenDescription(origin: string): Promise<CheckResult> {
   // This is checked alongside r01 — if tokens were found, check for $description
   const tokenResult = await probePaths(origin, ['/tokens.json', '/design-tokens.json', '/contracts/tokens.json', '/export/tokens.json']);
+  if (tokenResult.tooLarge) {
+    return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'WARN', detail: notRead(`Token file at ${tokenResult.url}`) };
+  }
   if (!tokenResult.found || !tokenResult.body) {
     return { id: 'r06', item: 'Token documentation: tokens carry $description', category: 'tokens', status: 'FAIL', detail: 'No token file found to check for $description' };
   }
@@ -265,9 +342,15 @@ async function checkR06TokenDescription(origin: string): Promise<CheckResult> {
 
 async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
   const result = await probePaths(origin, ['/components.json', '/contracts/components.json', '/component-schema.json']);
+  if (result.tooLarge) {
+    return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: notRead(`Component schema at ${result.url}`) };
+  }
   if (!result.found) {
     // Fallback: check if /open.json or /agent.json mentions components
     const openResult = await probePaths(origin, ['/open.json', '/.well-known/agent.json']);
+    if (openResult.tooLarge) {
+      return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: notRead(`${openResult.url}`) };
+    }
     const mentionsComponents = openResult.body?.includes('component');
     if (mentionsComponents) {
       return { id: 'r07', item: 'Component contract (machine-readable schema)', category: 'components', status: 'WARN', detail: 'Component documentation found but not machine-readable' };
@@ -278,7 +361,11 @@ async function checkR07ComponentContract(origin: string): Promise<CheckResult> {
 }
 
 async function checkR08Sitemap(origin: string): Promise<CheckResult> {
-  const result = await probeUrl(new URL('/sitemap.xml', origin).href, 'GET');
+  const url = new URL('/sitemap.xml', origin).href;
+  const result = await probeUrl(url, 'GET');
+  if (result.ok && result.tooLarge) {
+    return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'WARN', detail: notRead(`Sitemap at ${url}`) };
+  }
   if (result.ok && result.body && result.body.includes('<urlset')) {
     return { id: 'r08', item: 'Sitemap.xml present', category: 'crawlability', status: 'PASS', detail: '/sitemap.xml found: site is crawlable' };
   }
@@ -286,7 +373,11 @@ async function checkR08Sitemap(origin: string): Promise<CheckResult> {
 }
 
 async function checkR09RobotsTxt(origin: string): Promise<CheckResult> {
-  const result = await probeUrl(new URL('/robots.txt', origin).href, 'GET');
+  const url = new URL('/robots.txt', origin).href;
+  const result = await probeUrl(url, 'GET');
+  if (result.ok && result.tooLarge) {
+    return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'WARN', detail: notRead(`robots.txt at ${url}`) };
+  }
   if (!result.ok || !result.body) {
     return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'FAIL', detail: 'No /robots.txt: crawling rules undefined' };
   }
@@ -297,7 +388,13 @@ async function checkR09RobotsTxt(origin: string): Promise<CheckResult> {
   return { id: 'r09', item: 'robots.txt permissive for agents', category: 'crawlability', status: 'PASS', detail: '/robots.txt found and allows agent crawling' };
 }
 
-async function checkR10OpenGraph(html: string): Promise<CheckResult> {
+async function checkR10OpenGraph(home: Probe, url: string): Promise<CheckResult> {
+  // The page's body is read whatever its status, as before, so a page longer
+  // than the read limit is reported for any status.
+  if (home.tooLarge) {
+    return { id: 'r10', item: 'Open Graph + Twitter card meta tags', category: 'social', status: 'WARN', detail: notRead(`The page at ${url}`) };
+  }
+  const html = home.body || '';
   const hasOg = /<meta\s+property=["']og:/i.test(html);
   const hasTwitter = /<meta\s+name=["']twitter:/i.test(html);
   if (hasOg && hasTwitter) {
@@ -343,7 +440,7 @@ async function scoreReadinessUncached(targetUrl: string) {
     checkR07ComponentContract(origin),
     checkR08Sitemap(origin),
     checkR09RobotsTxt(origin),
-    checkR10OpenGraph(html),
+    checkR10OpenGraph(homeResult, targetUrl),
   ]);
 
   const pass = checks.filter((c) => c.status === 'PASS').length;
@@ -370,7 +467,26 @@ async function scoreReadinessUncached(targetUrl: string) {
 
 const READINESS_TTL = 60 * 60 * 24; // 24h
 
-const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness'], {
+// The second key part names the result format. A result cached before the
+// read limit could be wrong for a site with a file past it: a probe whose
+// gzip, deflate or br body decoded past 4 MiB failed, so its check reported
+// a file that exists as not found, and a home page that did so failed the
+// whole scan as not fetched. Under this key no result cached before the
+// read limit is read. Next.js 16.4.2 puts the function's source in the key
+// too, and the read limit edits this function, so on that version the old
+// entries are not read under either key. This part keeps them unread
+// whatever the framework does with the source; without both, such a result
+// would be served until 24 h after it was cached and once more, to the
+// request that starts a new scan.
+//
+// The third part keeps out every result cached before the URL guard sent
+// a request's body and stopped ending a read given a deadline early: r04
+// was WARN (HTTP 400) for an MCP endpoint that reads its request, and a
+// probe whose server was quiet for between Node's idle timeout (5 s, or as
+// little as 1 s on a kept-alive connection) and its 8 s deadline was read
+// as not found. scoreReadinessUncached is unchanged by that work, so its
+// source does not keep such a result out.
+const scoreReadiness = unstable_cache(scoreReadinessUncached, ['designesy-readiness', 'read-limit-4mib', 'request-body-deadline'], {
   revalidate: READINESS_TTL,
   tags: ['readiness'],
 });

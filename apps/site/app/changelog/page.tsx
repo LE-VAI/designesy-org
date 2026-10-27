@@ -819,6 +819,34 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'fetch bounds entry in CHANGELOG.md',
   },
 
+  // ── v0.4.7 (engine 1.5.4): each URL the MCP route reads for itself and each readiness read has a byte limit ──
+  {
+    version: 'v0.4.7 · engine 1.5.4',
+    date: '2026-10-25',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Read limits: each URL the MCP route reads for itself and each URL the readiness checks read holds 4 MiB, or 16 MiB for a Lottie file',
+    description:
+      'Each URL the hosted MCP route reads for itself, and each URL the readiness checks read, now passes the URL guard a byte limit of its own, counted after decoding when a 2xx body is compressed and as sent for any other body, and the guard ends the request one byte past it. The url of designesy_motion_score is held to 16 MiB. The url of designesy_tokens_score, the seven documents the read-only tools read from this site, every readiness probe and r04\'s read of a tools/list answer are held to 4 MiB. Past its limit, an MCP read fails with "Fetch failed: the response is over the 16 MiB read limit" (4 MiB for the others), and a readiness check reports WARN with a detail that names the file and says it is larger than the 4 MiB read limit and was not read. The status is read first, so a 404 with a large body still fails as "Fetch failed: 404" in the MCP tools and is still judged as a 404 by the readiness checks that need an ok response. An error or redirect body is held to the same limit: of a 500 or a 302 whose body is 20 MiB, a read with a 4 MiB limit now receives 4,259,833 bytes, and designesy_motion_score, whose limit is 16 MiB, receives 16,842,745 of such a 500 (Node 24.15.0 on Windows), where all 20,971,520 arrived before. The MCP tools\' errors, the verdicts of the readiness checks that need an ok response, and the next hop are as before. r10, which reads the page scanned whatever its status, is WARN for an error page past the limit. Before, a body sent with no content coding was read whole however long it was, and a compressed body that decoded past 4 MiB failed: in the MCP tools with an error that named no limit, and in readiness as a file not found or, for the page scanned, a scan that could not fetch it. So a gzip, deflate or br Lottie file that decodes to more than 4 MiB and at most 16 MiB, which failed before, is now read and scored.',
+    rationale:
+      'A tool or a check reads a file whole or says it did not read it. The limits sit above the largest files measured: Lottie files of 8,873,709 and 4,713,147 bytes, token files of 1,674,878 bytes (@primer/primitives 11.10.0, dist/styleLint/functional/themes/light.json) and 1,039,520 bytes (@adobe/spectrum-tokens 15.6.0, dist/json/variables.json), the seven documents the read-only tools read from this site at 100,907 bytes or less, and this site\'s home page at 392,045 bytes. No check, rule, weight or grade boundary changed and no version moves. A result changes only for a file past its limit, and for a compressed Lottie file that decodes to more than 4 MiB and at most 16 MiB, which is now scored. Readiness results and reports are cached under new keys, so none made before the limit is served.',
+    source: 'read limits entry in CHANGELOG.md',
+  },
+
+  // ── v0.4.7 (engine 1.5.4): a POST carries its body, and a quiet server no longer ends a read early ──
+  {
+    version: 'v0.4.7 · engine 1.5.4',
+    date: '2026-10-25',
+    dimension: 'verification',
+    change: 'modified',
+    title: 'Requests and deadlines: a POST through the URL guard carries its body, and a quiet server no longer ends a read before its deadline',
+    description:
+      'The URL guard ended each request without writing the body its caller passed. Readiness r04 is the only caller that passes one, so its tools/list POST reached every endpoint empty, and an endpoint that reads the request, as one built with mcp-handler does, answered 400: r04 reported WARN for an endpoint that lists its tools. The guard now sends a string or byte body with its length, and on such an endpoint r04 moves from WARN to PASS, reached directly or through a 307 or 308, which raises the readiness score by 5. A 301, 302, 303, 307 or 308 is followed with the method and body fetch would use: a 303 to any method but GET or HEAD, or a 301 or 302 to a POST, becomes a GET with no body, which such an endpoint answers 405, so r04 stays WARN there. A quiet server no longer ends a read before its deadline. Node\'s global agent gives each socket an idle timeout of 5 s, or on a connection kept alive from an earlier answer, 1 s less than the Keep-Alive timeout that answer gave when that is 2 to 5 s. For a socket a read is using, the agent only sets it, and the URL guard ended the read when it fired, so a readiness probe, r04, a page or stylesheet read by the score, drift, guardrails, monitor or compare route, and a contract URL in contract mode, each with an 8 s deadline, failed early when its server went quiet. For a read given a signal, the guard now turns that idle timeout off. Such a file or page is now read: a check that reported it as not found judges it, and a page that was unreachable is scored. When the URL given is that slow and a later candidate URL answers, the page read is now the URL given\'s, so a score can move either way. One whose server stays quiet past 8 s still fails, and the score route now says the request timed out, where it said the request failed at the network level. The drift, guardrails, monitor and compare routes read a page\'s stylesheets one after another, and now ask for none once 20 s have passed since the first, as the score route\'s stylesheet phase ends at 20 s, so a page of many quiet stylesheets cannot hold them past their 60 s limit. A compare run, which then scores both URLs, can still reach its 60 s limit, as it could before. A report\'s composite moves with its score, drift and readiness results: r04 moving from WARN to PASS raises it by 1 when all three engines return a score (by 2 in a few cases, from floating-point rounding), and by 1, 2 or 5 when an engine returns no score and the report weighs the others again. Against a server that stays quiet or answers late, a run can now take longer than the published designesy-mcp package waits for it (20 s for a score, 30 s for the others), and that package then returns its timeout error: a readiness scan of a site that answers its page at once and is quiet for every other file took 40.1 s, where it took 25.2 s. Against a server that sends one byte a second, runs already took that long, and a drift, guardrails or monitor run of a site whose URL does so, and whose page at its www. host links 8 stylesheets that do so, now takes 28.0 s, where it took 72.0 s. Readiness, report, drift, guardrails, monitor and compare results are cached under new keys, so none made before this change is served.',
+    rationale:
+      'r04 asks an endpoint for its tool list, so the request has to carry the question, and a quiet server no longer ends a read before the deadline its caller set. No check, rule, weight or grade boundary changed and no version moves. The score route\'s /DESIGN.md read has a deadline of its own of 5 s, so it moves only on a connection kept alive from an answer that gave a Keep-Alive timeout of 2 to 5 s, and only when it is asked for before the agent ends that connection unused, and the MCP route\'s reads, which had a 15 s idle timeout of their own, end at their 15 s deadline as before. This site\'s own r04 is answered in-process, as before.',
+    source: 'requests and deadlines entry in CHANGELOG.md',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',
@@ -929,7 +957,7 @@ export default function ChangelogPage() {
               if (count === 0 && dim !== 'all') return null;
               return (
                 <a key={dim} href={`#dim-${dim}`} className="changelog-tab" data-dimension={dim}>
-                  {DIMENSION_LABELS[dim]}{' '}
+                  {`${DIMENSION_LABELS[dim]} `}
                   <span className="changelog-tab-count">{count}</span>
                 </a>
               );
