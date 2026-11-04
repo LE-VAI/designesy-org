@@ -26,8 +26,8 @@ type CueLayer = { attack: number; decay: number; offset?: number };
  * fallen. Every layer counts at its recipe length, the one only strong
  * emphasis plays included, so this is an upper bound for the subtle and
  * normal emphasis. The site plays normal. Strong emphasis also makes every
- * layer 1.2 times longer (cuelume's EMPHASIS table), so a strong play would
- * outlast this wait and be cut.
+ * layer's decay 1.2 times longer (cuelume's EMPHASIS table), so a strong
+ * play would outlast this wait and be cut.
  */
 export const TOGGLE_CUE_MS = Math.ceil(
   1000 *
@@ -74,9 +74,12 @@ function applyToCuelume(on: boolean, afterCue = false) {
  * Default is enabled, unless reduced-motion is set (acoustic-reduction
  * proxy) or the visitor has explicitly opted out.
  *
- * Mobile: Web Audio starts suspended until a user gesture. The first
- * play() during a gesture (toggle, press, or tap) resumes Cuelume's
- * shared AudioContext.
+ * Mobile: Web Audio starts suspended until a user gesture. While sound
+ * is on, the binder (cuelume-binder.tsx) starts it in a gesture with
+ * cuelume's unlock(), and any play() in a gesture resumes it too. While
+ * cuelume is off, play() returns before it touches the AudioContext, so
+ * the toggle cue that turns sound on, played after setEnabled(true), is
+ * the play() that resumes it.
  *
  * Toggle cue is played here (not via data-cuelume-toggle) so enable can
  * sound after setEnabled(true). Capture-phase attribute cues fired too early.

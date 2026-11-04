@@ -30,8 +30,8 @@
  * fallen (a quick repeat only shortens it). The longest layer in the recipe,
  * at its recipe length, sets the latest moment cuelume may still be on. That
  * layer plays only at strong emphasis, which the site does not use, and
- * strong emphasis also makes every layer 1.2 times longer, so this bound
- * holds for the subtle and normal emphasis only.
+ * strong emphasis also makes every layer's decay 1.2 times longer, so this
+ * bound holds for the subtle and normal emphasis only.
  *
  * WHAT IT ASSERTS
  *   - The toggle cue has no release part, so its layers are all of it.
