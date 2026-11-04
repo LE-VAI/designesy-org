@@ -11,8 +11,8 @@ version moves). Turning sound off plays cuelume's toggle cue and then turns
 cuelume off. From cuelume 0.2.6, `setEnabled(false)` fades whatever is
 still sounding within 15 ms, and the sound preference hook
 (`app/lib/use-sound.tsx`) called it in the same click, so on cuelume 0.2.8
-the cue that confirms a mute was cut to a click. No check, rule, weight or
-score moves.
+the cue that confirms a mute was cut to a click. No check, scoring rule,
+weight or score moves.
 
 ### Fixed (sound mute cue)
 
@@ -23,8 +23,8 @@ score moves.
   layer in that recipe, 38.5 ms at its recipe length, rounded up to 39 ms.
   That layer plays only at strong emphasis. The cue as the site plays it,
   at normal emphasis, lasts 34.9 ms (29.8 ms at subtle emphasis). Strong
-  emphasis also makes every layer 1.2 times longer, so a strong play would
-  last 46.0 ms and be cut at 39 ms. The site plays none.
+  emphasis also makes every layer's decay 1.2 times longer, so a strong
+  play would last 46.0 ms and be cut at 39 ms. The site plays none.
 - **Sound turned back on inside the wait stays on.** Turning sound on
   cancels a mute that is still waiting, so cuelume and the switch agree.
   The switch, `html[data-audio]` and the stored preference change in the
@@ -44,18 +44,19 @@ score moves.
   and then plays the cue. The wait counts from the click, so a start that
   takes longer than 39 ms leaves the cue unheard, as before this change,
   and a quicker one shortens it.
-- cuelume stays 0.2.8, and the binder still plays `tick` on the first
-  pointerdown to start audio.
+- cuelume stays 0.2.8, and the mute wait leaves the binder alone. The
+  binder no longer plays `tick` to start audio: see the audio unlock entry
+  below.
 
 Caveats: for the 39 ms after a mute, cuelume is still on for every cue. A
 cue that starts inside them still sounds while the switch says off, such as
 the hover cue of the next row in the senses menu when the pointer gets there
-that fast. A cue already sounding at the click, such as the tap cue a touch
-screen plays for the row itself, plays on for up to 39 ms. Before this
-change the first did not play at all and the second faded within 15 ms of
-the click. The 15 ms fade and the length of the cue were read from cuelume's
-source, and the wait was checked with a stand-in for cuelume. Neither was
-listened to in a browser.
+that fast. A cue already sounding at the click, such as the hover cue the
+binder plays for the tap on the sound row itself on a touch screen, plays
+on for up to 39 ms. Before this change the first did not play at all and the second
+faded within 15 ms of the click. The 15 ms fade and the length of the cue
+were read from cuelume's source, and the wait was checked with a stand-in
+for cuelume. Neither was listened to in a browser.
 
 ### Gates (sound mute cue)
 
@@ -70,6 +71,74 @@ listened to in a browser.
   loads, the wait grows to 76 ms for a 68.8 ms cue, so a fixed wait fails.
   Against the hook before this change all 4 cases fail, because cuelume is
   turned off 0 ms into the cue.
+
+**Audio starts without a cue** (the site; no version moves). Browsers start
+Web Audio only after a user gesture. The site's cuelume binder
+(`app/lib/cuelume-binder.tsx`) starts cuelume's shared AudioContext during
+one, so that a cue played later from an event that is not a gesture, such
+as a hover or a timer, can sound. It did that with `play('tick')` on the
+first pointerdown: a cue of its own. With sound on, the tick played alone,
+or on a press control together with the press cue of the same pointerdown,
+since both waited on the same resume of the AudioContext. The binder now
+calls cuelume's `unlock()`, added in cuelume 0.2.6, which resumes the
+AudioContext and plays nothing. No check, scoring rule, weight or score
+moves.
+
+### Fixed (audio unlock)
+
+- **Starting audio plays nothing.** The first pointerdown plays only the
+  cues of the control it lands on.
+- **The binder starts no cuelume audio while sound is off.** `unlock()`
+  starts audio whether or not sound is on, where `play()` did nothing
+  while cuelume was off. So the binder skips it while `html[data-audio]`
+  is `"off"`, which the sound preference hook (`app/lib/use-sound.tsx`)
+  writes when a sound control mounts and in each click of the switch.
+- **The unlock is used up only when it works.** The binder counts it as
+  done once `unlock()` resolves true, and until then the next attempt tries
+  again. Before, the first pointerdown used it up even when `play()` did
+  nothing: with sound off, or on a first touch, which the browser does not
+  yet count as a user gesture.
+- **A touch or a pen also tries at its pointerup.** A mouse pointerdown is
+  a user gesture, and a touch or a pen first becomes one at its pointerup
+  (the HTML standard's activation-triggering input events), so the binder
+  also calls `unlock()` on the pointerup of any pointer that is not a
+  mouse.
+- **`cuelume.d.ts` gains `unlock()`, and `bind()` returns the function that
+  unbinds.** `apps/site/cuelume.d.ts` declares the cuelume module itself, so
+  TypeScript reads it in place of the types cuelume ships. Both came in
+  cuelume 0.2.6.
+- **Acoustic mapping rule 8 now describes `unlock()`.** It said audio
+  unlocks on the first real cue. It now says the binder resumes the
+  AudioContext during a gesture with `unlock()`, which plays nothing, and
+  skips it while sound is off. The rule reads so on `/acoustic-tokens`,
+  in `/acoustic-tokens.json`, on `/labs/acoustics` and in
+  `docs/acoustic-tokens.md`. The acoustic token document stays 0.2.0.
+
+### Not changed (audio unlock)
+
+- Every cue a control plays, and the event that plays it.
+- The extended cues (`app/lib/cuelume-extend.ts`). They keep an
+  AudioContext of their own, which neither `play('tick')` nor `unlock()`
+  starts, and this change does not touch them. They play with no check of
+  the sound preference, so the `error` cue the binder plays on the 404 and
+  error pages, and the cues of the copy button, can sound while sound is
+  off. That gap predates this change and is not fixed here.
+
+Caveats: none of this was listened to on a device, and the gate stands in
+for cuelume and the browser. Where the browser cannot report a gesture,
+`unlock()` may wait for a later one in place of resolving false, and the
+binder keeps trying until it resolves true. Only a sound control writes
+`html[data-audio]`, so on a page that has none, such as the error page
+loaded directly, the binder starts audio whatever the stored preference
+says, where it played the tick before.
+
+### Gates (audio unlock)
+
+- `check-audio-unlock.mjs` (new, in the build and in CI after Sound mute
+  cue) loads the real binder with cuelume, React and the page stood in for,
+  and checks that a pointerdown, and the pointerup of a touch or a pen,
+  call `unlock()` and add no cue, never while `html[data-audio]` says off,
+  and only until a call resolves true.
 
 **Requests and deadlines: a POST through the URL guard carries its body,
 so readiness r04 sends its tools/list request, and a quiet server no longer

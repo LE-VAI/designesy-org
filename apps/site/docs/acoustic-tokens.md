@@ -40,7 +40,7 @@ This document locks the Cuelume sound palette into Designesy doctrine. No sound 
 5. **Toggle sounds fire via preference hook.** The sound button does **not** use `data-cuelume-toggle` (capture-phase play ran before enable flipped). `useSoundPreference` calls `setEnabled` then `play('toggle')`.
 6. **No ambient audio.** Cuelume is interaction-only. No background music, no mood beds, no loading sounds.
 7. **Preference is user-owned.** Designesy stores the sound preference in `localStorage` under `designesy:sound`. Cuelume's `setEnabled()` applies it. Reduced-motion users default to sound off.
-8. **Audio unlock on first real cue.** Mobile Safari keeps `AudioContext` suspended until a user gesture. The first `play()` during that gesture resumes the engine.
+8. **Audio unlock without a cue.** Mobile Safari keeps `AudioContext` suspended until a user gesture. Designesy's binder resumes it with Cuelume's `unlock()`, which plays nothing, on any `pointerdown` and on a touch/pen `pointerup`, until `unlock()` resolves true. It skips the unlock while `html[data-audio]` is `off`.
 9. **Every cue must trace to this document.** If a sound appears in the markup without a token here, it is a contract violation.
 
 ## Accessibility
