@@ -20,5 +20,10 @@ declare module 'cuelume' {
 
   export function setEnabled(enabled: boolean): void;
 
-  export function bind(root?: ParentNode): void;
+  // From cuelume 0.2.6: resumes the shared AudioContext from a user gesture
+  // and plays nothing. Resolves true once cues can sound, never rejects.
+  export function unlock(): Promise<boolean>;
+
+  // From cuelume 0.2.6, bind() returns a function that unbinds.
+  export function bind(root?: ParentNode): () => void;
 }

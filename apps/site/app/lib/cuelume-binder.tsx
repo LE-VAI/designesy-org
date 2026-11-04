@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { bind, play } from 'cuelume';
+import { bind, play, unlock } from 'cuelume';
 import { triggerHapticForCue, warmHaptics } from './haptics-engine';
 import { playExtended, isExtendedSound } from './cuelume-extend';
 
@@ -87,17 +87,29 @@ export function CuelumeBinder() {
     // The audio unlock below is the critical fix for mobile.
 
     /**
-     * Mobile audio unlock: on the very first pointerdown, call play()
-     * to force Cuelume's internal AudioContext.resume() within the
-     * user gesture. Without this, the first tap's cue fires resume()
-     * but the recipe renders too late (after the gesture window closes
-     * on some mobile browsers). This silent unlock ensures the context
-     * is already running by the time real cues fire.
+     * Mobile audio unlock: on a pointerdown, call cuelume's unlock() to
+     * resume its shared AudioContext within the user gesture, so the
+     * context is already running by the time real cues fire. Without
+     * it, the first tap's cue fires resume() but the recipe renders too
+     * late (after the gesture window closes on some mobile browsers).
+     * unlock() plays nothing. The play('tick') it replaces was a cue of
+     * its own, waiting on the same resume as the press cue of the
+     * pointerdown that played it, so the two started together.
+     *
+     * unlock() starts audio whether or not sound is on, so it waits
+     * while the sound preference says off (html[data-audio="off"], which
+     * use-sound writes when it sets cuelume off): a muted page starts no
+     * audio. It counts as done only once it resolves true. A pointerdown
+     * the browser does not yet count as a user gesture (a first touch,
+     * since only its pointerup does) resolves false, and the next
+     * pointerdown tries again.
      */
     const unlockAudio = () => {
       if (audioUnlocked) return;
-      audioUnlocked = true;
-      play('tick');
+      if (document.documentElement.dataset.audio === 'off') return;
+      void unlock().then((running) => {
+        if (running) audioUnlocked = true;
+      });
     };
 
     const isSyntheticMouseAfterTouch = (e: PointerEvent | MouseEvent) => {
