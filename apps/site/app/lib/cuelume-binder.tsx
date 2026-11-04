@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { bind, play } from 'cuelume';
+import { bind, play, unlock } from 'cuelume';
 import { triggerHapticForCue, warmHaptics } from './haptics-engine';
 import { playExtended, isExtendedSound } from './cuelume-extend';
 
@@ -66,7 +66,9 @@ function playSense(cue: CueName, withHaptic = true) {
  * safe across route transitions in the Next.js app router.
  *
  * Mobile fixes:
- * 1. Audio unlock on first pointerdown within user gesture
+ * 1. Audio unlock with cuelume's unlock() on every pointerdown and on a
+ *    touch or pen pointerup, until it resolves true, and not while
+ *    html[data-audio] says off
  * 2. Touch/pen get press/release cues (Cuelume v0.2.2 gap)
  * 3. Hover-only targets map to one tap on coarse pointers
  * 4. Middle-click / auto-scroll spam guard
@@ -87,17 +89,32 @@ export function CuelumeBinder() {
     // The audio unlock below is the critical fix for mobile.
 
     /**
-     * Mobile audio unlock: on the very first pointerdown, call play()
-     * to force Cuelume's internal AudioContext.resume() within the
-     * user gesture. Without this, the first tap's cue fires resume()
-     * but the recipe renders too late (after the gesture window closes
-     * on some mobile browsers). This silent unlock ensures the context
-     * is already running by the time real cues fire.
+     * Audio unlock: resume cuelume's shared AudioContext during a user
+     * gesture, so that cues played later from events that are not
+     * gestures (a hover, a timer) can sound. Browsers let audio start
+     * only after a user gesture, and Mobile Safari only inside one. A
+     * mouse pointerdown is a gesture; a touch or a pen becomes one at its
+     * pointerup, so the unlock is tried on both.
+     *
+     * cuelume's unlock() plays nothing. The play('tick') it replaces was
+     * a cue of its own, which waited on the same resume as the press cue
+     * of the pointerdown that played it, so the two started together.
+     *
+     * unlock() starts audio whether or not sound is on, so it waits while
+     * the sound preference says off (html[data-audio="off"], which
+     * use-sound writes on mount and in the click that mutes): the binder
+     * starts no cuelume audio on a muted page. It counts as done only
+     * once it resolves true. It resolves false where the browser reports
+     * no gesture yet, has no Web Audio, or refuses the resume, and where
+     * the browser cannot report a gesture the resume may wait for a later
+     * one; either way the next attempt tries again.
      */
     const unlockAudio = () => {
       if (audioUnlocked) return;
-      audioUnlocked = true;
-      play('tick');
+      if (document.documentElement.dataset.audio === 'off') return;
+      void unlock().then((running) => {
+        if (running) audioUnlocked = true;
+      });
     };
 
     const isSyntheticMouseAfterTouch = (e: PointerEvent | MouseEvent) => {
@@ -160,6 +177,7 @@ export function CuelumeBinder() {
     };
 
     const onPointerUpCapture = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') unlockAudio();
       if (guardButton(e)) return;
       markTouchLike(e);
 
