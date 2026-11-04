@@ -241,6 +241,15 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-sound-mute.mjs
 
+      # A pointerdown, and the pointerup of a touch or a pen, start audio
+      # with cuelume's unlock(), which plays nothing; never while
+      # html[data-audio] says off, and again on the next try until unlock()
+      # resolves true (the real binder, app/lib/cuelume-binder.tsx, with
+      # cuelume, React and the page stood in for).
+      - name: Audio unlock
+        if: ${{ !cancelled() }}
+        run: node scripts/check-audio-unlock.mjs
+
       - name: Generate markdown
         if: ${{ !cancelled() }}
         run: node scripts/generate-markdown.js
