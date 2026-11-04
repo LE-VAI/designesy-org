@@ -16,8 +16,10 @@
  *   - a domain lists its cards in /.well-known/ai-catalog.json
  *     (application/ai-catalog+json, specVersion "1.0"), one entry per card,
  *     with a urn:air:{publisher}:{namespace}:{name} identifier.
- * /.well-known/mcp/server-card.json predates the Final spec. Smithery still
- * reads it when a live scan fails, so it serves this same card.
+ * /.well-known/mcp/server-card.json predates the Final spec. Smithery read it
+ * when a live scan failed; its page for this server went away when Smithery
+ * shut down its MCP proxy on 2026-10-31. The path stays, and serves this same
+ * card.
  *
  * ONE SOURCE FOR THE LISTING TEXT
  * The official MCP registry publishes server.json at the repo root, and the

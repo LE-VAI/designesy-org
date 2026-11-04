@@ -297,7 +297,13 @@ function isPrivateAddress(addr: string): boolean {
 // validation or DNS resolution, throws an Error — callers should catch and
 // treat as a failed fetch. A 2xx body is decoded as its Content-Encoding says
 // (point 5 at the top of this file); `maxBodyBytes` and `budget` bound what is
-// held.
+// held. A request body (a string or bytes) is sent with its length, and a
+// 301, 302, 303, 307 or 308 is followed with the method and body fetch would
+// use (redirectedInit). Two things differ from fetch: any other 3xx that
+// carries a Location (300, 304, 305, 306, or 309 to 399) is followed too,
+// repeating the request and its body, where fetch returns it; and every
+// header the caller passes is sent on every hop, to another origin too,
+// where fetch drops Authorization, Proxy-Authorization and Cookie there.
 
 const MAX_REDIRECTS = 5;
 
@@ -411,12 +417,17 @@ function giveBackDecoder(budget: ReadBudget): void {
  *   budget stops holds what was left of it, and cutByBudget(response) is true.
  *   A read that fails gives back what it was charged. With `decoders` set, a
  *   decoded body also waits for one of them, and gives it back when it ends.
- * - `idleTimeoutMs`: how long the socket may stay quiet before the read
- *   fails. Without a signal it is 15 s. With a signal and no idleTimeoutMs
- *   none is set here, and Node's global agent ends a socket that is quiet
- *   for 5 s (its default since Node 19).
+ *
+ * A `body` is a string, sent as UTF-8, or bytes, and is sent with its length;
+ * any other kind of body, and a body on a GET or HEAD, is refused with a
+ * TypeError before the URL is checked or its host resolved (bodyBytes). A
+ * read given a `signal` has no deadline but that signal: the guard turns off
+ * the idle timeout Node's agent gives its socket (5 s on Node 24.15.0), so
+ * the request's 'timeout' event, on which the guard ends a read, never
+ * fires. A read given none has a 15 s idle timeout, and fails with "SSRF
+ * guard: fetch timeout" once its socket has been quiet that long.
  */
-export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget; idleTimeoutMs?: number };
+export type SafeFetchInit = RequestInit & { headers?: Record<string, string>; maxBodyBytes?: number; budget?: ReadBudget };
 
 /**
  * The most bytes a decoded body may reach when the caller passes no
@@ -482,6 +493,47 @@ export function cutByBudget(resp: Response): boolean {
   return CUT_BY_BUDGET.has(resp);
 }
 
+/**
+ * A body as the text resp.text() gives for it, or null when it holds more
+ * than `limit` bytes. Read through safeFetch with maxBodyBytes set to
+ * `limit`, a body longer than the limit holds limit + 1 bytes, so null says
+ * it went past the limit. The limit counts bytes: the text of a body cut at
+ * it can hold fewer characters than the limit (a third as many, for a body
+ * of three-byte UTF-8 characters), so the text's length cannot say whether
+ * the body was cut. The chunks are read as they are, with no copy, by
+ * a default reader, which the byte stream pinnedFetch builds takes as any
+ * stream does, and only a body within the limit is decoded: a Response
+ * built on those chunks decodes them, as the response's own text() would,
+ * so the text, and the byte order marks dropped from its start, are the
+ * same. As in resp.text(), the body's bytes are held twice while the text
+ * is made, and the text is held besides them: for a 16 MiB body on Node
+ * 24.15.0, ArrayBuffer memory went from 16 to 32 MiB with either, and the
+ * 16 MiB text was held outside it. Reading the body with arrayBuffer()
+ * first and then a Response's text() took ArrayBuffer memory to 64 MiB or
+ * more: 64 to 96 MiB over the runs measured, one fresh process each.
+ */
+export async function textWithin(resp: Response, limit: number): Promise<string | null> {
+  const chunks: Uint8Array[] = [];
+  let held = 0;
+  const reader = resp.body?.getReader();
+  if (reader) {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      held += value.byteLength;
+    }
+  }
+  if (held > limit) return null;
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const c of chunks) controller.enqueue(c);
+      controller.close();
+    },
+  });
+  return new Response(body).text();
+}
+
 /** A decoding failure. Its message never decides how a caller classifies it. */
 function decodingError(detail: string): Error {
   const err = new Error(`content decoding failed${detail}`);
@@ -505,8 +557,9 @@ function decoderFor(coding: ContentCoding, head: Buffer): Transform {
 }
 
 /**
- * HTTP(S) GET with connection-level IP pinning. Returns a WHATWG `Response` so
- * it is a drop-in replacement for `fetch(url, { redirect: 'manual' })`.
+ * An HTTP(S) request with connection-level IP pinning. Returns a WHATWG
+ * `Response` so it is a drop-in replacement for
+ * `fetch(url, { redirect: 'manual' })`.
  *
  * The connection is made through node:http(s) with the `pinnedLookup` above, so
  * the socket can only ever reach a validated public IP — DNS rebinding (TOCTOU)
@@ -584,6 +637,19 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
     }
     const method = init?.method || 'GET';
     const maxBodyBytes = init?.maxBodyBytes;
+    // The request's body, sent with its length. safeFetch has already
+    // refused a body it cannot send, before the URL's DNS check.
+    let payload: Buffer | null;
+    try {
+      payload = bodyBytes(init);
+    } catch (e) {
+      reject(e as Error);
+      return;
+    }
+    if (payload) {
+      for (const k of Object.keys(headers)) if (k.toLowerCase() === 'content-length') delete headers[k];
+      headers['content-length'] = String(payload.length);
+    }
     const reqFn = isHttps ? https.request : http.request;
     const req = reqFn(
       {
@@ -593,7 +659,19 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         method,
         headers,
         lookup: pinnedLookup as typeof import('node:dns').lookup,
-        timeout: init?.idleTimeoutMs ?? (init?.signal ? undefined : 15000),
+        // With a signal, the caller's signal is the read's only deadline: 0
+        // turns off the idle timeout Node's global agent gives the socket.
+        // For a socket a request holds, that timeout ends nothing by itself:
+        // it makes the request emit 'timeout', and the handler below ends the
+        // read, with an error the caller does not read as its own timeout.
+        // (The agent does end a socket that waits unused in its pool, kept
+        // alive for a later request, once it fires.) Left on, it would end a
+        // read whose server goes quiet before the caller's deadline. On Node
+        // 24.15.0 it is 5 s, and on a connection kept alive from an earlier
+        // answer that gave a Keep-Alive timeout of 2 to 5 s it is 1 s less
+        // than that one (4 s for 5 s, 1 s for 2 s). With no signal it is
+        // 15 s, and the handler ends the read after 15 s of quiet.
+        timeout: init?.signal ? 0 : 15000,
       },
       (res) => {
         const status = res.statusCode || 0;
@@ -787,6 +865,8 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
         res.on('error', (e) => fail(e as Error));
       },
     );
+    // The socket's idle timeout (the request's `timeout` above) fired. For a
+    // socket a request holds, Node only emits this; the read ends here.
     req.on('timeout', () => {
       req.destroy(new Error('SSRF guard: fetch timeout'));
     });
@@ -821,8 +901,50 @@ function pinnedFetch(url: string, init?: SafeFetchInit): Promise<Response> {
       };
       signal.addEventListener('abort', onAbort, { once: true });
     }
-    req.end();
+    if (payload) req.end(payload);
+    else req.end();
   });
+}
+
+/**
+ * A request's body as the bytes sent: a string as UTF-8, or bytes (an
+ * ArrayBuffer, or a view of one, only the bytes it views). fetch takes other
+ * kinds of body too (a Blob, FormData, URLSearchParams or a stream); this
+ * refuses them with a TypeError rather than send a request without its body,
+ * and refuses a body on a GET or HEAD, as fetch does.
+ */
+function bodyBytes(init: SafeFetchInit | undefined): Buffer | null {
+  const body = init?.body;
+  if (body == null) return null;
+  const method = (init?.method || 'GET').toUpperCase();
+  if (method === 'GET' || method === 'HEAD') throw new TypeError(`safeFetch sends no body with a ${method}`);
+  if (typeof body === 'string') return Buffer.from(body, 'utf8');
+  if (body instanceof ArrayBuffer) return Buffer.from(body);
+  if (ArrayBuffer.isView(body)) return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+  throw new TypeError('safeFetch sends a string or byte body only');
+}
+
+/** The headers that describe a request's body, dropped when a redirect turns the request into a GET. */
+const BODY_HEADERS = new Set(['content-encoding', 'content-language', 'content-location', 'content-type', 'content-length']);
+
+/**
+ * The request a redirect leads to, with the method and body fetch would use:
+ * a 303 (to any method but GET or HEAD), or a 301 or 302 to a POST, becomes
+ * a GET with no body and none of the headers that describe one. A 307 or 308,
+ * and a 301 or 302 to any other method, repeats the request, its body
+ * included. So does any other 3xx with a Location (300, 304, 305, 306, or
+ * 309 to 399), which fetch does not follow (see the note above
+ * MAX_REDIRECTS).
+ */
+function redirectedInit(init: SafeFetchInit | undefined, status: number): SafeFetchInit | undefined {
+  const method = (init?.method || 'GET').toUpperCase();
+  const toGet = (status === 303 && method !== 'GET' && method !== 'HEAD') || ((status === 301 || status === 302) && method === 'POST');
+  if (!toGet) return init;
+  const headers: Record<string, string> = {};
+  for (const [k, v] of Object.entries(init?.headers ?? {})) {
+    if (!BODY_HEADERS.has(k.toLowerCase())) headers[k] = v;
+  }
+  return { ...init, method: 'GET', body: undefined, headers };
 }
 
 /**
@@ -873,7 +995,12 @@ function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefine
 // read past the caller's deadline.
 export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Response> {
   const signal = init?.signal ?? undefined;
+  // A body this cannot send is refused first, before the URL is checked or
+  // its host resolved, so the error is the same whatever the URL, and no
+  // DNS query is made for a request that will not be sent.
+  bodyBytes(init);
   let currentUrl = url;
+  let hopInit = init;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     if (signal?.aborted) throw abortedError();
     // Validate URL structure (scheme, hostname string, encoded IPs).
@@ -891,13 +1018,14 @@ export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Resp
     // Connection-level pinned fetch (node:http(s) with IP-pinned lookup), so a
     // DNS-rebinding TOCTOU cannot insert a private IP after validation. Returns
     // the Response with redirect left 'manual' — the loop below follows 3xx.
-    const resp = await pinnedFetch(currentUrl, init);
+    const resp = await pinnedFetch(currentUrl, hopInit);
     // Not a redirect — return the response (success, 4xx, 5xx, etc.)
     if (resp.status < 300 || resp.status >= 400) return resp;
     // 3xx redirect — extract Location header and resolve against current URL.
     const location = resp.headers.get('location');
     if (!location) return resp; // 3xx with no Location — return as-is
     currentUrl = new URL(location, currentUrl).href;
+    hopInit = redirectedInit(hopInit, resp.status);
     // Loop continues — next iteration validates the new URL + DNS.
   }
   // Exceeded MAX_REDIRECTS — treat as error (matches redirect: 'follow' which

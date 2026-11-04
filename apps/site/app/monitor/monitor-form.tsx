@@ -259,7 +259,7 @@ export function MonitorForm({
                     <button type="button" className="eg-watch" onClick={() => setUrl(w.url)}>
                       <span className="eg-watch-host">{hostOf(w.url)}</span>
                       <span className="eg-quiet">
-                        {w.runs} {w.runs === 1 ? 'run' : 'runs'} · last {w.last.grade} {w.last.score} · {when(w.last.timestamp)}
+                        {w.runs}{w.runs === 1 ? ' run' : ' runs'} · last {w.last.grade}{` ${w.last.score}`} · {when(w.last.timestamp)}
                       </span>
                     </button>
                   </li>

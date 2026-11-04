@@ -1152,7 +1152,7 @@ export function ScoreForm({
                 onClick={() => setFilterStatus('PASS')}
                 aria-pressed={filterStatus === 'PASS'}
               >
-                {STATUS_LABEL.PASS} <span className="score-tab-count">{animatedCounts.pass}</span>
+                {`${STATUS_LABEL.PASS} `}<span className="score-tab-count">{animatedCounts.pass}</span>
               </button>
               {result.fail! > 0 && (
                 <button
@@ -1161,7 +1161,7 @@ export function ScoreForm({
                   onClick={() => setFilterStatus('FAIL')}
                   aria-pressed={filterStatus === 'FAIL'}
                 >
-                  {STATUS_LABEL.FAIL} <span className="score-tab-count">{animatedCounts.fail}</span>
+                  {`${STATUS_LABEL.FAIL} `}<span className="score-tab-count">{animatedCounts.fail}</span>
                 </button>
               )}
               {result.warn! > 0 && (
@@ -1171,7 +1171,7 @@ export function ScoreForm({
                   onClick={() => setFilterStatus('WARN')}
                   aria-pressed={filterStatus === 'WARN'}
                 >
-                  {STATUS_LABEL.WARN} <span className="score-tab-count">{animatedCounts.warn}</span>
+                  {`${STATUS_LABEL.WARN} `}<span className="score-tab-count">{animatedCounts.warn}</span>
                 </button>
               )}
               {(result.manual || 0) > 0 && (
@@ -1181,7 +1181,7 @@ export function ScoreForm({
                   onClick={() => setFilterStatus('MANUAL')}
                   aria-pressed={filterStatus === 'MANUAL'}
                 >
-                  {STATUS_LABEL.MANUAL} <span className="score-tab-count">{result.manual}</span>
+                  {`${STATUS_LABEL.MANUAL} `}<span className="score-tab-count">{result.manual}</span>
                 </button>
               )}
               {/* Shown when some check does not apply, as on /score and as the
@@ -1193,7 +1193,7 @@ export function ScoreForm({
                   onClick={() => setFilterStatus('SKIP')}
                   aria-pressed={filterStatus === 'SKIP'}
                 >
-                  {STATUS_LABEL.SKIP} <span className="score-tab-count">{result.skip}</span>
+                  {`${STATUS_LABEL.SKIP} `}<span className="score-tab-count">{result.skip}</span>
                 </button>
               )}
             </div>

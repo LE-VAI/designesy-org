@@ -48,7 +48,7 @@ export default async function ReadinessPage({ searchParams }: { searchParams?: P
           steps={[
             { title: 'Find the origin', text: 'Every probe runs against the site root, whatever page the URL names.' },
             { title: 'Probe 9 locations', text: 'Common paths for each file, a tools/list call to the MCP endpoint, and the page head for share tags.' },
-            { title: 'Run 10 checks', text: 'Found passes. Found in a shape agents read poorly warns. Missing fails.' },
+            { title: 'Run 10 checks', text: 'Found passes. Found in a shape agents read poorly, or larger than the 4 MiB read limit, warns. Missing fails.' },
             { title: 'Grade', text: 'Pass counts 1, warn 0.5, fail 0, over all 10 checks. A is 90 and up.' },
           ]}
           formula={

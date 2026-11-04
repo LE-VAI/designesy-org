@@ -16,7 +16,11 @@
 //     8 MiB of HTML, 4 MiB of one stylesheet, and 16 MiB for a page's
 //     stylesheets together, decoded or not. A body past a cap is read up to
 //     it, so a few kilobytes on the wire cannot expand past what is read,
-//     however many sheets a page links.
+//     however many sheets a page links;
+//   - the sheets take at most 20 s in all, as the score route's do
+//     (STYLESHEET_DEADLINE_MS), so a page linking many sheets whose server
+//     stays quiet cannot hold a route past its limit; a sheet not read by
+//     then is left out.
 // The scanners below are the score route's (app/api/score/route.ts), copied
 // unchanged: each reads a run of text once, and
 // packages/score/test/linear-scan.test.mjs holds the score engine's copies to
@@ -198,6 +202,22 @@ const MAX_HTML_BYTES = 8 * 1024 * 1024;
 const MAX_STYLESHEET_BYTES = 4 * 1024 * 1024;
 const MAX_TOTAL_STYLESHEET_BYTES = 16 * 1024 * 1024;
 
+/** How long one read may take: the page at one candidate URL, or one sheet. */
+const READ_DEADLINE_MS = 8000;
+
+/**
+ * How long a page's stylesheets may take, in all, from the first one asked
+ * for: the score route's STYLESHEET_DEADLINE_MS. The sheets are read one
+ * after another, each with READ_DEADLINE_MS, so with no bound on the whole a
+ * page linking many sheets whose server stays quiet held a route for 8 s a
+ * sheet, past the 60 s each of the four routes may run once it links 8 such
+ * sheets. One timer, started as the first sheet is asked for, ends the
+ * phase: once it has fired no more sheets are asked for, and it ends the
+ * sheet being read. A sheet not read by then is left out, as one that
+ * cannot be read is.
+ */
+const STYLESHEET_DEADLINE_MS = 20_000;
+
 /**
  * Inline <style> bodies, then the absolute URL of each linked stylesheet,
  * in document order. `baseUrl` is the URL the page was read from.
@@ -219,11 +239,15 @@ export function extractCssLinks(html: string, baseUrl: string): string[] {
  * A body as text, up to `maxBytes` (decoded as Response.text() decodes), and
  * the URL that answered (resp.url, after redirects; a Response built by hand
  * has url ''), or '' and the URL asked for when the read failed. `budget`,
- * when given, is shared with the other reads of the same page.
+ * when given, is shared with the other reads of the same page. The read
+ * ends after READ_DEADLINE_MS, or when `phase` is aborted, if that comes
+ * first.
  */
-async function fetchText(url: string, maxBytes: number, budget?: ReadBudget): Promise<{ text: string; url: string }> {
+async function fetchText(url: string, maxBytes: number, budget?: ReadBudget, phase?: AbortSignal): Promise<{ text: string; url: string }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), READ_DEADLINE_MS);
+  const endPhase = () => controller.abort();
+  phase?.addEventListener('abort', endPhase, { once: true });
   try {
     // safeFetch holds at most maxBytes + 1 bytes of the body, and charges
     // the shared budget as they arrive.
@@ -240,6 +264,7 @@ async function fetchText(url: string, maxBytes: number, budget?: ReadBudget): Pr
     return { text: '', url };
   } finally {
     clearTimeout(timeout);
+    phase?.removeEventListener('abort', endPhase);
   }
 }
 
@@ -249,7 +274,8 @@ async function fetchText(url: string, maxBytes: number, budget?: ReadBudget): Pr
  * one after another, joined with newlines. A sheet that cannot be read is
  * left out. With no page, both are ''. Each sheet is read up to
  * MAX_STYLESHEET_BYTES, and the sheets share MAX_TOTAL_STYLESHEET_BYTES;
- * once that is spent, no more are asked for.
+ * once that is spent, no more are asked for. Nor are they once
+ * STYLESHEET_DEADLINE_MS has passed since the first was asked for.
  */
 export async function fetchPageResilient(targetUrl: string): Promise<{ html: string; css: string }> {
   let html = '';
@@ -273,15 +299,28 @@ export async function fetchPageResilient(targetUrl: string): Promise<{ html: str
   const parts = extractCssLinks(html, pageUrl);
   const cssParts: string[] = [];
   const budget: ReadBudget = { left: MAX_TOTAL_STYLESHEET_BYTES };
-  for (const part of parts) {
-    if (part.startsWith('http')) {
-      // A spent budget holds no byte of any later sheet.
-      if (budget.left <= 0) continue;
-      const ext = (await fetchText(part, MAX_STYLESHEET_BYTES, budget)).text;
-      if (ext) cssParts.push(ext);
-    } else {
-      cssParts.push(part);
+  // The phase's timer starts as the first sheet is asked for, and its signal
+  // alone says whether the phase is over. A timer can fire a millisecond
+  // before Date.now() reaches the end it was set for, so a loop that compared
+  // the time with that end could ask for one more sheet once the timer that
+  // ended the last one had fired.
+  const phase = new AbortController();
+  let phaseTimer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    for (const part of parts) {
+      if (part.startsWith('http')) {
+        // A spent budget holds no byte of any later sheet.
+        if (budget.left <= 0) continue;
+        if (phase.signal.aborted) continue;
+        if (!phaseTimer) phaseTimer = setTimeout(() => phase.abort(), STYLESHEET_DEADLINE_MS);
+        const ext = (await fetchText(part, MAX_STYLESHEET_BYTES, budget, phase.signal)).text;
+        if (ext) cssParts.push(ext);
+      } else {
+        cssParts.push(part);
+      }
     }
+  } finally {
+    clearTimeout(phaseTimer);
   }
   return { html, css: cssParts.join('\n') };
 }

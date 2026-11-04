@@ -45,7 +45,15 @@ sources → principles → contracts → tools → systems → better designed w
 - The build holds the line: `scripts/check-voice.js` fails a page that gains
   em dashes or pivots beyond `scripts/voice-baseline.json`, and
   `scripts/check-jsx-glue.js` fails a sentence that wraps so JSX glues two
-  words together (add `{' '}` at the boundary).
+  words together, and a space that can drop out of an accessible name. Keep
+  the space inside a text run: wrap one word earlier, or write it into the
+  neighbouring text or string (`Fixes <span>`, `` {` ${value}`} ``). In
+  inline content, a `{' '}` (or a lone space between two children) beside
+  text can be dropped from a name computed from content: links, buttons,
+  summaries, headings, table headers and cells, a label's control. In a
+  flex or grid container Chrome keeps it, and the gate flags it there too.
+  Between two host elements (`<span>`, `<b>`) it is safe; a component that
+  returns text, such as a number in a fragment, counts as text.
 
 ## Contract Versions
 

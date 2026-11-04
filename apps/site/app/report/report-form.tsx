@@ -132,7 +132,7 @@ export function ReportForm({
       >
         <span className="eg-label">Start here</span>
         <span className="eg-start-title">
-          {weakest.name} · {weakSub.grade} {weakSub.score}
+          {weakest.name} · {weakSub.grade}{` ${weakSub.score}`}
         </span>
         <span className="eg-start-detail">
           The lowest of the three: {weakSub.fail ?? 0} of {weakSub.total ?? 0} checks fail. Open its findings.

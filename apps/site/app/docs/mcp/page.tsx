@@ -93,7 +93,7 @@ const TOOLS = [
   {
     name: 'designesy_tokens_score',
     kind: 'Executable',
-    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown. A check that cannot apply returns SKIP and is left out of the score.',
+    desc: 'Validate a design token file against W3C DTCG 2025.10 format. Fetches from a URL (a file of up to 4 MiB) or accepts raw JSON. Runs 10 conformance checks (t01-t10): $schema, token groups, $type, $value, structured color format, standard types, custom extensions, dimension units, naming hierarchy, deprecated patterns. Returns score, grade, and per-check breakdown. A check that cannot apply returns SKIP and is left out of the score.',
     args: 'url?: string, dtcg_file?: string',
     source: '/contracts/tokens.json',
   },
@@ -107,7 +107,7 @@ const TOOLS = [
   {
     name: 'designesy_motion_score',
     kind: 'Executable',
-    desc: 'Validate a Lottie animation file against the motion contract: its ten checks (m01-m10), drawn from Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards, each under its own name. Fetches from a URL or accepts raw JSON. The checks: the schema\'s top-level animation object, required fields, no deprecated 4.x version, a markers array, a meta object, a reduced-motion path, keyframe easing, duration within 300 ms, and two that concern the embedding page (layout-property animation, keyboard-initiated motion), which return SKIP for a file.',
+    desc: 'Validate a Lottie animation file against the motion contract: its ten checks (m01-m10), drawn from Lottie spec v1.0.1 and Designesy section 16 Ten Non-Negotiable Motion Standards, each under its own name. Fetches from a URL (a file of up to 16 MiB) or accepts raw JSON. The checks: the schema\'s top-level animation object, required fields, no deprecated 4.x version, a markers array, a meta object, a reduced-motion path, keyframe easing, duration within 300 ms, and two that concern the embedding page (layout-property animation, keyboard-initiated motion), which return SKIP for a file.',
     args: 'url?: string, lottie_file?: string',
     source: '/contracts/motion.json',
   },

@@ -558,7 +558,7 @@ function ParamSlider({
       <label className="sv-param-head" htmlFor={id}>
         <span className="sv-param-label">{label}</span>
         <span className="sv-param-value">
-          {value.toFixed(1)} <span className="sv-param-unit">{unit}</span>
+          {`${value.toFixed(1)} `}<span className="sv-param-unit">{unit}</span>
         </span>
       </label>
       <input
