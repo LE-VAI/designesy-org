@@ -233,6 +233,23 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-results-language.mjs
 
+      # Muting sound plays the toggle cue to its end before cuelume is turned
+      # off, and sound turned back on inside that cue stays on (the real
+      # sound preference hook, app/lib/use-sound.tsx, with cuelume, React and
+      # the clock stood in for).
+      - name: Sound mute cue
+        if: ${{ !cancelled() }}
+        run: node scripts/check-sound-mute.mjs
+
+      # A pointerdown, and the pointerup of a touch or a pen, start audio
+      # with cuelume's unlock(), which plays nothing; never while
+      # html[data-audio] says off, and again on the next try until unlock()
+      # resolves true (the real binder, app/lib/cuelume-binder.tsx, with
+      # cuelume, React and the page stood in for).
+      - name: Audio unlock
+        if: ${{ !cancelled() }}
+        run: node scripts/check-audio-unlock.mjs
+
       - name: Generate markdown
         if: ${{ !cancelled() }}
         run: node scripts/generate-markdown.js
@@ -499,7 +516,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.12'
 

@@ -179,7 +179,7 @@ export const acousticTokens = {
     'Toggle sounds fire via preference hook. The sound button does not use data-cuelume-toggle.',
     'No ambient audio. Cuelume is interaction-only. No background music, no mood beds, no loading sounds.',
     'Preference is user-owned. Designesy stores the sound preference in localStorage under designesy:sound.',
-    'Audio unlock on first real cue. Mobile Safari keeps AudioContext suspended until a user gesture.',
+    "Audio unlock without a cue. Mobile Safari keeps AudioContext suspended until a user gesture. Designesy binder resumes it during a gesture with Cuelume's unlock(), which plays nothing, and skips it while sound is off.",
     'Every cue must trace to this document. If a sound appears in the markup without a token here, it is a contract violation.',
   ],
   accessibility: {
