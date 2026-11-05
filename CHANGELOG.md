@@ -6,6 +6,207 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**@vai/motion's CSS layer: the CSS waveform draw stops under reduced motion,
+and the CSS stagger starts its children as `settleAll` starts its blocks**
+(`packages/vai-motion/styles/vai-motion.css`; `@vai/motion` stays 0.1.0 and
+is not published). Two defects in the stylesheet, which the earlier
+`@vai/motion` timing fixes left as they were. No ease, duration or stagger
+step changes.
+
+### Fixed (vai-motion CSS layer)
+
+- **`.vai-waveform--css` stops under reduced motion.** The draw animation
+  sat on the element itself, and its `::after` line took it with
+  `animation: inherit`. The reduced-motion block removed it from the line
+  only, so for a user who asks for less motion the element, its content
+  included, still scaled on x from 0 to 1 about its centre over 600 ms:
+  `scaleX(0.872893)` at 300 ms in Chromium 153 and in Firefox 135. The
+  animation is now on the line alone. Under reduced motion nothing on the
+  element moves, and the line is drawn at once, as before.
+- **At full motion only the line draws.** This follows from the fix above.
+  The line runs `EASE.default` over 600 ms, as `waveformTrace.drawLine`
+  does, and the element and its content stay still. Before, the element
+  scaled with the line, so the line's length on screen was the square of
+  its eased progress: at most 0.25 of the element's width short of the
+  declared curve, at 120 ms. An element with `vai-waveform--css` and not
+  `vai-waveform` has no line, and now does not move.
+- **The CSS stagger matches `settleAll`.** Child n started at n × 80 ms, so
+  the first child waited 80 ms, and children 9 and later had no delay and
+  started first, at 0 ms. Child n now starts at (n - 1) × 80 ms, as
+  `settleAll` starts block n - 1, from `calc((sibling-index() - 1) * 0.08s)`.
+  A browser without `sibling-index()` (Chrome before 138, Safari before
+  26.2, Firefox before 154) drops that declaration and takes `:nth-child`
+  steps instead: the same delays up to child 9, at 640 ms, and 640 ms for
+  every later child, so no child starts before one ahead of it.
+
+### Not changed (vai-motion CSS layer)
+
+- Every ease and duration. The line draws in 600 ms at
+  `cubic-bezier(0.22, 0.61, 0.36, 1)`, the blocks settle in 600 ms at
+  `cubic-bezier(0.23, 1, 0.32, 1)`, the stagger step is 80 ms, and under
+  reduced motion the blocks settle in 200 ms with no delay.
+- The JS layer (`src/`), and the field-breath, mark-settle and grain-shift
+  rules.
+- The stagger step cannot be set from CSS: there is no custom property for
+  it, as before.
+- The package version. `@vai/motion` stays 0.1.0, and nothing is published.
+
+### Gates (vai-motion CSS layer)
+
+- `test/css.test.js` (new, 11 tests) reads `styles/vai-motion.css` with a
+  small cascade reader written in the test, in four settings: full and
+  reduced motion, each with and without `sibling-index()`. The reader throws
+  on a selector or `@supports` condition it does not know, on a property it
+  neither reads nor lists as one no test reads, and on a value of a property
+  it reads whose form it does not know. The values of the listed properties
+  no test reads, such as `position` and `inset`, are not checked. Three of
+  the tests check the reader on small sheets of its own, and one reads every
+  rule and declaration of the stylesheet with it. On main's stylesheet 5 of
+  the 11 fail: the two waveform tests, and the three stagger tests on delays
+  and order. The other 6 pass there too.
+- `npm test` in `packages/vai-motion`: 69 of 69 pass on Node 24.15.0 (11
+  CSS, 19 easing, 39 timing).
+- In a real browser, through Playwright, with 12 children: Chromium 153
+  (with `sibling-index()`) starts them at 0 to 880 ms in 80 ms steps, and
+  Chromium 134 and Firefox 135 (without it) at 0 to 640 ms, then 640 ms for
+  children 10 to 12. Main's stylesheet starts them at 80 to 640 ms and then
+  0 ms in all three. Under reduced motion every child starts at 0 ms and
+  runs 200 ms on both stylesheets.
+
+**The sound switch plays its whole cue when it mutes** (the site; no
+version moves). Turning sound off plays cuelume's toggle cue and then turns
+cuelume off. From cuelume 0.2.6, `setEnabled(false)` fades whatever is
+still sounding within 15 ms, and the sound preference hook
+(`app/lib/use-sound.tsx`) called it in the same click, so on cuelume 0.2.8
+the cue that confirms a mute was cut to a click. No check, scoring rule,
+weight or score moves.
+
+### Fixed (sound mute cue)
+
+- **A mute waits for the toggle cue before it turns cuelume off.** The wait
+  is read from the recipe cuelume ships (its `cuelume/themes` export): each
+  layer of the default theme's toggle cue starts at its offset, swells over
+  its attack and falls 60 dB over its decay. The wait ends with the longest
+  layer in that recipe, 38.5 ms at its recipe length, rounded up to 39 ms.
+  That layer plays only at strong emphasis. The cue as the site plays it,
+  at normal emphasis, lasts 34.9 ms (29.8 ms at subtle emphasis). Strong
+  emphasis also makes every layer's decay 1.2 times longer, so a strong
+  play would last 46.0 ms and be cut at 39 ms. The site plays none.
+- **Sound turned back on inside the wait stays on.** Turning sound on
+  cancels a mute that is still waiting, so cuelume and the switch agree.
+  The switch, `html[data-audio]` and the stored preference change in the
+  click, as before.
+- **A second sound control leaves a waiting mute to finish.** Each page
+  with the top bar renders its own senses menu, so the menu mounts again
+  when the page changes, and the Acoustics and Poise lab pages add a sound
+  switch. Each keeps its own state. One that mounts within 39 ms of a
+  mute, such as the next page's menu after a quick navigation, reads the
+  stored "off" and leaves the waiting mute in place, so the cue is not
+  cut.
+
+### Not changed (sound mute cue)
+
+- Turning sound on: cuelume is turned on before the cue plays, as before.
+- A mute made before the page's audio has started. cuelume starts audio
+  and then plays the cue. The wait counts from the click, so a start that
+  takes longer than 39 ms leaves the cue unheard, as before this change,
+  and a quicker one shortens it.
+- cuelume stays 0.2.8, and the mute wait leaves the binder alone. The
+  binder no longer plays `tick` to start audio: see the audio unlock entry
+  below.
+
+Caveats: for the 39 ms after a mute, cuelume is still on for every cue. A
+cue that starts inside them still sounds while the switch says off, such as
+the hover cue of the next row in the senses menu when the pointer gets there
+that fast. A cue already sounding at the click, such as the hover cue the
+binder plays for the tap on the sound row itself on a touch screen, plays
+on for up to 39 ms. Before this change the first did not play at all and the second
+faded within 15 ms of the click. The 15 ms fade and the length of the cue
+were read from cuelume's source, and the wait was checked with a stand-in
+for cuelume. Neither was listened to in a browser.
+
+### Gates (sound mute cue)
+
+- `check-sound-mute.mjs` (new, in the build and in CI after Results
+  language) loads the real hook with cuelume, React and the clock stood in
+  for, 4 cases. A mute turns cuelume off no earlier than the end of the
+  34.9 ms cue and no later than 39 ms after the click, and sound turned on
+  a second later plays its cue. Sound turned back on 10 ms into the cue
+  stays on, and cuelume is never told to turn off. A second control that
+  mounts 10 ms into the cue says off and leaves the cue uncut. With every
+  layer of the toggle cue ringing twice as long in the recipe the hook
+  loads, the wait grows to 76 ms for a 68.8 ms cue, so a fixed wait fails.
+  Against the hook before this change all 4 cases fail, because cuelume is
+  turned off 0 ms into the cue.
+
+**Audio starts without a cue** (the site; no version moves). Browsers start
+Web Audio only after a user gesture. The site's cuelume binder
+(`app/lib/cuelume-binder.tsx`) starts cuelume's shared AudioContext during
+one, so that a cue played later from an event that is not a gesture, such
+as a hover or a timer, can sound. It did that with `play('tick')` on the
+first pointerdown: a cue of its own. With sound on, the tick played alone,
+or on a press control together with the press cue of the same pointerdown,
+since both waited on the same resume of the AudioContext. The binder now
+calls cuelume's `unlock()`, added in cuelume 0.2.6, which resumes the
+AudioContext and plays nothing. No check, scoring rule, weight or score
+moves.
+
+### Fixed (audio unlock)
+
+- **Starting audio plays nothing.** The first pointerdown plays only the
+  cues of the control it lands on.
+- **The binder starts no cuelume audio while sound is off.** `unlock()`
+  starts audio whether or not sound is on, where `play()` did nothing
+  while cuelume was off. So the binder skips it while `html[data-audio]`
+  is `"off"`, which the sound preference hook (`app/lib/use-sound.tsx`)
+  writes when a sound control mounts and in each click of the switch.
+- **The unlock is used up only when it works.** The binder counts it as
+  done once `unlock()` resolves true, and until then the next attempt tries
+  again. Before, the first pointerdown used it up even when `play()` did
+  nothing: with sound off, or on a first touch, which the browser does not
+  yet count as a user gesture.
+- **A touch or a pen also tries at its pointerup.** A mouse pointerdown is
+  a user gesture, and a touch or a pen first becomes one at its pointerup
+  (the HTML standard's activation-triggering input events), so the binder
+  also calls `unlock()` on the pointerup of any pointer that is not a
+  mouse.
+- **`cuelume.d.ts` gains `unlock()`, and `bind()` returns the function that
+  unbinds.** `apps/site/cuelume.d.ts` declares the cuelume module itself, so
+  TypeScript reads it in place of the types cuelume ships. Both came in
+  cuelume 0.2.6.
+- **Acoustic mapping rule 8 now describes `unlock()`.** It said audio
+  unlocks on the first real cue. It now says the binder resumes the
+  AudioContext during a gesture with `unlock()`, which plays nothing, and
+  skips it while sound is off. The rule reads so on `/acoustic-tokens`,
+  in `/acoustic-tokens.json`, on `/labs/acoustics` and in
+  `docs/acoustic-tokens.md`. The acoustic token document stays 0.2.0.
+
+### Not changed (audio unlock)
+
+- Every cue a control plays, and the event that plays it.
+- The extended cues (`app/lib/cuelume-extend.ts`). They keep an
+  AudioContext of their own, which neither `play('tick')` nor `unlock()`
+  starts, and this change does not touch them. They play with no check of
+  the sound preference, so the `error` cue the binder plays on the 404 and
+  error pages, and the cues of the copy button, can sound while sound is
+  off. That gap predates this change and is not fixed here.
+
+Caveats: none of this was listened to on a device, and the gate stands in
+for cuelume and the browser. Where the browser cannot report a gesture,
+`unlock()` may wait for a later one in place of resolving false, and the
+binder keeps trying until it resolves true. Only a sound control writes
+`html[data-audio]`, so on a page that has none, such as the error page
+loaded directly, the binder starts audio whatever the stored preference
+says, where it played the tick before.
+
+### Gates (audio unlock)
+
+- `check-audio-unlock.mjs` (new, in the build and in CI after Sound mute
+  cue) loads the real binder with cuelume, React and the page stood in for,
+  and checks that a pointerdown, and the pointerup of a touch or a pen,
+  call `unlock()` and add no cue, never while `html[data-audio]` says off,
+  and only until a call resolves true.
+
 **Requests and deadlines: a POST through the URL guard carries its body,
 so readiness r04 sends its tools/list request, and a quiet server no longer
 ends a read before its deadline** (the site: its URL guard, page-fetch, the
