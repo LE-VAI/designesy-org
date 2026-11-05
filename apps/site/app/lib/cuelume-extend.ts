@@ -15,7 +15,13 @@
  * square for sharp alerts, sawtooth reserved for harsh error only.
  * Envelope: 2-5ms attack (legible but not aggressive), 40-400ms release.
  * All notes pitched in C major for harmonic compatibility across cues.
+ *
+ * The sound switch: these cues do not go through cuelume, so cuelume's
+ * setEnabled() does not reach them. Each one checks the site's sound switch
+ * itself (soundSwitchOn, below) and plays nothing while it is off.
  */
+
+import { SOUND_STORAGE_KEY, soundPreference } from './use-sound';
 
 let sharedContext: AudioContext | null = null;
 
@@ -30,6 +36,59 @@ function getContext(): AudioContext | null {
     return null;
   }
   return sharedContext;
+}
+
+// ── The sound switch ─────────────────────────────────────────────────────
+
+/**
+ * Whether the site's sound switch is on: the one check every extended cue
+ * passes before it touches audio. Where a sound control has mounted,
+ * html[data-audio] says it: use-sound.tsx writes it on mount and in each
+ * click of the switch, at once, where cuelume itself is turned off only
+ * once the toggle cue has played. On a page with no sound control, such as
+ * the error page loaded directly, the attribute is unset, and the switch
+ * reads as a sound control would when it mounts (soundPreference in
+ * use-sound.tsx).
+ */
+function soundSwitchOn(): boolean {
+  if (typeof document === 'undefined') return false;
+  const said = document.documentElement.dataset.audio;
+  if (said === 'on') return true;
+  if (said === 'off') return false;
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(SOUND_STORAGE_KEY);
+  } catch {
+    // Storage may be unavailable: the derived default, as a sound control keeps.
+  }
+  return soundPreference(stored, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+/**
+ * Render a cue on the shared AudioContext while the sound switch is on.
+ * While it is off, no AudioContext is made or resumed. A context that has
+ * not started yet renders the cue once it runs, if the switch is on then.
+ */
+function whenSoundOn(render: (ctx: AudioContext) => void): void {
+  if (!soundSwitchOn()) return;
+  const ctx = getContext();
+  if (!ctx) return;
+
+  const play = () => {
+    if (soundSwitchOn()) render(ctx);
+  };
+
+  if (ctx.state === 'running') {
+    play();
+  } else {
+    try {
+      void ctx.resume().then(() => {
+        if (ctx.state === 'running') play();
+      }, () => {});
+    } catch {
+      // Audio blocked — no-op
+    }
+  }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -317,13 +376,30 @@ function renderCheckFail(ctx: AudioContext) {
 let processingTimer: ReturnType<typeof setInterval> | null = null;
 
 /**
+ * Counts processing-start and processing-stop calls. A processing-start
+ * whose AudioContext has not started yet begins its loop only if no later
+ * processing-start or processing-stop has come by then, so a stop that
+ * arrives first still ends the run.
+ */
+let processingRun = 0;
+
+/**
  * Start a gentle processing loop — a low triangle pulse at 500ms intervals.
  * Used while the score engine runs checks. Gain is very low (0.15) —
  * "something is happening" without being annoying.
+ *
+ * Each pulse checks the sound switch first. A mute while the loop runs stops
+ * the loop at its next pulse, so after the mute only the pulse already
+ * sounding plays on, and it falls silent within 80 ms. Sound turned back
+ * on does not start it again: the next processing-start does.
  */
 function startProcessingLoop(ctx: AudioContext): void {
   stopProcessingLoop();
   const pulse = () => {
+    if (!soundSwitchOn()) {
+      stopProcessingLoop();
+      return;
+    }
     const master = ctx.createGain();
     master.gain.value = 0.15;
     master.connect(ctx.destination);
@@ -348,12 +424,19 @@ function stopProcessingLoop(): void {
  * Play an extended cuelume sound.
  * Supports: error, warning, info, blocked, retry, grade-reveal,
  *            check-pass, check-fail, processing-start, processing-stop.
+ * Plays nothing while the sound switch is off. processing-stop makes no
+ * sound, so it stops the loop whatever the switch says, and a
+ * processing-start still waiting for its AudioContext then never begins.
  */
 export function playExtended(sound: string): void {
-  const ctx = getContext();
-  if (!ctx) return;
+  if (sound === 'processing-stop') {
+    processingRun += 1;
+    stopProcessingLoop();
+    return;
+  }
+  const run = sound === 'processing-start' ? ++processingRun : processingRun;
 
-  const play = () => {
+  whenSoundOn((ctx) => {
     switch (sound) {
       case 'error':         renderError(ctx); break;
       case 'warning':       renderWarning(ctx); break;
@@ -362,46 +445,21 @@ export function playExtended(sound: string): void {
       case 'retry':         renderRetry(ctx); break;
       case 'check-pass':    renderCheckPass(ctx); break;
       case 'check-fail':    renderCheckFail(ctx); break;
-      case 'processing-start': startProcessingLoop(ctx); break;
-      case 'processing-stop':  stopProcessingLoop(); break;
+      case 'processing-start':
+        if (run === processingRun) startProcessingLoop(ctx);
+        break;
       default: break;
     }
-  };
-
-  if (ctx.state === 'running') {
-    play();
-  } else {
-    try {
-      void ctx.resume().then(() => {
-        if (ctx.state === 'running') play();
-      }, () => {});
-    } catch {
-      // Audio blocked — no-op
-    }
-  }
+  });
 }
 
 /**
  * Play a grade-reveal arpeggio for the given grade ('A' through 'F', or 'A+').
- * This is the hero acoustic moment — fires when the score animation completes.
+ * This is the hero acoustic moment — fires when the score lands. Plays
+ * nothing while the sound switch is off.
  */
 export function playGradeReveal(grade: string): void {
-  const ctx = getContext();
-  if (!ctx) return;
-
-  const play = () => renderGradeReveal(ctx, grade);
-
-  if (ctx.state === 'running') {
-    play();
-  } else {
-    try {
-      void ctx.resume().then(() => {
-        if (ctx.state === 'running') play();
-      }, () => {});
-    } catch {
-      // Audio blocked — no-op
-    }
-  }
+  whenSoundOn((ctx) => renderGradeReveal(ctx, grade));
 }
 
 /**
