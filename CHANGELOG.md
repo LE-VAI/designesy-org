@@ -6,6 +6,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The extended cues and the score form follow the sound switch** (the site;
+no version moves). The extended cues (`app/lib/cuelume-extend.ts`: error,
+warning, info, blocked, retry, the check ticks, the processing loop and the
+grade reveal) synthesize on an AudioContext of their own, so cuelume's
+`setEnabled()` never reached them, and nothing on the copy button's or the
+binder's path checked the sound preference before they played. The copy
+button's cues and the `error` cue the binder plays on the 404 and error
+pages could sound while sound was off (the gap the audio unlock entry below
+names), and a processing loop kept pulsing after a mute. The score form
+(`app/score/score-form.tsx`) kept a reading of the preference of its own,
+which said off under reduced motion even after the visitor had turned sound
+on, and off whenever storage could not be read. No check, scoring rule,
+weight or score moves.
+
+### Fixed (sound switch)
+
+- **The extended cues play nothing while the sound switch is off.** Each one
+  checks the switch before it touches audio. Where a sound control has
+  mounted, that is `html[data-audio]`, which the sound preference hook
+  (`app/lib/use-sound.tsx`) writes when a control mounts and in each click
+  of the switch, so it holds what the last control to mount or be clicked
+  set. While it says off, no extended cue plays, and no AudioContext is
+  made or resumed for one. The switch reaches the extended cues at the mute
+  click itself, so no extended cue starts after it, though cuelume stays on
+  until its toggle cue has played. A cue asked for while sound is on, whose
+  AudioContext starts only after a mute, plays nothing.
+- **On a page with no sound control, the extended cues read the preference
+  as a sound control would.** Such a page, the error page loaded directly
+  for one, has no `html[data-audio]`. There a stored `"true"` or `"false"`
+  decides, and with neither, or with storage that cannot be read, sound is
+  on unless reduced motion is set. The hook and the extended cues work this
+  out in one function, `soundPreference()`, which the hook now exports with
+  its storage key.
+- **A processing loop stops at a mute.** Each pulse checks the switch, so a
+  mute stops the loop at its next pulse, at most 500 ms later, and only a
+  pulse already sounding plays on, falling silent within 80 ms. The loop
+  does not start while sound is off, and `processing-stop` ends it whatever
+  the switch says. A `processing-stop` that comes while the loop's
+  AudioContext is still waiting to start ends that run too, so the loop
+  does not begin once the AudioContext starts.
+- **The score form follows the same switch.** It keeps no reading of its
+  own, and every cue the form plays from its own code goes through the
+  extended cues. A visitor who turns sound on under reduced motion now
+  hears the score form, as they hear the rest of the site, and so does a
+  visitor whose browser blocks storage, unless reduced motion is set. Under
+  reduced motion the form skips the count-up, at whose end the grade reveal
+  played, so the grade reveal now plays when the result lands.
+
+### Not changed (sound switch)
+
+- cuelume's own cues. The hook still turns cuelume off once the toggle cue
+  has played (the sound mute cue entry below).
+- The extended cues' recipes, and which event plays each one, except the
+  grade reveal under reduced motion (above).
+- Under reduced motion the score form still skips the count-up, and with it
+  the check ticks.
+- The sound preference hook reads the preference as before: a stored
+  `"true"` or `"false"` wins, else sound is on unless reduced motion is set.
+
+Caveats: an extended cue already sounding at a mute plays to its end,
+since the extended cues have no fade of their own. Sound turned back on
+while a score runs does not start its processing loop again; the next
+run's processing-start does. Each tab follows its own switch: turning
+sound on or off in one tab changes the stored preference, which another
+tab with a sound control reads only when a sound control mounts there
+again, on its next page. A tab with no sound control reads the stored
+preference at each cue. None of this was listened to in a browser, and the
+gate stands in for Web Audio.
+
+### Gates (sound switch)
+
+- `check-sound-switch.mjs` (new, in the build and in CI after Audio unlock)
+  loads the real extended cues, the sound preference hook and the score form
+  with the AudioContext, the page, storage and React stood in for, 8 cases.
+  With `html[data-audio]` on, every extended cue (the grade reveal at each
+  of its six grades) and the processing loop are heard, and with it off none
+  is and no AudioContext is made, the stored preference set the other way
+  each time. A processing loop muted at 1200 ms is not heard again, one
+  started while sound is off is never heard, one stopped while sound is off
+  stays stopped, and one stopped before its AudioContext has started is not
+  heard once that AudioContext starts. A cue whose AudioContext starts after
+  a mute is not heard. On a page with no sound control, the info and error
+  cues (the copy button's) are heard exactly when the real hook, mounted
+  there, says on, in six combinations of stored preference, blocked storage
+  and reduced motion. The score form, scoring a URL on mount, plays its
+  processing pulse, grade reveal and blocked cue (and its check ticks
+  without reduced motion) with the switch on under reduced motion, with no
+  switch and a stored `"true"` under reduced motion, and with no switch and
+  storage that throws, and plays nothing with the switch off. Against the
+  code before this change all 8 cases fail.
+- `check-audio-unlock.mjs` hands the harness cuelume's recipes
+  (`cuelume/themes`, imported, since cuelume's exports map offers it to
+  `import` only), which the binder now loads through the extended cues and
+  the hook.
+- `scripts/lib/route-harness.js` loads a relative stylesheet import as an
+  empty module, so a gate can load a component whose imports bring one in,
+  as two of the score form's do. No gate loaded one before.
+
 **The sound switch plays its whole cue when it mutes** (the site; no
 version moves). Turning sound off plays cuelume's toggle cue and then turns
 cuelume off. From cuelume 0.2.6, `setEnabled(false)` fades whatever is
@@ -122,7 +220,8 @@ moves.
   starts, and this change does not touch them. They play with no check of
   the sound preference, so the `error` cue the binder plays on the 404 and
   error pages, and the cues of the copy button, can sound while sound is
-  off. That gap predates this change and is not fixed here.
+  off. That gap predates this change and is not fixed here: see the sound
+  switch entry above.
 
 Caveats: none of this was listened to on a device, and the gate stands in
 for cuelume and the browser. Where the browser cannot report a gesture,
