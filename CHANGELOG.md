@@ -6,6 +6,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The site type-checks against the types cuelume ships** (the site; no
+version moves). `apps/site/cuelume.d.ts` declared the cuelume module
+itself, so TypeScript read it in place of the types cuelume 0.2.8 ships
+for `cuelume` (imports from `cuelume/themes` used the package's own).
+The file is removed. Only types change: no code the site runs, no cue,
+and no check, scoring rule, weight or score moves. The audio unlock entry
+below describes the file before this change. The `unlock()` and the
+`bind()` return type it says the file gained come from cuelume's own
+types.
+
+### Removed (cuelume types)
+
+- **`apps/site/cuelume.d.ts`.** It named ten cues, eight of them v0.2
+  names that cuelume 0.2.8 keeps as deprecated aliases until 1.0. It gave
+  `play()` no options and left out `press()`, `release()`, `setTheme()`,
+  `setVolume()` and the `PlayOptions` type, among others, so an import of
+  any of them failed with TS2305. A comment in it said `error` comes from
+  `app/lib/cuelume-extend.ts` and is missing from cuelume, and asked for
+  it to be listed so `data-cuelume-*="error"` would type-check. The file
+  never listed it, cuelume 0.2.8 ships an `error` cue of its own, and
+  TypeScript checks no `data-*` value against these names.
+
+### Not changed (cuelume types)
+
+- The binder (`app/lib/cuelume-binder.tsx`) still plays the v0.2 names
+  its markup asks for, such as `tick`, `bloom` and `chime`, and cuelume
+  plays each as the cue that replaced it, as before. The binder casts the
+  cue it passes to `play()` to `Parameters<typeof play>[0]`, which
+  TypeScript reads from the last of `play()`'s two signatures: the one
+  cuelume marks deprecated, which lists the v0.2 names only. So editors
+  now strike the call through, where they did not while the file
+  declared `play()`. `tsc` and ESLint report nothing new. Moving the
+  binder and its markup to the current names is left for a later change.
+
+### Gates (cuelume types)
+
+- In apps/site, before and after: `npx tsc --noEmit` exits 0, and
+  `npx eslint app` exits 0 with the same 55 warnings. A file that imports
+  `setVolume`, `press` and `PlayOptions` from cuelume fails with TS2305
+  for each while `cuelume.d.ts` is in place, and type-checks without it.
+  TypeScript's language service reports 16 deprecation hints across the
+  site, up from 15. The new one is the binder's cast `play()` call.
+
 **The sound switch plays its whole cue when it mutes** (the site; no
 version moves). Turning sound off plays cuelume's toggle cue and then turns
 cuelume off. From cuelume 0.2.6, `setEnabled(false)` fades whatever is
