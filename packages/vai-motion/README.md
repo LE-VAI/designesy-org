@@ -11,7 +11,7 @@ git clone https://github.com/LE-VAI/designesy-org.git
 npm install ./designesy-org/packages/vai-motion
 ```
 
-To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173. `npm test` runs the timing and easing tests (Node's built-in test runner, Node 18.13 or later, no dependencies).
+To see the five principles run, use `npm run demo` in `packages/vai-motion` and open http://localhost:4173. `npm test` runs the timing, easing and CSS tests (Node's built-in test runner, Node 18.13 or later, no dependencies).
 
 ## Why principles, not components
 
@@ -86,7 +86,10 @@ A new run on an element stops the run already on it, on its next frame, and the 
   <div>…</div><div>…</div>
 </div>
 <div class="vai-field-breath">…</div>
+<div class="vai-waveform vai-waveform--css">…</div>
 ```
+
+`.vai-block-settle--stagger` starts child n at (n - 1) × 80ms, as `settleAll` starts its blocks. A browser without `sibling-index()` (Chrome before 138, Safari before 26.2, Firefox before 154) takes the same steps up to child 9 and starts every later child with child 9, at 640ms. `vai-waveform vai-waveform--css` draws the trace line once, in 600ms at `EASE.default`, as `drawLine` does; the element itself does not move. Under reduced motion the stagger is dropped and the line is drawn at once, as in the JS.
 
 ## Contract backing
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { play, setEnabled } from 'cuelume';
+import { THEMES } from 'cuelume/themes';
 
 /**
  * Mirror the preference onto <html data-audio="on|off">. Check v04 requires the
@@ -14,15 +15,71 @@ function applyAudioAttr(on: boolean) {
 
 const STORAGE_KEY = 'designesy:sound';
 
+/** The timing of one layer of a cuelume cue, in seconds. */
+type CueLayer = { attack: number; decay: number; offset?: number };
+
+/**
+ * How long the toggle cue sounds, in milliseconds, read from cuelume's own
+ * recipe for it (the cuelume/themes export, default theme, the one this
+ * site plays). A layer starts at its offset, swells over its attack and
+ * falls 60 dB over its decay; the cue lasts until its last layer has
+ * fallen. Every layer counts at its recipe length, the one only strong
+ * emphasis plays included, so this is an upper bound for the subtle and
+ * normal emphasis. The site plays normal. Strong emphasis also makes every
+ * layer's decay 1.2 times longer (cuelume's EMPHASIS table), so a strong
+ * play would outlast this wait and be cut.
+ */
+export const TOGGLE_CUE_MS = Math.ceil(
+  1000 *
+    Math.max(
+      0,
+      ...(THEMES.default.toggle.layers as readonly CueLayer[]).map(
+        (layer) => (layer.offset ?? 0) + layer.attack + layer.decay,
+      ),
+    ),
+);
+
+/** A mute that waits for the toggle cue to finish, while it waits. */
+let pendingMute: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Turn cuelume on or off. From cuelume 0.2.6, setEnabled(false) fades
+ * whatever is still sounding within 15 ms, so a mute that confirms itself
+ * with the toggle cue waits TOGGLE_CUE_MS before it turns cuelume off.
+ * Turning sound on cancels a mute that is still waiting, so sound turned
+ * back on inside the wait stays on and the switch and the sound agree. A
+ * plain "off" while a mute waits (a second sound control mounting and
+ * applying the stored preference) leaves that mute to finish: cuelume goes
+ * off when the cue ends either way, and the cue is not cut.
+ */
+function applyToCuelume(on: boolean, afterCue = false) {
+  if (!on && !afterCue && pendingMute !== null) return;
+  if (pendingMute !== null) {
+    clearTimeout(pendingMute);
+    pendingMute = null;
+  }
+  if (on || !afterCue) {
+    setEnabled(on);
+    return;
+  }
+  pendingMute = setTimeout(() => {
+    pendingMute = null;
+    setEnabled(false);
+  }, TOGGLE_CUE_MS);
+}
+
 /**
  * Designesy owns the sound preference. Cuelume only applies it.
  *
  * Default is enabled, unless reduced-motion is set (acoustic-reduction
  * proxy) or the visitor has explicitly opted out.
  *
- * Mobile: Web Audio starts suspended until a user gesture. The first
- * play() during a gesture (toggle, press, or tap) resumes Cuelume's
- * shared AudioContext.
+ * Mobile: Web Audio starts suspended until a user gesture. While sound
+ * is on, the binder (cuelume-binder.tsx) starts it in a gesture with
+ * cuelume's unlock(), and any play() in a gesture resumes it too. While
+ * cuelume is off, play() returns before it touches the AudioContext, so
+ * the toggle cue that turns sound on, played after setEnabled(true), is
+ * the play() that resumes it.
  *
  * Toggle cue is played here (not via data-cuelume-toggle) so enable can
  * sound after setEnabled(true). Capture-phase attribute cues fired too early.
@@ -47,7 +104,7 @@ export function useSoundPreference() {
     }
 
     setEnabledState(initial);
-    setEnabled(initial);
+    applyToCuelume(initial);
     applyAudioAttr(initial);
     setReady(true);
   }, []);
@@ -57,12 +114,13 @@ export function useSoundPreference() {
       const next = !prev;
 
       if (prev) {
-        // Mute: confirm while still enabled when context is already running.
+        // Mute: confirm while still enabled when context is already running,
+        // and turn cuelume off once the cue has played.
         play('toggle');
-        setEnabled(false);
+        applyToCuelume(false, true);
       } else {
         // Enable first so async AudioContext.resume() still hears the cue.
-        setEnabled(true);
+        applyToCuelume(true);
         play('toggle');
       }
 

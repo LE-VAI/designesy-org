@@ -1,7 +1,9 @@
 // /.well-known/mcp/server-card.json — the pre-Final location of the MCP Server
 // Card. SEP-2127 (Final) moved the card to /api/mcp/server-card and advises
-// against .well-known for it, but Smithery still reads this path when a live
-// scan fails, so it serves the same card, from the same builder.
+// against .well-known for it. Smithery read this path when a live scan
+// failed; its page for this server went away when Smithery shut down its MCP
+// proxy on 2026-10-31. The path stays, and serves the same card, from the
+// same builder.
 //
 // Until 2026-10-11 this route kept its own list of 17 tool names, a description
 // the registry no longer used, a prompts capability the server does not have,
