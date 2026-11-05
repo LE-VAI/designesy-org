@@ -250,6 +250,15 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-audio-unlock.mjs
 
+      # The extended cues (app/lib/cuelume-extend.ts) play nothing while the
+      # sound switch is off, a processing loop stops sounding at a mute, and
+      # the score form follows the same switch (the real modules, the score
+      # form rendered, with the AudioContext, the page, storage and React
+      # stood in for).
+      - name: Sound switch
+        if: ${{ !cancelled() }}
+        run: node scripts/check-sound-switch.mjs
+
       - name: Generate markdown
         if: ${{ !cancelled() }}
         run: node scripts/generate-markdown.js

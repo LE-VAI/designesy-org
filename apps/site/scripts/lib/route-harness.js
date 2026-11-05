@@ -139,6 +139,10 @@ function createHarness({ app, pages = {}, api = () => undefined, lookup, stubs: 
       },
     }).outputText;
     const localRequire = (spec) => {
+      // A component's relative stylesheet import is there for its side
+      // effect in Next.js and has no exports, so here it loads as an empty
+      // module.
+      if (spec.startsWith('.') && /\.css$/i.test(spec)) return {};
       if (spec.startsWith('.')) return load(resolveLocal(abs, spec));
       if (Object.prototype.hasOwnProperty.call(stubs, spec)) return stubs[spec];
       return appRequire(spec);
