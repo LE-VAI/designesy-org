@@ -41,22 +41,12 @@ import { BrandIcon } from '../lib/brand-icons';
 import { useIgnition } from '../lib/engine/ignition';
 import type { Phase } from '../lib/engine/types';
 
-/**
- * Sound gate — mirrors the preference logic in use-sound.tsx.
- * Returns false under reduced-motion or when the user has muted via toggle.
- * Prevents score-reveal sounds from firing when sound is off.
- */
-function soundIsEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
-  try {
-    const stored = localStorage.getItem('designesy:sound');
-    if (stored === 'false') return false;
-  } catch {
-    return false;
-  }
-  return true;
-}
+// Sound: every cue this form plays from its own code goes through
+// lib/cuelume-extend, which plays nothing while the site's sound switch is
+// off (its buttons' press ticks are cuelume's, through the binder). The
+// form keeps no reading of the preference of its own, so it follows the
+// same switch as the rest of the site, reduced motion included: off by
+// default, on when the visitor turns sound on.
 
 type Status = 'idle' | 'loading' | 'ok' | 'error';
 
@@ -280,6 +270,9 @@ export function ScoreForm({
       }
       setAnimatedCatScores(finalCats);
       setAnimatedCounts(countTargets);
+      // No count-up, so no check ticks; the grade reveal plays as the
+      // final values land, if the sound switch is on.
+      if (result.grade) playGradeReveal(result.grade);
       return;
     }
     const target = result.score;
@@ -310,18 +303,16 @@ export function ScoreForm({
       // Animate integer counts in sync — Math.floor so they tick up, not float
       const curPass = Math.floor(countTargets.pass * eased);
       const curFail = Math.floor(countTargets.fail * eased);
-      // Fire micro-tick cues as each check lands (only if sound is enabled).
+      // Fire micro-tick cues as each check lands (silent while sound is off).
       // These are intentionally very quiet (gain 0.03, 40-60ms) — they sit
       // beneath the processing loop as texture, not compete with it.
-      if (soundIsEnabled()) {
-        if (curPass > prevPass) {
-          playExtended('check-pass');
-          prevPass = curPass;
-        }
-        if (curFail > prevFail) {
-          playExtended('check-fail');
-          prevFail = curFail;
-        }
+      if (curPass > prevPass) {
+        playExtended('check-pass');
+        prevPass = curPass;
+      }
+      if (curFail > prevFail) {
+        playExtended('check-fail');
+        prevFail = curFail;
       }
       setAnimatedCounts({
         pass: curPass,
@@ -340,9 +331,9 @@ export function ScoreForm({
         setAnimatedCatScores(catTargets);
         setAnimatedCounts(countTargets);
         // Grade-reveal arpeggio — the hero acoustic moment.
-        // Fires when the score animation reaches its final value.
-        // Respects sound preference + reduced-motion via soundIsEnabled().
-        if (soundIsEnabled() && result?.grade) {
+        // Fires when the score animation reaches its final value, and
+        // plays nothing while the sound switch is off.
+        if (result?.grade) {
           playGradeReveal(result.grade);
         }
       }
@@ -399,8 +390,8 @@ export function ScoreForm({
     setDelta(null);
 
     // Start the processing sound loop — a gentle pulse while checks run.
-    // Fires only if sound is enabled (respects reduced-motion + toggle).
-    if (soundIsEnabled()) playExtended('processing-start');
+    // It does not start while the sound switch is off, and a mute stops it.
+    playExtended('processing-start');
 
     try {
       const resp = await fetch('/api/score', {
@@ -419,14 +410,12 @@ export function ScoreForm({
         // - warning: soft errors (invalid URL, unknown format)
         // - retry: fetch failures (502 — could not reach target)
         const errMsg = typeof data.error === 'string' ? data.error : '';
-        if (soundIsEnabled()) {
-          if (/rate limit|access|forbidden/i.test(errMsg)) {
-            playExtended('blocked');
-          } else if (/could not reach|fetch|timeout/i.test(errMsg)) {
-            playExtended('retry');
-          } else {
-            playExtended('warning');
-          }
+        if (/rate limit|access|forbidden/i.test(errMsg)) {
+          playExtended('blocked');
+        } else if (/could not reach|fetch|timeout/i.test(errMsg)) {
+          playExtended('retry');
+        } else {
+          playExtended('warning');
         }
         return;
       }
@@ -437,7 +426,7 @@ export function ScoreForm({
       // (an F at 0% would sit in Recent scores as if it were a grade), and
       // the retry cue the fetch-failure path uses.
       if (isEmptyRun(data)) {
-        if (soundIsEnabled()) playExtended('retry');
+        playExtended('retry');
         return;
       }
       // Persist to free-tier local history. saveScore is SSR-safe and
@@ -454,7 +443,7 @@ export function ScoreForm({
       }
     } catch {
       playExtended('processing-stop');
-      if (soundIsEnabled()) playExtended('error');
+      playExtended('error');
       setStatus('error');
       setResult({ ok: false, error: 'Network error: could not reach the scoring server.' });
     }

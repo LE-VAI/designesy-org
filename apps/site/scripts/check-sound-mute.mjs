@@ -73,7 +73,7 @@ const APP = argApp > 0 ? path.resolve(process.argv[argApp + 1]) : path.join(HERE
 const require = createRequire(import.meta.url);
 const { createHarness } = require('./lib/route-harness.js');
 
-// cuelume ships ES modules only, so its recipes are imported, not required.
+// cuelume's exports map offers cuelume/themes to import only, so its recipes are imported, not required.
 const { THEMES } = await import('cuelume/themes');
 
 const STORAGE_KEY = 'designesy:sound';
