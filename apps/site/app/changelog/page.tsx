@@ -847,6 +847,34 @@ const CHANGELOG: ChangelogEntry[] = [
     source: 'requests and deadlines entry in CHANGELOG.md',
   },
 
+  // ── Site: the mute cue plays to its end ──
+  {
+    version: 'v0.4.7',
+    date: '2026-11-04',
+    dimension: 'acoustics',
+    change: 'modified',
+    title: 'The sound switch plays its whole cue when it mutes',
+    description:
+      'Turning sound off plays the toggle cue and then turns the cuelume sound engine off. From cuelume 0.2.6, turning the engine off fades whatever is still sounding within 15 ms, and the site turned it off in the same click, so on cuelume 0.2.8 the cue that confirms a mute was cut to a click. The site now waits for the cue before it turns the engine off. The wait is 39 ms: the end of the longest layer in the recipe cuelume ships for the cue, 38.5 ms, rounded up to a whole millisecond. The cue as the site plays it, at normal emphasis, lasts 34.9 ms. Turning sound back on inside the wait cancels the mute, so the engine stays on and the switch says on. The switch, the html data-audio attribute and the stored preference change in the click, as before. For those 39 ms the engine is still on, so another cue that starts inside them, such as a hover cue, can still sound.',
+    rationale:
+      'A sound switch confirms each change with a cue, and the mute cue was cut short. No check, scoring rule, weight or ceiling changed, no score moves and no version moves. A new gate, check-sound-mute, runs the real sound preference hook with cuelume, React and the clock stood in for.',
+    source: 'sound mute cue entry in CHANGELOG.md; cuelume 0.2.8 (src/audio/output.ts and src/sounds/recipes.ts)',
+  },
+
+  // ── Site: audio starts without a cue ──
+  {
+    version: 'v0.4.7',
+    date: '2026-11-04',
+    dimension: 'acoustics',
+    change: 'modified',
+    title: 'Audio starts without a cue',
+    description:
+      "Browsers start Web Audio only after a user gesture, so the site starts the cuelume sound engine during one, and a cue played later from a hover or a timer can sound. It did that by playing the tick cue on the first pointerdown, a cue of its own: with sound on, the tick played alone, or on a press control together with that control's press cue. The site now calls cuelume's unlock(), added in cuelume 0.2.6, which starts the engine and plays nothing. Unlike a cue, unlock() starts the engine whether or not sound is on, so the site skips it while the html data-audio attribute says off. It counts as done only once unlock() reports that audio has started. Before, the first pointerdown used it up even when the tick played nothing: with sound off, or on a first touch, which the browser does not yet count as a user gesture. A touch or a pen first becomes one at its pointerup, so the site now tries there too.",
+    rationale:
+      "Starting the sound engine should make no sound of its own, and a page with sound off should start no audio from it. No check, scoring rule, weight or ceiling changed, no score moves and no version moves. Acoustic mapping rule 8, on /acoustic-tokens, in /acoustic-tokens.json, on /labs/acoustics and in docs/acoustic-tokens.md, now describes unlock(), and the acoustic token document stays 0.2.0. The extended cues keep a sound engine of their own, which this change does not touch, and the error cue on the 404 and error pages and the copy button's cues can still sound while sound is off, as before. A new gate, check-audio-unlock, runs the real cuelume binder with cuelume, React and the page stood in for.",
+    source: 'audio unlock entry in CHANGELOG.md; cuelume 0.2.8 (src/audio/engine.ts)',
+  },
+
   // ── Tokens contract v0.1.3: types as the format assigns them ──
   {
     version: 'tokens v0.1.3',

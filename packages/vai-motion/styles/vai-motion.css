@@ -16,8 +16,9 @@
   position: relative;
 }
 /* The trace line: a horizontal rule that draws itself via scaleX.
-   Bind the width to the JS-driven progress var; JS-free usage can
-   override --vai-trace-progress with a CSS animation. */
+   waveformTrace.drawLine() sets --vai-trace-progress along its ease, and
+   adds vai-waveform--done once the line is drawn. Without JS, add
+   vai-waveform--css (below), which animates the line's transform. */
 .vai-waveform::after {
   content: '';
   position: absolute;
@@ -33,17 +34,16 @@
   transform: scaleX(1);
 }
 
-/* CSS-only waveform draw (no JS): */
+/* CSS-only waveform draw (no JS): class="vai-waveform vai-waveform--css".
+   Only the trace line draws, once, at the JS defaults (600ms, EASE.default):
+   the element itself and its content do not move. */
 @keyframes vai-waveform-draw {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
-.vai-waveform--css {
-  animation: vai-waveform-draw 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
 .vai-waveform--css::after {
   transform: scaleX(0);
-  animation: inherit;
+  animation: vai-waveform-draw 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 /* --- field-breath (tier 2) -------------------------------------------- */
@@ -86,18 +86,27 @@
 .vai-block-settle {
   animation: vai-block-settle 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
 }
-/* Staggered children (up to 8) — contract stagger interval 30–80ms */
+/* Staggered children, at the contract stagger interval (30 to 80ms).
+   Child n starts (n - 1) * 80ms in, as blockSettle.settleAll() starts
+   block i at i * 80ms: the first child at once, then one step per child. */
 .vai-block-settle--stagger > * {
   animation: vai-block-settle 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc((sibling-index() - 1) * 0.08s);
 }
-.vai-block-settle--stagger > *:nth-child(1) { animation-delay: 0.08s; }
-.vai-block-settle--stagger > *:nth-child(2) { animation-delay: 0.16s; }
-.vai-block-settle--stagger > *:nth-child(3) { animation-delay: 0.24s; }
-.vai-block-settle--stagger > *:nth-child(4) { animation-delay: 0.32s; }
-.vai-block-settle--stagger > *:nth-child(5) { animation-delay: 0.4s; }
-.vai-block-settle--stagger > *:nth-child(6) { animation-delay: 0.48s; }
-.vai-block-settle--stagger > *:nth-child(7) { animation-delay: 0.56s; }
-.vai-block-settle--stagger > *:nth-child(8) { animation-delay: 0.64s; }
+/* A browser without sibling-index() (Chrome before 138, Safari before
+   26.2, Firefox before 154) drops the line above. It gets the same steps
+   up to child 9, and every later child starts with child 9 at 0.64s, so
+   no child lands before the ones ahead of it. */
+@supports not (animation-delay: calc(sibling-index() * 1s)) {
+  .vai-block-settle--stagger > *:nth-child(2) { animation-delay: 0.08s; }
+  .vai-block-settle--stagger > *:nth-child(3) { animation-delay: 0.16s; }
+  .vai-block-settle--stagger > *:nth-child(4) { animation-delay: 0.24s; }
+  .vai-block-settle--stagger > *:nth-child(5) { animation-delay: 0.32s; }
+  .vai-block-settle--stagger > *:nth-child(6) { animation-delay: 0.4s; }
+  .vai-block-settle--stagger > *:nth-child(7) { animation-delay: 0.48s; }
+  .vai-block-settle--stagger > *:nth-child(8) { animation-delay: 0.56s; }
+  .vai-block-settle--stagger > *:nth-child(n + 9) { animation-delay: 0.64s; }
+}
 
 /* --- grain-shift (tier 1) --------------------------------------------- */
 @keyframes vai-grain-shift {
@@ -135,7 +144,8 @@
   .vai-grain::before {
     animation: none !important;
   }
-  .vai-waveform::after {
+  .vai-waveform::after,
+  .vai-waveform--css::after {
     transform: scaleX(1);
   }
   .vai-grain::before {
