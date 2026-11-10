@@ -43,7 +43,10 @@
  * unlock ends and how. The binder's two
  * local modules, the haptics engine and the extended cues, load, and what in
  * them would sound or vibrate is swapped out: the extended cues record what
- * they are asked to play, and the haptics do nothing. The page is a small
+ * they are asked to play, and the haptics do nothing. The extended cues
+ * import the sound preference hook (app/lib/use-sound.tsx), which reads
+ * cuelume's recipes from cuelume/themes; those load for real, imported, since
+ * cuelume's exports map offers them to import only. The page is a small
  * fake: a document that keeps the capture listeners the binder adds and the
  * html element's data-audio, an Element class for the binder's instanceof
  * test, window.matchMedia (a desktop mouse or a touch screen), and a
@@ -136,6 +139,9 @@ const argApp = process.argv.indexOf('--app');
 const APP = argApp > 0 ? path.resolve(process.argv[argApp + 1]) : path.join(HERE, '..');
 const require = createRequire(import.meta.url);
 const { createHarness } = require('./lib/route-harness.js');
+
+// cuelume's exports map offers cuelume/themes to import only, so its recipes are imported, not required.
+const { THEMES } = await import('cuelume/themes');
 
 /** The media queries the binder asks, answered for a desktop mouse or a touch screen. */
 const MEDIA = {
@@ -250,7 +256,7 @@ function newPage({ audio, media = 'desktop' } = {}) {
 
   const h = createHarness({
     app: APP,
-    stubs: { react, cuelume },
+    stubs: { react, cuelume, 'cuelume/themes': { THEMES } },
     overrides: {
       'app/lib/haptics-engine.ts': (real) => ({
         ...real,

@@ -13,7 +13,22 @@ function applyAudioAttr(on: boolean) {
   document.documentElement.dataset.audio = on ? 'on' : 'off';
 }
 
-const STORAGE_KEY = 'designesy:sound';
+/** Where the sound preference is stored, as the string "true" or "false". */
+export const SOUND_STORAGE_KEY = 'designesy:sound';
+
+/**
+ * The sound preference a page starts from, worked out in this one place: a
+ * stored "true" or "false" wins, and with neither (nothing stored, or
+ * storage that cannot be read) sound is on unless reduced motion is set.
+ * Pure: the caller reads storage and the media query. A sound control
+ * starts from it when it mounts, and the extended cues
+ * (cuelume-extend.ts) read it on a page that has no sound control.
+ */
+export function soundPreference(stored: string | null, reducedMotion: boolean): boolean {
+  if (stored === 'false') return false;
+  if (stored === 'true') return true;
+  return !reducedMotion;
+}
 
 /** The timing of one layer of a cuelume cue, in seconds. */
 type CueLayer = { attack: number; decay: number; offset?: number };
@@ -89,20 +104,16 @@ export function useSoundPreference() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let initial = true;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      initial = false;
-    }
-
+    let stored: string | null = null;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'false') initial = false;
-      if (stored === 'true') initial = true;
+      stored = localStorage.getItem(SOUND_STORAGE_KEY);
     } catch {
       // Storage may be unavailable — keep derived default.
     }
 
+    const initial = soundPreference(stored, reducedMotion);
     setEnabledState(initial);
     applyToCuelume(initial);
     applyAudioAttr(initial);
@@ -127,7 +138,7 @@ export function useSoundPreference() {
       applyAudioAttr(next);
 
       try {
-        localStorage.setItem(STORAGE_KEY, String(next));
+        localStorage.setItem(SOUND_STORAGE_KEY, String(next));
       } catch {
         // Session-only preference if storage is blocked.
       }
