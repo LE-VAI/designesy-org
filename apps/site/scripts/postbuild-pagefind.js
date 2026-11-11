@@ -27,6 +27,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { separateWords } = require('./lib/word-boundaries');
+const { pagefindIndexId } = require('./lib/pagefind-index-id');
 
 const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
@@ -68,7 +69,7 @@ const JSON_ENDPOINTS = [
 // hash in the name and no query (the worker script and the engine), each
 // exactly as Pagefind 1.5.2 and 1.6.0 write it (read from the emitted files
 // and from pagefind_web_js/lib in Pagefind's source: search_wrapper.ts for
-// the worker, coupled_search.ts for the engine). main() appends ?v=<build id>
+// the worker, coupled_search.ts for the engine). main() appends ?v=<index id>
 // inside the closing backtick.
 //
 //   pagefind.js         starts the worker at `${basePath}pagefind-worker.js`,
@@ -264,47 +265,45 @@ function main() {
     }
 
     // Give the worker script and the WebAssembly engine an address that
-    // changes with every build. Both keep their names from build to build and
-    // are served under /_next/static, which a browser may keep for a year
-    // (Cache-Control: public, max-age=31536000, immutable). With no query, a
-    // returning browser runs the worker and the engine it kept from an older
-    // build against this build's index. A kept worker carried an older
+    // changes whenever the index does. Both keep their names from build to
+    // build and are served under /_next/static, which a browser may keep for a
+    // year (Cache-Control: public, max-age=31536000, immutable). With no
+    // query, a returning browser runs the worker and the engine it kept from an
+    // older build against this build's index. A kept worker carried an older
     // deployment's CSP, which is why its address got a query first. A kept
     // engine from Pagefind 1.5.2 cannot read an index written by 1.6.0, and
     // Find loses its full-text rows. The index files need no query: each is
     // named by a hash, and Pagefind fetches pagefind-entry.json, which leads
-    // to them, with a timestamp. The query is ?v=<build id>, on every address
-    // in ADDRESS_PATCHES.
-    const BUILD_ID = (() => {
-      try {
-        return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
-      } catch {
-        return String(Date.now());
-      }
-    })();
+    // to them, with a timestamp. The query is ?v=<index id>, on every address
+    // in ADDRESS_PATCHES. The id is a hash of the files Pagefind wrote, taken
+    // here before any of them is patched (lib/pagefind-index-id.js says why
+    // .next/BUILD_ID cannot serve: with a deployment id set, Next writes the
+    // same build id on every build).
+    const INDEX_ID = pagefindIndexId(OUT_DIR);
     const versioned = [];
     for (const { file, what, find } of ADDRESS_PATCHES) {
       try {
         const filePath = path.join(OUT_DIR, file);
         const parts = fs.readFileSync(filePath, 'utf8').split(find);
         if (parts.length !== 2) {
-          console.error(`[postbuild-pagefind] ERROR ${file}: expected the ${what} ${find} exactly once, found it ${parts.length - 1} time(s). Nothing was replaced, so this address has no build id.`);
+          console.error(`[postbuild-pagefind] ERROR ${file}: expected the ${what} ${find} exactly once, found it ${parts.length - 1} time(s). Nothing was replaced, so this address has no index id.`);
           continue;
         }
-        fs.writeFileSync(filePath, parts.join(`${find.slice(0, -1)}?v=${BUILD_ID}\``));
+        fs.writeFileSync(filePath, parts.join(`${find.slice(0, -1)}?v=${INDEX_ID}\``));
         versioned.push(`${file} ${what}`);
       } catch (e) {
-        console.error(`[postbuild-pagefind] ERROR could not give the ${what} in ${file} a build id: ${e.message}`);
+        console.error(`[postbuild-pagefind] ERROR could not give the ${what} in ${file} an index id: ${e.message}`);
       }
     }
     if (versioned.length === ADDRESS_PATCHES.length) {
-      console.log(`[postbuild-pagefind] ${versioned.length} address(es) now end ?v=${BUILD_ID}: ${versioned.join(', ')}`);
+      console.log(`[postbuild-pagefind] ${versioned.length} address(es) now end ?v=${INDEX_ID}: ${versioned.join(', ')}`);
     } else {
-      console.error(`[postbuild-pagefind] ERROR only ${versioned.length} of ${ADDRESS_PATCHES.length} address(es) end ?v=${BUILD_ID}. A returning browser would run a worker or an engine kept from an older build; check-search-coverage.js, the next build step, fails the build on it.`);
+      console.error(`[postbuild-pagefind] ERROR only ${versioned.length} of ${ADDRESS_PATCHES.length} address(es) end ?v=${INDEX_ID}. A returning browser would run a worker or an engine kept from an older build; check-search-coverage.js, the next build step, fails the build on it.`);
     }
 
     // Write a version pointer file so the client can append the same
-    // cache-buster to the import() URL for pagefind.js itself. Without this,
+    // cache-buster to the import() URL for pagefind.js itself. Its key stays
+    // buildId, which the palette reads, and it holds the index id. Without this,
     // the browser serves a stale cached pagefind.js from a prior deploy that
     // carried an older CSP — the Worker cache-buster inside pagefind.js
     // would never be reached because the old pagefind.js (without the patch)
@@ -312,9 +311,9 @@ function main() {
     try {
       fs.writeFileSync(
         path.join(OUT_DIR, 'pagefind-version.json'),
-        JSON.stringify({ buildId: BUILD_ID })
+        JSON.stringify({ buildId: INDEX_ID })
       );
-      console.log(`[postbuild-pagefind] wrote pagefind-version.json (buildId: ${BUILD_ID})`);
+      console.log(`[postbuild-pagefind] wrote pagefind-version.json (buildId: ${INDEX_ID})`);
     } catch (e) {
       console.warn(`[postbuild-pagefind] could not write pagefind-version.json: ${e.message}`);
     }
