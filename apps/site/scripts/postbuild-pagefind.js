@@ -64,11 +64,12 @@ const JSON_ENDPOINTS = [
   { route: '/contracts/design-system.json', title: 'design-system.json' },
 ];
 
-// The addresses the emitted scripts build for the two Pagefind files that keep
-// their names from one build to the next, each exactly as Pagefind 1.5.2 and
-// 1.6.0 write it (read from the emitted files and from pagefind_web_js/lib in
-// Pagefind's source: search_wrapper.ts for the worker, coupled_search.ts for
-// the engine). main() appends ?v=<build id> inside the closing backtick.
+// The addresses of the two files that the scripts Find loads ask for with no
+// hash in the name and no query (the worker script and the engine), each
+// exactly as Pagefind 1.5.2 and 1.6.0 write it (read from the emitted files
+// and from pagefind_web_js/lib in Pagefind's source: search_wrapper.ts for
+// the worker, coupled_search.ts for the engine). main() appends ?v=<build id>
+// inside the closing backtick.
 //
 //   pagefind.js         starts the worker at `${basePath}pagefind-worker.js`,
 //                       and loads the engine itself when no worker can start
@@ -266,9 +267,9 @@ function main() {
     // deployment's CSP, which is why its address got a query first. A kept
     // engine from Pagefind 1.5.2 cannot read an index written by 1.6.0, and
     // Find loses its full-text rows. The index files need no query: each is
-    // named by a hash, and Pagefind fetches pagefind-entry.json, which lists
-    // them, with a timestamp. The query is ?v=<build id>, on every address in
-    // ADDRESS_PATCHES.
+    // named by a hash, and Pagefind fetches pagefind-entry.json, which leads
+    // to them, with a timestamp. The query is ?v=<build id>, on every address
+    // in ADDRESS_PATCHES.
     const BUILD_ID = (() => {
       try {
         return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
