@@ -64,6 +64,29 @@ const JSON_ENDPOINTS = [
   { route: '/contracts/design-system.json', title: 'design-system.json' },
 ];
 
+// The addresses the emitted scripts build for the two Pagefind files that keep
+// their names from one build to the next, each exactly as Pagefind 1.5.2 and
+// 1.6.0 write it (read from the emitted files and from pagefind_web_js/lib in
+// Pagefind's source: search_wrapper.ts for the worker, coupled_search.ts for
+// the engine). main() appends ?v=<build id> inside the closing backtick.
+//
+//   pagefind.js         starts the worker at `${basePath}pagefind-worker.js`,
+//                       and loads the engine itself when no worker can start
+//   pagefind-worker.js  loads the engine
+//
+// The engine address is one template for every engine file the build writes:
+// `language` is the indexed language's code from pagefind-entry.json ("en"
+// gives wasm.en.pagefind) or "unknown" (wasm.unknown.pagefind).
+//
+// Each string must occur exactly once in its file. If a later Pagefind writes
+// an address another way, nothing is replaced, an ERROR line says so in the
+// build log, and check-search-coverage.js fails the build.
+const ADDRESS_PATCHES = [
+  { file: 'pagefind.js', what: 'worker address', find: '`${basePath}pagefind-worker.js`' },
+  { file: 'pagefind.js', what: 'engine address', find: '`${this.basePath}wasm.${language}.pagefind`' },
+  { file: 'pagefind-worker.js', what: 'engine address', find: '`${this.basePath}wasm.${language}.pagefind`' },
+];
+
 /** Walk a directory tree, returning every file path relative to root. */
 function walkFiles(dir, base = dir) {
   const out = [];
@@ -234,12 +257,18 @@ function main() {
       console.warn(`[postbuild-pagefind] could not measure page_count against the route count: ${e.message}`);
     }
 
-    // Patch pagefind.js to append a cache-busting query param to the Worker
-    // URL and all WASM shard fetches. Pagefind constructs the Worker URL as
-    // `${basePath}pagefind-worker.js` — without a cache-buster, the browser
-    // serves a stale cached Worker from a prior deployment that carried an
-    // older CSP. We append ?v=<hash> where <hash> is derived from the build
-    // ID so every new deployment gets a unique cache-buster.
+    // Give the worker script and the WebAssembly engine an address that
+    // changes with every build. Both keep their names from build to build and
+    // are served under /_next/static, which a browser may keep for a year
+    // (Cache-Control: public, max-age=31536000, immutable). With no query, a
+    // returning browser runs the worker and the engine it kept from an older
+    // build against this build's index. A kept worker carried an older
+    // deployment's CSP, which is why its address got a query first. A kept
+    // engine from Pagefind 1.5.2 cannot read an index written by 1.6.0, and
+    // Find loses its full-text rows. The index files need no query: each is
+    // named by a hash, and Pagefind fetches pagefind-entry.json, which lists
+    // them, with a timestamp. The query is ?v=<build id>, on every address in
+    // ADDRESS_PATCHES.
     const BUILD_ID = (() => {
       try {
         return fs.readFileSync(path.join(SITE_DIR, 'BUILD_ID'), 'utf8').trim();
@@ -247,17 +276,25 @@ function main() {
         return String(Date.now());
       }
     })();
-    try {
-      const pfJsPath = path.join(OUT_DIR, 'pagefind.js');
-      let pfJs = fs.readFileSync(pfJsPath, 'utf8');
-      pfJs = pfJs.replace(
-        'pagefind-worker.js',
-        `pagefind-worker.js?v=${BUILD_ID}`
-      );
-      fs.writeFileSync(pfJsPath, pfJs);
-      console.log(`[postbuild-pagefind] patched pagefind.js with worker cache-buster ?v=${BUILD_ID}`);
-    } catch (e) {
-      console.warn(`[postbuild-pagefind] could not patch pagefind.js: ${e.message}`);
+    const versioned = [];
+    for (const { file, what, find } of ADDRESS_PATCHES) {
+      try {
+        const filePath = path.join(OUT_DIR, file);
+        const parts = fs.readFileSync(filePath, 'utf8').split(find);
+        if (parts.length !== 2) {
+          console.error(`[postbuild-pagefind] ERROR ${file}: expected the ${what} ${find} exactly once, found it ${parts.length - 1} time(s). Nothing was replaced, so this address has no build id.`);
+          continue;
+        }
+        fs.writeFileSync(filePath, parts.join(`${find.slice(0, -1)}?v=${BUILD_ID}\``));
+        versioned.push(`${file} ${what}`);
+      } catch (e) {
+        console.error(`[postbuild-pagefind] ERROR could not give the ${what} in ${file} a build id: ${e.message}`);
+      }
+    }
+    if (versioned.length === ADDRESS_PATCHES.length) {
+      console.log(`[postbuild-pagefind] ${versioned.length} address(es) now end ?v=${BUILD_ID}: ${versioned.join(', ')}`);
+    } else {
+      console.error(`[postbuild-pagefind] ERROR only ${versioned.length} of ${ADDRESS_PATCHES.length} address(es) end ?v=${BUILD_ID}. A returning browser would run a worker or an engine kept from an older build; check-search-coverage.js, the next build step, fails the build on it.`);
     }
 
     // Write a version pointer file so the client can append the same
