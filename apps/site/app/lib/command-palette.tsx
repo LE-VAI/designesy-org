@@ -247,7 +247,7 @@ function loadPagefind(): Promise<PagefindApi | null> {
     //      engine addresses inside pagefind.js and pagefind-worker.js.
     //   2. We append ?v=<index id> to the import() URL so the browser fetches
     //      a fresh pagefind.js (which has the patched addresses inside it).
-    // The index id is a hash of the files Pagefind wrote, so it changes
+    // The index id is a hash of the Pagefind files as served, so it changes
     // whenever they do (scripts/lib/pagefind-index-id.js; .next/BUILD_ID
     // stays the same from build to build when a deployment id is set). We
     // read it from a tiny JSON pointer file the postbuild script writes; its

@@ -27,7 +27,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { separateWords } = require('./lib/word-boundaries');
-const { pagefindIndexId } = require('./lib/pagefind-index-id');
+const { pagefindIndexId, stampIndexId, PLACEHOLDER } = require('./lib/pagefind-index-id');
 
 const ROOT = path.resolve(__dirname, '..'); // package root (apps/site), not scripts/
 const SITE_DIR = path.join(ROOT, '.next');
@@ -236,6 +236,10 @@ function main() {
 
   console.log(`[postbuild-pagefind] indexing ${path.relative(ROOT, STAGE_DIR)} -> ${path.relative(ROOT, OUT_DIR)}`);
   try {
+    // Start from an empty output directory, so the index id is a hash of this
+    // run's files alone and no fragment or shard of an earlier run is left
+    // to ship.
+    fs.rmSync(OUT_DIR, { recursive: true, force: true });
     execFileSync(process.execPath, [pagefindEntry, ...args], { stdio: 'inherit' });
     // Sanity: report how many fragments were written so a silent empty index is
     // visible in the build log rather than discovered as 404s in the browser.
@@ -275,11 +279,12 @@ function main() {
     // Find loses its full-text rows. The index files need no query: each is
     // named by a hash, and Pagefind fetches pagefind-entry.json, which leads
     // to them, with a timestamp. The query is ?v=<index id>, on every address
-    // in ADDRESS_PATCHES. The id is a hash of the files Pagefind wrote, taken
-    // here before any of them is patched (lib/pagefind-index-id.js says why
-    // .next/BUILD_ID cannot serve: with a deployment id set, Next writes the
-    // same build id on every build).
-    const INDEX_ID = pagefindIndexId(OUT_DIR);
+    // in ADDRESS_PATCHES. The id is a hash of the files as the site serves
+    // them: each address is patched with a fixed placeholder, the files are
+    // hashed, and the id is written where the placeholder was
+    // (lib/pagefind-index-id.js says how, and why .next/BUILD_ID cannot
+    // serve: with a deployment id set, Next writes the same build id on every
+    // build).
     const versioned = [];
     for (const { file, what, find } of ADDRESS_PATCHES) {
       try {
@@ -289,11 +294,17 @@ function main() {
           console.error(`[postbuild-pagefind] ERROR ${file}: expected the ${what} ${find} exactly once, found it ${parts.length - 1} time(s). Nothing was replaced, so this address has no index id.`);
           continue;
         }
-        fs.writeFileSync(filePath, parts.join(`${find.slice(0, -1)}?v=${INDEX_ID}\``));
+        fs.writeFileSync(filePath, parts.join(`${find.slice(0, -1)}?v=${PLACEHOLDER}\``));
         versioned.push(`${file} ${what}`);
       } catch (e) {
         console.error(`[postbuild-pagefind] ERROR could not give the ${what} in ${file} an index id: ${e.message}`);
       }
+    }
+    const INDEX_ID = pagefindIndexId(OUT_DIR);
+    try {
+      stampIndexId(OUT_DIR, INDEX_ID);
+    } catch (e) {
+      console.error(`[postbuild-pagefind] ERROR could not write the index id into the patched addresses: ${e.message}`);
     }
     if (versioned.length === ADDRESS_PATCHES.length) {
       console.log(`[postbuild-pagefind] ${versioned.length} address(es) now end ?v=${INDEX_ID}: ${versioned.join(', ')}`);

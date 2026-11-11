@@ -51,13 +51,14 @@
  *                             index measured nothing);
  *   * engine-address-build-id every engine address an emitted script writes
  *                             as the template wasm.${language}.pagefind ends
- *                             ?v=<index id>, the id being a hash of the
- *                             files Pagefind wrote, computed again here from
- *                             the files, in the index and in its
- *                             deployed copy. Any other string with .pagefind
- *                             before a quote or a "?" fails, and so does a
- *                             script that must load the engine and holds no
- *                             address written as the template;
+ *                             ?v=<index id>, the id being pf- and 20 hex
+ *                             digits hashed from the files as served,
+ *                             computed again here from the files, in the
+ *                             index and in its deployed copy. Any other
+ *                             string with .pagefind before a quote or a "?"
+ *                             fails, and so does a script that must load
+ *                             the engine and holds no address written as
+ *                             the template;
  *   * worker-address-build-id the address pagefind.js starts the worker at
  *                             ends the same way (a worker script kept from an
  *                             older build would ask for the engine under the
@@ -121,7 +122,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const zlib = require('node:zlib');
 const { spawnSync } = require('node:child_process');
-const { pagefindIndexId } = require('./lib/pagefind-index-id');
+const { pagefindIndexId, PLACEHOLDER, ID_FORMAT } = require('./lib/pagefind-index-id');
 
 const APP = path.join(__dirname, '..');
 
@@ -377,11 +378,15 @@ function addressProblems(pagefindDir, nextDir) {
     engine.push('pagefind-version.json holds no id, so there is no id for an address to carry');
     return { engine, worker, ok };
   }
-  // The id is a hash of the files Pagefind wrote (lib/pagefind-index-id.js).
-  // Read it again from the files here, with ?v=<id> taken out of them, so an
+  // The id is a hash of the files as served (lib/pagefind-index-id.js). Read
+  // it again from the files here, each ?v=<id> read as the placeholder, so an
   // id that stays the same while the files change cannot pass. A build id
   // cannot stand in for it: with a deployment id set, Next writes the same
   // build id on every build.
+  if (!ID_FORMAT.test(id) || id === PLACEHOLDER) {
+    engine.push(`pagefind-version.json says ${JSON.stringify(id)}, which is not an index id (pf- and 20 hex digits, not the placeholder ${PLACEHOLDER})`);
+    return { engine, worker, ok };
+  }
   const files = pagefindIndexId(pagefindDir, id);
   if (files !== id) {
     engine.push(`pagefind-version.json says ${JSON.stringify(id)} but the files in this index give ${JSON.stringify(files)}, so the addresses would not change when the files do`);
