@@ -75,9 +75,11 @@ the kept copy starts the worker and asks for the engine at the older
 build's addresses. In Chrome 156, with the file answering 503 on a build
 with Pagefind 1.5.2 and again on a build with 1.6.0, both with this change,
 the second visit took `pagefind.js` and the engine from its cache, logged
-the WASM error, and showed full-text rows for 0 of 40 searches. The loader
-is not changed here. None of this was measured on a deployment: the browser
-runs here were served by `next start` on a local address.
+the WASM error, and showed full-text rows for 0 of 40 searches. With the
+file failing on one of the two visits only, the rows were those of a fresh
+profile. The loader is not changed here. None of this was measured on a
+deployment: the browser runs here were served by `next start` on a local
+address.
 
 ### Gates (Find engine address)
 
@@ -94,10 +96,11 @@ runs here were served by `next start` on a local address.
   a classic script, so a patch that breaks a script cannot pass on
   addresses that still read right. `index-files-known` fails when the top
   level of the index holds a file or directory that is not on the gate's
-  list, so a file a later Pagefind adds under a fixed name stops the build
-  until someone has read how it is asked for. All four read the index and,
-  when a deployment adapter's output is present, the deployed copy. Gate
-  parity still counts 37 gates.
+  list, so a file a later Pagefind adds there under a fixed name stops the
+  build until someone has read how it is asked for. All four read the index
+  and, when a deployment adapter's output is present, the deployed copy.
+  The gate reads each address as it is written in the script, up to its
+  closing quote, and runs nothing. Gate parity still counts 37 gates.
 - On the commit that adds the first two findings without the fix, the gate
   fails the build with `engine-address-build-id`, naming `pagefind.js` and
   `pagefind-worker.js`. With the fix it passes, on Pagefind 1.5.2 and with
@@ -109,7 +112,12 @@ runs here were served by `next start` on a local address.
   built by concatenation, no address at all, a literal file name, a longer
   query, a lost worker query, another build's id, a missing script, a script
   that no longer parses, a stale deployed copy, a new file or directory the
-  gate does not know).
+  gate does not know). Five more seeded faults pass the gate and mark what
+  it does not read: a patch that appends the query and cuts it off again in
+  the emitted code, a second engine address built with no `.pagefind`
+  literal, a new file with a fixed name inside `index/` that the worker
+  script asks for with no query, one inside `fragment/` that no script
+  names, and the engine file `wasm.en.pagefind` missing from disk.
 - In Chrome 156 with its HTTP cache on disk, against `next start` on a local
   address, 40 searches per visit. A profile that searched on a build of the
   commit before and then met a build with Pagefind 1.6.0 and no fix took
