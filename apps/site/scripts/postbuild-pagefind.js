@@ -72,7 +72,9 @@ const JSON_ENDPOINTS = [
 // inside the closing backtick.
 //
 //   pagefind.js         starts the worker at `${basePath}pagefind-worker.js`,
-//                       and loads the engine itself when no worker can start
+//                       and loads the engine itself when no worker starts, or
+//                       when the worker's init fails or takes more than five
+//                       seconds
 //   pagefind-worker.js  loads the engine
 //
 // The engine address is one template for every engine file the build writes:

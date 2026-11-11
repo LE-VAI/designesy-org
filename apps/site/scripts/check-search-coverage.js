@@ -59,9 +59,9 @@
  *                             right in a script no browser can run);
  *   * index-files-known       every file and directory at the top level of
  *                             the index is on this gate's list (INDEX_FILES),
- *                             so a file a later Pagefind adds under a fixed
- *                             name stops the build until someone has read how
- *                             it is asked for;
+ *                             so a file a later Pagefind adds there under a
+ *                             fixed name stops the build until someone has
+ *                             read how it is asked for;
  *   * no-trace-manifests      no indexed url or title names a *.nft.json trace;
  *   * fragments-are-routes    every indexed document maps to exactly one
  *                             prerendered public route (a page, or a JSON
@@ -88,6 +88,11 @@
  * Reported, not gated: prerendered pages missing from the index. Pagefind drops
  * every page without data-pagefind-body once any page has one, so this list is
  * where an unmarked page shows up.
+ *
+ * Not checked: what a script does with an address after writing it (the two
+ * address findings read each address as it is written, up to its closing
+ * quote, and run nothing); the names inside fragment/, index/ and filter/;
+ * and whether the engine files are on disk.
  *
  * Runs in the build chain right after postbuild-pagefind.js. That script exits
  * 0 when Pagefind itself fails, so a broken indexer does not stop the build at
@@ -116,7 +121,8 @@ const PAGEFIND_REL = path.join('static', 'chunks', 'app', 'pagefind');
 const URL_MARK = '/pagefind.js?v=';
 
 /** The emitted scripts that load the engine: the page's own copy (used when no
- *  worker can start) and the worker's. Each must hold an engine address. */
+ *  worker starts, or when the worker's init fails or takes more than five
+ *  seconds) and the worker's. Each must hold an engine address. */
 const ENGINE_LOADERS = ['pagefind.js', 'pagefind-worker.js'];
 
 /** An engine address as Pagefind writes it: the template
@@ -135,10 +141,11 @@ const ENGINE_SUFFIX = /\.pagefind(?=[`"'?])/g;
 /** The worker script's name, wherever pagefind.js writes it. */
 const WORKER_ADDRESS = /pagefind-worker\.js/g;
 
-/** Everything Pagefind 1.5.2 and 1.6.0 write at the top level of the index
- *  (pagefind/src/output/mod.rs in Pagefind's source), and the version file
- *  postbuild-pagefind.js adds, each with what keeps a copy a browser holds
- *  for a year from being used on a later build:
+/** What Pagefind 1.5.2 and 1.6.0 write at the top level of the index when
+ *  not asked for a playground/ directory (pagefind/src/output/mod.rs in
+ *  Pagefind's source), and the version file postbuild-pagefind.js adds, each
+ *  with what keeps a copy a browser holds for a year from being used on a
+ *  later build:
  *    pagefind.js             the loader imports it with ?v=<build id>. When
  *                            pagefind-version.json does not answer, the
  *                            loader falls back to ?v=noversion, and a copy
@@ -152,7 +159,7 @@ const WORKER_ADDRESS = /pagefind-worker\.js/g;
  *                            the name is a hash of the content
  *    pagefind-highlight.js, and the three UI scripts and their style sheets
  *                            the site loads none of them
- *  Any other name fails the gate (index-files-known). */
+ *  Any other name at the top level fails the gate (index-files-known). */
 const INDEX_FILES = [
   'pagefind.js', 'pagefind-worker.js', 'pagefind-version.json', 'pagefind-entry.json',
   'fragment', 'index', 'filter',
@@ -335,7 +342,9 @@ function addressTail(code, from) {
  * The addresses the scripts in one Pagefind directory build for the engine
  * file and the worker script, read against this build's id. `engine` and
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
- * end ?v=<build id>.
+ * end ?v=<build id>. Each address is read as it is written, up to its closing
+ * quote. Nothing is run, so what a script does with an address after writing
+ * it is not seen.
  */
 function addressProblems(pagefindDir, nextDir) {
   const engine = [];
