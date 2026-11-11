@@ -42,11 +42,12 @@ rule, weight or score moves.
   the index it is about to read.
 - **A string that is not found is an error.** Each of the three addresses is
   replaced exactly as Pagefind 1.5.2 and 1.6.0 write it, and must occur
-  exactly once in its file. When one does not, nothing is replaced, the
-  build log carries an `ERROR` line that names the file and the string, and
-  the search gate fails the build. Until now the worker's address was
-  replaced wherever its name first appeared, and the log said it was patched
-  whether or not it was found.
+  exactly once in its file. When one does not, that address is left as
+  Pagefind wrote it (the others are still patched), the build log carries an
+  `ERROR` line that names the file and the string, and the search gate fails
+  the build. Until now the worker's address was replaced wherever its name
+  first appeared, and the log said it was patched whether or not it was
+  found.
 - **The deployed copy carries the addresses.** They are patched before the
   index is copied into a deployment adapter's output
   (`.next/output/static`), and the gate reads that copy too.
@@ -67,20 +68,23 @@ rule, weight or score moves.
 Caveats: a returning visitor who searches now downloads the engine once
 after each build (72,206 bytes for `wasm.en.pagefind` in a local build), as
 they already download `pagefind.js` and the worker script. The engine file a
-browser kept from before this change stays in its cache, unused, until it
-expires. One path stays open. When `pagefind-version.json` does not answer,
-the loader imports `pagefind.js?v=noversion`, an address that never changes,
-and a browser may keep that copy for a year like anything else under
-`/_next/static`. If the file fails again for that browser on a later build,
-the kept copy starts the worker and asks for the engine at the older
-build's addresses. In Chrome 156, with the file answering 503 on a build
-with Pagefind 1.5.2 and again on a build with 1.6.0, both with this change,
-the second visit took `pagefind.js` and the engine from its cache, logged
-the WASM error, and showed full-text rows for 0 of 40 searches. With the
-file failing on one of the two visits only, the rows were those of a fresh
-profile. The loader is not changed here. None of this was measured on a
-deployment: the browser runs here were served by `next start` on a local
-address.
+browser kept from before this change stays in its cache until it expires.
+One path stays open, and it can still ask for that file. When
+`pagefind-version.json` does not answer, the loader imports
+`pagefind.js?v=noversion`, an address that never changes, and a browser may
+keep that copy for a year like anything else under `/_next/static`. If the
+file fails again for that browser on a later build, the kept copy starts the
+worker and asks for the engine at the older build's addresses. A copy kept
+from before this change asks for it at its old address, with no query. In
+Chrome 156, with the file answering 503 on a build with Pagefind 1.5.2 and
+again on a build with 1.6.0, both with this change, the second visit took
+`pagefind.js` and the engine from its cache, logged the WASM error, and
+showed full-text rows for 0 of 40 searches. It did the same when the first
+build was one of the commit before, with that build's engine at its old
+address. With the file failing on one of the two visits only, the rows were
+those of a fresh profile. The loader is not changed here. None of this was
+measured on a deployment: the browser runs here were served by `next start`
+on a local address.
 
 ### Gates (Find engine address)
 
@@ -131,7 +135,9 @@ address.
   and the commit before then this change with 1.6.0.
 - In apps/site on Node 24.15.0, before and after: `npm run build:win` and
   every other node step of the build script exit 0, `npx tsc --noEmit` exits
-  0, and `npx eslint app` exits 0 with the same 55 warnings.
+  0, and `npx eslint app` exits 0 with the same 55 warnings. Neither of
+  those two reads the changed scripts, and ESLint run on them by name
+  reports nothing.
 
 **The site type-checks against the types cuelume ships** (the site; no
 version moves). `apps/site/cuelume.d.ts` declared the cuelume module
