@@ -10,20 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 site; no version moves). The command palette's full-text search runs on
 Pagefind. A post-build step (`apps/site/scripts/postbuild-pagefind.js`)
 writes its index under `/_next/static`, where every file is served with
-`Cache-Control: public, max-age=31536000, immutable`. Two of those files
-keep their names from one build to the next: the worker script and the
-WebAssembly engine (`wasm.<language>.pagefind`). The step gave the worker's
-address `?v=<build id>`, and its comment said the engine's address had the
-same. It had none, so a browser that had searched once could keep its engine
-file for a year and run it on the index of every later build. Measured on
+`Cache-Control: public, max-age=31536000, immutable`. The two scripts Find
+loads from there, `pagefind.js` and `pagefind-worker.js`, ask for two files
+at an address with no hash in the name and no query, as Pagefind writes
+them: the worker script and the WebAssembly engine
+(`wasm.<language>.pagefind`). The step gave the worker's address
+`?v=<build id>`, and its comment said the engine's address had the same. It
+had none, so a browser that had searched once could keep its engine file
+for a year and run it on the index of every later build. Measured on
 production on 2026-11-10,
-`/_next/static/chunks/app/pagefind/wasm.en.pagefind` answers 200 with that
-header. An engine from Pagefind 1.5.2 cannot read an index written by 1.6.0:
-it logs `Pagefind: WASM Error (No pointer)` and no search returns. The first
-Pagefind upgrade would have left returning visitors without Find's full-text
-rows, and a browser with an empty cache would have shown nothing wrong.
-Pagefind stays at 1.5.2 in this change, so nothing a visitor sees changes.
-No check, scoring rule, weight or score moves.
+`/_next/static/chunks/app/pagefind/wasm.en.pagefind` answers 200 with the
+same three directives. An engine from Pagefind 1.5.2 cannot read an index
+written by 1.6.0: it logs `Pagefind: WASM Error (No pointer)` and no search
+returns. The first Pagefind upgrade would have left returning visitors who
+had searched before without Find's full-text rows, and a browser with an
+empty cache would have shown nothing wrong. Pagefind stays at 1.5.2 in this
+change, so nothing a visitor sees changes. No check, scoring rule, weight
+or score moves.
 
 ### Fixed (Find engine address)
 
@@ -32,9 +35,10 @@ No check, scoring rule, weight or score moves.
   `wasm.${language}.pagefind`, for every engine file the build writes
   (`wasm.en.pagefind` and `wasm.unknown.pagefind` today). The post-build
   step now appends `?v=<build id>` to that template in both scripts, as it
-  does to the worker's address in `pagefind.js`. A returning browser asks
-  for the engine at an address it has not seen, and gets the engine written
-  with the index it is about to read.
+  does to the worker's address in `pagefind.js`. A returning browser whose
+  loader reads this build's id from `pagefind-version.json` asks for the
+  engine at an address it has not seen, and gets the engine written with
+  the index it is about to read.
 - **A string that is not found is an error.** Each of the three addresses is
   replaced exactly as Pagefind 1.5.2 and 1.6.0 write it, and must occur
   exactly once in its file. When one does not, nothing is replaced, the
@@ -63,32 +67,49 @@ Caveats: a returning visitor who searches now downloads the engine once
 after each build (72,206 bytes for `wasm.en.pagefind` in a local build), as
 they already download `pagefind.js` and the worker script. The engine file a
 browser kept from before this change stays in its cache, unused, until it
-expires. None of this was measured on a deployment: the browser runs below
-were served by `next start` on a local address.
+expires. One path stays open. When `pagefind-version.json` does not answer,
+the loader imports `pagefind.js?v=noversion`, an address that never changes,
+and a browser may keep that copy for a year like anything else under
+`/_next/static`. If the file fails again for that browser on a later build,
+the kept copy starts the worker and asks for the engine at the older
+build's addresses. In Chrome 156, with the file answering 503 on a build
+with Pagefind 1.5.2 and again on a build with 1.6.0, both with this change,
+the second visit took `pagefind.js` and the engine from its cache, logged
+the WASM error, and showed full-text rows for 0 of 40 searches. The loader
+is not changed here. None of this was measured on a deployment: the browser
+runs here were served by `next start` on a local address.
 
 ### Gates (Find engine address)
 
 - `check-search-coverage.js`, which already runs in the build and in CI
-  right after the post-build step, gains two findings.
-  `engine-address-build-id` fails when an emitted script builds an engine
-  address that does not end `?v=<build id>`, when `pagefind.js` or
-  `pagefind-worker.js` holds no engine address the gate can read, when a
-  string ending in `.pagefind` is written in a form it does not know, or
-  when `pagefind-version.json` does not name this build (`.next/BUILD_ID`).
-  `worker-address-build-id` fails when the worker's address in `pagefind.js`
-  does not end the same way. Both read the index and, when a deployment
-  adapter's output is present, the deployed copy. Gate parity still counts
-  37 gates.
-- On the commit that adds the findings without the fix, the gate fails the
-  build with `engine-address-build-id`, naming `pagefind.js` and
+  right after the post-build step, gains four findings.
+  `engine-address-build-id` fails when an emitted script's engine address
+  does not end `?v=<build id>`, when `pagefind.js` or `pagefind-worker.js`
+  holds no engine address written as the template, when a string ending in
+  `.pagefind` is written any other way (a literal `wasm.en.pagefind` is
+  one), or when `pagefind-version.json` does not name this build
+  (`.next/BUILD_ID`). `worker-address-build-id` fails when the worker's
+  address in `pagefind.js` does not end the same way. `loaders-parse` fails
+  when `pagefind.js` no longer parses as a module or `pagefind-worker.js` as
+  a classic script, so a patch that breaks a script cannot pass on
+  addresses that still read right. `index-files-known` fails when the top
+  level of the index holds a file or directory that is not on the gate's
+  list, so a file a later Pagefind adds under a fixed name stops the build
+  until someone has read how it is asked for. All four read the index and,
+  when a deployment adapter's output is present, the deployed copy. Gate
+  parity still counts 37 gates.
+- On the commit that adds the first two findings without the fix, the gate
+  fails the build with `engine-address-build-id`, naming `pagefind.js` and
   `pagefind-worker.js`. With the fix it passes, on Pagefind 1.5.2 and with
-  1.6.0 installed. Against a real build, 18 seeded faults each fail the
-  gate: 10 in the post-build step (an address left out, a constant or an
+  1.6.0 installed. Against a real build, 30 seeded faults each fail the
+  gate: 13 in the post-build step (an address left out, a constant or an
   empty id, the query on the wrong string, the deployed copy made before the
-  patch, a string Pagefind no longer writes) and 8 in the emitted files (an
-  address built by concatenation, no address at all, a literal file name, a
-  longer query, a lost worker query, another build's id, a missing script, a
-  stale deployed copy).
+  patch, a string Pagefind no longer writes, a lost backtick, one language's
+  code in place of the template) and 17 in the emitted files (an address
+  built by concatenation, no address at all, a literal file name, a longer
+  query, a lost worker query, another build's id, a missing script, a script
+  that no longer parses, a stale deployed copy, a new file or directory the
+  gate does not know).
 - In Chrome 156 with its HTTP cache on disk, against `next start` on a local
   address, 40 searches per visit. A profile that searched on a build of the
   commit before and then met a build with Pagefind 1.6.0 and no fix took
