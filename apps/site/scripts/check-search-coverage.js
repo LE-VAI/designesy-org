@@ -18,16 +18,19 @@
  * alone would have put that junk straight into Find.
  *
  * A third defect sat beside them. Everything under /_next/static is served
- * with `Cache-Control: public, max-age=31536000, immutable`, and two Pagefind
- * files keep their names from one build to the next: the worker script and the
- * WebAssembly engine (wasm.<language>.pagefind). postbuild-pagefind.js gave the
- * worker's address ?v=<build id>, and its comment said the engine's had it
- * too. The engine's had none, so a browser that had searched once kept its
- * engine file for a year, while the index beside it is new with every build.
- * An engine from Pagefind 1.5.2 cannot read an index written by 1.6.0: it logs
+ * with `Cache-Control: public, max-age=31536000, immutable`. The two scripts
+ * Find loads from the index, pagefind.js and pagefind-worker.js, ask for two
+ * files at an address with no hash in the name and no query, as Pagefind
+ * writes them: the worker script and the WebAssembly engine
+ * (wasm.<language>.pagefind). postbuild-pagefind.js gave the worker's address
+ * ?v=<build id>, and its comment said the engine's had it too. The engine's
+ * had none, so a browser that had searched once could keep its engine file
+ * for a year, while the index beside it is new with every build. An engine
+ * from Pagefind 1.5.2 cannot read an index written by 1.6.0: it logs
  * "Pagefind: WASM Error (No pointer)" and no search returns. The first
  * Pagefind upgrade would have taken the full-text rows from every returning
- * visitor, and a browser with an empty cache would have shown nothing wrong.
+ * visitor who had searched before, and a browser with an empty cache would
+ * have shown nothing wrong.
  *
  * None of the three showed in the build log or in the source review. They
  * live in the BUILD OUTPUT, so this gate reads the build output:
@@ -49,6 +52,16 @@
  *                             ends the same way (a worker script kept from an
  *                             older build would ask for the engine under the
  *                             older address);
+ *   * loaders-parse           pagefind.js still parses as a module and
+ *                             pagefind-worker.js as a classic script, in the
+ *                             index and in its deployed copy (a patch that
+ *                             broke one would leave its addresses reading
+ *                             right in a script no browser can run);
+ *   * index-files-known       every file and directory at the top level of
+ *                             the index is on this gate's list (INDEX_FILES),
+ *                             so a file a later Pagefind adds under a fixed
+ *                             name stops the build until someone has read how
+ *                             it is asked for;
  *   * no-trace-manifests      no indexed url or title names a *.nft.json trace;
  *   * fragments-are-routes    every indexed document maps to exactly one
  *                             prerendered public route (a page, or a JSON
@@ -87,7 +100,9 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const zlib = require('node:zlib');
+const { spawnSync } = require('node:child_process');
 
 const APP = path.join(__dirname, '..');
 
@@ -104,10 +119,12 @@ const URL_MARK = '/pagefind.js?v=';
  *  worker can start) and the worker's. Each must hold an engine address. */
 const ENGINE_LOADERS = ['pagefind.js', 'pagefind-worker.js'];
 
-/** An engine address as Pagefind writes it: wasm.<language>.pagefind, the
- *  language a template expression (`wasm.${language}.pagefind`, one address
- *  for every language the build wrote) or a literal code. */
-const ENGINE_ADDRESS = /wasm\.(?:\$\{[^}]*\}|[\w-]+)\.pagefind/g;
+/** An engine address as Pagefind writes it: the template
+ *  `wasm.${language}.pagefind`, one address for every engine file the build
+ *  wrote. The expression must be a name. An address written for one language
+ *  (wasm.en.pagefind, or a constant in the expression) would never ask for
+ *  the other engine files, so it is reported as unread. */
+const ENGINE_ADDRESS = /wasm\.\$\{[\w$.]+\}\.pagefind/g;
 
 /** The end of any string that names a .pagefind file, with or without a
  *  query after it: an engine address in whatever form. One that ENGINE_ADDRESS
@@ -117,6 +134,32 @@ const ENGINE_SUFFIX = /\.pagefind(?=[`"'?])/g;
 
 /** The worker script's name, wherever pagefind.js writes it. */
 const WORKER_ADDRESS = /pagefind-worker\.js/g;
+
+/** Everything Pagefind 1.5.2 and 1.6.0 write at the top level of the index
+ *  (pagefind/src/output/mod.rs in Pagefind's source), and the version file
+ *  postbuild-pagefind.js adds, each with what keeps a copy a browser holds
+ *  for a year from being used on a later build:
+ *    pagefind.js             the loader imports it with ?v=<build id>. When
+ *                            pagefind-version.json does not answer, the
+ *                            loader falls back to ?v=noversion, and a copy
+ *                            kept under that address can be used on a later
+ *                            build. Nothing here checks the loader's choice
+ *    pagefind-worker.js      started at ?v=<build id> (worker-address-build-id)
+ *    wasm.<code>.pagefind    asked for at ?v=<build id> (engine-address-build-id)
+ *    pagefind-version.json   the loader fetches it with cache: 'no-store'
+ *    pagefind-entry.json     Pagefind fetches it with ?ts=<time>
+ *    pagefind.<hash>.pf_meta and what fragment/, index/ and filter/ hold
+ *                            the name is a hash of the content
+ *    pagefind-highlight.js, and the three UI scripts and their style sheets
+ *                            the site loads none of them
+ *  Any other name fails the gate (index-files-known). */
+const INDEX_FILES = [
+  'pagefind.js', 'pagefind-worker.js', 'pagefind-version.json', 'pagefind-entry.json',
+  'fragment', 'index', 'filter',
+  'pagefind-highlight.js', 'pagefind-ui.js', 'pagefind-ui.css', 'pagefind-modular-ui.js',
+  'pagefind-modular-ui.css', 'pagefind-component-ui.js', 'pagefind-component-ui.css',
+];
+const INDEX_FILE_PATTERNS = [/^wasm\.[\w-]+\.pagefind$/, /^pagefind\.[\w-]+\.pf_meta$/];
 
 /** The palette whose curated INDEX is Find's second source. */
 const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
@@ -289,10 +332,10 @@ function addressTail(code, from) {
 }
 
 /**
- * The addresses the scripts in one Pagefind directory build for the two files
- * that keep their names from build to build, read against this build's id.
- * `engine` and `worker` list what is wrong, one line each; `ok` counts the
- * addresses that end ?v=<build id>.
+ * The addresses the scripts in one Pagefind directory build for the engine
+ * file and the worker script, read against this build's id. `engine` and
+ * `worker` list what is wrong, one line each; `ok` counts the addresses that
+ * end ?v=<build id>.
  */
 function addressProblems(pagefindDir, nextDir) {
   const engine = [];
@@ -334,10 +377,10 @@ function addressProblems(pagefindDir, nextDir) {
     }
     for (const m of code.matchAll(ENGINE_SUFFIX)) {
       if (ends.has(m.index + '.pagefind'.length)) continue;
-      engine.push(`${name} holds a string ending in .pagefind that is not written as wasm.<language>.pagefind: ${JSON.stringify(code.slice(Math.max(0, m.index - 48), m.index + 24))}`);
+      engine.push(`${name} holds a string ending in .pagefind that is not the template wasm.\${language}.pagefind: ${JSON.stringify(code.slice(Math.max(0, m.index - 48), m.index + 24))}`);
     }
     if (ENGINE_LOADERS.includes(name) && ends.size === 0) {
-      engine.push(`${name} holds no engine address written as wasm.<language>.pagefind, so what it asks for could not be read`);
+      engine.push(`${name} holds no engine address written as the template wasm.\${language}.pagefind, so what it asks for could not be read`);
     }
 
     if (name !== 'pagefind.js') continue;
@@ -350,6 +393,34 @@ function addressProblems(pagefindDir, nextDir) {
     if (starts.length === 0) worker.push(`${name} does not name pagefind-worker.js, so the worker's address could not be read`);
   }
   return { engine, worker, ok };
+}
+
+/**
+ * What is wrong with an emitted loader's syntax, or null when it parses. The
+ * post-build step rewrites both loaders, and a rewrite that broke one would
+ * leave its addresses reading right in a script no browser can run.
+ * pagefind.js is loaded with import(), so `node --check` reads it as a
+ * module: it parses and runs nothing. pagefind-worker.js is started with
+ * new Worker(url), so it is compiled, and not run, as a classic script.
+ */
+function parseProblem(name, code) {
+  if (name !== 'pagefind.js') {
+    try {
+      new vm.Script(code, { filename: name });
+      return null;
+    } catch (e) {
+      return `does not parse as a classic script (${e.name}: ${e.message})`;
+    }
+  }
+  // A SyntaxError line is a verdict. Anything else (the check was killed, or
+  // could not start) is tried once more and then reported, never passed.
+  for (let attempt = 1; ; attempt++) {
+    const r = spawnSync(process.execPath, ['--input-type=module', '--check', '-'], { input: code, encoding: 'utf8' });
+    if (r.status === 0) return null;
+    const line = String(r.stderr || '').split(/\r?\n/).find((l) => /^SyntaxError:/.test(l));
+    if (line) return `does not parse as a module (${line.trim()})`;
+    if (attempt === 2) return `could not be checked as a module: node --check gave no verdict twice (${r.error ? r.error.message : `exit ${r.status}`})`;
+  }
 }
 
 function check(nextDir) {
@@ -415,10 +486,12 @@ function check(nextDir) {
     }
   }
 
-  // 2c. A returning browser gets this build's engine. The engine file and the
-  // worker script keep their names from build to build and are cached for a
-  // year, so every address the emitted scripts build for them must end
-  // ?v=<build id>: in the index, and in the deployed copy when there is one.
+  // 2c. The engine and worker addresses carry this build's id. Pagefind
+  // writes both with no hash in the name and no query, and a browser may keep
+  // either file for a year, so every address the emitted scripts build for
+  // them must end ?v=<build id>: in the index, and in the deployed copy when
+  // there is one. Both loaders must still parse after the patch, and the
+  // index must hold nothing this gate does not know.
   for (const dir of indexDirs) {
     const where = path.relative(nextDir, dir).split(path.sep).join('/');
     const { engine, worker, ok } = addressProblems(dir, nextDir);
@@ -438,6 +511,36 @@ function check(nextDir) {
     }
     if (!engine.length && !worker.length) {
       notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
+    }
+
+    const parsed = [];
+    const unparsed = [];
+    for (const name of ENGINE_LOADERS) {
+      let code;
+      try { code = fs.readFileSync(path.join(dir, name), 'utf8'); } catch { continue; } // a missing loader is a finding above
+      const problem = parseProblem(name, code);
+      if (problem) unparsed.push(`${name} ${problem}`);
+      else parsed.push(`${name} parses as ${name === 'pagefind.js' ? 'a module' : 'a classic script'}`);
+    }
+    if (unparsed.length) {
+      add(
+        'loaders-parse',
+        `${where}: ${unparsed.join('; ')}. A browser that cannot parse pagefind.js loads no index, and Find serves only the curated INDEX to every visitor. One that cannot parse pagefind-worker.js cannot start the worker.`,
+        'postbuild-pagefind.js rewrites the addresses in both scripts (ADDRESS_PATCHES); read what it puts in place of each string. If the scripts fail as Pagefind wrote them, how they are loaded has changed: parseProblem() here reads pagefind.js as a module and pagefind-worker.js as a classic script.'
+      );
+    }
+
+    const entries = fs.readdirSync(dir).sort();
+    const unknown = entries.filter((f) => !INDEX_FILES.includes(f) && !INDEX_FILE_PATTERNS.some((re) => re.test(f)));
+    if (unknown.length) {
+      add(
+        'index-files-known',
+        `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
+        'Find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<build id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES with the reason it is safe.'
+      );
+    }
+    if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
+      notes.push(`${where}: ${parsed.join(' and ')}; ${entries.length} top-level entries, all on the gate's list`);
     }
   }
 
