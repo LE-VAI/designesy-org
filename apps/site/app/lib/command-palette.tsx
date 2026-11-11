@@ -243,12 +243,15 @@ function loadPagefind(): Promise<PagefindApi | null> {
     // CACHE-BUSTING: pagefind.js and pagefind-worker.js are served with
     // cache-control: immutable, so browsers hold stale copies from prior
     // deployments that carried an older CSP. We bust the cache two ways:
-    //   1. The postbuild script patches pagefind.js to append ?v=<BUILD_ID>
-    //      to the internal Worker URL string.
-    //   2. We append ?v=<BUILD_ID> to the import() URL so the browser fetches
-    //      a fresh pagefind.js (which has the patched Worker URL inside it).
-    // The BUILD_ID comes from .next/BUILD_ID at build time; we read it from
-    // a tiny JSON pointer file written by the postbuild script.
+    //   1. The postbuild script appends ?v=<index id> to the worker and
+    //      engine addresses inside pagefind.js and pagefind-worker.js.
+    //   2. We append ?v=<index id> to the import() URL so the browser fetches
+    //      a fresh pagefind.js (which has the patched addresses inside it).
+    // The index id is a hash of the files Pagefind wrote, so it changes
+    // whenever they do (scripts/lib/pagefind-index-id.js; .next/BUILD_ID
+    // stays the same from build to build when a deployment id is set). We
+    // read it from a tiny JSON pointer file the postbuild script writes; its
+    // key is still buildId.
     const PAGEFIND_DIR = '/_next/static/chunks/app/pagefind';
     pagefindPromise = fetch(`${PAGEFIND_DIR}/pagefind-version.json`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)

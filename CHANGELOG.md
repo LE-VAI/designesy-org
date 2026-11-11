@@ -6,6 +6,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Find's scripts and engine get an id that changes with the index** (the
+site; no version moves). The entry below gave Find's engine file the
+`?v=<id>` its worker address already had, with the id read from
+`.next/BUILD_ID`. When a deployment id is set, Next writes the same build id
+on every build (`getBuildId` in `next/dist/build/index.js` returns
+`build-TfctsWXpff2fKS`), and Vercel sets one through `NEXT_DEPLOYMENT_ID`
+for skew protection. Measured on production on 2026-11-11,
+`pagefind-version.json` held `build-TfctsWXpff2fKS` after the build with
+Pagefind 1.5.2 and again after the build with 1.6.0, and both builds asked
+for `wasm.${language}.pagefind?v=build-TfctsWXpff2fKS`. So the addresses did
+not change: a browser that had searched before the 1.6.0 build kept the
+1.5.2 `pagefind.js` and engine under the same addresses and ran them on the
+1.6.0 index, which they cannot read. Find then shows the curated rows and no
+full-text rows. No check, scoring rule, weight or score moves.
+
+### Fixed (Find index id)
+
+- **The id is read from the files.** The post-build step computes it from
+  the files Pagefind wrote, before it patches any of them: `pf-` and the
+  first 20 hex digits of a SHA-256 over each file's path and content, with
+  `pagefind-version.json` left out
+  (`apps/site/scripts/lib/pagefind-index-id.js`).
+  It puts `?v=<index id>` on the worker address and the two engine
+  addresses, and writes the id to `pagefind-version.json` under the same
+  `buildId` key, which the palette fetches with `cache: 'no-store'`. On its
+  next search a returning browser reads the new id and asks for
+  `pagefind.js`, the worker and the engine at addresses it has not seen.
+  The id stays the same while the files do.
+- **The gate computes the id again.** `engine-address-build-id` takes
+  `?v=<id>` out of the emitted files, hashes them the same way, and fails
+  when the result is not the id in `pagefind-version.json`, in the index
+  and in its deployed copy. It no longer compares the id with
+  `.next/BUILD_ID`. On the emitted files of main built with a deployment id
+  set, it fails.
+
+### Not changed (Find index id)
+
+- Pagefind stays at 1.6.0, and what it writes is the same apart from the
+  id in the three addresses and in `pagefind-version.json`.
+- The palette's code. One comment in `app/lib/command-palette.tsx` now
+  says where the id comes from.
+
+### Gates (Find index id)
+
+- Real Chrome with its HTTP cache on disk, `next start` on `127.0.0.1`,
+  every build made with `NEXT_DEPLOYMENT_ID` set so Next writes its
+  constant build id as on Vercel, 40 searches per visit. A profile that
+  searched on the build of the entry below (Pagefind 1.5.2) and then on
+  main (1.6.0) took `pagefind.js` and the 72,206-byte 1.5.2 engine from its
+  cache, logged `Pagefind: WASM Error (No pointer)`, and showed full-text
+  rows for 0 of 40 searches, where a fresh profile showed them for 39. With
+  this change as the second build, the same profile asked for both at new
+  addresses over the network and matched a fresh profile on 40 of 40
+  searches. A profile that searched on main and then met this change
+  matched on 40 of 40 as well.
+- `engine-address-build-id` fails on main's emitted files built with a
+  deployment id set, and passes on this change's. Main's Pagefind files and
+  this change's hash to the same id, so a build that leaves the index as it
+  was keeps the id.
+
 **Find's engine file gets an address that changes with every build** (the
 site; no version moves). The command palette's full-text search runs on
 Pagefind. A post-build step (`apps/site/scripts/postbuild-pagefind.js`)
