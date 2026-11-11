@@ -17,7 +17,19 @@
  * boosted over real pages and published as public fragments. Fixing the import
  * alone would have put that junk straight into Find.
  *
- * Both defects were invisible in the build log and in the source review. They
+ * A third defect sat beside them. Everything under /_next/static is served
+ * with `Cache-Control: public, max-age=31536000, immutable`, and two Pagefind
+ * files keep their names from one build to the next: the worker script and the
+ * WebAssembly engine (wasm.<language>.pagefind). postbuild-pagefind.js gave the
+ * worker's address ?v=<build id>, and its comment said the engine's had it
+ * too. The engine's had none, so a browser that had searched once kept its
+ * engine file for a year, while the index beside it is new with every build.
+ * An engine from Pagefind 1.5.2 cannot read an index written by 1.6.0: it logs
+ * "Pagefind: WASM Error (No pointer)" and no search returns. The first
+ * Pagefind upgrade would have taken the full-text rows from every returning
+ * visitor, and a browser with an empty cache would have shown nothing wrong.
+ *
+ * None of the three showed in the build log or in the source review. They
  * live in the BUILD OUTPUT, so this gate reads the build output:
  *
  *   * native-pagefind-import  the client chunk that builds the pagefind.js URL
@@ -27,6 +39,16 @@
  *   * index-present           pagefind.js, pagefind-entry.json and fragments
  *                             exist (a gate that passes because there was no
  *                             index measured nothing);
+ *   * engine-address-build-id every address an emitted script builds for an
+ *                             engine file ends ?v=<build id>, the id being
+ *                             this build's (.next/BUILD_ID), in the index and
+ *                             in its deployed copy; a script that must load
+ *                             the engine and holds no address this gate can
+ *                             read fails too;
+ *   * worker-address-build-id the address pagefind.js starts the worker at
+ *                             ends the same way (a worker script kept from an
+ *                             older build would ask for the engine under the
+ *                             older address);
  *   * no-trace-manifests      no indexed url or title names a *.nft.json trace;
  *   * fragments-are-routes    every indexed document maps to exactly one
  *                             prerendered public route (a page, or a JSON
@@ -77,6 +99,24 @@ const PAGEFIND_REL = path.join('static', 'chunks', 'app', 'pagefind');
 
 /** The loader's URL literal: present in the client chunk that loads Pagefind. */
 const URL_MARK = '/pagefind.js?v=';
+
+/** The emitted scripts that load the engine: the page's own copy (used when no
+ *  worker can start) and the worker's. Each must hold an engine address. */
+const ENGINE_LOADERS = ['pagefind.js', 'pagefind-worker.js'];
+
+/** An engine address as Pagefind writes it: wasm.<language>.pagefind, the
+ *  language a template expression (`wasm.${language}.pagefind`, one address
+ *  for every language the build wrote) or a literal code. */
+const ENGINE_ADDRESS = /wasm\.(?:\$\{[^}]*\}|[\w-]+)\.pagefind/g;
+
+/** The end of any string that names a .pagefind file, with or without a
+ *  query after it: an engine address in whatever form. One that ENGINE_ADDRESS
+ *  does not match is reported as unread, so a new way of writing the address
+ *  cannot pass unseen. */
+const ENGINE_SUFFIX = /\.pagefind(?=[`"'?])/g;
+
+/** The worker script's name, wherever pagefind.js writes it. */
+const WORKER_ADDRESS = /pagefind-worker\.js/g;
 
 /** The palette whose curated INDEX is Find's second source. */
 const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
@@ -241,6 +281,77 @@ function loaderSites(staticDir) {
   return sites;
 }
 
+/** What follows an address, up to the end of the string that holds it. */
+function addressTail(code, from) {
+  const rest = code.slice(from, from + 160);
+  const end = rest.search(/[`"']/);
+  return end === -1 ? `${rest.slice(0, 40)}...` : rest.slice(0, end);
+}
+
+/**
+ * The addresses the scripts in one Pagefind directory build for the two files
+ * that keep their names from build to build, read against this build's id.
+ * `engine` and `worker` list what is wrong, one line each; `ok` counts the
+ * addresses that end ?v=<build id>.
+ */
+function addressProblems(pagefindDir, nextDir) {
+  const engine = [];
+  const worker = [];
+  const ok = { engine: 0, worker: 0, id: null };
+
+  // The id the loader puts on pagefind.js, which must be this build's.
+  let id = null;
+  try {
+    id = JSON.parse(fs.readFileSync(path.join(pagefindDir, 'pagefind-version.json'), 'utf8')).buildId;
+  } catch { /* reported just below */ }
+  if (typeof id !== 'string' || id === '') {
+    engine.push('pagefind-version.json holds no build id, so there is no id for an address to carry');
+    return { engine, worker, ok };
+  }
+  let built = null;
+  try { built = fs.readFileSync(path.join(nextDir, 'BUILD_ID'), 'utf8').trim(); } catch { /* no BUILD_ID file */ }
+  if (built !== null && built !== id) {
+    engine.push(`pagefind-version.json says build id ${JSON.stringify(id)} but this build's is ${JSON.stringify(built)} (.next/BUILD_ID), so the addresses would not change with the build`);
+    return { engine, worker, ok };
+  }
+  ok.id = id;
+  const want = `?v=${id}`;
+
+  const scripts = fs.readdirSync(pagefindDir).filter((f) => f.endsWith('.js')).sort();
+  for (const name of ENGINE_LOADERS) {
+    if (!scripts.includes(name)) engine.push(`${name} is missing, so what it asks for could not be read`);
+  }
+  for (const name of scripts) {
+    const code = fs.readFileSync(path.join(pagefindDir, name), 'utf8');
+
+    const ends = new Set();
+    for (const m of code.matchAll(ENGINE_ADDRESS)) {
+      const end = m.index + m[0].length;
+      ends.add(end);
+      const tail = addressTail(code, end);
+      if (tail === want) ok.engine++;
+      else engine.push(`${name} asks for ${m[0]}${tail}, without this build's id (want ${m[0]}${want})`);
+    }
+    for (const m of code.matchAll(ENGINE_SUFFIX)) {
+      if (ends.has(m.index + '.pagefind'.length)) continue;
+      engine.push(`${name} holds a string ending in .pagefind that is not written as wasm.<language>.pagefind: ${JSON.stringify(code.slice(Math.max(0, m.index - 48), m.index + 24))}`);
+    }
+    if (ENGINE_LOADERS.includes(name) && ends.size === 0) {
+      engine.push(`${name} holds no engine address written as wasm.<language>.pagefind, so what it asks for could not be read`);
+    }
+
+    if (name !== 'pagefind.js') continue;
+    const starts = [...code.matchAll(WORKER_ADDRESS)];
+    for (const m of starts) {
+      const tail = addressTail(code, m.index + m[0].length);
+      if (tail === want) ok.worker++;
+      else worker.push(`${name} starts the worker at ${m[0]}${tail}, without this build's id (want ${m[0]}${want})`);
+    }
+    if (starts.length === 0) worker.push(`${name} does not name pagefind-worker.js, so the worker's address could not be read`);
+  }
+  return { engine, worker, ok };
+}
+
 function check(nextDir) {
   const findings = [];
   const notes = [];
@@ -289,6 +400,7 @@ function check(nextDir) {
   // the adapter's static output too: that copy is what is deployed, and it was
   // taken before postbuild-pagefind.js ran.
   const adapterStatic = path.join(nextDir, 'output', 'static');
+  const indexDirs = [pagefindDir];
   if (fs.existsSync(adapterStatic)) {
     const deployed = path.join(adapterStatic, '_next', PAGEFIND_REL);
     const absent = ['pagefind.js', 'pagefind-entry.json', 'fragment'].filter((f) => !fs.existsSync(path.join(deployed, f)));
@@ -298,6 +410,34 @@ function check(nextDir) {
         `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
         'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
       );
+    } else {
+      indexDirs.push(deployed);
+    }
+  }
+
+  // 2c. A returning browser gets this build's engine. The engine file and the
+  // worker script keep their names from build to build and are cached for a
+  // year, so every address the emitted scripts build for them must end
+  // ?v=<build id>: in the index, and in the deployed copy when there is one.
+  for (const dir of indexDirs) {
+    const where = path.relative(nextDir, dir).split(path.sep).join('/');
+    const { engine, worker, ok } = addressProblems(dir, nextDir);
+    if (engine.length) {
+      add(
+        'engine-address-build-id',
+        `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
+        'postbuild-pagefind.js appends ?v=<build id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
+      );
+    }
+    if (worker.length) {
+      add(
+        'worker-address-build-id',
+        `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
+        'postbuild-pagefind.js appends ?v=<build id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
+      );
+    }
+    if (!engine.length && !worker.length) {
+      notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
     }
   }
 
