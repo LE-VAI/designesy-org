@@ -27,10 +27,11 @@
  * had none, so a browser that had searched once could keep its engine file
  * for a year, while the index beside it is new with every build. An engine
  * from Pagefind 1.5.2 cannot read an index written by 1.6.0: it logs
- * "Pagefind: WASM Error (No pointer)" and no search returns. The first
- * Pagefind upgrade would have taken the full-text rows from every returning
- * visitor who had searched before, and a browser with an empty cache would
- * have shown nothing wrong.
+ * "Pagefind: WASM Error (No pointer)", every search finishes with no
+ * full-text rows, and the curated rows still show. The first Pagefind
+ * upgrade would have taken the full-text rows from every returning visitor
+ * whose browser still held the engine file, and a browser with an empty
+ * cache would have shown nothing wrong.
  *
  * None of the three showed in the build log or in the source review. They
  * live in the BUILD OUTPUT, so this gate reads the build output:
@@ -42,12 +43,14 @@
  *   * index-present           pagefind.js, pagefind-entry.json and fragments
  *                             exist (a gate that passes because there was no
  *                             index measured nothing);
- *   * engine-address-build-id every address an emitted script builds for an
- *                             engine file ends ?v=<build id>, the id being
- *                             this build's (.next/BUILD_ID), in the index and
- *                             in its deployed copy; a script that must load
- *                             the engine and holds no address this gate can
- *                             read fails too;
+ *   * engine-address-build-id every engine address an emitted script writes
+ *                             as the template wasm.${language}.pagefind ends
+ *                             ?v=<build id>, the id being this build's
+ *                             (.next/BUILD_ID), in the index and in its
+ *                             deployed copy. Any other string with .pagefind
+ *                             before a quote or a "?" fails, and so does a
+ *                             script that must load the engine and holds no
+ *                             address written as the template;
  *   * worker-address-build-id the address pagefind.js starts the worker at
  *                             ends the same way (a worker script kept from an
  *                             older build would ask for the engine under the
@@ -89,10 +92,13 @@
  * every page without data-pagefind-body once any page has one, so this list is
  * where an unmarked page shows up.
  *
- * Not checked: what a script does with an address after writing it (the two
- * address findings read each address as it is written, up to its closing
- * quote, and run nothing); the names inside fragment/, index/ and filter/;
- * and whether the engine files are on disk.
+ * Not checked, so a fault in any of these can pass: what a script does with
+ * an address after writing it (the two address findings read each address
+ * as it is written, up to its closing quote, and run nothing); an engine
+ * address built with no .pagefind before a quote or a "?", which is not read
+ * at all (a build with one fails only when pagefind.js or pagefind-worker.js
+ * then holds no address written as the template); the names inside
+ * fragment/, index/ and filter/; and whether the engine files are on disk.
  *
  * Runs in the build chain right after postbuild-pagefind.js. That script exits
  * 0 when Pagefind itself fails, so a broken indexer does not stop the build at
@@ -128,14 +134,16 @@ const ENGINE_LOADERS = ['pagefind.js', 'pagefind-worker.js'];
 /** An engine address as Pagefind writes it: the template
  *  `wasm.${language}.pagefind`, one address for every engine file the build
  *  wrote. The expression must be a name. An address written for one language
- *  (wasm.en.pagefind, or a constant in the expression) would never ask for
+ *  (wasm.en.pagefind, or a literal in the expression) would never ask for
  *  the other engine files, so it is reported as unread. */
 const ENGINE_ADDRESS = /wasm\.\$\{[\w$.]+\}\.pagefind/g;
 
-/** The end of any string that names a .pagefind file, with or without a
- *  query after it: an engine address in whatever form. One that ENGINE_ADDRESS
- *  does not match is reported as unread, so a new way of writing the address
- *  cannot pass unseen. */
+/** ".pagefind" before a quote or a "?": the end of a string that names a
+ *  .pagefind file, with or without a query after it. One that ENGINE_ADDRESS
+ *  does not match is reported as unread. An engine address built with no
+ *  .pagefind before a quote or a "?", such as
+ *  this.basePath + ["wasm", language, "pagefind"].join("."), is not read at
+ *  all (see Not checked in the header). */
 const ENGINE_SUFFIX = /\.pagefind(?=[`"'?])/g;
 
 /** The worker script's name, wherever pagefind.js writes it. */
@@ -344,7 +352,8 @@ function addressTail(code, from) {
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
  * end ?v=<build id>. Each address is read as it is written, up to its closing
  * quote. Nothing is run, so what a script does with an address after writing
- * it is not seen.
+ * it is not seen, and an engine address built with no .pagefind before a
+ * quote or a "?" is not read.
  */
 function addressProblems(pagefindDir, nextDir) {
   const engine = [];
@@ -498,7 +507,8 @@ function check(nextDir) {
   // 2c. The engine and worker addresses carry this build's id. Pagefind
   // writes both with no hash in the name and no query, and a browser may keep
   // either file for a year, so every address the emitted scripts build for
-  // them must end ?v=<build id>: in the index, and in the deployed copy when
+  // them must end ?v=<build id>. addressProblems reads the ones it can (see
+  // Not checked in the header), in the index and in the deployed copy when
   // there is one. Both loaders must still parse after the patch, and the
   // index must hold nothing this gate does not know.
   for (const dir of indexDirs) {

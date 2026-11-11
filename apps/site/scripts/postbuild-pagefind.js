@@ -82,8 +82,11 @@ const JSON_ENDPOINTS = [
 // gives wasm.en.pagefind) or "unknown" (wasm.unknown.pagefind).
 //
 // Each string must occur exactly once in its file. If a later Pagefind writes
-// an address another way, nothing is replaced, an ERROR line says so in the
-// build log, and check-search-coverage.js fails the build.
+// one of these addresses another way, that string is not replaced, an ERROR
+// line says so in the build log, and check-search-coverage.js fails the
+// build. A later Pagefind that keeps a string and also builds a second engine
+// address with no .pagefind before a quote or a "?" passes both (see Not
+// checked in check-search-coverage.js).
 const ADDRESS_PATCHES = [
   { file: 'pagefind.js', what: 'worker address', find: '`${basePath}pagefind-worker.js`' },
   { file: 'pagefind.js', what: 'engine address', find: '`${this.basePath}wasm.${language}.pagefind`' },
