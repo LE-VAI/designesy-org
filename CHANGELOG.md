@@ -6,6 +6,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Find's engine file gets an address that changes with every build** (the
+site; no version moves). The command palette's full-text search runs on
+Pagefind. A post-build step (`apps/site/scripts/postbuild-pagefind.js`)
+writes its index under `/_next/static`, where every file is served with
+`Cache-Control: public, max-age=31536000, immutable`. Two of those files
+keep their names from one build to the next: the worker script and the
+WebAssembly engine (`wasm.<language>.pagefind`). The step gave the worker's
+address `?v=<build id>`, and its comment said the engine's address had the
+same. It had none, so a browser that had searched once could keep its engine
+file for a year and run it on the index of every later build. Measured on
+production on 2026-11-10,
+`/_next/static/chunks/app/pagefind/wasm.en.pagefind` answers 200 with that
+header. An engine from Pagefind 1.5.2 cannot read an index written by 1.6.0:
+it logs `Pagefind: WASM Error (No pointer)` and no search returns. The first
+Pagefind upgrade would have left returning visitors without Find's full-text
+rows, and a browser with an empty cache would have shown nothing wrong.
+Pagefind stays at 1.5.2 in this change, so nothing a visitor sees changes.
+No check, scoring rule, weight or score moves.
+
+### Fixed (Find engine address)
+
+- **Every engine address carries the build id.** `pagefind.js` and
+  `pagefind-worker.js` each build the engine's address from one template,
+  `wasm.${language}.pagefind`, for every engine file the build writes
+  (`wasm.en.pagefind` and `wasm.unknown.pagefind` today). The post-build
+  step now appends `?v=<build id>` to that template in both scripts, as it
+  does to the worker's address in `pagefind.js`. A returning browser asks
+  for the engine at an address it has not seen, and gets the engine written
+  with the index it is about to read.
+- **A string that is not found is an error.** Each of the three addresses is
+  replaced exactly as Pagefind 1.5.2 and 1.6.0 write it, and must occur
+  exactly once in its file. When one does not, nothing is replaced, the
+  build log carries an `ERROR` line that names the file and the string, and
+  the search gate fails the build. Until now the worker's address was
+  replaced wherever its name first appeared, and the log said it was patched
+  whether or not it was found.
+- **The deployed copy carries the addresses.** They are patched before the
+  index is copied into a deployment adapter's output
+  (`.next/output/static`), and the gate reads that copy too.
+
+### Not changed (Find engine address)
+
+- Pagefind is 1.5.2, and what it writes is the same. Of the 84 files in the
+  emitted directory, 81 are byte for byte those of a build of the commit
+  before. `pagefind.js`, `pagefind-worker.js` and `pagefind-version.json`
+  differ only in the build id and in the two added `?v=<build id>` strings.
+- The loader (`app/lib/command-palette.tsx`) still reads the build id from
+  `pagefind-version.json` and imports `pagefind.js?v=<build id>`.
+- The index files need no query. Each is named by a hash, and Pagefind
+  fetches `pagefind-entry.json`, which leads to them, with a timestamp.
+- Pagefind's own UI scripts, which the build writes and the site does not
+  load, hold no engine address and are left as written.
+
+Caveats: a returning visitor who searches now downloads the engine once
+after each build (72,206 bytes for `wasm.en.pagefind` in a local build), as
+they already download `pagefind.js` and the worker script. The engine file a
+browser kept from before this change stays in its cache, unused, until it
+expires. None of this was measured on a deployment: the browser runs below
+were served by `next start` on a local address.
+
+### Gates (Find engine address)
+
+- `check-search-coverage.js`, which already runs in the build and in CI
+  right after the post-build step, gains two findings.
+  `engine-address-build-id` fails when an emitted script builds an engine
+  address that does not end `?v=<build id>`, when `pagefind.js` or
+  `pagefind-worker.js` holds no engine address the gate can read, when a
+  string ending in `.pagefind` is written in a form it does not know, or
+  when `pagefind-version.json` does not name this build (`.next/BUILD_ID`).
+  `worker-address-build-id` fails when the worker's address in `pagefind.js`
+  does not end the same way. Both read the index and, when a deployment
+  adapter's output is present, the deployed copy. Gate parity still counts
+  37 gates.
+- On the commit that adds the findings without the fix, the gate fails the
+  build with `engine-address-build-id`, naming `pagefind.js` and
+  `pagefind-worker.js`. With the fix it passes, on Pagefind 1.5.2 and with
+  1.6.0 installed. Against a real build, 18 seeded faults each fail the
+  gate: 10 in the post-build step (an address left out, a constant or an
+  empty id, the query on the wrong string, the deployed copy made before the
+  patch, a string Pagefind no longer writes) and 8 in the emitted files (an
+  address built by concatenation, no address at all, a literal file name, a
+  longer query, a lost worker query, another build's id, a missing script, a
+  stale deployed copy).
+- In Chrome 156 with its HTTP cache on disk, against `next start` on a local
+  address, 40 searches per visit. A profile that searched on a build of the
+  commit before and then met a build with Pagefind 1.6.0 and no fix took
+  `wasm.en.pagefind` from its cache, logged the WASM error, and showed
+  full-text rows for 0 of 40 searches, where a fresh profile showed them for
+  39 of 40. With the fix, a returning profile asked for
+  `wasm.en.pagefind?v=<build id>` over the network and showed the same rows
+  as a fresh profile for 40 of 40 searches, in each of three orders: the
+  commit before then this change, this change then this change with 1.6.0,
+  and the commit before then this change with 1.6.0.
+- In apps/site on Node 24.15.0, before and after: `npm run build:win` and
+  every other node step of the build script exit 0, `npx tsc --noEmit` exits
+  0, and `npx eslint app` exits 0 with the same 55 warnings.
+
 **The site type-checks against the types cuelume ships** (the site; no
 version moves). `apps/site/cuelume.d.ts` declared the cuelume module
 itself, so TypeScript read it in place of the types cuelume 0.2.8 ships
