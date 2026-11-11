@@ -21,12 +21,13 @@ for a year and run it on the index of every later build. Measured on
 production on 2026-11-10,
 `/_next/static/chunks/app/pagefind/wasm.en.pagefind` answers 200 with the
 same three directives. An engine from Pagefind 1.5.2 cannot read an index
-written by 1.6.0: it logs `Pagefind: WASM Error (No pointer)` and no search
-returns. The first Pagefind upgrade would have left returning visitors who
-had searched before without Find's full-text rows, and a browser with an
-empty cache would have shown nothing wrong. Pagefind stays at 1.5.2 in this
-change, so nothing a visitor sees changes. No check, scoring rule, weight
-or score moves.
+written by 1.6.0: it logs `Pagefind: WASM Error (No pointer)`, every search
+finishes with no full-text rows, and the curated rows still show. The
+first Pagefind upgrade would have left returning visitors whose browsers
+still held the engine file without Find's full-text rows, and a browser
+with an empty cache would have shown nothing wrong. Pagefind stays at
+1.5.2 in this change, so nothing a visitor sees changes. No check, scoring
+rule, weight or score moves.
 
 ### Fixed (Find engine address)
 
