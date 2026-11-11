@@ -33,6 +33,12 @@
  * whose browser still held the engine file, and a browser with an empty
  * cache would have shown nothing wrong.
  *
+ * The id itself was the next defect. With a deployment id set, Next writes
+ * the same .next/BUILD_ID on every build, and Vercel sets one for skew
+ * protection, so production gave the same ?v=<id> to the 1.5.2 files and to
+ * the 1.6.0 files that replaced them. The id is now a hash of the files
+ * Pagefind wrote (lib/pagefind-index-id.js), and this gate computes it again.
+ *
  * None of the three showed in the build log or in the source review. They
  * live in the BUILD OUTPUT, so this gate reads the build output:
  *
@@ -45,8 +51,9 @@
  *                             index measured nothing);
  *   * engine-address-build-id every engine address an emitted script writes
  *                             as the template wasm.${language}.pagefind ends
- *                             ?v=<build id>, the id being this build's
- *                             (.next/BUILD_ID), in the index and in its
+ *                             ?v=<index id>, the id being a hash of the
+ *                             files Pagefind wrote, computed again here from
+ *                             the files, in the index and in its
  *                             deployed copy. Any other string with .pagefind
  *                             before a quote or a "?" fails, and so does a
  *                             script that must load the engine and holds no
@@ -114,6 +121,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const zlib = require('node:zlib');
 const { spawnSync } = require('node:child_process');
+const { pagefindIndexId } = require('./lib/pagefind-index-id');
 
 const APP = path.join(__dirname, '..');
 
@@ -154,13 +162,13 @@ const WORKER_ADDRESS = /pagefind-worker\.js/g;
  *  Pagefind's source), and the version file postbuild-pagefind.js adds, each
  *  with what keeps a copy a browser holds for a year from being used on a
  *  later build:
- *    pagefind.js             the loader imports it with ?v=<build id>. When
+ *    pagefind.js             the loader imports it with ?v=<index id>. When
  *                            pagefind-version.json does not answer, the
  *                            loader falls back to ?v=noversion, and a copy
  *                            kept under that address can be used on a later
  *                            build. Nothing here checks the loader's choice
- *    pagefind-worker.js      started at ?v=<build id> (worker-address-build-id)
- *    wasm.<code>.pagefind    asked for at ?v=<build id> (engine-address-build-id)
+ *    pagefind-worker.js      started at ?v=<index id> (worker-address-build-id)
+ *    wasm.<code>.pagefind    asked for at ?v=<index id> (engine-address-build-id)
  *    pagefind-version.json   the loader fetches it with cache: 'no-store'
  *    pagefind-entry.json     Pagefind fetches it with ?ts=<time>
  *    pagefind.<hash>.pf_meta and what fragment/, index/ and filter/ hold
@@ -350,7 +358,7 @@ function addressTail(code, from) {
  * The addresses the scripts in one Pagefind directory build for the engine
  * file and the worker script, read against this build's id. `engine` and
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
- * end ?v=<build id>. Each address is read as it is written, up to its closing
+ * end ?v=<index id>. Each address is read as it is written, up to its closing
  * quote. Nothing is run, so what a script does with an address after writing
  * it is not seen, and an engine address built with no .pagefind before a
  * quote or a "?" is not read.
@@ -366,13 +374,17 @@ function addressProblems(pagefindDir, nextDir) {
     id = JSON.parse(fs.readFileSync(path.join(pagefindDir, 'pagefind-version.json'), 'utf8')).buildId;
   } catch { /* reported just below */ }
   if (typeof id !== 'string' || id === '') {
-    engine.push('pagefind-version.json holds no build id, so there is no id for an address to carry');
+    engine.push('pagefind-version.json holds no id, so there is no id for an address to carry');
     return { engine, worker, ok };
   }
-  let built = null;
-  try { built = fs.readFileSync(path.join(nextDir, 'BUILD_ID'), 'utf8').trim(); } catch { /* no BUILD_ID file */ }
-  if (built !== null && built !== id) {
-    engine.push(`pagefind-version.json says build id ${JSON.stringify(id)} but this build's is ${JSON.stringify(built)} (.next/BUILD_ID), so the addresses would not change with the build`);
+  // The id is a hash of the files Pagefind wrote (lib/pagefind-index-id.js).
+  // Read it again from the files here, with ?v=<id> taken out of them, so an
+  // id that stays the same while the files change cannot pass. A build id
+  // cannot stand in for it: with a deployment id set, Next writes the same
+  // build id on every build.
+  const files = pagefindIndexId(pagefindDir, id);
+  if (files !== id) {
+    engine.push(`pagefind-version.json says ${JSON.stringify(id)} but the files in this index give ${JSON.stringify(files)}, so the addresses would not change when the files do`);
     return { engine, worker, ok };
   }
   ok.id = id;
@@ -507,7 +519,7 @@ function check(nextDir) {
   // 2c. The engine and worker addresses carry this build's id. Pagefind
   // writes both with no hash in the name and no query, and a browser may keep
   // either file for a year, so every address the emitted scripts build for
-  // them must end ?v=<build id>. addressProblems reads the ones it can (see
+  // them must end ?v=<index id>. addressProblems reads the ones it can (see
   // Not checked in the header), in the index and in the deployed copy when
   // there is one. Both loaders must still parse after the patch, and the
   // index must hold nothing this gate does not know.
@@ -518,14 +530,14 @@ function check(nextDir) {
       add(
         'engine-address-build-id',
         `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
-        'postbuild-pagefind.js appends ?v=<build id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
+        'postbuild-pagefind.js appends ?v=<index id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
       );
     }
     if (worker.length) {
       add(
         'worker-address-build-id',
         `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
-        'postbuild-pagefind.js appends ?v=<build id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
+        'postbuild-pagefind.js appends ?v=<index id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
       );
     }
     if (!engine.length && !worker.length) {
@@ -555,7 +567,7 @@ function check(nextDir) {
       add(
         'index-files-known',
         `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
-        'Find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<build id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES with the reason it is safe.'
+        'Find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<index id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES with the reason it is safe.'
       );
     }
     if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
