@@ -6,6 +6,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Find's scripts and engine get an id that changes with the index** (the
+site; no version moves). The entry below gave Find's engine file the
+`?v=<id>` its worker address already had, with the id read from
+`.next/BUILD_ID`. When a deployment id is set, Next writes the same build id
+on every build (`getBuildId` in `next/dist/build/index.js` returns
+`build-TfctsWXpff2fKS`), and Vercel sets one through `NEXT_DEPLOYMENT_ID`
+for skew protection. Measured on production on 2026-11-11,
+`pagefind-version.json` held `build-TfctsWXpff2fKS` after the build with
+Pagefind 1.5.2 and again after the build with 1.6.0, and both builds asked
+for `wasm.${language}.pagefind?v=build-TfctsWXpff2fKS`. So the addresses did
+not change: a browser that had searched before the 1.6.0 build kept the
+1.5.2 `pagefind.js` and engine under the same addresses and ran them on the
+1.6.0 index, which they cannot read. Find then shows the curated rows and no
+full-text rows, and most searches end on "Nothing matches". No check,
+scoring rule, weight or score moves.
+
+### Fixed (Find index id)
+
+- **The id is read from the files as served.** The post-build step clears
+  Pagefind's output directory before Pagefind runs, patches the worker
+  address and the two engine addresses with a fixed placeholder, and then
+  computes the id: `pf-` and the first 20 hex digits of a SHA-256 over a
+  scheme number and each file's path and content, with
+  `pagefind-version.json` left out
+  (`apps/site/scripts/lib/pagefind-index-id.js`). It writes the id where
+  the placeholder was and into `pagefind-version.json` under the same
+  `buildId` key, which the palette fetches with `cache: 'no-store'`. On its
+  next search a returning browser reads the new id and asks for
+  `pagefind.js`, the worker and the engine at addresses it has not seen. A
+  change to what Pagefind writes or to the patching gives a new id, and
+  the id stays the same while the served files do. A response header is
+  not in the hash: a change only to a header these files carry, such as
+  the worker's Content-Security-Policy, keeps the id unless the scheme
+  number is raised by hand, and nothing checks that it is.
+- **The gate computes the id again.** `engine-address-build-id` fails when
+  `pagefind-version.json` does not hold `pf-` and 20 hex digits, or holds
+  the placeholder. Otherwise it reads each `?v=<id>` in the emitted files
+  as the placeholder, hashes them the same way, and fails when the result
+  is not that id, in the index and in its deployed copy. It no longer
+  compares the id with `.next/BUILD_ID`. On the emitted files of main
+  built with a deployment id set, it fails.
+
+### Not changed (Find index id)
+
+- Pagefind stays at 1.6.0, and what it writes is the same apart from the
+  id in the three addresses and in `pagefind-version.json`.
+- The palette's code. One comment in `app/lib/command-palette.tsx` now
+  says where the id comes from.
+
+### Gates (Find index id)
+
+- Real Chrome with its HTTP cache on disk, `next start` on `127.0.0.1`,
+  every build made with `NEXT_DEPLOYMENT_ID` set so Next writes its
+  constant build id as on Vercel, 40 searches per visit. A profile that
+  searched on the build of the entry below (Pagefind 1.5.2) and then on
+  main (1.6.0) took `pagefind.js` and the 72,206-byte 1.5.2 engine from its
+  cache, logged `Pagefind: WASM Error (No pointer)`, and showed full-text
+  rows for 0 of 40 searches, where a fresh profile showed them for 39; 29
+  of the 40 ended on "Nothing matches". A profile that searched on the
+  1.5.2 build and then met this change asked for both at new addresses
+  over the network and matched a fresh profile on 40 of 40 searches, and
+  so did one that searched on main and then met this change. Each sequence
+  started with an empty profile.
+- `engine-address-build-id` fails on main's emitted files built with a
+  deployment id set, and passes on this change's. Main's Pagefind files,
+  read as served, hash to this change's id, so a build that leaves the
+  index as it was keeps the id. The id depends on the platform that builds
+  the site: Pagefind's Linux and Windows builds write engine files of
+  different sizes.
+
 **Find's engine file gets an address that changes with every build** (the
 site; no version moves). The command palette's full-text search runs on
 Pagefind. A post-build step (`apps/site/scripts/postbuild-pagefind.js`)
