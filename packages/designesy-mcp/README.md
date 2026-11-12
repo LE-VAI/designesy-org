@@ -156,7 +156,7 @@ The W3C Design Tokens Community Group published the spec's **first stable versio
 
 ### Motion tokens — the spec's blind spot
 
-The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — there is no standard for motion token structure, reduced-motion markers, or animation accessibility. The [2026 State of Design Systems field report](https://www.thestackstories.com/blog/state-of-design-systems-2026-field-report) confirms this is the remaining friction point.
+The DTCG 2025.10 spec leaves motion tokens as a **second-class citizen** — there is no standard for motion token structure, reduced-motion markers, or animation accessibility. The [2026 State of Design Systems field report](https://web.archive.org/web/20261031104328/https://www.thestackstories.com/blog/state-of-design-systems-2026-field-report) (archived copy of 2026-10-31) names motion tokens among the remaining friction points, as something the spec "still treats as a second-class citizen".
 
 `designesy_motion_score` fills this gap. It validates Lottie files against the Lottie spec v1.0.1 AND the Designesy §16 Ten Non-Negotiable Motion Standards, so one call checks both structural well-formedness and accessibility (reduced-motion markers, no deprecated versions). It is the verification layer for the spec's known blind spot.
 
