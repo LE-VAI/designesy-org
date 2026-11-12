@@ -24,7 +24,13 @@ rule, weight or score moves.
   the middle, at the end or added; that an added file and a new `SCHEME`
   change it; that `pagefind-version.json` does not; that stamping
   round-trips; and that the worker-only and three-address patch sets give
-  two ids. The gate's cases check a correct index passes with every
+  two ids. Two known answers pin the scheme itself: five small files, named
+  so that NTFS lists them in another order than the code-unit order the id
+  uses, and the fixture index, each computed by the helper and again by a
+  separate implementation. A change to the scheme raises `SCHEME` and
+  replaces both. `ID_FORMAT` must refuse near misses: 19 or 21 hex digits,
+  upper-case or non-hex digits, a build id, a space before or a newline
+  after. The gate's cases check a correct index passes with every
   address counted, and that each fault fails through the one part of the
   check that can see it: a changed fragment or engine through the hash, an
   address left with the placeholder through the address reading, a build
@@ -47,11 +53,16 @@ rule, weight or score moves.
 
 ### Gates (search gate)
 
-- Each of 19 single-edit changes to a copy of `scripts/` makes the
-  self-test exit 1, nine to the helper and ten to the gate. They include
-  the nine that the second review of the entry below found passing every
-  check while making the id or its addresses wrong (five to the helper,
-  four to the gate), and one for each check this entry adds.
+- Each of 29 single-edit changes to a copy of `scripts/` makes the
+  self-test exit 1, seventeen to the helper and twelve to the gate. They
+  include the nine that the second review of the entry below found
+  passing every check while making the id or its addresses wrong (five to
+  the helper, four to the gate), and every other edit to the helper or
+  the gate it found passing but one, which replaces the placeholder with
+  itself and so changes no byte. The other eight cover the three checks
+  this entry adds and five checks that were already there. Two edits to
+  `postbuild-pagefind.js` that the review found passing are not covered:
+  the self-test does not run that script.
 - A returning Chrome profile whose request for `pagefind-version.json`
   fails (the harness of the entry below, answering 503 for that file on
   both visits). It searched on the build of the engine-address entry
