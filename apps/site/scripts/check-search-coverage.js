@@ -36,10 +36,10 @@
  * The id itself was the next defect. With a deployment id set, Next writes
  * the same .next/BUILD_ID on every build, and Vercel sets one for skew
  * protection, so production gave the same ?v=<id> to the 1.5.2 files and to
- * the 1.6.0 files that replaced them. The id is now a hash of the files
- * Pagefind wrote (lib/pagefind-index-id.js), and this gate computes it again.
+ * the 1.6.0 files that replaced them. The id is now a hash of the Pagefind
+ * files as served (lib/pagefind-index-id.js), and this gate computes it again.
  *
- * None of the three showed in the build log or in the source review. They
+ * None of these showed in the build log or in the source review. They
  * live in the BUILD OUTPUT, so this gate reads the build output:
  *
  *   * native-pagefind-import  the client chunk that builds the pagefind.js URL
@@ -357,7 +357,7 @@ function addressTail(code, from) {
 
 /**
  * The addresses the scripts in one Pagefind directory build for the engine
- * file and the worker script, read against this build's id. `engine` and
+ * file and the worker script, read against the index id. `engine` and
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
  * end ?v=<index id>. Each address is read as it is written, up to its closing
  * quote. Nothing is run, so what a script does with an address after writing
@@ -408,7 +408,7 @@ function addressProblems(pagefindDir, nextDir) {
       ends.add(end);
       const tail = addressTail(code, end);
       if (tail === want) ok.engine++;
-      else engine.push(`${name} asks for ${m[0]}${tail}, without this build's id (want ${m[0]}${want})`);
+      else engine.push(`${name} asks for ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
     }
     for (const m of code.matchAll(ENGINE_SUFFIX)) {
       if (ends.has(m.index + '.pagefind'.length)) continue;
@@ -423,7 +423,7 @@ function addressProblems(pagefindDir, nextDir) {
     for (const m of starts) {
       const tail = addressTail(code, m.index + m[0].length);
       if (tail === want) ok.worker++;
-      else worker.push(`${name} starts the worker at ${m[0]}${tail}, without this build's id (want ${m[0]}${want})`);
+      else worker.push(`${name} starts the worker at ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
     }
     if (starts.length === 0) worker.push(`${name} does not name pagefind-worker.js, so the worker's address could not be read`);
   }
@@ -521,7 +521,7 @@ function check(nextDir) {
     }
   }
 
-  // 2c. The engine and worker addresses carry this build's id. Pagefind
+  // 2c. The engine and worker addresses carry the index id. Pagefind
   // writes both with no hash in the name and no query, and a browser may keep
   // either file for a year, so every address the emitted scripts build for
   // them must end ?v=<index id>. addressProblems reads the ones it can (see

@@ -38,7 +38,8 @@ scoring rule, weight or score moves.
   change to what Pagefind writes or to the patching gives a new id, and
   the id stays the same while the served files do. A response header is
   not in the hash: a change only to a header these files carry, such as
-  the worker's Content-Security-Policy, raises the scheme number instead.
+  the worker's Content-Security-Policy, keeps the id unless the scheme
+  number is raised by hand, and nothing checks that it is.
 - **The gate computes the id again.** `engine-address-build-id` fails when
   `pagefind-version.json` does not hold `pf-` and 20 hex digits, or holds
   the placeholder. Otherwise it reads each `?v=<id>` in the emitted files
@@ -63,11 +64,11 @@ scoring rule, weight or score moves.
   main (1.6.0) took `pagefind.js` and the 72,206-byte 1.5.2 engine from its
   cache, logged `Pagefind: WASM Error (No pointer)`, and showed full-text
   rows for 0 of 40 searches, where a fresh profile showed them for 39; 29
-  of the 40 ended on "Nothing matches". With
-  this change as the second build, the same profile asked for both at new
-  addresses over the network and matched a fresh profile on 40 of 40
-  searches. A profile that searched on main and then met this change
-  matched on 40 of 40 as well.
+  of the 40 ended on "Nothing matches". A profile that searched on the
+  1.5.2 build and then met this change asked for both at new addresses
+  over the network and matched a fresh profile on 40 of 40 searches, and
+  so did one that searched on main and then met this change. Each sequence
+  started with an empty profile.
 - `engine-address-build-id` fails on main's emitted files built with a
   deployment id set, and passes on this change's. Main's Pagefind files,
   read as served, hash to this change's id, so a build that leaves the

@@ -11,8 +11,8 @@
  * the copies it holds against a new index.
  *
  * .next/BUILD_ID cannot be that id. When a deployment id is set, Next writes
- * the same build id on every build (next/dist/build/index.js, getBuildId:
- * "Set a constant but random string"), and Vercel sets one through
+ * the same build id on every build (getBuildId in next/dist/build/index.js
+ * returns a fixed string), and Vercel sets one through
  * NEXT_DEPLOYMENT_ID for skew protection. Production served the same id on two
  * builds with different Pagefind files on 2026-11-11.
  *
@@ -27,7 +27,8 @@
  *
  * What the hash cannot see: response headers. A deploy that changes only a
  * header the browser keeps with these files (the worker's
- * Content-Security-Policy, say) keeps the id. Such a deploy raises SCHEME.
+ * Content-Security-Policy, say) keeps the id unless SCHEME is raised by
+ * hand, and nothing checks that it is.
  */
 const crypto = require('node:crypto');
 const fs = require('node:fs');
