@@ -70,11 +70,11 @@ function replaceAll(bytes, from, to) {
 /**
  * The id of the Pagefind index in dir. `servedWith` is the id the files
  * already carry, if any: each '?v=<servedWith>' is read as
- * '?v=<PLACEHOLDER>'.
+ * '?v=<PLACEHOLDER>'. `scheme` is for the self-test; callers leave it.
  */
-function pagefindIndexId(dir, servedWith = null) {
+function pagefindIndexId(dir, servedWith = null, scheme = SCHEME) {
   const hash = crypto.createHash('sha256');
-  hash.update(`scheme ${SCHEME}\0`);
+  hash.update(`scheme ${scheme}\0`);
   const slot = Buffer.from(`?v=${PLACEHOLDER}`);
   const carried = servedWith && servedWith !== PLACEHOLDER ? Buffer.from(`?v=${servedWith}`) : null;
   for (const rel of filesUnder(dir)) {
@@ -102,4 +102,105 @@ function stampIndexId(dir, id) {
   return files;
 }
 
-module.exports = { pagefindIndexId, stampIndexId, PLACEHOLDER, ID_FORMAT, SCHEME, VERSION_FILE };
+// ---- self-test --------------------------------------------------------------
+//
+// The search gate computes the id with this same helper, so a helper that
+// skipped some bytes would pass both the post-build step and the gate. These
+// cases run the helper over a small index built in a temporary directory and
+// say which property fails. Each is one a single-edit change to this file was
+// shown to pass every other check with: skipping the engine, the scripts or
+// the worker, skipping file content or all but its start, dropping SCHEME, or
+// a stamp that does not round-trip.
+
+/** The two templates Pagefind writes for the worker and the engine. */
+const WORKER_TEMPLATE = '`${basePath}pagefind-worker.js`';
+const ENGINE_TEMPLATE = '`${this.basePath}wasm.${language}.pagefind`';
+
+/**
+ * Writes a small Pagefind-shaped index into dir, its addresses patched with
+ * PLACEHOLDER as the post-build step patches them (only the worker's when
+ * `engines` is false, as before the engine addresses were patched). Returns
+ * the relative paths of the files that count toward the id.
+ */
+function writeFixtureIndex(dir, { engines = true } = {}) {
+  const slot = (tpl) => `${tpl.slice(0, -1)}?v=${PLACEHOLDER}\``;
+  const engine = engines ? slot(ENGINE_TEMPLATE) : ENGINE_TEMPLATE;
+  const files = {
+    'pagefind.js': `export const worker = ${slot(WORKER_TEMPLATE)};\nexport const engine = ${engine};\n`,
+    'pagefind-worker.js': `const engine = ${engine};\nself.onmessage = () => {};\n`,
+    // Larger than the real engine, so hashing only a file's start is caught.
+    'wasm.en.pagefind': Buffer.concat([Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]), Buffer.alloc(128 * 1024, 7)]),
+    'wasm.unknown.pagefind': Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, 9, 9, 9, 9]),
+    'pagefind-entry.json': '{"version":"1.6.0","languages":{"en":{"hash":"en_aaaaaaa","page_count":1}}}',
+    'pagefind-ui.js': 'export const ui = 1;\n',
+    'fragment/en_bbbbbbb.pf_fragment': Buffer.from('fragment body'),
+    'index/en_ccccccc.pf_index': Buffer.from('index body'),
+    'pagefind.en_aaaaaaa.pf_meta': Buffer.from('meta body'),
+    [VERSION_FILE]: '{"buildId":"not read"}',
+  };
+  for (const [rel, body] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(dir, rel), body);
+  }
+  return Object.keys(files).filter((rel) => rel !== VERSION_FILE);
+}
+
+/** Runs the helper's cases in a temporary directory; returns what failed. */
+function selfTest() {
+  const os = require('node:os');
+  const bad = [];
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pagefind-index-id-'));
+  try {
+    const dir = path.join(root, 'index');
+    const counted = writeFixtureIndex(dir);
+    const base = pagefindIndexId(dir);
+    if (!ID_FORMAT.test(base) || base === PLACEHOLDER) bad.push(`the id ${base} is not pf- and 20 hex digits`);
+    if (pagefindIndexId(dir) !== base) bad.push('the same files gave two ids');
+    if (pagefindIndexId(dir, null, SCHEME + 1) === base) bad.push('a new SCHEME kept the id');
+
+    for (const rel of counted) {
+      const file = path.join(dir, rel);
+      const orig = fs.readFileSync(file);
+      const flip = (at) => { const b = Buffer.from(orig); b[at] ^= 1; return b; };
+      for (const [how, bytes] of [
+        ['a changed middle byte', flip(orig.length >> 1)],
+        ['a changed last byte', flip(orig.length - 1)],
+        ['an added last byte', Buffer.concat([orig, Buffer.from([1])])],
+      ]) {
+        fs.writeFileSync(file, bytes);
+        if (pagefindIndexId(dir) === base) bad.push(`${how} in ${rel} kept the id`);
+      }
+      fs.writeFileSync(file, orig);
+    }
+    const extra = path.join(dir, 'fragment', 'en_ddddddd.pf_fragment');
+    fs.writeFileSync(extra, 'another page');
+    if (pagefindIndexId(dir) === base) bad.push('an added fragment kept the id');
+    fs.rmSync(extra);
+    fs.writeFileSync(path.join(dir, VERSION_FILE), '{"buildId":"something else"}');
+    if (pagefindIndexId(dir) !== base) bad.push(`${VERSION_FILE} changed the id`);
+
+    const stamped = stampIndexId(dir, base);
+    if (stamped !== 2) bad.push(`the id went into ${stamped} file(s), not pagefind.js and pagefind-worker.js`);
+    if (pagefindIndexId(dir, base) !== base) bad.push('the stamped files, read as served, gave another id');
+    if (pagefindIndexId(dir) === base) bad.push('the stamped files gave the same id when the stamp was not read');
+
+    const before = path.join(root, 'worker-only');
+    writeFixtureIndex(before, { engines: false });
+    if (pagefindIndexId(before) === base) bad.push('patching the worker address alone gave the id of patching all three');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+  return bad;
+}
+
+module.exports = {
+  pagefindIndexId, stampIndexId, selfTest, writeFixtureIndex,
+  PLACEHOLDER, ID_FORMAT, SCHEME, VERSION_FILE, WORKER_TEMPLATE, ENGINE_TEMPLATE,
+};
+
+if (require.main === module) {
+  const bad = selfTest();
+  for (const b of bad) console.error(`  [self-test] FAIL ${b}`);
+  console.log(`[pagefind-index-id] self-test: ${bad.length ? `${bad.length} failure(s)` : 'every case holds'}`);
+  process.exit(bad.length ? 1 : 0);
+}

@@ -6,6 +6,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Find's search gate tests itself and reads two more things** (the
+site; no version moves). The entry below gave Find's scripts and engine an
+id read from the files. Its reviews found that the gate computes that id
+with the same helper the post-build step uses, so a helper that skipped
+some bytes would pass both, and named two faults no check caught and a
+palette fallback that could load an earlier build's script. No scoring
+rule, weight or score moves.
+
+### Fixed (search gate)
+
+- **A self-test runs first.** `check-search-coverage.js` runs one before
+  it reads the build, and fails when it fails; `--self-test` runs it alone.
+  It builds small Pagefind-shaped indexes in a temporary directory. The
+  helper's cases (`lib/pagefind-index-id.js`, which `node` can also run on
+  its own) check that a changed byte in any served file changes the id, in
+  the middle, at the end or added; that an added file and a new `SCHEME`
+  change it; that `pagefind-version.json` does not; that stamping
+  round-trips; and that the worker-only and three-address patch sets give
+  two ids. The gate's cases check a correct index passes with every
+  address counted, and that each fault fails through the one part of the
+  check that can see it: a changed fragment or engine through the hash, an
+  address left with the placeholder through the address reading, a build
+  id or the placeholder through the format pin. A changed engine in the
+  copy a deployment adapter's output holds fails as well, and a copy
+  without `pagefind.js` fails `index-deployed`.
+- **An address changed after its closing quote fails.** A `.` or `[`
+  after the string an engine or worker address is written in means the
+  script changes the address before it asks for it. Pagefind 1.5.2 and
+  1.6.0 end each with `;`.
+- **Names inside `fragment/`, `index/` and `filter/` must carry a hash.**
+  A file there with a fixed name, or a subdirectory, fails
+  `index-files-known`, as an unknown name at the top level already did.
+- **The palette's fallback address is used once.** When
+  `pagefind-version.json` does not answer, the palette asked for
+  `pagefind.js?v=noversion`, and a copy kept under that address could come
+  from any earlier build. It now asks for `pagefind.js?v=noversion-<time>`,
+  an address no other page load uses, so the browser fetches this build's
+  `pagefind.js`, whose worker and engine addresses carry this build's id.
+
+### Gates (search gate)
+
+- Each of 19 single-edit changes to a copy of `scripts/` makes the
+  self-test exit 1, nine to the helper and ten to the gate. They include
+  the nine that the second review of the entry below found passing every
+  check while making the id or its addresses wrong (five to the helper,
+  four to the gate), and one for each check this entry adds.
+- A returning Chrome profile whose request for `pagefind-version.json`
+  fails (the harness of the entry below, answering 503 for that file on
+  both visits). It searched on the build of the engine-address entry
+  further down (Pagefind 1.5.2) and then on main: it took
+  `pagefind.js?v=noversion` and the 1.5.2 engine from its cache, logged
+  `Pagefind: WASM Error (No pointer)`, and showed full-text rows for 0 of
+  40 searches, 29 ending on "Nothing matches". It searched on that build
+  and then on this change: it asked for `pagefind.js?v=noversion-<time>`
+  and the 1.6.0 engine over the network and matched a fresh profile on 40
+  of 40 searches.
+
 **Find's scripts and engine get an id that changes with the index** (the
 site; no version moves). The entry below gave Find's engine file the
 `?v=<id>` its worker address already had, with the id read from
