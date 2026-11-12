@@ -117,6 +117,19 @@ const WORKER_TEMPLATE = '`${basePath}pagefind-worker.js`';
 const ENGINE_TEMPLATE = '`${this.basePath}wasm.${language}.pagefind`';
 
 /**
+ * Known answers, so the scheme itself is pinned and not only its
+ * properties: SHA-256 over `scheme <SCHEME>\0`, then each file in code-unit
+ * order of its path (not the file system's: NTFS lists these five as a, ab,
+ * a_b, B, sub), each as its path, its length and its bytes. Both values were
+ * computed by this helper and again by a separate implementation. A change
+ * to the scheme raises SCHEME and replaces both with what the self-test
+ * prints.
+ */
+const KNOWN_FILES = [['B', 'b'], ['a', 'a'], ['a_b', 'ab'], ['ab', ''], ['sub/c', 'c']];
+const KNOWN_FILES_ID = 'pf-c9f1b878a4e1bf58b051';
+const KNOWN_FIXTURE_ID = 'pf-21c550eeb5dc600856c5';
+
+/**
  * Writes a small Pagefind-shaped index into dir, its addresses patched with
  * PLACEHOLDER as the post-build step patches them (only the worker's when
  * `engines` is false, as before the engine addresses were patched). Returns
@@ -157,6 +170,18 @@ function selfTest() {
     if (!ID_FORMAT.test(base) || base === PLACEHOLDER) bad.push(`the id ${base} is not pf- and 20 hex digits`);
     if (pagefindIndexId(dir) !== base) bad.push('the same files gave two ids');
     if (pagefindIndexId(dir, null, SCHEME + 1) === base) bad.push('a new SCHEME kept the id');
+
+    const known = path.join(root, 'known');
+    for (const [rel, body] of KNOWN_FILES) {
+      fs.mkdirSync(path.dirname(path.join(known, rel)), { recursive: true });
+      fs.writeFileSync(path.join(known, rel), body);
+    }
+    const knownId = pagefindIndexId(known);
+    if (knownId !== KNOWN_FILES_ID) bad.push(`five small files gave ${knownId}, not ${KNOWN_FILES_ID}: the hash, the order of the files or how each is framed changed (see KNOWN_FILES)`);
+    if (base !== KNOWN_FIXTURE_ID) bad.push(`the fixture index gave ${base}, not ${KNOWN_FIXTURE_ID} (see KNOWN_FILES)`);
+    for (const id of [`pf-${'a'.repeat(19)}`, `pf-${'a'.repeat(21)}`, `pf-${'A'.repeat(20)}`, `pf-${'g'.repeat(20)}`, 'build-TfctsWXpff2fKS', ` ${base}`, `${base}\n`]) {
+      if (ID_FORMAT.test(id)) bad.push(`ID_FORMAT accepts ${JSON.stringify(id)}`);
+    }
 
     for (const rel of counted) {
       const file = path.join(dir, rel);
