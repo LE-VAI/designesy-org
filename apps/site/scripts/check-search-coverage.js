@@ -123,10 +123,11 @@
  * Before it reads the build it runs its self-test: the index-id helper's
  * cases (lib/pagefind-index-id.js), then this gate's own over small indexes
  * built in a temporary directory, one with nothing wrong and at least one
- * for each check the address, parse, name and directory findings make (see
- * selfTest). A failing self-test fails the gate, since a clean result from a
- * broken check would prove nothing, and so does a self-test that checked
- * another number of cases than SELF_TEST_CASES. Every run prints
+ * for each check the address, parse, name and directory findings make, the
+ * directory findings read through check() itself (see selfTest). A failing
+ * self-test fails the gate, since a clean result from a broken check would
+ * prove nothing, and so does a self-test that checked another number of
+ * cases than SELF_TEST_CASES. Every run prints
  * "search-coverage: self-test OK (<n> cases)", so a build log shows the
  * self-test ran.
  *
@@ -700,7 +701,8 @@ function check(nextDir) {
   }
 
   // 2b and 2c. The deployed copy, and the addresses, loaders and names in
-  // each index directory (indexDirFindings, which the self-test runs).
+  // each index directory (indexDirFindings). The self-test reaches these
+  // findings through check() itself.
   const dirChecks = indexDirFindings(nextDir);
   findings.push(...dirChecks.findings);
   notes.push(...dirChecks.notes);
@@ -801,22 +803,25 @@ function check(nextDir) {
  *  when the count is another, so a self-test that is emptied, cut short or
  *  skips a loop cannot pass. Adding or removing a case on purpose changes
  *  this number with it. */
-const SELF_TEST_CASES = 77;
+const SELF_TEST_CASES = 82;
 
 /**
  * The helper's cases, then the gate's own on small indexes built in a
  * temporary directory: a correct one, which must pass with every address
  * counted, and at least one case for each check in addressProblems,
  * loaderParse, unknownEntriesFix and unknownIndexEntries (each directory's
- * pattern, a subdirectory, a top-level name), and for each finding
- * indexDirsOf and indexDirFindings give, those run on a small .next that
- * holds the index and a deployment adapter's copy. Some faults are seen by
- * one check only: a changed fragment or engine under the old id by the
- * hash; an address left with the placeholder by the address reading, since
- * the hash reads ?v=<id> as the placeholder; a build id or the placeholder
- * as the id by the format pin. A check can hold a part no case tries: no
- * case puts a "[" or white space after an address's closing quote.
- * Returns how many cases it checked and what failed.
+ * pattern, a subdirectory, a top-level name). Then check() itself runs on
+ * small .next directories that hold the index and a deployment adapter's
+ * copy: each of its five findings about the index directories must be
+ * raised for the copy, and engine-address-build-id and index-files-known
+ * for the written index too. A pair with one fault in one directory must
+ * raise that one finding for that directory and nothing else. Some faults
+ * are seen by one check only: a changed fragment or engine under the old
+ * id by the hash; an address left with the placeholder by the address
+ * reading, since the hash reads ?v=<id> as the placeholder; a build id or
+ * the placeholder as the id by the format pin. A check can hold a part no
+ * case tries: no case puts a "[" or white space after an address's closing
+ * quote. Returns how many cases it checked and what failed.
  */
 function selfTest() {
   const os = require('node:os');
@@ -899,6 +904,12 @@ function selfTest() {
     });
     failIf(!problems(workerChanged.dir).some((m) => m.includes('the worker address it starts could not be read')), 'a worker address changed after its closing quote passed');
 
+    const workerOptional = built('worker-optional', (dir) => {
+      const loader = path.join(dir, 'pagefind.js');
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`?.replace("?", "&");`));
+    });
+    failIf(!problems(workerOptional.dir).some((m) => m.includes('("?." after its closing quote), so the worker address it starts could not be read')), 'a worker address changed by an optional chain after its closing quote passed');
+
     // Each check only one line of addressProblems makes: a string ending in
     // .pagefind that is not the template, a loader whose engine address is
     // not written as the template, a missing loader, and a pagefind.js that
@@ -934,14 +945,18 @@ function selfTest() {
 
     // A deployment adapter's copy is read as well: a changed engine there
     // fails while the index the post-build step wrote is correct. Then
-    // check()'s own findings for the directories (indexDirFindings), on a
-    // small .next that holds the index and the copy.
+    // check() itself, on small .next directories that hold the index and the
+    // copy. A small .next has no client chunk and no prerender manifest, so
+    // check() also raises native-pagefind-import and index-readable there;
+    // dirFindings leaves out those two and keeps every other finding.
+    const SMALL_NEXT = new Set(['native-pagefind-import', 'index-readable']);
+    const dirFindings = (n) => check(n).findings.filter((f) => !SMALL_NEXT.has(f.id));
     const next = path.join(root, 'next');
     const copy = path.join(next, 'output', 'static', '_next', PAGEFIND_REL);
     const copyWhere = path.relative(next, copy).split(path.sep).join('/');
     fs.cpSync(good.dir, path.join(next, PAGEFIND_REL), { recursive: true });
     fs.cpSync(good.dir, copy, { recursive: true });
-    const clean = indexDirFindings(next).findings;
+    const clean = dirFindings(next);
     failIf(clean.length, `a correct .next and its deployed copy gave ${clean.map((f) => f.id).join(', ')}`);
     const copied = path.join(copy, 'wasm.en.pagefind');
     const copiedBytes = fs.readFileSync(copied);
@@ -949,10 +964,10 @@ function selfTest() {
     fs.writeFileSync(copied, copiedBytes);
     failIf(!indexDirsOf(next).dirs.includes(copy), "a deployment adapter's copy of the index was not read");
     failIf(!problems(copy).some((m) => m.includes('the files in this index give')), 'a changed engine in the deployed copy passed');
-    failIf(!indexDirFindings(next).findings.some((f) => f.id === 'engine-address-build-id' && f.why.startsWith(`${copyWhere}: `)), 'a changed engine in the deployed copy raised no engine-address-build-id for that copy');
+    failIf(!dirFindings(next).some((f) => f.id === 'engine-address-build-id' && f.why.startsWith(`${copyWhere}: `)), 'a changed engine in the deployed copy raised no engine-address-build-id for that copy');
     fs.rmSync(path.join(copy, 'pagefind.js'));
     failIf(!indexDirsOf(next).absent.includes('pagefind.js'), 'a deployed copy without pagefind.js passed');
-    failIf(!indexDirFindings(next).findings.some((f) => f.id === 'index-deployed'), 'a deployed copy without pagefind.js raised no index-deployed');
+    failIf(!dirFindings(next).some((f) => f.id === 'index-deployed'), 'a deployed copy without pagefind.js raised no index-deployed');
 
     // Unknown names raise index-files-known in check(), not only in
     // unknownIndexEntries.
@@ -962,8 +977,30 @@ function selfTest() {
     });
     const namedNext = path.join(root, 'next-names');
     fs.cpSync(named.dir, path.join(namedNext, PAGEFIND_REL), { recursive: true });
-    const namedFound = indexDirFindings(namedNext).findings;
+    const namedFound = dirFindings(namedNext);
     failIf(!namedFound.some((f) => f.id === 'index-files-known' && f.why.includes('pagefind-extra.js') && f.why.includes('fragment/stale.pf_fragment')), `an unknown top-level name and an unknown name in fragment/ did not both raise index-files-known (findings: ${namedFound.map((f) => f.id).join(', ') || 'none'})`);
+
+    // Pairs of a written index and a copy with one fault between them: the
+    // copy's worker address, loaders and names are read, and so is the
+    // written index while a copy exists. Each pair must raise its one
+    // finding for that directory alone.
+    const writtenWhere = PAGEFIND_REL.split(path.sep).join('/');
+    const pair = (name, written, copied) => {
+      const n = path.join(root, name);
+      fs.cpSync(written, path.join(n, PAGEFIND_REL), { recursive: true });
+      fs.cpSync(copied, path.join(n, 'output', 'static', '_next', PAGEFIND_REL), { recursive: true });
+      return dirFindings(n);
+    };
+    const unparsedCopy = built('copy-unparsed', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), '\n})(\n'));
+    for (const [what, found, id, where] of [
+      ['a worker address left with the placeholder in the deployed copy', pair('pair-worker', good.dir, workerUnstamped.dir), 'worker-address-build-id', copyWhere],
+      ['a pagefind.js that does not parse in the deployed copy', pair('pair-parse', good.dir, unparsedCopy.dir), 'loaders-parse', copyWhere],
+      ['an unknown name in the deployed copy', pair('pair-names', good.dir, named.dir), 'index-files-known', copyWhere],
+      ['a changed engine in the written index while a copy exists', pair('pair-written', engine.dir, good.dir), 'engine-address-build-id', writtenWhere],
+    ]) {
+      const alone = found.length === 1 && found[0].id === id && found[0].why.startsWith(`${where}: `);
+      failIf(!alone, `${what} gave ${found.map((x) => `${x.id} for ${x.why.split(': ')[0]}`).join(', ') || 'no finding'}, not ${id} for ${where} alone`);
+    }
 
     for (const [n, [what, id]] of [['a build id', 'build-TfctsWXpff2fKS'], ['the placeholder', PLACEHOLDER]].entries()) {
       const v = built(`id-${n}`);
