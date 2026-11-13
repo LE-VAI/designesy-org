@@ -101,15 +101,16 @@
  * where an unmarked page shows up.
  *
  * Not checked, so a fault in any of these can pass: what a script does with
- * an address after writing it (the two address findings read each address
- * as it is written, up to its closing quote, and run nothing; a method call
- * or an index straight after the closing quote fails, since the address
- * read would not be the one asked for); an engine address built with no
- * .pagefind before a quote or a "?", which is not read at all (a build with
- * one fails only when pagefind.js or pagefind-worker.js then holds no
- * address written as the template); and whether the engine files are on
- * disk. The names inside fragment/, index/ and filter/ are checked: each
- * must carry a hash, as Pagefind writes them (index-files-known).
+ * an address after writing it. The two address findings read each address
+ * as it is written, up to its closing quote, and run nothing. The one thing
+ * read after the quote is the first character past any white space: a "."
+ * or a "[", or "?." not followed by a digit (an optional chain), fails,
+ * since the address read would not be the one asked for. Anything else
+ * there passes, a concatenation or a comment before a call included. Also
+ * not checked: an engine address built with no .pagefind before a quote or
+ * a "?", which is not read at all (a build with one fails only when
+ * pagefind.js or pagefind-worker.js then holds no address written as the
+ * template); and whether the engine files are on disk.
  *
  * Runs in the build chain right after postbuild-pagefind.js. That script exits
  * 0 when Pagefind itself fails, so a broken indexer does not stop the build at
@@ -411,29 +412,32 @@ function indexDirsOf(nextDir) {
 }
 
 /**
- * The first character after the closing quote of the string an address is in,
- * past any white space. A "." or "[" there means the script changes the string
- * before it asks for it (a .replace, .slice or .split, or an index), so the
- * address read is not the one asked for. Pagefind 1.5.2 and 1.6.0 end each
- * address with a ";".
+ * What follows the closing quote of the string an address is in, past any
+ * white space: "?." when an optional chain starts there ("?." not followed
+ * by a digit, since "?.5" is a conditional), else the first
+ * character. A ".", "[" or "?." there means the script changes the string
+ * before it asks for it (a .replace, .slice or .split, or an index, with or
+ * without "?"), so the address read is not the one asked for. Pagefind 1.5.2
+ * and 1.6.0 end each address with a ";".
  */
 function afterAddress(code, from) {
   const rest = code.slice(from, from + 160);
   const end = rest.search(/[`"']/);
   if (end === -1) return '';
-  const m = code.slice(from + end + 1, from + end + 41).match(/^\s*(\S)/);
+  const m = code.slice(from + end + 1, from + end + 41).match(/^\s*(\?\.(?!\d)|\S)/);
   return m ? m[1] : '';
 }
-const CHANGES_STRING = new Set(['.', '[']);
+const CHANGES_STRING = new Set(['.', '[', '?.']);
 
 /**
  * The addresses the scripts in one Pagefind directory build for the engine
  * file and the worker script, read against the index id. `engine` and
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
  * end ?v=<index id>. Each address is read as it is written, up to its closing
- * quote. Nothing is run, so what a script does with an address after writing
- * it is not seen, and an engine address built with no .pagefind before a
- * quote or a "?" is not read.
+ * quote, and then what afterAddress reads past the quote. Nothing is run, so
+ * anything else a script does with an address after writing it is not seen,
+ * and an engine address built with no .pagefind before a quote or a "?" is
+ * not read.
  */
 function addressProblems(pagefindDir, nextDir) {
   const engine = [];
@@ -789,6 +793,11 @@ function selfTest() {
     fs.writeFileSync(worker, fs.readFileSync(worker, 'utf8').split(`?v=${unstamped.id}`).join(`?v=${PLACEHOLDER}`));
     if (!problems(unstamped.dir).some((m) => m.startsWith('pagefind-worker.js'))) bad.push('an engine address left with the placeholder passed');
 
+    const workerUnstamped = built('worker-unstamped');
+    const loaderJs = path.join(workerUnstamped.dir, 'pagefind.js');
+    fs.writeFileSync(loaderJs, fs.readFileSync(loaderJs, 'utf8').replace(`pagefind-worker.js?v=${workerUnstamped.id}`, `pagefind-worker.js?v=${PLACEHOLDER}`));
+    if (!problems(workerUnstamped.dir).some((m) => m.startsWith('pagefind.js starts the worker at'))) bad.push('a worker address left with the placeholder passed');
+
     const known = unknownIndexEntries(good.dir);
     if (known.length) bad.push(`a correct index holds names this gate does not know: ${known.join(', ')}`);
     for (const [n, [what, rel]] of [['a fixed name in fragment/', 'fragment/stale.pf_fragment'], ['a subdirectory in index/', 'index/old/en_1234567.pf_index'], ['an unknown top-level file', 'pagefind-extra.js']].entries()) {
@@ -803,6 +812,38 @@ function selfTest() {
       fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`.replace("?", "&");`));
     });
     if (!problems(changed.dir).some((m) => m.includes('then changes the string'))) bad.push('an engine address changed after its closing quote passed');
+
+    const optional = built('optional', (dir) => {
+      const loader = path.join(dir, 'pagefind-worker.js');
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`?.replace("?", "&");`));
+    });
+    if (!problems(optional.dir).some((m) => m.includes('("?." after its closing quote)'))) bad.push('an engine address changed by an optional chain after its closing quote passed');
+
+    const workerChanged = built('worker-changed', (dir) => {
+      const loader = path.join(dir, 'pagefind.js');
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`.replace("?", "&");`));
+    });
+    if (!problems(workerChanged.dir).some((m) => m.includes('the worker address it starts could not be read'))) bad.push('a worker address changed after its closing quote passed');
+
+    // Each check only one line of addressProblems makes: a string ending in
+    // .pagefind that is not the template, a loader whose engine address is
+    // not written as the template, a missing loader, and a pagefind.js that
+    // does not name the worker.
+    const stray = built('stray', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const extra = `${this.basePath}wasm.en.pagefind`;\n'));
+    if (!problems(stray.dir).some((m) => m.includes('that is not the template'))) bad.push('a string ending in .pagefind that is not the template passed');
+    const joined = built('joined', (dir) => {
+      const loader = path.join(dir, 'pagefind-worker.js');
+      const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(slotted, '[this.basePath + "wasm", language, "pagefind"].join(".")'));
+    });
+    if (!problems(joined.dir).some((m) => m.startsWith('pagefind-worker.js holds no engine address'))) bad.push('a loader with no engine address written as the template passed');
+    const noWorker = built('no-worker', (dir) => fs.rmSync(path.join(dir, 'pagefind-worker.js')));
+    if (!problems(noWorker.dir).some((m) => m.startsWith('pagefind-worker.js is missing'))) bad.push('an index without pagefind-worker.js passed');
+    const split = built('split', (dir) => {
+      const loader = path.join(dir, 'pagefind.js');
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace('pagefind-worker.js?v=', 'pagefind-` + `worker.js?v='));
+    });
+    if (!problems(split.dir).some((m) => m.includes('does not name pagefind-worker.js'))) bad.push('a pagefind.js that does not name pagefind-worker.js passed');
 
     // A deployment adapter's copy is read as well: a changed engine there
     // fails while the index the post-build step wrote is correct.
