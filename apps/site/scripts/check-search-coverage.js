@@ -69,10 +69,13 @@
  *                             broke one would leave its addresses reading
  *                             right in a script no browser can run);
  *   * index-files-known       every file and directory at the top level of
- *                             the index is on this gate's list (INDEX_FILES),
- *                             so a file a later Pagefind adds there under a
- *                             fixed name stops the build until someone has
- *                             read how it is asked for;
+ *                             the index is on this gate's list (INDEX_FILES,
+ *                             INDEX_FILE_PATTERNS), and inside fragment/,
+ *                             index/ and filter/ every entry is a file named
+ *                             with a hash (INDEX_DIR_PATTERNS), so a file a
+ *                             later Pagefind adds under a fixed name stops
+ *                             the build until someone has read how it is
+ *                             asked for;
  *   * no-trace-manifests      no indexed url or title names a *.nft.json trace;
  *   * fragments-are-routes    every indexed document maps to exactly one
  *                             prerendered public route (a page, or a JSON
@@ -537,6 +540,117 @@ function parseProblem(name, code) {
   }
 }
 
+/** How each loader in ENGINE_LOADERS in one index directory parses. A
+ *  missing loader is skipped here: addressProblems reports it. */
+function loaderParse(dir) {
+  const parsed = [];
+  const unparsed = [];
+  for (const name of ENGINE_LOADERS) {
+    let code;
+    try { code = fs.readFileSync(path.join(dir, name), 'utf8'); } catch { continue; }
+    const problem = parseProblem(name, code);
+    if (problem) unparsed.push(`${name} ${problem}`);
+    else parsed.push(`${name} parses as ${name === 'pagefind.js' ? 'a module' : 'a classic script'}`);
+  }
+  return { parsed, unparsed };
+}
+
+/**
+ * What to do about the names index-files-known reports, by where they are.
+ * INDEX_FILES and INDEX_FILE_PATTERNS are read only at the top level; inside
+ * fragment/, index/ and filter/ only INDEX_DIR_PATTERNS is, and a
+ * subdirectory there is always reported.
+ */
+function unknownEntriesFix(unknown) {
+  const top = unknown.filter((u) => !u.includes('/'));
+  const inner = unknown.filter((u) => u.includes('/'));
+  const fix = [];
+  if (top.length) {
+    fix.push('For a name at the top level: find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<index id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES, or a pattern for it to INDEX_FILE_PATTERNS, with the reason it is safe.');
+  }
+  if (inner.length) {
+    fix.push("For a name inside fragment/, index/ or filter/: INDEX_FILES is not read there. Confirm that the file's address changes with every build, and only then widen that directory's pattern in INDEX_DIR_PATTERNS. A subdirectory there cannot be allowed without changing unknownIndexEntries.");
+  }
+  return fix.join(' ');
+}
+
+/**
+ * check()'s findings about the index directories, steps 2b and 2c: the
+ * deployed copy is complete (index-deployed), and in each directory
+ * indexDirsOf picks, the engine and worker addresses carry the index id,
+ * both loaders parse and every name is known. Returns the findings and the
+ * notes in the order check() reports them.
+ */
+function indexDirFindings(nextDir) {
+  const findings = [];
+  const notes = [];
+  const add = (id, why, fix) => findings.push({ id, why, fix });
+
+  // 2b. With a deployment adapter (.next/output exists) the index must be in
+  // the adapter's static output too: that copy is what is deployed, and it was
+  // taken before postbuild-pagefind.js ran.
+  const { dirs: indexDirs, deployed, absent } = indexDirsOf(nextDir);
+  if (absent.length) {
+    add(
+      'index-deployed',
+      `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
+      'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
+    );
+  }
+
+  // 2c. The engine and worker addresses carry the index id. Pagefind
+  // writes both with no hash in the name and no query, and a browser may keep
+  // either file for a year, so every address the emitted scripts build for
+  // them must end ?v=<index id>. addressProblems reads the ones it can (see
+  // Not checked in the header), in the index and in the deployed copy when
+  // there is one. Both loaders must still parse after the patch, and the
+  // index must hold nothing this gate does not know.
+  for (const dir of indexDirs) {
+    const where = path.relative(nextDir, dir).split(path.sep).join('/');
+    const { engine, worker, ok } = addressProblems(dir, nextDir);
+    if (engine.length) {
+      add(
+        'engine-address-build-id',
+        `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
+        'postbuild-pagefind.js appends ?v=<index id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
+      );
+    }
+    if (worker.length) {
+      add(
+        'worker-address-build-id',
+        `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
+        'postbuild-pagefind.js appends ?v=<index id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
+      );
+    }
+    if (!engine.length && !worker.length) {
+      notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
+    }
+
+    const { parsed, unparsed } = loaderParse(dir);
+    if (unparsed.length) {
+      add(
+        'loaders-parse',
+        `${where}: ${unparsed.join('; ')}. A browser that cannot parse pagefind.js loads no index, and Find serves only the curated INDEX to every visitor. One that cannot parse pagefind-worker.js cannot start the worker.`,
+        'postbuild-pagefind.js rewrites the addresses in both scripts (ADDRESS_PATCHES); read what it puts in place of each string. If the scripts fail as Pagefind wrote them, how they are loaded has changed: parseProblem() here reads pagefind.js as a module and pagefind-worker.js as a classic script.'
+      );
+    }
+
+    const entries = fs.readdirSync(dir).sort();
+    const unknown = unknownIndexEntries(dir);
+    if (unknown.length) {
+      add(
+        'index-files-known',
+        `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES, and inside fragment/, index/ and filter/ a name with a hash, INDEX_DIR_PATTERNS). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
+        unknownEntriesFix(unknown)
+      );
+    }
+    if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
+      notes.push(`${where}: ${parsed.join(' and ')}; ${entries.length} top-level entries, all on the gate's list`);
+    }
+  }
+  return { findings, notes };
+}
+
 function check(nextDir) {
   const findings = [];
   const notes = [];
@@ -581,76 +695,11 @@ function check(nextDir) {
     return { findings, notes, sites };
   }
 
-  // 2b. With a deployment adapter (.next/output exists) the index must be in
-  // the adapter's static output too: that copy is what is deployed, and it was
-  // taken before postbuild-pagefind.js ran.
-  const { dirs: indexDirs, deployed, absent } = indexDirsOf(nextDir);
-  if (absent.length) {
-    add(
-      'index-deployed',
-      `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
-      'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
-    );
-  }
-
-  // 2c. The engine and worker addresses carry the index id. Pagefind
-  // writes both with no hash in the name and no query, and a browser may keep
-  // either file for a year, so every address the emitted scripts build for
-  // them must end ?v=<index id>. addressProblems reads the ones it can (see
-  // Not checked in the header), in the index and in the deployed copy when
-  // there is one. Both loaders must still parse after the patch, and the
-  // index must hold nothing this gate does not know.
-  for (const dir of indexDirs) {
-    const where = path.relative(nextDir, dir).split(path.sep).join('/');
-    const { engine, worker, ok } = addressProblems(dir, nextDir);
-    if (engine.length) {
-      add(
-        'engine-address-build-id',
-        `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
-        'postbuild-pagefind.js appends ?v=<index id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
-      );
-    }
-    if (worker.length) {
-      add(
-        'worker-address-build-id',
-        `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
-        'postbuild-pagefind.js appends ?v=<index id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
-      );
-    }
-    if (!engine.length && !worker.length) {
-      notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
-    }
-
-    const parsed = [];
-    const unparsed = [];
-    for (const name of ENGINE_LOADERS) {
-      let code;
-      try { code = fs.readFileSync(path.join(dir, name), 'utf8'); } catch { continue; } // a missing loader is a finding above
-      const problem = parseProblem(name, code);
-      if (problem) unparsed.push(`${name} ${problem}`);
-      else parsed.push(`${name} parses as ${name === 'pagefind.js' ? 'a module' : 'a classic script'}`);
-    }
-    if (unparsed.length) {
-      add(
-        'loaders-parse',
-        `${where}: ${unparsed.join('; ')}. A browser that cannot parse pagefind.js loads no index, and Find serves only the curated INDEX to every visitor. One that cannot parse pagefind-worker.js cannot start the worker.`,
-        'postbuild-pagefind.js rewrites the addresses in both scripts (ADDRESS_PATCHES); read what it puts in place of each string. If the scripts fail as Pagefind wrote them, how they are loaded has changed: parseProblem() here reads pagefind.js as a module and pagefind-worker.js as a classic script.'
-      );
-    }
-
-    const entries = fs.readdirSync(dir).sort();
-    const unknown = unknownIndexEntries(dir);
-    if (unknown.length) {
-      add(
-        'index-files-known',
-        `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES, and inside fragment/, index/ and filter/ a name with a hash, INDEX_DIR_PATTERNS). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
-        'Find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<index id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES with the reason it is safe.'
-      );
-    }
-    if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
-      notes.push(`${where}: ${parsed.join(' and ')}; ${entries.length} top-level entries, all on the gate's list`);
-    }
-  }
+  // 2b and 2c. The deployed copy, and the addresses, loaders and names in
+  // each index directory (indexDirFindings, which the self-test runs).
+  const dirChecks = indexDirFindings(nextDir);
+  findings.push(...dirChecks.findings);
+  notes.push(...dirChecks.notes);
 
   let fragments;
   let pageCount;
@@ -800,7 +849,13 @@ function selfTest() {
 
     const known = unknownIndexEntries(good.dir);
     if (known.length) bad.push(`a correct index holds names this gate does not know: ${known.join(', ')}`);
-    for (const [n, [what, rel]] of [['a fixed name in fragment/', 'fragment/stale.pf_fragment'], ['a subdirectory in index/', 'index/old/en_1234567.pf_index'], ['an unknown top-level file', 'pagefind-extra.js']].entries()) {
+    for (const [n, [what, rel]] of [
+      ['a fixed name in fragment/', 'fragment/stale.pf_fragment'],
+      ['a fixed name in index/', 'index/en.pf_index'],
+      ['a fixed name in filter/', 'filter/en.pf_filter'],
+      ['a subdirectory in index/', 'index/old/en_1234567.pf_index'],
+      ['an unknown top-level file', 'pagefind-extra.js'],
+    ].entries()) {
       const odd = built(`names-${n}`);
       fs.mkdirSync(path.dirname(path.join(odd.dir, rel)), { recursive: true });
       fs.writeFileSync(path.join(odd.dir, rel), 'x');
@@ -845,20 +900,51 @@ function selfTest() {
     });
     if (!problems(split.dir).some((m) => m.includes('does not name pagefind-worker.js'))) bad.push('a pagefind.js that does not name pagefind-worker.js passed');
 
+    // The loaders parse, read through ENGINE_LOADERS as check() reads them.
+    const goodParse = loaderParse(good.dir);
+    if (goodParse.unparsed.length || goodParse.parsed.length !== 2) bad.push(`a correct index's loaders gave ${goodParse.parsed.length} parsed of 2: ${goodParse.unparsed.join('; ')}`);
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const broke = built(`parse-${name}`, (dir) => fs.appendFileSync(path.join(dir, name), '\n})(\n'));
+      if (!loaderParse(broke.dir).unparsed.some((u) => u.startsWith(`${name} does not parse`))) bad.push(`a ${name} that does not parse passed`);
+    }
+
+    // The fix index-files-known gives depends on where the name is.
+    const topFix = unknownEntriesFix(['pagefind-extra.js']);
+    const innerFix = unknownEntriesFix(['fragment/stale.pf_fragment']);
+    if (!topFix.includes('INDEX_FILE_PATTERNS') || topFix.includes('INDEX_DIR_PATTERNS') || !innerFix.includes('INDEX_DIR_PATTERNS') || innerFix.includes('INDEX_FILE_PATTERNS')) bad.push('the index-files-known fix does not depend on where the name is');
+
     // A deployment adapter's copy is read as well: a changed engine there
-    // fails while the index the post-build step wrote is correct.
+    // fails while the index the post-build step wrote is correct. Then
+    // check()'s own findings for the directories (indexDirFindings), on a
+    // small .next that holds the index and the copy.
     const next = path.join(root, 'next');
     const copy = path.join(next, 'output', 'static', '_next', PAGEFIND_REL);
+    const copyWhere = path.relative(next, copy).split(path.sep).join('/');
     fs.cpSync(good.dir, path.join(next, PAGEFIND_REL), { recursive: true });
     fs.cpSync(good.dir, copy, { recursive: true });
+    const clean = indexDirFindings(next).findings;
+    if (clean.length) bad.push(`a correct .next and its deployed copy gave ${clean.map((f) => f.id).join(', ')}`);
     const copied = path.join(copy, 'wasm.en.pagefind');
     const copiedBytes = fs.readFileSync(copied);
     copiedBytes[copiedBytes.length - 1] ^= 1;
     fs.writeFileSync(copied, copiedBytes);
     if (!indexDirsOf(next).dirs.includes(copy)) bad.push("a deployment adapter's copy of the index was not read");
     else if (!problems(copy).some((m) => m.includes('the files in this index give'))) bad.push('a changed engine in the deployed copy passed');
+    if (!indexDirFindings(next).findings.some((f) => f.id === 'engine-address-build-id' && f.why.startsWith(`${copyWhere}: `))) bad.push('a changed engine in the deployed copy raised no engine-address-build-id for that copy');
     fs.rmSync(path.join(copy, 'pagefind.js'));
     if (!indexDirsOf(next).absent.includes('pagefind.js')) bad.push('a deployed copy without pagefind.js passed');
+    if (!indexDirFindings(next).findings.some((f) => f.id === 'index-deployed')) bad.push('a deployed copy without pagefind.js raised no index-deployed');
+
+    // Unknown names raise index-files-known in check(), not only in
+    // unknownIndexEntries.
+    const named = built('names-check', (dir) => {
+      fs.writeFileSync(path.join(dir, 'pagefind-extra.js'), 'x');
+      fs.writeFileSync(path.join(dir, 'fragment', 'stale.pf_fragment'), 'x');
+    });
+    const namedNext = path.join(root, 'next-names');
+    fs.cpSync(named.dir, path.join(namedNext, PAGEFIND_REL), { recursive: true });
+    const namedFound = indexDirFindings(namedNext).findings;
+    if (!namedFound.some((f) => f.id === 'index-files-known' && f.why.includes('pagefind-extra.js') && f.why.includes('fragment/stale.pf_fragment'))) bad.push(`an unknown top-level name and an unknown name in fragment/ did not both raise index-files-known (findings: ${namedFound.map((f) => f.id).join(', ') || 'none'})`);
 
     for (const [n, [what, id]] of [['a build id', 'build-TfctsWXpff2fKS'], ['the placeholder', PLACEHOLDER]].entries()) {
       const v = built(`id-${n}`);
