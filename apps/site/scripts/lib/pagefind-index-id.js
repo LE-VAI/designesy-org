@@ -119,14 +119,22 @@ const ENGINE_TEMPLATE = '`${this.basePath}wasm.${language}.pagefind`';
 /**
  * Known answers, so the scheme itself is pinned and not only its
  * properties: SHA-256 over `scheme <SCHEME>\0`, then each file in code-unit
- * order of its path (not the file system's: NTFS lists these five as a, ab,
- * a_b, B, sub), each as its path, its length and its bytes. Both values were
- * computed by this helper and again by a separate implementation. A change
- * to the scheme raises SCHEME and replaces both with what the self-test
- * prints.
+ * order of its whole path, each as its path, its length and its bytes.
+ *
+ * The six names make a walk that does not sort the whole list give another
+ * id, for two reasons. NTFS lists a directory in its own order, not in
+ * code-unit order (a, ab, a_b, B, sub, sub-d here). On Linux, Node returns
+ * each directory already sorted (libuv sorts what it reads, and macOS uses
+ * the same code), so there only sub-d tells the two apart: sorted as whole
+ * paths it comes before sub/c, since "-" is 0x2D and "/" is 0x2F, while a
+ * walk that sorts each directory on its own reaches sub/c first.
+ *
+ * Both values were computed by this helper and again by a separate
+ * implementation. A change to the scheme raises SCHEME and replaces both
+ * with what the self-test prints.
  */
-const KNOWN_FILES = [['B', 'b'], ['a', 'a'], ['a_b', 'ab'], ['ab', ''], ['sub/c', 'c']];
-const KNOWN_FILES_ID = 'pf-c9f1b878a4e1bf58b051';
+const KNOWN_FILES = [['B', 'b'], ['a', 'a'], ['a_b', 'ab'], ['ab', ''], ['sub/c', 'c'], ['sub-d', 'd']];
+const KNOWN_FILES_ID = 'pf-1e135fcf7d17617d1b3c';
 const KNOWN_FIXTURE_ID = 'pf-21c550eeb5dc600856c5';
 
 /**
@@ -177,7 +185,7 @@ function selfTest() {
       fs.writeFileSync(path.join(known, rel), body);
     }
     const knownId = pagefindIndexId(known);
-    if (knownId !== KNOWN_FILES_ID) bad.push(`five small files gave ${knownId}, not ${KNOWN_FILES_ID}: the hash, the order of the files or how each is framed changed (see KNOWN_FILES)`);
+    if (knownId !== KNOWN_FILES_ID) bad.push(`six small files gave ${knownId}, not ${KNOWN_FILES_ID}: the hash, the order of the files or how each is framed changed (see KNOWN_FILES)`);
     if (base !== KNOWN_FIXTURE_ID) bad.push(`the fixture index gave ${base}, not ${KNOWN_FIXTURE_ID} (see KNOWN_FILES)`);
     for (const id of [`pf-${'a'.repeat(19)}`, `pf-${'a'.repeat(21)}`, `pf-${'A'.repeat(20)}`, `pf-${'g'.repeat(20)}`, 'build-TfctsWXpff2fKS', ` ${base}`, `${base}\n`]) {
       if (ID_FORMAT.test(id)) bad.push(`ID_FORMAT accepts ${JSON.stringify(id)}`);
