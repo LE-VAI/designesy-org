@@ -166,18 +166,21 @@ function writeFixtureIndex(dir, { engines = true } = {}) {
   return Object.keys(files).filter((rel) => rel !== VERSION_FILE);
 }
 
-/** Runs the helper's cases in a temporary directory; returns what failed. */
+/** Runs the helper's cases in a temporary directory; returns how many cases
+ *  it checked and what failed. */
 function selfTest() {
   const os = require('node:os');
   const bad = [];
+  let cases = 0;
+  const failIf = (broken, what) => { cases++; if (broken) bad.push(what); };
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pagefind-index-id-'));
   try {
     const dir = path.join(root, 'index');
     const counted = writeFixtureIndex(dir);
     const base = pagefindIndexId(dir);
-    if (!ID_FORMAT.test(base) || base === PLACEHOLDER) bad.push(`the id ${base} is not pf- and 20 hex digits`);
-    if (pagefindIndexId(dir) !== base) bad.push('the same files gave two ids');
-    if (pagefindIndexId(dir, null, SCHEME + 1) === base) bad.push('a new SCHEME kept the id');
+    failIf(!ID_FORMAT.test(base) || base === PLACEHOLDER, `the id ${base} is not pf- and 20 hex digits`);
+    failIf(pagefindIndexId(dir) !== base, 'the same files gave two ids');
+    failIf(pagefindIndexId(dir, null, SCHEME + 1) === base, 'a new SCHEME kept the id');
 
     const known = path.join(root, 'known');
     for (const [rel, body] of KNOWN_FILES) {
@@ -185,10 +188,10 @@ function selfTest() {
       fs.writeFileSync(path.join(known, rel), body);
     }
     const knownId = pagefindIndexId(known);
-    if (knownId !== KNOWN_FILES_ID) bad.push(`six small files gave ${knownId}, not ${KNOWN_FILES_ID}: the hash, the order of the files or how each is framed changed (see KNOWN_FILES)`);
-    if (base !== KNOWN_FIXTURE_ID) bad.push(`the fixture index gave ${base}, not ${KNOWN_FIXTURE_ID} (see KNOWN_FILES)`);
+    failIf(knownId !== KNOWN_FILES_ID, `six small files gave ${knownId}, not ${KNOWN_FILES_ID}: the hash, the order of the files or how each is framed changed (see KNOWN_FILES)`);
+    failIf(base !== KNOWN_FIXTURE_ID, `the fixture index gave ${base}, not ${KNOWN_FIXTURE_ID} (see KNOWN_FILES)`);
     for (const id of [`pf-${'a'.repeat(19)}`, `pf-${'a'.repeat(21)}`, `pf-${'A'.repeat(20)}`, `pf-${'g'.repeat(20)}`, 'build-TfctsWXpff2fKS', ` ${base}`, `${base}\n`]) {
-      if (ID_FORMAT.test(id)) bad.push(`ID_FORMAT accepts ${JSON.stringify(id)}`);
+      failIf(ID_FORMAT.test(id), `ID_FORMAT accepts ${JSON.stringify(id)}`);
     }
 
     for (const rel of counted) {
@@ -201,29 +204,29 @@ function selfTest() {
         ['an added last byte', Buffer.concat([orig, Buffer.from([1])])],
       ]) {
         fs.writeFileSync(file, bytes);
-        if (pagefindIndexId(dir) === base) bad.push(`${how} in ${rel} kept the id`);
+        failIf(pagefindIndexId(dir) === base, `${how} in ${rel} kept the id`);
       }
       fs.writeFileSync(file, orig);
     }
     const extra = path.join(dir, 'fragment', 'en_ddddddd.pf_fragment');
     fs.writeFileSync(extra, 'another page');
-    if (pagefindIndexId(dir) === base) bad.push('an added fragment kept the id');
+    failIf(pagefindIndexId(dir) === base, 'an added fragment kept the id');
     fs.rmSync(extra);
     fs.writeFileSync(path.join(dir, VERSION_FILE), '{"buildId":"something else"}');
-    if (pagefindIndexId(dir) !== base) bad.push(`${VERSION_FILE} changed the id`);
+    failIf(pagefindIndexId(dir) !== base, `${VERSION_FILE} changed the id`);
 
     const stamped = stampIndexId(dir, base);
-    if (stamped !== 2) bad.push(`the id went into ${stamped} file(s), not pagefind.js and pagefind-worker.js`);
-    if (pagefindIndexId(dir, base) !== base) bad.push('the stamped files, read as served, gave another id');
-    if (pagefindIndexId(dir) === base) bad.push('the stamped files gave the same id when the stamp was not read');
+    failIf(stamped !== 2, `the id went into ${stamped} file(s), not pagefind.js and pagefind-worker.js`);
+    failIf(pagefindIndexId(dir, base) !== base, 'the stamped files, read as served, gave another id');
+    failIf(pagefindIndexId(dir) === base, 'the stamped files gave the same id when the stamp was not read');
 
     const before = path.join(root, 'worker-only');
     writeFixtureIndex(before, { engines: false });
-    if (pagefindIndexId(before) === base) bad.push('patching the worker address alone gave the id of patching all three');
+    failIf(pagefindIndexId(before) === base, 'patching the worker address alone gave the id of patching all three');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
-  return bad;
+  return { cases, bad };
 }
 
 module.exports = {
@@ -232,8 +235,8 @@ module.exports = {
 };
 
 if (require.main === module) {
-  const bad = selfTest();
+  const { cases, bad } = selfTest();
   for (const b of bad) console.error(`  [self-test] FAIL ${b}`);
-  console.log(`[pagefind-index-id] self-test: ${bad.length ? `${bad.length} failure(s)` : 'every case holds'}`);
+  console.log(`[pagefind-index-id] self-test: ${bad.length ? `${bad.length} failure(s) in ${cases} cases` : `every case holds (${cases} cases)`}`);
   process.exit(bad.length ? 1 : 0);
 }
