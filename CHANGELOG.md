@@ -89,20 +89,21 @@ rule, weight or score moves.
   edit to the helper or the gate it found passing but one, which replaces
   the placeholder with itself and so changes no byte. On Linux one of
   those, hashing the files unsorted, passed until the sixth known file was
-  added. Fifteen more are edits the review of this change found passing
-  the self-test: two to the worker address checks, four to other address
-  checks, three in `check()`, three to the parse check, one each to the
-  `index/` and `filter/` patterns, and an empty result in place of the
-  self-test. Eight more are edits a second review found passing once those
-  cases were in, each letting a build with the matching fault through the
-  gate: dropping the directory findings in `check()` or replacing them
-  with none, turning off `worker-address-build-id` or `loaders-parse`,
-  parsing the loaders or reading the names of the written index only,
-  reading only the deployed copy, and reading only a `.` after the worker
-  address. The other ten cover what this entry adds and five checks that
-  were already there. Two edits to `postbuild-pagefind.js` that the second
-  review of the entry below found passing are not covered: the self-test
-  does not run that script.
+  added. Fifteen more are edits the first review of this change found
+  passing the self-test: two to the worker address checks, four to other
+  address checks, three in `check()`, three to the parse check, one each
+  to the `index/` and `filter/` patterns, and an empty result in place of
+  the self-test. Eight more are edits the second review of this change
+  found passing once those cases were in, each letting a build with the
+  matching fault through the gate: dropping the directory findings in
+  `check()` or replacing them with none, turning off
+  `worker-address-build-id` or `loaders-parse`, parsing the loaders or
+  reading the names of the written index only, reading only the deployed
+  copy, and reading only a `.` after the worker address. The other ten
+  cover what this entry adds and five checks that were already there. Two
+  edits to `postbuild-pagefind.js` that the second review of the entry
+  below found passing are not covered: the self-test does not run that
+  script.
 - A returning Chrome profile whose request for `pagefind-version.json`
   fails (the harness of the entry below, answering 503 for that file on
   both visits). It searched on the build of the engine-address entry
