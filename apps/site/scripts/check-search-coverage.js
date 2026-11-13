@@ -803,7 +803,7 @@ function check(nextDir) {
  *  when the count is another, so a self-test that is emptied, cut short or
  *  skips a loop cannot pass. Adding or removing a case on purpose changes
  *  this number with it. */
-const SELF_TEST_CASES = 82;
+const SELF_TEST_CASES = 90;
 
 /**
  * The helper's cases, then the gate's own on small indexes built in a
@@ -879,6 +879,8 @@ function selfTest() {
       ['a fixed name in filter/', 'filter/en.pf_filter'],
       ['a subdirectory in index/', 'index/old/en_1234567.pf_index'],
       ['an unknown top-level file', 'pagefind-extra.js'],
+      ['a top-level name that starts as the meta file does', 'pagefind.extra.js'],
+      ['a top-level name that starts as an engine does', 'wasm.en.pagefind.map'],
     ].entries()) {
       const odd = built(`names-${n}`);
       fs.mkdirSync(path.dirname(path.join(odd.dir, rel)), { recursive: true });
@@ -911,17 +913,31 @@ function selfTest() {
     failIf(!problems(workerOptional.dir).some((m) => m.includes('("?." after its closing quote), so the worker address it starts could not be read')), 'a worker address changed by an optional chain after its closing quote passed');
 
     // Each check only one line of addressProblems makes: a string ending in
-    // .pagefind that is not the template, a loader whose engine address is
-    // not written as the template, a missing loader, and a pagefind.js that
-    // does not name the worker.
+    // .pagefind that is not the template (before a quote, and before a
+    // query), a loader whose engine address is not written as the template,
+    // a missing loader, and a pagefind.js that does not name the worker.
     const stray = built('stray', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const extra = `${this.basePath}wasm.en.pagefind`;\n'));
     failIf(!problems(stray.dir).some((m) => m.includes('that is not the template')), 'a string ending in .pagefind that is not the template passed');
-    const joined = built('joined', (dir) => {
-      const loader = path.join(dir, 'pagefind-worker.js');
-      const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
-      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(slotted, '[this.basePath + "wasm", language, "pagefind"].join(".")'));
-    });
-    failIf(!problems(joined.dir).some((m) => m.startsWith('pagefind-worker.js holds no engine address')), 'a loader with no engine address written as the template passed');
+    const strayQuery = built('stray-query', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const extra = "wasm.en.pagefind?v=pf-0123456789abcdef0123";\n'));
+    failIf(!problems(strayQuery.dir).some((m) => m.includes('that is not the template')), 'a string ending in .pagefind before a query that is not the template passed');
+    // The expression in the template must be a name: a literal there writes
+    // an address for one language, even with the index id after it.
+    const literal = built('literal', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const one = `${this.basePath}wasm.${"en"}.pagefind?v=' + PLACEHOLDER + '`;\n'));
+    failIf(!problems(literal.dir).some((m) => m.includes('that is not the template')), 'an engine address with a literal language in the template passed');
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const joined = built(`joined-${name}`, (dir) => {
+        const loader = path.join(dir, name);
+        const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(slotted, '[this.basePath + "wasm", language, "pagefind"].join(".")'));
+      });
+      failIf(!problems(joined.dir).some((m) => m.startsWith(`${name} holds no engine address`)), `a ${name} with no engine address written as the template passed`);
+    }
+    // Every script is read, not only the loaders, and every worker address
+    // in pagefind.js, not only the first.
+    const otherScript = built('other-script', (dir) => fs.appendFileSync(path.join(dir, 'pagefind-ui.js'), 'export const engine = `${this.basePath}wasm.${language}.pagefind`;\n'));
+    failIf(!problems(otherScript.dir).some((m) => m.startsWith('pagefind-ui.js asks for')), 'an engine address without the index id in a script other than the loaders passed');
+    const secondWorker = built('second-worker', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const again = `${basePath}pagefind-worker.js`;\n'));
+    failIf(!problems(secondWorker.dir).some((m) => m.startsWith('pagefind.js starts the worker at pagefind-worker.js,')), 'a second worker address without the index id passed');
     const noWorker = built('no-worker', (dir) => fs.rmSync(path.join(dir, 'pagefind-worker.js')));
     failIf(!problems(noWorker.dir).some((m) => m.startsWith('pagefind-worker.js is missing')), 'an index without pagefind-worker.js passed');
     const split = built('split', (dir) => {
@@ -991,11 +1007,12 @@ function selfTest() {
       fs.cpSync(copied, path.join(n, 'output', 'static', '_next', PAGEFIND_REL), { recursive: true });
       return dirFindings(n);
     };
+    const namedOne = built('names-one', (dir) => fs.writeFileSync(path.join(dir, 'pagefind-extra.js'), 'x'));
     const unparsedCopy = built('copy-unparsed', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), '\n})(\n'));
     for (const [what, found, id, where] of [
       ['a worker address left with the placeholder in the deployed copy', pair('pair-worker', good.dir, workerUnstamped.dir), 'worker-address-build-id', copyWhere],
       ['a pagefind.js that does not parse in the deployed copy', pair('pair-parse', good.dir, unparsedCopy.dir), 'loaders-parse', copyWhere],
-      ['an unknown name in the deployed copy', pair('pair-names', good.dir, named.dir), 'index-files-known', copyWhere],
+      ['an unknown name in the deployed copy', pair('pair-names', good.dir, namedOne.dir), 'index-files-known', copyWhere],
       ['a changed engine in the written index while a copy exists', pair('pair-written', engine.dir, good.dir), 'engine-address-build-id', writtenWhere],
     ]) {
       const alone = found.length === 1 && found[0].id === id && found[0].why.startsWith(`${where}: `);
@@ -1007,6 +1024,9 @@ function selfTest() {
       fs.writeFileSync(path.join(v.dir, indexId.VERSION_FILE), JSON.stringify({ buildId: id }));
       failIf(!problems(v.dir).some((m) => m.includes('which is not an index id')), `${what} as the id passed`);
     }
+    const noId = built('no-id');
+    fs.rmSync(path.join(noId.dir, indexId.VERSION_FILE));
+    failIf(!problems(noId.dir).some((m) => m.includes('holds no id')), 'an index without pagefind-version.json passed');
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
