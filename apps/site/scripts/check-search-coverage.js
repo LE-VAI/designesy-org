@@ -123,11 +123,14 @@
  * Before it reads the build it runs its self-test: the index-id helper's
  * cases (lib/pagefind-index-id.js), then this gate's own over small indexes
  * built in a temporary directory, one with nothing wrong and at least one
- * for each check the address, parse, name and directory findings make, the
- * directory findings read through check() itself (see selfTest). A failing
- * self-test fails the gate, since a clean result from a broken check would
- * prove nothing, and so does a self-test that checked another number of
- * cases than SELF_TEST_CASES. Every run prints
+ * for each check the address, parse, name and directory findings make (each
+ * engine address check in both loaders and in a third script), the
+ * directory findings read through check() itself, and last this gate run in
+ * a child process on a small whole build with one fault, so its exit code
+ * is checked too (see selfTest). A failing self-test fails the gate, since
+ * a clean result from a broken check would prove nothing, and so does a
+ * self-test that checked another number of cases than SELF_TEST_CASES.
+ * Every run prints
  * "search-coverage: self-test OK (<n> cases)", so a build log shows the
  * self-test ran.
  *
@@ -803,25 +806,32 @@ function check(nextDir) {
  *  when the count is another, so a self-test that is emptied, cut short or
  *  skips a loop cannot pass. Adding or removing a case on purpose changes
  *  this number with it. */
-const SELF_TEST_CASES = 93;
+const SELF_TEST_CASES = 110;
 
 /**
  * The helper's cases, then the gate's own on small indexes built in a
  * temporary directory: a correct one, which must pass with every address
  * counted, and at least one case for each check in addressProblems,
  * loaderParse, unknownEntriesFix and unknownIndexEntries (each directory's
- * pattern, a subdirectory, a top-level name). Then check() itself runs on
- * small .next directories that hold the index and a deployment adapter's
- * copy: each of its five findings about the index directories must be
- * raised for the copy, and engine-address-build-id and index-files-known
- * for the written index too. A pair with one fault in one directory must
- * raise that one finding for that directory and nothing else. Some faults
- * are seen by one check only: a changed fragment or engine under the old
- * id by the hash; an address left with the placeholder by the address
- * reading, since the hash reads ?v=<id> as the placeholder; a build id or
- * the placeholder as the id by the format pin. A check can hold a part no
- * case tries: no case puts a "[" or white space after an address's closing
- * quote. Returns how many cases it checked and what failed.
+ * pattern, a subdirectory, a top-level name). Each engine address check runs
+ * in both loaders and in pagefind-ui.js, since a check that skipped one script
+ * would still pass a case in another. Then check() itself runs on small .next
+ * directories that hold the index and a deployment adapter's copy: each of its
+ * five findings about the index directories must be raised for the copy, and
+ * engine-address-build-id and index-files-known for the written index too. A
+ * pair with one fault in one directory must raise that one finding for that
+ * directory and nothing else. Last, this gate runs in a child process, as the
+ * build runs it, on a small whole build with one fault, and must exit 1 with
+ * that one finding; in the child (SEARCH_COVERAGE_SELF_TEST_CHILD) that case
+ * is counted and not run again. Some faults are seen by one check only: a
+ * changed fragment or engine under the old id by the hash; an address left
+ * with the placeholder by the address reading, since the hash reads ?v=<id> as
+ * the placeholder; a build id or the placeholder as the id by the format pin.
+ * A check can hold a part no case tries: no case puts a digit after "?.",
+ * characters after the id inside an address, or an address with no closing
+ * quote, and no case puts a fault in what only a full build holds (the client
+ * chunk, the routes, the fragments' pages, the page count). Returns how many
+ * cases it checked and what failed.
  */
 function selfTest() {
   const os = require('node:os');
@@ -861,11 +871,6 @@ function selfTest() {
     fs.writeFileSync(wasm, bytes);
     failIf(!problems(engine.dir).some((m) => m.includes('the files in this index give')), 'a changed engine under the old id passed');
 
-    const unstamped = built('unstamped');
-    const worker = path.join(unstamped.dir, 'pagefind-worker.js');
-    fs.writeFileSync(worker, fs.readFileSync(worker, 'utf8').split(`?v=${unstamped.id}`).join(`?v=${PLACEHOLDER}`));
-    failIf(!problems(unstamped.dir).some((m) => m.startsWith('pagefind-worker.js')), 'an engine address left with the placeholder passed');
-
     const workerUnstamped = built('worker-unstamped');
     const loaderJs = path.join(workerUnstamped.dir, 'pagefind.js');
     fs.writeFileSync(loaderJs, fs.readFileSync(loaderJs, 'utf8').replace(`pagefind-worker.js?v=${workerUnstamped.id}`, `pagefind-worker.js?v=${PLACEHOLDER}`));
@@ -874,9 +879,9 @@ function selfTest() {
     const known = unknownIndexEntries(good.dir);
     failIf(known.length, `a correct index holds names this gate does not know: ${known.join(', ')}`);
     for (const [n, [what, rel]] of [
-      ['a fixed name in fragment/', 'fragment/stale.pf_fragment'],
-      ['a fixed name in index/', 'index/en.pf_index'],
-      ['a fixed name in filter/', 'filter/en.pf_filter'],
+      ['a fixed name in fragment/', 'fragment/en_current.pf_fragment'],
+      ['a fixed name in index/', 'index/en_current.pf_index'],
+      ['a fixed name in filter/', 'filter/en_current.pf_filter'],
       ['a subdirectory in index/', 'index/old/en_1234567.pf_index'],
       ['an unknown top-level file', 'pagefind-extra.js'],
       ['a top-level name that starts as the meta file does', 'pagefind.extra.js'],
@@ -888,58 +893,72 @@ function selfTest() {
       failIf(!unknownIndexEntries(odd.dir).length, `${what} passed`);
     }
 
-    const changed = built('changed', (dir) => {
-      const loader = path.join(dir, 'pagefind-worker.js');
-      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`.replace("?", "&");`));
-    });
-    failIf(!problems(changed.dir).some((m) => m.includes('then changes the string')), 'an engine address changed after its closing quote passed');
+    // Each engine address check, in both loaders and in pagefind-ui.js
+    // (every script is read, and these cases give that one an engine
+    // address), since a check that skipped one script would still pass a
+    // case in another: an address left with the placeholder; an address the
+    // script changes after its closing quote, by a ".", an optional chain, a
+    // "[", or a "." after white space; and strings ending in .pagefind that
+    // are not the template, before a backtick, a double quote, a single
+    // quote and a query. Then the same four changes after the worker's
+    // address in pagefind.js.
+    const AFTER_QUOTE = [
+      ['.replace("?", "&")', '.', '.replace'],
+      ['?.replace("?", "&")', '?.', '?.replace'],
+      ['[0]', '[', '[0]'],
+      [' .replace("?", "&")', '.', 'white space and .replace'],
+    ];
+    const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
+    for (const name of ['pagefind.js', 'pagefind-worker.js', 'pagefind-ui.js']) {
+      const address = (dir) => {
+        if (name === 'pagefind-ui.js') fs.appendFileSync(path.join(dir, name), `export const engine = ${slotted};\n`);
+      };
+      const unstamped = built(`unstamped-${name}`, address);
+      const script = path.join(unstamped.dir, name);
+      fs.writeFileSync(script, fs.readFileSync(script, 'utf8').replace(`pagefind?v=${unstamped.id}`, `pagefind?v=${PLACEHOLDER}`));
+      failIf(!problems(unstamped.dir).some((m) => m.startsWith(`${name} asks for wasm.`)), `an engine address left with the placeholder in ${name} passed`);
+      for (const [n, [after, next, how]] of AFTER_QUOTE.entries()) {
+        const changed = built(`changed-${n}-${name}`, (dir) => {
+          address(dir);
+          const file = path.join(dir, name);
+          fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`${after};`));
+        });
+        failIf(!problems(changed.dir).some((m) => m.startsWith(`${name} writes wasm.`) && m.includes(`("${next}" after its closing quote)`)), `an engine address in ${name} followed by ${how} after its closing quote passed`);
+      }
+      const strays = built(`strays-${name}`, (dir) => fs.appendFileSync(path.join(dir, name), 'var b = `${base}wasm.en.pagefind`, d = "wasm.en.pagefind", s = \'wasm.en.pagefind\', q = "wasm.en.pagefind?v=pf-0123456789abcdef0123";\n'));
+      const read = problems(strays.dir).filter((m) => m.startsWith(`${name} holds a string ending in .pagefind that is not the template`)).length;
+      failIf(read !== 4, `${read} of the 4 strings in ${name} ending in .pagefind that are not the template (before a backtick, a double quote, a single quote and a query) were reported`);
+    }
+    for (const [n, [after, next, how]] of AFTER_QUOTE.entries()) {
+      const workerChanged = built(`worker-changed-${n}`, (dir) => {
+        const loader = path.join(dir, 'pagefind.js');
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`${after};`));
+      });
+      failIf(!problems(workerChanged.dir).some((m) => m.startsWith('pagefind.js writes pagefind-worker.js') && m.includes(`("${next}" after its closing quote)`)), `a worker address followed by ${how} after its closing quote passed`);
+    }
 
-    const optional = built('optional', (dir) => {
-      const loader = path.join(dir, 'pagefind-worker.js');
-      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`?.replace("?", "&");`));
-    });
-    failIf(!problems(optional.dir).some((m) => m.includes('("?." after its closing quote)')), 'an engine address changed by an optional chain after its closing quote passed');
-
-    const workerChanged = built('worker-changed', (dir) => {
-      const loader = path.join(dir, 'pagefind.js');
-      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`.replace("?", "&");`));
-    });
-    failIf(!problems(workerChanged.dir).some((m) => m.includes('the worker address it starts could not be read')), 'a worker address changed after its closing quote passed');
-
-    const workerOptional = built('worker-optional', (dir) => {
-      const loader = path.join(dir, 'pagefind.js');
-      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`?.replace("?", "&");`));
-    });
-    failIf(!problems(workerOptional.dir).some((m) => m.includes('("?." after its closing quote), so the worker address it starts could not be read')), 'a worker address changed by an optional chain after its closing quote passed');
-
-    // Each check only one line of addressProblems makes: a string ending in
-    // .pagefind that is not the template (before a quote, and before a
-    // query), a loader whose engine address is not written as the template,
-    // a missing loader, and a pagefind.js that does not name the worker.
-    const stray = built('stray', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const extra = `${this.basePath}wasm.en.pagefind`;\n'));
-    failIf(!problems(stray.dir).some((m) => m.includes('that is not the template')), 'a string ending in .pagefind that is not the template passed');
-    const strayQuery = built('stray-query', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const extra = "wasm.en.pagefind?v=pf-0123456789abcdef0123";\n'));
-    failIf(!problems(strayQuery.dir).some((m) => m.includes('that is not the template')), 'a string ending in .pagefind before a query that is not the template passed');
-    // The expression in the template must be a name: a literal there writes
-    // an address for one language, even with the index id after it.
+    // Each check only one line of addressProblems makes: a language written
+    // as a literal in the template, a loader whose engine address is not
+    // written as the template, a missing loader (each loader), and a
+    // pagefind.js that does not name the worker. The expression in the
+    // template must be a name: a literal there writes an address for one
+    // language, even with the index id after it.
     const literal = built('literal', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const one = `${this.basePath}wasm.${"en"}.pagefind?v=' + PLACEHOLDER + '`;\n'));
     failIf(!problems(literal.dir).some((m) => m.includes('that is not the template')), 'an engine address with a literal language in the template passed');
     for (const name of ['pagefind.js', 'pagefind-worker.js']) {
       const joined = built(`joined-${name}`, (dir) => {
         const loader = path.join(dir, name);
-        const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
         fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(slotted, '[this.basePath + "wasm", language, "pagefind"].join(".")'));
       });
       failIf(!problems(joined.dir).some((m) => m.startsWith(`${name} holds no engine address`)), `a ${name} with no engine address written as the template passed`);
     }
-    // Every script is read, not only the loaders, and every worker address
-    // in pagefind.js, not only the first.
-    const otherScript = built('other-script', (dir) => fs.appendFileSync(path.join(dir, 'pagefind-ui.js'), 'export const engine = `${this.basePath}wasm.${language}.pagefind`;\n'));
-    failIf(!problems(otherScript.dir).some((m) => m.startsWith('pagefind-ui.js asks for')), 'an engine address without the index id in a script other than the loaders passed');
+    // Every worker address in pagefind.js is read, not only the first.
     const secondWorker = built('second-worker', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const again = `${basePath}pagefind-worker.js`;\n'));
     failIf(!problems(secondWorker.dir).some((m) => m.startsWith('pagefind.js starts the worker at pagefind-worker.js,')), 'a second worker address without the index id passed');
-    const noWorker = built('no-worker', (dir) => fs.rmSync(path.join(dir, 'pagefind-worker.js')));
-    failIf(!problems(noWorker.dir).some((m) => m.startsWith('pagefind-worker.js is missing')), 'an index without pagefind-worker.js passed');
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const missing = built(`no-${name}`, (dir) => fs.rmSync(path.join(dir, name)));
+      failIf(!problems(missing.dir).some((m) => m.startsWith(`${name} is missing`)), `an index without ${name} passed`);
+    }
     const split = built('split', (dir) => {
       const loader = path.join(dir, 'pagefind.js');
       fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace('pagefind-worker.js?v=', 'pagefind-` + `worker.js?v='));
@@ -953,6 +972,10 @@ function selfTest() {
       const broke = built(`parse-${name}`, (dir) => fs.appendFileSync(path.join(dir, name), '\n})(\n'));
       failIf(!loaderParse(broke.dir).unparsed.some((u) => u.startsWith(`${name} does not parse`)), `a ${name} that does not parse passed`);
     }
+    // The worker is read as a classic script, so syntax only a module allows
+    // fails there.
+    const moduleWorker = built('parse-worker-module', (dir) => fs.appendFileSync(path.join(dir, 'pagefind-worker.js'), '\nvar here = import.meta.url;\n'));
+    failIf(!loaderParse(moduleWorker.dir).unparsed.some((u) => u.startsWith('pagefind-worker.js does not parse as a classic script')), 'a pagefind-worker.js that only a module can run passed');
 
     // The fix index-files-known gives depends on where the name is.
     const topFix = unknownEntriesFix(['pagefind-extra.js']);
@@ -1027,6 +1050,36 @@ function selfTest() {
     const noId = built('no-id');
     fs.rmSync(path.join(noId.dir, indexId.VERSION_FILE));
     failIf(!problems(noId.dir).some((m) => m.includes('holds no id')), 'an index without pagefind-version.json passed');
+
+    // Last, the gate as the build runs it, in a child process: a copy of this
+    // script and the helper in a one-page site, run with no flag but --next
+    // on a whole small build (a client chunk that loads pagefind.js, a
+    // prerender manifest, the index) whose one fault is an engine address in
+    // pagefind.js without the index id. It must exit 1 and print that
+    // finding alone, so main()'s exit code and the rest of check() are
+    // checked too. In the child this case is counted and not run again.
+    if (process.env.SEARCH_COVERAGE_SELF_TEST_CHILD === '1') {
+      cases++;
+    } else {
+      const site = path.join(root, 'site');
+      fs.mkdirSync(path.join(site, 'scripts', 'lib'), { recursive: true });
+      fs.mkdirSync(path.join(site, 'app', 'lib'), { recursive: true });
+      fs.copyFileSync(__filename, path.join(site, 'scripts', 'gate.js'));
+      fs.copyFileSync(path.join(__dirname, 'lib', 'pagefind-index-id.js'), path.join(site, 'scripts', 'lib', 'pagefind-index-id.js'));
+      fs.writeFileSync(path.join(site, 'app', 'page.tsx'), 'export default function Page() { return null; }\n');
+      fs.writeFileSync(path.join(site, 'app', 'lib', 'command-palette.tsx'), "const INDEX: SearchItem[] = [\n  { href: '/' },\n];\n");
+      const whole = path.join(root, 'whole-next');
+      const unversioned = built('whole', (dir) => {
+        const loader = path.join(dir, 'pagefind.js');
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\``, 'pagefind`'));
+      });
+      fs.cpSync(unversioned.dir, path.join(whole, PAGEFIND_REL), { recursive: true });
+      fs.writeFileSync(path.join(whole, 'static', 'chunks', 'loader.js'), 'p.then((t) => import("".concat(e, "/pagefind.js?v=").concat(t)));\n');
+      fs.writeFileSync(path.join(whole, 'prerender-manifest.json'), JSON.stringify({ routes: { '/': { dataRoute: '/index.rsc' } } }));
+      const r = spawnSync(process.execPath, [path.join(site, 'scripts', 'gate.js'), '--next', whole], { encoding: 'utf8', env: { ...process.env, SEARCH_COVERAGE_SELF_TEST_CHILD: '1' } });
+      const ids = [...String(r.stderr).matchAll(/^ {2}\[([\w-]+)\]$/gm)].map((m) => m[1]).join(', ');
+      failIf(r.status !== 1 || ids !== 'engine-address-build-id', `the gate on a whole build whose pagefind.js asks for the engine without the index id exited ${r.status} with ${ids || 'no finding'}, not 1 with engine-address-build-id alone`);
+    }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
