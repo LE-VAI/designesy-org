@@ -6,23 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-**Find's search gate tests itself and reads two more things** (the
-site; no version moves). The entry below gave Find's scripts and engine an
-id read from the files. Its reviews found that the gate computes that id
-with the same helper the post-build step uses, so a helper that skipped
-some bytes would pass both, and named two faults no check caught and a
-palette fallback that could load an earlier build's script. No scoring
-rule, weight or score moves.
+**Find's search gate tests itself and reads two more things** (the site;
+no version moves). The entry below gave Find's scripts and engine an id
+read from the files. Its reviews found that the gate computes that id with
+the same helper the post-build step uses, so a helper that skipped some
+bytes would pass both, and named two faults no check caught and a palette
+fallback that could load an earlier build's script. No scoring rule,
+weight or score moves.
 
 ### Fixed (search gate)
 
 - **A self-test runs first.** Before it reads the build,
   `check-search-coverage.js` runs one and prints
-  `search-coverage: self-test OK (90 cases)`, so a build log shows it ran.
-  It fails the gate when a case fails, or when it checked another number
-  of cases than `SELF_TEST_CASES`, so an emptied or shortened self-test
-  fails too; `--self-test` runs it alone. It builds small Pagefind-shaped
-  indexes in a temporary directory. The helper's 45 cases
+  `search-coverage: self-test OK (110 cases)`, so a build log shows it
+  ran. It fails the gate when a case fails, or when it checked another
+  number of cases than `SELF_TEST_CASES`, so an emptied or shortened
+  self-test fails too; `--self-test` runs it alone. It builds small
+  Pagefind-shaped indexes in a temporary directory, with the engines,
+  fragment, index chunk and meta file gzip-encoded as Pagefind writes
+  them, and a UI script with its style sheet. The helper's 48 cases
   (`lib/pagefind-index-id.js`, which `node` can also run on its own) check
   that a changed byte in any served file changes the id, in the middle, at
   the end or added; that an added file and a new `SCHEME` change it; that
@@ -38,34 +40,41 @@ rule, weight or score moves.
   replaces both. `ID_FORMAT` must refuse near misses: 19 or 21 hex digits,
   upper-case or non-hex digits, a build id, a space before or a newline
   after.
-- **The gate's own 45 cases.** A correct index must pass with every
+- **The gate's own 62 cases.** A correct index must pass with every
   address counted and both loaders parsing, and each of these must fail: a
   changed fragment or engine under the old id (the hash); a build id or
   the placeholder as the id (the format pin), and an index without
-  `pagefind-version.json`; an engine or worker address left with the
-  placeholder or followed by `.replace` or `?.replace` after its closing
-  quote, a string ending in `.pagefind` that is not the template, before a
-  quote or before a query, a language written as a literal inside the
-  template, a `pagefind.js` or `pagefind-worker.js` whose engine address
-  is not written as the template, an engine address without the id in a
-  script other than those two, a second worker address without the id, a
-  missing `pagefind-worker.js` and a `pagefind.js` that does not name it
-  (the address reading); a `pagefind.js` or `pagefind-worker.js` that does
-  not parse; a fixed name in `fragment/`, `index/` or `filter/`, a
-  subdirectory in `index/`, an unknown top-level file and two top-level
-  names that only begin as the meta file and an engine do; and an
-  `index-files-known` fix that is the same for a top-level name and a name
-  inside `fragment/`. `check()`'s findings for the index directories are
-  now a function, `indexDirFindings`, and the self-test runs `check()`
-  itself on small `.next` directories holding the index and a deployment
-  adapter's copy. A correct pair raises nothing; a copy without
-  `pagefind.js` raises `index-deployed`; a changed engine in the copy
-  raises `engine-address-build-id` for the copy, and unknown names in the
-  written index raise `index-files-known`. Four pairs with one fault each
-  must raise that one finding for that directory alone: a worker address
-  left with the placeholder, a `pagefind.js` that does not parse and one
+  `pagefind-version.json`; in each of `pagefind.js`, `pagefind-worker.js`
+  and `pagefind-ui.js`, an engine address left with the placeholder or
+  followed after its closing quote by `.replace`, `?.replace`, `[0]`, or
+  white space and `.replace`, and strings ending in `.pagefind` that are
+  not the template, before a backtick, a double quote, a single quote and
+  a query; a worker address left with the placeholder or followed by the
+  same four; a language written as a literal inside the template, a
+  `pagefind.js` or `pagefind-worker.js` whose engine address is not
+  written as the template, a second worker address without the id, a
+  missing `pagefind.js` or `pagefind-worker.js`, and a `pagefind.js` that
+  does not name the worker (the address reading); a `pagefind.js` or
+  `pagefind-worker.js` that does not parse, and a `pagefind-worker.js`
+  that uses `import.meta`, which only a module may; a fixed name in
+  `fragment/`, `index/` or `filter/`, a subdirectory in `index/`, an
+  unknown top-level file and two top-level names that only begin as the
+  meta file and an engine do; and an `index-files-known` fix that is the
+  same for a top-level name and a name inside `fragment/`. `check()`'s
+  findings for the index directories are now a function,
+  `indexDirFindings`, and the self-test runs `check()` itself on small
+  `.next` directories holding the index and a deployment adapter's copy. A
+  correct pair raises nothing; a copy without `pagefind.js` raises
+  `index-deployed`; a changed engine in the copy raises
+  `engine-address-build-id` for the copy, and unknown names in the written
+  index raise `index-files-known`. Four pairs with one fault each must
+  raise that one finding for that directory alone: a worker address left
+  with the placeholder, a `pagefind.js` that does not parse and one
   unknown name, each in the copy, and a changed engine in the written
-  index.
+  index. Last, the self-test copies the gate and the helper into a
+  one-page site and runs the gate in a child process, as the build runs
+  it, on a small whole build whose `pagefind.js` asks for the engine
+  without the index id. The gate must exit 1 with that one finding.
 - **An address changed after its closing quote fails.** A `.`, a `[` or an
   optional chain (`?.` not followed by a digit) after the string an engine
   or worker address is written in means the script changes the address
@@ -80,15 +89,16 @@ rule, weight or score moves.
 - **The palette's fallback address is used once.** When
   `pagefind-version.json` does not answer, the palette asked for
   `pagefind.js?v=noversion`, and a copy kept under that address could come
-  from any earlier build. It now asks for `pagefind.js?v=noversion-<time>`,
-  an address no other page load uses, so the browser fetches this build's
-  `pagefind.js`, whose worker and engine addresses carry this build's id.
+  from any earlier build. It now asks for
+  `pagefind.js?v=noversion-<time>`, an address no other page load uses, so
+  the browser fetches this build's `pagefind.js`, whose worker and engine
+  addresses carry this build's id.
 
 ### Gates (search gate)
 
-- Each of 63 single-edit changes to a copy of `scripts/` makes the
-  self-test exit 1, on Windows and on Linux, seventeen to the helper and
-  forty-six to the gate. They include the nine that the second review of
+- Each of 82 single-edit changes to a copy of `scripts/` makes the
+  self-test exit 1, on Windows and on Linux, nineteen to the helper and
+  sixty-three to the gate. They include the nine that the second review of
   the entry below found passing every check while making the id or its
   addresses wrong (five to the helper, four to the gate), and every other
   edit to the helper or the gate it found passing but one, which replaces
@@ -107,17 +117,32 @@ rule, weight or score moves.
   copy, and reading only a `.` after the worker address. Nine more are
   edits the third review of this change found passing after that: the
   template check run for `pagefind-worker.js` only, a `.pagefind` string
-  before a query left unread, any expression let into the engine
-  template, the top-level meta and engine name patterns loosened, only the
-  two loaders read for addresses, only the first worker address read,
+  before a query left unread, any expression let into the engine template,
+  the top-level meta and engine name patterns loosened, only the two
+  loaders read for addresses, only the first worker address read,
   `index-files-known` raised only for two or more names, and the check for
   an index with no id turned off. With each of the first eight, a build
   with the matching fault passed the gate; with the ninth, a build without
-  `pagefind-version.json` still fails, on the format pin. The other ten
-  cover what this entry adds and five checks that were already there. Two
-  edits to `postbuild-pagefind.js` that the second review of the entry
-  below found passing are not covered: the self-test does not run that
-  script.
+  `pagefind-version.json` still fails, on the format pin. Thirteen more
+  are edits the fourth review of this change found passing after that:
+  `main()` exiting 0 whatever it found, or only on two or more findings;
+  `check()` dropping every finding at its last return; the engine id check
+  and the change after the closing quote each skipping `pagefind.js`; the
+  stray `.pagefind` strings read in `pagefind.js` only, or in every script
+  but `pagefind-worker.js`; a `.pagefind` string before a double or single
+  quote left unread; `pagefind-worker.js` parsed as a module; `index/` and
+  `fragment/` names let through without a hex hash; and the helper leaving
+  out gzip-encoded files or style sheets. With each, a build with the
+  matching fault passed the gate. Three more are edits earlier reviews
+  found passing and judged harmless: one lets a `[` after an address
+  through, and two, in different ways, miss a `.` that follows white space
+  there. With each, a build with the matching fault passed the gate too.
+  Three more were written for the new cases: the change after the closing
+  quote and the stray strings read in the two loaders only, and a missing
+  `pagefind.js` not reported. The other ten cover what this entry adds and
+  five checks that were already there. Two edits to
+  `postbuild-pagefind.js` that the second review of the entry below found
+  passing are not covered: the self-test does not run that script.
 - A returning Chrome profile whose request for `pagefind-version.json`
   fails (the harness of the entry below, answering 503 for that file on
   both visits). It searched on the build of the engine-address entry
