@@ -33,6 +33,7 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const zlib = require('node:zlib');
 
 const SCHEME = 1;
 const VERSION_FILE = 'pagefind-version.json';
@@ -109,8 +110,9 @@ function stampIndexId(dir, id) {
 // cases run the helper over a small index built in a temporary directory and
 // say which property fails. Each is one a single-edit change to this file was
 // shown to pass every other check with: skipping the engine, the scripts or
-// the worker, skipping file content or all but its start, dropping SCHEME, or
-// a stamp that does not round-trip.
+// the worker, skipping file content or all but its start, dropping SCHEME, a
+// stamp that does not round-trip, or skipping gzip-encoded files or style
+// sheets, which is why the fixture holds both.
 
 /** The two templates Pagefind writes for the worker and the engine. */
 const WORKER_TEMPLATE = '`${basePath}pagefind-worker.js`';
@@ -135,13 +137,36 @@ const ENGINE_TEMPLATE = '`${this.basePath}wasm.${language}.pagefind`';
  */
 const KNOWN_FILES = [['B', 'b'], ['a', 'a'], ['a_b', 'ab'], ['ab', ''], ['sub/c', 'c'], ['sub-d', 'd']];
 const KNOWN_FILES_ID = 'pf-1e135fcf7d17617d1b3c';
-const KNOWN_FIXTURE_ID = 'pf-21c550eeb5dc600856c5';
+const KNOWN_FIXTURE_ID = 'pf-5085132950acc582635e';
+
+/**
+ * raw as a gzip stream, the encoding Pagefind writes its engines,
+ * fragments, index chunks and meta file in. The blocks are stored, not
+ * compressed, and laid out here, so the bytes are the same with every zlib
+ * build; zlib gives only the last eight bytes, the CRC-32 and length that
+ * end any gzip stream of raw.
+ */
+function gzipStored(raw) {
+  const parts = [Buffer.from([0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 255])];
+  for (let at = 0; at < raw.length; at += 0xffff) {
+    const len = Math.min(0xffff, raw.length - at);
+    const head = Buffer.alloc(5);
+    head[0] = at + len === raw.length ? 1 : 0;
+    head.writeUInt16LE(len, 1);
+    head.writeUInt16LE(len ^ 0xffff, 3);
+    parts.push(head, raw.subarray(at, at + len));
+  }
+  parts.push(zlib.gzipSync(raw).subarray(-8));
+  return Buffer.concat(parts);
+}
 
 /**
  * Writes a small Pagefind-shaped index into dir, its addresses patched with
  * PLACEHOLDER as the post-build step patches them (only the worker's when
- * `engines` is false, as before the engine addresses were patched). Returns
- * the relative paths of the files that count toward the id.
+ * `engines` is false, as before the engine addresses were patched). The
+ * files Pagefind gzip-encodes are gzip-encoded here too, and the one
+ * fragment is a page at "/". Returns the relative paths of the files that
+ * count toward the id.
  */
 function writeFixtureIndex(dir, { engines = true } = {}) {
   const slot = (tpl) => `${tpl.slice(0, -1)}?v=${PLACEHOLDER}\``;
@@ -150,13 +175,14 @@ function writeFixtureIndex(dir, { engines = true } = {}) {
     'pagefind.js': `export const worker = ${slot(WORKER_TEMPLATE)};\nexport const engine = ${engine};\n`,
     'pagefind-worker.js': `const engine = ${engine};\nself.onmessage = () => {};\n`,
     // Larger than the real engine, so hashing only a file's start is caught.
-    'wasm.en.pagefind': Buffer.concat([Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]), Buffer.alloc(128 * 1024, 7)]),
-    'wasm.unknown.pagefind': Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, 9, 9, 9, 9]),
+    'wasm.en.pagefind': gzipStored(Buffer.concat([Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]), Buffer.alloc(128 * 1024, 7)])),
+    'wasm.unknown.pagefind': gzipStored(Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, 9, 9, 9, 9])),
     'pagefind-entry.json': '{"version":"1.6.0","languages":{"en":{"hash":"en_aaaaaaa","page_count":1}}}',
     'pagefind-ui.js': 'export const ui = 1;\n',
-    'fragment/en_bbbbbbb.pf_fragment': Buffer.from('fragment body'),
-    'index/en_ccccccc.pf_index': Buffer.from('index body'),
-    'pagefind.en_aaaaaaa.pf_meta': Buffer.from('meta body'),
+    'pagefind-ui.css': '.pagefind-ui { color: inherit; }\n',
+    'fragment/en_bbbbbbb.pf_fragment': gzipStored(Buffer.from('pagefind_dcd{"url":"/","meta":{"title":"Home"}}')),
+    'index/en_ccccccc.pf_index': gzipStored(Buffer.from('index body')),
+    'pagefind.en_aaaaaaa.pf_meta': gzipStored(Buffer.from('meta body')),
     [VERSION_FILE]: '{"buildId":"not read"}',
   };
   for (const [rel, body] of Object.entries(files)) {

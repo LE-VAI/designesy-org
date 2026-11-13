@@ -803,7 +803,7 @@ function check(nextDir) {
  *  when the count is another, so a self-test that is emptied, cut short or
  *  skips a loop cannot pass. Adding or removing a case on purpose changes
  *  this number with it. */
-const SELF_TEST_CASES = 90;
+const SELF_TEST_CASES = 93;
 
 /**
  * The helper's cases, then the gate's own on small indexes built in a
