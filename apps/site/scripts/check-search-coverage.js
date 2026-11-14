@@ -69,10 +69,13 @@
  *                             broke one would leave its addresses reading
  *                             right in a script no browser can run);
  *   * index-files-known       every file and directory at the top level of
- *                             the index is on this gate's list (INDEX_FILES),
- *                             so a file a later Pagefind adds there under a
- *                             fixed name stops the build until someone has
- *                             read how it is asked for;
+ *                             the index is on this gate's list (INDEX_FILES,
+ *                             INDEX_FILE_PATTERNS), and inside fragment/,
+ *                             index/ and filter/ every entry is a file named
+ *                             with a hash (INDEX_DIR_PATTERNS), so a file a
+ *                             later Pagefind adds under a fixed name stops
+ *                             the build until someone has read how it is
+ *                             asked for;
  *   * no-trace-manifests      no indexed url or title names a *.nft.json trace;
  *   * fragments-are-routes    every indexed document maps to exactly one
  *                             prerendered public route (a page, or a JSON
@@ -101,20 +104,42 @@
  * where an unmarked page shows up.
  *
  * Not checked, so a fault in any of these can pass: what a script does with
- * an address after writing it (the two address findings read each address
- * as it is written, up to its closing quote, and run nothing); an engine
- * address built with no .pagefind before a quote or a "?", which is not read
- * at all (a build with one fails only when pagefind.js or pagefind-worker.js
- * then holds no address written as the template); the names inside
- * fragment/, index/ and filter/; and whether the engine files are on disk.
+ * an address after writing it. The two address findings read each address
+ * as it is written, up to its closing quote, and run nothing. The one thing
+ * read after the quote is the first character past any white space: a "."
+ * or a "[", or "?." not followed by a digit (an optional chain), fails,
+ * since the address read would not be the one asked for. Anything else
+ * there passes, a concatenation or a comment before a call included. Also
+ * not checked: an engine address built with no .pagefind before a quote or
+ * a "?", which is not read at all (a build with one fails only when
+ * pagefind.js or pagefind-worker.js then holds no address written as the
+ * template); and whether the engine files are on disk.
  *
  * Runs in the build chain right after postbuild-pagefind.js. That script exits
  * 0 when Pagefind itself fails, so a broken indexer does not stop the build at
  * its own step; this gate does, because a site that ships without its index
  * ships a Find that cannot find body copy.
  *
- * Usage:  node scripts/check-search-coverage.js [--json] [--next <dir>]
- * Exits 1 on any finding, so it can gate CI.
+ * Before it reads the build it runs its self-test: the index-id helper's
+ * cases (lib/pagefind-index-id.js), then this gate's own over small indexes
+ * built in a temporary directory, one with nothing wrong and at least one
+ * for each check the address, parse, name and directory findings make (each
+ * engine address check in both loaders and in a third script), the
+ * directory findings read through check() itself, and last this gate run
+ * the way the build and CI run it, with no flag, on ten small sites with
+ * one fault each: one or two for each finding only a whole build can
+ * raise, and one for an engine address. So main()'s default path and exit
+ * code, and each of those findings, are checked too (see selfTest). A
+ * failing self-test fails the gate, since a clean result from a broken
+ * check would prove nothing, and so does a self-test that checked another
+ * number of cases than SELF_TEST_CASES.
+ * Every run prints
+ * "search-coverage: self-test OK (<n> cases)", so a build log shows the
+ * self-test ran.
+ *
+ * Usage:  node scripts/check-search-coverage.js [--json] [--next <dir>] [--self-test]
+ * --self-test runs the self-test alone. With --json the self-test line goes
+ * to stderr. Exits 1 on any finding or a failed self-test, so it can gate CI.
  */
 
 const fs = require('node:fs');
@@ -122,7 +147,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const zlib = require('node:zlib');
 const { spawnSync } = require('node:child_process');
-const { pagefindIndexId, PLACEHOLDER, ID_FORMAT } = require('./lib/pagefind-index-id');
+const indexId = require('./lib/pagefind-index-id');
+const { pagefindIndexId, PLACEHOLDER, ID_FORMAT } = indexId;
 
 const APP = path.join(__dirname, '..');
 
@@ -165,9 +191,9 @@ const WORKER_ADDRESS = /pagefind-worker\.js/g;
  *  later build:
  *    pagefind.js             the loader imports it with ?v=<index id>. When
  *                            pagefind-version.json does not answer, the
- *                            loader falls back to ?v=noversion, and a copy
- *                            kept under that address can be used on a later
- *                            build. Nothing here checks the loader's choice
+ *                            loader asks for ?v=noversion-<time>, an address
+ *                            no other page load uses, so no kept copy is
+ *                            used. Nothing here checks the loader's choice
  *    pagefind-worker.js      started at ?v=<index id> (worker-address-build-id)
  *    wasm.<code>.pagefind    asked for at ?v=<index id> (engine-address-build-id)
  *    pagefind-version.json   the loader fetches it with cache: 'no-store'
@@ -184,6 +210,15 @@ const INDEX_FILES = [
   'pagefind-modular-ui.css', 'pagefind-component-ui.js', 'pagefind-component-ui.css',
 ];
 const INDEX_FILE_PATTERNS = [/^wasm\.[\w-]+\.pagefind$/, /^pagefind\.[\w-]+\.pf_meta$/];
+
+/** What Pagefind writes inside fragment/, index/ and filter/: files named by
+ *  language and a hash of the content, which a browser cannot hold stale.
+ *  Anything else there, a subdirectory included, fails index-files-known. */
+const INDEX_DIR_PATTERNS = {
+  fragment: /^[\w-]+_[0-9a-f]{7,}\.pf_fragment$/,
+  index: /^[\w-]+_[0-9a-f]{7,}\.pf_index$/,
+  filter: /^[\w-]+_[0-9a-f]{7,}\.pf_filter$/,
+};
 
 /** The palette whose curated INDEX is Find's second source. */
 const PALETTE = path.join(APP, 'app', 'lib', 'command-palette.tsx');
@@ -356,13 +391,67 @@ function addressTail(code, from) {
 }
 
 /**
+ * What the index directory holds that this gate does not know: a top-level
+ * name on neither INDEX_FILES nor INDEX_FILE_PATTERNS, and anything inside
+ * fragment/, index/ or filter/ not named by a hash (INDEX_DIR_PATTERNS),
+ * a subdirectory included.
+ */
+function unknownIndexEntries(dir) {
+  const entries = fs.readdirSync(dir).sort();
+  const unknown = entries.filter((f) => !INDEX_FILES.includes(f) && !INDEX_FILE_PATTERNS.some((re) => re.test(f)));
+  for (const [sub, re] of Object.entries(INDEX_DIR_PATTERNS)) {
+    if (!entries.includes(sub)) continue;
+    for (const e of fs.readdirSync(path.join(dir, sub), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (e.isDirectory() || !re.test(e.name)) unknown.push(`${sub}/${e.name}${e.isDirectory() ? '/' : ''}`);
+    }
+  }
+  return unknown;
+}
+
+/**
+ * The index directories the address, parse and name checks read: the one
+ * postbuild-pagefind.js writes, and, when .next/output/static exists, the
+ * copy in that deployment adapter's output, since the copy is what is
+ * deployed. absent names what the copy lacks; a copy that lacks any of it is
+ * a finding (index-deployed), not a directory to read.
+ */
+function indexDirsOf(nextDir) {
+  const dirs = [path.join(nextDir, PAGEFIND_REL)];
+  const adapterStatic = path.join(nextDir, 'output', 'static');
+  if (!fs.existsSync(adapterStatic)) return { dirs, deployed: null, absent: [] };
+  const deployed = path.join(adapterStatic, '_next', PAGEFIND_REL);
+  const absent = ['pagefind.js', 'pagefind-entry.json', 'fragment'].filter((f) => !fs.existsSync(path.join(deployed, f)));
+  if (!absent.length) dirs.push(deployed);
+  return { dirs, deployed, absent };
+}
+
+/**
+ * What follows the closing quote of the string an address is in, past any
+ * white space: "?." when an optional chain starts there ("?." not followed
+ * by a digit, since "?.5" is a conditional), else the first
+ * character. A ".", "[" or "?." there means the script changes the string
+ * before it asks for it (a .replace, .slice or .split, or an index, with or
+ * without "?"), so the address read is not the one asked for. Pagefind 1.5.2
+ * and 1.6.0 end each address with a ";".
+ */
+function afterAddress(code, from) {
+  const rest = code.slice(from, from + 160);
+  const end = rest.search(/[`"']/);
+  if (end === -1) return '';
+  const m = code.slice(from + end + 1, from + end + 41).match(/^\s*(\?\.(?!\d)|\S)/);
+  return m ? m[1] : '';
+}
+const CHANGES_STRING = new Set(['.', '[', '?.']);
+
+/**
  * The addresses the scripts in one Pagefind directory build for the engine
  * file and the worker script, read against the index id. `engine` and
  * `worker` list what is wrong, one line each; `ok` counts the addresses that
  * end ?v=<index id>. Each address is read as it is written, up to its closing
- * quote. Nothing is run, so what a script does with an address after writing
- * it is not seen, and an engine address built with no .pagefind before a
- * quote or a "?" is not read.
+ * quote, and then what afterAddress reads past the quote. Nothing is run, so
+ * anything else a script does with an address after writing it is not seen,
+ * and an engine address built with no .pagefind before a quote or a "?" is
+ * not read.
  */
 function addressProblems(pagefindDir, nextDir) {
   const engine = [];
@@ -407,8 +496,10 @@ function addressProblems(pagefindDir, nextDir) {
       const end = m.index + m[0].length;
       ends.add(end);
       const tail = addressTail(code, end);
-      if (tail === want) ok.engine++;
-      else engine.push(`${name} asks for ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
+      const next = afterAddress(code, end);
+      if (tail !== want) engine.push(`${name} asks for ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
+      else if (CHANGES_STRING.has(next)) engine.push(`${name} writes ${m[0]}${tail} and then changes the string ("${next}" after its closing quote), so the address it asks for could not be read`);
+      else ok.engine++;
     }
     for (const m of code.matchAll(ENGINE_SUFFIX)) {
       if (ends.has(m.index + '.pagefind'.length)) continue;
@@ -422,8 +513,10 @@ function addressProblems(pagefindDir, nextDir) {
     const starts = [...code.matchAll(WORKER_ADDRESS)];
     for (const m of starts) {
       const tail = addressTail(code, m.index + m[0].length);
-      if (tail === want) ok.worker++;
-      else worker.push(`${name} starts the worker at ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
+      const next = afterAddress(code, m.index + m[0].length);
+      if (tail !== want) worker.push(`${name} starts the worker at ${m[0]}${tail}, without the index id (want ${m[0]}${want})`);
+      else if (CHANGES_STRING.has(next)) worker.push(`${name} writes ${m[0]}${tail} and then changes the string ("${next}" after its closing quote), so the worker address it starts could not be read`);
+      else ok.worker++;
     }
     if (starts.length === 0) worker.push(`${name} does not name pagefind-worker.js, so the worker's address could not be read`);
   }
@@ -456,6 +549,117 @@ function parseProblem(name, code) {
     if (line) return `does not parse as a module (${line.trim()})`;
     if (attempt === 2) return `could not be checked as a module: node --check gave no verdict twice (${r.error ? r.error.message : `exit ${r.status}`})`;
   }
+}
+
+/** How each loader in ENGINE_LOADERS in one index directory parses. A
+ *  missing loader is skipped here: addressProblems reports it. */
+function loaderParse(dir) {
+  const parsed = [];
+  const unparsed = [];
+  for (const name of ENGINE_LOADERS) {
+    let code;
+    try { code = fs.readFileSync(path.join(dir, name), 'utf8'); } catch { continue; }
+    const problem = parseProblem(name, code);
+    if (problem) unparsed.push(`${name} ${problem}`);
+    else parsed.push(`${name} parses as ${name === 'pagefind.js' ? 'a module' : 'a classic script'}`);
+  }
+  return { parsed, unparsed };
+}
+
+/**
+ * What to do about the names index-files-known reports, by where they are.
+ * INDEX_FILES and INDEX_FILE_PATTERNS are read only at the top level; inside
+ * fragment/, index/ and filter/ only INDEX_DIR_PATTERNS is, and a
+ * subdirectory there is always reported.
+ */
+function unknownEntriesFix(unknown) {
+  const top = unknown.filter((u) => !u.includes('/'));
+  const inner = unknown.filter((u) => u.includes('/'));
+  const fix = [];
+  if (top.length) {
+    fix.push('For a name at the top level: find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<index id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES, or a pattern for it to INDEX_FILE_PATTERNS, with the reason it is safe.');
+  }
+  if (inner.length) {
+    fix.push("For a name inside fragment/, index/ or filter/: INDEX_FILES is not read there. Confirm that the file's address changes with every build, and only then widen that directory's pattern in INDEX_DIR_PATTERNS. A subdirectory there cannot be allowed without changing unknownIndexEntries.");
+  }
+  return fix.join(' ');
+}
+
+/**
+ * check()'s findings about the index directories, steps 2b and 2c: the
+ * deployed copy is complete (index-deployed), and in each directory
+ * indexDirsOf picks, the engine and worker addresses carry the index id,
+ * both loaders parse and every name is known. Returns the findings and the
+ * notes in the order check() reports them.
+ */
+function indexDirFindings(nextDir) {
+  const findings = [];
+  const notes = [];
+  const add = (id, why, fix) => findings.push({ id, why, fix });
+
+  // 2b. With a deployment adapter (.next/output exists) the index must be in
+  // the adapter's static output too: that copy is what is deployed, and it was
+  // taken before postbuild-pagefind.js ran.
+  const { dirs: indexDirs, deployed, absent } = indexDirsOf(nextDir);
+  if (absent.length) {
+    add(
+      'index-deployed',
+      `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
+      'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
+    );
+  }
+
+  // 2c. The engine and worker addresses carry the index id. Pagefind
+  // writes both with no hash in the name and no query, and a browser may keep
+  // either file for a year, so every address the emitted scripts build for
+  // them must end ?v=<index id>. addressProblems reads the ones it can (see
+  // Not checked in the header), in the index and in the deployed copy when
+  // there is one. Both loaders must still parse after the patch, and the
+  // index must hold nothing this gate does not know.
+  for (const dir of indexDirs) {
+    const where = path.relative(nextDir, dir).split(path.sep).join('/');
+    const { engine, worker, ok } = addressProblems(dir, nextDir);
+    if (engine.length) {
+      add(
+        'engine-address-build-id',
+        `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
+        'postbuild-pagefind.js appends ?v=<index id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
+      );
+    }
+    if (worker.length) {
+      add(
+        'worker-address-build-id',
+        `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
+        'postbuild-pagefind.js appends ?v=<index id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
+      );
+    }
+    if (!engine.length && !worker.length) {
+      notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
+    }
+
+    const { parsed, unparsed } = loaderParse(dir);
+    if (unparsed.length) {
+      add(
+        'loaders-parse',
+        `${where}: ${unparsed.join('; ')}. A browser that cannot parse pagefind.js loads no index, and Find serves only the curated INDEX to every visitor. One that cannot parse pagefind-worker.js cannot start the worker.`,
+        'postbuild-pagefind.js rewrites the addresses in both scripts (ADDRESS_PATCHES); read what it puts in place of each string. If the scripts fail as Pagefind wrote them, how they are loaded has changed: parseProblem() here reads pagefind.js as a module and pagefind-worker.js as a classic script.'
+      );
+    }
+
+    const entries = fs.readdirSync(dir).sort();
+    const unknown = unknownIndexEntries(dir);
+    if (unknown.length) {
+      add(
+        'index-files-known',
+        `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES, and inside fragment/, index/ and filter/ a name with a hash, INDEX_DIR_PATTERNS). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
+        unknownEntriesFix(unknown)
+      );
+    }
+    if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
+      notes.push(`${where}: ${parsed.join(' and ')}; ${entries.length} top-level entries, all on the gate's list`);
+    }
+  }
+  return { findings, notes };
 }
 
 function check(nextDir) {
@@ -502,83 +706,12 @@ function check(nextDir) {
     return { findings, notes, sites };
   }
 
-  // 2b. With a deployment adapter (.next/output exists) the index must be in
-  // the adapter's static output too: that copy is what is deployed, and it was
-  // taken before postbuild-pagefind.js ran.
-  const adapterStatic = path.join(nextDir, 'output', 'static');
-  const indexDirs = [pagefindDir];
-  if (fs.existsSync(adapterStatic)) {
-    const deployed = path.join(adapterStatic, '_next', PAGEFIND_REL);
-    const absent = ['pagefind.js', 'pagefind-entry.json', 'fragment'].filter((f) => !fs.existsSync(path.join(deployed, f)));
-    if (absent.length) {
-      add(
-        'index-deployed',
-        `A deployment adapter's output exists (.next/output/static) but the index is not in it (${path.relative(nextDir, deployed)}, missing: ${absent.join(', ')}). The deployment would answer 404 for the index and Find would serve only the curated INDEX.`,
-        'postbuild-pagefind.js copies the index into .next/output/static/_next/static/chunks/app/pagefind; read its log lines.'
-      );
-    } else {
-      indexDirs.push(deployed);
-    }
-  }
-
-  // 2c. The engine and worker addresses carry the index id. Pagefind
-  // writes both with no hash in the name and no query, and a browser may keep
-  // either file for a year, so every address the emitted scripts build for
-  // them must end ?v=<index id>. addressProblems reads the ones it can (see
-  // Not checked in the header), in the index and in the deployed copy when
-  // there is one. Both loaders must still parse after the patch, and the
-  // index must hold nothing this gate does not know.
-  for (const dir of indexDirs) {
-    const where = path.relative(nextDir, dir).split(path.sep).join('/');
-    const { engine, worker, ok } = addressProblems(dir, nextDir);
-    if (engine.length) {
-      add(
-        'engine-address-build-id',
-        `${where}: ${engine.join('; ')}. A browser that kept an engine file (wasm.<language>.pagefind) from an older build would run it on this build's index. When the two come from different Pagefind versions the engine may be unable to read the index (1.5.2 cannot read one written by 1.6.0), and Find loses its full-text rows for that visitor.`,
-        'postbuild-pagefind.js appends ?v=<index id> to each engine address before it copies the index; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the strings that script replaces and the patterns here (ENGINE_ADDRESS, ENGINE_SUFFIX) together.'
-      );
-    }
-    if (worker.length) {
-      add(
-        'worker-address-build-id',
-        `${where}: ${worker.join('; ')}. A browser that kept pagefind-worker.js from an older build would run that copy, which asks for the engine under the older build's address.`,
-        'postbuild-pagefind.js appends ?v=<index id> to the worker address in pagefind.js; read its [postbuild-pagefind] lines in the build log. If Pagefind now writes the address another way, change the string that script replaces and WORKER_ADDRESS here together.'
-      );
-    }
-    if (!engine.length && !worker.length) {
-      notes.push(`${where}: ${ok.engine} engine address(es) and ${ok.worker} worker address(es) end ?v=${ok.id}`);
-    }
-
-    const parsed = [];
-    const unparsed = [];
-    for (const name of ENGINE_LOADERS) {
-      let code;
-      try { code = fs.readFileSync(path.join(dir, name), 'utf8'); } catch { continue; } // a missing loader is a finding above
-      const problem = parseProblem(name, code);
-      if (problem) unparsed.push(`${name} ${problem}`);
-      else parsed.push(`${name} parses as ${name === 'pagefind.js' ? 'a module' : 'a classic script'}`);
-    }
-    if (unparsed.length) {
-      add(
-        'loaders-parse',
-        `${where}: ${unparsed.join('; ')}. A browser that cannot parse pagefind.js loads no index, and Find serves only the curated INDEX to every visitor. One that cannot parse pagefind-worker.js cannot start the worker.`,
-        'postbuild-pagefind.js rewrites the addresses in both scripts (ADDRESS_PATCHES); read what it puts in place of each string. If the scripts fail as Pagefind wrote them, how they are loaded has changed: parseProblem() here reads pagefind.js as a module and pagefind-worker.js as a classic script.'
-      );
-    }
-
-    const entries = fs.readdirSync(dir).sort();
-    const unknown = entries.filter((f) => !INDEX_FILES.includes(f) && !INDEX_FILE_PATTERNS.some((re) => re.test(f)));
-    if (unknown.length) {
-      add(
-        'index-files-known',
-        `${where}: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} not on this gate's list of what the index holds (INDEX_FILES). A browser may keep anything under /_next/static for a year, so a file that keeps its name from build to build is safe only when nothing the site loads asks for it, or when its address changes with every build. No one has checked that for ${unknown.length === 1 ? 'this one' : 'these'}.`,
-        'Find what asks for it in pagefind.js and pagefind-worker.js. If the address has no hash in the name and no query, give it ?v=<index id> in postbuild-pagefind.js (ADDRESS_PATCHES) and check it here first. Then add the name to INDEX_FILES with the reason it is safe.'
-      );
-    }
-    if (parsed.length === ENGINE_LOADERS.length && !unknown.length) {
-      notes.push(`${where}: ${parsed.join(' and ')}; ${entries.length} top-level entries, all on the gate's list`);
-    }
-  }
+  // 2b and 2c. The deployed copy, and the addresses, loaders and names in
+  // each index directory (indexDirFindings). The self-test reaches these
+  // findings through check() itself.
+  const dirChecks = indexDirFindings(nextDir);
+  findings.push(...dirChecks.findings);
+  notes.push(...dirChecks.notes);
 
   let fragments;
   let pageCount;
@@ -670,9 +803,399 @@ function check(nextDir) {
   return { findings, notes, sites, pageCount, routeCount, fragments: fragments.length, unindexed };
 }
 
+// ---- self-test --------------------------------------------------------------
+
+/** How many cases selfTest() checks, the helper's included. main() fails
+ *  when the count is another, so a self-test that is emptied, cut short or
+ *  skips a loop cannot pass. Adding or removing a case on purpose changes
+ *  this number with it. */
+const SELF_TEST_CASES = 119;
+
+/** How long the self-test lets each gate it starts run, and how many times
+ *  it starts one. A gate on a small build finishes in seconds. A node
+ *  process here now and then did not exit after printing everything, more
+ *  often under load, so a gate still running at the limit is stopped and
+ *  started again; one stopped CHILD_STARTS times fails its case, so a gate
+ *  that hangs fails the build instead of hanging it. */
+const CHILD_LIMIT_MS = 60000;
+const CHILD_STARTS = 3;
+
+/** Run by the self-test with `node -e`: starts the gate in each site
+ *  directory it is given, all at once and as the build runs it (`node
+ *  scripts/check-search-coverage.js`, no flag), stops any gate still running
+ *  at the limit and starts it again, up to the number of starts given, and
+ *  prints each gate's last exit status, signal and stderr as JSON, in the
+ *  order given. */
+const START_GATES = `
+const { spawn } = require('node:child_process');
+const [limit, most, ...sites] = process.argv.slice(1);
+const run = (cwd, starts) => new Promise((done) => {
+  const gate = spawn(process.execPath, ['scripts/check-search-coverage.js'], { cwd, timeout: Number(limit), stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '';
+  gate.stderr.setEncoding('utf8').on('data', (d) => { stderr += d; });
+  gate.on('error', (e) => done({ status: null, signal: e.message, stderr }));
+  gate.on('close', (status, signal) => {
+    if (status === null && starts > 1) run(cwd, starts - 1).then(done);
+    else done({ status, signal, stderr });
+  });
+});
+Promise.all(sites.map((cwd) => run(cwd, Number(most)))).then((runs) => process.stdout.write(JSON.stringify(runs)));
+`;
+
+/**
+ * The helper's cases, then the gate's own on small indexes built in a
+ * temporary directory: a correct one, which must pass with every address
+ * counted, and at least one case for each check in addressProblems,
+ * loaderParse, unknownEntriesFix and unknownIndexEntries (each directory's
+ * pattern, a subdirectory, a top-level name). Each engine address check runs
+ * in both loaders and in pagefind-ui.js, since a check that skipped one script
+ * would still pass a case in another. Then check() itself runs on small .next
+ * directories that hold the index and a deployment adapter's copy: each of its
+ * five findings about the index directories must be raised for the copy, and
+ * engine-address-build-id and index-files-known for the written index too. A
+ * pair with one fault in one directory must raise that one finding for that
+ * directory and nothing else. Last, this gate runs the way the build and CI
+ * run it (`node scripts/check-search-coverage.js`, no flag, from the site's
+ * directory) on small sites (WHOLE_BUILDS) that hold one fault each, and
+ * must exit 1 with that one finding alone: an engine address without the
+ * index id, no index, a client chunk that hands pagefind.js to a webpack
+ * module call, client chunks that never build its address, a fragment that
+ * cannot be read, a trace manifest, a fragment that is no route, a route
+ * indexed twice, a page_count above the ratio, and a page Find cannot
+ * reach. In a gate the self-test starts (SEARCH_COVERAGE_SELF_TEST_CHILD)
+ * those cases are counted and not run again. Some faults are seen by one
+ * check only: a
+ * changed fragment or engine under the old id by the hash; an address left
+ * with the placeholder by the address reading, since the hash reads ?v=<id> as
+ * the placeholder; a build id or the placeholder as the id by the format pin.
+ * A check can hold a part no case tries: no case puts a digit after "?.",
+ * characters after the id inside an address, or an address with no closing
+ * quote, and each finding only a whole build can raise is tried in one or
+ * two of the ways it can arise. Returns how many cases it checked and what
+ * failed.
+ */
+function selfTest() {
+  const os = require('node:os');
+  const helper = indexId.selfTest();
+  let cases = helper.cases;
+  const bad = helper.bad.map((b) => `index id: ${b}`);
+  const failIf = (broken, what) => { cases++; if (broken) bad.push(what); };
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'search-coverage-'));
+  const built = (name, edit = null) => {
+    const dir = path.join(root, name);
+    indexId.writeFixtureIndex(dir);
+    if (edit) edit(dir);
+    const id = pagefindIndexId(dir);
+    indexId.stampIndexId(dir, id);
+    fs.writeFileSync(path.join(dir, indexId.VERSION_FILE), JSON.stringify({ buildId: id }));
+    return { dir, id };
+  };
+  const problems = (dir) => {
+    const r = addressProblems(dir, null);
+    return [...r.engine, ...r.worker];
+  };
+  try {
+    const good = built('good');
+    const r = addressProblems(good.dir, null);
+    const wrong = [...r.engine, ...r.worker];
+    failIf(wrong.length, `a correct index was rejected: ${wrong[0]}`);
+    failIf(r.ok.engine !== 2 || r.ok.worker !== 1, `a correct index counted ${r.ok.engine} engine and ${r.ok.worker} worker address(es), not 2 and 1`);
+
+    const fragment = built('fragment');
+    fs.appendFileSync(path.join(fragment.dir, 'fragment', 'en_bbbbbbb.pf_fragment'), ' changed');
+    failIf(!problems(fragment.dir).some((m) => m.includes('the files in this index give')), 'a changed fragment under the old id passed');
+
+    const engine = built('engine');
+    const wasm = path.join(engine.dir, 'wasm.en.pagefind');
+    const bytes = fs.readFileSync(wasm);
+    bytes[bytes.length - 1] ^= 1;
+    fs.writeFileSync(wasm, bytes);
+    failIf(!problems(engine.dir).some((m) => m.includes('the files in this index give')), 'a changed engine under the old id passed');
+
+    const workerUnstamped = built('worker-unstamped');
+    const loaderJs = path.join(workerUnstamped.dir, 'pagefind.js');
+    fs.writeFileSync(loaderJs, fs.readFileSync(loaderJs, 'utf8').replace(`pagefind-worker.js?v=${workerUnstamped.id}`, `pagefind-worker.js?v=${PLACEHOLDER}`));
+    failIf(!problems(workerUnstamped.dir).some((m) => m.startsWith('pagefind.js starts the worker at')), 'a worker address left with the placeholder passed');
+
+    const known = unknownIndexEntries(good.dir);
+    failIf(known.length, `a correct index holds names this gate does not know: ${known.join(', ')}`);
+    for (const [n, [what, rel]] of [
+      ['a fixed name in fragment/', 'fragment/en_current.pf_fragment'],
+      ['a fixed name in index/', 'index/en_current.pf_index'],
+      ['a fixed name in filter/', 'filter/en_current.pf_filter'],
+      ['a subdirectory in index/', 'index/old/en_1234567.pf_index'],
+      ['an unknown top-level file', 'pagefind-extra.js'],
+      ['a top-level name that starts as the meta file does', 'pagefind.extra.js'],
+      ['a top-level name that starts as an engine does', 'wasm.en.pagefind.map'],
+    ].entries()) {
+      const odd = built(`names-${n}`);
+      fs.mkdirSync(path.dirname(path.join(odd.dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(odd.dir, rel), 'x');
+      failIf(!unknownIndexEntries(odd.dir).length, `${what} passed`);
+    }
+
+    // Each engine address check, in both loaders and in pagefind-ui.js
+    // (every script is read; the placeholder and after-quote cases give
+    // pagefind-ui.js an engine address), since a check that skipped one
+    // script would still pass a case in another: an address left with the
+    // placeholder; an address the script changes after its closing quote,
+    // by a ".", an optional chain, a "[", or a "." after white space; and
+    // strings ending in .pagefind that are not the template, before a
+    // backtick, a double quote, a single quote and a query. Then the same
+    // four changes after the worker's address in pagefind.js.
+    const AFTER_QUOTE = [
+      ['.replace("?", "&")', '.', '.replace'],
+      ['?.replace("?", "&")', '?.', '?.replace'],
+      ['[0]', '[', '[0]'],
+      [' .replace("?", "&")', '.', 'white space and .replace'],
+    ];
+    const slotted = `${indexId.ENGINE_TEMPLATE.slice(0, -1)}?v=${PLACEHOLDER}\``;
+    for (const name of ['pagefind.js', 'pagefind-worker.js', 'pagefind-ui.js']) {
+      const address = (dir) => {
+        if (name === 'pagefind-ui.js') fs.appendFileSync(path.join(dir, name), `export const engine = ${slotted};\n`);
+      };
+      const unstamped = built(`unstamped-${name}`, address);
+      const script = path.join(unstamped.dir, name);
+      fs.writeFileSync(script, fs.readFileSync(script, 'utf8').replace(`pagefind?v=${unstamped.id}`, `pagefind?v=${PLACEHOLDER}`));
+      failIf(!problems(unstamped.dir).some((m) => m.startsWith(`${name} asks for wasm.`)), `an engine address left with the placeholder in ${name} passed`);
+      for (const [n, [after, next, how]] of AFTER_QUOTE.entries()) {
+        const changed = built(`changed-${n}-${name}`, (dir) => {
+          address(dir);
+          const file = path.join(dir, name);
+          fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\`;`, `pagefind?v=${PLACEHOLDER}\`${after};`));
+        });
+        failIf(!problems(changed.dir).some((m) => m.startsWith(`${name} writes wasm.`) && m.includes(`("${next}" after its closing quote)`)), `an engine address in ${name} followed by ${how} after its closing quote passed`);
+      }
+      const strays = built(`strays-${name}`, (dir) => fs.appendFileSync(path.join(dir, name), 'var b = `${base}wasm.en.pagefind`, d = "wasm.en.pagefind", s = \'wasm.en.pagefind\', q = "wasm.en.pagefind?v=pf-0123456789abcdef0123";\n'));
+      const read = problems(strays.dir).filter((m) => m.startsWith(`${name} holds a string ending in .pagefind that is not the template`)).length;
+      failIf(read !== 4, `${read} of the 4 strings in ${name} ending in .pagefind that are not the template (before a backtick, a double quote, a single quote and a query) were reported`);
+    }
+    for (const [n, [after, next, how]] of AFTER_QUOTE.entries()) {
+      const workerChanged = built(`worker-changed-${n}`, (dir) => {
+        const loader = path.join(dir, 'pagefind.js');
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind-worker.js?v=${PLACEHOLDER}\`;`, `pagefind-worker.js?v=${PLACEHOLDER}\`${after};`));
+      });
+      failIf(!problems(workerChanged.dir).some((m) => m.startsWith('pagefind.js writes pagefind-worker.js') && m.includes(`("${next}" after its closing quote)`)), `a worker address followed by ${how} after its closing quote passed`);
+    }
+
+    // Each check only one line of addressProblems makes: a language written
+    // as a literal in the template, a loader whose engine address is not
+    // written as the template, a missing loader (each loader), and a
+    // pagefind.js that does not name the worker. The expression in the
+    // template must be a name: a literal there writes an address for one
+    // language, even with the index id after it.
+    const literal = built('literal', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const one = `${this.basePath}wasm.${"en"}.pagefind?v=' + PLACEHOLDER + '`;\n'));
+    failIf(!problems(literal.dir).some((m) => m.includes('that is not the template')), 'an engine address with a literal language in the template passed');
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const joined = built(`joined-${name}`, (dir) => {
+        const loader = path.join(dir, name);
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(slotted, '[this.basePath + "wasm", language, "pagefind"].join(".")'));
+      });
+      failIf(!problems(joined.dir).some((m) => m.startsWith(`${name} holds no engine address`)), `a ${name} with no engine address written as the template passed`);
+    }
+    // Every worker address in pagefind.js is read, not only the first.
+    const secondWorker = built('second-worker', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), 'export const again = `${basePath}pagefind-worker.js`;\n'));
+    failIf(!problems(secondWorker.dir).some((m) => m.startsWith('pagefind.js starts the worker at pagefind-worker.js,')), 'a second worker address without the index id passed');
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const missing = built(`no-${name}`, (dir) => fs.rmSync(path.join(dir, name)));
+      failIf(!problems(missing.dir).some((m) => m.startsWith(`${name} is missing`)), `an index without ${name} passed`);
+    }
+    const split = built('split', (dir) => {
+      const loader = path.join(dir, 'pagefind.js');
+      fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace('pagefind-worker.js?v=', 'pagefind-` + `worker.js?v='));
+    });
+    failIf(!problems(split.dir).some((m) => m.includes('does not name pagefind-worker.js')), 'a pagefind.js that does not name pagefind-worker.js passed');
+
+    // The loaders parse, read through ENGINE_LOADERS as check() reads them.
+    const goodParse = loaderParse(good.dir);
+    failIf(goodParse.unparsed.length || goodParse.parsed.length !== 2, `a correct index's loaders gave ${goodParse.parsed.length} parsed of 2: ${goodParse.unparsed.join('; ')}`);
+    for (const name of ['pagefind.js', 'pagefind-worker.js']) {
+      const broke = built(`parse-${name}`, (dir) => fs.appendFileSync(path.join(dir, name), '\n})(\n'));
+      failIf(!loaderParse(broke.dir).unparsed.some((u) => u.startsWith(`${name} does not parse`)), `a ${name} that does not parse passed`);
+    }
+    // The worker is read as a classic script, so syntax only a module allows
+    // fails there.
+    const moduleWorker = built('parse-worker-module', (dir) => fs.appendFileSync(path.join(dir, 'pagefind-worker.js'), '\nvar here = import.meta.url;\n'));
+    failIf(!loaderParse(moduleWorker.dir).unparsed.some((u) => u.startsWith('pagefind-worker.js does not parse as a classic script')), 'a pagefind-worker.js that only a module can run passed');
+
+    // The fix index-files-known gives depends on where the name is.
+    const topFix = unknownEntriesFix(['pagefind-extra.js']);
+    const innerFix = unknownEntriesFix(['fragment/stale.pf_fragment']);
+    failIf(!topFix.includes('INDEX_FILE_PATTERNS') || topFix.includes('INDEX_DIR_PATTERNS') || !innerFix.includes('INDEX_DIR_PATTERNS') || innerFix.includes('INDEX_FILE_PATTERNS'), 'the index-files-known fix does not depend on where the name is');
+
+    // A deployment adapter's copy is read as well: a changed engine there
+    // fails while the index the post-build step wrote is correct. Then
+    // check() itself, on small .next directories that hold the index and the
+    // copy. A small .next has no client chunk and no prerender manifest, so
+    // check() also raises native-pagefind-import and index-readable there;
+    // dirFindings leaves out those two and keeps every other finding.
+    const SMALL_NEXT = new Set(['native-pagefind-import', 'index-readable']);
+    const dirFindings = (n) => check(n).findings.filter((f) => !SMALL_NEXT.has(f.id));
+    const next = path.join(root, 'next');
+    const copy = path.join(next, 'output', 'static', '_next', PAGEFIND_REL);
+    const copyWhere = path.relative(next, copy).split(path.sep).join('/');
+    fs.cpSync(good.dir, path.join(next, PAGEFIND_REL), { recursive: true });
+    fs.cpSync(good.dir, copy, { recursive: true });
+    const clean = dirFindings(next);
+    failIf(clean.length, `a correct .next and its deployed copy gave ${clean.map((f) => f.id).join(', ')}`);
+    const copied = path.join(copy, 'wasm.en.pagefind');
+    const copiedBytes = fs.readFileSync(copied);
+    copiedBytes[copiedBytes.length - 1] ^= 1;
+    fs.writeFileSync(copied, copiedBytes);
+    failIf(!indexDirsOf(next).dirs.includes(copy), "a deployment adapter's copy of the index was not read");
+    failIf(!problems(copy).some((m) => m.includes('the files in this index give')), 'a changed engine in the deployed copy passed');
+    failIf(!dirFindings(next).some((f) => f.id === 'engine-address-build-id' && f.why.startsWith(`${copyWhere}: `)), 'a changed engine in the deployed copy raised no engine-address-build-id for that copy');
+    fs.rmSync(path.join(copy, 'pagefind.js'));
+    failIf(!indexDirsOf(next).absent.includes('pagefind.js'), 'a deployed copy without pagefind.js passed');
+    failIf(!dirFindings(next).some((f) => f.id === 'index-deployed'), 'a deployed copy without pagefind.js raised no index-deployed');
+
+    // Unknown names raise index-files-known in check(), not only in
+    // unknownIndexEntries.
+    const named = built('names-check', (dir) => {
+      fs.writeFileSync(path.join(dir, 'pagefind-extra.js'), 'x');
+      fs.writeFileSync(path.join(dir, 'fragment', 'stale.pf_fragment'), 'x');
+    });
+    const namedNext = path.join(root, 'next-names');
+    fs.cpSync(named.dir, path.join(namedNext, PAGEFIND_REL), { recursive: true });
+    const namedFound = dirFindings(namedNext);
+    failIf(!namedFound.some((f) => f.id === 'index-files-known' && f.why.includes('pagefind-extra.js') && f.why.includes('fragment/stale.pf_fragment')), `an unknown top-level name and an unknown name in fragment/ did not both raise index-files-known (findings: ${namedFound.map((f) => f.id).join(', ') || 'none'})`);
+
+    // Pairs of a written index and a copy with one fault between them: the
+    // copy's worker address, loaders and names are read, and so is the
+    // written index while a copy exists. Each pair must raise its one
+    // finding for that directory alone.
+    const writtenWhere = PAGEFIND_REL.split(path.sep).join('/');
+    const pair = (name, written, copied) => {
+      const n = path.join(root, name);
+      fs.cpSync(written, path.join(n, PAGEFIND_REL), { recursive: true });
+      fs.cpSync(copied, path.join(n, 'output', 'static', '_next', PAGEFIND_REL), { recursive: true });
+      return dirFindings(n);
+    };
+    const namedOne = built('names-one', (dir) => fs.writeFileSync(path.join(dir, 'pagefind-extra.js'), 'x'));
+    const unparsedCopy = built('copy-unparsed', (dir) => fs.appendFileSync(path.join(dir, 'pagefind.js'), '\n})(\n'));
+    for (const [what, found, id, where] of [
+      ['a worker address left with the placeholder in the deployed copy', pair('pair-worker', good.dir, workerUnstamped.dir), 'worker-address-build-id', copyWhere],
+      ['a pagefind.js that does not parse in the deployed copy', pair('pair-parse', good.dir, unparsedCopy.dir), 'loaders-parse', copyWhere],
+      ['an unknown name in the deployed copy', pair('pair-names', good.dir, namedOne.dir), 'index-files-known', copyWhere],
+      ['a changed engine in the written index while a copy exists', pair('pair-written', engine.dir, good.dir), 'engine-address-build-id', writtenWhere],
+    ]) {
+      const alone = found.length === 1 && found[0].id === id && found[0].why.startsWith(`${where}: `);
+      failIf(!alone, `${what} gave ${found.map((x) => `${x.id} for ${x.why.split(': ')[0]}`).join(', ') || 'no finding'}, not ${id} for ${where} alone`);
+    }
+
+    for (const [n, [what, id]] of [['a build id', 'build-TfctsWXpff2fKS'], ['the placeholder', PLACEHOLDER]].entries()) {
+      const v = built(`id-${n}`);
+      fs.writeFileSync(path.join(v.dir, indexId.VERSION_FILE), JSON.stringify({ buildId: id }));
+      failIf(!problems(v.dir).some((m) => m.includes('which is not an index id')), `${what} as the id passed`);
+    }
+    const noId = built('no-id');
+    fs.rmSync(path.join(noId.dir, indexId.VERSION_FILE));
+    failIf(!problems(noId.dir).some((m) => m.includes('holds no id')), 'an index without pagefind-version.json passed');
+
+    // Last, the gate the way the build and CI run it: `node
+    // scripts/check-search-coverage.js` with no flag, from a site's own
+    // directory, so main() takes its default path and reads that site's .next
+    // and app/. Each of WHOLE_BUILDS is a small site whose app/ and whole
+    // build (a client chunk that loads pagefind.js, a prerender manifest with
+    // one page, the index) hold one fault between them, and the gate must
+    // exit 1 with that one finding alone. The sites share one copy of the
+    // scripts, hard-linked where the file system allows it. One node process
+    // (START_GATES) starts
+    // every gate at once and waits for them all; a gate still running at
+    // CHILD_LIMIT_MS is stopped and started again, and fails its case when
+    // stopped CHILD_STARTS times. The self-test stops that process too if it
+    // is still running 30 s after that many limits. In a gate the self-test
+    // starts, these cases are counted and not run again.
+    const LOADER = 'p.then((t) => import("".concat(e, "/pagefind.js?v=").concat(t)));\n';
+    const second = (doc) => (dir) => fs.writeFileSync(path.join(dir, 'fragment', 'en_eeeeeee.pf_fragment'), zlib.gzipSync(`pagefind_dcd${JSON.stringify(doc)}`));
+    const WHOLE_BUILDS = [
+      ['whose pagefind.js asks for the engine without the index id', 'engine-address-build-id', { index: (dir) => {
+        const loader = path.join(dir, 'pagefind.js');
+        fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\``, 'pagefind`'));
+      } }],
+      ['with no index', 'index-present', { next: (n) => fs.rmSync(path.join(n, PAGEFIND_REL), { recursive: true }) }],
+      ['whose client chunk hands pagefind.js to a webpack module call', 'native-pagefind-import', { chunk: 'p.then((t) => n(4471)("".concat(e, "/pagefind.js?v=").concat(t)));\n' }],
+      ['whose client chunks never build the pagefind.js address', 'native-pagefind-import', { chunk: 'p.then((t) => t);\n' }],
+      ['whose fragment is cut short', 'index-readable', { index: (dir) => {
+        const cut = path.join(dir, 'fragment', 'en_bbbbbbb.pf_fragment');
+        const bytes = fs.readFileSync(cut);
+        fs.writeFileSync(cut, bytes.subarray(0, bytes.length >> 1));
+      } }],
+      ['that indexes a trace manifest', 'no-trace-manifests', { index: second({ url: '/endpoints/page.js.nft.json.html', meta: { title: 'page.js.nft' } }) }],
+      ['that indexes a page that is no route', 'fragments-are-routes', { index: second({ url: '/gone', meta: { title: 'Gone' } }) }],
+      ['that indexes a route twice', 'fragments-are-routes', { index: second({ url: '/', meta: { title: 'Home again' } }) }],
+      ['whose page_count is above the ratio', 'page-count-ratio', { index: (dir) => fs.writeFileSync(path.join(dir, 'pagefind-entry.json'), '{"version":"1.6.0","languages":{"en":{"hash":"en_aaaaaaa","page_count":2}}}') }],
+      ['with a page Find cannot reach', 'routes-findable', { page: 'unreached' }],
+    ];
+    if (process.env.SEARCH_COVERAGE_SELF_TEST_CHILD === '1') {
+      cases += WHOLE_BUILDS.length;
+    } else {
+      const SCRIPTS = ['check-search-coverage.js', path.join('lib', 'pagefind-index-id.js')];
+      const shared = path.join(root, 'scripts');
+      fs.mkdirSync(path.join(shared, 'lib'), { recursive: true });
+      fs.copyFileSync(__filename, path.join(shared, SCRIPTS[0]));
+      fs.copyFileSync(path.join(__dirname, SCRIPTS[1]), path.join(shared, SCRIPTS[1]));
+      const sites = WHOLE_BUILDS.map(([, , fault], i) => {
+        const site = path.join(root, `whole-${i}`);
+        for (const rel of SCRIPTS) {
+          const to = path.join(site, 'scripts', rel);
+          fs.mkdirSync(path.dirname(to), { recursive: true });
+          try { fs.linkSync(path.join(shared, rel), to); } catch { fs.copyFileSync(path.join(shared, rel), to); }
+        }
+        for (const route of ['', ...(fault.page ? [fault.page] : [])]) {
+          fs.mkdirSync(path.join(site, 'app', route), { recursive: true });
+          fs.writeFileSync(path.join(site, 'app', route, 'page.tsx'), 'export default function Page() { return null; }\n');
+        }
+        fs.mkdirSync(path.join(site, 'app', 'lib'), { recursive: true });
+        fs.writeFileSync(path.join(site, 'app', 'lib', 'command-palette.tsx'), "const INDEX: SearchItem[] = [\n  { href: '/' },\n];\n");
+        const next = path.join(site, '.next');
+        built(path.join(`whole-${i}`, '.next', PAGEFIND_REL), fault.index);
+        fs.writeFileSync(path.join(next, 'static', 'chunks', 'loader.js'), fault.chunk || LOADER);
+        fs.writeFileSync(path.join(next, 'prerender-manifest.json'), JSON.stringify({ routes: { '/': { dataRoute: '/index.rsc' } } }));
+        if (fault.next) fault.next(next);
+        return site;
+      });
+      const r = spawnSync(process.execPath, ['-e', START_GATES, String(CHILD_LIMIT_MS), String(CHILD_STARTS), ...sites], { encoding: 'utf8', timeout: CHILD_STARTS * CHILD_LIMIT_MS + 30000, env: { ...process.env, SEARCH_COVERAGE_SELF_TEST_CHILD: '1' } });
+      let runs = [];
+      try { runs = JSON.parse(r.stdout); } catch { /* each case below fails */ }
+      for (const [i, [what, want]] of WHOLE_BUILDS.entries()) {
+        const run = runs[i] || { status: null, signal: `no result: ${r.error ? r.error.message : `exit ${r.status}`}`, stderr: '' };
+        const ids = [...String(run.stderr).matchAll(/^ {2}\[([\w-]+)\]$/gm)].map((m) => m[1]).join(', ');
+        const how = run.status === null ? `did not finish (${run.signal})` : `exited ${run.status}`;
+        failIf(run.status !== 1 || ids !== want, `the gate on a whole build ${what} ${how} with ${ids || 'no finding'}, not 1 with ${want} alone`);
+      }
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+  return { cases, bad };
+}
+
+// main() sets process.exitCode and returns, and node exits once nothing is
+// left to run, rather than calling process.exit(). Under load on Linux, node
+// 24 now and then stayed alive after a gate that called process.exit() had
+// printed everything, its threads all waiting, and the build waits for this
+// gate with no time limit.
 function main() {
   const argv = process.argv.slice(2);
   const asJson = argv.includes('--json');
+  const { cases, bad } = selfTest();
+  const broken = cases === SELF_TEST_CASES ? bad : [...bad, `the self-test checked ${cases} case(s), not ${SELF_TEST_CASES}: a case was added, removed or skipped (SELF_TEST_CASES)`];
+  if (argv.includes('--self-test')) {
+    for (const b of broken) console.error(`  [self-test] FAIL ${b}`);
+    console.log(`search-coverage: self-test ${broken.length ? `FAILED (${broken.length} failure(s), ${cases} cases)` : `OK (${cases} cases)`}`);
+    process.exitCode = broken.length ? 1 : 0;
+    return;
+  }
+  if (broken.length) {
+    console.error('search-coverage: the self-test failed, so a clean result would prove nothing:');
+    for (const b of broken) console.error(`  ${b}`);
+    process.exitCode = 1;
+    return;
+  }
+  // Every run says that the self-test ran and how many cases it checked. With
+  // --json the line goes to stderr, so stdout stays one JSON document.
+  (asJson ? console.error : console.log)(`search-coverage: self-test OK (${cases} cases)`);
   const at = argv.indexOf('--next');
   const nextDir = at !== -1 && argv[at + 1] ? path.resolve(argv[at + 1]) : path.join(APP, '.next');
 
@@ -695,9 +1218,9 @@ function main() {
     }
   }
 
-  process.exit(findings.length === 0 ? 0 : 1);
+  process.exitCode = findings.length === 0 ? 0 : 1;
 }
 
-module.exports = { publicRoutes, indexedPageCount, readFragments, routeOf, appPageRoutes, curatedIndexHrefs, routeMatcher, FIND_EXEMPT, PAGE_COUNT_RATIO };
+module.exports = { publicRoutes, indexedPageCount, readFragments, routeOf, appPageRoutes, curatedIndexHrefs, routeMatcher, selfTest, FIND_EXEMPT, PAGE_COUNT_RATIO };
 
 if (require.main === module) main();
