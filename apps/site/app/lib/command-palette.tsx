@@ -255,10 +255,15 @@ function loadPagefind(): Promise<PagefindApi | null> {
     const PAGEFIND_DIR = '/_next/static/chunks/app/pagefind';
     pagefindPromise = fetch(`${PAGEFIND_DIR}/pagefind-version.json`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
-      .then((v: { buildId?: string } | null) => v?.buildId ?? 'noversion')
-      .catch(() => 'noversion')
+      .then((v: { buildId?: string } | null) => v?.buildId ?? null)
+      .catch(() => null)
       .then((version) => {
-        const pagefindUrl = `${PAGEFIND_DIR}/pagefind.js?v=${version}`;
+        // Without the version file there is no id to ask for, and a copy kept
+        // under one fixed address could be from any earlier build. An address
+        // no other page load uses makes the browser fetch this build's
+        // pagefind.js, whose worker and engine addresses carry this build's id.
+        const v = version ?? `noversion-${Date.now().toString(36)}`;
+        const pagefindUrl = `${PAGEFIND_DIR}/pagefind.js?v=${v}`;
         return import(/* webpackIgnore: true */ /* turbopackIgnore: true */ pagefindUrl);
       })
       .then(async (mod) => {
