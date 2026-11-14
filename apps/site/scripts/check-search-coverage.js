@@ -126,13 +126,13 @@
  * for each check the address, parse, name and directory findings make (each
  * engine address check in both loaders and in a third script), the
  * directory findings read through check() itself, and last this gate run
- * the way the build and CI run it, with no flag, on small whole builds with
- * one fault each: one for each finding only a whole build can raise, and
- * one for an engine address. So main()'s default path and exit code, and
- * each of those findings, are checked too (see selfTest). A failing
- * self-test fails the gate, since a clean result from a broken check would
- * prove nothing, and so does a self-test that checked another number of
- * cases than SELF_TEST_CASES.
+ * the way the build and CI run it, with no flag, on ten small sites with
+ * one fault each: one or two for each finding only a whole build can
+ * raise, and one for an engine address. So main()'s default path and exit
+ * code, and each of those findings, are checked too (see selfTest). A
+ * failing self-test fails the gate, since a clean result from a broken
+ * check would prove nothing, and so does a self-test that checked another
+ * number of cases than SELF_TEST_CASES.
  * Every run prints
  * "search-coverage: self-test OK (<n> cases)", so a build log shows the
  * self-test ran.
@@ -856,22 +856,23 @@ Promise.all(sites.map((cwd) => run(cwd, Number(most)))).then((runs) => process.s
  * pair with one fault in one directory must raise that one finding for that
  * directory and nothing else. Last, this gate runs the way the build and CI
  * run it (`node scripts/check-search-coverage.js`, no flag, from the site's
- * directory) on one-page sites whose small whole builds (WHOLE_BUILDS) hold
- * one fault each, and must exit 1 with that one finding alone: an engine
- * address without the index id, no index, a client chunk that hands
- * pagefind.js to a webpack module call, client chunks that never build its
- * address, a fragment that cannot be read, a trace manifest, a fragment that
- * is no route, a route indexed twice, a page_count above the ratio, and a
- * page Find cannot reach. In a gate the
- * self-test starts (SEARCH_COVERAGE_SELF_TEST_CHILD) those cases are
- * counted and not run again. Some faults are seen by one check only: a
+ * directory) on small sites (WHOLE_BUILDS) that hold one fault each, and
+ * must exit 1 with that one finding alone: an engine address without the
+ * index id, no index, a client chunk that hands pagefind.js to a webpack
+ * module call, client chunks that never build its address, a fragment that
+ * cannot be read, a trace manifest, a fragment that is no route, a route
+ * indexed twice, a page_count above the ratio, and a page Find cannot
+ * reach. In a gate the self-test starts (SEARCH_COVERAGE_SELF_TEST_CHILD)
+ * those cases are counted and not run again. Some faults are seen by one
+ * check only: a
  * changed fragment or engine under the old id by the hash; an address left
  * with the placeholder by the address reading, since the hash reads ?v=<id> as
  * the placeholder; a build id or the placeholder as the id by the format pin.
  * A check can hold a part no case tries: no case puts a digit after "?.",
  * characters after the id inside an address, or an address with no closing
- * quote, and each finding only a whole build can raise has one case, for one
- * way it can arise. Returns how many cases it checked and what failed.
+ * quote, and each finding only a whole build can raise is tried in one or
+ * two of the ways it can arise. Returns how many cases it checked and what
+ * failed.
  */
 function selfTest() {
   const os = require('node:os');
@@ -1094,11 +1095,12 @@ function selfTest() {
     // Last, the gate the way the build and CI run it: `node
     // scripts/check-search-coverage.js` with no flag, from a site's own
     // directory, so main() takes its default path and reads that site's .next
-    // and app/. Each of WHOLE_BUILDS is a one-page site whose whole build (a
-    // client chunk that loads pagefind.js, a prerender manifest with one page,
-    // the index) holds one fault, and the gate must exit 1 with that one
-    // finding alone. The sites share one copy of the scripts, hard-linked
-    // where the file system allows it. One node process (START_GATES) starts
+    // and app/. Each of WHOLE_BUILDS is a small site whose app/ and whole
+    // build (a client chunk that loads pagefind.js, a prerender manifest with
+    // one page, the index) hold one fault between them, and the gate must
+    // exit 1 with that one finding alone. The sites share one copy of the
+    // scripts, hard-linked where the file system allows it. One node process
+    // (START_GATES) starts
     // every gate at once and waits for them all; a gate still running at
     // CHILD_LIMIT_MS is stopped and started again, and fails its case when
     // stopped CHILD_STARTS times. The self-test stops that process too if it
@@ -1169,6 +1171,11 @@ function selfTest() {
   return { cases, bad };
 }
 
+// main() sets process.exitCode and returns, and node exits once nothing is
+// left to run, rather than calling process.exit(). Under load on Linux, node
+// 24 now and then stayed alive after a gate that called process.exit() had
+// printed everything, its threads all waiting, and the build waits for this
+// gate with no time limit.
 function main() {
   const argv = process.argv.slice(2);
   const asJson = argv.includes('--json');
@@ -1177,12 +1184,14 @@ function main() {
   if (argv.includes('--self-test')) {
     for (const b of broken) console.error(`  [self-test] FAIL ${b}`);
     console.log(`search-coverage: self-test ${broken.length ? `FAILED (${broken.length} failure(s), ${cases} cases)` : `OK (${cases} cases)`}`);
-    process.exit(broken.length ? 1 : 0);
+    process.exitCode = broken.length ? 1 : 0;
+    return;
   }
   if (broken.length) {
     console.error('search-coverage: the self-test failed, so a clean result would prove nothing:');
     for (const b of broken) console.error(`  ${b}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   // Every run says that the self-test ran and how many cases it checked. With
   // --json the line goes to stderr, so stdout stays one JSON document.
@@ -1209,7 +1218,7 @@ function main() {
     }
   }
 
-  process.exit(findings.length === 0 ? 0 : 1);
+  process.exitCode = findings.length === 0 ? 0 : 1;
 }
 
 module.exports = { publicRoutes, indexedPageCount, readFragments, routeOf, appPageRoutes, curatedIndexHrefs, routeMatcher, selfTest, FIND_EXEMPT, PAGE_COUNT_RATIO };
