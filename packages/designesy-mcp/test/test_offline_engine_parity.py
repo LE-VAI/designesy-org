@@ -386,8 +386,9 @@ class TestFetchLayer:
     """Engine 1.5.4 in the offline fallback: the page's links resolve against
     the URL that answered, and a compressed body is decoded or not read.
 
-    urllib.request.urlopen is replaced by a stand-in that answers from a table
-    of example.test URLs: a context manager whose read() gives the bytes sent,
+    _urlopen (urllib.request.urlopen, with each hop's host and address
+    checked) is replaced by a stand-in that answers from a table of
+    example.test URLs: a context manager whose read() gives the bytes sent,
     with the response's headers and the URL urllib would report after its
     redirects (geturl)."""
 
@@ -416,7 +417,7 @@ class TestFetchLayer:
         mcp._cache.clear()
         mcp._FINAL_URL.clear()
         getattr(mcp, "_DECODED_BYTES", {}).clear()
-        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, calls)):
+        with patch.object(mcp, "_urlopen", self._urlopen(table, calls)):
             html, css, read = mcp._fetch_page_parts(url)
         return html, css, read, calls
 
@@ -498,7 +499,7 @@ class TestFetchLayer:
         table = {url: (gzip.compress(gzip.compress(b":root{--a:#fff}" * 100)), self._two_lines("gzip", "gzip"), None)}
         mcp._cache.clear()
         getattr(mcp, "_DECODED_BYTES", {}).clear()
-        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+        with patch.object(mcp, "_urlopen", self._urlopen(table, [])):
             with pytest.raises(ValueError, match="unsupported Content-Encoding 'gzip, gzip'"):
                 mcp._fetch(url, as_json=False)
 
@@ -526,7 +527,7 @@ class TestFetchLayer:
         table = {url: (gzip.compress(b"a" * (10 * self.MiB)), {"Content-Encoding": "gzip"}, None)}
         mcp._cache.clear()
         getattr(mcp, "_DECODED_BYTES", {}).clear()
-        with patch.object(mcp.urllib.request, "urlopen", self._urlopen(table, [])):
+        with patch.object(mcp, "_urlopen", self._urlopen(table, [])):
             assert len(mcp._fetch(url, as_json=False)) == 10 * self.MiB
             with pytest.raises(ValueError, match="over"):
                 mcp._fetch(url, as_json=False, max_decoded=5 * self.MiB)

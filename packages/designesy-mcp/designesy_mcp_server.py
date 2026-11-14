@@ -146,6 +146,26 @@ def _tls_flagged(result: Any, *urls: str) -> Any:
 # Block URLs that could reach internal services when a user supplies an
 # arbitrary URL to _fetch().  _post_api() is inherently safe — it constructs
 # its own URL from BASE_URL — so only _fetch() calls _validate_url().
+#
+# Every hop of a fetch is checked, the URL _fetch is given and each redirect
+# alike, as the hosted guard checks it (apps/site/app/lib/url-guard.ts,
+# safeFetch), in two steps:
+#   1. Before any lookup, _validate_url: the scheme, and the host as the
+#      connection will use it (_request_host, _check_host).
+#   2. As the connection is made, _checked_connection: the host is looked up
+#      once, every address the lookup gives must be public
+#      (_blocked_address), and the socket connects only to one of those
+#      addresses, so a second lookup cannot give another.
+# _urlopen opens every caller URL through these checks and follows at most
+# _MAX_REDIRECTS redirects. Through a proxy, the proxy looks the name up and
+# connects: the name is looked up here too and every address checked, but
+# the proxy's own lookup is not pinned (_checked_class).
+#
+# Until designesy-mcp's next release a shorter form of step 1 ran, on the
+# first URL alone.
+
+import ipaddress  # noqa: E402
+import socket  # noqa: E402
 
 _BLOCKED_HOSTS = frozenset({
     "127.0.0.1", "localhost", "0.0.0.0",
@@ -153,31 +173,276 @@ _BLOCKED_HOSTS = frozenset({
     "::1",
 })
 
+# The most redirects one fetch follows: safeFetch's MAX_REDIRECTS.
+_MAX_REDIRECTS = 5
+
+# The ranges of addresses that are not public. They hold every range that
+# ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges: the hosted guard
+# refuses an address whose ipaddr.js range() is anything but 'unicast'. The
+# list is written out so that every Python reads it alike; what ipaddress
+# calls private differs between Python releases.
+_BLOCKED_NETWORKS = tuple(ipaddress.ip_network(n) for n in (
+    "0.0.0.0/8",  # unspecified
+    "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",  # private
+    "100.64.0.0/10",  # carrier-grade NAT
+    "127.0.0.0/8",  # loopback
+    "169.254.0.0/16",  # link-local, cloud metadata
+    "192.0.0.0/24", "192.0.2.0/24", "192.88.99.0/24", "198.18.0.0/15",
+    "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4",  # reserved
+    "192.31.196.0/24", "192.175.48.0/24",  # AS112
+    "192.52.193.0/24",  # AMT
+    "224.0.0.0/4",  # multicast
+    "255.255.255.255/32",  # broadcast
+    "::/128", "::1/128",  # unspecified, loopback
+    "::/96",  # IPv4-compatible
+    "::ffff:0:0/96",  # IPv4-mapped
+    "::ffff:0:0:0/96",  # RFC 6145
+    "64:ff9b::/96", "64:ff9b:1::/48",  # RFC 6052, RFC 8215
+    "100::/64",  # discard
+    "2001::/32",  # Teredo
+    "2001:2::/48",  # benchmarking
+    "2001:3::/32",  # AMT
+    "2001:4:112::/48", "2620:4f:8000::/48",  # AS112
+    "2001:10::/28", "2001:20::/28",  # ORCHID
+    "2001:30::/28",  # drone remote ID
+    "2001::/23", "2001:db8::/32", "3fff::/20",  # reserved
+    "2002::/16",  # 6to4
+    "5f00::/16",  # segment routing
+    "fc00::/7",  # unique local
+    "fe80::/10",  # link-local
+    "fec0::/10",  # site-local
+    "ff00::/8",  # multicast
+))
+
+# One label of a numeric host as the system resolver reads one (inet_aton):
+# decimal, octal with a leading 0, or hex after 0x.
+_NUMERIC_LABEL = re.compile(r"0x[0-9a-f]*|[0-9]+")
+
+# One part of a dotted-quad IPv4 address written in decimal, without a
+# leading zero.
+_DECIMAL_OCTET = re.compile(r"0|[1-9][0-9]?|1[0-9][0-9]|2[0-4][0-9]|25[0-5]")
+
+# The characters no host name holds: the URL Standard's forbidden domain code
+# points (C0 controls, space, # % / : < > ? @ [ \ ] ^ | and DEL), which the
+# hosted guard's URL parser refuses in a host. A URL parser other than
+# urllib's, such as a proxy's, can read a host that holds one differently.
+_FORBIDDEN_HOST_CHARS = frozenset(map(chr, range(0x21))) | frozenset("#%/:<>?@[\\]^|\x7f")
+
+
+class _BlockedURL(ValueError):
+    """A URL, or an address its host resolves to, that the server refuses."""
+
+
+def _blocked_address(address: str) -> bool:
+    """True when `address`, an IP address as a lookup gives it, is not
+    public: it is in _BLOCKED_NETWORKS, or it does not parse."""
+    try:
+        ip = ipaddress.ip_address(address.split("%", 1)[0])
+    except ValueError:
+        return True
+    return any(ip in network for network in _BLOCKED_NETWORKS)
+
+
+def _request_host(url: str) -> str:
+    """The host a request for `url` connects to, as urllib and http.client
+    read it: urllib's Request decodes percent-escapes in the host, and
+    http.client splits off the port and drops an IPv6 address's brackets.
+    Empty when the URL has no host.
+
+    _BlockedURL when what comes before the host or after it would be read
+    another way by another URL parser, such as a proxy's: credentials (a
+    user name before an '@'), which urllib keeps as part of the host, or a
+    port that http.client cannot read as a number (it refuses that request
+    itself, but a plain http request through a proxy goes to the proxy
+    unread)."""
+    try:
+        host = urllib.request.Request(url).host or ""
+    except ValueError:
+        return ""
+    if "@" in host:
+        raise _BlockedURL("Blocked: credentials in URL")
+    colon, bracket = host.rfind(":"), host.rfind("]")
+    if colon > bracket:
+        port = host[colon + 1:]
+        if port:
+            try:
+                int(port)
+            except ValueError:
+                raise _BlockedURL(f"Blocked: port '{port}' is not a number") from None
+        host = host[:colon]
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    return host
+
+
+def _check_host(host: str) -> None:
+    """Refuse a host, as a connection uses it, that names an internal
+    service, before it is looked up.
+
+    The host is read as the lookup reads it: a name with a character outside
+    ASCII is mapped by the idna codec, as socket.getaddrinfo maps it, then
+    lowercased, with its trailing dots dropped. It is refused when it is one
+    of _BLOCKED_HOSTS, an IPv6 address (the hosted guard fetches none), a
+    name that holds a character no host name holds (_FORBIDDEN_HOST_CHARS),
+    a name of one label, a numeric host not written as four decimal parts
+    (one number, hex, octal, leading zeros or fewer than four parts: the
+    system resolver reads each as an address, and resolvers differ on how),
+    or an IPv4 address in _BLOCKED_NETWORKS. A name with numeric labels
+    whose last label is not numeric (007.example.com) is a name.
+    """
+    name = host
+    if not name.isascii():
+        try:
+            name = name.encode("idna").decode("ascii")
+        except UnicodeError:
+            raise _BlockedURL(f"Blocked: host '{host}' is not a valid name") from None
+    name = name.lower().rstrip(".")
+    if not name:
+        raise _BlockedURL("Blocked: no hostname in URL")
+    if name in _BLOCKED_HOSTS:
+        raise _BlockedURL(f"Blocked: internal host '{host}'")
+    if ":" in name:
+        raise _BlockedURL(f"Blocked: IPv6 address host '{host}'")
+    if not _FORBIDDEN_HOST_CHARS.isdisjoint(name):
+        raise _BlockedURL(f"Blocked: host '{host}' is not a valid name")
+    labels = name.split(".")
+    if all(_NUMERIC_LABEL.fullmatch(label) for label in labels):
+        if len(labels) != 4 or not all(_DECIMAL_OCTET.fullmatch(label) for label in labels):
+            raise _BlockedURL(f"Blocked: numeric host '{host}' not written as four decimal parts")
+        if _blocked_address(name):
+            raise _BlockedURL(f"Blocked: private/reserved IP '{host}'")
+    elif len(labels) == 1:
+        raise _BlockedURL(f"Blocked: single-label host '{host}'")
+
 
 def _validate_url(url: str) -> None:
-    """Reject URLs that could reach internal services (SSRF protection)."""
+    """Reject URLs that could reach internal services (SSRF protection).
+
+    The checks made before any lookup, on the URL _fetch is given and on
+    each redirect: the scheme is http or https, and the host as the
+    connection will use it (_request_host) passes _check_host. The
+    addresses the host resolves to are checked as the connection is made
+    (_checked_connection).
+    """
     from urllib.parse import urlparse
-    import ipaddress
 
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https"):
-        raise ValueError(f"Blocked: non-http(s) scheme '{parsed.scheme}'")
+        raise _BlockedURL(f"Blocked: non-http(s) scheme '{parsed.scheme}'")
+    _check_host(_request_host(url))
 
-    host = parsed.hostname or ""
-    if not host:
-        raise ValueError("Blocked: no hostname in URL")
 
-    if host.lower() in _BLOCKED_HOSTS:
-        raise ValueError(f"Blocked: internal host '{host}'")
+def _resolve_checked(host: Any, port: Any) -> list[Any]:
+    """socket.getaddrinfo(host, port) for a TCP connection, made once, or
+    _BlockedURL when any address it gives is not public: the hosted guard
+    refuses a host with one private address among public ones. A lookup
+    that fails raises as it does for socket.create_connection
+    (socket.gaierror)."""
+    infos = socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM)
+    for info in infos:
+        address = info[4][0]
+        if _blocked_address(address):
+            raise _BlockedURL(f"Blocked: host '{host}' resolves to private/reserved IP '{address}'")
+    if not infos:
+        raise OSError("getaddrinfo returns an empty list")
+    return infos
 
-    # If the host is an IP literal, reject private/reserved ranges.
-    try:
-        ip = ipaddress.ip_address(host)
-    except ValueError:
-        pass  # hostname, not an IP — allowed
-    else:
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-            raise ValueError(f"Blocked: private/reserved IP '{host}'")
+
+def _checked_connection(address: tuple[Any, Any], timeout: Any = socket._GLOBAL_DEFAULT_TIMEOUT,
+                        source_address: Any = None) -> socket.socket:
+    """socket.create_connection(address, timeout, source_address), as
+    http.client calls it, except that the host is checked (_check_host) and
+    looked up once (_resolve_checked), and the socket connects only to an
+    address that lookup gave. The addresses are tried in the order the
+    lookup gave them, as socket.create_connection tries them."""
+    host, port = address
+    _check_host(host)
+    error: OSError | None = None
+    for family, socktype, proto, _canonname, sockaddr in _resolve_checked(host, port):
+        sock = None
+        try:
+            sock = socket.socket(family, socktype, proto)
+            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sockaddr)
+            return sock
+        except OSError as exc:
+            error = exc
+            if sock is not None:
+                sock.close()
+    raise error if error is not None else OSError("no address to connect to")
+
+
+def _checked_class(http_class: Any, req: Any) -> Any:
+    """What do_open makes req's connection with.
+
+    A request made directly gets a connection that opens its socket through
+    _checked_connection. A request through a proxy (urllib reads one from
+    the environment, or from the system's settings on Windows and macOS)
+    connects to the proxy, as before. The URL's own host is checked and
+    looked up here first, and refused when any address is not public or
+    when it does not resolve here, but the proxy looks the name up again
+    for itself.
+    """
+    if req.has_proxy() or getattr(req, "_tunnel_host", None):
+        host = _request_host(req.full_url)
+        _check_host(host)
+        try:
+            _resolve_checked(host, None)
+        except OSError as exc:
+            raise urllib.error.URLError(exc) from None
+        return http_class
+
+    def connection(host: str, **kwargs: Any) -> Any:
+        conn = http_class(host, **kwargs)
+        conn._create_connection = _checked_connection
+        return conn
+
+    return connection
+
+
+class _CheckedHTTPHandler(urllib.request.HTTPHandler):
+    def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
+        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+
+
+class _CheckedHTTPSHandler(urllib.request.HTTPSHandler):
+    def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
+        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+
+
+class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+    """urllib's redirect handler, except that each redirect is checked
+    (_validate_url) before it is followed, and that a fetch follows at most
+    _MAX_REDIRECTS of them, as safeFetch does. A redirect to any scheme but
+    http and https is refused: urllib follows one to ftp. Which statuses
+    are followed is urllib's choice, as before: 301, 302, 303 and 307, and
+    308 from Python 3.11."""
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        hops = getattr(req, "_designesy_redirects", 0) + 1
+        try:
+            if hops > _MAX_REDIRECTS:
+                raise _BlockedURL(f"Blocked: more than {_MAX_REDIRECTS} redirects")
+            _validate_url(newurl)
+        except _BlockedURL:
+            fp.close()
+            raise
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None:
+            new._designesy_redirects = hops
+        return new
+
+
+def _urlopen(req: Any, timeout: float, context: ssl.SSLContext | None = None) -> Any:
+    """urllib.request.urlopen(req, timeout=timeout, context=context), except
+    that every hop is checked: each redirect before it is followed
+    (_CheckedRedirects), and each connection as it is made
+    (_checked_class, _checked_connection)."""
+    handlers: list[Any] = [_CheckedRedirects(), _CheckedHTTPHandler(), _CheckedHTTPSHandler(context=context)]
+    return urllib.request.build_opener(*handlers).open(req, timeout=timeout)
 
 
 # The URL that answered each fetched URL, after urllib's redirects.
@@ -275,12 +540,12 @@ def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> An
     req = urllib.request.Request(url, headers=headers)
     verified = True
     try:
-        opener = urllib.request.urlopen(req, timeout=15, context=_SSL_CONTEXT)
+        opener = _urlopen(req, timeout=15, context=_SSL_CONTEXT)
     except Exception as exc:
         if not (_is_cert_failure(exc) and _insecure_tls_allowed(url)):
             raise
         sys.stderr.write(f"WARNING: certificate verification failed for {url}, reading it unverified (DESIGNESY_INSECURE_TLS=1): {exc}\n")
-        opener = urllib.request.urlopen(req, timeout=15, context=_unverified_ssl_context())
+        opener = _urlopen(req, timeout=15, context=_unverified_ssl_context())
         verified = False
     with opener as resp:
         # urllib follows redirects; the page's own links resolve against the
@@ -3263,7 +3528,8 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
     let any page have itself fetched from this machine. Until 1.13.10 all of
     these fell back, so a URL the engine refused, such as one on the host
     100.100.100.200, was fetched from this machine instead, through
-    _validate_url, which lets that address through.
+    _validate_url, which let that address through until designesy-mcp's
+    next release.
     """
     try:
         body = _post_score_api(url, "designesy", scope)

@@ -838,10 +838,10 @@ class TestScoreFormatScope:
 # phrase included).
 # designesy_score scored a URL locally whenever the engine did not return a
 # score, so http://100.100.100.200/, which the engine refuses with HTTP 400 and
-# _validate_url lets through, was fetched from this machine, and the offline
+# _validate_url let through, was fetched from this machine, and the offline
 # engine then opened it in whatever Chrome answered on 127.0.0.1:9222.
-# urlopen and subprocess.run are mocked here, so nothing reaches a network or
-# a browser.
+# urlopen (and _urlopen, which _fetch opens URLs through), and subprocess.run
+# are mocked here, so nothing reaches a network or a browser.
 
 import http.client  # noqa: E402
 import io  # noqa: E402
@@ -922,7 +922,7 @@ class TestTlsIsVerified(_FreshState):
     def test_a_failed_verification_is_raised_with_its_reason(self, env):
         url = "https://expired.example/t.json"
         site = _Site({url: "{}"}, {url: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site), \
+        with patch.object(mcp, "_urlopen", site), \
                 patch.object(mcp, "_unverified_ssl_context") as unverified:
             with pytest.raises(urllib.error.URLError, match="certificate has expired"):
                 mcp._fetch(url)
@@ -937,7 +937,7 @@ class TestTlsIsVerified(_FreshState):
         url = "https://example.com/t.json"
         error = _not_a_verification_failure(kind)
         site = _Site({url: "{}"}, {url: error})
-        with patch.object(mcp.urllib.request, "urlopen", site), \
+        with patch.object(mcp, "_urlopen", site), \
                 patch.object(mcp, "_unverified_ssl_context") as unverified:
             with pytest.raises(type(error)):
                 mcp._fetch(url)
@@ -948,7 +948,7 @@ class TestTlsIsVerified(_FreshState):
         env.setenv("DESIGNESY_INSECURE_TLS", "1")
         url = f"{mcp.BASE_URL}/open.json"
         site = _Site({url: "{}"}, {url: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site), \
+        with patch.object(mcp, "_urlopen", site), \
                 patch.object(mcp, "_unverified_ssl_context") as unverified:
             with pytest.raises(urllib.error.URLError):
                 mcp._fetch(url)
@@ -961,7 +961,7 @@ class TestTlsIsVerified(_FreshState):
         contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
         tokens = json.dumps({"ink": {"$type": "color", "$value": {"colorSpace": "srgb", "components": [0, 0, 0]}}})
         site = _Site({contract_url: contract, tokens_url: tokens}, {tokens_url: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site):
+        with patch.object(mcp, "_urlopen", site):
             result = mcp._tokens_score_impl(url=tokens_url)
         assert result["tls_verified"] is False
         assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
@@ -975,7 +975,7 @@ class TestTlsIsVerified(_FreshState):
         tokens_url = "https://example.com/tokens.json"
         contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
         site = _Site({contract_url: contract, tokens_url: '{"ink": {"$type": "color", "$value": "#000"}}'})
-        with patch.object(mcp.urllib.request, "urlopen", site):
+        with patch.object(mcp, "_urlopen", site):
             result = mcp._tokens_score_impl(url=tokens_url)
         assert "tls_verified" not in result
 
@@ -984,7 +984,7 @@ class TestTlsIsVerified(_FreshState):
         page, sheet = "https://example.com/", "https://cdn.example.com/a.css"
         html = f'<html><head><link rel="stylesheet" href="{sheet}"></head><body><main>x</main></body></html>'
         site = _Site({page: html, sheet: ":root{--paper:#fff}"}, {sheet: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site):
+        with patch.object(mcp, "_urlopen", site):
             result = mcp._score_local_impl(page)
         assert result["tls_verified"] is False
         assert site.contexts(page) == [mcp._SSL_CONTEXT]
@@ -998,7 +998,7 @@ class TestTlsIsVerified(_FreshState):
             contract_url: (motion / "contract.json").read_text(encoding="utf-8"),
             lottie_url: (motion / "conformant.json").read_text(encoding="utf-8"),
         }, {lottie_url: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site):
+        with patch.object(mcp, "_urlopen", site):
             result = mcp._motion_score_impl(url=lottie_url)
         assert result["tls_verified"] is False
         assert site.contexts(contract_url) == [mcp._SSL_CONTEXT]
@@ -1008,11 +1008,15 @@ class TestTlsIsVerified(_FreshState):
 class TestEngineErrorIsTheResult(_FreshState):
     REFUSED = "http://100.100.100.200/"
 
-    def test_the_local_guard_lets_the_refused_url_through(self):
+    def test_the_local_guard_refuses_what_the_engine_refuses(self):
         # Why the fallback mattered: the engine refuses this address with
-        # HTTP 400, and _validate_url does not.
-        mcp._validate_url(self.REFUSED)
-        mcp._validate_url("http://[fec0::1]/")
+        # HTTP 400, and until the address checks (designesy-mcp, next
+        # release) _validate_url did not.
+        host = self.REFUSED.split("/")[2]
+        with pytest.raises(ValueError, match=f"private/reserved IP '{re.escape(host)}'"):
+            mcp._validate_url(self.REFUSED)
+        with pytest.raises(ValueError, match="IPv6 address host 'fec0::1'"):
+            mcp._validate_url("http://[fec0::1]/")
 
     @pytest.mark.parametrize("status, error", [
         (400, "Invalid URL. Enter a valid domain like designesy.org or nike.com."),
@@ -1396,7 +1400,7 @@ class TestJsonRpcSession(_FreshState):
         contract_url = "https://www.designesy.org/contracts/tokens.json"
         contract = (PACKAGE / "test" / "fixtures" / "tokens" / "contract.json").read_text(encoding="utf-8")
         site = _Site({contract_url: contract}, {url: _cert_error()})
-        with patch.object(mcp.urllib.request, "urlopen", site):
+        with patch.object(mcp, "_urlopen", site):
             reply = mcp._handle(json.loads(_request(
                 "tools/call", {"name": "designesy_tokens_score", "arguments": {"url": url}})))
         assert reply["result"]["isError"] is True

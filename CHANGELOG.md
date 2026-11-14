@@ -6,6 +6,224 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp, next release: the offline engine checks the host and the
+address of every hop** (PyPI and the MCP registry; not yet released, and
+designesy-mcp stays 1.13.10). The Python server reads a caller's URL from
+the user's machine in three places: the page and its stylesheets in
+`designesy_score`'s offline fallback, the `url` of `designesy_tokens_score`
+and the `url` of `designesy_motion_score`. Its URL check looked at the host
+of the first URL as written, against six names and the IP addresses
+Python's `ipaddress` called private, loopback, link-local or reserved. It
+looked no name up, and it did not run on the redirects urllib followed.
+Each hop is now checked the way the hosted fetch checks it
+(`apps/site/app/lib/url-guard.ts`): the host as the connection uses it,
+then every address the name resolves to, and the socket connects only to
+an address that passed.
+
+### Security (designesy-mcp, next release: address checks)
+
+- **The host is read as the connection reads it.** Percent-escapes in the
+  host are decoded first, as urllib decodes them, and a name with
+  characters outside ASCII is mapped to ASCII the way the lookup maps it.
+- **Some hosts are refused before any lookup:** the six names refused
+  before, now with or without a trailing dot; any IPv6 address, as the
+  hosted fetch refuses every one; a name of one label; a numeric host
+  written in any form other than four decimal parts; and an IPv4 address
+  in a range that is not public.
+- **The URL around the host must read one way.** A URL with credentials
+  before the host, a port that is not a number, or a host holding a
+  character no host name holds (the URL Standard's forbidden domain code
+  points) is refused before any lookup: a URL parser that follows
+  RFC 3986, such as a proxy's, can read each one another way. Two host
+  forms still read another way there: a name between percent-escaped
+  brackets (`%5Bx.example.com%5D`), and a name with a percent-escaped
+  colon and a port after it (`x.example.com%3A80`). Each is checked as
+  the name http.client connects to on a direct request, and in an http
+  URL a proxy is sent it as written, as before.
+- **Every address a name resolves to must be public.** The name is looked
+  up once. When any one of its addresses is in a range that is not public,
+  the host is refused and no connection is made. The blocked ranges
+  include every range ipaddr.js 2.5.0 names, which the hosted fetch
+  refuses: unspecified, private, loopback, link-local (the cloud metadata
+  address among them), carrier-grade NAT, multicast, broadcast, the
+  reserved and documentation ranges, AS112 and AMT, and for IPv6 the
+  IPv4-mapped and translated forms, NAT64, 6to4, Teredo, unique local,
+  site-local and the reserved blocks. They also include the
+  IPv4-compatible form `::/96`, which ipaddr.js does not name. The list
+  is written out in the server, so every Python refuses the same
+  addresses: what Python's `ipaddress` calls private differs between
+  Python releases.
+- **The socket connects to an address that was checked.** It takes the
+  address from that one lookup, so a second lookup cannot answer
+  differently.
+- **Every redirect is checked before it is followed**, in the same two
+  steps, and a read follows at most 5 redirects, the hosted fetch's limit.
+  A redirect to a scheme other than http or https is refused; urllib
+  followed one to `ftp://`.
+- **Through a proxy**, the URL's host is checked and looked up on this
+  machine before the proxy is asked. It is refused when any address is not
+  public or when the name does not resolve here. This covers a proxy set in
+  the environment and, on Windows and macOS, one in the system settings,
+  which urllib reads too.
+- The second read that `DESIGNESY_INSECURE_TLS=1` allows after a failed
+  certificate goes through the same checks.
+
+### Results that can move (designesy-mcp, next release: address checks)
+
+- A page, token file or Lottie file whose host is refused is a tool error
+  that starts "Tool execution failed: Blocked: " and gives the reason,
+  where it was read. A refused stylesheet is left out, as a stylesheet that
+  fails to load always was, and the page is scored without it. These were
+  read until now, or failed with another message:
+  - a host that resolves to an address that is not public: "host
+    '`<name>`' resolves to private/reserved IP '`<address>`'";
+  - a numeric host written as one number, in hex or octal, in fewer or
+    more than four parts, with a part above 255 or with leading zeros,
+    even one that names a public address: "numeric host '`<host>`' not
+    written as four decimal parts". The hosted fetch's URL parser rewrites
+    such a host as four decimal parts and then checks that address, or
+    refuses the URL when the host names no address;
+  - an IPv6 address as the host, a public one too, or a host that still
+    holds a colon once the port is split off: "IPv6 address host
+    '`<host>`'";
+  - a name of one label, such as a machine on the local network:
+    "single-label host '`<host>`'";
+  - a host in a range the old check let through, such as carrier-grade NAT
+    or multicast, an IPv4 address in any blocked range written with a
+    trailing dot, and one of the six names with a trailing dot or written
+    with percent-escapes: "private/reserved IP" or "internal host", the
+    wording the check used before;
+  - a host written with percent-escapes or with characters outside ASCII,
+    which is now read as it decodes and refused for the reason its decoded
+    form gets;
+  - a name with characters outside ASCII that the idna codec cannot map,
+    or a host holding a character no host name holds: "host '`<host>`' is
+    not a valid name". Before, a direct read passed some such hosts to
+    the lookup, such as `a^b.example.com`, and sometimes refused the URL
+    or failed on it before any lookup: for example, http.client refused
+    `http://a%20b.example.com/` for the space in its host;
+  - a URL with credentials before the host: "credentials in URL". urllib
+    kept them as part of the host. Before, a direct read sometimes
+    looked the whole text up as one name, as it did for an http URL with
+    `user@` before `x.example.com`, and sometimes refused the URL or
+    failed on it before any lookup: for example, http.client refused an
+    http URL with `user:pw@` before `x.example.com` ("nonnumeric port");
+  - a port that is not a number: "port '`<port>`' is not a number".
+    Before, a direct read sometimes refused such a URL before any
+    lookup: for example, http.client refused `http://x.example.com:x/`
+    with "nonnumeric port".
+- A sixth redirect: "more than 5 redirects". urllib followed redirects to
+  up to 10 different URLs.
+- A redirect to `ftp://`: "non-http(s) scheme 'ftp'".
+- Through a proxy, a host that resolves on this machine to an address that
+  is not public, and a name this machine cannot resolve ("Failed to fetch
+  URL: "), are refused before the proxy is asked. A URL with credentials,
+  a port that is not a number or a host holding a character no host name
+  holds is refused before the proxy is asked too. Before, the proxy was
+  asked for some of these, such as `http://a^b.example.com/` and an
+  https URL with `user@` before `x.example.com`, and the code before
+  refused others or failed on them before it sent anything. For example,
+  the old check refused `http://user@localhost/`, as it read the host
+  after the `@`, and http.client refused `https://x.example.com:x/` with
+  "nonnumeric port" and `http://a b.example.com/`, whose host holds a
+  space, with "URL can't contain control characters".
+- On a network where only the proxy resolves names, every read of a URL
+  whose host is a name now fails before the proxy is asked, the reads of
+  designesy.org's own documents among them. There the catalog, contract,
+  design review, skill, agent.json and llms tools fail with "Failed to
+  fetch URL: ", and so do the tokens, accessibility and motion scorers,
+  which read their contract first; a `designesy://` resource fails with
+  "Failed to read resource: ". Before this change the proxy was asked for
+  each of those reads. A URL whose host is a public IPv4 address in four
+  decimal parts is still sent to the proxy, and the calls to
+  designesy.org's engines still go through it.
+- On a network whose resolver makes up IPv6 addresses for IPv4-only sites
+  (NAT64 with DNS64, `64:ff9b::/96`), every read of such a site now fails
+  with "resolves to private/reserved IP": one of the addresses its name
+  resolves to is in a blocked range. The hosted fetch refuses the same
+  answer. `www.designesy.org` has no IPv6 address of its own as this is
+  written, so on such a network the tools and resources named above fail
+  the same way.
+
+### Not changed (designesy-mcp, next release: address checks)
+
+- A URL whose host is a public name of two labels or more that resolves
+  only to public addresses, or a public IPv4 address written as four
+  decimal parts, with no credentials and a port that is a number when it
+  has one, is read as before: the same request, the certificate checked
+  against the same name, the same proxy, and up to 5 redirects. A name
+  that does not resolve fails as before, with "Failed to fetch URL: ".
+- The calls to designesy.org's engines. Their URL is built from the site's
+  own address. The reads of designesy.org's documents go through the new
+  checks, and pass them wherever this machine resolves `www.designesy.org`
+  to public addresses alone; the two networks above are the exception.
+- The browser probe. With `DESIGNESY_CDP_URL` set, the server checks that
+  its endpoint answers, as before, and the browser it drives loads the page
+  and follows its redirects itself, outside these checks.
+- The hosted MCP route and the hosted fetch. designesy-mcp stays 1.13.10.
+
+Caveats: through a proxy, the proxy looks the name up again and makes the
+connection, so its address is checked only as this machine resolves the
+name, and it is not pinned. A name with a numeric label is read as a name
+when its last label is not numeric (`007.example.com`), and its addresses
+are checked as any name's are. The tests stand a table in for the system
+resolver, which reads a numeric host as glibc's `inet_aton` does; they do
+not show how each system's resolver reads one, and the check refuses every
+such form so that it does not depend on that. The hosted fetch reads a
+URL with credentials from the host after the `@` and drops them; urllib
+cannot, so the offline engine refuses such a URL.
+
+### Gates (designesy-mcp, next release: address checks)
+
+- `test/test_offline_url_checks.py` (new), 323 cases, against a test
+  network: a name table stands in for the resolver and honours the
+  address family, socket type, protocol and flags a lookup asks with, and
+  every connection that does not go to the test server on 127.0.0.1 is
+  refused before it is made and recorded. The cases cover hosts refused
+  as written, names that resolve to addresses across the blocked ranges,
+  each blocked range at its first address and at its last, the redirect
+  limit and a redirect to another scheme for every redirect status urllib
+  follows, direct HTTPS and the TLS context the opener is given, the read
+  timeout on its way to the socket, the arguments the lookup asks with,
+  the source address the socket binds, the checked socket's cleanup, a
+  proxy plain and tunnelled, the retry that `DESIGNESY_INSECURE_TLS=1`
+  allows, the page, stylesheet, token file and Lottie file reads, and the
+  reads of designesy.org's own documents on the two networks above.
+  Against the code before the change, 285 of the 324 (these and the guard
+  test below) fail on Python 3.14.6, 3.13.2 and 3.12.4, and 282 on
+  3.10.9. The 39 that pass there are 32 controls (among them two refusals
+  the code before gave in the same words, and the arguments the lookup
+  asks with, which the code before asked with too), the non-http scheme
+  case, the lookup-once case (the code before made one lookup too), the
+  read-timeout case (the code before read with that timeout too), the
+  case that the certificate is checked with the server's TLS context, and
+  three proxy cases with credentials, which the code before refused as
+  well. On 3.10.9 three 308 cases pass too, since urllib there does not
+  follow a 308. All 324 pass after it.
+- `test/conftest.py` (new): every test in the package runs with name
+  lookups, reverse lookups and connections past loopback refused, and a
+  test that tries one fails, so a change that opens a URL by a path the
+  tests do not stand in for fails the suite and sends nothing.
+- `test_server.py`: the test that pinned the old check letting a
+  carrier-grade NAT address and `http://[fec0::1]/` through now requires
+  both to be refused. The tests that stood in for `urllib.request.urlopen`
+  on the `_fetch` path stand in for `_urlopen`, the opener `_fetch` now
+  uses, and so do seven in `test_offline_engine_parity.py`.
+- 104 named single-edit mutants of the change (each check dropped or
+  loosened, a range removed or made narrower, a connection made by name,
+  the TLS context, the timeout, the socket type or the source address
+  dropped, the lookup's address family, protocol or flags narrowed, a
+  socket or response left open, the redirect limit off by one, one
+  redirect status let past the limit or the check, the retry opened
+  without the checks): each fails at least one test on Python 3.14.6,
+  3.13.2, 3.12.4 and 3.10.9. Other single edits of the checks pass
+  every test: some change no result, and reviews of this change kept
+  finding others that do.
+- The package suite: 1220 passed on Python 3.14.6, 3.13.2, 3.12.4 and
+  3.10.9; the code before passes 897. Run once more with every name
+  lookup, every reverse lookup and every connection past 127.0.0.1
+  refused and counted, it made none.
+
 **Find's scripts and engine get an id that changes with the index** (the
 site; no version moves). The entry below gave Find's engine file the
 `?v=<id>` its worker address already had, with the id read from
