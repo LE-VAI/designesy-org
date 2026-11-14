@@ -71,18 +71,28 @@ weight or score moves.
   raise that one finding for that directory alone: a worker address left
   with the placeholder, a `pagefind.js` that does not parse and one
   unknown name, each in the copy, and a changed engine in the written
-  index. Last, the self-test writes ten one-page sites, each with the
-  gate, the helper and a small whole build holding one fault, and runs the
-  gate in each as the build and CI run it, with no flag, so it reads that
-  site's own `.next` and `app/`. Each gate must exit 1 with its one
-  finding: an engine address without the index id, no index, a client
-  chunk that hands `pagefind.js` to a webpack module call, client chunks
-  that never build its address, a fragment cut short, a trace manifest, a
-  page that is no route, a route indexed twice, a `page_count` above the
-  ratio, and a page Find cannot reach. A gate still running after 60 s is
-  stopped and started again, since a node process here now and then did
-  not exit after printing everything; one stopped three times fails its
-  case, so a gate that hangs fails the build instead of hanging it.
+  index. Last, the self-test writes ten small sites, each with the gate,
+  the helper, an `app/` and a small whole build, and one fault in each,
+  and runs the gate in each as the build and CI run it, with no flag, so
+  it reads that site's own `.next` and `app/`. Each gate must exit 1 with
+  its one finding: an engine address without the index id, no index, a
+  client chunk that hands `pagefind.js` to a webpack module call, client
+  chunks that never build its address, a fragment cut short, a trace
+  manifest, a page that is no route, a route indexed twice, a `page_count`
+  above the ratio, and a page Find cannot reach. A gate still running
+  after 60 s is stopped and started again, since a node process here now
+  and then did not exit after printing everything; one stopped three times
+  fails its case, so a gate that hangs fails the build instead of hanging
+  it.
+- **The gate sets its exit code and returns.** `main()` sets
+  `process.exitCode` and lets node exit once nothing is left to run,
+  instead of calling `process.exit()`. Under load on Linux, node 24 now
+  and then stayed alive after a gate that called `process.exit()` after
+  the self-test had printed everything, its threads all waiting, while the
+  gate on main did not, and the build runs the gate with no time limit. In
+  runs made on Linux, gates started as the self-test starts them, on a
+  copy of this change's build, stayed alive in 5 of 6,000 runs that called
+  `process.exit()` and in 0 of 6,000 that did not.
 - **An address changed after its closing quote fails.** A `.`, a `[` or an
   optional chain (`?.` not followed by a digit) after the string an engine
   or worker address is written in means the script changes the address
