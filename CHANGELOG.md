@@ -18,7 +18,7 @@ weight or score moves.
 
 - **A self-test runs first.** Before it reads the build,
   `check-search-coverage.js` runs one and prints
-  `search-coverage: self-test OK (110 cases)`, so a build log shows it
+  `search-coverage: self-test OK (119 cases)`, so a build log shows it
   ran. It fails the gate when a case fails, or when it checked another
   number of cases than `SELF_TEST_CASES`, so an emptied or shortened
   self-test fails too; `--self-test` runs it alone. It builds small
@@ -40,7 +40,7 @@ weight or score moves.
   replaces both. `ID_FORMAT` must refuse near misses: 19 or 21 hex digits,
   upper-case or non-hex digits, a build id, a space before or a newline
   after.
-- **The gate's own 62 cases.** A correct index must pass with every
+- **The gate's own 71 cases.** A correct index must pass with every
   address counted and both loaders parsing, and each of these must fail: a
   changed fragment or engine under the old id (the hash); a build id or
   the placeholder as the id (the format pin), and an index without
@@ -71,10 +71,18 @@ weight or score moves.
   raise that one finding for that directory alone: a worker address left
   with the placeholder, a `pagefind.js` that does not parse and one
   unknown name, each in the copy, and a changed engine in the written
-  index. Last, the self-test copies the gate and the helper into a
-  one-page site and runs the gate in a child process, as the build runs
-  it, on a small whole build whose `pagefind.js` asks for the engine
-  without the index id. The gate must exit 1 with that one finding.
+  index. Last, the self-test writes ten one-page sites, each with the
+  gate, the helper and a small whole build holding one fault, and runs the
+  gate in each as the build and CI run it, with no flag, so it reads that
+  site's own `.next` and `app/`. Each gate must exit 1 with its one
+  finding: an engine address without the index id, no index, a client
+  chunk that hands `pagefind.js` to a webpack module call, client chunks
+  that never build its address, a fragment cut short, a trace manifest, a
+  page that is no route, a route indexed twice, a `page_count` above the
+  ratio, and a page Find cannot reach. A gate still running after 60 s is
+  stopped and started again, since a node process here now and then did
+  not exit after printing everything; one stopped three times fails its
+  case, so a gate that hangs fails the build instead of hanging it.
 - **An address changed after its closing quote fails.** A `.`, a `[` or an
   optional chain (`?.` not followed by a digit) after the string an engine
   or worker address is written in means the script changes the address
@@ -96,9 +104,9 @@ weight or score moves.
 
 ### Gates (search gate)
 
-- Each of 82 single-edit changes to a copy of `scripts/` makes the
+- Each of 95 single-edit changes to a copy of `scripts/` makes the
   self-test exit 1, on Windows and on Linux, nineteen to the helper and
-  sixty-three to the gate. They include the nine that the second review of
+  seventy-six to the gate. They include the nine that the second review of
   the entry below found passing every check while making the id or its
   addresses wrong (five to the helper, four to the gate), and every other
   edit to the helper or the gate it found passing but one, which replaces
@@ -139,10 +147,23 @@ weight or score moves.
   there. With each, a build with the matching fault passed the gate too.
   Three more were written for the new cases: the change after the closing
   quote and the stray strings read in the two loaders only, and a missing
-  `pagefind.js` not reported. The other ten cover what this entry adds and
-  five checks that were already there. Two edits to
-  `postbuild-pagefind.js` that the second review of the entry below found
-  passing are not covered: the self-test does not run that script.
+  `pagefind.js` not reported. Thirteen more are edits the fifth review of
+  this change found passing after that, or written for its cases: `main()`
+  exiting 0 when run without `--next`; the findings dropped where
+  `index-present` returns early; `index-present`, `index-readable`,
+  `no-trace-manifests`, `page-count-ratio` and `routes-findable` turned
+  off; `native-pagefind-import` turned off for a loader or for client
+  chunks that never build the address, or loosened to let a loader with no
+  native import through; `fragments-are-routes` turned off for a page that
+  is no route or for a route indexed twice; and a gate that never exits
+  after its self-test. With each of the first twelve but the one to
+  `index-present`, a build with the matching fault passed the gate run as
+  the build runs it; with that one the gate stops with an error on a build
+  with no index, and with the last the self-test itself did not finish.
+  The other ten cover what this entry adds and five checks that were
+  already there. Two edits to `postbuild-pagefind.js` that the second
+  review of the entry below found passing are not covered: the self-test
+  does not run that script.
 - A returning Chrome profile whose request for `pagefind-version.json`
   fails (the harness of the entry below, answering 503 for that file on
   both visits). It searched on the build of the engine-address entry
