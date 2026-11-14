@@ -3,69 +3,50 @@
 import { useEffect } from 'react';
 
 /**
- * Scroll-driven depth — the parallax + progress layer.
+ * Scroll-driven depth: the hero constellation's parallax.
  *
- * Sets three CSS variables on <html> via a single passive scroll listener
- * + rAF throttle:
+ * Sets --scroll-y (current scrollY in px) on each .hero-seam-mark from one
+ * passive scroll listener, rAF-throttled; the mark's CSS drifts it up at 0.3x
+ * scroll speed (globals.css, "Scroll-driven parallax").
  *
- *   --scroll-y      : current scrollY in px (for parallax transforms)
- *   --scroll-progress : 0..1 fraction of the page scrolled (for a top progress bar)
- *   --scroll-velocity : -1..1 normalized velocity (for skew/stretch effects)
+ * The variable is written on the marks, never on <html>, and only while a
+ * mark is on the page. It used to be written on the root every scrolled
+ * frame, with --scroll-progress and --scroll-velocity beside it (neither had
+ * a reader). A custom property on the root is inherited by every element, so
+ * each write invalidated style for the whole document, and the next layout
+ * read in the frame (the dock's pacing) paid for it in script. Measured on a
+ * 390x844 phone at 4x CPU throttle, scrolling the landing from the hero into
+ * the inspect section: 83 frames over 50 ms per pass with the root writes,
+ * 3 to 5 without. That was the one-time jitter between the score hero and the
+ * verify console on a phone.
  *
- * The CSS layer reads these vars to drive:
- *   - .hero-seam parallax drift (translateY at 0.3x scroll speed)
- *   - .scroll-progress-bar (top-of-page width: calc(var(--scroll-progress) * 100%))
- *   - .section parallax (subtle 4px shift per section as it crosses the viewport)
- *
- * Zero dependencies. Respects prefers-reduced-motion (exits early — the
- * site stays fully readable, just without parallax). Passive listener
- * so it never blocks the scroll thread.
+ * Zero dependencies. Respects prefers-reduced-motion (exits early: the mark
+ * stays put, the var unset and the calc's fallback 0px). The collection is
+ * live, so a mark that mounts after a client navigation is picked up.
  */
 export function ScrollDepth() {
   useEffect(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let ticking = false;
-    let lastY = window.scrollY;
-    let lastTime = performance.now();
-    let velocity = 0;
+    const marks = document.getElementsByClassName('hero-seam-mark');
+    let frame = 0;
 
     const update = () => {
-      const y = window.scrollY;
-      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const progress = Math.min(y / maxScroll, 1);
-
-      // Velocity: px/ms, normalized to a -1..1 range and smoothed.
-      const now = performance.now();
-      const dt = Math.max(now - lastTime, 1);
-      const rawVel = (y - lastY) / dt;
-      velocity = velocity * 0.7 + rawVel * 0.3; // smoothing
-      const normVel = Math.max(-1, Math.min(1, velocity / 3));
-
-      const root = document.documentElement;
-      root.style.setProperty('--scroll-y', `${y}px`);
-      root.style.setProperty('--scroll-progress', String(progress));
-      root.style.setProperty('--scroll-velocity', String(normVel));
-
-      lastY = y;
-      lastTime = now;
-      ticking = false;
+      frame = 0;
+      const y = `${window.scrollY}px`;
+      for (let i = 0; i < marks.length; i++) (marks[i] as HTMLElement).style.setProperty('--scroll-y', y);
     };
 
     const onScroll = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
+      if (!frame && marks.length) frame = requestAnimationFrame(update);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
-    // Initial paint so the progress bar starts at 0 and vars are defined.
     update();
 
     return () => {
       window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
