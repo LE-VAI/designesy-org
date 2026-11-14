@@ -125,11 +125,14 @@
  * built in a temporary directory, one with nothing wrong and at least one
  * for each check the address, parse, name and directory findings make (each
  * engine address check in both loaders and in a third script), the
- * directory findings read through check() itself, and last this gate run in
- * a child process on a small whole build with one fault, so its exit code
- * is checked too (see selfTest). A failing self-test fails the gate, since
- * a clean result from a broken check would prove nothing, and so does a
- * self-test that checked another number of cases than SELF_TEST_CASES.
+ * directory findings read through check() itself, and last this gate run
+ * the way the build and CI run it, with no flag, on small whole builds with
+ * one fault each: one for each finding only a whole build can raise, and
+ * one for an engine address. So main()'s default path and exit code, and
+ * each of those findings, are checked too (see selfTest). A failing
+ * self-test fails the gate, since a clean result from a broken check would
+ * prove nothing, and so does a self-test that checked another number of
+ * cases than SELF_TEST_CASES.
  * Every run prints
  * "search-coverage: self-test OK (<n> cases)", so a build log shows the
  * self-test ran.
@@ -806,7 +809,38 @@ function check(nextDir) {
  *  when the count is another, so a self-test that is emptied, cut short or
  *  skips a loop cannot pass. Adding or removing a case on purpose changes
  *  this number with it. */
-const SELF_TEST_CASES = 110;
+const SELF_TEST_CASES = 119;
+
+/** How long the self-test lets each gate it starts run, and how many times
+ *  it starts one. A gate on a small build finishes in seconds. A node
+ *  process here now and then did not exit after printing everything, more
+ *  often under load, so a gate still running at the limit is stopped and
+ *  started again; one stopped CHILD_STARTS times fails its case, so a gate
+ *  that hangs fails the build instead of hanging it. */
+const CHILD_LIMIT_MS = 60000;
+const CHILD_STARTS = 3;
+
+/** Run by the self-test with `node -e`: starts the gate in each site
+ *  directory it is given, all at once and as the build runs it (`node
+ *  scripts/check-search-coverage.js`, no flag), stops any gate still running
+ *  at the limit and starts it again, up to the number of starts given, and
+ *  prints each gate's last exit status, signal and stderr as JSON, in the
+ *  order given. */
+const START_GATES = `
+const { spawn } = require('node:child_process');
+const [limit, most, ...sites] = process.argv.slice(1);
+const run = (cwd, starts) => new Promise((done) => {
+  const gate = spawn(process.execPath, ['scripts/check-search-coverage.js'], { cwd, timeout: Number(limit), stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '';
+  gate.stderr.setEncoding('utf8').on('data', (d) => { stderr += d; });
+  gate.on('error', (e) => done({ status: null, signal: e.message, stderr }));
+  gate.on('close', (status, signal) => {
+    if (status === null && starts > 1) run(cwd, starts - 1).then(done);
+    else done({ status, signal, stderr });
+  });
+});
+Promise.all(sites.map((cwd) => run(cwd, Number(most)))).then((runs) => process.stdout.write(JSON.stringify(runs)));
+`;
 
 /**
  * The helper's cases, then the gate's own on small indexes built in a
@@ -820,18 +854,24 @@ const SELF_TEST_CASES = 110;
  * five findings about the index directories must be raised for the copy, and
  * engine-address-build-id and index-files-known for the written index too. A
  * pair with one fault in one directory must raise that one finding for that
- * directory and nothing else. Last, this gate runs in a child process, as the
- * build runs it, on a small whole build with one fault, and must exit 1 with
- * that one finding; in the child (SEARCH_COVERAGE_SELF_TEST_CHILD) that case
- * is counted and not run again. Some faults are seen by one check only: a
+ * directory and nothing else. Last, this gate runs the way the build and CI
+ * run it (`node scripts/check-search-coverage.js`, no flag, from the site's
+ * directory) on one-page sites whose small whole builds (WHOLE_BUILDS) hold
+ * one fault each, and must exit 1 with that one finding alone: an engine
+ * address without the index id, no index, a client chunk that hands
+ * pagefind.js to a webpack module call, client chunks that never build its
+ * address, a fragment that cannot be read, a trace manifest, a fragment that
+ * is no route, a route indexed twice, a page_count above the ratio, and a
+ * page Find cannot reach. In a gate the
+ * self-test starts (SEARCH_COVERAGE_SELF_TEST_CHILD) those cases are
+ * counted and not run again. Some faults are seen by one check only: a
  * changed fragment or engine under the old id by the hash; an address left
  * with the placeholder by the address reading, since the hash reads ?v=<id> as
  * the placeholder; a build id or the placeholder as the id by the format pin.
  * A check can hold a part no case tries: no case puts a digit after "?.",
  * characters after the id inside an address, or an address with no closing
- * quote, and no case puts a fault in what only a full build holds (the client
- * chunk, the routes, the fragments' pages, the page count). Returns how many
- * cases it checked and what failed.
+ * quote, and each finding only a whole build can raise has one case, for one
+ * way it can arise. Returns how many cases it checked and what failed.
  */
 function selfTest() {
   const os = require('node:os');
@@ -894,14 +934,14 @@ function selfTest() {
     }
 
     // Each engine address check, in both loaders and in pagefind-ui.js
-    // (every script is read, and these cases give that one an engine
-    // address), since a check that skipped one script would still pass a
-    // case in another: an address left with the placeholder; an address the
-    // script changes after its closing quote, by a ".", an optional chain, a
-    // "[", or a "." after white space; and strings ending in .pagefind that
-    // are not the template, before a backtick, a double quote, a single
-    // quote and a query. Then the same four changes after the worker's
-    // address in pagefind.js.
+    // (every script is read; the placeholder and after-quote cases give
+    // pagefind-ui.js an engine address), since a check that skipped one
+    // script would still pass a case in another: an address left with the
+    // placeholder; an address the script changes after its closing quote,
+    // by a ".", an optional chain, a "[", or a "." after white space; and
+    // strings ending in .pagefind that are not the template, before a
+    // backtick, a double quote, a single quote and a query. Then the same
+    // four changes after the worker's address in pagefind.js.
     const AFTER_QUOTE = [
       ['.replace("?", "&")', '.', '.replace'],
       ['?.replace("?", "&")', '?.', '?.replace'],
@@ -1051,34 +1091,77 @@ function selfTest() {
     fs.rmSync(path.join(noId.dir, indexId.VERSION_FILE));
     failIf(!problems(noId.dir).some((m) => m.includes('holds no id')), 'an index without pagefind-version.json passed');
 
-    // Last, the gate as the build runs it, in a child process: a copy of this
-    // script and the helper in a one-page site, run with no flag but --next
-    // on a whole small build (a client chunk that loads pagefind.js, a
-    // prerender manifest, the index) whose one fault is an engine address in
-    // pagefind.js without the index id. It must exit 1 and print that
-    // finding alone, so main()'s exit code and the rest of check() are
-    // checked too. In the child this case is counted and not run again.
-    if (process.env.SEARCH_COVERAGE_SELF_TEST_CHILD === '1') {
-      cases++;
-    } else {
-      const site = path.join(root, 'site');
-      fs.mkdirSync(path.join(site, 'scripts', 'lib'), { recursive: true });
-      fs.mkdirSync(path.join(site, 'app', 'lib'), { recursive: true });
-      fs.copyFileSync(__filename, path.join(site, 'scripts', 'gate.js'));
-      fs.copyFileSync(path.join(__dirname, 'lib', 'pagefind-index-id.js'), path.join(site, 'scripts', 'lib', 'pagefind-index-id.js'));
-      fs.writeFileSync(path.join(site, 'app', 'page.tsx'), 'export default function Page() { return null; }\n');
-      fs.writeFileSync(path.join(site, 'app', 'lib', 'command-palette.tsx'), "const INDEX: SearchItem[] = [\n  { href: '/' },\n];\n");
-      const whole = path.join(root, 'whole-next');
-      const unversioned = built('whole', (dir) => {
+    // Last, the gate the way the build and CI run it: `node
+    // scripts/check-search-coverage.js` with no flag, from a site's own
+    // directory, so main() takes its default path and reads that site's .next
+    // and app/. Each of WHOLE_BUILDS is a one-page site whose whole build (a
+    // client chunk that loads pagefind.js, a prerender manifest with one page,
+    // the index) holds one fault, and the gate must exit 1 with that one
+    // finding alone. The sites share one copy of the scripts, hard-linked
+    // where the file system allows it. One node process (START_GATES) starts
+    // every gate at once and waits for them all; a gate still running at
+    // CHILD_LIMIT_MS is stopped and started again, and fails its case when
+    // stopped CHILD_STARTS times. The self-test stops that process too if it
+    // is still running 30 s after that many limits. In a gate the self-test
+    // starts, these cases are counted and not run again.
+    const LOADER = 'p.then((t) => import("".concat(e, "/pagefind.js?v=").concat(t)));\n';
+    const second = (doc) => (dir) => fs.writeFileSync(path.join(dir, 'fragment', 'en_eeeeeee.pf_fragment'), zlib.gzipSync(`pagefind_dcd${JSON.stringify(doc)}`));
+    const WHOLE_BUILDS = [
+      ['whose pagefind.js asks for the engine without the index id', 'engine-address-build-id', { index: (dir) => {
         const loader = path.join(dir, 'pagefind.js');
         fs.writeFileSync(loader, fs.readFileSync(loader, 'utf8').replace(`pagefind?v=${PLACEHOLDER}\``, 'pagefind`'));
+      } }],
+      ['with no index', 'index-present', { next: (n) => fs.rmSync(path.join(n, PAGEFIND_REL), { recursive: true }) }],
+      ['whose client chunk hands pagefind.js to a webpack module call', 'native-pagefind-import', { chunk: 'p.then((t) => n(4471)("".concat(e, "/pagefind.js?v=").concat(t)));\n' }],
+      ['whose client chunks never build the pagefind.js address', 'native-pagefind-import', { chunk: 'p.then((t) => t);\n' }],
+      ['whose fragment is cut short', 'index-readable', { index: (dir) => {
+        const cut = path.join(dir, 'fragment', 'en_bbbbbbb.pf_fragment');
+        const bytes = fs.readFileSync(cut);
+        fs.writeFileSync(cut, bytes.subarray(0, bytes.length >> 1));
+      } }],
+      ['that indexes a trace manifest', 'no-trace-manifests', { index: second({ url: '/endpoints/page.js.nft.json.html', meta: { title: 'page.js.nft' } }) }],
+      ['that indexes a page that is no route', 'fragments-are-routes', { index: second({ url: '/gone', meta: { title: 'Gone' } }) }],
+      ['that indexes a route twice', 'fragments-are-routes', { index: second({ url: '/', meta: { title: 'Home again' } }) }],
+      ['whose page_count is above the ratio', 'page-count-ratio', { index: (dir) => fs.writeFileSync(path.join(dir, 'pagefind-entry.json'), '{"version":"1.6.0","languages":{"en":{"hash":"en_aaaaaaa","page_count":2}}}') }],
+      ['with a page Find cannot reach', 'routes-findable', { page: 'unreached' }],
+    ];
+    if (process.env.SEARCH_COVERAGE_SELF_TEST_CHILD === '1') {
+      cases += WHOLE_BUILDS.length;
+    } else {
+      const SCRIPTS = ['check-search-coverage.js', path.join('lib', 'pagefind-index-id.js')];
+      const shared = path.join(root, 'scripts');
+      fs.mkdirSync(path.join(shared, 'lib'), { recursive: true });
+      fs.copyFileSync(__filename, path.join(shared, SCRIPTS[0]));
+      fs.copyFileSync(path.join(__dirname, SCRIPTS[1]), path.join(shared, SCRIPTS[1]));
+      const sites = WHOLE_BUILDS.map(([, , fault], i) => {
+        const site = path.join(root, `whole-${i}`);
+        for (const rel of SCRIPTS) {
+          const to = path.join(site, 'scripts', rel);
+          fs.mkdirSync(path.dirname(to), { recursive: true });
+          try { fs.linkSync(path.join(shared, rel), to); } catch { fs.copyFileSync(path.join(shared, rel), to); }
+        }
+        for (const route of ['', ...(fault.page ? [fault.page] : [])]) {
+          fs.mkdirSync(path.join(site, 'app', route), { recursive: true });
+          fs.writeFileSync(path.join(site, 'app', route, 'page.tsx'), 'export default function Page() { return null; }\n');
+        }
+        fs.mkdirSync(path.join(site, 'app', 'lib'), { recursive: true });
+        fs.writeFileSync(path.join(site, 'app', 'lib', 'command-palette.tsx'), "const INDEX: SearchItem[] = [\n  { href: '/' },\n];\n");
+        const next = path.join(site, '.next');
+        built(path.join(`whole-${i}`, '.next', PAGEFIND_REL), fault.index);
+        fs.writeFileSync(path.join(next, 'static', 'chunks', 'loader.js'), fault.chunk || LOADER);
+        fs.writeFileSync(path.join(next, 'prerender-manifest.json'), JSON.stringify({ routes: { '/': { dataRoute: '/index.rsc' } } }));
+        if (fault.next) fault.next(next);
+        return site;
       });
-      fs.cpSync(unversioned.dir, path.join(whole, PAGEFIND_REL), { recursive: true });
-      fs.writeFileSync(path.join(whole, 'static', 'chunks', 'loader.js'), 'p.then((t) => import("".concat(e, "/pagefind.js?v=").concat(t)));\n');
-      fs.writeFileSync(path.join(whole, 'prerender-manifest.json'), JSON.stringify({ routes: { '/': { dataRoute: '/index.rsc' } } }));
-      const r = spawnSync(process.execPath, [path.join(site, 'scripts', 'gate.js'), '--next', whole], { encoding: 'utf8', env: { ...process.env, SEARCH_COVERAGE_SELF_TEST_CHILD: '1' } });
-      const ids = [...String(r.stderr).matchAll(/^ {2}\[([\w-]+)\]$/gm)].map((m) => m[1]).join(', ');
-      failIf(r.status !== 1 || ids !== 'engine-address-build-id', `the gate on a whole build whose pagefind.js asks for the engine without the index id exited ${r.status} with ${ids || 'no finding'}, not 1 with engine-address-build-id alone`);
+      const r = spawnSync(process.execPath, ['-e', START_GATES, String(CHILD_LIMIT_MS), String(CHILD_STARTS), ...sites], { encoding: 'utf8', timeout: CHILD_STARTS * CHILD_LIMIT_MS + 30000, env: { ...process.env, SEARCH_COVERAGE_SELF_TEST_CHILD: '1' } });
+      let runs = [];
+      try { runs = JSON.parse(r.stdout); } catch { /* each case below fails */ }
+      for (const [i, [what, want]] of WHOLE_BUILDS.entries()) {
+        const run = runs[i] || { status: null, signal: `no result: ${r.error ? r.error.message : `exit ${r.status}`}`, stderr: '' };
+        const ids = [...String(run.stderr).matchAll(/^ {2}\[([\w-]+)\]$/gm)].map((m) => m[1]).join(', ');
+        const how = run.status === null ? `did not finish (${run.signal})` : `exited ${run.status}`;
+        failIf(run.status !== 1 || ids !== want, `the gate on a whole build ${what} ${how} with ${ids || 'no finding'}, not 1 with ${want} alone`);
+      }
     }
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
