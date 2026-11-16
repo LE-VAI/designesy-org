@@ -6,6 +6,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Own-contract formula 1.0.3: f02's line counts every color outside your
+palette** (the site; the engine stays 1.5.4, and nothing is published to
+npm or PyPI). f02's one-line result says how many shipped colors are in
+the palette. It took that count from the outside colors it lists, and the
+list stops at 20. With more than 20 shipped colors outside the palette,
+the line said more colors were in the palette than were. The status was
+already right, because it reads the full count. Only the sentence moves.
+
+### Fixed (formula 1.0.3)
+
+- **f02's count comes from every outside color.** The line took the
+  shipped colors minus the 20 it lists. A page with 1 color in the palette
+  and 33 outside read "14 of 34 shipped colors are in your palette"; it now
+  reads "1 of 34 shipped colors is in your palette". The line still names
+  20 colors and ends "and 13 more".
+
+### Not changed (formula 1.0.3)
+
+- No threshold, weight, ceiling, status or verdict moves, so no score,
+  grade or verdict digest moves. A line with 20 or fewer outside colors
+  reads as before, and requests without a contract are untouched.
+- The `/score/contract` page builds f02's row and first finding from the
+  counts, so it already showed the right number. The fix reaches f02's
+  `detail` in the `POST /api/score` response: API callers read it, and
+  the page's Download JSON saves it.
+- The npm engine and the PyPI server do not run the own-contract checks.
+- The recorded page fixture `landed.json` still holds the old line. The
+  page gate replays it and compares a row with the engine's own line only
+  when the list is not cut, so the old line does not fail it. Recording it
+  again is left to a later change.
+
+### Gates (formula 1.0.3)
+
+- `check-own-contract.mjs` gains a check: 1 color in the palette and 33
+  outside must read "1 of 34 ... and 13 more". It fails on main's engine,
+  which writes "14 of 34", and passes with this change.
+
 **designesy-mcp, next release: the offline engine checks the host and the
 address of every hop** (PyPI and the MCP registry; not yet released, and
 designesy-mcp stays 1.13.10). The Python server reads a caller's URL from
