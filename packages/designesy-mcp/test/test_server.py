@@ -840,14 +840,20 @@ class TestScoreFormatScope:
 # score, so http://100.100.100.200/, which the engine refuses with HTTP 400 and
 # _validate_url let through, was fetched from this machine, and the offline
 # engine then opened it in whatever Chrome answered on 127.0.0.1:9222.
-# urlopen (and _urlopen, which _fetch opens URLs through), and subprocess.run
-# are mocked here, so nothing reaches a network or a browser.
+# urlopen (and _urlopen, which _fetch opens URLs through, and _probe_urlopen,
+# which the browser probe opens its endpoint through), and subprocess.run are
+# mocked here, so nothing reaches a network or a browser.
+# TestTlsReachesTheHandshake runs the real _urlopen against a server on
+# 127.0.0.1, read through a name that resolves to a public address here, with
+# each TLS handshake replaced.
 
 import http.client  # noqa: E402
+import http.server  # noqa: E402
 import io  # noqa: E402
 import re  # noqa: E402
 import shutil  # noqa: E402
 import socket  # noqa: E402
+import socketserver  # noqa: E402
 import ssl  # noqa: E402
 import subprocess  # noqa: E402
 import threading  # noqa: E402
@@ -1005,6 +1011,109 @@ class TestTlsIsVerified(_FreshState):
         assert site.contexts(lottie_url)[1].verify_mode == ssl.CERT_NONE
 
 
+class _Handshakes:
+    """Stands in for one SSLContext's TLS handshake (its wrap_socket) and
+    records the host each one was for. With fail set it raises what an
+    unverifiable certificate raises; otherwise it leaves the connection as
+    it is, so the server's plain HTTP answer is read."""
+
+    def __init__(self, fail: bool):
+        self.fail = fail
+        self.hosts = []
+
+    def __call__(self, sock, server_hostname=None, **_kwargs):
+        self.hosts.append(server_hostname)
+        if self.fail:
+            raise _cert_error().reason
+        return sock
+
+
+class TestTlsReachesTheHandshake(_FreshState):
+    """The real _urlopen, opener and HTTPS connection, against a server on
+    127.0.0.1: the SSLContext that _fetch passes is the one whose handshake
+    runs. TestTlsIsVerified replaces _urlopen, so it checks only which
+    context _fetch passes to it.
+
+    The server is read as NAME, which resolves here to PUBLIC, a public
+    address, and a connection to PUBLIC on the server's port is made to the
+    server, so the URL passes the offline URL checks as a public site's
+    does. Each context's wrap_socket is replaced (_Handshakes):
+    _SSL_CONTEXT's fails as an unverifiable certificate, and the context
+    _unverified_ssl_context returns lets the connection through."""
+
+    NAME = "site.example.test"
+    PUBLIC = "93.184.215.14"
+
+    @pytest.fixture
+    def site(self, env):
+        class Answer(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = b'{"ok": true}'
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+
+        class Server(http.server.ThreadingHTTPServer):
+            # No reverse lookup of its own address, which HTTPServer's
+            # server_bind makes (socket.getfqdn) and the test network guard
+            # in conftest.py refuses.
+            def server_bind(self):
+                socketserver.TCPServer.server_bind(self)
+                self.server_name, self.server_port = self.server_address[:2]
+
+        server = Server(("127.0.0.1", 0), Answer)
+        server.daemon_threads = True
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        port = server.server_address[1]
+        lookup, connect = socket.getaddrinfo, socket.socket.connect
+
+        def getaddrinfo(host, *args, **kwargs):
+            if host == self.NAME:
+                return [(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP, "", (self.PUBLIC, port))]
+            return lookup(host, *args, **kwargs)
+
+        def to_the_server(sock, address):
+            return connect(sock, ("127.0.0.1", port) if tuple(address) == (self.PUBLIC, port) else address)
+
+        env.setattr(socket, "getaddrinfo", getaddrinfo)
+        env.setattr(socket.socket, "connect", to_the_server)
+        for name in ("http_proxy", "https_proxy", "all_proxy", "no_proxy"):
+            env.delenv(name, raising=False)
+            env.delenv(name.upper(), raising=False)
+        # No proxy for any host, so urllib reads none from the system either.
+        env.setenv("no_proxy", "*")
+        verified, unverified = _Handshakes(fail=True), _Handshakes(fail=False)
+        loose = mcp._unverified_ssl_context()
+        loose.wrap_socket = unverified
+        env.setattr(mcp, "_unverified_ssl_context", lambda: loose)
+        try:
+            with patch.object(mcp._SSL_CONTEXT, "wrap_socket", verified):
+                yield f"https://{self.NAME}:{port}/t.json", verified, unverified
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_the_verified_context_runs_the_handshake_and_a_failure_is_raised(self, site):
+        url, verified, unverified = site
+        with pytest.raises(urllib.error.URLError, match="certificate has expired"):
+            mcp._fetch(url)
+        assert verified.hosts == [self.NAME]
+        assert unverified.hosts == []
+        assert url not in mcp._TLS_UNVERIFIED
+
+    def test_the_opt_in_runs_the_retry_with_the_unverified_context(self, site, env):
+        env.setenv("DESIGNESY_INSECURE_TLS", "1")
+        url, verified, unverified = site
+        assert mcp._fetch(url) == {"ok": True}
+        assert verified.hosts == [self.NAME]
+        assert unverified.hosts == [self.NAME]
+        assert url in mcp._TLS_UNVERIFIED
+
+
 class TestEngineErrorIsTheResult(_FreshState):
     REFUSED = "http://100.100.100.200/"
 
@@ -1113,12 +1222,16 @@ class TestEngineErrorIsTheResult(_FreshState):
 
 class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
     def test_unset_means_no_connection_and_no_probe(self, env):
-        with patch.object(mcp.urllib.request, "urlopen") as urlopen, \
+        # Both openers are watched: the probe's own, and urllib's, which a
+        # default endpoint opened another way would go through.
+        with patch.object(mcp, "_probe_urlopen") as urlopen, \
+                patch.object(mcp.urllib.request, "urlopen") as plain_urlopen, \
                 patch.object(mcp.subprocess, "run") as run:
             assert mcp._cdp_available() is False
             assert mcp._check_viewport_overflow_cdp("https://example.com/") == ("MANUAL", mcp._V02_MANUAL)
             assert mcp._check_cwv_cdp("https://example.com/") == ("MANUAL", mcp._V21_MANUAL)
         urlopen.assert_not_called()
+        plain_urlopen.assert_not_called()
         run.assert_not_called()
 
     def test_set_names_the_endpoint_that_is_checked(self, env):
@@ -1128,7 +1241,7 @@ class TestBrowserProbeNeedsDesignesyCdpUrl(_FreshState):
         def urlopen(url, timeout=None):
             seen.append(url)
             return MagicMock()
-        with patch.object(mcp.urllib.request, "urlopen", urlopen):
+        with patch.object(mcp, "_probe_urlopen", urlopen):
             assert mcp._cdp_available() is True
         assert seen == ["http://127.0.0.1:59222/json/version"]
 

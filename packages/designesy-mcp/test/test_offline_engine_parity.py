@@ -37,6 +37,7 @@ from __future__ import annotations
 import email.message
 import gzip
 import hashlib
+import io
 import json
 import math
 import os
@@ -387,8 +388,9 @@ class TestFetchLayer:
     the URL that answered, and a compressed body is decoded or not read.
 
     _urlopen (urllib.request.urlopen, with each hop's host and address
-    checked) is replaced by a stand-in that answers from a table of
-    example.test URLs: a context manager whose read() gives the bytes sent,
+    checked and a redirect's body left unread) is replaced by a stand-in
+    that answers from a table of example.test URLs: a context manager whose
+    read() and read1() give the bytes sent,
     with the response's headers and the URL urllib would report after its
     redirects (geturl)."""
 
@@ -403,7 +405,9 @@ class TestFetchLayer:
                 raise mcp.urllib.error.HTTPError(url, 404, "Not Found", {}, None)
             body, headers, final = table[url]
             resp = MagicMock()
-            resp.read.return_value = body
+            sent = io.BytesIO(body)
+            resp.read.side_effect = sent.read
+            resp.read1.side_effect = sent.read1
             resp.headers = headers
             resp.geturl.return_value = final or url
             cm = MagicMock()
