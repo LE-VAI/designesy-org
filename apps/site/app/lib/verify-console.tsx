@@ -45,10 +45,17 @@ import { logLabel } from './check-labels';
 type Status = 'pass' | 'warn' | 'fail' | 'manual' | 'ran';
 
 const LOOP_S = 12; // the site's master period; every other loop divides it
+// The running panel and the verdict share one box, so they hand over in
+// sequence, never as a crossfade: the last check resolves (runEnd), "Check N
+// of N" holds with the meter full (to runHold), the panel leaves (runOut),
+// and only then does the verdict rise in (verdictIn). A crossfade put both on
+// screen at once for 0.4 s, the grade drawn over the finished count.
 const PH = {
   fadeIn: 0.035,
   runStart: 0.07,
-  runEnd: 0.58,
+  runEnd: 0.555,
+  runHold: 0.58,
+  runOut: 0.5925,
   verdictIn: 0.615,
   holdEnd: 0.885,
   fadeOut: 0.955,
@@ -136,7 +143,7 @@ function choreography(rows: Row[], cells: Cell[]) {
     scroll.push(`${pc(b)}{transform:${logY(c.k)};animation-timing-function:${EASE_OUT}}`);
     scroll.push(`${pc(b + step * 0.6)}{transform:${logY(c.k + 1)}}`);
   }
-  scroll.push(`${pc(PH.runEnd)}{transform:${logY(n)};animation-timing-function:${EASE_OUT}}`);
+  scroll.push(`${pc(PH.runEnd)},${pc(PH.runOut)}{transform:${logY(n)};animation-timing-function:${EASE_OUT}}`);
   scroll.push(`${pc(PH.verdictIn)},100%{transform:${logY(n + 1)}}`);
   css.push(`@keyframes vc-log{${scroll.join('')}}`);
 
@@ -169,10 +176,11 @@ function choreography(rows: Row[], cells: Cell[]) {
     );
   });
 
-  // Panels: running while checks run, the verdict after; the stage gate.
+  // Panels: running while checks run, the verdict after (in sequence, see
+  // PH); the stage gate.
   css.push(
-    `@keyframes vc-run{0%{opacity:0}${pc(PH.fadeIn)},${pc(PH.runEnd)}{opacity:1}${pc(PH.verdictIn)},100%{opacity:0}}`,
-    `@keyframes vc-verdict{0%,${pc(PH.runEnd)}{opacity:0;transform:translateY(.5rem);animation-timing-function:${EASE_OUT}}` +
+    `@keyframes vc-run{0%{opacity:0}${pc(PH.fadeIn)},${pc(PH.runHold)}{opacity:1}${pc(PH.runOut)},100%{opacity:0}}`,
+    `@keyframes vc-verdict{0%,${pc(PH.runOut)}{opacity:0;transform:translateY(.5rem);animation-timing-function:${EASE_OUT}}` +
       `${pc(PH.verdictIn)},${pc(PH.holdEnd)}{opacity:1;transform:none}${pc(PH.fadeOut)},100%{opacity:0;transform:none}}`,
     `@keyframes vc-gate{0%{opacity:0}${pc(PH.fadeIn)},${pc(PH.holdEnd)}{opacity:1}${pc(PH.fadeOut)},100%{opacity:0}}`,
     `@keyframes vc-meter{0%,${pc(PH.runStart)}{transform:scaleX(0)}${pc(PH.runEnd)},100%{transform:scaleX(1)}}`
@@ -181,7 +189,7 @@ function choreography(rows: Row[], cells: Cell[]) {
   // The hero's "provable" underline: drawn as the verdict lands, withdrawn
   // with it.
   css.push(
-    `@keyframes vc-underline{0%,${pc(PH.runEnd)}{transform:translateX(-101%);animation-timing-function:${EASE_OUT}}` +
+    `@keyframes vc-underline{0%,${pc(PH.runHold)}{transform:translateX(-101%);animation-timing-function:${EASE_OUT}}` +
       `${pc(PH.verdictIn + 0.02)},${pc(PH.holdEnd)}{transform:none;animation-timing-function:${EASE_IN_OUT}}` +
       `${pc(PH.fadeOut)},100%{transform:translateX(101%)}}`
   );
