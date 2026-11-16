@@ -6119,7 +6119,12 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   try {
     // @ts-ignore — optional dependency, may not be installed
     const mod = await import('@google/design.md/linter');
-    lintDesignMd = mod.lint;
+    // @google/design.md 0.4.0 declares its types against zod 3. Under zod 4,
+    // which this package's package.json overrides it to, those declarations
+    // type a finding's severity as a union that also includes a number and
+    // functions, so the declared signature is set aside here. What runs does
+    // not change: design.md's built code does not import zod.
+    lintDesignMd = mod.lint as unknown as typeof lintDesignMd;
   } catch (e) {
     // MANUAL, not PASS and not WARN. The file was fetched but NOTHING validated
     // it: PASS would assert validation that never happened (the false-PASS

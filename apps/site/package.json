@@ -104,6 +104,12 @@
       "brace-expansion": "1.1.21"
     },
     "@eslint/plugin-kit": "0.7.2",
-    "js-yaml": "4.3.2"
+    "js-yaml": "4.3.2",
+    "@google/design.md": {
+      "zod": "$zod"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }

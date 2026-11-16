@@ -6315,7 +6315,12 @@ async function checkDesignMdSpec(targetUrl: string): Promise<CheckResult> {
   let lintDesignMd: (markdown: string) => { findings: Array<{ severity: string; path?: string; message?: string }>; summary: { errors: number; warnings: number; infos: number } };
   try {
     const mod = await import('@google/design.md/linter');
-    lintDesignMd = mod.lint;
+    // @google/design.md 0.4.0 declares its types against zod 3. Under zod 4,
+    // which this package's package.json overrides it to, those declarations
+    // type a finding's severity as a union that also includes a number and
+    // functions, so the declared signature is set aside here. What runs does
+    // not change: design.md's built code does not import zod.
+    lintDesignMd = mod.lint as unknown as typeof lintDesignMd;
   } catch (e) {
     // MANUAL (weight 0), matching engine.ts: the linter did not run here, which
     // says nothing about the site, so it must not cost the site points.
