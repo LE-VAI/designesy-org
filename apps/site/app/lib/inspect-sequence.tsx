@@ -124,10 +124,12 @@ const FADE_QUICK = 150; // starting or stopping: within the 200ms reduced-motion
 // Below it the type is too small to read, and the stage rests resolved.
 const FIT_MIN = 0.75;
 
-// Narrow, pinned: where a step rests whole under the stage, its numeral this
-// far below the stage's fade. Step four comes to rest there when the pin
-// releases (--ix-pin-end).
-const SETTLE_GAP = 8; // px between the stage's fade and the resting step's numeral
+// The settle (narrow, pinned): where a step comes to rest, how close a stop
+// must be to one, and when a scroll counts as stopped.
+const SETTLE_GAP = 8; // px between the stage's fade and the settled step's numeral
+const SETTLE_REACH = 0.5; // of a step's spacing: farther than this, the page stays where it stopped
+const SETTLE_IDLE = 180; // ms without a scroll event
+const SETTLE_LAPSE = 1000; // ms an input waits for the scroll it should cause
 
 const LABEL = `Demo on a generic page, inspected in four steps. v03 fails because no focus-visible ring is declared. v06 warns because muted text measures 3.8 to 1, under the 4.5 to 1 body minimum. The v03 failure caps the grade at B: ${PASS} pass, ${WARN} warn, ${FAIL} fail, grade B.`;
 
@@ -242,9 +244,9 @@ export function InspectSequence() {
      * The last step has no successor, so the pin ends when its block reaches
      * E + SETTLE_GAP: the section's content box stops --ix-pin-end short of
      * the list's end (the list runs on into the padding; home-inspect.css),
-     * and at release step four sits whole under the graded stage. (It
-     * released with its heading on S, under the fade, and its numeral under
-     * the stage, and they scrolled away like that.)
+     * and at release step four sits whole under the graded stage, as a
+     * settled step does. (It released with its heading on S, under the fade,
+     * and its numeral under the stage, and they scrolled away like that.)
      *
      * H is the large viewport's height (100lvh), not innerHeight. On a phone
      * innerHeight changes as the address bar slides in and out on the first
@@ -493,6 +495,117 @@ export function InspectSequence() {
     const mo = new MutationObserver(sync);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-motion'] });
 
+    /**
+     * The settle (narrow, pinned). Scrolling stays free; when a reader's
+     * scroll stops near a step, the page eases the last few pixels so that
+     * step rests whole just under the stage, its numeral SETTLE_GAP below the
+     * fade: the place every step passes through on its turn, and where step
+     * four releases. Without it a stop could leave the lit step low with an
+     * empty band above it, or the step just read half faded at the stage's
+     * edge.
+     *
+     * Only after the reader's own input (wheel, touch, a scrolling key), so a
+     * jump, find-in-page or this settle's own scroll never sets one off; not
+     * while a finger is down; only toward a step ahead in the direction of
+     * travel, or back onto one passed by no more than the gap, and only
+     * within SETTLE_REACH of it. So a short scroll stays where it stopped,
+     * and the page never pulls a reader back against the way they were
+     * going by more than the gap. Never in calm (reduced motion, or the
+     * site's motion toggle), never while the play loop runs.
+     */
+    // The direction of travel is the page's last movement in the gesture,
+    // else the input's own (a wheel's delta, the key): a passive listener
+    // can run after the scroll it caused, so a one-notch wheel can arrive
+    // with the page already still. No direction, no settle. A touch has no
+    // direction of its own. One that leaves the page where it was (a tap, a
+    // sideways swipe) is not a scroll: it disarms as the finger lifts, so a
+    // tapped link's jump is not settled. Any other input that moves nothing
+    // (a wheel or a key at the page's end) lapses after SETTLE_LAPSE.
+    let armed = false;
+    let touching = false;
+    let touchScroll = 0; // scrollY as the gesture's first finger went down
+    let lastY = 0;
+    let dir = 0; // 1: the page moved down the document, -1: up
+    let idle = 0;
+    const disarm = () => {
+      idle = 0;
+      if (touching) return;
+      armed = false;
+      dir = 0;
+    };
+    const arm = (hint: number) => {
+      if (!armed) {
+        armed = true;
+        lastY = window.scrollY;
+      }
+      if (hint) dir = hint;
+      clearTimeout(idle);
+      idle = window.setTimeout(disarm, SETTLE_LAPSE);
+    };
+    const settle = () => {
+      idle = 0;
+      if (touching || !armed) return;
+      armed = false;
+      const d = dir;
+      dir = 0;
+      if (!d || !pinned || auto || root.hasAttribute('data-ix-calm')) return;
+      let best: number | null = null;
+      for (const li of steps) {
+        // scrollBy(delta) brings this step's numeral to E + SETTLE_GAP.
+        const delta = li.getBoundingClientRect().top - (edge + SETTLE_GAP);
+        if (d * delta < -SETTLE_GAP || Math.abs(delta) > spacing * SETTLE_REACH) continue;
+        if (best === null || Math.abs(delta) < Math.abs(best)) best = delta;
+      }
+      if (best !== null && Math.abs(best) >= 2) window.scrollBy({ top: best, behavior: 'smooth' });
+    };
+    const onScroll = () => {
+      if (!armed) return;
+      clearTimeout(idle);
+      // Away from the section, the gesture just runs out.
+      if (!root.hasAttribute('data-ix-active')) {
+        idle = window.setTimeout(disarm, SETTLE_IDLE);
+        return;
+      }
+      const y = window.scrollY;
+      if (y !== lastY) {
+        dir = Math.sign(y - lastY);
+        lastY = y;
+      }
+      idle = window.setTimeout(settle, SETTLE_IDLE);
+    };
+    const onWheel = (e: WheelEvent) => arm(Math.sign(e.deltaY));
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.defaultPrevented || el?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el?.tagName ?? '')) return;
+      const k = e.key;
+      if (k === 'PageDown' || k === 'ArrowDown' || k === 'End' || (k === ' ' && !e.shiftKey)) arm(1);
+      else if (k === 'PageUp' || k === 'ArrowUp' || k === 'Home' || (k === ' ' && e.shiftKey)) arm(-1);
+    };
+    const onTouch = (e: TouchEvent) => {
+      if (e.type === 'touchstart') {
+        if (e.touches.length <= 1) touchScroll = window.scrollY;
+        touching = true;
+        arm(0);
+        return;
+      }
+      touching = e.touches.length > 0;
+      if (touching) return;
+      if (window.scrollY === touchScroll) {
+        // Not a scroll. Clear the lapse too: left pending, it would disarm
+        // the next input's gesture before that one could settle.
+        clearTimeout(idle);
+        disarm();
+        return;
+      }
+      onScroll();
+    };
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('touchstart', onTouch, { passive: true });
+    window.addEventListener('touchend', onTouch, { passive: true });
+    window.addEventListener('touchcancel', onTouch, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     // --- Play on request ---------------------------------------------------
     let timers: number[] = [];
     let leave: IntersectionObserver | null = null;
@@ -593,8 +706,15 @@ export function InspectSequence() {
       mo.disconnect();
       rm.removeEventListener('change', sync);
       cancelAnimationFrame(raf);
+      clearTimeout(idle);
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scrollend', resync);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('touchstart', onTouch);
+      window.removeEventListener('touchend', onTouch);
+      window.removeEventListener('touchcancel', onTouch);
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
