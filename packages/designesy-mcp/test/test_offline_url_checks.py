@@ -745,20 +745,10 @@ def test_a_redirect_to_an_internal_host_is_refused_before_it_is_followed(target,
     assert net.refused == []
 
 
-# The redirect statuses urllib follows: 301, 302, 303 and 307, and 308 from
-# Python 3.11.
+# The redirect statuses the server follows on every Python: 301, 302, 303,
+# 307 and 308. urllib follows a 308 from Python 3.11, and the server has 3.10
+# follow one too.
 REDIRECT_STATUSES = [301, 302, 303, 307, 308]
-
-
-def _follows(status: int) -> bool:
-    return status != 308 or sys.version_info >= (3, 11)
-
-
-def _not_followed(error: BaseException, status: int) -> None:
-    """A redirect urllib does not follow, a 308 before Python 3.11, is an
-    HTTPError of that status."""
-    assert isinstance(error, urllib.error.HTTPError) and error.code == status
-    error.close()
 
 
 @pytest.mark.parametrize("status", REDIRECT_STATUSES)
@@ -766,12 +756,9 @@ def test_a_redirect_to_ftp_on_a_public_host_is_refused_for_its_scheme(status, ne
     # This redirect's host passes the host check, so the scheme check alone
     # refuses it. urllib follows a redirect to ftp and connects.
     net.server.redirect("/hop", "ftp://site.example.test:1/secret", status)
-    with pytest.raises((ValueError, urllib.error.HTTPError)) as caught:
+    with pytest.raises(ValueError) as caught:
         mcp._fetch(_site(net, "/hop"), as_json=False)
-    if _follows(status):
-        assert str(caught.value) == "Blocked: non-http(s) scheme 'ftp'"
-    else:
-        _not_followed(caught.value, status)
+    assert str(caught.value) == "Blocked: non-http(s) scheme 'ftp'"
     assert net.server.paths() == ["/hop"]
     assert net.lookups == ["site.example.test"]
     assert net.connected == [(PUBLIC, net.server.port)]
@@ -788,14 +775,11 @@ def test_each_redirect_status_urllib_follows_is_checked(status, net):
 
 
 def test_a_308_to_an_internal_host_is_not_followed(net):
-    # urllib follows a 308 from Python 3.11; on 3.10 it raises HTTPError.
+    # A 308 is followed on every Python, and checked as every redirect is.
     _serve_secret(net)
     net.server.redirect("/hop", _inside(net), 308)
-    with pytest.raises((ValueError, urllib.error.HTTPError)) as caught:
+    with pytest.raises(ValueError, match="resolves to private/reserved IP '127.0.0.1'"):
         mcp._fetch(_site(net, "/hop"), as_json=False)
-    if isinstance(caught.value, urllib.error.HTTPError):
-        caught.value.close()
-        assert sys.version_info < (3, 11) and caught.value.code == 308
     assert net.server.paths() == ["/hop"]
 
 
@@ -832,26 +816,17 @@ def _chain(net: _Net, length: int, status: int = 302) -> str:
 @pytest.mark.parametrize("status", REDIRECT_STATUSES)
 def test_control_five_redirects_are_followed(status, net):
     url = _chain(net, 5, status)
-    if _follows(status):
-        assert mcp._fetch(url, as_json=False) == "end"
-        assert mcp._FINAL_URL[url] == _site(net, "/c0")
-    else:
-        with pytest.raises(urllib.error.HTTPError) as caught:
-            mcp._fetch(url, as_json=False)
-        _not_followed(caught.value, status)
+    assert mcp._fetch(url, as_json=False) == "end"
+    assert mcp._FINAL_URL[url] == _site(net, "/c0")
 
 
 @pytest.mark.parametrize("status", REDIRECT_STATUSES)
 def test_a_sixth_redirect_is_not_followed(status, net):
     url = _chain(net, 6, status)
-    with pytest.raises((ValueError, urllib.error.HTTPError)) as caught:
+    with pytest.raises(ValueError) as caught:
         mcp._fetch(url, as_json=False)
-    if _follows(status):
-        assert str(caught.value) == "Blocked: more than 5 redirects"
-        assert net.server.paths() == ["/c6", "/c5", "/c4", "/c3", "/c2", "/c1"]
-    else:
-        _not_followed(caught.value, status)
-        assert net.server.paths() == ["/c6"]
+    assert str(caught.value) == "Blocked: more than 5 redirects"
+    assert net.server.paths() == ["/c6", "/c5", "/c4", "/c3", "/c2", "/c1"]
 
 
 def test_control_a_redirect_on_the_same_public_host_is_followed(net):
