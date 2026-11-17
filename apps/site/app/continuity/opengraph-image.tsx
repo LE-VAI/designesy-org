@@ -10,5 +10,6 @@ export default function OpenGraphImage() {
     title: 'Judgment that stays current',
     lede: 'Score, contract, verify, and keep current. History, delta, and trend for every URL.',
     path: 'designesy.org/continuity',
+    icon: 'continuity',
   });
 }
