@@ -95,8 +95,46 @@
   font-size: var(--text-label);
   color: var(--muted-dim);
   font-family: var(--mono);
-  min-width: 5.5rem;
+  /* The longest token, --ease-drawer, is 13 characters of mono, so every
+     plot and track starts on one line. At 5.5rem the two long names pushed
+     their rows 14px to the right. */
+  min-width: 13ch;
   white-space: nowrap;
+}
+
+/* The curve itself, still: time runs left to right and progress bottom to
+   top. Drawn from the contract's numbers (page.tsx), so the shape is on the
+   page with motion paused or reduced, when the dots do not travel. The axes
+   are a hairline; the curve is ink at the icon family's round 2px-on-24
+   stroke. */
+.demo-easing-plot {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.demo-easing-axis,
+.demo-easing-curve {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.demo-easing-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.demo-easing-curve {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+@media (forced-colors: active) {
+  .demo-easing-axis,
+  .demo-easing-curve {
+    stroke: CanvasText;
+  }
 }
 
 .demo-easing-track {

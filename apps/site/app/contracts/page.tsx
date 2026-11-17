@@ -7,7 +7,7 @@ import { Footer } from '../lib/footer';
 import { CheckGrid } from '../lib/check-grid';
 import { checkItemsFromStrings } from '../lib/check-items';
 import { DemoCell, DemoGrid } from '../lib/demo-cell';
-import { EasingDemo } from './easing-demo';
+import { EasingDemo, type EasingCurve } from './easing-demo';
 import { ReadingProgress } from '../lib/reading-progress';
 import { pageMeta } from '../lib/site-meta';
 import { AgentActions } from '../lib/agent-actions';
@@ -257,6 +257,24 @@ const PRIMITIVE_SHAPE_MOTION = [
   { token: '--ease-out', value: 'cubic-bezier(0.23, 1, 0.32, 1)', role: 'Exit / settle' },
   { token: '--ease-in-out', value: 'cubic-bezier(0.77, 0, 0.175, 1)', role: 'Symmetric motion' },
   { token: '--ease-drawer', value: 'cubic-bezier(0.32, 0.72, 0, 1)', role: 'Drawer / panel slide' },
+];
+
+// The four timing functions as the contract publishes them, parsed for the
+// Easing curves demo, which plots each one. A value that is not a
+// cubic-bezier of four numbers fails the build here, where the contract and
+// the plot would otherwise part ways unseen.
+const bezierOf = (value: string): EasingCurve['bezier'] => {
+  const nums = /^cubic-bezier\(([^)]+)\)$/.exec(value)?.[1].split(',').map((n) => Number(n.trim()));
+  if (!nums || nums.length !== 4 || nums.some((n) => Number.isNaN(n))) {
+    throw new Error(`contracts: not a cubic-bezier of four numbers: ${value}`);
+  }
+  return [nums[0], nums[1], nums[2], nums[3]];
+};
+const EASING_CURVES: EasingCurve[] = [
+  { ease: 'default', token: ds.motion.ease.token, bezier: bezierOf(ds.motion.ease.value) },
+  { ease: 'out', token: ds.motion.ease_out.token, bezier: bezierOf(ds.motion.ease_out.value) },
+  { ease: 'in-out', token: ds.motion.ease_in_out.token, bezier: bezierOf(ds.motion.ease_in_out.value) },
+  { ease: 'drawer', token: ds.motion.ease_drawer.token, bezier: bezierOf(ds.motion.ease_drawer.value) },
 ];
 
 // The material system, read from the contract module (dark values; the
@@ -923,7 +941,7 @@ export default function ContractsPage() {
               label="Easing curves"
               note={<>Four timing functions. Watch the dot travel: same distance, different feel.</>}
             >
-              <EasingDemo />
+              <EasingDemo curves={EASING_CURVES} />
             </DemoCell>
           </DemoGrid>
         </section>
