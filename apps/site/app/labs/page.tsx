@@ -10,6 +10,7 @@ import { CONTRACT_VERSION } from '../lib/design-system-contract';
 import { labs } from '../lib/labs';
 import { acousticTokens } from '../lib/acoustic-tokens';
 import { designReviewKit } from '../lib/kits/design-review';
+import { Wordmark } from '../lib/brand-logotype';
 import './labs.css';
 
 const LAB_INDEX = [labs.poise, labs.takt, labs.cadence, labs.acoustics];
@@ -28,6 +29,73 @@ function verdictState(outcome: string): VerdictState {
    (its rule count). A lab whose outcome differs brings the column back. */
 const LAB_OUTCOMES = new Set(LAB_INDEX.map((lab) => lab.field_check.outcome));
 const SHARED_OUTCOME = LAB_OUTCOMES.size === 1 ? LAB_INDEX[0].field_check.outcome : null;
+
+/* The lab cards' plates. Each card opens on a small specimen of what its lab
+   studies, drawn from that lab's own published values, so the index shows
+   the four experiments and does not only name them. A plate is a picture
+   of the lab the card links to: decorative, so hidden from assistive
+   technology, which reads the title, the lede and the description below. */
+
+/* Takt's first rule: outerRadius = innerRadius + padding. The corner of a
+   nested pair at 8x, on the contract's own radius steps (--radius-lg 12 =
+   --radius 6 + 6 of padding), so both arcs turn about one centre. The centre
+   is the drawing's one dot. Units are the 8x drawing's: 96 = 48 + 48, and
+   the figures give the real ones. */
+function TaktPlate() {
+  return (
+    <svg className="lab-plate-drawing" viewBox="0 0 320 136" width="320" height="136" focusable="false">
+      {/* outer corner, r 96 about (136, 110) */}
+      <path className="lab-plate-line" d="M40 136 V110 A96 96 0 0 1 136 14 H320" />
+      {/* inner corner, r 48 about the same centre */}
+      <path className="lab-plate-line" d="M88 136 V110 A48 48 0 0 1 136 62 H320" />
+      {/* the outer radius, drawn to its arc at 225 degrees, ticked where it
+          crosses the inner arc */}
+      <path className="lab-plate-rule" d="M136 110 L68.1 42.1" />
+      <path className="lab-plate-tick" d="M99.3 78.9 l5.6 -5.6" />
+      {/* the padding between the two top edges */}
+      <path className="lab-plate-rule" d="M188 14 V62" />
+      <path className="lab-plate-tick" d="M184 14 h8 M184 62 h8" />
+      <circle className="lab-plate-dot" cx="136" cy="110" r="4" />
+      <text className="lab-plate-dim" x="60" y="36" textAnchor="end">12</text>
+      <text className="lab-plate-dim" x="114" y="106" textAnchor="end">6</text>
+      <text className="lab-plate-dim" x="198" y="43">6</text>
+    </svg>
+  );
+}
+
+/* Cadence's "tracking by size": three lines, each at the tracking its size
+   takes, with the value on the right. */
+function CadencePlate() {
+  return (
+    <dl className="lab-plate-type">
+      <div>
+        <dt className="lab-plate-type-display">Rhythm</dt>
+        <dd>-0.02em</dd>
+      </div>
+      <div>
+        <dt className="lab-plate-type-body">of text on a page</dt>
+        <dd>0</dd>
+      </div>
+      <div>
+        <dt className="lab-plate-type-label">Labels</dt>
+        <dd>+0.18em</dd>
+      </div>
+    </dl>
+  );
+}
+
+/* Acoustics: every cue token by name, read from the acoustic token module, so
+   the plate lists exactly the cues the contract holds. */
+function AcousticsPlate() {
+  return (
+    <div className="lab-plate-cues">
+      <span className="lab-plate-cues-prefix">--cue:</span>
+      {acousticTokens.tokens.map((cue) => (
+        <span key={cue.token}>{cue.token.replace('--cue:', '')}</span>
+      ))}
+    </div>
+  );
+}
 
 type RelatedRow = {
   href: string;
@@ -235,9 +303,13 @@ export default function LabsPage() {
           <div className="lab-grid">
           <Link
             href="/labs/poise"
-            className="lab-card"
+            className="lab-card has-plate"
             data-cuelume-hover="tick" data-cuelume-press="tick"
           >
+            <div className="lab-plate" aria-hidden="true" data-pagefind-ignore>
+              <Wordmark className="lab-plate-wordmark" />
+              <span className="lab-plate-caption">Wordmark at rest</span>
+            </div>
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab One</span>
               <span className="lab-card-status">Live</span>
@@ -255,9 +327,13 @@ export default function LabsPage() {
           </Link>
           <Link
             href="/labs/takt"
-            className="lab-card"
+            className="lab-card has-plate"
             data-cuelume-hover="tick" data-cuelume-press="tick"
           >
+            <div className="lab-plate" aria-hidden="true" data-pagefind-ignore>
+              <TaktPlate />
+              <span className="lab-plate-caption">Concentric radii · 12 = 6 + 6</span>
+            </div>
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Two</span>
               <span className="lab-card-status">Live</span>
@@ -275,9 +351,13 @@ export default function LabsPage() {
           </Link>
           <Link
             href="/labs/cadence"
-            className="lab-card"
+            className="lab-card has-plate"
             data-cuelume-hover="tick" data-cuelume-press="tick"
           >
+            <div className="lab-plate" aria-hidden="true" data-pagefind-ignore>
+              <CadencePlate />
+              <span className="lab-plate-caption">Tracking by size</span>
+            </div>
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Three</span>
               <span className="lab-card-status">Live</span>
@@ -296,9 +376,13 @@ export default function LabsPage() {
           </Link>
           <Link
             href="/labs/acoustics"
-            className="lab-card"
+            className="lab-card has-plate"
             data-cuelume-hover="tick" data-cuelume-press="tick"
           >
+            <div className="lab-plate" aria-hidden="true" data-pagefind-ignore>
+              <AcousticsPlate />
+              <span className="lab-plate-caption">{acousticTokens.tokens.length} cue tokens</span>
+            </div>
             <div className="lab-card-top">
               <span className="status-badge status-badge--lab">Lab Four</span>
               <span className="lab-card-status">Live</span>
