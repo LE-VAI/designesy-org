@@ -41,10 +41,19 @@ SAFETY:
     TOOL_ANNOTATIONS records each tool's hints. Every certificate is verified
     unless the operator sets DESIGNESY_INSECURE_TLS=1, which covers a
     caller's URL only, and no browser is used unless the operator sets
-    DESIGNESY_CDP_URL.
+    DESIGNESY_CDP_URL. Each body the server fetches for itself is held to
+    16 MiB, as sent and decoded: the read fails once the body passes it.
+    On these reads a redirect's body is not read (_read_body, _urlopen,
+    _probe_urlopen).
+    The error body of a failed call to designesy.org's score engine is
+    held to 16 MiB as sent (_score_api_failure). Other replies from
+    designesy.org's engines are not held to this limit (_post_api,
+    _post_score_api).
 """
 from __future__ import annotations
 
+import http.client
+import io
 import json
 import os
 import re
@@ -413,13 +422,54 @@ class _CheckedHTTPSHandler(urllib.request.HTTPSHandler):
         return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
 
 
-class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+class _UnreadBody:
+    """A redirect's response that is closed, not read, when asked to read."""
+
+    def __init__(self, fp: Any):
+        self._fp = fp
+
+    def read(self, *args: Any) -> bytes:
+        self._fp.close()
+        return b""
+
+    def close(self) -> None:
+        self._fp.close()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._fp, name)
+
+
+class _UnreadRedirects(urllib.request.HTTPRedirectHandler):
+    """urllib's redirect handler, except that a redirect's body is not read.
+
+    urllib reads a redirect's body whole before it follows the redirect
+    (fp.read() in HTTPRedirectHandler.http_error_302), for as long as the
+    server sends it, and holds all of it in memory, and a body that ends
+    before its Content-Length fails the read (IncompleteRead). Nothing in it
+    is used, so here it is closed unread once the Location is known, and
+    a redirect is followed, or refused, however its body ends. Which
+    statuses are followed is urllib's choice. _CheckedRedirects builds on
+    this handler: it checks each redirect and follows at most
+    _MAX_REDIRECTS. The browser probe uses this handler alone
+    (_probe_urlopen).
+    """
+
+    def http_error_302(self, req: Any, fp: Any, code: int, msg: str, headers: Any) -> Any:
+        return super().http_error_302(req, _UnreadBody(fp), code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_302
+    if hasattr(urllib.request.HTTPRedirectHandler, "http_error_308"):
+        http_error_308 = http_error_302
+
+
+class _CheckedRedirects(_UnreadRedirects):
     """urllib's redirect handler, except that each redirect is checked
-    (_validate_url) before it is followed, and that a fetch follows at most
-    _MAX_REDIRECTS of them, as safeFetch does. A redirect to any scheme but
-    http and https is refused: urllib follows one to ftp. Which statuses
-    are followed is urllib's choice, as before: 301, 302, 303 and 307, and
-    308 from Python 3.11."""
+    (_validate_url) before it is followed, that a fetch follows at most
+    _MAX_REDIRECTS of them, as safeFetch does, and that a redirect's body
+    is closed unread (_UnreadRedirects). A redirect to any scheme but http
+    and https is refused: urllib follows one to ftp. Which statuses are
+    followed is urllib's choice, as before: 301, 302, 303 and 307, and 308
+    from Python 3.11."""
 
     def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
         hops = getattr(req, "_designesy_redirects", 0) + 1
@@ -440,24 +490,47 @@ def _urlopen(req: Any, timeout: float, context: ssl.SSLContext | None = None) ->
     """urllib.request.urlopen(req, timeout=timeout, context=context), except
     that every hop is checked: each redirect before it is followed
     (_CheckedRedirects), and each connection as it is made
-    (_checked_class, _checked_connection)."""
+    (_checked_class, _checked_connection). A redirect's body is closed
+    unread (_UnreadRedirects)."""
     handlers: list[Any] = [_CheckedRedirects(), _CheckedHTTPHandler(), _CheckedHTTPSHandler(context=context)]
     return urllib.request.build_opener(*handlers).open(req, timeout=timeout)
+
+
+def _probe_urlopen(url: str, timeout: float) -> Any:
+    """urllib.request.urlopen(url, timeout=timeout) for the browser probe,
+    except that a redirect's body is closed unread (_UnreadRedirects). Its
+    endpoint is opened outside the checks _urlopen makes, as before."""
+    return urllib.request.build_opener(_UnreadRedirects()).open(url, timeout=timeout)
 
 
 # The URL that answered each fetched URL, after urllib's redirects.
 _FINAL_URL: dict[str, str] = {}
 
-# How many bytes each fetched URL's body decoded to (0 when it was not
-# compressed), so a cached body is charged to a page's budget as a fresh one is.
+# How many bytes each fetched URL's body read to: what it decoded to, or its
+# bytes as sent when it had no content coding. A cached body is charged to a
+# page's budget as a fresh one is. Until the read cap (designesy-mcp, next
+# release) a body with no content coding was recorded as 0.
 _DECODED_BYTES: dict[str, int] = {}
 
-# The most bytes one compressed body may decode to (engine 1.5.4), and the most
-# a page's stylesheets may decode to between them (_fetch_page_parts shares one
-# budget of this size). Past it the read fails: a body of a few kilobytes can
-# decode to gigabytes. 16 MiB is the largest cap the hosted engine sets on one
-# document, and its stylesheet total.
+# The bytes _fetch holds one body to (engine 1.5.4), and the budget a page's
+# stylesheets share: _fetch_page_parts charges each sheet what it decoded
+# to, or its bytes as sent when it had no content coding, so the bytes sent
+# for compressed sheets are not held to it between them. Past it the read
+# fails: a compressed body of a few kilobytes can decode to gigabytes, and a
+# server can send a body that never ends. A body with no content coding is
+# held to it as sent, and a compressed body both as sent and decoded. 16 MiB
+# is the largest cap the hosted engine sets on one document, and its
+# stylesheet total. Until the read cap only what a compressed body decoded to
+# was held to it: every body was read whole first, and urllib read a
+# redirect's body whole before it followed the redirect.
 _MAX_DECODED_BYTES = 16 * 1024 * 1024
+
+# _MAX_DECODED_BYTES as a message names it.
+_MAX_BODY_LABEL = f"{_MAX_DECODED_BYTES // (1024 * 1024)} MiB"
+
+# How much of a compressed body one read asks for. The bytes as sent stop at
+# most this far past _MAX_DECODED_BYTES.
+_READ_CHUNK = 64 * 1024
 
 # Codings in the IANA HTTP Content Coding Registry that transform the body and
 # that this port does not decode (br has no standard-library decoder). A label
@@ -476,60 +549,157 @@ def _header_values(headers: Any, name: str) -> str | None:
     return value if isinstance(value, str) else None
 
 
-def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
-    """`raw` with its Content-Encoding undone, as the live engine reads it.
+def _content_coding(encoding: str | None) -> str | None:
+    """The coding a Content-Encoding header asks the reader to undo.
 
-    The request asks for identity, but a server may compress anyway. gzip
-    (x-gzip too) and deflate (zlib-wrapped, or raw as some servers send it,
-    told apart by the zlib header) are decoded with the standard library, up
-    to `limit` bytes (at most _MAX_DECODED_BYTES). identity and labels no
-    registry defines leave the body as sent. br has no decoder in the standard
-    library and this package has no dependencies, so a br body fails, as do
-    zstd and the other registered codings in _UNDECODED_CODINGS, more than one
-    coding, a corrupt or truncated stream and a body that decodes past the
-    limit: ValueError, never compressed bytes read as text.
+    gzip (x-gzip too) or deflate, or None when there is nothing to undo:
+    identity, and a label no registry defines, leave the body as sent. br
+    has no decoder in the standard library and this package has no
+    dependencies, so a br body fails, as do zstd and the other registered
+    codings in _UNDECODED_CODINGS and more than one coding: ValueError,
+    before any of the body is read.
     """
     codings = ["gzip" if c == "x-gzip" else c for c in (c.strip().lower() for c in (encoding or "").split(","))]
     codings = [c for c in codings if c in ("gzip", "deflate") or c in _UNDECODED_CODINGS]
     if not codings:
-        return raw
+        return None
     if len(codings) > 1:
         raise ValueError(f"content decoding failed: unsupported Content-Encoding {', '.join(codings)!r}")
-    coding = codings[0]
-    if coding == "gzip":
-        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-    elif coding == "deflate":
-        wrapped = len(raw) >= 2 and (raw[0] & 0x0F) == 8 and (raw[0] >> 4) <= 7 and ((raw[0] << 8) | raw[1]) % 31 == 0
-        d = zlib.decompressobj(zlib.MAX_WBITS if wrapped else -zlib.MAX_WBITS)
+    if codings[0] in _UNDECODED_CODINGS:
+        raise ValueError(f"content decoding failed: unsupported Content-Encoding {codings[0]!r}")
+    return codings[0]
+
+
+def _over_limit(limit: int, what: str) -> ValueError:
+    """The error for a body past `limit`, naming the limit."""
+    if limit >= _MAX_DECODED_BYTES:
+        bound = f"{_MAX_BODY_LABEL}, the most this server reads from one body"
     else:
-        raise ValueError(f"content decoding failed: unsupported Content-Encoding {coding!r}")
-    if not raw:
-        return raw
+        bound = f"the {limit} bytes left of the {_MAX_BODY_LABEL} budget a page's stylesheets share"
+    return ValueError(f"the response body {what} over {bound}")
+
+
+def _require_end(resp: Any) -> None:
+    """IncompleteRead when the body ended before its Content-Length.
+
+    resp.read() raises it; resp.read(amt) returns the short body instead.
+    """
+    left = getattr(resp, "length", None)
+    if isinstance(left, int) and left > 0:
+        raise http.client.IncompleteRead(b"", left)
+
+
+def _sent_chunks(resp: Any) -> Any:
+    """A compressed body's bytes as sent, as they arrive (read1, at most
+    _READ_CHUNK at a time), held to _MAX_DECODED_BYTES: past it the read
+    fails, so a stream that decodes to little or nothing (empty deflate
+    blocks with no end) still stops there."""
+    received = 0
+    while True:
+        chunk = resp.read1(_READ_CHUNK)
+        if not chunk:
+            return
+        received += len(chunk)
+        if received > _MAX_DECODED_BYTES:
+            raise _over_limit(_MAX_DECODED_BYTES, "as sent is")
+        yield chunk
+
+
+def _read_body(resp: Any, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
+    """Read a response's body with its Content-Encoding undone, as the live
+    engine reads it, and never more than `limit` bytes of it.
+
+    The request asks for identity, but a server may compress anyway.
+    `limit` is at most _MAX_DECODED_BYTES (16 MiB), and less for a stylesheet
+    when less is left of its page's budget. A body with no content coding is
+    read to at most one byte past `limit`, and past it fails. A gzip or
+    deflate body (zlib-wrapped, or raw as some servers send it, told apart by
+    the zlib header) is read as it arrives (_sent_chunks): its bytes as sent
+    are held to _MAX_DECODED_BYTES and what it decodes to, to `limit`. When
+    its stream ends nothing more is read or waited for, even when its
+    Content-Length gives more bytes. Until the read cap the whole response
+    was read first.
+
+    A body past a bound is a ValueError that names the bound. Any other
+    coding is a ValueError before a byte is read (_content_coding), and a
+    corrupt or truncated stream one after: never compressed bytes read as
+    text. A body with no content coding, or a compressed body whose stream
+    is cut short, that ends before its Content-Length raises
+    http.client.IncompleteRead, as resp.read() does. A compressed stream
+    that ends whole is read, though resp.read() raised IncompleteRead there.
+    """
     limit = max(0, min(limit, _MAX_DECODED_BYTES))
-    try:
-        out = d.decompress(raw, limit + 1)
-    except zlib.error as exc:
-        raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
-    if len(out) > limit or d.unconsumed_tail:
-        raise ValueError(f"content decoding failed ({coding}): the decoded body is over {limit} bytes")
+    coding = _content_coding(encoding)
+    if coding is None:
+        body = resp.read(limit + 1)
+        if len(body) > limit:
+            raise _over_limit(limit, "is")
+        _require_end(resp)
+        return body
+
+    d = None
+    head = b""
+    out: list[bytes] = []
+    produced = 0
+
+    def inflate(data: bytes) -> None:
+        nonlocal produced
+        try:
+            piece = d.decompress(data, limit + 1 - produced)
+        except zlib.error as exc:
+            raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
+        produced += len(piece)
+        if produced > limit:
+            raise _over_limit(limit, "decodes to")
+        out.append(piece)
+
+    def decoder(first: bytes) -> Any:
+        if coding == "gzip":
+            return zlib.decompressobj(16 + zlib.MAX_WBITS)
+        wrapped = len(first) >= 2 and (first[0] & 0x0F) == 8 and (first[0] >> 4) <= 7 and ((first[0] << 8) | first[1]) % 31 == 0
+        return zlib.decompressobj(zlib.MAX_WBITS if wrapped else -zlib.MAX_WBITS)
+
+    for chunk in _sent_chunks(resp):
+        if d is None:
+            # deflate's form is told from its first two bytes.
+            head += chunk
+            if len(head) < 2:
+                continue
+            d, chunk = decoder(head), head
+        inflate(chunk)
+        if d.eof:
+            return b"".join(out)
+    # The body ended before its stream did.
+    _require_end(resp)
+    if d is None:
+        if not head:
+            return b""
+        d = decoder(head)
+        inflate(head)
     if not d.eof:
         raise ValueError(f"content decoding failed ({coding}): the stream is truncated")
-    return out
+    return b"".join(out)
+
+
+def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
+    """`raw` with its Content-Encoding undone, read as _read_body reads a
+    response's body, with the same bounds and errors."""
+    return _read_body(io.BytesIO(raw), encoding, limit)
 
 
 def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> Any:
     """Fetch a URL with in-memory caching. Returns parsed JSON or text.
 
-    `max_decoded` bounds what a compressed body may decode to (a page's
-    remaining stylesheet budget); a cached body that decoded past it fails the
-    same way, ValueError.
+    The body is read by _read_body, which holds it to 16 MiB, as sent and
+    decoded. `max_decoded` bounds it further (a page's remaining stylesheet
+    budget); a cached body that read past it fails the same way, ValueError.
     """
     _validate_url(url)
     now = time.time()
     cached = _cache.get(url)
     if cached and (now - cached[0]) < CACHE_TTL:
         if max_decoded is not None and _DECODED_BYTES.get(url, 0) > max_decoded:
-            raise ValueError(f"content decoding failed: the decoded body is over {max_decoded} bytes")
+            raise _over_limit(max_decoded, "is")
         return cached[1]
 
     # Merge browser headers with per-call Accept override.
@@ -554,10 +724,9 @@ def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> An
         _FINAL_URL[url] = final if isinstance(final, str) and final else url
         # Every Content-Encoding line: a coding split over two lines is two codings.
         coding = _header_values(resp.headers, "Content-Encoding")
-        raw = resp.read()
-        decoded = _decode_content(raw, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
-        _DECODED_BYTES[url] = len(decoded) if decoded is not raw else 0
-        body = decoded.decode("utf-8")
+        read = _read_body(resp, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
+        _DECODED_BYTES[url] = len(read)
+        body = read.decode("utf-8")
 
     if as_json:
         data = json.loads(body)
@@ -1916,10 +2085,13 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal. The sheets decode no more than
-    _MAX_DECODED_BYTES between them (engine 1.5.4), as the npm engine's do: a
-    compressed sheet past what is left fails. The third item lists the URLs
-    read: the page, then each sheet that loaded.
+    fails to load is dropped, not fatal. The sheets read no more than
+    _MAX_DECODED_BYTES between them (engine 1.5.4): a compressed sheet is
+    charged what it decodes to, and a sheet with no content coding its bytes
+    as sent (from the read cap; it was charged nothing before). A sheet past
+    what is left fails and is left out, and a sheet that fails is charged
+    nothing. The page is not charged. The third item lists the URLs read:
+    the page, then each sheet that loaded.
     """
     html = _fetch(url, as_json=False)
     read = [url]
@@ -3054,8 +3226,12 @@ def _cdp_available() -> bool:
     if base is None:
         return False
     try:
-        import urllib.request as ur
-        ur.urlopen(f"{base}/json/version", timeout=2).read()
+        # Nothing in the answer is used. It is read through _read_body as a
+        # body with no content coding, so the read stops once it passes
+        # 16 MiB, and a redirect's body is not read; until the read cap it
+        # was read whole.
+        with _probe_urlopen(f"{base}/json/version", timeout=2) as resp:
+            _read_body(resp, None)
         return True
     except Exception:
         return False
@@ -3595,12 +3771,31 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
 
 
 def _score_api_failure(exc: Exception) -> str:
-    """Describe a failed /api/score call, with the engine's own error text."""
+    """Describe a failed /api/score call, with the engine's own error text.
+
+    An HTTP error's body is read by _read_body as a body with no content
+    coding, since the call asks for identity and its reply is not decoded
+    either: it is held to 16 MiB as sent. Past that the text gives the
+    status's reason phrase and names the limit. The response is closed once
+    read, so nothing more of it is read or waited for. Until the read cap
+    (designesy-mcp, next release) the body was read whole, for as long as
+    the engine sent it.
+
+    An HTTPError built with no response (fp None) has nothing to close, and
+    gives its status. CPython 3.10.0 to 3.10.9 and 3.11.0 to 3.11.1 build
+    one without its file wrapper, so its read() and close() raise
+    KeyError('file'); later releases give it an empty body.
+    """
     if isinstance(exc, urllib.error.HTTPError):
         try:
-            detail = exc.read().decode("utf-8", "replace").strip()
+            detail = _read_body(exc, None).decode("utf-8", "replace").strip()
+        except ValueError as err:
+            return _scrub_local_paths(f"HTTP {exc.code}: {exc.reason}; {err}")
         except Exception:
             detail = ""
+        finally:
+            if exc.fp is not None:
+                exc.close()
         try:
             detail = json.loads(detail).get("error") or detail
         except Exception:
@@ -4181,7 +4376,7 @@ TOOLS = [
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "URL to a DTCG token file (JSON). The tool fetches and validates it.",
+                    "description": "URL to a DTCG token file (JSON) of up to 16 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.",
                 },
                 "dtcg_file": {
                     "type": "string",
@@ -4264,7 +4459,7 @@ TOOLS = [
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "URL to a Lottie JSON file. The tool fetches and validates it.",
+                    "description": "URL to a Lottie JSON file of up to 16 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.",
                 },
                 "lottie_file": {
                     "type": "string",

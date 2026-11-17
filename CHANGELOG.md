@@ -6,6 +6,237 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp, next release: every body the offline engine reads stops at
+16 MiB** (PyPI and the MCP registry; not yet released, and designesy-mcp
+stays 1.13.10). The Python server read each body it fetched for itself
+whole, with `resp.read()`, before it looked at its size, and held to 16 MiB
+only what a compressed body decoded to. A body sent with no content coding
+(a page, a stylesheet, a token file or a Lottie file), and any redirect's
+body, was read for as long as the server sent it, into memory. Every such
+read now stops at 16 MiB, as sent and decoded, and on these reads a
+redirect's body is not read. The error body of a failed `designesy_score`
+call to designesy.org's engine, which was read whole too, now stops at
+16 MiB as well. Every read of a caller's URL still goes through the
+address checks (below) on each hop.
+
+### Security (designesy-mcp, next release: read cap)
+
+- **A body with no content coding stops at 16 MiB.** At most 16,777,217
+  bytes of it are read. A body of 16,777,217 bytes or more fails with "the
+  response body is over 16 MiB, the most this server reads from one body"
+  and its connection is closed, so nothing more is read. A body of
+  16,777,216 bytes is read. This holds with a `Content-Length`, chunked, and
+  with neither.
+- **A compressed body's bytes as sent stop at 16 MiB too.** Only what it
+  decoded to was counted, after the whole body had been read. A gzip or
+  deflate body is now read as it arrives. Past 16 MiB as sent it fails ("the
+  response body as sent is over 16 MiB"), within one 64 KiB read of the
+  limit. Past 16 MiB decoded it fails with "the response body decodes to
+  over 16 MiB", where the message gave "16777216 bytes". A gzip body made of
+  empty deflate blocks decodes to nothing: it was read until the server
+  stopped sending, and then failed as truncated.
+- **When a compressed stream ends, nothing more is read.** The response was
+  read to its end first. A gzip page sent with no `Content-Length` on a
+  connection the server then held open failed with `TimeoutError` after
+  about 15 s, the read's idle timeout; it is now read at once (on Python
+  3.14.6 and 3.10.9, against a local server).
+- **On the offline engine's reads a redirect's body is not read.** urllib
+  reads a redirect's body whole before it follows the redirect, for as
+  long as the server sends it. The server now closes it unread once the
+  `Location` is known. Each redirect is still checked before it is
+  followed, and a read still follows at most 5 of them (address checks,
+  below). Which statuses are followed is urllib's choice, as before: 301,
+  302, 303 and 307, and 308 from Python 3.11.
+- **A coding the server does not decode fails before its body is read**
+  (br, zstd and the other registered codings, or more than one coding). The
+  body was read whole first.
+- **A page's stylesheets share the 16 MiB budget, compressed or not.** A
+  sheet with no content coding is charged its bytes as sent; it was charged
+  nothing. A sheet past what is left is left out, and a sheet that fails is
+  charged nothing.
+- **The browser probe stops reading its answer once it passes 16 MiB.** With
+  `DESIGNESY_CDP_URL` set, the check that the DevTools endpoint answers read
+  its `/json/version` reply whole, redirects included. An answer past 16 MiB
+  now counts as no browser, and v02 and v21 read MANUAL. The endpoint is
+  still opened outside the address checks, as before.
+- **A failed score call's error body stops at 16 MiB.** When designesy.org's
+  score engine answers `designesy_score` with an error status, the server
+  reads the error body to quote the engine's error text. It read the body
+  whole, for as long as the engine sent it. It now reads at most 16,777,217
+  bytes of it, as sent, and closes it once read. Past 16 MiB the error gives
+  the status and its reason phrase and names the limit, for example "HTTP
+  502: Bad Gateway; the response body is over 16 MiB, the most this server
+  reads from one body". An error body of up to 16 MiB still gives the
+  engine's error text. This holds in every format, with a `Content-Length`,
+  chunked, and with neither.
+- An error status on a body the offline engine reads still fails at once
+  with its status: urllib raises it before the body, and nothing reads that
+  body.
+
+### Results that can move (designesy-mcp, next release: read cap)
+
+- A page over 16 MiB, in `designesy_score`'s offline fallback (the network
+  failed before the request reached the engine), is a tool error, "Tool
+  execution failed: the response body is over 16 MiB, the most this server
+  reads from one body", where it was scored. A test page of 16,777,217
+  bytes scored 56.2 (F) before this change, on Python 3.14.6 and 3.10.9.
+- `designesy_tokens_score` and `designesy_motion_score` fail the same way on
+  a file over 16 MiB at the `url` given, where they read and scored it. The
+  hosted MCP route holds a token file to 4 MiB and a Lottie file to 16 MiB
+  (Read limits, below); this server holds both to 16 MiB.
+- A gzip page on a connection held open after its stream ends is read,
+  where it failed after 15 s.
+- A gzip or deflate body whose stream is whole is read when the connection
+  closes before its `Content-Length` is reached, where it raised
+  `IncompleteRead`. Before this change, a test page whose `Content-Length`
+  gave 100 bytes more than its gzip stream raised it on Python 3.14.6 and
+  3.10.9.
+- A redirect is followed however its body ends. A redirect whose body ended
+  before its `Content-Length` raised `IncompleteRead`, and one whose body
+  never ends was read for as long as the server sent it.
+- A compressed body that decoded past 16 MiB already failed; its message
+  now names 16 MiB. A compressed body of more than 16 MiB as sent fails
+  even when it decodes to less. Only a body larger compressed than plain can
+  do that.
+- A stylesheet with no content coding that would take a page's stylesheets
+  past 16 MiB between them is left out, where it was read. A compressed
+  sheet after sheets with no content coding gets only what they left.
+- The `url` parameter descriptions of `designesy_tokens_score` and
+  `designesy_motion_score` now say that the tool reads a file of up to
+  16 MiB, and that a longer file fails with an error that names the limit.
+- A `designesy_score` call whose engine error body is over 16 MiB ends in an
+  error that names the limit, where it quoted the body once all of it had
+  been read. Against a local server on Python 3.14.6 and 3.10.9, a 502
+  whose body was 16,777,217 bytes of text, with 1 MiB more held back for
+  3 s, returned before this change only once the held megabyte had come,
+  with all 17,825,793 bytes of the body quoted in its error. It now
+  returns in well under a second with an error that names the limit and
+  quotes none of the body, and closes the socket before the held megabyte
+  is sent. Such times move from run to run.
+- A body of at most 16 MiB, and stylesheets of at most 16 MiB between them,
+  counted both as sent and decoded, read as before. A body with no content
+  coding, or a compressed body whose stream is cut short, that ends before
+  its `Content-Length` still raises `IncompleteRead`.
+
+### Corrected (engine 1.5.4)
+
+- The engine 1.5.4 entry below says "The npm engine and the Python offline
+  engine fail a body past 16 MiB decoded". In the Python offline engine
+  that held only for what a compressed body decoded to, once the whole body
+  had been read. It now holds for every body the offline engine reads.
+- The same entry says that when a coded stream ends before its response
+  does, "the decoded body is read and the connection is closed". The Python
+  offline engine read the response to its end first, and a connection held
+  open ended in a timeout. It now stops at the stream's end.
+
+### Not changed (designesy-mcp, next release: read cap)
+
+- designesy-mcp stays 1.13.10 and the offline engine still mirrors engine
+  1.5.4; nothing is published. No check, rule, weight or score arithmetic
+  moves.
+- The address checks. Every hop of a read of a caller's URL, or of one of
+  designesy.org's documents, goes through them as before, and they refuse
+  the same hosts and addresses; a redirect they let through now has its
+  body closed unread. The browser probe's endpoint and the calls to
+  designesy.org's engines stay outside them, as before.
+- A read still has no overall deadline. A server that sends a byte before
+  each 15 s idle timeout keeps a read open, but the read now stops once it
+  passes 16 MiB.
+- Calls to designesy.org's own engines still read the whole reply when its
+  status is not an error. They are not reads of a page the offline engine
+  scores. A failed call to the other engines does not read its error body.
+- A failed score call's error body of up to 16 MiB is still read whole, and
+  is not decoded: the call asks for identity, and its reply is not decoded
+  either. When the body is a JSON object with an `error` field that is not
+  empty, as the engine's error replies are, only that field is quoted in
+  the error text; any other body of up to 16 MiB is quoted whole. Its read
+  has no overall deadline: each wait in it is bounded by the call's 20 s
+  timeout.
+- br is still not decoded.
+- The hosted engine and the npm engine do not change.
+
+### Gates (designesy-mcp, next release: read cap)
+
+- `packages/designesy-mcp/test/test_offline_read_cap.py` (new): 50 cases on
+  Python 3.14.6, 3.13.2 and 3.12.4 (49 on 3.10.9, which follows no 308) run
+  `_fetch`, a page's stylesheets, `designesy_score`'s offline fallback,
+  `designesy_tokens_score`, `designesy_motion_score`, the browser probe and
+  `designesy_score`'s call to the engine in each format against a server on
+  127.0.0.1, with bodies built at run time to an exact length. `_fetch`
+  reads the server through a name that the cases resolve to a public
+  address, so each hop goes through the address checks and passes them;
+  the browser probe and the engine read it on 127.0.0.1. A route can hold
+  back the end of its body until the socket closes or a set time passes
+  (3 s; 1.5 s for the browser probe, which waits 2 s for a quiet socket;
+  20 s for the connection held open), and a case that holds one checks that
+  the socket closed before any of it was sent. Run against the code before
+  this change, the 30 rule cases fail on Python 3.14.6, 3.13.2 and 3.12.4
+  (29 on 3.10.9) and the 20 controls pass.
+- Controls: a body of exactly 16 MiB with a `Content-Length`, chunked and
+  with neither; gzip, deflate and raw deflate bodies that decode to exactly
+  16 MiB; a gzip body of exactly 16 MiB as sent; a token file and a Lottie
+  file of exactly 16 MiB, each scored; a compressed body cut short, which
+  fails as truncated with no `Content-Length` and as `IncompleteRead` with
+  one; a body that ends before its `Content-Length` (`IncompleteRead`); a
+  404, which fails at once with its status; four stylesheets of 4 MiB, all
+  read; a small DevTools answer; a score error body of exactly 16 MiB with
+  a `Content-Length`, chunked and with neither, whose error text is given;
+  the score call asking for identity; and a score error with no response,
+  which gives its status, both as urllib builds one now and as CPython
+  3.10.0 to 3.10.9 and 3.11.0 to 3.11.1 built one, whose `close()` raises
+  `KeyError`.
+- Each bound fails a case when it moves by one byte either way: with the
+  bound on a body with no content coding, on a compressed body's bytes as
+  sent or on its decoded bytes changed to `>=`, a control fails; with any of
+  them one byte higher, a rule case fails. With a sheet with no content
+  coding charged nothing, both budget cases fail; with a failed sheet ending
+  the page's sheets, the case of a later sheet that still fits fails. With
+  the redirect handler that checks each hop built on urllib's own handler,
+  or with a redirect's body read before it is closed, the six redirect cases
+  fail; with the `IncompleteRead` check removed, two controls fail; with the
+  read going on after the stream ends, the three stream-end cases fail; with
+  the coding checked after the body is read, or the probe reading its answer
+  whole, the case for it fails. With the probe's call in `_cdp_available`
+  opened through the address checks' `_urlopen`, its two cases here fail,
+  and so does one in `test_server.py`, which stands in for `_probe_urlopen`
+  by name; with `_probe_urlopen` itself opening through `_urlopen`, its two
+  cases here fail. With a failed score call's error body read whole, or
+  giving only the reason phrase past 16 MiB, the six cases past the limit
+  fail (three framings in the default format, and canonical, review and
+  google); with urllib's own error text in canonical and google, their two
+  cases fail, and in review too, all three; with the error response left
+  open once read, the case that closes it fails; with an error that has no
+  response closed too, the no-response control fails; with the score call
+  asking for gzip, the identity control fails. Each of these was run on
+  Python 3.14.6 on Windows, against the new cases, the parity file's
+  fetch-layer cases, three classes in `test_server.py` and the address
+  checks' cases. No case fails when the error body's `Content-Encoding` is
+  undone: the call asks for identity.
+- The address checks stay in force. With the opener's redirect handler
+  left unchecked, 12 of the address checks' cases fail, and with the
+  opener that does no checks at all, 160 of them (Python 3.14.6, Windows).
+  `test/conftest.py` and `test/test_offline_url_checks.py` are unchanged,
+  and every case in the package still runs under the network guard.
+- Two cases in `test_server.py` run the real `_urlopen`, its opener and the
+  HTTPS connection against a server on 127.0.0.1, read through a name that
+  resolves to a public address, with each context's TLS handshake replaced
+  by a stand-in that records it. The first handshake runs on the verified
+  context and its certificate failure is raised, and with
+  `DESIGNESY_INSECURE_TLS=1` the retry runs on the unverified context and
+  the answer is read. Both pass before this change. Both fail when
+  `_urlopen` drops the context it is given, or always reads unverified, as
+  two of the address checks' cases do.
+- The fetch-layer stand-ins in `test_offline_engine_parity.py` answer
+  `read1()` as well as `read()`, and the browser probe's cases in
+  `test_server.py` stand in for `_probe_urlopen`, the opener the probe now
+  uses. The case with `DESIGNESY_CDP_URL` unset stands in for urllib's own
+  opener as well, and requires that neither is called: with a default
+  endpoint opened through urllib when the variable is unset, it fails.
+- `python -m pytest` in packages/designesy-mcp: 1272 passed on Python
+  3.14.6, 3.13.2 and 3.12.4, and 1271 on 3.10.9, on Windows, and 1272 on
+  Python 3.12.3 on Linux (1220 before this change on each).
+  `test_offline_engine_parity.py` passes 369 of 369.
+
 **Own-contract formula 1.0.3: f02's line counts every color outside your
 palette** (the site; the engine stays 1.5.4, and nothing is published to
 npm or PyPI). f02's one-line result says how many shipped colors are in
