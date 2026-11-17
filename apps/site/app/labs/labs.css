@@ -301,3 +301,211 @@ html[data-motion="paused"] .labs-rack-row::before {
     background: CanvasText;
   }
 }
+
+/* --- Lab card plates ---------------------------------------------------
+   The four live-lab cards were text only: the index named Poise, Takt,
+   Cadence and Acoustics and showed none of them. Each card now opens on a
+   plate, a recessed stage on the page's own ground that holds one specimen
+   of what the lab studies (page.tsx draws each from the lab's published
+   values), with a mono caption naming it. The plate bleeds to the card's
+   edges and takes its top corners; the card's rim (a ::before layer in
+   globals.css) draws over it, so the edge is unchanged. Plates are still:
+   the labs themselves carry the motion. */
+.lab-card.has-plate {
+  padding-top: 0;
+}
+
+.lab-plate {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--space-144) + var(--space-56));
+  margin: 0 calc(-1 * var(--space-24)) var(--space-16);
+  padding: var(--space-24) var(--space-24) var(--space-40);
+  border-bottom: 1px solid var(--line-faint);
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.lab-plate-caption {
+  position: absolute;
+  inset-inline-start: var(--space-24);
+  bottom: var(--space-12);
+  font: 500 var(--text-label)/var(--leading-single) var(--mono);
+  letter-spacing: 0.04em;
+  color: var(--muted-dim);
+}
+
+/* Poise: the wordmark at rest, ink with its one Azure period. */
+.lab-plate-wordmark {
+  width: min(100%, 16rem);
+  height: auto;
+  color: var(--ink);
+}
+
+/* Takt: a detail of a nested corner, drawn at a fixed size so its figures
+   stay on the label step at every card width. A narrow card crops it, and
+   it fades out to the right and the foot, where the two edges run on. */
+.lab-plate-drawing {
+  flex: 0 0 auto;
+  overflow: visible;
+  -webkit-mask-image: linear-gradient(to right, #000 72%, transparent), linear-gradient(to bottom, #000 86%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, #000 72%, transparent), linear-gradient(to bottom, #000 86%, transparent);
+  mask-composite: intersect;
+}
+
+.lab-plate-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.lab-plate-rule,
+.lab-plate-tick {
+  fill: none;
+  stroke: var(--muted-dim);
+  stroke-width: 1;
+}
+
+.lab-plate-rule {
+  stroke-dasharray: 3 3;
+}
+
+/* The shared centre of the two arcs: the drawing's one filled mark. */
+.lab-plate-dot {
+  fill: var(--signal);
+}
+
+/* On a light ground Azure sits near 3:1, so the dot takes a 1px rim of its
+   deeper counterpart, the access blue. */
+[data-theme="light"] .lab-plate-dot {
+  stroke: var(--signal-access);
+  stroke-width: 1;
+}
+
+.lab-plate-dim {
+  font: 500 var(--text-label)/var(--leading-single) var(--mono);
+  fill: var(--muted);
+}
+
+/* Cadence: three lines, each at the tracking its size takes; the value
+   stands on the right in the data face. */
+.lab-plate-type {
+  display: grid;
+  width: min(100%, 22rem);
+  margin: 0;
+}
+
+.lab-plate-type > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding-block: var(--space-6);
+}
+
+.lab-plate-type > div + div {
+  border-top: 1px solid var(--line-faint);
+}
+
+.lab-plate-type dt {
+  min-width: 0;
+}
+
+.lab-plate-type dd {
+  margin: 0;
+  font: 500 var(--text-label)/var(--leading-single) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-dim);
+  white-space: nowrap;
+}
+
+.lab-plate-type-display {
+  font: 700 var(--text-h2)/var(--leading-heading) var(--display);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.lab-plate-type-body {
+  font: 400 var(--text-body)/var(--leading-tight) var(--sans);
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.lab-plate-type-label {
+  font: 600 var(--text-label)/var(--leading-tight) var(--sans);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Acoustics: the cue tokens by name, as a set. In a plate with room they
+   stand in columns of five, filled downwards, so the names align like the
+   rows of a token table; a narrower plate runs them on as wrapped text,
+   which fits any width. The plate is the query container. */
+.lab-plate {
+  container: lab-plate / inline-size;
+}
+
+.lab-plate-cues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-12);
+  margin: 0;
+  font: 500 var(--text-label)/var(--leading-tight) var(--mono);
+  color: var(--muted);
+}
+
+.lab-plate-cues-prefix {
+  color: var(--muted-dim);
+}
+
+@container lab-plate (width >= 26rem) {
+  .lab-plate-cues {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(5, auto);
+    gap: var(--space-4) var(--space-32);
+  }
+
+  /* In columns the names stand alone; the caption says what they are. */
+  .lab-plate-cues-prefix {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .lab-plate {
+    border-bottom-color: var(--line-strong);
+  }
+
+  .lab-plate-rule,
+  .lab-plate-tick {
+    stroke: var(--muted);
+  }
+}
+
+@media (forced-colors: active) {
+  .lab-plate {
+    border-bottom-color: CanvasText;
+    background: Canvas;
+  }
+
+  .lab-plate-line,
+  .lab-plate-rule,
+  .lab-plate-tick {
+    stroke: CanvasText;
+  }
+
+  .lab-plate-dot {
+    fill: Highlight;
+  }
+
+  .lab-plate-dim {
+    fill: CanvasText;
+  }
+}
