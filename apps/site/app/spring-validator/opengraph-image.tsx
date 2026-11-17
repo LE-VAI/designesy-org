@@ -10,5 +10,6 @@ export default function OpenGraphImage() {
     title: 'Spring physics accessibility',
     lede: 'Simulate spring motion, compute overshoot, get a reduced-motion accessibility recommendation.',
     path: 'designesy.org/spring-validator',
+    icon: 'motion',
   });
 }

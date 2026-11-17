@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { PoisePlate } from '../../lib/og-lab-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -9,9 +10,10 @@ export default function OpenGraphImage() {
   return renderOgCard({
     eyebrow: 'Labs · Lab One',
     title: 'Poise',
-    lede: 'How Designesy responds when someone touches it. Restrained interaction: wordmark, press, sound, reduced motion.',
+    lede: 'How Designesy responds when someone touches it. Wordmark, press, sound, reduced motion.',
     path: 'designesy.org/labs/poise',
     kind: 'lab',
+    art: <PoisePlate />,
     badge: 'Live',
   });
 }
