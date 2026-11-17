@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../learn.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { pageMeta } from '../../lib/site-meta';
@@ -55,7 +56,7 @@ export default function PauseCaseStudyPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" data-pagefind-body className="surface-page">
+      <main id="main-content" data-pagefind-body className="surface-page learn-article">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Learn · Case study</p>
           <h1 className="surface-title" data-scramble>The pause button that emptied our pages</h1>
