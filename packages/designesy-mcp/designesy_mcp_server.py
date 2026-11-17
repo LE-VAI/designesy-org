@@ -44,26 +44,30 @@ SAFETY:
     DESIGNESY_CDP_URL. Each body the server fetches for itself is held to
     16 MiB, as sent and decoded: the read fails once the body passes it.
     On these reads a redirect's body is not read (_read_body, _urlopen,
-    _probe_urlopen).
-    The error body of a failed call to designesy.org's score engine is
-    held to 16 MiB as sent (_score_api_failure). Other replies from
-    designesy.org's engines are not held to this limit (_post_api,
-    _post_score_api).
+    _probe_urlopen). A page or stylesheet read of the offline engine that
+    has not finished 8 seconds after its request, redirects included,
+    fails there (_within_read_deadline). The error body of a failed call to
+    designesy.org's score engine is held to 16 MiB as sent
+    (_score_api_failure). Other replies from designesy.org's engines are
+    not held to this limit (_post_api, _post_score_api).
 """
 from __future__ import annotations
 
+import contextlib
 import http.client
 import io
 import json
 import os
 import re
+import socket
 import ssl
 import sys
+import threading
 import time
 import urllib.request
 import urllib.error
 import zlib
-from typing import Any
+from typing import Any, Callable
 
 SERVER_NAME = "designesy-mcp-server"
 SERVER_VERSION = "1.13.10"
@@ -414,12 +418,12 @@ def _checked_class(http_class: Any, req: Any) -> Any:
 
 class _CheckedHTTPHandler(urllib.request.HTTPHandler):
     def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
-        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+        return super().do_open(_watched(_checked_class(http_class, req)), req, **http_conn_args)
 
 
 class _CheckedHTTPSHandler(urllib.request.HTTPSHandler):
     def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
-        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+        return super().do_open(_watched(_checked_class(http_class, req)), req, **http_conn_args)
 
 
 class _UnreadBody:
@@ -440,26 +444,38 @@ class _UnreadBody:
 
 
 class _UnreadRedirects(urllib.request.HTTPRedirectHandler):
-    """urllib's redirect handler, except that a redirect's body is not read.
+    """urllib's redirect handler, except that a redirect's body is not read,
+    and that a 308 is followed on every Python.
 
     urllib reads a redirect's body whole before it follows the redirect
     (fp.read() in HTTPRedirectHandler.http_error_302), for as long as the
     server sends it, and holds all of it in memory, and a body that ends
     before its Content-Length fails the read (IncompleteRead). Nothing in it
     is used, so here it is closed unread once the Location is known, and
-    a redirect is followed, or refused, however its body ends. Which
-    statuses are followed is urllib's choice. _CheckedRedirects builds on
-    this handler: it checks each redirect and follows at most
-    _MAX_REDIRECTS. The browser probe uses this handler alone
-    (_probe_urlopen).
+    a redirect is followed, or refused, however its body ends.
+
+    A 301, 302, 303, 307 or 308 is followed, the statuses fetch follows.
+    urllib follows a 308 only from Python 3.11, so on 3.10 a 308 raised
+    HTTPError and the read failed. A 308 now goes through urllib's own
+    redirect code as a 307 does, with urllib's own checks: the Location's
+    scheme must be http, https, ftp or empty, and a redirect to one URL is
+    followed at most 4 times (max_repeats). _CheckedRedirects builds on
+    this handler: it checks each redirect, a 308 too, and follows at most
+    _MAX_REDIRECTS.
+    The browser probe uses this handler alone (_probe_urlopen).
     """
 
     def http_error_302(self, req: Any, fp: Any, code: int, msg: str, headers: Any) -> Any:
         return super().http_error_302(req, _UnreadBody(fp), code, msg, headers)
 
-    http_error_301 = http_error_303 = http_error_307 = http_error_302
-    if hasattr(urllib.request.HTTPRedirectHandler, "http_error_308"):
-        http_error_308 = http_error_302
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        # From Python 3.11 urllib builds the same request for a GET or HEAD
+        # 308 as for a 307; on 3.10 it refuses a 308, so it is asked as a 307.
+        if code == 308 and req.get_method() in ("GET", "HEAD"):
+            code = 307
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
 class _CheckedRedirects(_UnreadRedirects):
@@ -467,9 +483,9 @@ class _CheckedRedirects(_UnreadRedirects):
     (_validate_url) before it is followed, that a fetch follows at most
     _MAX_REDIRECTS of them, as safeFetch does, and that a redirect's body
     is closed unread (_UnreadRedirects). A redirect to any scheme but http
-    and https is refused: urllib follows one to ftp. Which statuses are
-    followed is urllib's choice, as before: 301, 302, 303 and 307, and 308
-    from Python 3.11."""
+    and https is refused: urllib follows one to ftp. A 301, 302, 303, 307
+    or 308 is followed on every Python (_UnreadRedirects), and each is
+    checked here before it is followed."""
 
     def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
         hops = getattr(req, "_designesy_redirects", 0) + 1
@@ -491,7 +507,8 @@ def _urlopen(req: Any, timeout: float, context: ssl.SSLContext | None = None) ->
     that every hop is checked: each redirect before it is followed
     (_CheckedRedirects), and each connection as it is made
     (_checked_class, _checked_connection). A redirect's body is closed
-    unread (_UnreadRedirects)."""
+    unread (_UnreadRedirects), and a read with a deadline has its sockets
+    shut down when the deadline comes (_watched, _ReadWatch)."""
     handlers: list[Any] = [_CheckedRedirects(), _CheckedHTTPHandler(), _CheckedHTTPSHandler(context=context)]
     return urllib.request.build_opener(*handlers).open(req, timeout=timeout)
 
@@ -687,6 +704,177 @@ def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_
     return _read_body(io.BytesIO(raw), encoding, limit)
 
 
+# How long one page or stylesheet read of the offline engine may take in all:
+# from the request, through every redirect, to the end of the body. The
+# hosted route ends each page and stylesheet read 8 s after it starts
+# (fetchCssSingleDetailed). Until this, a read had only the socket's 15 s
+# timeout, which bounds each wait on its own, so a server that sent a byte
+# before each one passed kept the read open, through every redirect it
+# followed. The hosted route's 5 s deadline for /DESIGN.md has no counterpart
+# here: this engine does not read /DESIGN.md (v37 does not run offline).
+_READ_DEADLINE_SECONDS = 8
+
+# The read under way in this thread, when it has a deadline (_ReadWatch).
+_READ_WATCH = threading.local()
+
+
+class _ReadWatch:
+    """The sockets of one read that has a deadline (_within_read_deadline).
+
+    When the deadline comes, cut() shuts each socket down, so no more of
+    the read is sent or received. A socket opened after that is shut down
+    as it opens. A read whose deadline has come caches nothing, and a read
+    that has cached what it read is not cut (_fetch).
+    """
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.cut_off = False
+        self.kept = False  # the read has cached what it read (_fetch)
+        self._socks: list[socket.socket] = []
+
+    def add(self, sock: socket.socket) -> None:
+        with self.lock:
+            if not self.cut_off:
+                self._socks.append(sock)
+                return
+        _shut_down(sock)
+
+    def cut(self) -> bool:
+        """Shut the read's sockets down, and True, unless the read has
+        cached what it read (kept): then False, and nothing is shut down."""
+        with self.lock:
+            if self.kept:
+                return False
+            self.cut_off = True
+            socks, self._socks = self._socks, []
+        for sock in socks:
+            _shut_down(sock)
+        return True
+
+
+def _shut_down(sock: socket.socket) -> None:
+    """Shut a socket down for both directions, from any thread.
+
+    The socket stays open, so the thread reading it never reads another
+    socket that took its number. socket.socket.shutdown is the plain
+    socket's, so a TLS socket's state is left to its own thread.
+    """
+    try:
+        socket.socket.shutdown(sock, socket.SHUT_RDWR)
+    except OSError:
+        pass  # closed already, or never connected
+
+
+class _HandshakeWatched:
+    """The SSL context of one HTTPS connection whose read has a deadline.
+
+    ssl's own wrap_socket detaches the TCP socket it is given before the
+    TLS handshake starts, and the TLS socket it makes holds the connection
+    from then on. Shutting the detached TCP socket down reaches nothing, so
+    a deadline that came during the handshake left the read waiting until
+    the handshake ended or its own 15 s wait did. Here the TLS socket is
+    made with its handshake held back, given to the read's _ReadWatch, and
+    only then does the handshake run. Every other attribute is the
+    context's own.
+    """
+
+    def __init__(self, context: Any, watch: _ReadWatch) -> None:
+        self._context = context
+        self._watch = watch
+
+    def wrap_socket(self, sock: socket.socket, server_hostname: str | None = None) -> Any:
+        tls = self._context.wrap_socket(sock, server_hostname=server_hostname, do_handshake_on_connect=False)
+        self._watch.add(tls)
+        try:
+            tls.do_handshake()
+        except BaseException:
+            tls.close()  # as ssl's own wrap_socket does when the handshake fails
+            raise
+        return tls
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._context, name)
+
+
+def _watched(http_class: Any) -> Any:
+    """http_class, here what _checked_class gives, with each socket a
+    connection opens given to the read's _ReadWatch when the read has a
+    deadline: the TCP socket once it is connected (_checked_connection, or
+    to the proxy), and for HTTPS the TLS socket as it is made, before its
+    handshake (_HandshakeWatched)."""
+
+    def connection(host: str, **kwargs: Any) -> Any:
+        conn = http_class(host, **kwargs)
+        watch = getattr(_READ_WATCH, "watch", None)
+        if watch is None:
+            return conn
+        create = conn._create_connection
+
+        def create_watched(*args: Any, **kw: Any) -> Any:
+            sock = create(*args, **kw)
+            watch.add(sock)
+            return sock
+
+        conn._create_connection = create_watched
+        if hasattr(conn, "_context"):  # HTTPS: http.client wraps with conn._context.wrap_socket
+            conn._context = _HandshakeWatched(conn._context, watch)
+        return conn
+
+    return connection
+
+
+def _past_read_deadline() -> TimeoutError:
+    """The error for a page or stylesheet read past its deadline."""
+    return TimeoutError(
+        f"the read did not finish within {_READ_DEADLINE_SECONDS} seconds, the "
+        "most this server waits for one read of a page or a stylesheet"
+    )
+
+
+def _within_read_deadline(read: Callable[[], Any]) -> Any:
+    """read(), or TimeoutError naming the deadline once _READ_DEADLINE_SECONDS
+    pass before it is done, wherever it is: the lookup, the connection, the
+    TLS handshake, the headers, a redirect or the body.
+
+    read() runs on a thread of its own. At the deadline the caller gets the
+    error, and the read's sockets are shut down (_ReadWatch), the TLS
+    socket during its handshake included, so the read gets nothing more
+    and ends. On Windows a wait already under way when a socket is shut
+    down still runs until the server closes the connection or the socket's
+    own timeout ends it. A lookup, or a TCP connection still being made,
+    cannot be stopped: the read ends when the lookup returns or the
+    connection is made or fails, and a connection made after the deadline
+    is shut down as it opens. What the read returns or raises after the
+    deadline is dropped, and it caches nothing (_fetch). A read that has
+    cached what it read by the time the deadline is enforced is not cut:
+    the caller gets what it read.
+    """
+    seconds = _READ_DEADLINE_SECONDS
+    watch = _ReadWatch()
+    done = threading.Event()
+    outcome: dict[str, Any] = {}
+
+    def run() -> None:
+        _READ_WATCH.watch = watch
+        try:
+            outcome["value"] = read()
+        except BaseException as exc:  # handed to the caller, not lost
+            outcome["error"] = exc
+        finally:
+            done.set()
+
+    threading.Thread(target=run, name="designesy-mcp read", daemon=True).start()
+    if not done.wait(seconds) and watch.cut():
+        raise _past_read_deadline()
+    # Done, or the read cached what it read before it could be cut: it has
+    # only to return.
+    done.wait()
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["value"]
+
+
 def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> Any:
     """Fetch a URL with in-memory caching. Returns parsed JSON or text.
 
@@ -721,11 +909,9 @@ def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> An
         # urllib follows redirects; the page's own links resolve against the
         # URL that answered (engine 1.5.4), so it is kept beside the body.
         final = resp.geturl()
-        _FINAL_URL[url] = final if isinstance(final, str) and final else url
         # Every Content-Encoding line: a coding split over two lines is two codings.
         coding = _header_values(resp.headers, "Content-Encoding")
         read = _read_body(resp, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
-        _DECODED_BYTES[url] = len(read)
         body = read.decode("utf-8")
 
     if as_json:
@@ -733,11 +919,22 @@ def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> An
     else:
         data = body
 
-    _cache[url] = (now, data)
-    if verified:
-        _TLS_UNVERIFIED.discard(url)
-    else:
-        _TLS_UNVERIFIED.add(url)
+    # A read whose deadline has come caches nothing: its sockets were shut
+    # down, and a body with no length of its own ends where the read was cut.
+    # A read that caches what it read first is not cut (_ReadWatch.cut).
+    watch = getattr(_READ_WATCH, "watch", None)
+    with watch.lock if watch is not None else contextlib.nullcontext():
+        if watch is not None:
+            if watch.cut_off:
+                raise _past_read_deadline()
+            watch.kept = True
+        _FINAL_URL[url] = final if isinstance(final, str) and final else url
+        _DECODED_BYTES[url] = len(read)
+        _cache[url] = (now, data)
+        if verified:
+            _TLS_UNVERIFIED.discard(url)
+        else:
+            _TLS_UNVERIFIED.add(url)
     return data
 
 
@@ -2092,8 +2289,14 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     what is left fails and is left out, and a sheet that fails is charged
     nothing. The page is not charged. The third item lists the URLs read:
     the page, then each sheet that loaded.
+
+    The page, and each sheet, has _READ_DEADLINE_SECONDS to be read, from
+    its request to the end of its body, redirects included. A page past it
+    fails with TimeoutError naming the deadline, and a sheet past it is left
+    out like any sheet that fails. Each sheet has a deadline of its own, so
+    a page with sheets can take longer in all.
     """
-    html = _fetch(url, as_json=False)
+    html = _within_read_deadline(lambda: _fetch(url, as_json=False))
     read = [url]
     # Hrefs resolve against the URL that answered, after redirects (engine
     # 1.5.4), as a browser resolves them.
@@ -2103,7 +2306,7 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     budget = _MAX_DECODED_BYTES
     for href in external[:_MAX_STYLESHEETS]:
         try:
-            text = _fetch(href, as_json=False, max_decoded=budget)
+            text = _within_read_deadline(lambda href=href, budget=budget: _fetch(href, as_json=False, max_decoded=budget))
         except Exception:
             continue
         budget -= _DECODED_BYTES.get(href, 0)

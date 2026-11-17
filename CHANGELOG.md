@@ -6,6 +6,227 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp, next release: the offline engine follows a 308 on Python
+3.10, and each page and stylesheet read it makes ends 8 seconds after its
+request** (PyPI and the MCP registry; not yet released, and designesy-mcp
+stays 1.13.10). The Python server reads URLs with urllib, which follows a
+308 only from Python 3.11, and the package supports 3.10: there a page,
+token file or Lottie file behind a 308 failed with "HTTP Error 308:
+Permanent Redirect", and a stylesheet behind one was left out. The server's
+reads had no overall deadline. The socket's 15 s timeout bounds each wait on
+its own, so a server that sent a byte before each 15 s passed kept a page
+read open for as long as it went on sending. The hosted route ends each page
+and stylesheet read 8 s after it starts, and the offline engine's page and
+stylesheet reads now end at 8 s too. Every hop of these reads, a 308 on
+Python 3.10 included, still goes through the address checks (below).
+
+### Fixed (designesy-mcp, next release: 308 and read deadline)
+
+- **A 308 is followed on Python 3.10.** The server's redirect handler passes
+  a 308 to urllib's own redirect code as a 307, which urllib treats the same
+  way from Python 3.11. The address checks run on a 308 before it is
+  followed, as on any other redirect, and a read of a page, a stylesheet,
+  a token or Lottie file or a designesy.org document still follows at most
+  5 redirects. From Python 3.11 nothing changes.
+- **A page or stylesheet read ends 8 seconds after its request.** The 8
+  seconds cover the lookup, the connection, the TLS handshake, the headers,
+  every redirect and the body. A page not read by then fails
+  `designesy_score`'s offline fallback with "Tool execution failed: the read
+  did not finish within 8 seconds, the most this server waits for one read
+  of a page or a stylesheet". A stylesheet not read by then is left out, as
+  a stylesheet that fails always was. Each stylesheet has 8 seconds of its
+  own.
+- **A read past its deadline is cut off, and caches nothing.** The read runs
+  on a thread of its own. At the deadline the call returns, and the read's
+  sockets are shut down, so the server sees the connection end. This holds
+  during a TLS handshake, and while an HTTPS read through a proxy waits for
+  the proxy to open its tunnel. A connection the read makes after the
+  deadline is shut down as it opens. What the read returns after the
+  deadline is dropped, and none of it is cached. A read that is already
+  storing what it read when the deadline comes is not cut, and the call
+  returns that result.
+
+### Corrected (designesy-mcp, next release: read cap)
+
+- The read cap entry below says that which redirect statuses are followed
+  is urllib's choice: 301, 302, 303 and 307, and 308 from Python 3.11.
+  With this change a 308 is followed on Python 3.10 too.
+- The same entry says that a read still has no overall deadline. With this
+  change each page and stylesheet read of the offline engine has one, of 8
+  seconds. The other reads that entry names still have none.
+
+### Results that can move (designesy-mcp, next release: 308 and read deadline)
+
+- On Python 3.10, a page, token file or Lottie file behind a 308 is read
+  where the tool failed with "Failed to fetch URL: HTTP Error 308: Permanent
+  Redirect", and a stylesheet behind one is read where it was left out.
+  Against a server on 127.0.0.1, read through a name that resolves to a
+  public address, on Python 3.10.9, one run: a page behind a 308 failed in
+  0.00 s and is now scored (65.0, D).
+- A page whose read takes longer than 8 seconds in all is a tool error that
+  names the deadline. One run each on Python 3.14.6 and 3.10.9 on Windows,
+  against a server on 127.0.0.1: a 20-byte page sent one byte a second was
+  scored (50.0, F) after 20.0 s on each, and now fails after 8.0 s. A
+  server that answered nothing for 20 s failed the tool with "Tool
+  execution failed: timed out" after 15.0 s, the socket's timeout, and now
+  fails after 8.0 s with the error that names the deadline.
+- A page read whose lookup, TCP connection or TLS handshake has not
+  finished at 8 seconds now fails then, with "Tool execution failed:" and
+  the error that names the deadline. Before, the read waited for that step
+  to end: when it then failed, the tool gave that step's own error, and
+  when it then finished, the page was read. In the same runs, a TLS
+  handshake that a listener never answered failed after 15.0 s with
+  `Failed to fetch URL: <urlopen error _ssl.c:1064: The handshake operation timed out>`
+  (`_ssl.c:980` on 3.10.9), and the listener saw the connection end at
+  15.0 s. Now the call fails after 8.0 s on each, and the listener sees the
+  end then.
+- A stylesheet whose read takes longer than 8 seconds is left out where it
+  was read, so a page's score can move when one of its stylesheets is that
+  slow.
+- A page or stylesheet whose read finishes within 8 seconds is read as
+  before.
+
+### Not changed (designesy-mcp, next release: 308 and read deadline)
+
+- designesy-mcp stays 1.13.10, the offline engine still mirrors engine
+  1.5.4, and nothing is published. No check, rule, weight or score
+  arithmetic moves.
+- The address checks. Every hop of a page or stylesheet read goes through
+  them as before, a 308 on Python 3.10 too, and they refuse the same hosts
+  and addresses. A read of a page, a stylesheet, a token or Lottie file or
+  a designesy.org document follows at most 5 redirects.
+- A token or Lottie file read, a designesy.org document read and the
+  DevTools endpoint's answer have no overall deadline. Each wait in them is
+  bounded by a timeout of its own (15 s, and 2 s for the DevTools endpoint),
+  as before. The DevTools endpoint stays outside the address checks, and on
+  Python 3.10 it follows a 308 too.
+- The stylesheets are still read one after another, each with 8 seconds of
+  its own, so a call whose 60 stylesheets each run to the deadline can take
+  up to about 488 seconds: under 8 for the page, whose read fails the call
+  when it runs to its deadline, and 8 for each sheet. The hosted route
+  reads them at the same time and gives the whole stylesheet phase 20
+  seconds: when a sheet is still being read at 20 seconds, it scores the
+  page with none of the stylesheets the page links.
+- The offline engine reads no `/DESIGN.md` (v37 does not run offline), so
+  the hosted route's 5 s deadline for it has no counterpart here.
+- A lookup, or a TCP connection still being made, cannot be stopped: the
+  call returns at the deadline, and the read's thread ends when the lookup
+  returns or the connection is made or fails. On Windows a wait already
+  under way when a socket is shut down goes on until the server closes the
+  connection or the socket's 15 s timeout ends it. With a server that held
+  the connection open, a cut read's thread ended after 15.0 s on Windows
+  (Python 3.14.6 and 3.10.9), where the call returned after 8.0 s. On
+  Linux (Python 3.12.3, three runs) the call returned, and the thread
+  ended, after 8.1 s, 8.0 s and 8.0 s.
+- The hosted engine and the npm engine do not change.
+
+### Gates (designesy-mcp, next release: 308 and read deadline)
+
+- `packages/designesy-mcp/test/test_offline_redirect_deadline.py` (new): 42
+  cases run `_fetch`, a page's stylesheets and `designesy_score`'s offline
+  fallback against a server on 127.0.0.1 that answers each request with a
+  script of bytes and pauses, each pause shorter than the socket's 15 s
+  timeout. They read the server through a name that resolves to a public
+  address, so every hop passes the address checks, and the fixture clears
+  the proxy variables. Three cases run a real TLS handshake, or a proxy's
+  `CONNECT`, to a listener that never answers it. Four more give the
+  handshake a stand-in that raises an SSL error, a connection reset, a
+  timeout or an error that is not an `OSError`. Most deadline cases set the
+  deadline to 2 s; one keeps the real 8 s and checks the tool's error text
+  and that the call took at least 7.9 s and under 9.5 s. Run on Windows
+  against the code before this change on Python 3.14.6, 3.13.2 and 3.12.4,
+  23 fail: the 17 deadline rule cases, and the 6 cases with a 308 that load
+  the server with Python 3.10's redirect handling. The 2 deadline controls,
+  the case of a read caching its page as the deadline comes (nothing cuts
+  that read there) and the other 16 redirect cases pass. On 3.10.9 the 6
+  other cases with a 308 fail too, 29 in all.
+- The 308 cases: a page behind a 308, whose stylesheet resolves against the
+  URL it landed on; a stylesheet behind a 308; 5 redirects followed, and a
+  sixth refused with "Blocked: more than 5 redirects"; a redirect back to
+  itself failing as a loop; and a `Location` with the file scheme refused.
+  The last four run for a 302 as well, and a 308 gives the same result.
+  Six more load a fresh copy of the server while urllib's redirect handler
+  is as Python 3.10 has it (no `http_error_308`, and a 308 refused), so
+  they need the server's own 308 handling on every Python, Python 3.12 in
+  CI included: a 308 is followed; a 308 to 127.0.0.1, and to a name that
+  resolves to it, is refused with "Blocked: " before the internal path is
+  asked for; a page, and a page's stylesheet, whose 308 leads to that name
+  are read through `_fetch_page_parts`, so through the deadline's handlers:
+  the name is looked up, the page is refused and the sheet left out, and
+  the internal path is never asked for; and a sixth 308 is refused. A 302
+  beside each is a control.
+- The deadline rule cases: a server that answers nothing; a body, and
+  headers, sent a byte at a time; three redirects of 0.6 s, 0.6 s and 1.5 s,
+  the third asked for at about 1.2 s; a stylesheet that answers nothing,
+  left out, while a later one read in 1.6 s is kept; a read cut at the
+  deadline, and a read that ends after it, both caching nothing; a slow
+  lookup, after which no request reaches the server; a real TLS handshake
+  that is never answered; the TLS socket of a handshake cut at the deadline,
+  closed and not left for the garbage collector; the TLS socket of a
+  handshake that raises an SSL error, a connection reset, a timeout or an
+  error that is not an `OSError`, closed whichever it raises, with a
+  stand-in context; an HTTPS read through a proxy that never answers its
+  `CONNECT`; an HTTPS body sent a byte at a time after a stand-in handshake
+  that detaches the TCP socket as ssl does; and the real 8 s. Every case
+  that starts a read checks that its threads have ended. The controls: a
+  page read in about 1.1 s through a redirect, and a JSON file read by
+  `_fetch` alone, as a token file is, over about 3 s, past the 2 s deadline,
+  which such a read does not have. One more case makes the cache's store
+  take 2.5 s, so a read is storing its page when the 2 s deadline comes: the
+  call returns the page, and the cache holds it.
+- `test_offline_url_checks.py`: four cases expected or allowed a 308 not
+  to be followed on Python 3.10. Three expected urllib's `HTTPError` there
+  and now expect on every Python what they expected on 3.11 and later: a
+  redirect to `ftp://` refused for its scheme, five 308s followed, and a
+  sixth refused. The fourth, a 308 to an internal name, allowed any
+  `ValueError`, or an `HTTPError` on 3.10, and now requires the address
+  checks' refusal, which names the address. On the code before this
+  change the four fail on 3.10.9 and pass on the other Pythons. No other
+  case changes, and `test/conftest.py` is unchanged: every case in the
+  package runs under its network guard.
+- `test_offline_read_cap.py` runs its redirect case for a 308 on every
+  Python, so it has 50 cases on 3.10.9 too; that case fails on 3.10.9
+  before this change.
+- 24 mutants, each one edit of the server, ran on Windows on Python
+  3.14.6 and 3.10.9 against the new file, `test_offline_read_cap.py` and
+  `test_offline_url_checks.py` (415 cases, all passing unmutated). Each
+  fails at least one case on both:
+  - the TLS socket of a failed handshake left open: the close case and the
+    4 stand-in cases; closed only on an SSL error: the close case, as a
+    cut handshake raises an `OSError` on Windows, and the 3 stand-in cases
+    that raise something else; closed only on an `OSError`: the stand-in
+    case that raises another error. On Linux (Python 3.12.3) these three
+    ran too, and fail 5 cases, 3 and 1: there a cut handshake raises an SSL
+    error, so only the stand-in cases catch the second;
+  - the TCP socket of an HTTPS connection not given to the watch: the
+    proxy case;
+  - a cut that does not leave alone a read storing its result, or a read
+    that never says it is storing one: the store case;
+  - a 308 handled only where urllib has a handler for it: the 6 cases with
+    Python 3.10's redirect handling on 3.14.6, and 17 cases on 3.10.9; a
+    308 not passed on as a 307: 5 and 14;
+  - the redirect checks skipped for a 308: the cases for a sixth 308 and
+    for a 308 to `ftp://`, 4 in all (a 308 to an internal host is still
+    refused, when its connection is made);
+  - the redirect limit at 6: 9 cases, 5 of them the address checks';
+  - no socket given to the watch on plain http, or on https: 7 and 3
+    cases; the watch given the connection class outside the checks, on
+    http or on https: 124 cases, 118 of them the address checks', and 21,
+    all theirs; the deadline path's connection made to the name, past the
+    address checks: 6 cases, the 4 with a redirect to an internal name on
+    the deadline path and 2 of the address checks';
+  - no deadline on the page, or none on the stylesheets: 12 cases and the
+    stylesheet case; the deadline at 9 s or 7 s: the 8 s case;
+  - no socket shut down at the deadline: 9 cases; a socket opened after
+    the deadline kept open: the slow lookup case; the TLS socket not given
+    to the watch: the 2 TLS cases; the handshake run before it is given:
+    the handshake case; a read that ends after its deadline caching what
+    it read: that case.
+- `python -m pytest` in packages/designesy-mcp: 1314 passed on Python
+  3.14.6, 3.13.2, 3.12.4 and 3.10.9 on Windows and on Python 3.12.3 on
+  Linux (1272 before this change, 1271 on 3.10.9).
+  `test_offline_engine_parity.py` passes 369 of 369.
+
 **designesy-mcp, next release: every body the offline engine reads stops at
 16 MiB** (PyPI and the MCP registry; not yet released, and designesy-mcp
 stays 1.13.10). The Python server read each body it fetched for itself

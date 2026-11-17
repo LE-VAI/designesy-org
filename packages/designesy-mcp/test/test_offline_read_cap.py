@@ -384,7 +384,8 @@ def test_control_an_error_status_fails_at_once_with_its_status(server):
     assert time.monotonic() - started < HOLD / 2
 
 
-_REDIRECTS = [301, 302, 303, 307] + ([308] if hasattr(urllib.request.HTTPRedirectHandler, "http_error_308") else [])
+# Every Python: a 308 is followed on 3.10 too (_UnreadRedirects).
+_REDIRECTS = [301, 302, 303, 307, 308]
 
 
 @pytest.mark.parametrize("status", _REDIRECTS)
