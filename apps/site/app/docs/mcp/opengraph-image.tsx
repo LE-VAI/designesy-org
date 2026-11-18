@@ -1,4 +1,5 @@
 import { renderOgCard } from '../../lib/og-card';
+import { McpToolsPlate } from '../../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,6 +11,7 @@ export default function OpenGraphImage() {
     title: 'Design intelligence over MCP',
     lede: 'Seventeen tools + one MCP App. Stateless 2026-07-28 spec. Connect Claude Desktop, Cursor, or ZCode.',
     path: 'designesy.org/docs/mcp',
+    art: <McpToolsPlate />,
     kind: 'default',
   });
 }

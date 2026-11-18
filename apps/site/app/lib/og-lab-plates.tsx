@@ -12,10 +12,10 @@ import { OG_T } from './og-card';
  *
  * The card renderer draws no SVG text, so every label is a positioned box.
  */
-const PLATE = { width: 302, height: 228 } as const;
-const MONO = '"Atkinson Hyperlegible Mono"';
+export const PLATE = { width: 302, height: 228 } as const;
+export const MONO = '"Atkinson Hyperlegible Mono"';
 
-function Plate({ children, padding = 0 }: { children: ReactNode; padding?: number | string }) {
+export function Plate({ children, padding = 0 }: { children: ReactNode; padding?: number | string }) {
   return (
     <div
       style={{

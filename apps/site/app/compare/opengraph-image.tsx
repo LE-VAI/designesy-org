@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { ComparePlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'Diff two design systems',
     lede: 'Tokens added, removed, renamed, value-changed: from live URLs, deterministically.',
     path: 'designesy.org/compare',
+    art: <ComparePlate />,
   });
 }
