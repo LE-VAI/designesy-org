@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { TiersPlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'Open core, free forever',
     lede: 'Free forever, CI gate included. Continuity at $29 a month for 5 sites. Enterprise for private, on-prem scoring.',
     path: 'designesy.org/pricing',
+    art: <TiersPlate />,
   });
 }
