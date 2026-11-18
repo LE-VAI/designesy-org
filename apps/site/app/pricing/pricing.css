@@ -55,14 +55,23 @@
 .pricing-card-price {
   display: flex;
   align-items: baseline;
-  gap: var(--space-fine-15);
+  /* 6px between the figure and its unit: at the old 0.15rem "Free" and
+     "forever" read as one word once the figure took the display face. */
+  gap: var(--space-6);
   line-height: var(--leading-figure-tight);
 }
 
+/* The price speaks in the site's figure voice: the display face at 700 with
+   the optical size and softness the case-study readouts use (work.css,
+   .cs-readout-text) and the score readout's tracking, on the h1 step. It was
+   the interface sans on the h2 step, the one figure on the site set as a
+   card title, under a page title that is the display face saying a price. */
 .pricing-card-price-value {
-  font-size: var(--text-h2);
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 32, 'SOFT' 40;
+  font-size: var(--text-h1);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -348,7 +357,7 @@ html[data-motion="paused"] .pricing-faq-q::after {
 
 @media (max-width: 720px) {
   .pricing-card-price-value {
-    font-size: var(--text-h3);
+    font-size: var(--text-h2);
   }
 }
 
