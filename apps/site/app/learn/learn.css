@@ -1,0 +1,66 @@
+/* The four /learn articles only. Each article's page.tsx imports this sheet
+   and sets .learn-article on its <main>, so every rule here stays on those
+   routes.
+
+   An article is read, where most pages on the site are scanned. Two things
+   set it apart from a document page.
+
+   1. Running text is ink at the reading leading on a measured column. As
+      .surface-note it was the muted grey the site uses for asides, so the
+      argument of the page read as a caption to its own cards, and its
+      column ran past 80 characters a line. --learn-measure sets about 62
+      (measured in Chrome at 16px, from the paragraphs of three or more
+      lines in the four articles: 55 to 65).
+
+   2. From 72rem each section names itself in a margin column and its
+      content runs beside it. Stacked, an article was one column down the
+      left 58% of the page with the rest empty; now the section names form a
+      second, scannable column and the text starts where the eye lands after
+      reading one. Below 72rem the content column would fall under 40rem and
+      the three-up lists would crush, so the sections stay stacked.
+
+   --learn-margin holds the longest section name set here, "The four-part
+   contract", on one line at the h3 step: 268px of 288 in Chrome. In 15rem
+   it broke after the hyphen. Two longer names take two lines. */
+.learn-article {
+  --learn-margin: 18rem;
+  --learn-gap: var(--space-48);
+  --learn-measure: 28rem;
+}
+
+.learn-article .doctrine-section .surface-note {
+  max-width: min(100%, var(--learn-measure));
+  color: var(--ink);
+  line-height: var(--leading-reading);
+}
+
+@media (min-width: 72rem) {
+  .learn-article .doctrine-section {
+    display: grid;
+    grid-template-columns: var(--learn-margin) minmax(0, 1fr);
+    column-gap: var(--learn-gap);
+    align-items: start;
+  }
+
+  .learn-article .doctrine-section > * {
+    grid-column: 2;
+  }
+
+  /* The name spans every row of its section, so the content beside it flows
+     as it did when stacked. A section here holds its name and at most two
+     blocks; the unused rows of the span are empty and take no height. In the margin the
+     name is a label for the column beside it, so it steps down to h3: at the
+     h2 step it outweighed the text it names. */
+  .learn-article .doctrine-section > .doctrine-heading {
+    grid-column: 1;
+    grid-row: 1 / span 12;
+    margin-bottom: 0;
+    font-size: var(--text-h3);
+  }
+
+  /* The closing source note follows the last section, so it starts on the
+     content column too. */
+  .learn-article > .status-note {
+    margin-left: calc(var(--learn-margin) + var(--learn-gap));
+  }
+}

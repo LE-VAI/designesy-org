@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../learn.css';
 import './compare.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
@@ -65,7 +66,7 @@ export default function ComparisonPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" data-pagefind-body className="surface-page">
+      <main id="main-content" data-pagefind-body className="surface-page learn-article">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Learn · Comparison</p>
           <h1 className="surface-title" data-scramble>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import '../learn.css';
 import { Topbar } from '../../lib/topbar';
 import { Footer } from '../../lib/footer';
 import { CheckGrid } from '../../lib/check-grid';
@@ -65,7 +66,7 @@ export default function WhatIsDesignVerificationPage() {
     <>
       <Topbar scrolled />
 
-      <main id="main-content" data-pagefind-body className="surface-page">
+      <main id="main-content" data-pagefind-body className="surface-page learn-article">
         <section className="surface-header fade-up">
           <p className="surface-eyebrow" data-scramble>Learn · Category definition</p>
           <h1 className="surface-title" data-scramble>What is design verification?</h1>

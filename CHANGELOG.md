@@ -6,6 +6,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The document pages read in one order, and the labs show what they
+measure** (the site; no version moves). Three visual changes, each its own
+pull request (#440, #441, #442). Section headings on the document pages
+were 20px Schibsted under a 65px title, with no step between. The four
+cards on `/labs` were the same box four times. 21 share cards were text
+only, the labs among them, because the icon family has no icon that means
+a lab. No check, scoring rule, weight or score moves, and the design
+contract, its version and its lock are unchanged.
+
+### Changed (section headings, lab plates, share cards)
+
+- **Section headings on the document pages are Fraunces on the contract's
+  h2 step** (contracts, learn, labs, kits, work, docs, review, open): 31.25px,
+  and the h3 step, 25px, at 720px and narrower. Card titles keep the sans,
+  so a page reads title, section, card. 318 headings in 52 files take the
+  one rule, `.doctrine-heading` in `globals.css`. This reverses an older
+  comment there ("the serif belongs to the page title"); the engine pages
+  had already set their second level in Fraunces, and the site had both
+  systems live.
+- **Each card on `/labs` opens with a specimen plate** that shows what the
+  lab measures: the wordmark for Poise, a dimensioned corner for Takt
+  (outer radius 12 = inner radius 6 + padding 6), a tracking ladder for
+  Cadence and the 19 cue names for Acoustics, read from
+  `app/lib/acoustic-tokens.ts`. The plates are decorative: hidden from
+  assistive technology and left out of search and the Markdown export, so
+  `/labs.md` is unchanged.
+- **The share cards for `/labs`, the four labs and `/acoustic-tokens`
+  carry a plate** in the tile's place, drawn from the same values
+  (`app/lib/og-lab-plates.tsx`). `/continuity` and `/spring-validator`
+  take the continuity and motion icons the family already has.
+- **Three lab share cards are titled by name.** `Takt · Lab Two`,
+  `Cadence · Lab Three` and `Acoustics · Lab Four` wrapped beside a plate,
+  so the lab number moves to the label above the title and the badge reads
+  `Live`, as on the Poise card. The Poise card's second sentence drops
+  `Restrained interaction:` so it fits two lines, and the `/labs` badge
+  reads `Four labs` where it said `Poise + Takt`. Each card's `alt` text
+  is unchanged.
+
+### Not changed (section headings, lab plates, share cards)
+
+- 13 share cards still have no picture: `/benchmarks`, `/changelog`,
+  `/compare`, `/docs/mcp`, `/drift`, `/graph`, `/guardrails`, `/maturity`,
+  `/methodology`, `/pricing`, `/pricing/review`, `/readiness` and `/specs`.
+  The icon family has no icon that means what those pages are, and the
+  card code does not borrow one that means something else.
+- The `/score` share card, every page's markup outside `/labs`, and every
+  colour, size, space and radius token.
+
+### Gates (section headings, lab plates, share cards)
+
+- No gate was added or changed. `app/critical-css.manifest.json` gained
+  one key, the 720px `.doctrine-heading` rule, which `check-critical-css`
+  requires for any rule a page uses.
+
 **designesy-mcp, next release: the offline engine follows a 308 on Python
 3.10, and each page and stylesheet read it makes ends 8 seconds after its
 request** (PyPI and the MCP registry; not yet released, and designesy-mcp
