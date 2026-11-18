@@ -6,6 +6,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The articles are set as reading, the easing curves show their shape, and
+the prices take the figure voice** (the site; no version moves). Three
+visual changes, each its own pull request (#443, #445, #446). The four
+`/learn` articles ran their text in the muted grey, past 80 characters a
+line, down the left 58% of the page. The Easing curves demo on `/contracts`
+was four identical rows whenever motion was reduced or paused. The prices
+on `/pricing` were the interface sans at a card title's size, on a site
+whose other leading figures are the display face. No check, scoring rule,
+weight or score moves, and the design contract, its version and its lock
+are unchanged.
+
+### Changed (learn articles, easing plots, pricing figures)
+
+- **The four `/learn` articles are set as reading.** Running text is ink at
+  the reading leading on a 28rem column: 55 to 65 characters a line at
+  desktop widths. From 72rem wide each section's name sits in an 18rem
+  margin column on the h3 step, 25px, with its content beside it. Narrower
+  than that the name stays above its section, on the step #440 gave it.
+  The rules are a new `app/learn/learn.css` that only the four articles
+  import.
+- **The Easing curves demo on `/contracts` draws each timing function
+  beside its token**: a 24px plot built from the contract's own
+  cubic-bezier numbers, so the four curves can be told apart when motion is
+  reduced or paused. A contract value that is anything other than a
+  cubic-bezier of four numbers fails the build. The plots are decorative:
+  hidden from assistive technology and left out of the Markdown export, so
+  `/contracts.md` is unchanged.
+- **The four tracks in that demo are one length.** The label column was
+  5.5rem, narrower than the two long token names, so two tracks started
+  15px further right and ran 15px shorter, under a note that reads "same
+  distance, different feel". The column is now 13 characters of mono, the
+  length of the longest token. The plot and its gap take 52px from each
+  track at desktop width.
+- **The prices on `/pricing` are the display face at 700 on the h1 step**,
+  39px, and on the h2 step, 31px, at 720px and narrower. That is the voice
+  the score and case-study readouts already use; the prices were the
+  interface sans on the h2 step. The gap between a price and its unit is
+  6px where it was 2.4px.
+
+### Not changed (learn articles, easing plots, pricing figures)
+
+- The cards and one-sentence definition boxes inside the articles, each
+  article's hero, and each article's Markdown export. The `/learn` index is
+  as it was.
+- The three tiers on `/pricing` stay equal columns with their heads, first
+  bullets and buttons on shared rows. Each tier card is 8px taller at
+  desktop width, and `/pricing.md` is unchanged.
+- Every colour, size, space and radius token.
+
+### Gates (learn articles, easing plots, pricing figures)
+
+- No gate was added or changed, and `app/critical-css.manifest.json` is
+  untouched: the three pull requests change nine files between them, under
+  `app/learn/`, `app/contracts/` and `app/pricing/`.
+
 **The document pages read in one order, and the labs show what they
 measure** (the site; no version moves). Three visual changes, each its own
 pull request (#440, #441, #442). Section headings on the document pages
