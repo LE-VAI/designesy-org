@@ -185,7 +185,7 @@ export default function PrivacyPage() {
                 </span>
                 <span className="row-body">
                   <span className="row-title">{item.title}</span>
-                  <span className="row-meta">{item.meta}</span>
+                  <span className="row-meta row-meta--prose">{item.meta}</span>
                 </span>
                 <span className="row-side">
                   <span className="row-side-line">{item.held}</span>

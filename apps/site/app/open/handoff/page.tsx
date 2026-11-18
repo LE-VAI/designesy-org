@@ -191,7 +191,10 @@ export default function OpenHandoffPage() {
               >
                 <span className="row-body">
                   <span className="row-title">{post.role}</span>
-                  <span className="row-meta" style={{ whiteSpace: 'pre-wrap' }}>
+                  <span
+                    className="row-meta row-meta--prose"
+                    style={{ whiteSpace: 'pre-wrap' }}
+                  >
                     {post.text}
                   </span>
                 </span>
