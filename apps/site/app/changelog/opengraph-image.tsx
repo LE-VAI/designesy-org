@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { VersionsPlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'Every contract change',
     lede: 'Design contract changes by dimension. Every version bump, every new check, every rule addition.',
     path: 'designesy.org/changelog',
+    art: <VersionsPlate />,
   });
 }

@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { SchemaPlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'The findings schema',
     lede: 'The canonical review-findings schema: designesy, Google design.md, Lighthouse, and jakubkoczorowicz compatible.',
     path: 'designesy.org/specs',
+    art: <SchemaPlate />,
   });
 }

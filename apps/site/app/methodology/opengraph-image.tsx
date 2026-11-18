@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { WeightsPlate } from '../lib/og-data-plates';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
 
 export const size = { width: 1200, height: 630 };
@@ -11,5 +12,6 @@ export default function OpenGraphImage() {
     title: 'How the engine scores',
     lede: `The ${ENGINE_CHECK_COUNT}-check scoring methodology: weights, math, grade bands, and the accessibility floor.`,
     path: 'designesy.org/methodology',
+    art: <WeightsPlate />,
   });
 }

@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { DriftPlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'Detect AI-generated UI drift',
     lede: '12 deterministic checks against compiled CSS: token fabrication, value variance, off-contract values.',
     path: 'designesy.org/drift',
+    art: <DriftPlate />,
   });
 }
