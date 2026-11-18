@@ -8,6 +8,8 @@ import { OG_T } from './og-card';
 import { MONO, Plate } from './og-lab-plates';
 import { REVIEW_FINDINGS_SCHEMA } from './review-findings-schema';
 import { REVIEW_PRICE } from './review-offer';
+import { AXES, STAGE_LABELS } from '../maturity/axes';
+import { TIERS } from '../pricing/tiers';
 
 /**
  * Share-card plates for the tool and document pages the icon family has no
@@ -314,6 +316,68 @@ export function VersionsPlate() {
     <Plate padding="0 28px">
       {row('Contract', CONTRACT_VERSION, true)}
       {row('Engine', ENGINE_VERSION)}
+    </Plate>
+  );
+}
+
+/** Pricing: the three tiers by name, each with its price. */
+export function TiersPlate() {
+  return (
+    <Plate padding="0 26px">
+      {TIERS.map((tier, i) => (
+        <div
+          key={tier.name}
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            height: 60,
+            paddingTop: 14,
+            borderTop: i === 0 ? 'none' : RULE,
+          }}
+        >
+          <div style={{ display: 'flex', fontSize: 21, fontWeight: 500, color: OG_T.muted }}>{tier.name}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <div style={{ display: 'flex', fontFamily: 'Fraunces', fontSize: 32, fontWeight: 600, letterSpacing: '-0.01em', color: OG_T.ink }}>
+              {tier.price}
+            </div>
+            {tier.suffix ? (
+              <div style={{ display: 'flex', fontFamily: MONO, fontSize: 14, color: OG_T.mutedDim }}>{tier.suffix}</div>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </Plate>
+  );
+}
+
+/**
+ * Maturity: the assessment's own matrix before a question is answered, one
+ * row for each axis and one cell for each stage.
+ */
+export function MaturityPlate() {
+  const stages = Object.keys(STAGE_LABELS);
+  return (
+    <Plate padding="0 26px">
+      {AXES.map((axis, i) => (
+        <div
+          key={axis.id}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 31,
+            borderTop: i === 0 ? 'none' : RULE,
+          }}
+        >
+          <div style={{ display: 'flex', fontSize: 15, fontWeight: 500, color: OG_T.muted }}>{axis.label}</div>
+          <div style={{ display: 'flex', gap: 5 }}>
+            {stages.map((stage) => (
+              <div key={stage} style={{ display: 'flex', width: 13, height: 13, borderRadius: 4, border: `1.5px solid ${OG_T.muted}` }} />
+            ))}
+          </div>
+        </div>
+      ))}
     </Plate>
   );
 }
