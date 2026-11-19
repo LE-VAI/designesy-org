@@ -1,0 +1,1598 @@
+{
+  "$comment": "Stylesheet hrefs, each with the URL of the page that links it, and the href new URL(href, base) gives on the Node named in node (null where it throws). test_offline_href_resolution.py requires the offline engine to give each, or as_typed where a case has it: the same URL with a host the href types as a number in a form other than four decimal parts kept as typed, which the address checks refuse. href-resolution.mjs checks them against the Node it runs on, and that new URL reads each as_typed as expected; --write sets every expected. Each href can sit in an href attribute: none is empty or holds a quote.",
+  "node": "24.15.0",
+  "cases": [
+    {
+      "group": "control",
+      "href": "/css/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "control",
+      "href": "a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css"
+    },
+    {
+      "group": "control",
+      "href": "../a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "control",
+      "href": "./a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css"
+    },
+    {
+      "group": "control",
+      "href": "//cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "control",
+      "href": "https://cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "control",
+      "href": "a.css?v=2",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=2"
+    },
+    {
+      "group": "control",
+      "href": "a.css#x",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css#x"
+    },
+    {
+      "group": "control",
+      "href": "http://cdn.example:8080/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://cdn.example:8080/a.css"
+    },
+    {
+      "group": "host case",
+      "href": "https://CDN.Example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "host case",
+      "href": "//CDN.EXAMPLE/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "scheme case",
+      "href": "HTTPS://cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "scheme case",
+      "href": "HTTP://cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://cdn.example/a.css"
+    },
+    {
+      "group": "scheme case",
+      "href": "Https://CDN.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "https://cdn.example:443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "http://cdn.example:80/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "https://cdn.example:0443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "https://cdn.example:/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "//cdn.example:443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "default port",
+      "href": "https://site.example:443/css/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "port new URL rejects",
+      "href": "https://cdn.example:99999/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "port new URL rejects",
+      "href": "https://cdn.example:8a/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "port new URL rejects",
+      "href": "https://cdn.example:-1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "backslash",
+      "href": "\\css\\a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "..\\a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "css\\a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/css/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "\\\\cdn.example\\a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "https:\\\\cdn.example\\a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "/\\cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "backslash",
+      "href": "\\/cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "https:///cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "////cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "https:////cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "https:cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "http:cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://cdn.example/a.css"
+    },
+    {
+      "group": "slashes",
+      "href": "http:/cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://cdn.example/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": " /css/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": "/css/a.css ",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": "\t/css/a.css\n",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": "\u000b/css/a.css\f",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": "\u0000/css/a.css\u001f",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "space or control at an end",
+      "href": "  https://cdn.example/a.css  ",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "tab or newline inside",
+      "href": "/css/\na.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "tab or newline inside",
+      "href": "/css/a\t.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "tab or newline inside",
+      "href": "/c\rss/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "tab or newline inside",
+      "href": "https://cdn.\nexample/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "space in path",
+      "href": "/css/a b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%20b.css"
+    },
+    {
+      "group": "space in path",
+      "href": "/css/a%20b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%20b.css"
+    },
+    {
+      "group": "space in path",
+      "href": "/css/a  b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%20%20b.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a{b}.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%7Bb%7D.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a^b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%5Eb.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a`b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%60b.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a<b>.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%3Cb%3E.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a|b.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a|b.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a%zz.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%zz.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a%2fb.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%2fb.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a\u007fb.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a%7Fb.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/caf\u00e9.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/caf%C3%A9.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/%E9.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/%E9.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/\u4e2d.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/%E4%B8%AD.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/\ud83d\ude00.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/%F0%9F%98%80.css"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/css/a~b!$&()*+,;=:@.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a~b!$&()*+,;=:@.css"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?v=1 2",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=1%202"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?v=1%202",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=1%202"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?v=\u00e9",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=%C3%A9"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?v=<x>&w={y}",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=%3Cx%3E&w={y}"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css#x y",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css#x%20y"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css#`x`",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css#%60x%60"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css#\u00e9",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css#%C3%A9"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?a#b?c#d",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?a#b?c#d"
+    },
+    {
+      "group": "query and fragment",
+      "href": "a.css?v=1#",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css?v=1#"
+    },
+    {
+      "group": "dot segments",
+      "href": "https://cdn.example/x/../a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "https://cdn.example/./a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "https://cdn.example/x/%2e%2e/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "https://cdn.example/x/..",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/"
+    },
+    {
+      "group": "dot segments",
+      "href": "%2e%2e/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "%2E/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "/css/%2e/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "/css/.%2E/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "../../../../a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "dot segments",
+      "href": "/css/..",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/"
+    },
+    {
+      "group": "dot segments",
+      "href": "/css/.",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/"
+    },
+    {
+      "group": "dot segments",
+      "href": "/css/a.css/..%2f",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/css/a.css/..%2f"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": "#",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/post#"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": "?",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/post?"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": " ",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/post"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": ".",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": "..",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": "?#",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/post?#"
+    },
+    {
+      "group": "empty or only a mark",
+      "href": "#top",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/blog/post#top"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://user@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://user@cdn/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://u@@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://u%40@cdn/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://a b@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://a%20b@cdn/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://cdn@other/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn@other/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://u:p:q@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://u:p%3Aq@cdn/a.css"
+    },
+    {
+      "group": "userinfo",
+      "href": "https://u:@cdn/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://u@cdn/a.css"
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://exa mple.com/b.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn<x>.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn^.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn|x.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn%x.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn%25.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn%00.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://[::1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://:443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://@/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL rejects",
+      "href": "https://cdn%2Fexample/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://cdn_x.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn_x.example/a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://cdn!x.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn!x.example/a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://a..b/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://a..b/a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://cdn.example./a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example./a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://%63dn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://cdn%2Eexample/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "host new URL accepts",
+      "href": "https://CDN%2eEXAMPLE/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://0x7f.1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://127.0.0.1/a.css",
+      "as_typed": "https://0x7f.1/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://2130706433/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://127.0.0.1/a.css",
+      "as_typed": "https://2130706433/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://127.1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://127.0.0.1/a.css",
+      "as_typed": "https://127.1/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://1.2.3/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://1.2.0.3/a.css",
+      "as_typed": "https://1.2.3/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://0300.0250.1.1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://192.168.1.1/a.css",
+      "as_typed": "https://0300.0250.1.1/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://4294967295/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://255.255.255.255/a.css",
+      "as_typed": "https://4294967295/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://1.2.3.4./a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://1.2.3.4/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://0x/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://0.0.0.0/a.css",
+      "as_typed": "https://0x/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "https://08.1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://1.2.3.4.5/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://foo.123/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://foo.0x10/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://foo.09/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://256.256.256.256/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://4294967296/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv4",
+      "href": "https://1.0x/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://1.0.0.0/a.css",
+      "as_typed": "https://1.0x/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[::1]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[::1]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[0:0::1]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[::1]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[0:0:0:0:0:0:0:1]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[::1]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[::FFFF:1.2.3.4]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[::ffff:102:304]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[2001:DB8::]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[2001:db8::]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[1:0:0:2::3:0]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[1::2:0:0:3:0]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[1:2:3:4:5:6:7:8]:443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[1:2:3:4:5:6:7:8]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[::1]:8443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[::1]:8443/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[g::1]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[1::2::3]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[::1.2.3]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[1:2:3:4:5:6:7:8:9]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://b\u00fccher.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://B\u00dcCHER.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://xn--bcher-kva.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://XN--BCHER-KVA.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://b%C3%BCcher.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://bu\u0308cher.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\uff42\u00fc\uff43\uff48\uff45\uff52.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://b\u00fccher\u3002example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://b\u00fc\u00adcher.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://fa\u00df.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--fa-hia.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://FA\u1e9e.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--fa-hia.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u03c2.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--3xa.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u03a3.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--4xa.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u0130.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--i-9bb.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u4e2d\u6587.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--fiq228c.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u05d0\u05d1.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--4dbc.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u0645\u062b\u0627\u0644.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--mgbh0fb.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u0661.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--9hb.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\ud83d\ude00.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--e28h.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u212a.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://k.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\ufb01.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://fi.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://a\u200bb.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://ab.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u0915\u094d\u200d.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--11b6iy14e.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u00e9.\u00e9.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--9ca.xn--9ca.example/a.css"
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\u05d0a.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\u0301a.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u200db.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://xn--a.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://xn--.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\u2488.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u3000b.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\ufffd.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://%FF.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://%C3%28.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u200eb.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\u2ff0.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "not http",
+      "href": "data:text/css,a{}",
+      "base": "https://site.example/blog/post",
+      "expected": "data:text/css,a{}"
+    },
+    {
+      "group": "not http",
+      "href": "DATA:text/css,a%7B%7D",
+      "base": "https://site.example/blog/post",
+      "expected": "data:text/css,a%7B%7D"
+    },
+    {
+      "group": "not http",
+      "href": "javascript:void(0)",
+      "base": "https://site.example/blog/post",
+      "expected": "javascript:void(0)"
+    },
+    {
+      "group": "not http",
+      "href": "ftp://cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "ftp://cdn.example/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "FTP://CDN.example:21/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "ftp://cdn.example/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "ws://cdn.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "ws://cdn.example/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "file:///etc/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "file:///etc/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "file:///C|",
+      "base": "https://site.example/blog/post",
+      "expected": "file:///C:"
+    },
+    {
+      "group": "not http",
+      "href": "foo://Bar/x y",
+      "base": "https://site.example/blog/post",
+      "expected": "foo://Bar/x%20y"
+    },
+    {
+      "group": "not http",
+      "href": "blob:https://cdn.example/x",
+      "base": "https://site.example/blog/post",
+      "expected": "blob:https://cdn.example/x"
+    },
+    {
+      "group": "not http",
+      "href": "about:blank",
+      "base": "https://site.example/blog/post",
+      "expected": "about:blank"
+    },
+    {
+      "group": "not http",
+      "href": "Foo:Bar Baz",
+      "base": "https://site.example/blog/post",
+      "expected": "foo:Bar Baz"
+    },
+    {
+      "group": "page at the site root",
+      "href": "a.css",
+      "base": "https://site.example/",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "page at the site root",
+      "href": "/a.css",
+      "base": "https://site.example/",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "page at the site root",
+      "href": "../a.css",
+      "base": "https://site.example/",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "page on a port",
+      "href": "a.css",
+      "base": "http://site.example:8080/a/b?q=1#top",
+      "expected": "http://site.example:8080/a/a.css"
+    },
+    {
+      "group": "page on a port",
+      "href": "/a.css",
+      "base": "http://site.example:8080/a/b?q=1#top",
+      "expected": "http://site.example:8080/a.css"
+    },
+    {
+      "group": "page on a port",
+      "href": "?v=1",
+      "base": "http://site.example:8080/a/b?q=1#top",
+      "expected": "http://site.example:8080/a/b?v=1"
+    },
+    {
+      "group": "page on a port",
+      "href": "//cdn.example/a.css",
+      "base": "http://site.example:8080/a/b?q=1#top",
+      "expected": "http://cdn.example/a.css"
+    },
+    {
+      "group": "page URL in another spelling",
+      "href": "a.css",
+      "base": "https://Site.Example:443/x/../blog/",
+      "expected": "https://site.example/blog/a.css"
+    },
+    {
+      "group": "page URL in another spelling",
+      "href": "../a.css",
+      "base": "https://Site.Example:443/x/../blog/",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "page URL in another spelling",
+      "href": "/a.css",
+      "base": "https://Site.Example:443/x/../blog/",
+      "expected": "https://site.example/a.css"
+    },
+    {
+      "group": "page on a host outside ASCII",
+      "href": "a.css",
+      "base": "https://b\u00fccher.example/kurs/",
+      "expected": "https://xn--bcher-kva.example/kurs/a.css"
+    },
+    {
+      "group": "page on a host outside ASCII",
+      "href": "/a.css",
+      "base": "https://b\u00fccher.example/kurs/",
+      "expected": "https://xn--bcher-kva.example/a.css"
+    },
+    {
+      "group": "page on a host outside ASCII",
+      "href": "//\u00fc.example/a.css",
+      "base": "https://b\u00fccher.example/kurs/",
+      "expected": "https://xn--tda.example/a.css"
+    },
+    {
+      "group": "page on an IPv6 address",
+      "href": "a.css",
+      "base": "https://[2001:db8::1]/app/",
+      "expected": "https://[2001:db8::1]/app/a.css"
+    },
+    {
+      "group": "page on an IPv6 address",
+      "href": "/a.css",
+      "base": "https://[2001:db8::1]/app/",
+      "expected": "https://[2001:db8::1]/a.css"
+    },
+    {
+      "group": "page on an IPv6 address",
+      "href": "//[::1]:443/a.css",
+      "base": "https://[2001:db8::1]/app/",
+      "expected": "https://[::1]/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://0.0.0.1/a.css",
+      "as_typed": "http://000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://0.0.0.1/a.css",
+      "as_typed": "http://0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://1.0.0.1/a.css",
+      "as_typed": "http://1.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037777777777/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://255.255.255.255/a.css",
+      "as_typed": "http://00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000037777777777/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040000000000/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "http://11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "http://037777777777/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://255.255.255.255/a.css",
+      "as_typed": "http://037777777777/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://0377777777777/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "http://0x0000ffffffff/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "http://255.255.255.255/a.css",
+      "as_typed": "http://0x0000ffffffff/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "http://0x100000000000/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "https://cdn.example.test:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://cdn.example.test:80/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://h.example:1/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://h.example:0/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:000065535/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://h.example:65535/a.css"
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:0065536/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "long number",
+      "href": "https://h.example:0000443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://h.example/a.css"
+    },
+    {
+      "group": "IPv4",
+      "href": "http://1.256.1.1/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[1:0:2:3:4:5:6:7]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://[1:0:2:3:4:5:6:7]/a.css"
+    },
+    {
+      "group": "IPv6",
+      "href": "https://[::ffff:01.2.3.4]/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "userinfo",
+      "href": "https://a:b@c:d@h.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://a:b%40c%3Ad@h.example/a.css"
+    },
+    {
+      "group": "query and fragment",
+      "href": "#x",
+      "base": "https://site.example/p?v='1'",
+      "expected": "https://site.example/p?v=%271%27#x"
+    },
+    {
+      "group": "other characters in path",
+      "href": "/a\ud800.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://site.example/a%EF%BF%BD.css"
+    },
+    {
+      "group": "not http",
+      "href": "ws://h.example:80/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "ws://h.example/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "wss://h.example:443/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "wss://h.example/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "file://localhost/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "file:///a.css"
+    },
+    {
+      "group": "not http",
+      "href": "file:///C:/../a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "file:///C:/a.css"
+    },
+    {
+      "group": "not http",
+      "href": "data:text/css,a ?c",
+      "base": "https://site.example/blog/post",
+      "expected": "data:text/css,a%20?c"
+    },
+    {
+      "group": "not http",
+      "href": "web+x://u@/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "not http",
+      "href": "web+x://a<b/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "not http",
+      "href": "web+x:/.//a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "web+x:/.//a.css"
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://\u05d0\u06611\u05d0.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://xn--ex-8tb.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://xn--abc-.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u1680b.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u200cb.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII new URL rejects",
+      "href": "https://a\u0378b.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": null
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://xn---uvw53efr.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn---uvw53efr.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://XN---UVW53EFR.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn---uvw53efr.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07\u4e08\u4e09\u4e0a\u4e0b\u4e0c\u4e0d\u4e0e\u4e0f\u4e10\u4e11\u4e12\u4e13\u4e14\u4e15\u4e16\u4e17\u4e18\u4e19\u4e1a\u4e1b\u4e1c\u4e1d\u4e1e\u4e1f\u4e20\u4e21\u4e22\u4e23\u4e24\u4e25\u4e26\u4e27\u4e28\u4e29\u4e2a\u4e2b\u4e2c\u4e2d\u4e2e\u4e2f\u4e30\u4e31\u4e32\u4e33\u4e34\u4e35\u4e36\u4e37\u4e38\u4e39\u4e3a\u4e3b\u4e3c\u4e3d\u4e3e.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--4gqcdefghijklmnopqrstuvwxyz0a1a2a3a4a5a6a7a8a9azb0b1b1b2b3b4b5b6b6b7b8b9bxcycxcyczc0c1c2c1c2c3c4c5c6c5c.example/a.css"
+    },
+    {
+      "group": "host outside ASCII",
+      "href": "https://xn--9caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/a.css",
+      "base": "https://site.example/blog/post",
+      "expected": "https://xn--9caaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.example/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/css/site.css",
+      "base": "https://xn--mgba4a4edcg74fu38n.ir/",
+      "expected": "https://xn--mgba4a4edcg74fu38n.ir/css/site.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "https://cdn.example/x.css",
+      "base": "https://xn--mgba4a4edcg74fu38n.ir/",
+      "expected": "https://cdn.example/x.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/css/site.css",
+      "base": "https://XN--MGBA4A4EDCG74FU38N.IR/",
+      "expected": "https://xn--mgba4a4edcg74fu38n.ir/css/site.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/css/site.css",
+      "base": "https://\u0645\u06cc\u200c\u062e\u0648\u0627\u0645.ir/",
+      "expected": "https://xn--mgbn2ecn40f260k.ir/css/site.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "x.css",
+      "base": "https://xn--a-nnd.example/blog/",
+      "expected": "https://xn--a-nnd.example/blog/x.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://xn--mgba4a4edcg74fu38n.ir:8443/",
+      "expected": "https://xn--mgba4a4edcg74fu38n.ir:8443/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "a.css",
+      "base": "file://xn--mgba4a4edcg74fu38n.ir/dir/x",
+      "expected": "file://xn--mgba4a4edcg74fu38n.ir/dir/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://a\u200db.example/",
+      "expected": null
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://xn--.example/",
+      "expected": null
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://1\u05d0.example/",
+      "expected": "https://xn--1-0hc.example/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://xn--ab-jph.example/",
+      "expected": "https://xn--ab-jph.example/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://a\u0c5cb.example/",
+      "expected": "https://xn--ab-jph.example/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://a\u0897.example/",
+      "expected": "https://xn--a-nnd.example/a.css"
+    },
+    {
+      "group": "page host read leniently",
+      "href": "/a.css",
+      "base": "https://a\ue000b.example/",
+      "expected": null
+    }
+  ]
+}
