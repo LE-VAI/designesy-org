@@ -60,6 +60,7 @@ import * as http from 'node:http';
 import { createBrotliDecompress, createGunzip, createInflate, createInflateRaw } from 'node:zlib';
 import type { Transform } from 'node:stream';
 import ipaddr from 'ipaddr.js';
+import { endsInANumber, isOtherNumericForm, readHost, typedHost, withoutTrailingDots } from './typed-host';
 
 // ── Normalization ────────────────────────────────────────────────────────────
 
@@ -69,6 +70,11 @@ export function normalizeInputUrl(raw: string): string {
   if (!/^https?:\/\//i.test(clean)) {
     clean = `https://${clean}`;
   }
+  // new URL() writes a host that ends in a number as four decimal parts. A
+  // host typed as a number in any other form is left as typed, so that
+  // isValidUrl, which every route runs next, reads that form and refuses it.
+  const typed = typedHost(clean);
+  if (typed === null || isOtherNumericForm(typed)) return clean;
   try {
     const u = new URL(clean);
     return u.href;
@@ -82,7 +88,8 @@ export function normalizeInputUrl(raw: string): string {
 /**
  * Returns true only for public http(s) URLs whose host does not resolve to a
  * private, loopback, link-local, or unspecified address. Rejects IPv6, cloud
- * metadata, and encoded-IP bypass attempts that the prior blocklist missed.
+ * metadata, and encoded-IP bypass attempts that the prior blocklist missed,
+ * and a host typed as a number in any form other than four decimal parts.
  */
 export function isValidUrl(url: string): boolean {
   let u: URL;
@@ -115,22 +122,27 @@ export function isValidUrl(url: string): boolean {
     return false;
   }
 
-  // ── IPv4 checks (host is a dotted-quad or bare hostname) ────────────────────
+  // ── IPv4 checks (host is a dotted-quad or a name) ───────────────────────────
 
-  // Reject decimal/octal/hex IP encodings that new URL() passes through as
-  // hostnames (e.g. 2130706433 → 127.0.0.1, 0177.0.0.1 → 127.0.0.1).
-  // If the hostname parses as an integer in any base, treat it as an encoded
-  // IP and reject (public sites are not addressed this way).
-  if (/^\d+$/.test(host)) return false; // pure decimal (e.g. 2130706433)
-  if (host.split('.').some((octet) => octet.startsWith('0') && octet.length > 1 && /^0[0-7]+$/.test(octet))) {
-    return false; // octal (e.g. 0177.0.0.1)
-  }
-  if (host.split('.').some((octet) => /^0x[0-9a-f]+$/i.test(octet))) {
-    return false; // hex (e.g. 0x7f.0.0.1)
-  }
+  // The URL parser can read a host typed as a number as an IPv4 address and
+  // write it as four decimal parts (2130706433, 0177.0.0.1 and 0x7f.1 all
+  // read 127.0.0.1), so the form is read from the host as typed (typedHost,
+  // in typed-host.ts). A host that ends in a number once its trailing dots
+  // are dropped, typed in any form other than four decimal parts (one
+  // number, a hex or octal part, a leading zero, fewer parts), is refused,
+  // whatever address it names, and so is a URL whose host cannot be read as
+  // typed. Four decimal parts and dots are the address they name, which the
+  // range check below reads. A name whose other labels look numeric
+  // (007.example.com, 0x1.example.com) does not end in a number: it is a
+  // name, checked by isPrivateIPv4 below (which reads four labels that
+  // begin with digits as the address they spell) and then by the addresses
+  // it resolves to (resolveAndValidateHost).
+  const typed = typedHost(url);
+  if (typed === null || isOtherNumericForm(typed)) return false;
 
-  // Reject known private/reserved IPv4 ranges.
-  if (isPrivateIPv4(host)) return false;
+  // Reject known private/reserved IPv4 ranges. A host that ends in a number
+  // is read without its trailing dots.
+  if (isPrivateIPv4(endsInANumber(host) ? withoutTrailingDots(host) : host)) return false;
 
   return true;
 }
@@ -160,8 +172,10 @@ function isPrivateIPv4(host: string): boolean {
   if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12 — full /12 (was 172.16. only)
   if (a === 192 && b === 168) return true; // 192.168.0.0/16 — private Class C
   if (a >= 224) return true; // 224.0.0.0/4 — multicast/reserved (no public site lives here)
-  // 100.64.0.0/10 — Carrier-Grade NAT (CGNAT). Not routable on the public internet.
-  if (a === 100 && b >= 64) return true;
+  // 100.64.0.0/10: Carrier-Grade NAT (CGNAT), 100.64.0.0 to 100.127.255.255.
+  // Not routable on the public internet. 100.128.0.0 to 100.255.255.255
+  // are public.
+  if (a === 100 && b >= 64 && b <= 127) return true;
 
   return false;
 }
@@ -181,7 +195,8 @@ function isPrivateIPv4(host: string): boolean {
 //   IPv4: 0.0.0.0/8, 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, 100.64/10,
 //         224/4 (multicast/reserved)
 //   IPv6: ::1 (loopback), fc00::/7 (ULA, includes fd00:ec2::254 AWS IMDS),
-//         fe80::/10 (link-local), :: (unspecified)
+//         fe80::/10 (link-local), :: (unspecified), ::/96 (IPv4-compatible),
+//         and every other range ipaddr.js does not call 'unicast'
 //
 // Per-hop DNS cache (60s TTL) reduces repeat lookups without weakening the
 // guard — cached IPs are re-validated against the blocklist on every call.
@@ -196,6 +211,25 @@ const dnsCache = new Map<string, { addresses: string[]; expiresAt: number }>();
  * browser (app/lib/browser-guard.ts).
  */
 export async function resolveAndValidateHost(hostname: string): Promise<boolean> {
+  // A hostname that holds a C0 control or a space is refused before it is
+  // read. The read removes tabs and newlines, as the URL parser does, and
+  // the lookup below is given the hostname as it came, so for such a
+  // hostname the name looked up would not be the name read. Every caller
+  // in the site passes the hostname of a URL the URL parser has read,
+  // which holds none.
+  for (let i = 0; i < hostname.length; i++) {
+    if (hostname.charCodeAt(i) <= 0x20) return false;
+  }
+  // A hostname is read as isValidUrl reads the host of a URL (readHost).
+  // One that cannot be read, one typed as a number in any form but four
+  // decimal parts, and four decimal parts that name a private address, with
+  // or without trailing dots, are refused before any lookup, as isValidUrl
+  // refuses them in a URL: a resolver can read such a name as the address
+  // it spells.
+  const typed = readHost(hostname);
+  if (typed === null || isOtherNumericForm(typed)) return false;
+  if (endsInANumber(typed) && isPrivateIPv4(withoutTrailingDots(typed))) return false;
+
   // Check DNS cache first (cache the resolution, not the decision — re-validate
   // cached IPs against the blocklist on every call).
   const now = Date.now();
@@ -249,6 +283,13 @@ export async function isPublicUrl(url: string): Promise<boolean> {
 }
 
 /**
+ * ::/96, the IPv4-compatible IPv6 addresses (RFC 4291 section 2.5.5.1,
+ * deprecated): never a public address. ipaddr.js does not name this range,
+ * so it is named here.
+ */
+const IPV4_COMPATIBLE = ipaddr.IPv6.parseCIDR('::/96');
+
+/**
  * Returns true if the IP address is private, loopback, link-local, cloud-
  * metadata, unspecified, or otherwise non-public. Uses ipaddr.js for parsing
  * (the `ip` npm package has a known isPublic() SSRF bypass CVE).
@@ -273,6 +314,7 @@ function isPrivateAddress(addr: string): boolean {
   // ── IPv6 checks ───────────────────────────────────────────────────────────
   if (parsed.kind() === 'ipv6') {
     const ipv6 = parsed as ipaddr.IPv6;
+    if (ipv6.match(IPV4_COMPATIBLE)) return true;
     const range = ipv6.range();
     // ipaddr.js IPv6 range() returns: unicast, loopback, uniqueLocal, linkLocal,
     // reserved, etc. Anything that's NOT 'unicast' is non-public.
@@ -324,9 +366,10 @@ const MAX_REDIRECTS = 5;
 // redirect hop and every call closes the window.
 //
 // Addresses that fail the public-range check are filtered OUT, and if the host
-// resolves to nothing public, we throw (fail closed). ipaddr.range() returns
-// anything not 'unicast' as non-public (loopback, linkLocal, private, ULA,
-// multicast, reserved, unspecified) — mirrors isPrivateAddress().
+// resolves to nothing public, we throw (fail closed). The check is
+// isPrivateAddress(), the one resolveAndValidateHost runs: anything ipaddr.js
+// does not call 'unicast' (loopback, linkLocal, private, ULA, multicast,
+// reserved, unspecified), and ::/96.
 function pinnedLookup(
   hostname: string,
   options: { all?: boolean; family?: number },
@@ -346,14 +389,9 @@ function pinnedLookup(
       const safe = addresses.filter(
         // Keep ONLY publicly routable addresses. Anything non-unicast is private/
         // reserved and must not be reachable — including IPv4-mapped IPv6, cloud
-        // metadata, link-local, ULA (fd00:ec2::254 AWS IMDS), loopback.
-        (a: { address: string; family: number }) => {
-          try {
-            return ipaddr.parse(a.address).range() === 'unicast';
-          } catch {
-            return false;
-          }
-        },
+        // metadata, link-local, ULA (fc00::/7), loopback, ::/96.
+        // An address that does not parse is not kept.
+        (a: { address: string; family: number }) => !isPrivateAddress(a.address),
       );
       if (safe.length === 0) {
         callback(new Error(`SSRF guard: ${hostname} has no public address`), '', 4);
@@ -989,6 +1027,38 @@ function untilAborted<T>(work: Promise<T>, signal: AbortSignal | null | undefine
   });
 }
 
+/**
+ * `input` resolved against `base`, as new URL(input, base).href gives it,
+ * except that a host `input` types as a number in a form other than four
+ * decimal parts is kept as typed (as typedHost reads it), where new URL
+ * writes it as four decimal parts. Such a result is a URL of the same
+ * scheme that isValidUrl refuses: a redirect to it is refused, and a
+ * page's link to it is still a link, which safeFetch refuses. A host that
+ * typedHost cannot read fails closed, as isValidUrl does, unless the result
+ * has the base's own scheme, host and port, its origin (a path, query or
+ * fragment names no host of its own): an http or https URL keeps its
+ * scheme, path, query and fragment, with the host invalid, a name of one
+ * label that isValidUrl refuses, and a URL of another scheme is refused by
+ * isValidUrl for its scheme. For a redirect's Location and a page's links.
+ * Throws as new URL does.
+ */
+export function resolveAsTyped(input: string, base: string): string {
+  const url = new URL(input, base);
+  const typed = typedHost(input, base);
+  if (typed === null) {
+    if (url.origin === new URL(base).origin || (url.protocol !== 'http:' && url.protocol !== 'https:')) return url.href;
+    return `${url.protocol}//invalid${url.pathname}${url.search}${url.hash}`;
+  }
+  if (!isOtherNumericForm(typed)) return url.href;
+  // In url.href the host follows the scheme's // and any userinfo (which
+  // ends at the last @), and ends at the port or at the path, which a URL
+  // of these schemes always has.
+  const from = url.protocol.length + 2;
+  const path = url.href.indexOf('/', from);
+  const host = Math.max(from, url.href.lastIndexOf('@', path) + 1);
+  return `${url.href.slice(0, host)}${typed}${url.port ? `:${url.port}` : ''}${url.href.slice(path)}`;
+}
+
 // The caller's signal bounds the whole call: every hop, every DNS check and
 // every body. A DNS answer that arrives after the signal fired is not followed
 // by a request, so a redirect to a host with a slow resolver cannot carry a
@@ -1022,9 +1092,12 @@ export async function safeFetch(url: string, init?: SafeFetchInit): Promise<Resp
     // Not a redirect — return the response (success, 4xx, 5xx, etc.)
     if (resp.status < 300 || resp.status >= 400) return resp;
     // 3xx redirect — extract Location header and resolve against current URL.
+    // A Location whose host is typed as a number in a form isValidUrl
+    // refuses keeps that host as typed, so the check at the top of the loop
+    // reads that form (resolveAsTyped).
     const location = resp.headers.get('location');
     if (!location) return resp; // 3xx with no Location — return as-is
-    currentUrl = new URL(location, currentUrl).href;
+    currentUrl = resolveAsTyped(location, currentUrl);
     hopInit = redirectedInit(hopInit, resp.status);
     // Loop continues — next iteration validates the new URL + DNS.
   }
