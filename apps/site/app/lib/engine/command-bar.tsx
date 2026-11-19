@@ -27,6 +27,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { endsInANumber, isOtherNumericForm, typedHost, withoutTrailingDots } from '../typed-host';
 
 /** A field's reading. ok: what the engine will read (verb and target);
     otherwise the plain sentence saying what the value still lacks. */
@@ -59,14 +60,23 @@ export function checkUrl(raw: string, reads: 'page' | 'origin' | 'site' = 'page'
   const miss = (plain: string): FieldCheck => ({ ok: false, text: plain, plain });
   if (/\s/.test(v)) return miss('A web address has no spaces. Paste one URL.');
   let u: URL;
+  const typedUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? v : `https://${v}`;
   try {
-    u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? v : `https://${v}`);
+    u = new URL(typedUrl);
   } catch {
     return miss('That is not a web address yet.');
   }
   if (u.protocol !== 'https:' && u.protocol !== 'http:') return miss('Only http and https addresses can be read.');
   const host = u.hostname.toLowerCase();
-  if (isPrivateHost(host)) return miss('The engine reads public sites. Local and private addresses are out of its reach.');
+  // A host that ends in a number is read without its trailing dots, as the
+  // URL guard reads it.
+  if (isPrivateHost(endsInANumber(host) ? withoutTrailingDots(host) : host)) return miss('The engine reads public sites. Local and private addresses are out of its reach.');
+  // The URL guard refuses a host typed as a number in any form other than
+  // four decimal parts, and a host it cannot read as typed (typed-host.ts).
+  // new URL() can have rewritten such a host, so it is read as typed here.
+  const typed = typedHost(typedUrl);
+  if (typed === null) return miss('That is not a web address yet.');
+  if (isOtherNumericForm(typed)) return miss('Write an IP address as four numbers with dots between them.');
   if (!host.includes('.')) return miss(`Add the domain ending, like ${host}.com.`);
   const target = reads === 'origin' ? u.origin : reads === 'site' ? `${u.origin}/` : u.href;
   const verb = reads === 'origin' ? 'Probes' : 'Reads';

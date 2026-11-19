@@ -19,6 +19,12 @@
       "kind": "intentional",
       "why": "Output envelope. route.ts attaches a receipt (buildReceipt) for the HTTP API and strips the internal retrievedAt; the package returns the result as-is."
     },
+    "fn:extractCssLinks": {
+      "route": "fb199fd4015140ac",
+      "engine": "7f7625f0d42e4d08",
+      "kind": "intentional",
+      "why": "Transport. route.ts resolves each stylesheet href with resolveAsTyped from the site's url-guard: when the href's host is typed as a number in a form the site's URL guard refuses, it keeps that host as typed, and when the href is an http or https link to another origin whose host resolveAsTyped cannot read, the link gets a host the guard refuses; either way safeFetch refuses the link. engine.ts resolves each href with new URL and hands the result to its own SSRF guard (isValidUrl, then httpsFetch with safeLookup). Only how a link is resolved differs."
+    },
     "fn:fetchPageResilient": {
       "route": "0112473beb8921ed",
       "engine": "8df1ea0d928a76cf",

@@ -6,6 +6,346 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The URL guard's address checks match the ranges they name, and a host
+that ends in a number must be typed as four decimal parts** (the site
+and the npm engine's source-drift baseline; no version moves).
+Three of the hosted URL guard's checks
+(`app/lib/url-guard.ts`) did not match the ranges they name, and the
+guard now reads a host that ends in a number as it was typed. Every
+route that reads a URL, and the browser audit
+(`app/lib/browser-guard.ts`), runs these checks, so all of them change
+together. What can move: a URL whose host is typed as four decimal parts
+from 100.128.0.0 to 100.255.255.255, a name with an octal- or
+hex-looking label before its last one, such as `007.example.com`, and a
+name of four labels that begin with digits spelling an address in that
+range, such as `100.200.1.2a`, are read where they were refused as
+invalid URLs. No audit check, scoring rule or weight moves. A page that
+links a stylesheet by a host typed as a number in another form is scored
+without that stylesheet, as it is when the stylesheet's host is private,
+and the link still counts as a linked stylesheet.
+
+### Fixed (URL guard ranges)
+
+- **Carrier-grade NAT is 100.64.0.0/10.** A literal IPv4 host was
+  refused as carrier-grade NAT from 100.64.0.0 up to 100.255.255.255. It
+  is now refused from 100.64.0.0 to 100.127.255.255, the range the check
+  of resolver answers already used and the URL bar's hint already
+  showed. A host from 100.128.0.0 to 100.255.255.255 is public and is
+  read.
+- **The numeric-form checks apply only to a host that ends in a
+  number.** The guard refused any host with a label that looked octal or
+  hex, so a name such as `007.example.com` or `0x1.example.com` could
+  not be read, while the URL bar said it would be. These checks now
+  apply only to a host whose last label, once every trailing dot is
+  dropped, is a number. The guard refuses such a host when it is not
+  typed as four decimal parts (below), and checks it as the address it
+  names and refuses it when that is private. Any other host is a name. A
+  name of four labels that begin with digits, with no dot after them, is
+  still refused when those digits spell a private address, and every
+  name is then checked by the addresses it resolves to.
+- **A host that ends in a number must be typed as four decimal parts.**
+  The URL parser can write such a host as four decimal parts before any
+  check of the hostname runs. The guard reads the host as it was typed
+  (`app/lib/typed-host.ts`), the way the URL parser reads it:
+  percent-escapes decoded, IDNA mapping applied (fullwidth digits,
+  ideographic full stops), and userinfo and port left out. A host typed
+  as a number in any other form (one number, a hex or octal part, a
+  leading zero, or fewer parts) is refused, whatever address it names.
+  Every trailing dot is dropped first: four decimal parts and dots are
+  read as the address they name, and refused when it is private. The
+  host is read this way wherever a URL comes in: `isValidUrl`, and
+  through it `isPublicUrl` and `safeFetch`; `normalizeInputUrl`, which
+  leaves such a URL as typed so that `isValidUrl` refuses it;
+  `resolveAndValidateHost`; the browser audit's `createUrlVerdict`, for
+  the URL it is given; each redirect `safeFetch` follows and each
+  stylesheet link of a page (`resolveAsTyped`, which keeps such a host
+  as typed in the URL it gives, so that a link is still read as a link);
+  and the URL bar's hint, which asks for an IP address as four numbers
+  with dots between them. A URL whose host cannot be read as typed is
+  refused: `isValidUrl` refuses it, and `resolveAsTyped` gives a URL
+  that `isValidUrl` refuses for a redirect or a link whose host it
+  cannot read, unless it names the scheme, host and port of the page it
+  came from.
+- **A host typed outside ASCII with an empty label is refused.** The
+  typed-host read gives nothing for a host typed with a character
+  outside ASCII, or a percent-escape of one, when the host the URL
+  parser reads from it has an empty label other than one at its end. The
+  URL parser reads such a host, and a strict IDNA reading refuses the
+  empty label, so readers differ on it. Each place that reads the host
+  as typed refuses it, unless a redirect or a link names the scheme,
+  host and port of the page it came from. The URL bar's hint says it is
+  not a web address yet.
+- **`resolveAndValidateHost` reads a hostname before any lookup.** It
+  refuses a hostname the typed-host read cannot give, one typed as a
+  number in another form, and four decimal parts that name a private
+  address, with or without trailing dots. It refuses a hostname that
+  holds a C0 control or a space before it reads it: the read removes
+  tabs and newlines, as the URL parser does, and the lookup is given the
+  hostname as it came. Every caller in the site passes it the hostname
+  of a URL the URL parser has read, which holds none.
+- **An IPv4-compatible IPv6 answer is not public.** A resolver answer in
+  `::/96`, however it is written, is not public: the check before each
+  request refuses the name, and the lookup the connection is pinned to
+  drops the answer. ipaddr.js does not name that range, so the guard
+  names it itself. The two checks now run one function,
+  `isPrivateAddress`.
+
+### Not changed (URL guard ranges)
+
+- Every IPv6 literal host is refused, and every other private, loopback,
+  link-local, multicast and reserved range is refused as before, for
+  literal hosts and for resolver answers.
+- The redirect limit, the DNS cache, how the connection is pinned, the
+  body limits, and the wording of every error message the guard and the
+  routes give.
+- The npm engine (`packages/score`) reads URLs on the user's own machine
+  with URL checks of its own. This entry does not change them.
+- A request the audited page itself makes reaches the browser audit's
+  check as the browser wrote its URL. The browser can write a host typed
+  as a number as four decimal parts, so that request is checked by the
+  address it names.
+
+### Gates (URL guard ranges)
+
+- `check-url-guard-hosts.js` (new, in the build and in CI after the
+  audit SSRF gate) loads the real URL guard, browser guard, URL bar and
+  routes with stubbed DNS, which answers a lookup in the shape and with
+  the families it asks for and refuses an option it does not model or an
+  `all` option that is not a boolean, and local servers on 127.0.0.1,
+  which a socket reaches only when the guard's pinned lookup answers in
+  the shape it asked for, each address with its own family. It runs 550
+  checks: literal hosts on both sides of each 100.64.0.0/10 edge and
+  after other first parts, names whose other labels look octal or hex or
+  whose last label only starts like a number, names whose four digit-led
+  labels spell a public or a private address, `::/96` answers alone and
+  next to a public one in several spellings, IPv4-mapped answers with a
+  private or a public address inside, private answers next to public
+  ones, of the same family or not, three, four and five answers with a
+  private one among them, link-local, multicast, broadcast, reserved,
+  unspecified, 6to4, Teredo and 64:ff9b::/96 answers, a lookup that
+  fails with a temporary error, every time or at the first lookup alone,
+  a second check of a name whose answers are read from the cache or
+  whose lookup failed, a name read from the cache 59 s after its lookup,
+  and 10 s after it once 501 other names were checked, a name not public
+  at its first lookup checked again from the cache, a name, of one
+  answer or two, asked about again once its answer is older than the
+  cache keeps one, whether or not it was read from the cache in between,
+  and when its new lookup fails or finds no answer, answers that are not
+  public at the pinned connection, alone or next to public ones among up
+  to five answers, first, last or in the middle, one of them or more,
+  when the socket asks for every address, which is handed each public
+  one as the lookup gave them, and when it asks for one, a lookup that
+  fails at the connection, the browser audit's verdict for the same
+  URLs, and hosts typed as a number in other forms or with trailing
+  dots, or typed with a character outside ASCII with an empty label,
+  with four decimal parts and names typed the same ways, with
+  percent-escapes, backslashes, userinfo, a port, spaces and controls
+  around the URL, tabs and newlines inside it, and inputs of up to about
+  5,000 characters, at the places a URL comes in, each place given the
+  ways its rows hold, each route that reads one among them, the compare
+  route's second URL too, and the URL bar as it reads a page, a site and
+  an origin, hostnames of up to 269 characters that hold a control
+  character at their start, inside or at their end, which
+  `resolveAndValidateHost` refuses with no lookup, as it refuses
+  hostnames the typed-host read gives nothing for, one typed as a number
+  in another form, and private addresses typed in fullwidth digits,
+  stylesheet links written with backslashes, a trailing space, or a
+  space or control character that the URL parser keeps, and Locations
+  written with such a character, read as the URL parser reads them,
+  redirects of the five statuses that carry a Location, a redirect to a
+  name the DNS check refuses, a `data:` URL, which the browser audit's
+  check passes, a redirect and a link with no scheme and three slashes,
+  a redirect and a link from a page whose own host is the address they
+  name, a second redirect, read as typed, and a redirect of only a
+  query, each resolved against the URL that answered with it, a page
+  whose one stylesheet is linked that way, read and scored as the same
+  page with none, a link the URL parser reads as a path on its own page,
+  which the score route reads there, and, with the typed-host read made
+  to give nothing for eighteen inputs, a URL, a route's input, the
+  browser audit's check, the URL bar, a link and a redirect whose host
+  it cannot read, a redirect to another host whose name ends with its
+  page's, a redirect and a link to a host under its page's and to its
+  page's parent domain, a redirect to its page's host under www or with
+  a dot after it, a link to its page's host on another port, a redirect
+  and a link from a page on another port to its host on the default
+  port, and a redirect and a link to its page's host on the other
+  scheme. Its checks of resolver answers, of the DNS cache, of the
+  pinned lookup and of the browser audit's verdict are named by case
+  number, apart from the one that counts the lookups of the pinned
+  cases, a failing check of what the pinned lookup handed names no
+  address, and a check that names a typed input gives a long run of one
+  character by its length. The gate runs offline. It refuses every DNS
+  lookup or query, socket connection and fetch past loopback, and its
+  last check fails if it refused any. Against the site before this
+  change, 316 of the 550 fail, each a case the gate marks new, and the
+  other 234 pass.
+- `check-own-contract.mjs` loads the real URL guard through the route
+  harness, so the module the guard now imports loads with it.
+- The source-drift baseline of the npm engine (`packages/score`)
+  records the difference in `extractCssLinks` between its copy and the
+  site's as intentional. The site's copy resolves each stylesheet link
+  with `resolveAsTyped`, so `safeFetch` refuses a link whose host is
+  typed as a number in a form the guard refuses, and an http or https
+  link to another origin whose host `resolveAsTyped` cannot read, which
+  gets a host the guard refuses; the npm engine's copy resolves it with
+  `new URL` and checks it with its own guard.
+- The URL guard before and after this change, run side by side on
+  1,225,762 seeded inputs, give the same result on every input outside
+  the three results above that are now read and the hosts and answers
+  the checks above refuse. The inputs: 300,768 literal IPv4 hosts,
+  120,000 numeric forms of 20,000 addresses and the same 120,000 forms
+  with two trailing dots, 100,000 names, 19,994 names of four labels
+  that begin with digits, 85,000 resolver answers in many spellings,
+  20,000 hosts typed in several spellings, 210,000 hosts typed as four
+  decimal parts or as the six other numeric forms with one, two or three
+  trailing dots, and 10,000 hosts, nearly all typed with a character
+  outside ASCII, with one, two or three full stops at their end or an
+  empty label inside, each of the last three sets read as a URL and as a
+  route reads what a visitor typed (40,000, 420,000 and 20,000). Outside
+  the three results above that are now read, no input the guard refused
+  before is read. For each second part b from 0 to 255, `100.b.0.1` is
+  refused exactly when ipaddr.js 2.5.0 calls it carrier-grade NAT. On
+  200,000 seeded URLs, 103,243 of which the URL parser reads with a
+  network scheme, the guard's reading of the typed host and the URL
+  parser's reading of the whole URL give the same host every time, and
+  no URL a redirect or a link gives came from a read that gave nothing.
+  On 20,000 more seeded URLs whose host is typed with a character
+  outside ASCII and has an empty label other than one at its end, the
+  read gives nothing for each one the URL parser reads, and the guard
+  accepts none of them.
+- Of 257 edits tried to a check or to the typed-host read, each of these
+  255 fails at least one check: the carrier-grade NAT bound moved by one
+  either way or dropped, or its first part loosened either way; `::/96`
+  dropped from either check, from both, or for cached answers, narrowed,
+  replaced, answered public in whole or in part, or let through next to
+  a public answer; the last-label rule inverted, dropped, unanchored, or
+  read from the first or any label, or its hex form dropped, or its
+  trailing-dot rule dropped, narrowed to one dot or to three, or a last
+  label of more than ten digits, of 0x and more than eight hex digits,
+  or of more than 63 characters, or a host of more than 253 characters,
+  read as a name; a name read as an address only when it is four decimal
+  parts or only when it ends in a number; the private ranges of a host
+  that ends in a number read with its trailing dots, by the guard or by
+  the URL bar, or those of every host read without them; an IPv4-mapped
+  answer judged by the address inside it; an answer in 64:ff9b::/96, an
+  IPv4 link-local, loopback, unspecified, multicast or broadcast answer,
+  or an IPv6 link-local, multicast, 6to4 or Teredo answer counted as
+  public, or an IPv4 answer judged by the test for a literal host, at
+  both checks or at the pinned lookup alone; at the DNS check, only its
+  first two answers read, a private answer let through next to a public
+  one of its family, a cached answer kept past its lifetime, always or
+  by each read of it, or checked for `::/96` only, a lookup that failed
+  cached as no answers, a lookup that fails with a code other than
+  ENOTFOUND read as public, a cached answer used, however old, when its
+  new lookup fails, or the check skipped at a redirect; at the pinned
+  lookup, its answer of one address left unfiltered or picked by the
+  range test alone, one `::/96` answer let through, every IPv6 answer
+  kept, every IPv4 answer kept, always or when every answer is IPv4, a
+  private IPv4 answer kept next to a public one, an IPv6 loopback or
+  link-local answer kept, an answer between the first and the last kept
+  unchecked, only the first answer that is not public taken out, the
+  first answer judged alone, its lookup made to ask for one answer when
+  the socket does, for a family given by name, or with an `all` option
+  that is not a boolean, a list handed to a socket that asks for one
+  address, a socket that names no `all` option read as one that asks for
+  every address, a socket that asks for every address refused when its
+  first answer is not public, or handed the answers of one family only,
+  the addresses it hands given the family of another answer, the one
+  address it hands a socket given family 4, the last public answer
+  handed to a socket that asks for one address, or its first answer when
+  none is public, the public answers handed in another order, or the
+  socket answered by the `node:dns` callback `lookup` when its own
+  lookup fails; the four-decimal-parts refusal dropped, two or three
+  parts read as four, five or more parts read as four, a last part from
+  256 to 299, or from 1000 to 1999, read as a decimal part, a part from
+  256 to 259 before the last, or an empty one, read as a decimal part, a
+  leading zero let in before the last part or in a last part of two
+  digits, or the four-decimal-parts test not anchored at its start, or
+  made to drop at most two trailing dots; at `resolveAndValidateHost`, a
+  hostname read as given, or as the host of a URL made from it, a
+  hostname that holds a C0 control or a space let through to the read,
+  in any place, only at its start, only at its end, past its 64th or its
+  253rd character, or when it ends in a number, the private ranges of
+  every hostname read, a number refused before its lookup only when it
+  is not four parts, a hostname looked up when the read gives nothing,
+  four decimal parts of a private address looked up, read with their
+  trailing dots, or read from the hostname as given, its lookup made to
+  ask for IPv4 answers only, for one answer, with the ADDRCONFIG hint,
+  with an `all` option that is not a boolean, or for a family given by
+  name, or only its IPv6 answers read when it has any; the typed host
+  read without decoding and mapping, from only the first 4096 characters
+  typed, by NFKC in place of the URL parser, given as typed when the URL
+  parser refuses it, read although it holds a character that ends a
+  host, any of them, or only an `@`, a slash or a backslash, or a
+  question mark or a number sign, with its userinfo or part of it, with
+  its port, past a backslash, a question mark or a number sign, after at
+  most two or three slashes, with at most 64 slashes skipped, with its
+  authority ended at a space, with its tabs or the spaces around the
+  URL, with only tabs removed, or only the first tab or newline, with a
+  vertical tab and a form feed removed with them, with the spaces
+  outside ASCII that trim drops removed at its ends, with the controls
+  at its end kept, or only the spaces there, with only spaces dropped at
+  its start, with the spaces after its scheme's colon skipped, with the
+  scheme read in lower case only or compared as typed, or read in a link
+  or a redirect only when its scheme is typed in lower case, without ws
+  and wss, read where a relative redirect names no host, one with one
+  slash among them, or not read where a redirect of another network
+  scheme with no slashes names one, read only after two forward slashes
+  in a redirect of the same scheme or in a link or a redirect with no
+  scheme, read after two slashes alone, or not read after three, in a
+  link or a redirect with no scheme, with four decimal parts and a dot
+  refused, given as typed in a link or a redirect, kept in a URL past an
+  `@` that is not the userinfo's, kept in a URL without its port, given
+  as `new URL` gives it when it has userinfo or when the read gives
+  nothing, written with `invalid` over the first copy of its host when
+  the read gives nothing, or with that path skipped for an empty
+  reference, or when the read gives nothing for the page's host on
+  another port or on the other scheme, for another host whose name ends
+  with the page's, for a host under the page's, for the page's host
+  under www or with a dot after it, for the page's parent domain, or for
+  the page's host on the default port from a page on another port, or
+  whenever a link or a redirect names its page's scheme, host and port,
+  or when the host has one trailing dot and the URL parser wrote it as a
+  public address, a second redirect resolved against the first URL of
+  the call, a redirect or a link trimmed before it is resolved, a
+  redirect resolved against the origin of the URL that answered, or read
+  as typed only at the first redirect, let through when the read gives
+  nothing by `normalizeInputUrl`, the browser audit or the URL bar, read
+  by the browser audit from the URL as `new URL` writes it when it
+  starts with a control or a space, only when the URL has no userinfo,
+  or before its pass for `data:`, `blob:` and `about:` URLs, read by the
+  URL bar only as it reads a page, or only when it has no userinfo or
+  names no port, or with a value that has a scheme and no slashes taken
+  as a URL, read by `isValidUrl` from only the first 2048 characters of
+  a URL, kept as typed by `normalizeInputUrl` only up to 2048
+  characters, read as `new URL` writes it from a redirect or a URL for
+  the browser audit of more than 2048 characters, a link of more than
+  512 or a value of the URL bar of more than 253, the URL bar's hint for
+  another numeric form given only for a host of at most 63 characters,
+  or not read at one of the places a URL comes in; and the read of a
+  host typed outside ASCII with an empty label dropped, skipped for a
+  percent-escape, or for one of a two-byte character, made to find an
+  empty label only at the end, made to refuse one empty label at the
+  end, made to skip an empty first label, made to skip the last
+  character typed, made to miss a code point outside the BMP, or applied
+  to every host; and 40 more, written in later rounds, which passed
+  every check the gate then had and now fail at least one: they change
+  how the typed-host read takes some inputs, how a route, the browser
+  audit, the URL bar or a link reads a host, how
+  `resolveAndValidateHost` refuses a control character, how a Location
+  is resolved at a redirect of another status, which answers the DNS
+  check and the pinned lookup read, which public answers the pinned
+  lookup hands, how the `::/96` test reads an answer, how the DNS check
+  takes a lookup that fails, and how the DNS cache keeps an answer. Two
+  edits pass every check, and each refuses more and no less: widening
+  `::/96` to `::/95`, which adds only addresses in the reserved `::/8`,
+  and reading an empty last label as a number, which adds only a host
+  made of dots alone. These figures are for the edits named here, which
+  are not every edit: other small edits, to the typed-host read, the
+  redirect handling, the DNS check and its cache, the pinned lookup and
+  other parts of the guard, pass every check, and independent rounds of
+  edits kept finding new ones.
+
 **The articles are set as reading, the easing curves show their shape, and
 the prices take the figure voice** (the site; no version moves). Three
 visual changes, each its own pull request (#443, #445, #446). The four
