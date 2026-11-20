@@ -258,8 +258,13 @@
 }
 
 /* A source path is a link: ink on a strong-line underline drawn at the
-   glyphs (the status note's idiom), the underline taking the signal on hover. */
+   glyphs (the status note's idiom), the underline taking the signal on hover.
+   It is a link on a line of its own, not one inside a sentence, and its box
+   was the glyphs' 17px. Block padding on an inline box adds to the box and
+   not to the line, so 4px each side makes it 25px, past the 24px target
+   floor, and no row moves. */
 .mcp-tools .row-side a {
+  padding-block: var(--space-4);
   color: var(--ink);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -272,15 +277,6 @@
   .mcp-tools .row-side a:hover {
     text-decoration-color: var(--signal-light);
   }
-}
-
-/* These descriptions are paragraphs people read, three to six lines each,
-   not one-line captions: --muted at 14px holds the body floor where the
-   caption grey (--muted-dim at 13px, about Lc 38) did not. */
-.mcp-tools .row-meta {
-  color: var(--muted);
-  font-size: var(--text-label);
-  line-height: var(--leading-body);
 }
 
 /* A client's name over its config: a sub-heading in the sans, as every h3

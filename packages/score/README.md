@@ -102,11 +102,13 @@ One optional dependency: Google's [`@google/design.md`](https://github.com/googl
 ## SSRF guard
 
 Built-in SSRF protection rejects:
-- Private IP ranges (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x)
-- Cloud metadata endpoints (169.254.169.254)
-- All IPv6 addresses
+- An address in a range that is not public, as a URL's IPv4 host and as any address, IPv4 or IPv6, that the engine's own lookup gets for a host name: every range ipaddr.js 2.5.0 names (private, loopback, link-local, carrier-grade NAT, the reserved and documentation ranges, multicast, unique local and the rest), and ::/96. The engine holds its own copy of the ranges and does not load ipaddr.js.
+- An IPv4-mapped IPv6 address that the engine's own lookup gets, whatever IPv4 address it holds
+- All IPv6 addresses as a URL host
 - Encoded IP bypasses (decimal, octal, hex)
 - Redirect chains to internal addresses
+
+The engine connects directly to each site and ignores proxy settings in the environment (`HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, `NO_PROXY`, `NODE_USE_ENV_PROXY=1`, `--use-env-proxy`) and a proxy set on `https.globalAgent`, so the check applies to every request: the page and its other candidate URLs, each redirect, each stylesheet and `/DESIGN.md`. On a network that allows traffic out only through a proxy, the engine cannot reach sites, and each page is reported unreachable (`unreachableReason: 'network'`), so the engine cannot score pages on such a network. Other settings given to `https.globalAgent`, such as a CA, do not apply to the engine's requests; `NODE_EXTRA_CA_CERTS` does. The engine makes its agent when it loads, so an `Agent` class put in place of `node:https`'s after that is not used. Code in the same process that replaces `node:https`'s request functions, or its `Agent` class before the engine loads, is outside this.
 
 ## License
 

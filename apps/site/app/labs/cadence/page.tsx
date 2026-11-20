@@ -18,7 +18,7 @@ import { AdoptedTally } from '../adopted-tally';
 export const metadata: Metadata = pageMeta({
   title: 'Cadence',
   description:
-    'Lab Three covers text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence and verified against designesy.org.',
+    'Lab Three covers text rhythm: font declaration, scale, leading, tracking, measure, wrapping, numbers, and selection. Rules compiled from external typography intelligence.',
   path: '/labs/cadence',
   ogTitle: 'Cadence · Lab Three · Designesy',
   ogDescription:
@@ -49,7 +49,7 @@ const PRINCIPLES = [
   {
     num: '01',
     title: 'Font declaration on root',
-    body: 'Set font-smoothing on the root element: -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale. Set font-synthesis: none to prevent the browser from synthesizing fake weights. Name a system stack with Inter as the first named face, and keep decorative display fonts out of public UI.',
+    body: 'Set font-smoothing on the root element: -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale. Set font-synthesis: none to prevent the browser from synthesizing fake weights. Name each face with a system fallback stack, and keep decorative display fonts out of public UI.',
   },
   {
     num: '02',
@@ -83,7 +83,7 @@ const CONTRACT_RULES = [
   { title: 'Tabular numbers', meta: 'font-variant-numeric: tabular-nums for data, stats, and numerical tables' },
   { title: 'Selection and user-select', meta: '::selection styled with a token color, user-select: none on UI chrome' },
   { title: '16px input floor', meta: 'Inputs never below 16px on mobile, which avoids iOS auto-zoom' },
-  { title: 'No decorative display fonts', meta: 'System stack is the contract: no invented display faces for public UI' },
+  { title: 'Three faces, no decorative display fonts', meta: 'Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data (amended from the v0.1.3 system-stack rule; the mono face changed in v0.4.5)' },
 ];
 
 const REVIEW_CHECKS = [
@@ -200,11 +200,12 @@ Open tensions (not yet fully verified on designesy.org):
   - Block-axis logical properties not yet migrated (margin-block-start/end)
   - border-inline-start not yet used; decorative borders still physical
   - inset-inline not yet used; absolute positioning still left/right
+  - Measure wider than rule 5: notes cap at 660px, page shell at 1180px to 1560px
 
 Resolved tensions (v0.1.3 CSS fixes applied):
-  - font-synthesis: none now set on :root
-  - text-underline-position: from-font now set on :root
-  - text-decoration-skip-ink: auto now set on :root
+  - font-synthesis: none now set on body
+  - text-underline-position: from-font now set on body
+  - text-decoration-skip-ink: auto now set on body
   - Inline-axis logical properties (margin-inline, padding-inline) applied
 
 Output format:
@@ -241,9 +242,10 @@ export default function CadenceLabPage() {
           <p className="surface-note">
             Lab Three studies the typographic decisions that make text feel
             composed rather than placed. Rules are compiled from external
-            typography intelligence, cross-referenced against the Designesy
-            contract, and verified on designesy.org. You are reading the
-            live artifact right now.
+            typography intelligence and cross-referenced against the Designesy
+            contract. The Verification section below lists the rules checked
+            on designesy.org and marks the ones the site does not meet. You
+            are reading the live artifact right now.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Live</span>
@@ -259,7 +261,7 @@ export default function CadenceLabPage() {
             <span className="lab-meta-item">
               Field check ·{' '}
               <Link href="/review/cadence" data-cuelume-hover="tick" data-cuelume-press="tick">
-                pass with notes
+                {labs.cadence.field_check.outcome}
               </Link>
             </span>
           </div>
@@ -271,14 +273,18 @@ export default function CadenceLabPage() {
           <div className="definition">
             <p className="definition-label">This page is the demo</p>
             <p>
-              Every line you are reading demonstrates cadence: the system
-              stack with font-smoothing on root, the rem-based scale (body at
-              16px, headings climbing in rem multiples), line-height 1.55 on
-              body and 1.08 on headings, negative tracking on titles and
-              positive tracking on the eyebrow labels above them, text-wrap:
-              balance on headings, text-wrap: pretty on body, tabular-nums on
-              every number on this page, and ::selection styled with the accent
-              blue. Select any text on this page to see it.
+              Every line you are reading demonstrates cadence. Three
+              self-hosted faces carry it: Fraunces for headlines, Schibsted
+              Grotesk for interface and reading, Atkinson Hyperlegible Mono
+              for data. Font smoothing is set on body. The scale is rem-based,
+              with body text at 16px. Leading comes from tokens: 1.55 on body
+              text, 1.5 in this paragraph, 1.08 on section headings and 1.02
+              on the page title. Tracking is set in em: -0.025em on the page
+              title, -0.02em on section headings and 0.18em on the eyebrow
+              above the title. Headings use text-wrap: balance and paragraphs
+              use text-wrap: pretty. Principle numbers, check indexes and the
+              status strip use tabular-nums, and ::selection is styled with
+              --signal. Select any text on this page to see it.
             </p>
           </div>
 
@@ -460,24 +466,25 @@ export default function CadenceLabPage() {
           <h2 className="doctrine-heading">Verification</h2>
           <CheckGrid
             items={[
-              { title: 'Font smoothing: antialiased + grayscale on :root', status: 'pass' },
+              { title: 'Font smoothing: antialiased + grayscale, set on body', meta: 'The rule names the root element. The site sets both properties on body, one level down.', status: 'pass with notes' },
               { title: 'Rem-based scale: all sizes in rem, root at 16px', status: 'pass' },
-              { title: 'Line-height: headings 1.08, body 1.55, hero 1', status: 'pass' },
+              { title: 'Line-height: section headings 1.08, body 1.55, page title 1.02', meta: 'The rule asks 1.05 to 1.1 for headings and 1 for display. The page title sits between the two.', status: 'pass with notes' },
               { title: 'Letter-spacing: negative headings (-0.02 to -0.04em), positive labels (0.03 to 0.18em)', status: 'pass' },
-              { title: 'Measure: --maxw 1080px shell, surface-note 520 to 580px body', status: 'pass' },
+              { title: 'Measure: notes cap at 66ch (660px), page shell at 1180px to 1560px', meta: 'The rule asks 520 to 580px for body text and a 1080px shell. A full line of a note is 660px wide and holds about 90 characters. Principle text has no cap of its own and reaches 100 characters on a 2560px screen. The shell grows with the screen.', status: 'fail' },
               { title: 'text-wrap: balance + pretty, both present', status: 'pass' },
-              { title: 'tabular-nums: 8 instances across the live CSS', status: 'pass' },
+              { title: 'tabular-nums: set per component (principle numbers, check indexes, status strips)', status: 'pass' },
               { title: '::selection styled with var(--signal) instead of the browser default', status: 'pass' },
               { title: 'user-select: none, present on UI chrome', status: 'pass' },
-              { title: 'font-synthesis: none, set on :root', status: 'pass' },
-              { title: 'text-underline-position: from-font, set on :root', status: 'pass' },
-              { title: 'text-decoration-skip-ink: auto, set on :root', status: 'pass' },
+              { title: 'font-synthesis: none, set on body', status: 'pass' },
+              { title: 'text-underline-position: from-font, set on body', status: 'pass' },
+              { title: 'text-decoration-skip-ink: auto, set on body', status: 'pass' },
               { title: 'Logical inline properties: margin-inline and padding-inline applied', status: 'pass' },
               { title: 'Block-axis logical properties: not yet migrated (open tension)', status: 'fail' },
               { title: 'border-inline-start unused; decorative borders still physical (open tension)', status: 'fail' },
               {
                 title: 'Field check with Kit One · Design Review',
-                status: 'pass',
+                meta: `Reviewed ${FIELD_CHECK.reviewed}. The rows above are newer, and some differ from it.`,
+                status: labs.cadence.field_check.outcome,
                 href: '/review/cadence',
               },
             ]}

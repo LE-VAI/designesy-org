@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { MaturityPlate } from '../lib/og-data-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -10,5 +11,6 @@ export default function OpenGraphImage() {
     title: 'Six compliance axes',
     lede: 'Where does your design system land? 24 questions, 6 minutes, sharable scorecard.',
     path: 'designesy.org/maturity',
+    art: <MaturityPlate />,
   });
 }

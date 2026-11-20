@@ -42,7 +42,9 @@ function getContext(): AudioContext | null {
 
 /**
  * Whether the site's sound switch is on: the one check every extended cue
- * passes before it touches audio. Where a sound control has mounted,
+ * passes before it touches audio, and in the binder (cuelume-binder.tsx),
+ * the state it gives cuelume when it mounts and the check its audio unlock
+ * makes before each attempt. Where a sound control has mounted,
  * html[data-audio] says it: use-sound.tsx writes it on mount and in each
  * click of the switch, at once, where cuelume itself is turned off only
  * once the toggle cue has played. On a page with no sound control, such as
@@ -50,7 +52,7 @@ function getContext(): AudioContext | null {
  * reads as a sound control would when it mounts (soundPreference in
  * use-sound.tsx).
  */
-function soundSwitchOn(): boolean {
+export function soundSwitchOn(): boolean {
   if (typeof document === 'undefined') return false;
   const said = document.documentElement.dataset.audio;
   if (said === 'on') return true;
@@ -61,7 +63,7 @@ function soundSwitchOn(): boolean {
   } catch {
     // Storage may be unavailable: the derived default, as a sound control keeps.
   }
-  return soundPreference(stored, window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  return soundPreference(stored);
 }
 
 /**

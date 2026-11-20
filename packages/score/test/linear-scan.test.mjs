@@ -76,7 +76,9 @@ function loadSource(path) {
   }
   const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   // node:https and node:dns are never reached by the functions under test.
-  const stub = () => ({});
+  // The engine makes its connection agent when it loads, so node:https
+  // gives it an Agent class that does nothing here.
+  const stub = (id) => (id === 'node:https' ? { Agent: class {} } : {});
   return new Function('exports', 'require', 'module', `${js}\nreturn { ${[...new Set(names)].join(', ')} };`)({}, stub, { exports: {} });
 }
 

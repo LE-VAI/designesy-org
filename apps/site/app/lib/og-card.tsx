@@ -106,8 +106,9 @@ export type OgCardProps = {
 
 /**
  * The tile's icon, where the icon family has one for what the page is. A
- * page with no matching icon gets no tile (labs, most tools): an icon that
- * means something else would mislabel it.
+ * page with no matching icon gets no tile (most tools): an icon that means
+ * something else would mislabel it. The labs pass their own art instead
+ * (og-lab-plates.tsx).
  */
 function defaultIcon(kind: OgKind, path: string): BrandIconName | null {
   if (kind === 'contract') return 'contract';

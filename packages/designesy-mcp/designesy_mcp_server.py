@@ -41,20 +41,33 @@ SAFETY:
     TOOL_ANNOTATIONS records each tool's hints. Every certificate is verified
     unless the operator sets DESIGNESY_INSECURE_TLS=1, which covers a
     caller's URL only, and no browser is used unless the operator sets
-    DESIGNESY_CDP_URL.
+    DESIGNESY_CDP_URL. Each body the server fetches for itself is held to
+    16 MiB, as sent and decoded: the read fails once the body passes it.
+    On these reads a redirect's body is not read (_read_body, _urlopen,
+    _probe_urlopen). A page or stylesheet read of the offline engine that
+    has not finished 8 seconds after its request, redirects included,
+    fails there (_within_read_deadline). The error body of a failed call to
+    designesy.org's score engine is held to 16 MiB as sent
+    (_score_api_failure). Other replies from designesy.org's engines are
+    not held to this limit (_post_api, _post_score_api).
 """
 from __future__ import annotations
 
+import contextlib
+import http.client
+import io
 import json
 import os
 import re
+import socket
 import ssl
 import sys
+import threading
 import time
 import urllib.request
 import urllib.error
 import zlib
-from typing import Any
+from typing import Any, Callable
 
 SERVER_NAME = "designesy-mcp-server"
 SERVER_VERSION = "1.13.10"
@@ -405,21 +418,74 @@ def _checked_class(http_class: Any, req: Any) -> Any:
 
 class _CheckedHTTPHandler(urllib.request.HTTPHandler):
     def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
-        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+        return super().do_open(_watched(_checked_class(http_class, req)), req, **http_conn_args)
 
 
 class _CheckedHTTPSHandler(urllib.request.HTTPSHandler):
     def do_open(self, http_class: Any, req: Any, **http_conn_args: Any) -> Any:
-        return super().do_open(_checked_class(http_class, req), req, **http_conn_args)
+        return super().do_open(_watched(_checked_class(http_class, req)), req, **http_conn_args)
 
 
-class _CheckedRedirects(urllib.request.HTTPRedirectHandler):
+class _UnreadBody:
+    """A redirect's response that is closed, not read, when asked to read."""
+
+    def __init__(self, fp: Any):
+        self._fp = fp
+
+    def read(self, *args: Any) -> bytes:
+        self._fp.close()
+        return b""
+
+    def close(self) -> None:
+        self._fp.close()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._fp, name)
+
+
+class _UnreadRedirects(urllib.request.HTTPRedirectHandler):
+    """urllib's redirect handler, except that a redirect's body is not read,
+    and that a 308 is followed on every Python.
+
+    urllib reads a redirect's body whole before it follows the redirect
+    (fp.read() in HTTPRedirectHandler.http_error_302), for as long as the
+    server sends it, and holds all of it in memory, and a body that ends
+    before its Content-Length fails the read (IncompleteRead). Nothing in it
+    is used, so here it is closed unread once the Location is known, and
+    a redirect is followed, or refused, however its body ends.
+
+    A 301, 302, 303, 307 or 308 is followed, the statuses fetch follows.
+    urllib follows a 308 only from Python 3.11, so on 3.10 a 308 raised
+    HTTPError and the read failed. A 308 now goes through urllib's own
+    redirect code as a 307 does, with urllib's own checks: the Location's
+    scheme must be http, https, ftp or empty, and a redirect to one URL is
+    followed at most 4 times (max_repeats). _CheckedRedirects builds on
+    this handler: it checks each redirect, a 308 too, and follows at most
+    _MAX_REDIRECTS.
+    The browser probe uses this handler alone (_probe_urlopen).
+    """
+
+    def http_error_302(self, req: Any, fp: Any, code: int, msg: str, headers: Any) -> Any:
+        return super().http_error_302(req, _UnreadBody(fp), code, msg, headers)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        # From Python 3.11 urllib builds the same request for a GET or HEAD
+        # 308 as for a 307; on 3.10 it refuses a 308, so it is asked as a 307.
+        if code == 308 and req.get_method() in ("GET", "HEAD"):
+            code = 307
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+class _CheckedRedirects(_UnreadRedirects):
     """urllib's redirect handler, except that each redirect is checked
-    (_validate_url) before it is followed, and that a fetch follows at most
-    _MAX_REDIRECTS of them, as safeFetch does. A redirect to any scheme but
-    http and https is refused: urllib follows one to ftp. Which statuses
-    are followed is urllib's choice, as before: 301, 302, 303 and 307, and
-    308 from Python 3.11."""
+    (_validate_url) before it is followed, that a fetch follows at most
+    _MAX_REDIRECTS of them, as safeFetch does, and that a redirect's body
+    is closed unread (_UnreadRedirects). A redirect to any scheme but http
+    and https is refused: urllib follows one to ftp. A 301, 302, 303, 307
+    or 308 is followed on every Python (_UnreadRedirects), and each is
+    checked here before it is followed."""
 
     def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
         hops = getattr(req, "_designesy_redirects", 0) + 1
@@ -440,24 +506,48 @@ def _urlopen(req: Any, timeout: float, context: ssl.SSLContext | None = None) ->
     """urllib.request.urlopen(req, timeout=timeout, context=context), except
     that every hop is checked: each redirect before it is followed
     (_CheckedRedirects), and each connection as it is made
-    (_checked_class, _checked_connection)."""
+    (_checked_class, _checked_connection). A redirect's body is closed
+    unread (_UnreadRedirects), and a read with a deadline has its sockets
+    shut down when the deadline comes (_watched, _ReadWatch)."""
     handlers: list[Any] = [_CheckedRedirects(), _CheckedHTTPHandler(), _CheckedHTTPSHandler(context=context)]
     return urllib.request.build_opener(*handlers).open(req, timeout=timeout)
+
+
+def _probe_urlopen(url: str, timeout: float) -> Any:
+    """urllib.request.urlopen(url, timeout=timeout) for the browser probe,
+    except that a redirect's body is closed unread (_UnreadRedirects). Its
+    endpoint is opened outside the checks _urlopen makes, as before."""
+    return urllib.request.build_opener(_UnreadRedirects()).open(url, timeout=timeout)
 
 
 # The URL that answered each fetched URL, after urllib's redirects.
 _FINAL_URL: dict[str, str] = {}
 
-# How many bytes each fetched URL's body decoded to (0 when it was not
-# compressed), so a cached body is charged to a page's budget as a fresh one is.
+# How many bytes each fetched URL's body read to: what it decoded to, or its
+# bytes as sent when it had no content coding. A cached body is charged to a
+# page's budget as a fresh one is. Until the read cap (designesy-mcp, next
+# release) a body with no content coding was recorded as 0.
 _DECODED_BYTES: dict[str, int] = {}
 
-# The most bytes one compressed body may decode to (engine 1.5.4), and the most
-# a page's stylesheets may decode to between them (_fetch_page_parts shares one
-# budget of this size). Past it the read fails: a body of a few kilobytes can
-# decode to gigabytes. 16 MiB is the largest cap the hosted engine sets on one
-# document, and its stylesheet total.
+# The bytes _fetch holds one body to (engine 1.5.4), and the budget a page's
+# stylesheets share: _fetch_page_parts charges each sheet what it decoded
+# to, or its bytes as sent when it had no content coding, so the bytes sent
+# for compressed sheets are not held to it between them. Past it the read
+# fails: a compressed body of a few kilobytes can decode to gigabytes, and a
+# server can send a body that never ends. A body with no content coding is
+# held to it as sent, and a compressed body both as sent and decoded. 16 MiB
+# is the largest cap the hosted engine sets on one document, and its
+# stylesheet total. Until the read cap only what a compressed body decoded to
+# was held to it: every body was read whole first, and urllib read a
+# redirect's body whole before it followed the redirect.
 _MAX_DECODED_BYTES = 16 * 1024 * 1024
+
+# _MAX_DECODED_BYTES as a message names it.
+_MAX_BODY_LABEL = f"{_MAX_DECODED_BYTES // (1024 * 1024)} MiB"
+
+# How much of a compressed body one read asks for. The bytes as sent stop at
+# most this far past _MAX_DECODED_BYTES.
+_READ_CHUNK = 64 * 1024
 
 # Codings in the IANA HTTP Content Coding Registry that transform the body and
 # that this port does not decode (br has no standard-library decoder). A label
@@ -476,60 +566,328 @@ def _header_values(headers: Any, name: str) -> str | None:
     return value if isinstance(value, str) else None
 
 
-def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
-    """`raw` with its Content-Encoding undone, as the live engine reads it.
+def _content_coding(encoding: str | None) -> str | None:
+    """The coding a Content-Encoding header asks the reader to undo.
 
-    The request asks for identity, but a server may compress anyway. gzip
-    (x-gzip too) and deflate (zlib-wrapped, or raw as some servers send it,
-    told apart by the zlib header) are decoded with the standard library, up
-    to `limit` bytes (at most _MAX_DECODED_BYTES). identity and labels no
-    registry defines leave the body as sent. br has no decoder in the standard
-    library and this package has no dependencies, so a br body fails, as do
-    zstd and the other registered codings in _UNDECODED_CODINGS, more than one
-    coding, a corrupt or truncated stream and a body that decodes past the
-    limit: ValueError, never compressed bytes read as text.
+    gzip (x-gzip too) or deflate, or None when there is nothing to undo:
+    identity, and a label no registry defines, leave the body as sent. br
+    has no decoder in the standard library and this package has no
+    dependencies, so a br body fails, as do zstd and the other registered
+    codings in _UNDECODED_CODINGS and more than one coding: ValueError,
+    before any of the body is read.
     """
     codings = ["gzip" if c == "x-gzip" else c for c in (c.strip().lower() for c in (encoding or "").split(","))]
     codings = [c for c in codings if c in ("gzip", "deflate") or c in _UNDECODED_CODINGS]
     if not codings:
-        return raw
+        return None
     if len(codings) > 1:
         raise ValueError(f"content decoding failed: unsupported Content-Encoding {', '.join(codings)!r}")
-    coding = codings[0]
-    if coding == "gzip":
-        d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-    elif coding == "deflate":
-        wrapped = len(raw) >= 2 and (raw[0] & 0x0F) == 8 and (raw[0] >> 4) <= 7 and ((raw[0] << 8) | raw[1]) % 31 == 0
-        d = zlib.decompressobj(zlib.MAX_WBITS if wrapped else -zlib.MAX_WBITS)
+    if codings[0] in _UNDECODED_CODINGS:
+        raise ValueError(f"content decoding failed: unsupported Content-Encoding {codings[0]!r}")
+    return codings[0]
+
+
+def _over_limit(limit: int, what: str) -> ValueError:
+    """The error for a body past `limit`, naming the limit."""
+    if limit >= _MAX_DECODED_BYTES:
+        bound = f"{_MAX_BODY_LABEL}, the most this server reads from one body"
     else:
-        raise ValueError(f"content decoding failed: unsupported Content-Encoding {coding!r}")
-    if not raw:
-        return raw
+        bound = f"the {limit} bytes left of the {_MAX_BODY_LABEL} budget a page's stylesheets share"
+    return ValueError(f"the response body {what} over {bound}")
+
+
+def _require_end(resp: Any) -> None:
+    """IncompleteRead when the body ended before its Content-Length.
+
+    resp.read() raises it; resp.read(amt) returns the short body instead.
+    """
+    left = getattr(resp, "length", None)
+    if isinstance(left, int) and left > 0:
+        raise http.client.IncompleteRead(b"", left)
+
+
+def _sent_chunks(resp: Any) -> Any:
+    """A compressed body's bytes as sent, as they arrive (read1, at most
+    _READ_CHUNK at a time), held to _MAX_DECODED_BYTES: past it the read
+    fails, so a stream that decodes to little or nothing (empty deflate
+    blocks with no end) still stops there."""
+    received = 0
+    while True:
+        chunk = resp.read1(_READ_CHUNK)
+        if not chunk:
+            return
+        received += len(chunk)
+        if received > _MAX_DECODED_BYTES:
+            raise _over_limit(_MAX_DECODED_BYTES, "as sent is")
+        yield chunk
+
+
+def _read_body(resp: Any, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
+    """Read a response's body with its Content-Encoding undone, as the live
+    engine reads it, and never more than `limit` bytes of it.
+
+    The request asks for identity, but a server may compress anyway.
+    `limit` is at most _MAX_DECODED_BYTES (16 MiB), and less for a stylesheet
+    when less is left of its page's budget. A body with no content coding is
+    read to at most one byte past `limit`, and past it fails. A gzip or
+    deflate body (zlib-wrapped, or raw as some servers send it, told apart by
+    the zlib header) is read as it arrives (_sent_chunks): its bytes as sent
+    are held to _MAX_DECODED_BYTES and what it decodes to, to `limit`. When
+    its stream ends nothing more is read or waited for, even when its
+    Content-Length gives more bytes. Until the read cap the whole response
+    was read first.
+
+    A body past a bound is a ValueError that names the bound. Any other
+    coding is a ValueError before a byte is read (_content_coding), and a
+    corrupt or truncated stream one after: never compressed bytes read as
+    text. A body with no content coding, or a compressed body whose stream
+    is cut short, that ends before its Content-Length raises
+    http.client.IncompleteRead, as resp.read() does. A compressed stream
+    that ends whole is read, though resp.read() raised IncompleteRead there.
+    """
     limit = max(0, min(limit, _MAX_DECODED_BYTES))
-    try:
-        out = d.decompress(raw, limit + 1)
-    except zlib.error as exc:
-        raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
-    if len(out) > limit or d.unconsumed_tail:
-        raise ValueError(f"content decoding failed ({coding}): the decoded body is over {limit} bytes")
+    coding = _content_coding(encoding)
+    if coding is None:
+        body = resp.read(limit + 1)
+        if len(body) > limit:
+            raise _over_limit(limit, "is")
+        _require_end(resp)
+        return body
+
+    d = None
+    head = b""
+    out: list[bytes] = []
+    produced = 0
+
+    def inflate(data: bytes) -> None:
+        nonlocal produced
+        try:
+            piece = d.decompress(data, limit + 1 - produced)
+        except zlib.error as exc:
+            raise ValueError(f"content decoding failed ({coding}): {exc}") from exc
+        produced += len(piece)
+        if produced > limit:
+            raise _over_limit(limit, "decodes to")
+        out.append(piece)
+
+    def decoder(first: bytes) -> Any:
+        if coding == "gzip":
+            return zlib.decompressobj(16 + zlib.MAX_WBITS)
+        wrapped = len(first) >= 2 and (first[0] & 0x0F) == 8 and (first[0] >> 4) <= 7 and ((first[0] << 8) | first[1]) % 31 == 0
+        return zlib.decompressobj(zlib.MAX_WBITS if wrapped else -zlib.MAX_WBITS)
+
+    for chunk in _sent_chunks(resp):
+        if d is None:
+            # deflate's form is told from its first two bytes.
+            head += chunk
+            if len(head) < 2:
+                continue
+            d, chunk = decoder(head), head
+        inflate(chunk)
+        if d.eof:
+            return b"".join(out)
+    # The body ended before its stream did.
+    _require_end(resp)
+    if d is None:
+        if not head:
+            return b""
+        d = decoder(head)
+        inflate(head)
     if not d.eof:
         raise ValueError(f"content decoding failed ({coding}): the stream is truncated")
-    return out
+    return b"".join(out)
+
+
+def _decode_content(raw: bytes, encoding: str | None, limit: int = _MAX_DECODED_BYTES) -> bytes:
+    """`raw` with its Content-Encoding undone, read as _read_body reads a
+    response's body, with the same bounds and errors."""
+    return _read_body(io.BytesIO(raw), encoding, limit)
+
+
+# How long one page or stylesheet read of the offline engine may take in all:
+# from the request, through every redirect, to the end of the body. The
+# hosted route ends each page and stylesheet read 8 s after it starts
+# (fetchCssSingleDetailed). Until this, a read had only the socket's 15 s
+# timeout, which bounds each wait on its own, so a server that sent a byte
+# before each one passed kept the read open, through every redirect it
+# followed. The hosted route's 5 s deadline for /DESIGN.md has no counterpart
+# here: this engine does not read /DESIGN.md (v37 does not run offline).
+_READ_DEADLINE_SECONDS = 8
+
+# The read under way in this thread, when it has a deadline (_ReadWatch).
+_READ_WATCH = threading.local()
+
+
+class _ReadWatch:
+    """The sockets of one read that has a deadline (_within_read_deadline).
+
+    When the deadline comes, cut() shuts each socket down, so no more of
+    the read is sent or received. A socket opened after that is shut down
+    as it opens. A read whose deadline has come caches nothing, and a read
+    that has cached what it read is not cut (_fetch).
+    """
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.cut_off = False
+        self.kept = False  # the read has cached what it read (_fetch)
+        self._socks: list[socket.socket] = []
+
+    def add(self, sock: socket.socket) -> None:
+        with self.lock:
+            if not self.cut_off:
+                self._socks.append(sock)
+                return
+        _shut_down(sock)
+
+    def cut(self) -> bool:
+        """Shut the read's sockets down, and True, unless the read has
+        cached what it read (kept): then False, and nothing is shut down."""
+        with self.lock:
+            if self.kept:
+                return False
+            self.cut_off = True
+            socks, self._socks = self._socks, []
+        for sock in socks:
+            _shut_down(sock)
+        return True
+
+
+def _shut_down(sock: socket.socket) -> None:
+    """Shut a socket down for both directions, from any thread.
+
+    The socket stays open, so the thread reading it never reads another
+    socket that took its number. socket.socket.shutdown is the plain
+    socket's, so a TLS socket's state is left to its own thread.
+    """
+    try:
+        socket.socket.shutdown(sock, socket.SHUT_RDWR)
+    except OSError:
+        pass  # closed already, or never connected
+
+
+class _HandshakeWatched:
+    """The SSL context of one HTTPS connection whose read has a deadline.
+
+    ssl's own wrap_socket detaches the TCP socket it is given before the
+    TLS handshake starts, and the TLS socket it makes holds the connection
+    from then on. Shutting the detached TCP socket down reaches nothing, so
+    a deadline that came during the handshake left the read waiting until
+    the handshake ended or its own 15 s wait did. Here the TLS socket is
+    made with its handshake held back, given to the read's _ReadWatch, and
+    only then does the handshake run. Every other attribute is the
+    context's own.
+    """
+
+    def __init__(self, context: Any, watch: _ReadWatch) -> None:
+        self._context = context
+        self._watch = watch
+
+    def wrap_socket(self, sock: socket.socket, server_hostname: str | None = None) -> Any:
+        tls = self._context.wrap_socket(sock, server_hostname=server_hostname, do_handshake_on_connect=False)
+        self._watch.add(tls)
+        try:
+            tls.do_handshake()
+        except BaseException:
+            tls.close()  # as ssl's own wrap_socket does when the handshake fails
+            raise
+        return tls
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._context, name)
+
+
+def _watched(http_class: Any) -> Any:
+    """http_class, here what _checked_class gives, with each socket a
+    connection opens given to the read's _ReadWatch when the read has a
+    deadline: the TCP socket once it is connected (_checked_connection, or
+    to the proxy), and for HTTPS the TLS socket as it is made, before its
+    handshake (_HandshakeWatched)."""
+
+    def connection(host: str, **kwargs: Any) -> Any:
+        conn = http_class(host, **kwargs)
+        watch = getattr(_READ_WATCH, "watch", None)
+        if watch is None:
+            return conn
+        create = conn._create_connection
+
+        def create_watched(*args: Any, **kw: Any) -> Any:
+            sock = create(*args, **kw)
+            watch.add(sock)
+            return sock
+
+        conn._create_connection = create_watched
+        if hasattr(conn, "_context"):  # HTTPS: http.client wraps with conn._context.wrap_socket
+            conn._context = _HandshakeWatched(conn._context, watch)
+        return conn
+
+    return connection
+
+
+def _past_read_deadline() -> TimeoutError:
+    """The error for a page or stylesheet read past its deadline."""
+    return TimeoutError(
+        f"the read did not finish within {_READ_DEADLINE_SECONDS} seconds, the "
+        "most this server waits for one read of a page or a stylesheet"
+    )
+
+
+def _within_read_deadline(read: Callable[[], Any]) -> Any:
+    """read(), or TimeoutError naming the deadline once _READ_DEADLINE_SECONDS
+    pass before it is done, wherever it is: the lookup, the connection, the
+    TLS handshake, the headers, a redirect or the body.
+
+    read() runs on a thread of its own. At the deadline the caller gets the
+    error, and the read's sockets are shut down (_ReadWatch), the TLS
+    socket during its handshake included, so the read gets nothing more
+    and ends. On Windows a wait already under way when a socket is shut
+    down still runs until the server closes the connection or the socket's
+    own timeout ends it. A lookup, or a TCP connection still being made,
+    cannot be stopped: the read ends when the lookup returns or the
+    connection is made or fails, and a connection made after the deadline
+    is shut down as it opens. What the read returns or raises after the
+    deadline is dropped, and it caches nothing (_fetch). A read that has
+    cached what it read by the time the deadline is enforced is not cut:
+    the caller gets what it read.
+    """
+    seconds = _READ_DEADLINE_SECONDS
+    watch = _ReadWatch()
+    done = threading.Event()
+    outcome: dict[str, Any] = {}
+
+    def run() -> None:
+        _READ_WATCH.watch = watch
+        try:
+            outcome["value"] = read()
+        except BaseException as exc:  # handed to the caller, not lost
+            outcome["error"] = exc
+        finally:
+            done.set()
+
+    threading.Thread(target=run, name="designesy-mcp read", daemon=True).start()
+    if not done.wait(seconds) and watch.cut():
+        raise _past_read_deadline()
+    # Done, or the read cached what it read before it could be cut: it has
+    # only to return.
+    done.wait()
+    if "error" in outcome:
+        raise outcome["error"]
+    return outcome["value"]
 
 
 def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> Any:
     """Fetch a URL with in-memory caching. Returns parsed JSON or text.
 
-    `max_decoded` bounds what a compressed body may decode to (a page's
-    remaining stylesheet budget); a cached body that decoded past it fails the
-    same way, ValueError.
+    The body is read by _read_body, which holds it to 16 MiB, as sent and
+    decoded. `max_decoded` bounds it further (a page's remaining stylesheet
+    budget); a cached body that read past it fails the same way, ValueError.
     """
     _validate_url(url)
     now = time.time()
     cached = _cache.get(url)
     if cached and (now - cached[0]) < CACHE_TTL:
         if max_decoded is not None and _DECODED_BYTES.get(url, 0) > max_decoded:
-            raise ValueError(f"content decoding failed: the decoded body is over {max_decoded} bytes")
+            raise _over_limit(max_decoded, "is")
         return cached[1]
 
     # Merge browser headers with per-call Accept override.
@@ -551,24 +909,32 @@ def _fetch(url: str, as_json: bool = True, max_decoded: int | None = None) -> An
         # urllib follows redirects; the page's own links resolve against the
         # URL that answered (engine 1.5.4), so it is kept beside the body.
         final = resp.geturl()
-        _FINAL_URL[url] = final if isinstance(final, str) and final else url
         # Every Content-Encoding line: a coding split over two lines is two codings.
         coding = _header_values(resp.headers, "Content-Encoding")
-        raw = resp.read()
-        decoded = _decode_content(raw, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
-        _DECODED_BYTES[url] = len(decoded) if decoded is not raw else 0
-        body = decoded.decode("utf-8")
+        read = _read_body(resp, coding, _MAX_DECODED_BYTES if max_decoded is None else max_decoded)
+        body = read.decode("utf-8")
 
     if as_json:
         data = json.loads(body)
     else:
         data = body
 
-    _cache[url] = (now, data)
-    if verified:
-        _TLS_UNVERIFIED.discard(url)
-    else:
-        _TLS_UNVERIFIED.add(url)
+    # A read whose deadline has come caches nothing: its sockets were shut
+    # down, and a body with no length of its own ends where the read was cut.
+    # A read that caches what it read first is not cut (_ReadWatch.cut).
+    watch = getattr(_READ_WATCH, "watch", None)
+    with watch.lock if watch is not None else contextlib.nullcontext():
+        if watch is not None:
+            if watch.cut_off:
+                raise _past_read_deadline()
+            watch.kept = True
+        _FINAL_URL[url] = final if isinstance(final, str) and final else url
+        _DECODED_BYTES[url] = len(read)
+        _cache[url] = (now, data)
+        if verified:
+            _TLS_UNVERIFIED.discard(url)
+        else:
+            _TLS_UNVERIFIED.add(url)
     return data
 
 
@@ -849,15 +1215,19 @@ def _design_review_rubric(
 #     Number#toFixed do (13 prints "13", 0.125 to 2 places prints "0.13").
 #   - _js_trim strips the JS whitespace set, which includes U+FEFF.
 #   - _js_pow returns NaN where Math.pow does, never a complex number.
+#   - _resolve_href resolves a stylesheet href as new URL(href, base).href
+#     does, with the URL Standard's parser rather than urljoin's RFC 3986
+#     rules (see "Stylesheet hrefs" below).
 
 import math
 import os
 import re
 import subprocess
+import unicodedata
 from bisect import bisect_left, bisect_right
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Callable, NamedTuple
-from urllib.parse import urljoin, urlparse
+from typing import Callable, Iterator, NamedTuple
+from urllib.parse import urlparse
 
 # The live engine build this engine mirrors, and the contract revision that
 # build reports. Both are asserted against the golden the TypeScript engine
@@ -1429,10 +1799,43 @@ def _stylesheet_link_matches(html: str) -> list[_Scan]:
     quoted href in the tag after its first rel=stylesheet. The second (engine
     1.5.4) reads a tag that writes href first: the last quoted href in the tag
     that is followed by rel=stylesheet before the next `>`."""
+    return list(_stylesheet_links(html))
+
+
+# How far past the offset the link scan asks about it finds the starts of
+# rel=stylesheet and of href=", so that it finds them in runs, as the
+# whole page's were found at once, rather than a tag at a time.
+_LINK_SCAN_AHEAD = 64 * 1024
+
+
+def _more_starts(starts: list[int], found: "Iterator[re.Match[str]]", at: int) -> bool:
+    """Append the starts of the matches `found` gives until one starts at or
+    past `at` + _LINK_SCAN_AHEAD; False once `found` has no more."""
+    stop = at + _LINK_SCAN_AHEAD
+    for m in found:
+        s = m.start()
+        starts.append(s)
+        if s >= stop:
+            return True
+    return False
+
+
+def _stylesheet_links(html: str) -> Iterator[_Scan]:
+    """_stylesheet_link_matches, one match at a time. The page is scanned
+    only as far as the matches taken need: the starts of rel=stylesheet and
+    of href=" are found as the scan reaches them, in runs of
+    _LINK_SCAN_AHEAD characters, so a caller that stops taking matches
+    (_extract_css_parts) leaves the rest of the page unscanned. Where the
+    next rel=stylesheet starts is asked only in a tag that holds an href
+    with a value: a tag with none gives no match."""
     start = _js_re("<link", "gi")
     rel = _next_match_finder(html, _js_re("rel=[\"']?stylesheet", "gi"))
-    rels = _match_starts(html, _js_re("rel=[\"']?stylesheet", "gi"))
-    hrefs = _match_starts(html, _js_re("href=[\"']", "gi"))
+    rel_found = _js_re("rel=[\"']?stylesheet", "gi").finditer(html)
+    href_found = _js_re("href=[\"']", "gi").finditer(html)
+    # Every start before the offset last asked about, in order.
+    rels: list[int] = []
+    hrefs: list[int] = []
+    more_rels = more_hrefs = True
     gt = _next_char_finder(html, ">")
     gt_after_value = _next_char_finder(html, ">")
     quote = _js_re("[\"']")
@@ -1444,59 +1847,71 @@ def _stylesheet_link_matches(html: str) -> list[_Scan]:
     # and a rel=stylesheet starts after q and before the first `>` after q.
     # The greedy [^>]* ends the match with the last such rel.
     def href_first_at(at: int) -> "tuple[int, int] | None":
+        nonlocal more_rels
         v = at + 6
         if not (v < n and html[v] not in "\"'" and last_quote > v):
             return None
         q = quote.search(html, v + 1).start()
-        k = bisect_left(rels, int(min(gt_after_value(q + 1), n))) - 1
+        x = int(min(gt_after_value(q + 1), n))
+        if more_rels and (not rels or rels[-1] < x):
+            more_rels = _more_starts(rels, rel_found, x)
+        k = bisect_left(rels, x) - 1
         if k < 0 or rels[k] <= q:
             return None
         return (q, rels[k] + (15 if html[rels[k] + 4] in "\"'" else 14))
 
-    href_first = [href_first_at(at) for at in hrefs]
+    href_first: "list[tuple[int, int] | None]" = []
     # last_viable[i]: the largest k <= i whose href reads by the second alternative, or -1.
     last_viable: list[int] = []
     lv = -1
-    for i, hit in enumerate(href_first):
-        if hit is not None:
-            lv = i
-        last_viable.append(lv)
-    out: list[_Scan] = []
     ptr = 0
     pos = 0
     while True:
         m = start.search(html, pos)
         if m is None:
-            break
+            return
         after = m.end()
         g = int(min(gt(after), n))
+        if more_hrefs and (not hrefs or hrefs[-1] < g):
+            more_hrefs = _more_starts(hrefs, href_found, g)
         ptr = bisect_left(hrefs, after, ptr)
         end = bisect_left(hrefs, g, ptr)
-        # The last href=" in the tag whose value is non-empty and closes.
-        h = -1
-        for k in range(end - 1, ptr - 1, -1):
-            v = hrefs[k] + 6
-            if v < n and html[v] not in "\"'" and last_quote > v:
-                h = hrefs[k]
-                break
-        r = rel(after)
-        if h >= 0 and r < g and r + (15 if html[int(r) + 4] in "\"'" else 14) <= h:
-            q = quote.search(html, h + 7).start()
-            out.append(_Scan(m.start(), html[m.start():q + 1], (html[h + 6:q],)))
-            pos = q + 1
-            continue
-        # No rel before an href: the last href in the tag that rel=stylesheet follows.
-        k = last_viable[end - 1] if end > ptr else -1
-        if k >= ptr:
-            q, e = href_first[k]
-            out.append(_Scan(m.start(), html[m.start():e], (html[hrefs[k] + 6:q],)))
-            pos = e
-            continue
+        # A tag with no href=" before its first `>` gives no match by either
+        # alternative, so nothing more is worked out for it.
+        if end > ptr:
+            # The last href=" in the tag whose value is non-empty and closes.
+            h = -1
+            for k in range(end - 1, ptr - 1, -1):
+                v = hrefs[k] + 6
+                if v < n and html[v] not in "\"'" and last_quote > v:
+                    h = hrefs[k]
+                    break
+            if h >= 0:
+                r = rel(after)
+                if r < g and r + (15 if html[int(r) + 4] in "\"'" else 14) <= h:
+                    q = quote.search(html, h + 7).start()
+                    yield _Scan(m.start(), html[m.start():q + 1], (html[h + 6:q],))
+                    pos = q + 1
+                    continue
+            # No rel before an href: the last href in the tag that
+            # rel=stylesheet follows, worked out for every href found so far.
+            if len(last_viable) < end:
+                for at in hrefs[len(href_first):]:
+                    hit = href_first_at(at)
+                    if hit is not None:
+                        lv = len(href_first)
+                    href_first.append(hit)
+                    last_viable.append(lv)
+            k = last_viable[end - 1]
+            if k >= ptr:
+                q, e = href_first[k]
+                yield _Scan(m.start(), html[m.start():e], (html[hrefs[k] + 6:q],))
+                pos = e
+                continue
         # Every start before g sees less of the same tag, by either alternative.
         if g >= n:
-            break
+            return
         pos = g + 1
-    return out
 
 
 def _without_media_blocks(css: str) -> str:
@@ -1892,7 +2307,955 @@ def _relative_color_match(args: str) -> tuple[str, str, str | None] | None:
     return None
 
 
+# ── Stylesheet hrefs: the URL Standard's parser ─────────────────────────────
+#
+# The npm engine (packages/score/src/engine.ts) resolves each stylesheet
+# href with new URL(href, pageUrl).href, the basic URL parser of the URL
+# Standard (https://url.spec.whatwg.org/). Until designesy-mcp's next
+# release this engine used urllib's urljoin, which follows RFC 3986, so an
+# href could resolve to another URL here: a host's case and a default port
+# were kept, a backslash was not a slash, a space or other character new URL
+# percent-encodes was sent as it is, dot segments in an absolute href were
+# kept, and a host new URL rejects was read. Hrefs that are one sheet in the
+# npm engine could take two of the 60 places here, and some sheets it reads
+# failed here or were not asked for.
+#
+# This is that parser for an href and the URL of its page: no state override,
+# and UTF-8 throughout. It uses the standard library only. A host with a
+# character outside ASCII goes through UTS #46 (nontransitional, as the
+# standard asks); the standard library has no UTS #46 tables, so the mapping
+# is NFKC and case folding from unicodedata, with the exceptions Node's
+# parser makes (the deviation characters, the characters it ignores or
+# rejects), and Node's bidi and joiner checks. An xn-- label is kept as
+# written, as Node keeps it. The URL of a page this engine has read is parsed
+# again with lenient host checks where its own checks reject it (_page_base).
+# Text the parser builds a code point at a time is kept in a local list or
+# string, a label that goes through punycode is held to 63 code points
+# (_URL_IDNA_MAX_LABEL), and NFC runs on one label at a time, once its
+# length is checked (_URL_IDNA_MAX_COMPOSED), so the time an href takes
+# grows with its length. A page's hrefs are resolved until 60 distinct
+# sheets are found or their charges would pass _HREF_BUDGET_BYTES
+# (_extract_css_parts), no more of a host is built once it can no longer
+# fit what is left (_url_idna), and the scan for links stops where they
+# stop (_stylesheet_links), so a page's time is held to what that many
+# bytes cost and to a scan that grows with the page's length.
+# test/fixtures/href-resolution.json
+# holds cases whose results are new URL's, and test_offline_href_resolution.py
+# requires this engine to give each of them.
+
+_URL_SPECIAL_PORTS: dict[str, int | None] = {"ftp": 21, "file": None, "http": 80, "https": 443, "ws": 80, "wss": 443}
+
+# Percent-encode sets, by the ASCII code points each holds. Every code point
+# above U+007E is in every set.
+_URL_C0_SET = frozenset(range(0x20))
+_URL_FRAGMENT_SET = _URL_C0_SET | frozenset(b' "<>`')
+_URL_QUERY_SET = _URL_C0_SET | frozenset(b' "#<>')
+_URL_SPECIAL_QUERY_SET = _URL_QUERY_SET | frozenset(b"'")
+_URL_PATH_SET = _URL_QUERY_SET | frozenset(b"?^`{}")
+_URL_USERINFO_SET = _URL_PATH_SET | frozenset(b"/:;=@[\\]|")
+
+_URL_FORBIDDEN_HOST = frozenset("\x00\t\n\r #/:<>?@[\\]^|")
+_URL_FORBIDDEN_DOMAIN = _URL_FORBIDDEN_HOST | frozenset(chr(c) for c in range(0x20)) | {"%", "\x7f"}
+_URL_C0_OR_SPACE = "".join(chr(c) for c in range(0x21))
+
+
+class _Url:
+    """A parsed URL: path is a list of segments, or a str for an opaque path.
+
+    username and userpass are the userinfo before and after its first colon.
+    typed_host is the host as the URL typed it, read up to the point where
+    the parser writes a number as an IPv4 address, when the URL names a host
+    of its own that it types as a number in a form other than four decimal
+    parts; None otherwise.
+    """
+
+    __slots__ = ("scheme", "username", "userpass", "host", "typed_host", "port", "path", "query", "fragment")
+
+    def __init__(self) -> None:
+        self.scheme = ""
+        self.username = ""
+        self.userpass = ""
+        self.host: str | None = None
+        self.typed_host: str | None = None
+        self.port: int | None = None
+        self.path: list[str] | str = []
+        self.query: str | None = None
+        self.fragment: str | None = None
+
+    @property
+    def special(self) -> bool:
+        return self.scheme in _URL_SPECIAL_PORTS
+
+    def href(self, as_typed: bool = False) -> str:
+        """The URL serialized, as new URL's href gives it. With as_typed, a
+        host kept in typed_host is written as typed."""
+        out = self.scheme + ":"
+        if self.host is not None:
+            out += "//"
+            if self.username or self.userpass:
+                out += self.username
+                if self.userpass:
+                    out += ":" + self.userpass
+                out += "@"
+            out += self.typed_host if as_typed and self.typed_host is not None else self.host
+            if self.port is not None:
+                out += f":{self.port}"
+        if isinstance(self.path, str):
+            out += self.path
+        else:
+            if self.host is None and len(self.path) > 1 and self.path[0] == "":
+                out += "/."
+            out += "".join("/" + segment for segment in self.path)
+        if self.query is not None:
+            out += "?" + self.query
+        if self.fragment is not None:
+            out += "#" + self.fragment
+        return out
+
+
+def _url_pct(ch: str, encode_set: frozenset[int]) -> str:
+    """UTF-8 percent-encode one code point with a percent-encode set."""
+    cp = ord(ch)
+    if cp <= 0x7E and cp not in encode_set:
+        return ch
+    return "".join(f"%{b:02X}" for b in ch.encode("utf-8"))
+
+
+def _url_is_drive(s: str, normalized: bool = False) -> bool:
+    return len(s) == 2 and s[0].isascii() and s[0].isalpha() and (s[1] == ":" or (not normalized and s[1] == "|"))
+
+
+def _url_starts_with_drive(s: str) -> bool:
+    return len(s) >= 2 and _url_is_drive(s[:2]) and (len(s) == 2 or s[2] in "/\\?#")
+
+
+def _url_shorten(url: _Url) -> None:
+    path = url.path
+    assert isinstance(path, list)
+    if url.scheme == "file" and len(path) == 1 and _url_is_drive(path[0], normalized=True):
+        return
+    if path:
+        path.pop()
+
+
+def _url_ipv4_number(s: str) -> int | None:
+    if s == "":
+        return None
+    radix = 10
+    if len(s) >= 2 and s[:2] in ("0x", "0X"):
+        s, radix = s[2:], 16
+    elif len(s) >= 2 and s[0] == "0":
+        s, radix = s[1:], 8
+    if s == "":
+        return 0
+    digits = "0123456789abcdefABCDEF" if radix == 16 else "0123456789"[:radix]
+    if any(ch not in digits for ch in s):
+        return None
+    # Leading zeros do not change the number. A number of more than 11 digits
+    # is at least 8 ** 11, past any part of an IPv4 address, and is given as
+    # 2 ** 32, which fails the same checks, without int(): int() of a decimal
+    # string of more than 4,300 digits raises ValueError (CPython 3.10.7 and
+    # later).
+    s = s.lstrip("0")
+    if len(s) > 11:
+        return 1 << 32
+    return int(s or "0", radix)
+
+
+def _url_ends_in_number(s: str) -> bool:
+    parts = s.split(".")
+    if parts[-1] == "":
+        if len(parts) == 1:
+            return False
+        parts.pop()
+    last = parts[-1]
+    if last and all("0" <= ch <= "9" for ch in last):
+        return True
+    return _url_ipv4_number(last) is not None
+
+
+def _url_ipv4(s: str) -> str | None:
+    parts = s.split(".")
+    if parts[-1] == "" and len(parts) > 1:
+        parts.pop()
+    if len(parts) > 4:
+        return None
+    numbers = [_url_ipv4_number(part) for part in parts]
+    if any(n is None for n in numbers):
+        return None
+    if any(n > 255 for n in numbers[:-1]):
+        return None
+    if numbers[-1] >= 256 ** (5 - len(numbers)):
+        return None
+    ipv4 = numbers[-1]
+    for i, n in enumerate(numbers[:-1]):
+        ipv4 += n * 256 ** (3 - i)
+    return ".".join(str((ipv4 >> shift) & 0xFF) for shift in (24, 16, 8, 0))
+
+
+def _url_ipv6(s: str) -> str | None:
+    """The IPv6 parser, then its serializer in brackets; None on failure."""
+    address = [0] * 8
+    piece = 0
+    compress: int | None = None
+    p = 0
+    n = len(s)
+    hexdigits = "0123456789abcdefABCDEF"
+    if s[:1] == ":":
+        if s[1:2] != ":":
+            return None
+        p += 2
+        piece += 1
+        compress = piece
+    while p < n:
+        if piece == 8:
+            return None
+        if s[p] == ":":
+            if compress is not None:
+                return None
+            p += 1
+            piece += 1
+            compress = piece
+            continue
+        value = length = 0
+        while length < 4 and p < n and s[p] in hexdigits:
+            value = value * 16 + int(s[p], 16)
+            p += 1
+            length += 1
+        if p < n and s[p] == ".":
+            if length == 0:
+                return None
+            p -= length
+            if piece > 6:
+                return None
+            seen = 0
+            while p < n:
+                v4: int | None = None
+                if seen > 0:
+                    if s[p] == "." and seen < 4:
+                        p += 1
+                    else:
+                        return None
+                if p >= n or not "0" <= s[p] <= "9":
+                    return None
+                while p < n and "0" <= s[p] <= "9":
+                    digit = int(s[p])
+                    if v4 is None:
+                        v4 = digit
+                    elif v4 == 0:
+                        return None
+                    else:
+                        v4 = v4 * 10 + digit
+                    if v4 > 255:
+                        return None
+                    p += 1
+                address[piece] = address[piece] * 0x100 + v4
+                seen += 1
+                if seen in (2, 4):
+                    piece += 1
+            if seen != 4:
+                return None
+            break
+        if p < n and s[p] == ":":
+            p += 1
+            if p >= n:
+                return None
+        elif p < n:
+            return None
+        address[piece] = value
+        piece += 1
+    if compress is not None:
+        swaps = piece - compress
+        piece = 7
+        while piece != 0 and swaps > 0:
+            address[piece], address[compress + swaps - 1] = address[compress + swaps - 1], address[piece]
+            piece -= 1
+            swaps -= 1
+    elif piece != 8:
+        return None
+    # The first longest run of two or more zero pieces is written as "::".
+    run_at, run_len, i = None, 1, 0
+    while i < 8:
+        j = i
+        while j < 8 and address[j] == 0:
+            j += 1
+        if j - i > run_len:
+            run_at, run_len = i, j - i
+        i = max(j, i + 1)
+    out = ""
+    ignore0 = False
+    for i in range(8):
+        if ignore0 and address[i] == 0:
+            continue
+        ignore0 = False
+        if run_at == i:
+            out += "::" if i == 0 else ":"
+            ignore0 = True
+            continue
+        out += f"{address[i]:x}"
+        if i != 7:
+            out += ":"
+    return "[" + out + "]"
+
+
+def _url_percent_decode(s: str) -> bytes:
+    raw = s.encode("utf-8")
+    out = bytearray()
+    i = 0
+    hexdigits = b"0123456789abcdefABCDEF"
+    while i < len(raw):
+        if raw[i] == 0x25 and i + 2 < len(raw) and raw[i + 1] in hexdigits and raw[i + 2] in hexdigits:
+            out.append(int(raw[i + 1:i + 3], 16))
+            i += 3
+        else:
+            out.append(raw[i])
+            i += 1
+    return bytes(out)
+
+
+def _url_host(s: str, special: bool, lenient: bool = False, typed: list[str] | None = None,
+              built: list[Any] | None = None, room: int | None = None) -> str | None:
+    """The host parser, serialized; None on failure.
+
+    lenient is for the URL of a page this engine has read (_page_base), and
+    passes over the two checks that need Unicode data this engine does not
+    have as Node has it (see _url_idna_label_ok).
+
+    When the host is a number typed in a form other than four decimal parts,
+    which is written as four decimal parts here, the host as read before
+    that step (escapes decoded, mapped and lowercased) is appended to
+    `typed`, when given.
+
+    `built`, when given, goes to _url_idna, which records in it how far it
+    built a host that goes through UTS #46 (_url_built_growth). So does
+    `room`, past which _url_idna builds no more of such a host (_PastRoom).
+    """
+    if s.startswith("["):
+        if not s.endswith("]"):
+            return None
+        return _url_ipv6(s[1:-1])
+    if not special:
+        if any(ch in _URL_FORBIDDEN_HOST for ch in s):
+            return None
+        return "".join(_url_pct(ch, _URL_C0_SET) for ch in s)
+    domain = _url_percent_decode(s).decode("utf-8", "replace")
+    if domain.isascii() and not any(label[:4].lower() == "xn--" for label in domain.split(".")):
+        ascii_domain: str | None = domain.lower()
+    else:
+        ascii_domain = _url_idna(domain, lenient, built, room)
+    if not ascii_domain or any(ch in _URL_FORBIDDEN_DOMAIN for ch in ascii_domain):
+        return None
+    if _url_ends_in_number(ascii_domain):
+        ipv4 = _url_ipv4(ascii_domain)
+        if typed is not None and ipv4 is not None and ascii_domain.rstrip(".") != ipv4:
+            typed.append(ascii_domain)
+        return ipv4
+    return ascii_domain
+
+
+# UTS #46 for a host with a character outside ASCII, or a label that starts
+# with xn--. The four deviation characters are kept (nontransitional). The
+# default-ignorable code points Node's parser drops; the others (the bidi
+# controls among them) it rejects.
+_URL_IDNA_DEVIATIONS = frozenset("\u00df\u03c2\u200c\u200d")
+_URL_IDNA_DOTS = frozenset("\u3002\uff0e\uff61")
+_URL_IDNA_IGNORED = (
+    (0x00AD, 0x00AD), (0x034F, 0x034F), (0x115F, 0x1160), (0x17B4, 0x17B5),
+    (0x180B, 0x180F), (0x200B, 0x200B), (0x2060, 0x2064), (0x206A, 0x206F),
+    (0x3164, 0x3164), (0xFE00, 0xFE0F), (0xFEFF, 0xFEFF), (0xFFA0, 0xFFA0),
+    (0x1BCA0, 0x1BCA3), (0x1D173, 0x1D17A), (0xE0100, 0xE01EF),
+)
+_URL_IDNA_REJECTED_CATEGORIES = frozenset(("Cn", "Co", "Cs", "Cc", "Cf", "Zs", "Zl", "Zp"))
+_URL_BIDI_RTL = frozenset(("R", "AL", "AN"))
+_URL_BIDI_LTR_ALLOWED = frozenset(("L", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"))
+_URL_BIDI_RTL_ALLOWED = frozenset(("R", "AL", "AN", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"))
+
+# The most code points a label that goes through punycode may hold: one with
+# a character outside ASCII, or one written as xn--. Such a label's ASCII
+# form is longer than the 63 octets DNS allows in a label, so it names no
+# host that can be looked up. Node's parser accepts one; this one rejects it
+# before the punycode codec runs, as Python's codec takes time that grows
+# with a label's length times the distinct code points in it.
+_URL_IDNA_MAX_LABEL = 63
+
+# The most code points NFC composes into one: a character's canonical
+# decomposition holds at most four (U+1F82 holds a letter and three marks),
+# so a label of more than four times _URL_IDNA_MAX_LABEL code points before
+# NFC holds more than _URL_IDNA_MAX_LABEL after it. _url_idna rejects such a
+# label before NFC runs on it: on CPython 3.10 to 3.13, NFC's time on a run
+# of combining marks can grow with the square of the run's length, in one
+# call that the read deadline cannot cut short.
+_URL_IDNA_MAX_COMPOSED = 4
+
+
+def _url_idna_map(ch: str, lenient: bool = False) -> str | None:
+    """One code point as UTS #46 maps it; None when it is disallowed.
+
+    lenient takes a code point this Python's unicodedata does not assign
+    as itself: Node's tables can assign it.
+    """
+    cp = ord(ch)
+    if cp < 0x80:
+        return ch.lower()
+    if ch in _URL_IDNA_DEVIATIONS:
+        return ch
+    if ch == "\u1e9e":
+        return "\u00df"
+    if ch in _URL_IDNA_DOTS:
+        return "."
+    if any(lo <= cp <= hi for lo, hi in _URL_IDNA_IGNORED):
+        return ""
+    category = unicodedata.category(ch)
+    if lenient and category == "Cn":
+        return ch
+    if category in _URL_IDNA_REJECTED_CATEGORIES:
+        return None
+    # Ideographic description characters, U+FFFC and U+FFFD.
+    if 0x2FF0 <= cp <= 0x2FFF or cp in (0x31EF, 0xFFFC, 0xFFFD):
+        return None
+    mapped = unicodedata.normalize("NFKC", unicodedata.normalize("NFKC", ch).casefold())
+    # A character that maps to a full stop (U+2488 to "1.") is disallowed.
+    return None if "." in mapped else mapped
+
+
+def _url_bidi_ok(label: str) -> bool:
+    """RFC 5893's bidi rule as Node's parser applies it, to one label.
+
+    Only a label with an R, AL or AN character is checked. One that starts
+    with an L character may hold only L, EN, ES, CS, ET, ON, BN and NSM
+    before its last character that is not an NSM; any other is held to rules
+    2 to 4, as an RTL label.
+    """
+    classes = [unicodedata.bidirectional(ch) for ch in label]
+    last = len(classes) - 1
+    while last >= 0 and classes[last] == "NSM":
+        last -= 1
+    if last < 0:
+        return False
+    if not _URL_BIDI_RTL.intersection(classes):
+        return True
+    if classes[0] == "L":
+        return all(c in _URL_BIDI_LTR_ALLOWED for c in classes[:last])
+    if not all(c in _URL_BIDI_RTL_ALLOWED for c in classes[: last + 1]):
+        return False
+    if classes[last] not in ("R", "AL", "EN", "AN"):
+        return False
+    return not ("EN" in classes and "AN" in classes)
+
+
+def _url_idna_label_ok(label: str, lenient: bool = False) -> bool:
+    """Whether one label is valid, as Node's parser checks it.
+
+    Two of the checks need Unicode data this engine does not have as Node
+    has it, and lenient passes over them: a code point this Python does not
+    assign (_url_idna_map), and a ZWNJ that is not right after a virama,
+    which Node also accepts between joining letters (the standard library
+    has no joining types). A ZWJ is still valid only right after a virama,
+    and the bidi rule is still applied.
+    """
+    if not label:
+        return True
+    if unicodedata.category(label[0])[0] == "M":
+        return False
+    if any(_url_idna_map(ch, lenient) != ch for ch in label):
+        return False
+    for i, ch in enumerate(label):
+        if ch in "\u200c\u200d":
+            # A joiner Node's parser finds valid ends the label's checks.
+            if i > 0 and unicodedata.combining(label[i - 1]) == 9:
+                return True
+            return lenient and ch == "\u200c"
+    return _url_bidi_ok(label)
+
+
+class _PastRoom(Exception):
+    """Raised by _url_idna when the host it builds can no longer fit the
+    room it was given; _extract_css_parts then leaves that href out and
+    reads no later one, as it does for an href whose URL passes what is
+    left."""
+
+
+def _url_label_floor(label: str) -> int:
+    """The fewest bytes one label of a mapped host can take in the host
+    _url_idna gives, or, when the host is rejected, in it as far as it was
+    built (_url_built_growth): its ASCII form, or its bytes in UTF-8 as
+    mapped. An ASCII label is its own ASCII form. One that goes through
+    punycode takes xn-- and at least a character for each code point it
+    holds once NFC has run, so its floor is the lesser of that and its
+    bytes. As in _url_idna, NFC runs only on a label of at most four times
+    63 code points; a longer one gets no ASCII form, and takes its bytes."""
+    size = len(label.encode("utf-8", "surrogatepass"))
+    if label.isascii() or len(label) > _URL_IDNA_MAX_LABEL * _URL_IDNA_MAX_COMPOSED:
+        return size
+    return min(size, 4 + len(unicodedata.normalize("NFC", label)))
+
+
+def _url_idna(domain: str, lenient: bool = False, built: list[Any] | None = None,
+              room: int | None = None) -> str | None:
+    """UTS #46 ToASCII as the URL Standard asks for it; None on failure.
+
+    With `built`, the domain and the list of its code points as mapped,
+    then the labels as mapped and the list of the ASCII forms made of them,
+    are appended to it as each list starts, so that they show how far the
+    host was built when it fails (_url_built_growth).
+
+    With `room`, the host is built only while it can still fit in room
+    bytes. Once it is mapped, and before each label is checked and given
+    its ASCII form, the full stops, the labels already in that form and the
+    floors of the others (_url_label_floor) are added up, and _PastRoom is
+    raised when they pass room, as it is when the whole host, once built,
+    does. That sum is never more than the host takes once built, nor than
+    it takes as far as it is built when it is rejected later.
+    """
+    mapped: list[str] = []
+    if built is not None:
+        built.append((domain, mapped))
+    for ch in domain:
+        m = _url_idna_map(ch, lenient)
+        if m is None:
+            return None
+        mapped.append(m)
+    # A full stop is a starter, is in no character's canonical
+    # decomposition and composes with nothing, so NFC of each label is NFC
+    # of the domain split at its full stops. A label with a character
+    # outside ASCII before NFC has one after it, and an ASCII label is its
+    # own NFC.
+    labels = "".join(mapped).split(".")
+    out: list[str] = []
+    if built is not None:
+        built.append((labels, out))
+    floors = [] if room is None else [_url_label_floor(label) for label in labels]
+    floor = len(labels) - 1 + sum(floors)
+    for i, label in enumerate(labels):
+        if room is not None:
+            if i:
+                floor += len(out[i - 1]) - floors[i - 1]
+            if floor > room:
+                raise _PastRoom
+        limited = label[:4] == "xn--" or not label.isascii()
+        if limited and len(label) > _URL_IDNA_MAX_LABEL * _URL_IDNA_MAX_COMPOSED:
+            return None
+        label = unicodedata.normalize("NFC", label)
+        if limited and len(label) > _URL_IDNA_MAX_LABEL:
+            return None
+        if label[:4] == "xn--":
+            if not label.isascii() or label[4:8] == "xn--":
+                return None
+            try:
+                decoded = label[4:].encode("ascii").decode("punycode")
+            except (UnicodeError, ValueError):
+                return None
+            if not decoded or decoded.isascii() or unicodedata.normalize("NFC", decoded) != decoded:
+                return None
+            if not _url_idna_label_ok(decoded, lenient):
+                return None
+            # The label as written, as Node keeps it, even where the
+            # punycode codec would write it another way (xn---abc is xn--abc
+            # to the codec).
+            out.append(label)
+            continue
+        if not _url_idna_label_ok(label, lenient):
+            return None
+        out.append(label if label.isascii() else "xn--" + label.encode("punycode").decode("ascii"))
+    host = ".".join(out)
+    if room is not None and len(host) > room:
+        raise _PastRoom
+    return host
+
+
+def _url_built_growth(built: list[Any]) -> int:
+    """How many more bytes in UTF-8 the host _url_idna recorded in `built`
+    takes as far as it was built than as _url_idna was given it, with its
+    percent-escapes decoded. While it was mapping: the code points mapped,
+    as mapped, and the others unmapped. Once it was mapped: each label
+    given its ASCII form, in that form, and the others as mapped. 0 when
+    nothing was recorded."""
+    if not built:
+        return 0
+    domain, mapped = built[0]
+    if len(built) == 1:
+        size = len("".join(mapped).encode("utf-8", "surrogatepass"))
+        size += len(domain[len(mapped):].encode("utf-8", "surrogatepass"))
+    else:
+        labels, out = built[1]
+        size = len(labels) - 1 + sum(map(len, out))
+        size += sum(len(label.encode("utf-8", "surrogatepass")) for label in labels[len(out):])
+    return size - len(domain.encode("utf-8", "surrogatepass"))
+
+
+def _parse_url(text: str, base: _Url | None, lenient: bool = False, built: list[Any] | None = None,
+               room: int | None = None) -> _Url | None:
+    """The URL Standard's basic URL parser; None where new URL throws.
+
+    lenient is passed to the host parser (_url_host). Text that grows one
+    code point at a time (the userinfo, an opaque path, the fragment) is
+    kept in a list and joined once, so the time taken grows with the
+    length of the text, as the time urljoin and new URL take does.
+
+    `built` is passed to the host parser too, which records in it how far
+    it built a host that goes through UTS #46, so that _extract_css_parts
+    can charge an href rejected after that work for it. So is `room`, the
+    bytes _extract_css_parts has left: past it, the host parser builds no
+    more of such a host and raises _PastRoom.
+    """
+    if any(0xD800 <= ord(ch) <= 0xDFFF for ch in text):
+        # A JavaScript string with a lone surrogate reaches the parser with
+        # U+FFFD in its place.
+        text = "".join("\ufffd" if 0xD800 <= ord(ch) <= 0xDFFF else ch for ch in text)
+    s = text.strip(_URL_C0_OR_SPACE).replace("\t", "").replace("\n", "").replace("\r", "")
+    n = len(s)
+    url = _Url()
+    state = "scheme start"
+    buf = ""
+    username: list[str] = []
+    userpass: list[str] = []
+    opaque: list[str] = []
+    at_seen = in_brackets = colon_seen = False
+    p = 0
+    while True:
+        c = s[p] if 0 <= p < n else None  # None is end of input
+        if state == "scheme start":
+            if c is not None and c.isascii() and c.isalpha():
+                buf += c.lower()
+                state = "scheme"
+            else:
+                state = "no scheme"
+                p -= 1
+        elif state == "scheme":
+            if c is not None and c.isascii() and (c.isalnum() or c in "+-."):
+                buf += c.lower()
+            elif c == ":":
+                url.scheme = buf
+                buf = ""
+                if url.scheme == "file":
+                    state = "file"
+                elif url.special and base is not None and base.scheme == url.scheme:
+                    state = "special relative or authority"
+                elif url.special:
+                    state = "special authority slashes"
+                elif s[p + 1:p + 2] == "/":
+                    state = "path or authority"
+                    p += 1
+                else:
+                    url.path = ""
+                    state = "opaque path"
+            else:
+                buf = ""
+                state = "no scheme"
+                p = -1
+        elif state == "no scheme":
+            if base is None or (isinstance(base.path, str) and c != "#"):
+                return None
+            if isinstance(base.path, str):
+                url.scheme, url.path, url.query = base.scheme, base.path, base.query
+                url.fragment = ""
+                state = "fragment"
+            else:
+                state = "relative" if base.scheme != "file" else "file"
+                p -= 1
+        elif state == "special relative or authority":
+            if c == "/" and s[p + 1:p + 2] == "/":
+                state = "special authority ignore slashes"
+                p += 1
+            else:
+                state = "relative"
+                p -= 1
+        elif state == "path or authority":
+            if c == "/":
+                state = "authority"
+            else:
+                state = "path"
+                p -= 1
+        elif state == "relative":
+            assert base is not None
+            url.scheme = base.scheme
+            if c == "/" or (url.special and c == "\\"):
+                state = "relative slash"
+            else:
+                url.username, url.userpass = base.username, base.userpass
+                url.host, url.port = base.host, base.port
+                url.path = list(base.path)
+                url.query = base.query
+                if c == "?":
+                    url.query = ""
+                    state = "query"
+                elif c == "#":
+                    url.fragment = ""
+                    state = "fragment"
+                elif c is not None:
+                    url.query = None
+                    _url_shorten(url)
+                    state = "path"
+                    p -= 1
+        elif state == "relative slash":
+            assert base is not None
+            if url.special and c in ("/", "\\"):
+                state = "special authority ignore slashes"
+            elif c == "/":
+                state = "authority"
+            else:
+                url.username, url.userpass = base.username, base.userpass
+                url.host, url.port = base.host, base.port
+                state = "path"
+                p -= 1
+        elif state == "special authority slashes":
+            state = "special authority ignore slashes"
+            if c == "/" and s[p + 1:p + 2] == "/":
+                p += 1
+            else:
+                p -= 1
+        elif state == "special authority ignore slashes":
+            if c not in ("/", "\\"):
+                state = "authority"
+                p -= 1
+        elif state == "authority":
+            if c == "@":
+                if at_seen:
+                    buf = "%40" + buf
+                at_seen = True
+                for ch in buf:
+                    if ch == ":" and not colon_seen:
+                        colon_seen = True
+                    elif colon_seen:
+                        userpass.append(_url_pct(ch, _URL_USERINFO_SET))
+                    else:
+                        username.append(_url_pct(ch, _URL_USERINFO_SET))
+                buf = ""
+            elif c is None or c in "/?#" or (url.special and c == "\\"):
+                if at_seen and buf == "":
+                    return None
+                url.username, url.userpass = "".join(username), "".join(userpass)
+                p -= len(buf) + 1
+                buf = ""
+                state = "host"
+            else:
+                buf += c
+        elif state == "host":
+            if c == ":" and not in_brackets:
+                if buf == "":
+                    return None
+                typed: list[str] = []
+                host = _url_host(buf, url.special, lenient, typed, built, room)
+                if host is None:
+                    return None
+                url.host, buf, state = host, "", "port"
+                url.typed_host = typed[0] if typed else None
+            elif c is None or c in "/?#" or (url.special and c == "\\"):
+                p -= 1
+                if url.special and buf == "":
+                    return None
+                typed = []
+                host = _url_host(buf, url.special, lenient, typed, built, room)
+                if host is None:
+                    return None
+                url.host, buf, state = host, "", "path start"
+                url.typed_host = typed[0] if typed else None
+            else:
+                if c == "[":
+                    in_brackets = True
+                elif c == "]":
+                    in_brackets = False
+                buf += c
+        elif state == "port":
+            if c is not None and "0" <= c <= "9":
+                buf += c
+            elif c is None or c in "/?#" or (url.special and c == "\\"):
+                if buf != "":
+                    # Leading zeros do not change a port, and one of more than
+                    # 5 digits is past 65535. int() of a decimal string of
+                    # more than 4,300 digits raises ValueError.
+                    digits = buf.lstrip("0")
+                    if len(digits) > 5:
+                        return None
+                    port = int(digits or "0")
+                    if port > 65535:
+                        return None
+                    url.port = None if _URL_SPECIAL_PORTS.get(url.scheme, -1) == port else port
+                    buf = ""
+                state = "path start"
+                p -= 1
+            else:
+                return None
+        elif state == "file":
+            url.scheme = "file"
+            url.host = ""
+            if c in ("/", "\\"):
+                state = "file slash"
+            elif base is not None and base.scheme == "file":
+                url.host, url.path, url.query = base.host, list(base.path), base.query
+                if c == "?":
+                    url.query = ""
+                    state = "query"
+                elif c == "#":
+                    url.fragment = ""
+                    state = "fragment"
+                elif c is not None:
+                    url.query = None
+                    if not _url_starts_with_drive(s[p:]):
+                        _url_shorten(url)
+                    else:
+                        url.path = []
+                    state = "path"
+                    p -= 1
+            else:
+                state = "path"
+                p -= 1
+        elif state == "file slash":
+            if c in ("/", "\\"):
+                state = "file host"
+            else:
+                if base is not None and base.scheme == "file":
+                    url.host = base.host
+                    if not _url_starts_with_drive(s[p:]) and base.path and _url_is_drive(base.path[0], normalized=True):
+                        assert isinstance(url.path, list)
+                        url.path.append(base.path[0])
+                state = "path"
+                p -= 1
+        elif state == "file host":
+            if c is None or c in "/\\?#":
+                p -= 1
+                if _url_is_drive(buf):
+                    # The buffer is kept: the path state reads it as a drive letter.
+                    state = "path"
+                elif buf == "":
+                    url.host = ""
+                    state = "path start"
+                else:
+                    host = _url_host(buf, True, lenient, None, built, room)
+                    if host is None:
+                        return None
+                    url.host = "" if host == "localhost" else host
+                    buf = ""
+                    state = "path start"
+            else:
+                buf += c
+        elif state == "path start":
+            if url.special:
+                state = "path"
+                if c not in ("/", "\\"):
+                    p -= 1
+            elif c == "?":
+                url.query = ""
+                state = "query"
+            elif c == "#":
+                url.fragment = ""
+                state = "fragment"
+            elif c is not None:
+                state = "path"
+                if c != "/":
+                    p -= 1
+        elif state == "path":
+            if c is None or c in "/?#" or (url.special and c == "\\"):
+                slash = c == "/" or (url.special and c == "\\")
+                assert isinstance(url.path, list)
+                folded = buf.lower()
+                if folded in ("..", ".%2e", "%2e.", "%2e%2e"):
+                    _url_shorten(url)
+                    if not slash:
+                        url.path.append("")
+                elif folded in (".", "%2e"):
+                    if not slash:
+                        url.path.append("")
+                else:
+                    if url.scheme == "file" and not url.path and _url_is_drive(buf):
+                        buf = buf[0] + ":"
+                    url.path.append(buf)
+                buf = ""
+                if c == "?":
+                    url.query = ""
+                    state = "query"
+                elif c == "#":
+                    url.fragment = ""
+                    state = "fragment"
+            else:
+                buf += _url_pct(c, _URL_PATH_SET)
+        elif state == "opaque path":
+            if c is None or c in "?#":
+                url.path = "".join(opaque)
+                if c == "?":
+                    url.query = ""
+                    state = "query"
+                elif c == "#":
+                    url.fragment = ""
+                    state = "fragment"
+            elif c == " ":
+                opaque.append("%20" if s[p + 1:p + 2] in ("?", "#") else " ")
+            else:
+                opaque.append(_url_pct(c, _URL_C0_SET))
+        elif state == "query":
+            if c is None or c == "#":
+                encode_set = _URL_SPECIAL_QUERY_SET if url.special else _URL_QUERY_SET
+                url.query = (url.query or "") + "".join(_url_pct(ch, encode_set) for ch in buf)
+                buf = ""
+                if c == "#":
+                    url.fragment = ""
+                    state = "fragment"
+            else:
+                buf += c
+        elif state == "fragment":
+            # The fragment runs to the end of the input.
+            url.fragment = (url.fragment or "") + "".join(_url_pct(ch, _URL_FRAGMENT_SET) for ch in s[p:])
+            return url
+        if p >= n:
+            return url
+        p += 1
+
+
+def _page_base(base_url: str) -> _Url | None:
+    """The URL a page was read from, parsed as the base for its hrefs.
+
+    Where this engine's host checks reject it for want of Unicode data Node
+    has (a label with a ZWNJ between joining letters, or a code point this
+    Python's unicodedata does not assign), it is parsed again with lenient
+    host checks (_url_idna_label_ok), so the page's hrefs resolve against
+    it rather than all being left out. base_url is the URL urllib read the
+    page from. urllib cannot send a request whose host holds a character
+    outside Latin-1 (http.client writes the Host header in Latin-1), so a
+    page with such a host was read from its xn-- form.
+    """
+    try:
+        return _parse_url(base_url, None) or _parse_url(base_url, None, lenient=True)
+    except ValueError:
+        return None
+
+
+def _resolve_href(href: str, base_url: str) -> str | None:
+    """new URL(href, base_url).href, or None where new URL throws.
+
+    base_url is parsed by _page_base, as _extract_css_parts parses it. A
+    ValueError from the parser is raised here, where _extract_css_parts
+    leaves that href out.
+    """
+    base = _page_base(base_url)
+    url = None if base is None else _parse_url(href, base)
+    return None if url is None else url.href()
+
+
 # ── Page fetch ───────────────────────────────────────────────────────────────
+
+# The most bytes of stylesheet hrefs that _extract_css_parts resolves for
+# one page, each href charged as its docstring says. The parser is Python,
+# and its time grows with an href's length and with its URL's; of the kinds
+# tried, those whose host is labels outside ASCII cost it the most per
+# byte. With no bound, a page at the 16 MiB read cap whose links carried
+# such hosts took more than a minute to resolve. With this bound, and no
+# more of a host built once it can no longer fit what is left (_PastRoom),
+# a page at the read cap of each kind of href tried resolves inside
+# _READ_DEADLINE_SECONDS on Python 3.10, the oldest Python this package
+# supports, on a machine with nothing else running, after the tags tried
+# that cost the scan the most per byte, each of which holds an href with a
+# value and no rel: hosts of labels of 63 CJK code points, of labels of 63
+# distinct two-byte letters, Arabic among them, and of characters that each
+# map to several letters, the last two also rejected late, once every label
+# is built (a port past 65535, a number or a forbidden code point at the
+# end) or at the last label (a short invalid one after them, or for the
+# Arabic letters their own last label, invalid or too long), and of
+# combining marks; one href on such labels whose own bytes fill the budget;
+# and a relative href on a page read at a long URL.
+# It leaves an ordinary page room for 60 hrefs charged 1,092 bytes each,
+# such as 60 sheet URLs of 1,092 characters, or relative hrefs whose URLs
+# are that long.
+_HREF_BUDGET_BYTES = 64 * 1024
 
 
 def _extract_css_parts(html: str, base_url: str) -> list[str]:
@@ -1900,14 +3263,84 @@ def _extract_css_parts(html: str, base_url: str) -> list[str]:
 
     A <link> is a stylesheet with rel=stylesheet before or after its href
     (engine 1.5.4; before it, href first was ignored by both engines alike).
-    `base_url` is the URL the page was read from.
+    `base_url` is the URL the page was read from. Each href resolves as
+    new URL(href, base_url).href does (from designesy-mcp's next release;
+    urljoin before it), and an href new URL rejects is left out, as the npm
+    engine leaves it out. An href the parser raises ValueError on is left out
+    too, and the other hrefs are read, as they were with urljoin.
+
+    One difference from new URL: an href that types its own host as a
+    number in a form other than four decimal parts keeps that host as typed
+    (_Url.typed_host), where new URL writes it as four decimal parts. The
+    address checks refuse such a host in a sheet URL as they refuse it in
+    the page URL and in a redirect, so the sheet fails and is left out. It
+    still takes its place among the sheets, as it did with urljoin.
+
+    The hrefs are resolved in document order until _MAX_STYLESHEETS
+    distinct sheet URLs (those that start with http, which _fetch_page_parts
+    reads) are found, or until the next href's charge would take the
+    charges past _HREF_BUDGET_BYTES. An href is charged the longer of its
+    own bytes in UTF-8 and the URL it resolves to: a relative href takes
+    the page URL's path, so its URL can be far longer than it. An href the
+    parser rejects is charged its own bytes, and what its host, with its
+    percent-escapes decoded, grew by in bytes as far as the parser built it
+    when that is more than nothing (_url_built_growth): while it was
+    mapping, the code points mapped as mapped and the rest unmapped; once
+    it was mapped, the full stops, the labels given their ASCII form in
+    that form and the others as mapped.
+    An href whose own bytes pass what is left is not resolved, and one
+    whose URL or charge passes it is left out once that is known. For a
+    host that goes through UTS #46 that can be before the host is built:
+    the parser builds no more of it once the full stops, the labels in
+    their ASCII form and the floors of the others (_url_label_floor) pass
+    what is left (_PastRoom), which they do only where the URL or the
+    charge would. Neither that href nor any later one is read, and one
+    that is not http no longer goes into the CSS as text. The links are
+    found as the hrefs are taken (_stylesheet_links), so the rest of the
+    page is not scanned. The distinct sheets _fetch_page_parts reads are
+    the first _MAX_STYLESHEETS as before, while the budget lasts. Until
+    designesy-mcp's next release every href was resolved.
     """
     parts = [m.groups[0] for m in _style_elements(html)]
-    for m in _stylesheet_link_matches(html):
+    base = _page_base(base_url)
+    sheets: set[str] = set()
+    left = _HREF_BUDGET_BYTES
+    for m in _stylesheet_links(html):
+        if len(sheets) >= _MAX_STYLESHEETS:
+            break
+        href = m.groups[0]
+        # A code point is at least one byte in UTF-8, so an href of more
+        # code points than the bytes left is not encoded to count them.
+        size = len(href)
+        if size <= left:
+            size = len(href.encode("utf-8", "surrogatepass"))
+        if size > left:
+            break
+        built: list[Any] = []
         try:
-            parts.append(urljoin(base_url, m.groups[0]))
+            url = None if base is None else _parse_url(href, base, built=built, room=left)
+        except _PastRoom:
+            # Its host can no longer fit what is left, built or rejected
+            # later (_url_idna): left out, as an href whose URL passes it.
+            break
         except ValueError:
-            pass  # malformed href, ignored as the live engine does
+            url = None
+        part = None if url is None else url.href(as_typed=True)
+        # The URL is ASCII, one byte a character.
+        if part is not None and len(part) > size:
+            size = len(part)
+            if size > left:
+                break
+        # Rejected after its host went through UTS #46: charged what its
+        # host grew by as far as it was built, and never less than its own
+        # bytes. Past what is left, no later href is read.
+        if part is None:
+            size += max(0, _url_built_growth(built))
+        left -= size
+        if part is not None:
+            parts.append(part)
+            if part.startswith("http"):
+                sheets.add(part)
     return parts
 
 
@@ -1916,12 +3349,28 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
 
     Inline <style> text first, then each distinct linked stylesheet (at most
     _MAX_STYLESHEETS) in document order, joined with newlines. A sheet that
-    fails to load is dropped, not fatal. The sheets decode no more than
-    _MAX_DECODED_BYTES between them (engine 1.5.4), as the npm engine's do: a
-    compressed sheet past what is left fails. The third item lists the URLs
-    read: the page, then each sheet that loaded.
+    fails to load is dropped, not fatal. The sheets read no more than
+    _MAX_DECODED_BYTES between them (engine 1.5.4): a compressed sheet is
+    charged what it decodes to, and a sheet with no content coding its bytes
+    as sent (from the read cap; it was charged nothing before). A sheet past
+    what is left fails and is left out, and a sheet that fails is charged
+    nothing. The page is not charged. The third item lists the URLs read:
+    the page, then each sheet that loaded.
+
+    The page, and each sheet, has _READ_DEADLINE_SECONDS to be read, from
+    its request to the end of its body, redirects included. A page past it
+    fails with TimeoutError naming the deadline, and a sheet past it is left
+    out like any sheet that fails. Each sheet has a deadline of its own, so
+    a page with sheets can take longer in all.
+
+    Each sheet is read at the URL _extract_css_parts gives for its href,
+    and through _fetch, as the page is: the checks _validate_url and
+    _urlopen make apply to that URL and to every redirect it leads to. A
+    sheet they refuse fails, and is left out like any sheet that fails.
+    _extract_css_parts resolves a page's hrefs only until 60 distinct
+    sheets are found or their charges would pass _HREF_BUDGET_BYTES.
     """
-    html = _fetch(url, as_json=False)
+    html = _within_read_deadline(lambda: _fetch(url, as_json=False))
     read = [url]
     # Hrefs resolve against the URL that answered, after redirects (engine
     # 1.5.4), as a browser resolves them.
@@ -1931,7 +3380,7 @@ def _fetch_page_parts(url: str) -> tuple[str, str, list[str]]:
     budget = _MAX_DECODED_BYTES
     for href in external[:_MAX_STYLESHEETS]:
         try:
-            text = _fetch(href, as_json=False, max_decoded=budget)
+            text = _within_read_deadline(lambda href=href, budget=budget: _fetch(href, as_json=False, max_decoded=budget))
         except Exception:
             continue
         budget -= _DECODED_BYTES.get(href, 0)
@@ -3054,8 +4503,12 @@ def _cdp_available() -> bool:
     if base is None:
         return False
     try:
-        import urllib.request as ur
-        ur.urlopen(f"{base}/json/version", timeout=2).read()
+        # Nothing in the answer is used. It is read through _read_body as a
+        # body with no content coding, so the read stops once it passes
+        # 16 MiB, and a redirect's body is not read; until the read cap it
+        # was read whole.
+        with _probe_urlopen(f"{base}/json/version", timeout=2) as resp:
+            _read_body(resp, None)
         return True
     except Exception:
         return False
@@ -3595,12 +5048,31 @@ def _score_remote(url: str, scope: str | None = None) -> dict[str, Any] | None:
 
 
 def _score_api_failure(exc: Exception) -> str:
-    """Describe a failed /api/score call, with the engine's own error text."""
+    """Describe a failed /api/score call, with the engine's own error text.
+
+    An HTTP error's body is read by _read_body as a body with no content
+    coding, since the call asks for identity and its reply is not decoded
+    either: it is held to 16 MiB as sent. Past that the text gives the
+    status's reason phrase and names the limit. The response is closed once
+    read, so nothing more of it is read or waited for. Until the read cap
+    (designesy-mcp, next release) the body was read whole, for as long as
+    the engine sent it.
+
+    An HTTPError built with no response (fp None) has nothing to close, and
+    gives its status. CPython 3.10.0 to 3.10.9 and 3.11.0 to 3.11.1 build
+    one without its file wrapper, so its read() and close() raise
+    KeyError('file'); later releases give it an empty body.
+    """
     if isinstance(exc, urllib.error.HTTPError):
         try:
-            detail = exc.read().decode("utf-8", "replace").strip()
+            detail = _read_body(exc, None).decode("utf-8", "replace").strip()
+        except ValueError as err:
+            return _scrub_local_paths(f"HTTP {exc.code}: {exc.reason}; {err}")
         except Exception:
             detail = ""
+        finally:
+            if exc.fp is not None:
+                exc.close()
         try:
             detail = json.loads(detail).get("error") or detail
         except Exception:
@@ -4181,7 +5653,7 @@ TOOLS = [
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "URL to a DTCG token file (JSON). The tool fetches and validates it.",
+                    "description": "URL to a DTCG token file (JSON) of up to 16 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.",
                 },
                 "dtcg_file": {
                     "type": "string",
@@ -4264,7 +5736,7 @@ TOOLS = [
             "properties": {
                 "url": {
                     "type": "string",
-                    "description": "URL to a Lottie JSON file. The tool fetches and validates it.",
+                    "description": "URL to a Lottie JSON file of up to 16 MiB. The tool fetches and validates it; a longer file fails with an error that names the limit.",
                 },
                 "lottie_file": {
                     "type": "string",

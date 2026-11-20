@@ -2992,10 +2992,10 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
     box-shadow: 0 0 0 3px var(--paper), 0 0 8px var(--signal-dim);
   }
 }
-/* A card title, in the section heading's family: the display serif belongs
-   to the page title alone (see .doctrine-heading). In Fraunces bold at 17.4px
-   it out-flavoured the 20px Schibsted h2 above it; Schibsted 1rem/600 in ink
-   ranks under the h2 (1.25x) and over the muted body by weight and colour.
+/* A card title, in the interface sans: the display serif belongs to the page
+   title and the section heading (see .doctrine-heading). In Fraunces bold at
+   17.4px it competed with the h2 above it; Schibsted in ink ranks under the
+   h2 by face and size and over the muted body by weight and colour.
    Lifted to 1.125rem/650 (2026-10-04, round-3 judges): the Observation./
    Judgment. run-ins below are 15px/700 by browser default, so the run-in was
    heavier than its own card title; the title now wins on both size and
@@ -3082,8 +3082,14 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 /* --- Lab crumbs: signal underline grow --- */
+/* The crumb is a link of one short word and its box was the glyphs' 15px.
+   Block padding on an inline box adds to the box and not to the line, so 5px
+   each side makes it 25px, past the 24px target floor, and the eyebrow does
+   not move. The underline is placed from the box's bottom edge, so it gives
+   the padding back and stays 1px under the word. */
 .lab-crumb {
   position: relative;
+  padding-block: var(--space-5);
 }
 .lab-crumb::after {
   content: "";
@@ -3092,7 +3098,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   right: 0;
   transform: scaleX(0);
   transform-origin: left center;
-  bottom: -1px;
+  bottom: calc(var(--space-5) - 1px);
   height: 1px;
   background: var(--signal);
   transition: transform 200ms var(--ease-out);
@@ -3849,18 +3855,28 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   padding-top: 0;
 }
 
-/* A section title, not a caption. As 0.72rem --muted-dim caps it was
-   out-ranked by everything inside its own section (16.8px definition labels,
-   14.4px row titles), so a page had a 60px H1 and no second level. Sans, not
-   the display serif: the serif belongs to the page title. */
+/* A section title: the page's second level, on the contract's h2 step
+   (typography.scale, --text-h2) in the heading face, weight, leading and
+   tracking the h1-h4 rule above already sets (typography.headings). As
+   Schibsted 600 at --text-lead it sat 3.25x under a 65px page title with no
+   step between, and under the 24.8px Fraunces lab-card titles inside its own
+   section. The engine pages already set their second level in Fraunces
+   (.eg-h2, engine.css), so a document page and an engine page now share one
+   order: title, section, card. Card titles stay in the sans (.principle-body
+   h3, .row-title), so the serif marks the two levels that structure a page. */
 .doctrine-heading {
-  font-family: var(--sans);
-  font-size: var(--text-lead);
-  font-weight: 600;
-  line-height: var(--leading-compact);
-  letter-spacing: -0.01em;
+  font-size: var(--text-h2);
   color: var(--ink);
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-20);
+}
+
+/* Where the page title has shrunk to about 34px, an h2 at 31px would tie
+   with it. The h3 step keeps the 1.25 ratio the scale is built on. */
+@media (max-width: 720px) {
+  .doctrine-heading {
+    font-size: var(--text-h3);
+    margin-bottom: var(--space-16);
+  }
 }
 
 /* Principle list — numbered entries with title + description */
@@ -5091,6 +5107,19 @@ button.row {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
+}
+
+/* The prose form of the description. The row contract gives a row "One line
+   of description", and the caption size and grey above suit that line. On a
+   few lists the description is sentences people read, three lines and up at
+   a phone's width: there the caption form set whole paragraphs at the label
+   step, under the reading floor. Those lists mark the description
+   .row-meta--prose and it takes the reading size, grey and leading. Every
+   other list keeps the caption form. */
+.row-meta--prose {
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
 
 

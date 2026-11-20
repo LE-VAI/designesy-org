@@ -1199,6 +1199,16 @@ await check('every fidelity result carries layer, reads, derivedFrom, title and 
     if (c.status === 'SKIP') assert.ok(['not_declared', 'not_located', 'not_applicable'].includes(c.skipReason), c.id);
   }
 });
+await check('f02 counts the colours in the palette from every outside colour, not the 20 it lists', async () => {
+  // 1 colour in the palette and 33 outside: the line lists 20 and says 13 more.
+  const outside = Array.from({ length: 33 }, (_, i) => `#${(0x100000 + i * 4099).toString(16).slice(0, 6)}`);
+  const c = await st('f02', PAL10, shipColors([inPal[0], ...outside]));
+  assert.equal(c.status, 'FAIL');
+  assert.equal(c.evidence.truncated, 13);
+  assert.ok(c.detail.startsWith('1 of 34 shipped colors is in your palette (90% needed to pass). Outside it: '), c.detail);
+  assert.ok(c.detail.endsWith(' and 13 more'), c.detail);
+  assert.equal(run.paletteLine(34, outside.slice(0, 20), 0.9, 33).split('.')[0], '1 of 34 shipped colors is in your palette (90% needed to pass)');
+});
 await check('evidence lists stop at 20 entries with a truncated count', async () => {
   const many = Array.from({ length: 30 }, (_, i) => `#${(0x100000 + i * 4099).toString(16).slice(0, 6)}`);
   const c = await st('f02', PAL10, shipColors(many));
@@ -1675,14 +1685,11 @@ await check('a stalled contract URL aborts at 8 s with CONTRACT_URL_UNREACHABLE 
   assert.equal(r.body.problems[0].why, 'timeout');
 });
 await check('the real URL guard refuses contract URLs on loopback and the metadata address', async () => {
-  const appRequire = createRequire(path.join(APP, 'package.json'));
-  const ts = appRequire('typescript');
-  const src = fs.readFileSync(path.join(APP, 'app', 'lib', 'url-guard.ts'), 'utf8');
-  const out = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
-  const mod = { exports: {} };
-  new Function('exports', 'require', 'module', out)(mod.exports, appRequire, mod);
+  // The real module (realSafeFetch), loaded through the harness so that the
+  // modules it imports load with it.
+  const guard = createHarness({ app: APP, realSafeFetch: true }).load('app/lib/url-guard.ts');
   for (const u of ['http://127.0.0.1/DESIGN.md', 'http://169.254.169.254/latest/meta-data', 'http://localhost/DESIGN.md', 'http://[::1]/x', 'http://2130706433/x']) {
-    const r = await fetchMod.fetchContract(u, mod.exports.safeFetch);
+    const r = await fetchMod.fetchContract(u, guard.safeFetch);
     assert.equal(r.ok, false, u);
     assert.equal(r.problem.why, 'blocked', `${u}: ${r.problem.why}`);
   }

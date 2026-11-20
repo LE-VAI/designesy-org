@@ -86,7 +86,7 @@ const INDEX: SearchItem[] = [
   { title: 'Compare design systems', href: '/compare', group: 'Verify', keywords: 'compare diff two design systems urls side by side tokens added removed renamed value changed scale structure contrast drift score delta', meta: '8-check diff' },
   { title: 'Design-intelligence report', href: '/report', group: 'Verify', keywords: 'report design intelligence synthesis composite score drift readiness unified one grade holistic assessment capstone', meta: 'synthesis capstone' },
   { title: 'Benchmarks', href: '/benchmarks', group: 'Verify', keywords: 'compare benchmark baseline', meta: '' },
-  { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire radar chart axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
+  { title: 'Maturity self-assessment', href: '/maturity', group: 'Verify', keywords: 'maturity self-assessment quiz questionnaire stage matrix axes stages compliance token motion accessibility platform verification', meta: '24 questions' },
   { title: 'Methodology', href: '/methodology', group: 'Verify', keywords: 'how scoring works weights checks rubric', meta: 'how it works' },
   { title: 'Contract changelog', href: '/changelog', group: 'Verify', keywords: 'changelog history version dimension tokens motion cadence accessibility takt poise acoustics copywriting identity security verification adopted added modified', meta: 'by dimension' },
   { title: 'M3 → DTCG bridge', href: '/m3-bridge', group: 'Verify', keywords: 'm3 material design 3 dtcg w3c token bridge converter dsp archived google design.md material-foundation', meta: 'token format bridge' },

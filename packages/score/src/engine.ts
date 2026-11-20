@@ -19,7 +19,7 @@
  *   APCA-W3 0.0.98G-4g (perceptual contrast)
  */
 
-import { get as httpsGet } from 'node:https';
+import { Agent as HttpsAgent, get as httpsGet } from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import type { LookupOptions, LookupAddress } from 'node:dns';
 import { createBrotliDecompress, createGunzip, createInflate, createInflateRaw } from 'node:zlib';
@@ -161,38 +161,127 @@ export function isValidUrl(url: string): boolean {
   if (/^\d+$/.test(host)) return false;
   if (host.split('.').some((o) => o.startsWith('0') && o.length > 1 && /^0[0-7]+$/.test(o))) return false;
   if (host.split('.').some((o) => /^0x[0-9a-f]+$/i.test(o))) return false;
-  if (isPrivateIPv4(host)) return false;
+  if (addressBytes(host) && !isPublicAddress(host)) return false;
   return true;
 }
 
-function isPrivateIPv4(host: string): boolean {
-  const parts = host.split('.');
-  if (parts.length !== 4) return false;
-  const oct = parts.map((p) => { const n = parseInt(p, 10); return Number.isNaN(n) ? -1 : n; });
-  if (oct.some((n) => n < 0 || n > 255)) return false;
-  const [a, b] = oct;
-  if (a === 0) return true;
-  if (a === 10) return true;
-  if (a === 127) return true;
-  if (a === 169 && b === 254) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 192 && b === 168) return true;
-  if (a >= 224) return true;
-  if (a === 100 && b >= 64) return true;
-  return false;
+/**
+ * The bytes of an IP address, 4 for IPv4 and 16 for IPv6, or null when `s` is
+ * not one. It reads IPv4 as four decimal parts from 0 to 255 with no leading
+ * zero, and IPv6 as hex groups of one to four digits in either case, with at
+ * most one `::`, an IPv4 address in place of the last two groups, and a zone
+ * id after `%`, which is dropped. That covers every form node:dns lookup
+ * writes and the IPv4 form a parsed URL host holds.
+ */
+function addressBytes(s: string): number[] | null {
+  const ipv4 = (t: string): number[] | null => {
+    const parts = t.split('.');
+    if (parts.length !== 4 || !parts.every((p) => /^(?:0|[1-9]\d{0,2})$/.test(p) && Number(p) <= 255)) return null;
+    return parts.map(Number);
+  };
+  if (!s.includes(':')) return ipv4(s);
+  const zone = s.indexOf('%');
+  const halves = (zone === -1 ? s : s.slice(0, zone)).toLowerCase().split('::');
+  if (halves.length > 2) return null;
+  const words: number[][] = [];
+  for (let h = 0; h < halves.length; h++) {
+    const parts = halves[h] === '' ? [] : halves[h].split(':');
+    const out: number[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      const tail = h === halves.length - 1 && i === parts.length - 1 && parts[i].includes('.');
+      if (tail) {
+        const b = ipv4(parts[i]);
+        if (!b) return null;
+        out.push((b[0] << 8) | b[1], (b[2] << 8) | b[3]);
+      } else if (/^[0-9a-f]{1,4}$/.test(parts[i])) {
+        out.push(parseInt(parts[i], 16));
+      } else {
+        return null;
+      }
+    }
+    words.push(out);
+  }
+  const [head, rest = []] = words;
+  const zeros = 8 - head.length - rest.length;
+  if (halves.length === 2 ? zeros < 1 : zeros !== 0) return null;
+  return [...head, ...new Array<number>(zeros).fill(0), ...rest].flatMap((w) => [w >> 8, w & 0xff]);
+}
+
+/**
+ * The address ranges that are not public: every range ipaddr.js 2.5.0 names
+ * in its IPv4 and IPv6 SpecialRanges, and ::/96, the IPv4-compatible
+ * addresses. A range that another one holds is not listed again:
+ * 240.0.0.0/4 holds the broadcast address, ::/96 holds :: and ::1, and
+ * 2001::/23 holds the Teredo, benchmarking, AMT, AS112, ORCHID and drone
+ * remote ID ranges under 2001::. Written out here so the engine needs no
+ * dependency.
+ */
+const NON_PUBLIC_RANGES: Array<{ bytes: number[]; prefix: number }> = [
+  '0.0.0.0/8', // "this network"
+  '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', // private
+  '100.64.0.0/10', // carrier-grade NAT
+  '127.0.0.0/8', // loopback
+  '169.254.0.0/16', // link-local
+  '192.0.0.0/24', '192.0.2.0/24', '192.88.99.0/24', '198.18.0.0/15',
+  '198.51.100.0/24', '203.0.113.0/24', '240.0.0.0/4', // reserved
+  '192.31.196.0/24', '192.175.48.0/24', // AS112
+  '192.52.193.0/24', // AMT
+  '224.0.0.0/4', // multicast
+  '::/96', // IPv4-compatible
+  '::ffff:0:0/96', // IPv4-mapped
+  '::ffff:0:0:0/96', // IPv4-translated (RFC 6145)
+  '64:ff9b::/96', '64:ff9b:1::/48', // NAT64 (RFC 6052, RFC 8215)
+  '100::/64', // discard
+  '2001::/23', // IETF protocol assignments
+  '2001:db8::/32', '3fff::/20', // documentation
+  '2002::/16', // 6to4
+  '2620:4f:8000::/48', // AS112
+  '5f00::/16', // segment routing
+  'fc00::/7', // unique local
+  'fe80::/10', // link-local
+  'fec0::/10', // site-local
+  'ff00::/8', // multicast
+].map((cidr) => {
+  const [address, prefix] = cidr.split('/');
+  return { bytes: addressBytes(address) as number[], prefix: Number(prefix) };
+});
+
+/**
+ * True when `address` is an IP address in none of NON_PUBLIC_RANGES. False
+ * for an address in one of them, and for a string addressBytes cannot read,
+ * so a lookup answer the check cannot read is refused. An IPv4-mapped address
+ * is refused whatever IPv4 address it holds.
+ */
+function isPublicAddress(address: string): boolean {
+  const bytes = addressBytes(address);
+  if (!bytes) return false;
+  return !NON_PUBLIC_RANGES.some((r) => {
+    if (r.bytes.length !== bytes.length) return false;
+    for (let bit = 0; bit < r.prefix; bit += 8) {
+      const mask = (0xff << (8 - Math.min(8, r.prefix - bit))) & 0xff;
+      if ((bytes[bit / 8] & mask) !== (r.bytes[bit / 8] & mask)) return false;
+    }
+    return true;
+  });
 }
 
 // ── Zero-dep HTTPS fetch (avoids Windows libuv crash) ───────────────────────
 
 /**
  * TOCTOU-safe SSRF guard: custom DNS lookup that validates every resolved IP
- * against the private-range blocklist BEFORE the socket connects. This runs
+ * against NON_PUBLIC_RANGES BEFORE the socket connects. This runs
  * inside the connection's resolution step — there is no window between
  * validation and connection for DNS rebinding to exploit.
  *
  * The synchronous `isValidUrl` remains for fast initial filtering (protocol,
  * IPv6, encoded IPs, IP-literal private ranges). This lookup function adds
  * the DNS-resolution layer that catches hostnames that resolve to private IPs.
+ * A URL host and every answer, IPv4 and IPv6, go through the same check.
+ * Every request is sent on DIRECT_AGENT, which has no proxy, so this lookup
+ * runs for each connection the agent opens to a host name. A request on a
+ * kept-alive connection goes to an address this lookup already accepted. A
+ * URL whose host is an IP address is connected to with no lookup, and
+ * isValidUrl judges that host before the request.
  *
  * References:
  *   OWASP SSRF Prevention Cheat Sheet (DNS pinning — resolve A+AAAA, validate every address)
@@ -209,8 +298,8 @@ function safeLookup(
 
   // Fast path: IP literal — validate directly without DNS resolution
   if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) {
-    if (isPrivateIPv4(host)) {
-      callback(new Error(`SSRF blocked: private IP ${host}`), '', 4);
+    if (!isPublicAddress(host)) {
+      callback(new Error(`SSRF blocked: non-public IP ${host}`), '', 4);
       return;
     }
     if (all) {
@@ -224,17 +313,12 @@ function safeLookup(
   // Hostname: resolve all addresses and validate each (fail-closed)
   dnsLookup(host, { all: true })
     .then((addresses) => {
+      // Every answer is judged by its address, whatever family it is
+      // labelled with. One answer that is not public refuses the name.
       for (const addr of addresses) {
-        const ip = addr.address.toLowerCase();
-        if (isPrivateIPv4(ip)) {
-          callback(new Error(`SSRF blocked: ${host} resolves to private IP ${ip}`), '', addr.family);
+        if (!isPublicAddress(addr.address)) {
+          callback(new Error(`SSRF blocked: ${host} resolves to non-public IP ${addr.address}`), '', addr.family);
           return;
-        }
-        if (addr.family === 6) {
-          if (ip === '::1' || ip === '::' || ip.startsWith('fe80:') || ip.startsWith('fc') || ip.startsWith('fd')) {
-            callback(new Error(`SSRF blocked: ${host} resolves to private IPv6 ${ip}`), '', 6);
-            return;
-          }
         }
       }
       // Return validated addresses — honor options.all for Node v24 compat
@@ -270,6 +354,27 @@ const BROWSER_HEADERS: Record<string, string> = {
 
 /** Redirects httpsFetch follows before it gives up (engine 1.3.1). */
 const MAX_REDIRECT_HOPS = 3;
+
+/**
+ * The agent every request httpsFetch makes is sent on: the page and its other
+ * candidate URLs, each redirect, each stylesheet and the /DESIGN.md probe. It
+ * has the settings Node's own https.globalAgent has from Node 19 (keep-alive,
+ * lifo scheduling, a 5 s idle timeout) and no proxy, so each connection goes
+ * directly to an address safeLookup accepted, or to an IP-literal host that
+ * isValidUrl accepted, and requests to one host share a connection. Node
+ * gives a proxy named in the environment (HTTPS_PROXY, with
+ * NODE_USE_ENV_PROXY=1 or --use-env-proxy) to its global agents, and code in
+ * the process can give https.globalAgent a proxy; an agent made here with no
+ * proxy option takes neither. `agent: false` is not used: it makes a new
+ * agent of https.globalAgent's class, and a replaced global agent's class can
+ * send through a proxy of its own. The agent is made once, when the engine
+ * loads, and is not exported, so an Agent class put in place of node:https's
+ * after that is not used. Code in the same process that replaces node:https's
+ * request functions, or its Agent class before the engine loads, is outside
+ * this. On a network that lets traffic out only through a proxy, the engine
+ * cannot reach a site, and the page is reported unreachable.
+ */
+const DIRECT_AGENT = new HttpsAgent({ keepAlive: true, scheduling: 'lifo', timeout: 5000 });
 
 /**
  * The most bytes httpsFetch decodes from one compressed body (engine 1.5.4),
@@ -338,6 +443,9 @@ type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected
  * or names a registered coding not decoded here (or more than one coding) is
  * a failed read (ok: false, status 0), never compressed bytes read as text.
  * When the coded stream ends, the response is not read further.
+ *
+ * Every request, the first and each redirect, is sent on DIRECT_AGENT, so it
+ * connects directly and uses no proxy from the environment.
  */
 function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0, budget?: { left: number }): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
@@ -353,7 +461,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
       resolve(r);
     };
     try {
-      const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
+      const req = httpsGet(url, { agent: DIRECT_AGENT, headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
         // Follow a redirect manually (3xx → Location)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           try {

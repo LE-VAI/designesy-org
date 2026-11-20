@@ -5,8 +5,7 @@
 // 6 axes × 4 questions = 24 questions. Each answer = stage 1–4.
 // A stage matrix (six axes, four stages) fills as you answer and carries
 // the result. Shareable via URL hash (base64).
-// CTA: "Score your compliance with Designesy" → /score (wording aligned
-// 2026-09-24 with the destination page, which is named Score, not Verify).
+// CTA: "Score the live site" → /score.
 //
 // All state is client-side. No data is sent to any server.
 
@@ -16,19 +15,11 @@ import Link from 'next/link';
 import '../lib/engine/command-bar.css';
 import { bringIntoView, userJustActed } from '../lib/engine/bring-into-view';
 import { ENGINE_CHECK_COUNT } from '../lib/check-definitions';
+import { AXES, STAGE_LABELS } from './axes';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type Stage = 0 | 1 | 2 | 3 | 4; // 0 = unanswered
-
-interface Axis {
-  id: string;
-  label: string;
-  symbol: string;
-  description: string;
-  categories: string;
-  contractWeight: string;
-}
 
 interface Question {
   id: string;
@@ -36,59 +27,6 @@ interface Question {
   prompt: string;
   answers: { stage: 1 | 2 | 3 | 4; label: string }[];
 }
-
-// ── Data: 6 axes ────────────────────────────────────────────────────────────
-
-const AXES: Axis[] = [
-  {
-    id: 'tokens',
-    label: 'Token discipline',
-    symbol: 'T',
-    description: 'Are design tokens defined, structured, and enforced?',
-    categories: 'tokens, spec',
-    contractWeight: '13% of contract',
-  },
-  {
-    id: 'motion',
-    label: 'Motion consistency',
-    symbol: 'M',
-    description: 'Are duration, easing, and interaction feel tokenized and applied?',
-    categories: 'motion, takt',
-    contractWeight: '18% of contract',
-  },
-  {
-    id: 'a11y',
-    label: 'Accessibility readiness',
-    symbol: 'A',
-    description: 'WCAG conformance, focus visibility, reduced-motion tiering.',
-    categories: 'accessibility, interaction',
-    contractWeight: '21% of contract',
-  },
-  {
-    id: 'platform',
-    label: 'Platform fit',
-    symbol: 'P',
-    description: 'Core Web Vitals, responsive, interaction poise across devices.',
-    categories: 'performance, responsive, poise',
-    contractWeight: '16% of contract',
-  },
-  {
-    id: 'identity',
-    label: 'Identity and copy',
-    symbol: 'I',
-    description: 'Semantic landmarks, UX copy discipline, security hygiene.',
-    categories: 'identity, copywriting, security',
-    contractWeight: '19% of contract',
-  },
-  {
-    id: 'verification',
-    label: 'Verification maturity',
-    symbol: 'V',
-    description: 'Is compliance measured deterministically, or by vibes?',
-    categories: 'cadence, self-measurement',
-    contractWeight: '18% of contract + the moat',
-  },
-];
 
 // ── Data: 24 questions (4 per axis) ─────────────────────────────────────────
 
@@ -193,7 +131,7 @@ const QUESTIONS: Question[] = [
     answers: [
       { stage: 1, label: 'Eyeballed, with no automated check' },
       { stage: 2, label: 'Manual axe-core or browser extension checks during QA' },
-      { stage: 3, label: 'APC contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
+      { stage: 3, label: 'APCA contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
       { stage: 4, label: 'Automated WCAG 2.2 AA scan in CI + contrast tokens with computed Lc values' },
     ],
   },
@@ -369,15 +307,6 @@ const QUESTIONS: Question[] = [
     ],
   },
 ];
-
-// ── Stage labels ────────────────────────────────────────────────────────────
-
-const STAGE_LABELS: Record<number, string> = {
-  1: 'Ad-hoc',
-  2: 'Emerging',
-  3: 'Systematic',
-  4: 'Verified',
-};
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

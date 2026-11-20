@@ -1,4 +1,5 @@
 import { renderOgCard } from '../lib/og-card';
+import { CuesPlate } from '../lib/og-lab-plates';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -11,5 +12,6 @@ export default function OpenGraphImage() {
     lede: 'The sound parallel to the visual token system. Net-new relative to the W3C Design Tokens Format Module.',
     path: 'designesy.org/acoustic-tokens',
     kind: 'lab',
+    art: <CuesPlate />,
   });
 }

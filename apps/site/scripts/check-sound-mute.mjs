@@ -204,15 +204,17 @@ function fakeReact() {
 
 /**
  * One page: the hook loaded fresh with its own cuelume, React and clock, and
- * the browser globals it reads. `run` puts the page's globals in place for
- * the length of one synchronous step and restores Node's afterwards.
+ * the browser globals it reads. Its storage holds a stored "true", a visitor
+ * who has turned sound on: sound is off until a visitor does, and a mute
+ * starts from on. `run` puts the page's globals in place for the length of
+ * one synchronous step and restores Node's afterwards.
  */
 function newPage({ themes = THEMES } = {}) {
   const cue = toggleCue(themes);
   const clock = fakeClock();
   const cuelume = fakeCuelume(clock, cue.cueMs);
   const react = fakeReact();
-  const storage = new Map();
+  const storage = new Map([[STORAGE_KEY, 'true']]);
   const html = { dataset: {} };
   const globals = {
     setTimeout: clock.setTimeout,
