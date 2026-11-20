@@ -6,6 +6,146 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The reference-format code sample holds the label size on every screen, and
+the Takt and Cadence labs, their field checks and their records name rules
+the shipped CSS does not meet** (the site; no version moves). Three changes,
+each its own pull request (#459, #460, #462). The code sample was sized to
+fit its box, so on a phone it shrank under the 12.8px floor for text, to
+8.4px on a 320px screen. The Takt and Cadence lab pages said their rules
+were verified on the live site, and a read of the shipped CSS and the
+rendered pages against their Verification rows found rows that do not hold.
+Once those rows were rewritten, the two field checks, dated 2026-07-13, and
+the two lab records still gave the July readings. No check, scoring rule,
+weight or score moves, and the design contract, its version and its lock are
+unchanged. The code sample bullet in the entry for #448 to #452, below,
+describes the sample before #459.
+
+### Fixed (code sample, lab pages, field checks)
+
+- **The reference-format code sample on `/acoustic-tokens` and
+  `/labs/acoustics` is 12.8px on every screen at the default text size**
+  (#459). The fit that sized it to its box took it to 8.4px on a 320px
+  screen and 11.1px at 390px. On a screen under about 400px wide the longest
+  line, 37 characters, now wraps between its key and its value. A code box
+  that scrolls sideways gets a keyboard stop from the site's scroll helper.
+  The card is one button, and a stop inside a button fails WCAG 4.1.2, so
+  the sample wraps. At every width measured, from 320px to 1440px, and at
+  four larger text sizes on 320px and 360px screens, the box does not scroll
+  sideways and takes no stop. The copied text is the same JSON at every
+  width measured. The size is the label step, 0.8rem, so a reader who raises
+  the text size gets larger code and more wrapped lines, and from a 24px
+  root size on a 320px screen, keys break inside a word. The wrap reverses a
+  decision recorded in `token-format.css`, that the sample never wraps. At
+  the default text size both pages are taller on small phones,
+  `/acoustic-tokens` by up to 98px, and nothing changes from 480px up.
+- **The Takt and Cadence lab pages mark rules the site does not meet**
+  (#460). The rewritten rows of their Verification grids are readings of the
+  shipped CSS. On `/labs/takt` three rows read fail: press scale, skip
+  animation on page load and `will-change`. On `/labs/cadence` the measure
+  row (line length) reads fail, and the font smoothing and line-height rows
+  read pass with notes. The CSS behind the rows that now read fail is the
+  same as before. Each lab's header note said the rules were verified on
+  designesy.org, and it now points to the lab's Verification section. Each
+  lab's meta description and its card on `/labs` drop the same claim. The
+  "Live artifact" paragraph on `/labs/takt` describes what the page does on
+  load, and the demo paragraph on `/labs/cadence` names the three faces the
+  site ships.
+- **The stagger demo on `/labs/takt` rises 100ms apart** (#460). A more
+  specific rule in `globals.css` sets the whole `animation` shorthand, which
+  put every bar's delay back to 0s, so the four bars rose together. Three
+  rules in `app/labs/takt/takt.css` restate the delays of the second, third
+  and fourth bars: 100, 200 and 300ms. The Takt stagger row now describes
+  these four bars. Under reduced motion the four bars fade in together, as
+  before.
+- **The meta description of `/maturity` and its catalog entry describe the
+  result as a stage matrix with a result link**, which is what the page
+  draws (#460). The command palette's keywords say "stage matrix" where they
+  named a radar chart, and one answer in the questionnaire reads "APCA"
+  where it read "APC".
+- **The Takt and Cadence field checks each name the rules the review
+  confirmed and the lab page now marks fail** (#462). `/review/takt` and
+  `/review/cadence` each gain one section, "Lab page checked again", dated
+  2026-11-20. Its one paragraph names those rules: three on Takt (press
+  scale, skip animation on page load and `will-change`) and one on Cadence
+  (the measure). The new paragraph on `/review/cadence` also says the site
+  ships three self-hosted faces and sets its text settings on `body`, where
+  the review describes a system font stack and `:root`. The closing note on
+  `/review/takt` gives the review's date, 2026-07-13, where it said with no
+  date that the live CSS confirms every verifiable rule, and both closing
+  notes gain a sentence that says the lab page was checked again. Each
+  review's findings and Summary stay as its dated record. The Markdown
+  copies of both reviews carry the new section.
+- **The lab records list what passes and what fails** (#462). In
+  `/labs/takt.json` and `/labs/cadence.json`, `verified_against` lists what
+  passes, what passes with notes (Cadence only) and what fails on each lab
+  page. `unverified` carries a row for each failed rule, since no key was
+  added for failures. The Cadence record's font rule takes the contract's
+  current wording, which names three faces.
+- **On `/labs/cadence`, two Verification rows and three lines of the
+  copyable prompt say what the CSS holds about logical properties** (#462):
+  block-axis properties partly migrated, `border-inline-start` used once,
+  and `inset-inline` used in places. They said not yet migrated, unused and
+  not yet used. Both rows stay fail, because physical properties are still
+  the large majority.
+
+### Removed (code sample, lab pages, field checks)
+
+- **The spoken abstract for the Maturity assessment on `/open`, with its
+  play button** (#460). The recording read the package's previous
+  description aloud. `public/audio/open/designesy.maturity.opus` is deleted
+  and its row is out of `app/lib/open-audio.ts`, which left 21 of the 23
+  package rows on `/open` with a play button. `app/lib/open-audio.ts` is
+  generated by `scripts/build_open_audio.py`, and the row was taken out by
+  hand. If the script is run for this package again, it records the
+  description that is live at that time and puts the row back. The sentence
+  above the list now says a row with a play button carries a spoken
+  abstract.
+
+### Not changed (code sample, lab pages, field checks)
+
+- The CSS behind the rows that read fail or pass with notes. #460 adds three
+  rules for the stagger demo's delays and changes no other style, and #462
+  changes no CSS. Bringing the site in line with each failed rule is work of
+  its own.
+- On `/labs/cadence`, the letter-spacing and `user-select` rows, which #460
+  lists as not measured and #462 leaves as they were. Both still read pass.
+  Body text is tracked at -0.003em where the tracking rule says zero for
+  body, and no row or record line says so.
+- The design system contract (`app/lib/design-system-contract.ts`). It still
+  carries the July readings for both labs and the older logical-property
+  wording in `open_tensions`, so `/labs/takt.json` and `/labs/cadence.json`
+  differ from the contract's JSON export, `/contracts/design-system.json`,
+  on `verified_against` and `unverified`.
+- `/contracts` and `/graph` (with `/graph.json`). Three lines of the open
+  tensions list written in `app/contracts/page.tsx` and one example in
+  `app/lib/graph.ts` keep the older logical-property wording.
+- The Takt and Cadence sections of `/contracts/design-system`, which still
+  say the rules were verified on live CSS.
+- The catalog entries for the two reviews and their spoken abstracts on
+  `/open`. When these three merged, they still said the live CSS confirms
+  the rules.
+- On `/review/cadence`, the Summary, one tension and the closing note, among
+  other places, still treat block-axis logical properties as not migrated,
+  and the new paragraph says nothing about logical properties.
+- In the lab records: every key, each `field_check`, each outcome, the lab
+  versions and the count of rules (8 and 11).
+- The Markdown copies `/labs/takt.md` and `/labs/cadence.md` leave out the
+  Verification grids, as they did before. The rows that read fail are on the
+  pages, and the failed rules are also in the two lab records.
+- The text of the code sample, and both code-sample pages from 480px up at
+  the default text size.
+- Every colour, size, space and radius token.
+
+### Gates (code sample, lab pages, field checks)
+
+- No gate was added or changed, and `app/critical-css.manifest.json` is as
+  it was.
+- No script binds the lab rows, the field-check paragraphs or the records'
+  lists to a measurement, so a later CSS change can make any of them stale
+  again. No gate loads the two code-sample pages under 390px wide except
+  `check-dock-clearance.js`, so the sample's size and the absence of a
+  keyboard stop rest on the measurements in #459.
+
 **zod and minimatch move past their advisories in this repository's
 installs** (the lockfiles of the site, @designesy/score and
 @designesy/cli, and the `overrides` in their package.json files; no
