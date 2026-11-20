@@ -27,7 +27,7 @@
 // the patterns they stand for. scripts/check-fetch-layer.mjs holds this
 // module's stylesheetLinkMatches to the same pattern and runs all four routes.
 
-import { safeFetch, type ReadBudget } from './url-guard';
+import { resolveAsTyped, safeFetch, type ReadBudget } from './url-guard';
 
 /** Headers the page and sheet requests send. */
 // Accept-Encoding names the three codings url-guard decodes (engine 1.5.4):
@@ -227,7 +227,10 @@ export function extractCssLinks(html: string, baseUrl: string): string[] {
   for (const m of styleElements(html)) links.push(m.groups[0] as string);
   for (const m of stylesheetLinkMatches(html)) {
     try {
-      links.push(new URL(m.groups[0] as string, baseUrl).href);
+      // A link whose host is typed as a number in a form the URL guard
+      // refuses keeps that host as typed (resolveAsTyped): it is still a
+      // URL of its scheme, read as a link, and safeFetch refuses it.
+      links.push(resolveAsTyped(m.groups[0] as string, baseUrl));
     } catch {
       // ignore malformed hrefs
     }
