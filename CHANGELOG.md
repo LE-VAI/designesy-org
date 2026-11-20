@@ -6,6 +6,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The report page draws what it is given as text, and only its host
+drives it** (the site; no version moves). The page at `/api/report/app`,
+which the MCP server also serves as `ui://designesy/report-app`, starts a
+report on the address it is given and draws the result. It now writes
+that address into its script so it reads back as exactly the text given,
+draws every value a report carries as text, and acts only on messages
+from the window that embeds it.
+
+### Fixed (report page)
+
+- **The address reads back as the text given**, whatever characters it
+  holds. It is written into the page's script as a JSON string.
+- **A report's values are drawn as text.** An engine's error, a grade, a
+  check's ID and a status are escaped before they are drawn. Scores and
+  totals are drawn as numbers, and as 0 when a value is not a number. A
+  status is styled only when it is PASS, FAIL, WARN, SKIP or MANUAL; any
+  other status is drawn as escaped text.
+- **Only the embedding host drives the page.** A report or a report
+  request sent with `postMessage` is acted on only when it comes from the
+  page's parent window, the check the MCP Apps SDK's own transport makes
+  for a view. A page opened on its own has no parent and acts on none.
+
+### Not changed (report page)
+
+- The report API the page calls, the page's layout and styles, and
+  `buildReportAppHtml(targetUrl, baseUrl)`. A report whose strings hold
+  no markup shows as before.
+- The headers the site sends with the page.
+
+### Gates (report page)
+
+- `check-report-app-html.js` (new, in the build and in CI after the MCP
+  protocol errors gate) loads the real route offline and runs the page's
+  own script in a `node:vm` context against a stand-in DOM. For each of
+  14 addresses it checks that the page is unchanged but for the one line
+  that sets the address, and that the script reads back exactly the
+  address given. It checks that a report from the API or from the host
+  is drawn as text, and that only the host's messages are acted on.
+
 **designesy-mcp, next release: the offline engine resolves each stylesheet
 href as the npm engine does** (PyPI and the MCP registry; not yet released,
 and designesy-mcp stays 1.13.10). The npm engine resolves a stylesheet's

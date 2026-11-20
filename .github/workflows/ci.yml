@@ -344,6 +344,14 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-mcp-protocol-errors.js
 
+      # The report page (/api/report/app, and ui://designesy/report-app) writes
+      # the address it is given, and every value a report carries, as text, and
+      # only the host that embeds it can drive it: the real route offline, its
+      # inline script run against a stand-in DOM.
+      - name: Report app text
+        if: ${{ !cancelled() }}
+        run: node scripts/check-report-app-html.js
+
       - name: Count literal
         if: ${{ !cancelled() }}
         run: node scripts/check-count-literal.js

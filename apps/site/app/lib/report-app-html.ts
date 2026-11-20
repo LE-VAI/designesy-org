@@ -13,12 +13,28 @@ import { ENGINE_CHECK_COUNT } from './check-definitions';
 // check breakdown. CSP-safe (inline script + style only, connects to
 // baseUrl/api/report). Dark-mode native, auto-adapts via prefers-color-scheme.
 
-function escapeJs(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+/**
+ * A string written into the page's inline script as a JavaScript string
+ * literal. The HTML parser reads the script before JavaScript does, so a
+ * value that only had its quotes escaped could still end the script element
+ * (or open a comment the parser honours) and put markup of its own on the
+ * page. JSON.stringify gives a valid literal, and escaping <, > and & on top
+ * of it leaves no character the HTML parser acts on inside a script; U+2028
+ * and U+2029 are escaped too, since older engines read them as line ends.
+ * The script reads back exactly the string that went in.
+ */
+function scriptString(s: string): string {
+  return JSON.stringify(s)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
-  const safeUrl = escapeJs(targetUrl);
+  const initialUrl = targetUrl ? scriptString(targetUrl) : 'null';
+  const reportApi = scriptString(`${baseUrl}/api/report`);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -177,8 +193,8 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 <script>
 (function() {
   'use strict';
-  var INITIAL_URL = ${safeUrl ? '"' + safeUrl + '"' : 'null'};
-  var API = '${baseUrl}/api/report';
+  var INITIAL_URL = ${initialUrl};
+  var API = ${reportApi};
   var state = document.getElementById('state');
   var stateText = document.getElementById('stateText');
   var stateSpinner = document.getElementById('stateSpinner');
@@ -230,23 +246,36 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
       '</svg>';
   }
 
+  // Every value a report carries is drawn as text: a number through num(), a
+  // string through escapeHtml(), and a status only from the five the page
+  // styles. A report comes from this site's own API or its host, but its
+  // strings can quote the page that was scored (an engine's error, a check).
+  function num(x) {
+    var n = Number(x);
+    return isFinite(n) ? n : 0;
+  }
+
   function engineCard(label, weight, result, desc) {
     if (!result || !result.ok) {
       return '<div class="engine-card"><p class="engine-label">' + label + ' ' + weight + '</p>' +
         '<p class="engine-grade" style="color:var(--muted-dim)" aria-hidden="true">–</p>' +
-        '<p class="engine-fail">' + (result && result.error ? result.error : 'Engine did not return a score') + '</p></div>';
+        '<p class="engine-fail">' + escapeHtml(result && result.error ? result.error : 'Engine did not return a score') + '</p></div>';
     }
-    var s = result.score, g = result.grade;
+    var s = num(result.score), g = escapeHtml(result.grade);
     var ink = s >= 90 ? 'var(--ok-ink)' : s >= 70 ? 'var(--warn-ink)' : 'var(--error-ink)';
     return '<div class="engine-card"><p class="engine-label">' + label + ' ' + weight + '</p>' +
       '<p class="engine-grade" style="color:' + ink + '">' + g + ' · ' + s + '</p>' +
-      '<p class="engine-totals">' + (result.pass||0) + ' pass · ' + (result.warn||0) + ' warn · ' + (result.fail||0) + ' fail of ' + (result.total||0) + '</p>' +
+      '<p class="engine-totals">' + num(result.pass) + ' pass · ' + num(result.warn) + ' warn · ' + num(result.fail) + ' fail of ' + num(result.total) + '</p>' +
       '<p class="engine-desc">' + desc + '</p></div>';
   }
 
+  var STATUS_LABELS = { PASS: 'PASS', FAIL: 'FAIL', WARN: 'WARN', SKIP: 'N/A', MANUAL: 'Manual' };
+
   function statusBadge(status) {
-    var label = status === 'MANUAL' ? 'Manual' : status === 'SKIP' ? 'N/A' : status;
-    return '<span class="status status-' + status + '">' + label + '</span>';
+    if (typeof status === 'string' && Object.prototype.hasOwnProperty.call(STATUS_LABELS, status)) {
+      return '<span class="status status-' + status + '">' + STATUS_LABELS[status] + '</span>';
+    }
+    return '<span class="status">' + escapeHtml(status) + '</span>';
   }
 
   function renderChecks(checks, emptyText) {
@@ -258,7 +287,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
     for (var i = 0; i < checks.length; i++) {
       var c = checks[i];
       html += '<div class="check">' +
-        '<span class="check-id">' + c.id + '</span>' +
+        '<span class="check-id">' + escapeHtml(c.id) + '</span>' +
         '<div class="check-body">' +
           '<p class="check-title">' + escapeHtml(c.item) + ' ' + statusBadge(c.status) + '</p>' +
           '<p class="check-detail">' + escapeHtml(c.detail) + '</p>' +
@@ -295,7 +324,7 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
     ];
     var html = '';
     for (var i = 0; i < tabs.length; i++) {
-      html += '<button class="tab" data-tab="' + tabs[i].key + '" aria-selected="' + (tabs[i].key === activeTab ? 'true' : 'false') + '">' + tabs[i].label + ' (' + tabs[i].count + ')</button>';
+      html += '<button class="tab" data-tab="' + tabs[i].key + '" aria-selected="' + (tabs[i].key === activeTab ? 'true' : 'false') + '">' + tabs[i].label + ' (' + num(tabs[i].count) + ')</button>';
     }
     tabsEl.innerHTML = html;
     var btns = tabsEl.querySelectorAll('.tab');
@@ -314,16 +343,16 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
     targetUrlEl.textContent = result.url || '';
     titleEl.textContent = 'Design-Intelligence Report';
 
-    var cs = result.compositeScore, cg = result.compositeGrade;
-    compositeEl.innerHTML = dial(cs || 0, cg || 'F') +
+    var cs = num(result.compositeScore), cg = escapeHtml(result.compositeGrade) || 'F';
+    compositeEl.innerHTML = dial(cs, cg) +
       '<div class="composite-meta">' +
-        '<p class="composite-grade">Composite grade ' + (cg || 'F') + '</p>' +
-        '<p class="composite-score">' + (cs || 0) + '/100 · score×0.5 + drift×0.3 + readiness×0.2</p>' +
-        '<p class="composite-totals"><span class="badge-pass">' + (result.totalPass||0) + ' pass</span> · ' +
-          '<span class="badge-warn">' + (result.totalWarn||0) + ' warn</span> · ' +
-          '<span class="badge-fail">' + (result.totalFail||0) + ' fail</span> · ' +
-          (result.totalManual||0) + ' manual · ' +
-          (result.totalSkip||0) + ' N/A of ' + (result.totalChecks||0) + ' checks</p>' +
+        '<p class="composite-grade">Composite grade ' + cg + '</p>' +
+        '<p class="composite-score">' + cs + '/100 · score×0.5 + drift×0.3 + readiness×0.2</p>' +
+        '<p class="composite-totals"><span class="badge-pass">' + num(result.totalPass) + ' pass</span> · ' +
+          '<span class="badge-warn">' + num(result.totalWarn) + ' warn</span> · ' +
+          '<span class="badge-fail">' + num(result.totalFail) + ' fail</span> · ' +
+          num(result.totalManual) + ' manual · ' +
+          num(result.totalSkip) + ' N/A of ' + num(result.totalChecks) + ' checks</p>' +
       '</div>';
 
     enginesEl.innerHTML =
@@ -375,6 +404,10 @@ export function buildReportAppHtml(targetUrl: string, baseUrl: string): string {
 
   // Listen for tool-result pushes from the host (MCP Apps bidirectional channel).
   window.addEventListener('message', function(event) {
+    // Only the host that embeds this page may drive it. A page opened on its
+    // own has no host, and a message from any other window (another tab, a
+    // popup, or a page that opened this one) is ignored.
+    if (window.parent === window || event.source !== window.parent) return;
     if (!event.data || typeof event.data !== 'object') return;
     var msg = event.data;
     if (msg.jsonrpc !== '2.0') return;
