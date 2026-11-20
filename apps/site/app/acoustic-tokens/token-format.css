@@ -1,26 +1,35 @@
 /* The reference-format card (token-format.tsx), imported by the component,
-   so /acoustic-tokens and /labs/acoustics both carry it. The card is P2's
+   so /acoustic-tokens and /labs/acoustics both carry it. The card is the
    face/side definition (globals.css, .definition-split); only the code well
    and the accented value are set here.
 
-   The JSON is code, so it never wraps: white-space: pre, one pair per line,
-   in a well that scrolls sideways if a line is ever wider than the face.
-   Inherited overflow-wrap: anywhere broke '"$des|cription"' across two lines
-   at 390. Its size steps down with the face (the face is the query
-   container) so the longest line, 37 characters, fits from a 320px screen up
-   and the well never needs to scroll at a supported width. Its ceiling is
-   the label step (12.8px), the floor for all text: it was 0.75rem, so the
-   sample sat at 12px however wide the face was. It reaches the ceiling from
-   a 354px face (about a 440px screen); on a 390px screen the face is 310px
-   and the fit holds it at 11.1px, which is this rule working, not the
-   ceiling. The budget is 37 characters at the face's widest rendered
-   advance. Atkinson Hyperlegible Mono is 0.632em in
-   its font file, but Chrome on Windows rounds each advance to a whole pixel
-   at these sizes: measured 0.694em at 11.52px and 0.667em at 12px (Geist
-   Mono rendered 0.608em and 0.583em there). 37 x 0.697em is 25.8em, so the
-   longest line fits on every platform; at 23.5em it ran 23px past the well
-   at 390 on Windows. At 12.8px the advance still rounds to 8px (0.625em),
-   inside the budget. */
+   The sample is the label step (--text-label, the floor for all text) at
+   every width, and the well does not scroll sideways. It used to keep each
+   line whole (white-space: pre) and shrink with the face to fit the longest
+   one, 37 characters, which set it at 8.4px on a 320px screen and 11.1px at
+   390. A well that scrolls instead would take a keyboard stop from
+   lib/scroll-regions, and this card is one button
+   (lib/definition-copy-enhancer): a stop inside a button fails WCAG 4.1.2.
+   So the size holds and a long line wraps.
+
+   At the default text size a pair wraps in one place: between its key and
+   its value. token-format.tsx renders each source line as its own block
+   (.token-format-line) and the value of a key/value pair as one inline box
+   (.token-format-value). The box moves to the next line whole when it does
+   not fit beside its key, and what wraps hangs two characters in from the
+   line's own indent (--hang, set on each line). The widest value is 19
+   characters and hangs 4 in, and the well holds at least 26 on a 320px
+   phone (216px, at about 8px a character), so the key and the value both
+   stay whole. On a phone under about 400px wide the longest line wraps;
+   wider, none does.
+
+   At a larger text size a value wider than the well wraps inside its own
+   box, a key wider than the well breaks where it has to (overflow-wrap),
+   and the hang stops at two fifths of the face (the face is the query
+   container), so the hang never takes the whole line. Without that stop
+   the well ran 8px over on a 320px screen at twice the default text size.
+   overflow-x stays as the fallback: a line that still cannot fit scrolls
+   inside the well and never widens the page. */
 .token-format > .definition-face {
   container-type: inline-size;
 }
@@ -32,18 +41,44 @@
   background: var(--surface-soft);
   box-shadow: inset 0 0 0 1px var(--line-faint);
   color: var(--ink);
-  font: 500 min(var(--text-label), (100cqi - 2 * var(--space-12)) / 25.8) / 1.6 var(--mono);
+  font: 500 var(--text-label) / 1.6 var(--mono);
   font-variant-ligatures: none;
   tab-size: 2;
-  white-space: pre;
-  overflow-wrap: normal;
+  white-space: normal;
   overflow-x: auto;
 }
 
+/* The newlines between the line blocks stay in the markup, so the text of
+   the <code> is the JSON exactly. They collapse here (white-space: normal
+   on the well); each line keeps its own indent (pre-wrap, below). */
 .token-format-json code {
+  display: block;
   font: inherit;
   color: inherit;
   white-space: inherit;
+}
+
+/* One block per source line, hung on its own indent: --hang is the line's
+   indent plus two characters, in ch of the mono face (token-format.tsx).
+   The padding and the first line's pull are one length, capped at 40cqi of
+   the face in both, so they cancel: the first row starts at the well's
+   edge and what wraps continues at the hang. */
+.token-format-line {
+  display: block;
+  padding-inline-start: min(var(--hang, 0px), 40cqi);
+  text-indent: calc(-1 * min(var(--hang, 0px), 40cqi));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A pair's value: an atomic inline that moves to the next line whole, and
+   wraps inside itself only when it is wider than the line (max-width). It
+   is a block container, so it drops the line's hanging text-indent. */
+.token-format-value {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+  text-indent: 0;
 }
 
 /* The proposal is the card's one accent: the type this system adds. */
