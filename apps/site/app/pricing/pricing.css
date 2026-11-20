@@ -83,8 +83,14 @@
   letter-spacing: -0.01em;
 }
 
+/* The sentence that says what the tier is. It was on the label step, the
+   smallest text in the card, over a list set at the body size; it takes the
+   body size, in the reading grey so the list under it still leads in ink.
+   The 66ch cap holds its measure where the tiers stack and a card is the
+   page's width (under 860px). */
 .pricing-card-sub {
-  font-size: var(--text-label);
+  max-width: 66ch;
+  font-size: var(--text-body);
   color: var(--muted);
   text-wrap: pretty;
   line-height: var(--leading-prose);
