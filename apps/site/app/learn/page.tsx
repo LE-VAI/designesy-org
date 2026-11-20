@@ -92,7 +92,7 @@ export default function LearnPage() {
                   </span>
                   <span className="row-body">
                     <span className="row-title">{article.title}</span>
-                    <span className="row-meta">{article.lede}</span>
+                    <span className="row-meta row-meta--prose">{article.lede}</span>
                   </span>
                   {/* The article's kind over its read time: data, so it sits
                       in the side pane on the 7-line, with the arrow. */}

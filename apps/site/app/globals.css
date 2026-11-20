@@ -5103,6 +5103,19 @@ button.row {
   min-height: 2.75rem;
 }
 
+/* The prose form of the description. The row contract gives a row "One line
+   of description", and the caption size and grey above suit that line. On a
+   few lists the description is sentences people read, three lines and up at
+   a phone's width: there the caption form set whole paragraphs at the label
+   step, under the reading floor. Those lists mark the description
+   .row-meta--prose and it takes the reading size, grey and leading. Every
+   other list keeps the caption form. */
+.row-meta--prose {
+  color: var(--muted);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
 
 /* Inline desc after title (Seven Layers style) */
 

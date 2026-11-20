@@ -242,7 +242,7 @@ export default function OpenPage() {
                       : `${KIND_LABEL[pkg.kind]} · `}
                     {pkg.title}
                   </span>
-                  <span className="row-meta">{pkg.lede}</span>
+                  <span className="row-meta row-meta--prose">{pkg.lede}</span>
                   {/* The paths: human, then machine. A separator leads the
                       second and is clipped when the pair wraps, so no line
                       starts or ends on one. */}

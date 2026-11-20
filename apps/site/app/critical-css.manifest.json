@@ -752,6 +752,7 @@
   "|.row-check:before",
   "|.row-copy-badge",
   "|.row-index",
+  "|.row-meta--prose",
   "|.row-meta.open-package-paths",
   "|.row-meta.open-package-paths a",
   "|.row-side-arrow",
