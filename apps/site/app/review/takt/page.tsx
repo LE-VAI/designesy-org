@@ -170,6 +170,14 @@ const VERIFICATION = [
 
 const REVIEWED = '2026-07-13';
 
+// The lab page was checked again on CHECKED_AGAIN. The findings in this file
+// are the review's record and are left in place. CHECKED_AGAIN_NOTE names the
+// rules the lab page's Verification section now marks fail.
+const CHECKED_AGAIN = '2026-11-20';
+
+const CHECKED_AGAIN_NOTE =
+  `This review is dated ${REVIEWED}. The lab page was checked against the shipped CSS on ${CHECKED_AGAIN}, and three rules confirmed here are now marked fail on /labs/takt: press scale, skip animation on page load, and will-change. The lab page's header and sections animate once on load, check-grid cells press at 0.992 where the review found 0.96, and will-change stays on in three places. The findings stay on this page as the review's record.`;
+
 const SUMMARY =
   'Takt is a considered lab. The live CSS confirms every rule: no transition:all, will-change restricted to transform/opacity, press scale 0.96 on cells and 0.985 on larger surfaces, concentric radii holding, stagger at 80ms increments. The lab codifies what the site already does. Two rules remain unverified (image outlines, with no image surfaces yet; mobile hit area, tested on desktop only). Five rules are promoted into contract v0.1.2. Remaining work is verification and synchronization.';
 
@@ -276,6 +284,11 @@ export default function TaktFieldCheckPage() {
               </dl>
             </div>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up" id="checked-again">
+          <h2 className="doctrine-heading">{`Lab page checked again · ${CHECKED_AGAIN}`}</h2>
+          <p className="surface-note">{CHECKED_AGAIN_NOTE}</p>
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
@@ -478,10 +491,12 @@ export default function TaktFieldCheckPage() {
 
         <div className="status-note">
           Field check of Lab Two · Takt using Use Kit One · Design Review.
-          Outcome: pass with notes. Live CSS confirms every verifiable rule.
+          Outcome: pass with notes. On {REVIEWED} the review found that the
+          live CSS confirmed every verifiable rule.
           Five takt rules adopted into contract v0.1.2. Remaining notes are
           image-outline and mobile-hit-area verification, and synchronization
-          after adoption.
+          after adoption. The lab page was checked again on {CHECKED_AGAIN}, and
+          three rules confirmed here are now marked fail there.
         </div>
       </main>
 
