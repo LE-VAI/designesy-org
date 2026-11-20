@@ -3082,8 +3082,14 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
 }
 
 /* --- Lab crumbs: signal underline grow --- */
+/* The crumb is a link of one short word and its box was the glyphs' 15px.
+   Block padding on an inline box adds to the box and not to the line, so 5px
+   each side makes it 25px, past the 24px target floor, and the eyebrow does
+   not move. The underline is placed from the box's bottom edge, so it gives
+   the padding back and stays 1px under the word. */
 .lab-crumb {
   position: relative;
+  padding-block: var(--space-5);
 }
 .lab-crumb::after {
   content: "";
@@ -3092,7 +3098,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   right: 0;
   transform: scaleX(0);
   transform-origin: left center;
-  bottom: -1px;
+  bottom: calc(var(--space-5) - 1px);
   height: 1px;
   background: var(--signal);
   transition: transform 200ms var(--ease-out);

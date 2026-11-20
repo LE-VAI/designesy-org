@@ -8,14 +8,19 @@
    Inherited overflow-wrap: anywhere broke '"$des|cription"' across two lines
    at 390. Its size steps down with the face (the face is the query
    container) so the longest line, 37 characters, fits from a 320px screen up
-   and the well never needs to scroll at a supported width; at 390 and wider
-   it is the 12px mono step. The budget is 37 characters at the face's
-   widest rendered advance. Atkinson Hyperlegible Mono is 0.632em in
+   and the well never needs to scroll at a supported width. Its ceiling is
+   the label step (12.8px), the floor for all text: it was 0.75rem, so the
+   sample sat at 12px however wide the face was. It reaches the ceiling from
+   a 354px face (about a 440px screen); on a 390px screen the face is 310px
+   and the fit holds it at 11.1px, which is this rule working, not the
+   ceiling. The budget is 37 characters at the face's widest rendered
+   advance. Atkinson Hyperlegible Mono is 0.632em in
    its font file, but Chrome on Windows rounds each advance to a whole pixel
    at these sizes: measured 0.694em at 11.52px and 0.667em at 12px (Geist
    Mono rendered 0.608em and 0.583em there). 37 x 0.697em is 25.8em, so the
    longest line fits on every platform; at 23.5em it ran 23px past the well
-   at 390 on Windows. */
+   at 390 on Windows. At 12.8px the advance still rounds to 8px (0.625em),
+   inside the budget. */
 .token-format > .definition-face {
   container-type: inline-size;
 }
@@ -27,7 +32,7 @@
   background: var(--surface-soft);
   box-shadow: inset 0 0 0 1px var(--line-faint);
   color: var(--ink);
-  font: 500 min(0.75rem, (100cqi - 2 * var(--space-12)) / 25.8) / 1.6 var(--mono);
+  font: 500 min(var(--text-label), (100cqi - 2 * var(--space-12)) / 25.8) / 1.6 var(--mono);
   font-variant-ligatures: none;
   tab-size: 2;
   white-space: pre;
