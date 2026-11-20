@@ -6,6 +6,138 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The npm engine's address check: one check reads a URL's host and every
+address its lookup gets for a name** (npm `@designesy/score`, from its
+next release; the hosted engine is not changed and no version moves).
+The engine refuses an address in any range that is not public: every
+range ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges, and
+::/96, the IPv4-compatible addresses. The ranges are written out in
+`packages/score/src/engine.ts`, so the check adds no dependency.
+
+### Fixed (npm address checks)
+
+- **One check for a host and for every answer.** `isValidUrl`, for a URL
+  whose host is an IPv4 address, the lookup's path for an IPv4 host, and
+  each address the lookup's resolver answers, IPv4 and IPv6, all go
+  through `isPublicAddress`. An answer is judged by its address,
+  whatever family it is labelled with, and one answer that is not public
+  refuses the name, whether the lookup is asked for every address or for
+  one.
+- **Every form node:dns writes is read.** The check reads dotted IPv4,
+  and IPv6 hex groups compressed or in full, in either case, with an
+  IPv4 address in place of the last two groups or with a zone id, which
+  it drops. That covers every form node:dns writes. A string it cannot
+  read as an IP address is refused.
+- **An IPv4-mapped answer is refused whatever IPv4 address it holds**,
+  and so is an answer in ::/96.
+- **Carrier-grade NAT is 100.64.0.0/10.** The engine refused every
+  address from 100.64.0.0 to 100.255.255.255. 100.128.0.0 to
+  100.255.255.255 are public, and a URL at one of them is now read.
+- **An IPv6 answer whose first group is written with two or three digits
+  and starts with fc or fd** (00fc, 00fd, and 0fc0 to 0fdf in full) is
+  in no range of the table, and ipaddr.js 2.5.0 calls it unicast, so it
+  is now accepted. The engine read it as unique local, which is
+  fc00::/7.
+- The IPv4 ranges: "this network" (0.0.0.0/8), private, carrier-grade
+  NAT, loopback, link-local, the reserved and documentation ranges
+  (192.0.0.0/24, 192.0.2.0/24, 192.88.99.0/24, 198.18.0.0/15,
+  198.51.100.0/24, 203.0.113.0/24, and 240.0.0.0/4, which holds the
+  broadcast address), AS112, AMT and multicast. The IPv6 ranges: ::/96,
+  IPv4-mapped, IPv4-translated, NAT64 (64:ff9b::/96 and 64:ff9b:1::/48),
+  discard, 2001::/23 (which holds Teredo, benchmarking, AMT, AS112,
+  ORCHID and drone remote ID), the documentation ranges, 6to4, AS112,
+  segment routing, unique local, link-local, site-local and multicast.
+- The package README's SSRF section lists what the check refuses.
+
+### Results that can move (npm address checks)
+
+- A URL whose host is an IPv4 address from 100.128.0.0 to
+  100.255.255.255 is read and scored, where it was reported unreachable
+  with no request made. A stylesheet or `/DESIGN.md` at such a host is
+  read, and a redirect to one is followed.
+- A URL whose host is an IPv4 address in a range that is not public, or
+  whose name the engine's lookup resolves to an address in one, is not
+  requested. The engine still tries the page's other candidate URLs, and
+  when none of them can be read the page is reported unreachable
+  (`network`). Such a stylesheet is left out of the CSS read, v37 is
+  SKIP for such a `/DESIGN.md`, and a redirect to such a URL is not
+  followed.
+- A host name of four dot-separated labels that each start with digits
+  could be refused as if it were the IPv4 address those digits spell. It
+  is now resolved and judged by its answers, like any other name.
+- A NAT64 answer (64:ff9b::/96) is refused, and one refused answer
+  refuses the name. On a network whose resolver adds NAT64 answers
+  (DNS64) for a site with only IPv4 addresses, that site is reported
+  unreachable.
+- On a seeded corpus of 3,406 addresses (every range edge, the address
+  on either side and the middle of each range ipaddr.js 2.5.0 names, and
+  seeded random addresses, the IPv6 ones written as node:dns writes
+  them), the engine's verdict now matches the reference (ipaddr.js 2.5.0
+  range() other than `unicast`, or ::/96) for all 6,768 checks of a URL
+  host, a lookup host and a lookup answer.
+- A page that is read is scored as before, and no check, rule, weight or
+  grade boundary changes.
+
+### Not changed (npm address checks)
+
+- The hosted engine and its URL guard. The site does not import the npm
+  engine.
+- `@designesy/cli`. It depends on `@designesy/score` ^0.9.2 from the npm
+  registry, so it picks the check up at the next 0.9.x release of
+  `@designesy/score`; a 0.10.0 release would need its dependency raised.
+  Its source is not changed.
+- The source of the repo's own CLI, `cli/designesy-score.mjs`
+  (`npm run score`). It imports the engine built in `packages/score`, so
+  it runs the check once that is built from this commit.
+- The rest of `isValidUrl`: the protocol, a host with no dot, any IPv6
+  host, and the numeric, octal and hex label rules, which read the host
+  after the URL parser has rewritten it.
+- Redirects (at most 3), the read limits and the timeouts.
+- A request Node sends through a proxy: the proxy resolves the name, and
+  the check does not see its answers.
+- The calibration corpus, the offline engine's golden, and every verdict
+  for a page that is read.
+- Versions. `@designesy/score` stays 0.9.3 and `ENGINE_VERSION` stays
+  1.5.4, and nothing is published.
+
+### Gates (npm address checks)
+
+- `packages/score/test/ssrf.test.mjs` holds 52 new cases, 68 in all.
+  Each range above is refused at its first and last address and one
+  inside it, as a URL host (IPv4) and as a lookup answer, and each
+  address just outside it that no listed range holds is accepted. More
+  cases cover IPv4-mapped answers, ::/96 answers in the form node:dns
+  writes them, upper case, zone ids, full and zero-padded groups and an
+  IPv4 tail, strings that are not an address (a malformed IPv4 tail
+  among them), an answer labelled with the other family, a list with one
+  answer that is not public, a lookup asked for one address, an IPv4
+  host handed to the lookup (judged with no lookup made), and a page, a
+  stylesheet (listed before or after a public one), a `/DESIGN.md` and a
+  redirect (the first, second or third hop of a chain) at an IPv4 host.
+  The cases replace node:https get and node:dns/promises lookup, so they
+  open no socket and resolve no name. On the engine before this change
+  36 fail, and the 16 marked control pass on both.
+- 133 single-edit mutants of the built engine, each run against the
+  file: each range dropped, each prefix one bit shorter and one bit
+  longer, 24 edits of the parser and the lookup, the check removed
+  before each kind of request (a candidate URL, a stylesheet, the
+  `/DESIGN.md` and a redirect target), and the check run on a redirect
+  target only at the first hop or the first two, or on a stylesheet only
+  while no CSS is held. 128 fail 1 to 31 cases. The other 5 give the
+  same verdict for every address: 224.0.0.0/3 in place of 224.0.0.0/4 or
+  240.0.0.0/4, and fe80::/9 in place of fe80::/10 or fec0::/10, each the
+  union of two listed ranges; and an IPv4 tail with its two groups
+  swapped, since no IPv6 range in the table is longer than /96.
+- The source-drift baseline lists `NON_PUBLIC_RANGES`, `addressBytes`
+  and `isPublicAddress` as engine-only, in place of `isPrivateIPv4`.
+- In `packages/score` on Node 24.15.0, `npm run build`,
+  `node scripts/export-corpus.mjs --check` (34 fixtures, the digest as
+  on main) and `node scripts/export-offline-golden.mjs --check` (152
+  cases) exit 0. `npm test` passes 489 of 489 with no connection allowed
+  past loopback and 13 tests left out, which reach a live host or
+  resolve a name under `.invalid`. With no network, 10 of those 13 fail,
+  the same 10 as on main.
+
 **Twelve more share cards carry a plate, descriptions people read are set at
 the reading size, and two link boxes meet the target floor** (the site; no
 version moves). Five visual changes, each its own pull request (#448, #449,

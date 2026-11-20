@@ -102,9 +102,9 @@ One optional dependency: Google's [`@google/design.md`](https://github.com/googl
 ## SSRF guard
 
 Built-in SSRF protection rejects:
-- Private IP ranges (10.x, 127.x, 169.254.x, 172.16-31.x, 192.168.x)
-- Cloud metadata endpoints (169.254.169.254)
-- All IPv6 addresses
+- An address in a range that is not public, as a URL's IPv4 host and as any address, IPv4 or IPv6, that the engine's own lookup gets for a host name: every range ipaddr.js 2.5.0 names (private, loopback, link-local, carrier-grade NAT, the reserved and documentation ranges, multicast, unique local and the rest), and ::/96. The engine holds its own copy of the ranges and does not load ipaddr.js.
+- An IPv4-mapped IPv6 address that the engine's own lookup gets, whatever IPv4 address it holds
+- All IPv6 addresses as a URL host
 - Encoded IP bypasses (decimal, octal, hex)
 - Redirect chains to internal addresses
 
