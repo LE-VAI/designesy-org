@@ -1,6 +1,9 @@
 /**
  * Designesy Labs — machine-readable data for the four published labs.
  * Source: design-system-contract.ts adopted sections + lab page content.
+ * For Takt and Cadence, verified_against follows each lab page's Verification
+ * section, and unverified carries a row for each rule that section marks fail.
+ * Both are newer than the contract's copy.
  *
  * Each lab is a design experiment that compiled into contract rules.
  * This module provides the machine export for each lab.
@@ -60,7 +63,7 @@ export const labs = {
       'Spare will-change: only transform, opacity, or filter (only when a stutter was observed)',
     ],
     verified_against:
-      'Live CSS audit (47,680 bytes): all transitions, scales, will-change, radii, outlines parsed',
+      'The shipped CSS, checked on 2026-11-20 against the rules in the Verification section of the lab page (the field check audited a 47,680-byte stylesheet in July 2026). Pass: concentric radii, all nav links at 40px or more, the stagger demo (four bars, 100ms apart), and the rule against transition: all. Fail: press scale, skip animation on page load, and will-change. Each failed rule has a row under unverified.',
     verification: [
       'https://www.designesy.org/labs/takt',
       'https://www.designesy.org/review/takt',
@@ -68,6 +71,9 @@ export const labs = {
     unverified: [
       'Image outline rule: no image surfaces on designesy.org yet',
       'Mobile hit area 44px unverified; desktop 40px confirmed',
+      'Press scale fails (checked 2026-11-20). Seven values ship, from 0.995 down to 0.9: check-grid cells press at 0.992, and the small cells on the score page press at 0.9, under the 0.95 floor',
+      'Skip animation on page load fails on the lab page (checked 2026-11-20). The header rises and each section fades up once on load',
+      'will-change fails (checked 2026-11-20). It stays on for the scroll progress bar, the nav drawer at 720px and below, and the check mark of a checked cell',
     ],
     field_check: {
       outcome: 'pass with notes',
@@ -97,18 +103,19 @@ export const labs = {
       'Selection: ::selection styled with a token color (never default browser blue)',
       'user-select: none on UI chrome (buttons, labels, meta); body text stays selectable',
       '16px input floor on mobile: inputs never below 16px to avoid iOS auto-zoom',
-      'No decorative display fonts: system stack is the contract for public UI',
+      'Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data (amended from the v0.1.3 system-stack rule; the mono face changed in v0.4.5)',
     ],
     verified_against:
-      'Live CSS audit (48,755 bytes): font smoothing, line-heights, letter-spacing, text-wrap, tabular-nums, ::selection, user-select, rem scale, font-synthesis, text-underline-position, text-decoration-skip-ink, logical inline properties all parsed',
+      'The shipped CSS, checked on 2026-11-20 against the rules in the Verification section of the lab page (the field check audited a 48,755-byte stylesheet in July 2026). Pass: rem scale, tracking on headings and labels, text-wrap, tabular-nums, ::selection, user-select, font-synthesis, text-underline-position, text-decoration-skip-ink, and logical inline properties. Pass with notes: font smoothing (set on body, where the rule names the root) and line-height (1.08 on section headings, 1.55 on body, 1.02 on the page title). Fail: the measure, block-axis logical properties, and border-inline-start. Each failed rule has a row under unverified.',
     verification: [
       'https://www.designesy.org/labs/cadence',
       'https://www.designesy.org/review/cadence',
     ],
     unverified: [
-      'Block-axis logical properties (margin-block-start/end) not yet migrated: only inline-axis done',
-      'border-left decorative accents not yet migrated to border-inline-start: visual regression risk needs testing',
-      'inset left/right positioning not yet migrated to inset-inline: absolute positioning needs case-by-case review',
+      'Block-axis logical properties fail (checked 2026-11-20). Partly migrated: padding-block and margin-block are in use, and most block margins and padding are still physical',
+      'border-inline-start fails (checked 2026-11-20). It is used once, and the border-left accents are not yet migrated: visual regression risk needs testing',
+      'inset left/right positioning partly migrated to inset-inline: absolute positioning needs case-by-case review',
+      'Measure fails (checked 2026-11-20). Lab page notes are capped at 660px, about 90 characters a line, and the page shell at 1180px to 1560px. The rule asks 520 to 580px and a 1080px shell',
     ],
     field_check: {
       outcome: 'pass with notes',
