@@ -5,8 +5,8 @@ import { openIndex } from './open-index';
  * The Graph shows how sources become shipped work through the Designesy pipeline.
  * Source: docs/designesy/03-architecture.md (Graph layer definition)
  *
- * This is the public surface of the internal Graph. It shows the chain
- * without internal paths or control-plane naming.
+ * The page and /graph.json list each stage of the chain with public
+ * examples only.
  */
 export const graph = {
   version: '0.1',
