@@ -6,6 +6,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Twelve more share cards carry a plate, descriptions people read are set at
+the reading size, and two link boxes meet the target floor** (the site; no
+version moves). Five visual changes, each its own pull request (#448, #449,
+#450, #451, #452). Twelve share cards had no picture. On five lists the
+row's description ran as a paragraph at the caption size, 12.8px, and on
+four of them in the dim grey. On `/pricing` each tier's description was at
+the smallest size in its card. The source links on `/docs/mcp` and the crumb
+link in the eyebrow of 17 pages had boxes 17px and 15px tall, under the 24px
+target floor. No check, scoring rule, weight or score moves, and the design
+contract, its version and its lock are unchanged.
+
+### Changed (share cards, row and pricing descriptions, floors)
+
+- **Twelve more share cards carry a plate in the tile's place, each drawn
+  from the module its page reads**: the category weights on `/methodology`,
+  the checks by group on `/drift`, the probed paths on `/readiness`, the six
+  files on `/guardrails`, the diff checks on `/compare`, the 17 tool names
+  on `/docs/mcp`, the chain's stages on `/graph`, the required fields on
+  `/specs`, the price on `/pricing/review`, the current contract and engine
+  versions on `/changelog`, the three tiers with their prices on `/pricing`,
+  and the assessment's six axes by four stages on `/maturity`. The tiers
+  moved from the pricing page to `app/pricing/tiers.ts`, and the axes and
+  stage names from the maturity form to `app/maturity/axes.ts`, unchanged,
+  so each page and its card read one list.
+- **Row descriptions that run as paragraphs are set as reading text.** On
+  five lists the description takes the body size (16px), the reading grey
+  and the body leading, through a new `.row-meta--prose` form: the packages
+  on `/open`, the tools on `/docs/mcp`, what may be collected on `/privacy`,
+  the suggested thread on `/open/handoff`, and the article list on `/learn`.
+  At 390px wide, 50 of their 53 descriptions ran three lines or more. Every
+  other list keeps the row contract's one-line caption form. The five pages
+  are 2.5% to 13.2% taller.
+- **The `/docs/mcp` override this replaces is removed.** `docs.css` raised
+  the colour of the tool descriptions and left their size on the label step.
+  The prose form covers both, in one place.
+- **On `/pricing`, each tier's description is set at the body size** with a
+  66ch cap on its width. At 768px wide, where the tiers stack, two of the
+  descriptions ran one line of about 110 characters; every description now
+  runs two lines there, the first of about 84 to 92 characters. The Review
+  card's description uses the same class and changes with it. The tiers'
+  shared rows hold: the first bullets sit at one height across the three
+  tiers from 860px up.
+
+### Fixed (share cards, row and pricing descriptions, floors)
+
+- **The source path links on `/docs/mcp` have a 25px box**; it was 17px.
+  Each sits on a data line of its row and outside any sentence, so the 24px
+  target floor applies. Block padding on an inline box grows the box and
+  leaves the line as it is, so no row height changes.
+- **The crumb link in the eyebrow of 17 pages has a 25px box**; it was 15px.
+  The eyebrow's height is unchanged, and the crumb's hover underline stays
+  1px under the word.
+- **The reference-format code sample's ceiling is the label step, 12.8px**;
+  it was 12px, under the step the type scale calls the floor for all text.
+  The sample reaches it from a screen about 440px wide. This change leaves
+  the fit that sizes it on narrower screens as it was. `/acoustic-tokens`
+  and `/labs/acoustics` are 9px to 10px taller at 430px wide and 14px to
+  15px taller from 440px; widths from 413px to 429px were not measured.
+
+### Not changed (share cards, row and pricing descriptions, floors)
+
+- Each share card's title, lede and `alt` text. `/benchmarks` is the one
+  share card still without a picture.
+- The wording of every page: #450, #451 and #452 change class names and
+  stylesheet rules only, and the Markdown exports of the five list pages and
+  `/pricing.md` are as they were.
+- Every other row list, and the path lines under the package rows on
+  `/open`, keep the caption form.
+- On `/pricing`, the price, its suffix, the tier name, the list and the
+  buttons.
+- Outside the two code-sample pages, the floors change no page height, and
+  the eyebrow stays 19.8px tall.
+- Every colour, size, space and radius token.
+
+### Gates (share cards, row and pricing descriptions, floors)
+
+- No gate was added or changed. `app/critical-css.manifest.json` gained one
+  key, the `.row-meta--prose` rule, which `check-critical-css` requires for
+  any rule a page uses.
+
 **The report page draws what it is given as text, and only its host
 drives it** (the site; no version moves). The page at `/api/report/app`,
 which the MCP server also serves as `ui://designesy/report-app`, starts a
@@ -978,11 +1058,13 @@ contract, its version and its lock are unchanged.
 
 ### Not changed (section headings, lab plates, share cards)
 
-- 13 share cards still have no picture: `/benchmarks`, `/changelog`,
-  `/compare`, `/docs/mcp`, `/drift`, `/graph`, `/guardrails`, `/maturity`,
-  `/methodology`, `/pricing`, `/pricing/review`, `/readiness` and `/specs`.
-  The icon family has no icon that means what those pages are, and the
-  card code does not borrow one that means something else.
+- 13 share cards had no picture when these three merged: `/benchmarks`,
+  `/changelog`, `/compare`, `/docs/mcp`, `/drift`, `/graph`, `/guardrails`,
+  `/maturity`, `/methodology`, `/pricing`, `/pricing/review`, `/readiness`
+  and `/specs`. The icon family has no icon that means what those pages are,
+  and the card code does not borrow one that means something else. Twelve of
+  them have since gained a plate drawn from their page's data (#448 and
+  #449, above); `/benchmarks` is the one still without.
 - The `/score` share card, every page's markup outside `/labs`, and every
   colour, size, space and radius token.
 
