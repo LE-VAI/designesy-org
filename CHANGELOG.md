@@ -6,6 +6,844 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**designesy-mcp, next release: the offline engine resolves each stylesheet
+href as the npm engine does** (PyPI and the MCP registry; not yet released,
+and designesy-mcp stays 1.13.10). The npm engine resolves a stylesheet's
+href with `new URL(href, pageUrl)`, the URL Standard's parser. The Python
+server resolved it with urllib's `urljoin`, which follows RFC 3986, and for
+some hrefs the two give different URLs, or a URL where `new URL` gives none.
+The offline engine now resolves each href with a port of the URL Standard's
+parser, written with the standard library only. It asks for a page's sheets
+at the URLs the npm engine asks for, and two hrefs it reads as one sheet
+take one of its 60 places. Each sheet is read at the URL the parser gives,
+through the offline URL checks on every hop, as the page is, and a sheet
+they refuse is left out, as a sheet that fails to load always was. A page's
+hrefs are resolved until 60 distinct sheets are found or the hrefs resolved
+would pass 64 KiB, each counted as the longer of its own bytes and the URL
+it gives, or as its own bytes and what its host grew by as far as the parser
+built it when it is rejected once that host has gone through UTS #46. No
+more of a host is built once it can no longer fit what is left, and the scan
+for links reads no further than the first `rel=stylesheet` or `href="`
+65,536 characters or more past where they stop, or the page's end when there
+is none, so the time they take is bounded.
+
+### Fixed (designesy-mcp, next release: href resolution)
+
+- **An href resolves to the URL `new URL` gives.** `urljoin` kept a host's
+  case and a default port (`https://CDN.example:443/a.css`), read a
+  backslash as part of a path segment (`..\css\a.css` on `/blog/post` gave
+  `/blog/..\css\a.css`, where `new URL` gives `/css/a.css`), and kept dot
+  segments in an absolute href (`https://cdn.example/x/../a.css`). It kept a
+  scheme written in capitals on a page of the other scheme as it was, so
+  `HTTP://cdn.example/a.css` on an https page went into the page's CSS as a
+  line of text and was not read. It kept a space at an href's end, and on
+  Python 3.10.9 at its start too (`" /css/a.css "` on `/blog/post` gave
+  `/blog/ /css/a.css ` there). Each now resolves as `new URL` resolves it:
+  the scheme and host in lowercase, no default port, a backslash read as a
+  slash, dot segments removed, and spaces and control characters at the
+  ends dropped.
+- **A space or a character outside ASCII in a path is percent-encoded.**
+  `urljoin` kept them, and urllib then refused to send the request: a space
+  failed with "URL can't contain control characters", and a character
+  outside ASCII with a UnicodeEncodeError, so the sheet was left out.
+  `/css/a b.css` now reads `/css/a%20b.css`, and an e with an acute accent
+  in a path reads `%C3%A9`, as in the npm engine.
+- **An href `new URL` rejects is left out, and takes none of the 60
+  places.** Among them: a host holding a space, `<`, `>`, `^` or `|`, as
+  typed or percent-encoded, or a `%` left once its percent-escapes are
+  decoded (`https://exa mple.com/b.css`); a port above 65535 or with a
+  letter in it; a host whose last label is a number but which is no IPv4
+  address; and a malformed IPv6 address. `urljoin` kept each as a URL,
+  which took one of the 60 places, and the engine tried to read it.
+- **Two hrefs that `new URL` reads as one sheet take one place.** The
+  offline engine keeps the first 60 distinct sheet URLs in document order,
+  and distinct now means distinct as `new URL` writes them. On a page at
+  `https://h.example/`, `/a.css`, `https://h.example:443/a.css` and
+  `https://H.example/a.css` are one sheet, read once, and a sheet linked
+  again in another spelling no longer takes a place a later sheet needs.
+
+### Results that can move (designesy-mcp, next release: href resolution)
+
+- A page that links a sheet in one of these spellings can score differently
+  offline. A sheet is read where it was left out (a space or a character
+  outside ASCII in its path, a backslash, a scheme in capitals, or a host
+  typed with a character outside Latin-1 that `new URL` writes in ASCII),
+  a sheet linked in two spellings is read once where it was read twice and
+  its text was in the CSS twice, and a sheet past what were the first 60
+  URLs can be read where a second spelling took its place. Measured on one
+  page whose only stylesheet declares 17 custom properties and is linked as
+  `/css/site tokens.css`, in universal scope, with urllib's opener replaced
+  by a stand-in that serves the sheet at `/css/site%20tokens.css`, on Python
+  3.14.6 and 3.10.9: 56.2% (F) with no tokens before, and 86.4% (B) with 17
+  tokens now.
+- The offline URL checks see each sheet at the URL the parser gives, which
+  is not always the URL `urljoin` gave. A sheet whose href `new URL` reads
+  as a URL on another host is checked on that host, and read when it
+  passes. A sheet whose host is typed as a number in a form other than
+  four decimal parts is still refused, public or not, as such a host is
+  refused in the page URL and in a redirect's `Location`: the engine keeps
+  that host as typed in the URL it asks for (below).
+- A page whose host holds ß is read, as before, and its relative sheets
+  are now asked for at the host `new URL` gives, `xn--strae-oqa`, where
+  `urljoin` kept the page's host as written. A page whose host is typed
+  with a character outside Latin-1, such as ς, a ZWJ or a ZWNJ, is not
+  read, before this change or after it: urllib writes the Host header in
+  Latin-1 and cannot send the request. Given in its `xn--` form, such a
+  page is read, and its sheets resolve on that host. A sheet whose host is
+  typed with such a character is now read at the `xn--` form `new URL`
+  gives (`xn--mxa8a` for ας), where it was left out. Measured end to end,
+  with the real opener and the offline URL checks, on Python 3.14.6 and
+  3.10.9.
+- A page whose URL the parser rejects, the second parse below included, has
+  its linked sheets left out, and its inline styles are read. `urljoin`
+  resolved its hrefs against the URL as written. `new URL` rejects most such
+  page URLs too, so the npm engine reads no page there; the exceptions are
+  named below.
+- A sheet whose href `new URL` rejects is no longer asked for.
+- A page's hrefs are resolved in document order only until 60 distinct sheet
+  URLs are found, the most the engine reads, or until the next href would
+  take the hrefs resolved past 64 KiB, room for 60 hrefs that count 1,092
+  bytes each. Each href counts the longer of its own bytes in UTF-8 and the
+  URL it resolves to, so a short relative href on a page read at a long URL
+  counts that URL. An href whose own bytes would pass the budget is not
+  resolved, and one whose URL or count would pass it is left out once that
+  is known. An href rejected once its host has gone through UTS #46 counts
+  its own bytes and what its host, its percent-escapes decoded, grew by as
+  far as the parser built it, when that is more than nothing: while it was
+  mapping, the code points mapped as mapped; once it was mapped, the full
+  stops, the labels given their ASCII form in that form and the others as
+  mapped. The rest of the href counts as written, where an href that
+  resolves counts its URL, so the two can count far apart. On 10 labels of
+  an e with an acute accent and a path of 20,000 spaces, an href rejected
+  for its port counts 20,099 bytes, where with port 65535 it resolves to a
+  URL of 60,099; on 1,334 such labels and a path of 25,000 `./`, it counts
+  60,691 where with that port it counts 54,021. With a forbidden code point,
+  `|`, `<` or `^`, typed in a label of left-to-right letters outside ASCII,
+  which the parser finds only once that label is in its `xn--` form, all 84
+  such hrefs tried count 1 or 2 bytes further from the same href without it
+  than the bytes by which the two differ; the 21 tried with U+FF5C, which
+  maps to `|`, do not. Counted so, on a host of about 4,000 bytes of CJK
+  compatibility squares, 10 hrefs rejected once it is built reach the
+  parser, as for the href that resolves, where their own bytes alone would
+  let 16 in, and on 1,334 labels of one two-byte letter, 16 rejected at the
+  first label reach it where 6 resolve. The parser builds no more of a host
+  once the full stops, the labels in their ASCII form and, for each other
+  label, the fewer of its bytes as mapped and four more than its code points
+  after NFC, or its bytes when it holds more than 252 code points, pass what
+  is left, or the host once built does. Neither the URL nor the count of
+  such an href can be less than that, so it is left out and ends the hrefs
+  read, as it would be once either were known, and the sheets a page reads
+  do not change. One href of 65,515 bytes on 1,417 labels of compatibility
+  squares, whose URL is 141,955 characters, took 1.37 to 1.45 s to be left
+  out on Python 3.10.9 held to the slow cores of one Windows 11 machine, and
+  now takes 0.12 to 0.14 s. The sheets a page reads are its first 60
+  distinct ones, as before, while the budget lasts: a page whose hrefs up to
+  its 60th distinct sheet count 65,536 bytes or less between them reads the
+  sheets it would read with no budget, and a page whose hrefs pass 64 KiB
+  before its 60th sheet reads only the sheets before that point. So one href
+  of more than 64 KiB, such as a `data:` URL that holds a whole sheet, ends
+  the hrefs read, and the sheets linked after it are left out. An href past
+  either bound is not resolved, so one that is not http no longer goes into
+  the CSS as text. The page is scanned for links no further than the first
+  `rel=stylesheet` or `href="` 65,536 characters or more past the last link
+  the parse reads, or to its end when there is none.
+- An href with a scheme other than http or https still goes into the CSS as
+  a line of text, as in the npm engine, and the text is now the one
+  `new URL` writes: `DATA:text/css,a%7B%7D` is `data:text/css,a%7B%7D`.
+- An href that `urljoin` and `new URL` resolve alike is read as before.
+- The time an href takes to resolve grows with its length, and is longer
+  than `urljoin`'s. On one Windows 11 machine, best of three, with other
+  test runs going on, an href of 1,000,000 characters in its path, query,
+  fragment, userinfo, opaque path or host took at most 2.430 s on Python
+  3.14.6, 3.13.2, 3.12.4 and 3.10.9, where `urljoin` took at most 0.0046 s
+  and `new URL` on Node 24.15.0 at most 2.36 ms. An href of 99,989
+  characters whose host is 1,562 labels of 63 CJK code points took at most
+  3.247 s, where `new URL` took 13.56 ms. The parse runs after the page is
+  read and before its sheets are, under no read deadline of its own, so the
+  bound above holds a page's time. Pages at the 16 MiB read cap of `<link>`,
+  `<link href="a">` or `<linkhref=">` tags, then a budget's worth of links
+  whose hosts are labels of 63 CJK code points, of 63 Arabic letters, of 63
+  other two-byte letters, of CJK compatibility squares or of combining
+  marks, the Arabic letters and the squares also rejected once built or at
+  the last label, or one href of such labels whose own bytes fill the
+  budget, were timed in turn with the code before this change, in fresh
+  processes at several times in one day, on that machine with no other test
+  run going on, and so were the slowest pages a search of other tags and
+  links found on its slow cores on Python 3.10.9, and one with Syriac
+  letters tried later. Held to its slow cores, the slowest, `<linkhref='>`
+  tags then links whose hosts are labels of 63 Arabic or Syriac letters and
+  marks in turn, took 6.78 to 7.58 s on Python 3.10.9, where the code before
+  this change took 5.90 to 6.48 s; held to its fast cores, no page of the
+  kinds above took more than 4.16 s there, and on Python 3.14.6 none more
+  than 3.39 s on the fast cores and 6.02 s on the slow ones. The scan for
+  links reads such a page to the cap, as the code before this change did:
+  alone, `<linkhref=">` tags took 5.85 to 6.36 s on the slow cores of
+  3.10.9, and 5.63 to 5.88 s before this change. Under load, a page can take
+  more than 8 s on a slow core: with one other busy process held to the same
+  slow cores, `<linkhref=">` tags then Arabic letters with a number as the
+  last label took 8.06 and 9.06 s on Python 3.10.9 in fresh processes, where
+  the code before this change took 7.51 to 7.96 s; with eight processes that
+  each keep a core busy, it took 13.81 and 14.68 s, and 12.22 to 14.18 s
+  before this change. In one run on each of the four Pythons at each of two
+  times, held to the fast cores and then to the slow ones, pages at the cap
+  of links of those kinds, of hrefs of 300,000 characters and of short links
+  took at most 0.4 s and 0.8 s, but 2.5 to 3.3 s and 4.0 to 6.0 s where tags
+  with an href and no rel, which the scan reads whole, came first; the code
+  before this change took at most 3.2 s and 6.7 s. With no bound, the page
+  of 56 links whose hosts are 1,562 labels of 63 CJK code points took 65.7 s
+  on Python 3.14.6 and 63.2 s on 3.10.9.
+- On Python 3.10 to 3.13, NFC and NFKC take time that grows with the square
+  of a run of combining marks they must put in order, in one call that no
+  deadline cuts short; 3.14 does not. `urljoin`'s own check of a host
+  outside ASCII runs NFKC on it, so before this change one href whose host
+  is such a run took from 0.583 to 0.679 s to resolve on those Pythons at
+  65,535 bytes, which fills the budget, and from 2.338 to 2.506 s at 131,071
+  bytes, in fresh processes with no other test run going on, and was kept.
+  The engine runs NFC on one label at a time, and rejects a label that goes
+  through punycode and holds more than four times 63 code points before NFC
+  runs, as a character's canonical decomposition holds at most four: such a
+  label holds more than 63 after NFC. The href of 65,535 bytes is left out
+  in 0.066 to 0.081 s on each Python, the one of 131,071 bytes is past the
+  budget and not resolved, and a page at the read cap of links whose first
+  fills the budget with such a host resolves in 0.1 s in one run on each
+  Python, and in up to 0.2 s held to the slow cores of Python 3.10.9, where
+  nine runs of it alone took 0.143 to 0.158 s.
+
+### Not changed (designesy-mcp, next release: href resolution)
+
+- designesy-mcp stays 1.13.10, the offline engine still mirrors engine
+  1.5.4, and nothing is published. No check, rule, weight or score
+  arithmetic moves. The hosted route and the npm engine do not change.
+- Only a stylesheet href is resolved this way. The URL given to
+  `designesy_score`, a token file's URL and a Lottie file's URL are read as
+  before, through the same checks. A redirect's `Location` is resolved by
+  urllib, as before, and a page's sheets resolve against the URL urllib
+  landed on.
+- The offline URL checks, the read cap and the read deadline do not change.
+  Each sheet still has a deadline of its own.
+- An href the parser raises `ValueError` on is left out, and the page's
+  other sheets are read, as an href `urljoin` raised `ValueError` on was. A
+  port or an IPv4 number written with thousands of digits, leading zeros
+  and all, is read as `new URL` reads it, where `int()` of a decimal string
+  of more than 4,300 digits raises `ValueError` (CPython 3.10.7 and later).
+- `_extract_css_parts` keeps its signature and its order: inline `<style>`
+  text first, then each href in document order, up to the bound above.
+
+### Where the engine and `new URL` still differ (designesy-mcp, next release: href resolution)
+
+- **A host label too long for DNS.** A label that goes through punycode (one
+  with a character outside ASCII, or one written as `xn--`) and holds more
+  than 63 code points is rejected, so its href is left out. Its ASCII form
+  is longer than the 63 octets DNS allows in a label, so no engine can read
+  a sheet there; `new URL` accepts it, and the npm engine asks for its
+  sheet. Python's punycode codec takes time that grows with a label's length
+  times its distinct code points, and the label is rejected before the codec
+  runs. With the limit lifted, one label of 1,024 distinct CJK code points
+  took at most 0.325 s on Python 3.14.6, 3.13.2, 3.12.4 and 3.10.9, and one
+  of 4,096 at most 5.412 s, about 15 to 17 times as long for four times the
+  length, best of three with other test runs going on. With it, a label of
+  20,000 is rejected in at most 0.130 s, where `new URL` took 570.56 ms to
+  accept it.
+- **Unicode data.** A host with a character outside ASCII goes through
+  UTS #46, which the standard library does not carry. The engine maps it
+  with `unicodedata` (Unicode 13.0 on Python 3.10, 15.0 on 3.12, 15.1 on
+  3.13 and 16.0 on 3.14) and the exceptions Node's parser makes, where Node
+  24.15.0 has tables of its own. For a host with one such character, tried
+  at each code point in `a<c>b.example` and `<c>.example` (2,224,128
+  hrefs), the two agree on every code point Unicode 13.0 assigns. They
+  differ on 15,927 code points on Python 3.10.9, 10,822 on 3.12.4,
+  10,200 on 3.13.2 and 5,132 on 3.14.6, none of them assigned in Unicode
+  13.0, and on each the engine rejects the host and Node accepts it.
+- **RTL labels from Python 3.12 on.** For each code point the running
+  Python assigns above U+007F, after U+05D0 and between two U+0627, 0 hrefs
+  differ on Python 3.10.9, 509 on 3.12.4 and on 3.13.2, and 1,427 on
+  3.14.6. Of those, Node rejects 507, 507 and 1,423 that the engine
+  accepts, none of their code points assigned in Unicode 13.0, and the
+  engine rejects 2, 2 and 4 that Node accepts, over U+1734 (bidi class NSM
+  in Unicode 13.0, L from Python 3.12) and, on 3.14.6, U+1171E (NSM before
+  Python 3.14, L on it).
+- **A ZWNJ in an href's host.** One that is not right after a virama is
+  rejected. Node accepts one with a dual-joining or left-joining letter
+  before it and a dual-joining or right-joining letter after it, and the
+  standard library has no joining types.
+- **A page URL the engine's own checks reject.** Its sheets are still read
+  when it fails only for want of Unicode data Node has: the engine parses it
+  again, taking a code point that the running Python's `unicodedata` does
+  not assign as itself, and a ZWNJ that is not right after a virama as
+  valid. U+0C5C, which Node 24.15.0 accepts, is unassigned on every Python
+  from 3.10 to 3.14, and U+0897 on each before 3.14. The case set holds 10
+  cases that need the second parse on Python 3.10.9, 3.12.4 and 3.13.2, and
+  8 on 3.14.6, and each resolves as `new URL` resolves it. The second parse
+  also reads some page URLs Node rejects: one with a code point that neither
+  the running Python nor Node assigns, such as a host `xn--0x7f` (U+190EA),
+  and one with a ZWNJ between letters that do not join, such as `a` ZWNJ
+  `b`. As Node does with a ZWNJ it finds valid, the second parse checks
+  nothing after such a ZWNJ in its label. Such a page's sheets are read, as
+  they were with `urljoin`, on the host the parser gives. On Python 3.12 and
+  later a page URL with an RTL code point newer than Unicode 13.0 after a
+  Latin letter (`a` U+0870 `b`), which Node accepts, still leaves its sheets
+  out.
+- **A sheet host typed as a number in another form.** `new URL` writes a
+  host typed as a number in a form other than four decimal parts as four
+  decimal parts. The engine keeps such a host as typed in the URL it asks
+  for, so the offline URL checks refuse the sheet, public or not, as they
+  refuse such a host in the page URL and in a redirect's `Location`. The
+  sheet still takes its place among the 60, and `_resolve_href` gives
+  `new URL`'s URL. The 14 cases of the case set that type a host this way
+  hold both URLs. How the hosted route reads such a host is not changed
+  here.
+- **Where Node and the URL Standard differ, the engine follows Node:** a
+  label is held to the bidi rule only when it holds an R, AL or AN
+  character, and one that starts with an L character only before its last
+  character; a joiner right after a virama ends a label's checks; a label
+  that is `xn--` followed by `xn--` is rejected; and an `xn--` label that
+  decodes and passes is kept as written, in lowercase, where Python's
+  punycode codec writes some labels another way (`xn---uvw53efr` is
+  `xn--uvw53efr` to the codec). On a `file:` URL whose first path segment
+  starts with a drive letter, the engine follows the standard. Such an
+  href is not http, and only its text goes into the CSS.
+
+### Gates (designesy-mcp, next release: href resolution)
+
+- `packages/designesy-mcp/test/fixtures/href-resolution.json` (new): 263
+  stylesheet hrefs in 29 groups, each with the URL of the page that links
+  it and what `new URL` gives on Node 24.15.0 (null where it throws, in 57
+  of them). They cover controls, host and scheme case, default ports, ports
+  and hosts `new URL` rejects and accepts, numbers of thousands of digits
+  in a port and in an IPv4 address, backslashes, slashes, spaces and
+  control characters at the ends, tabs and newlines inside, spaces and
+  other characters in a path, queries and fragments, dot segments,
+  userinfo, IPv4, IPv6, hosts outside ASCII, `xn--` labels, a label of 63
+  code points outside ASCII, schemes other than http, and 19 page URLs
+  besides the default one: the site root, a port, a page URL in another
+  spelling, a host outside ASCII, an IPv6 address, a quote in a query, and
+  13 for the second parse. `node test/fixtures/href-resolution.mjs` in
+  packages/designesy-mcp checks each against the Node it runs on (0 of 263
+  differ on Node 24.15.0), and `--write` writes them. CI does not run it.
+- `packages/designesy-mcp/test/test_offline_href_resolution.py` (new, 334
+  tests): each of the 263 cases through `_extract_css_parts`; one test that
+  requires the offline URL checks to refuse each URL the 14 cases with a
+  host typed as a number in another form give; one test that runs them all
+  through `_resolve_href`, which has no handler for what the parser raises;
+  four pairs of spellings of one sheet that take one place, and a host `new
+  URL` rejects that takes none; an href and a page URL the parser raises on;
+  a line count; a timing test; an allocation count; a label of 64 code
+  points through punycode, CJK or `xn--`, left out; three tests of NFC; four
+  cases through `_fetch_page_parts` with urllib's opener replaced by a
+  stand-in; forty-nine tests of the bound; and two through
+  `_fetch_page_parts` with the real opener, against a server on 127.0.0.1
+  read through a name that resolves to a public address. The line count
+  reads ten hrefs, each with one long part, at n = 500 and at 4n: the path,
+  query, fragment, userinfo before and after a colon, opaque path, host, an
+  `@` in every other character, an `xn--` label and a label of distinct code
+  points outside ASCII. It counts the lines of Python the parser runs, with
+  `sys.settrace`, and fails when the second count is more than six times the
+  first, where it stops counting; on the four Pythons on Windows and on
+  Python 3.12.3 on Linux the ratios were from 3.2 to 3.9, and Python 3.12
+  counted the same lines for each href on both. The timing test times eleven
+  hrefs, each with one long part, at a length n and at 4n: the path, query,
+  fragment, userinfo before and after a colon, opaque path, host and an `@`
+  in every other character at n = 150,000, and a label of distinct code
+  points outside ASCII, labels of 63 of them and an `xn--` label at n =
+  2,500, 10,000 and 25,000. It times the two lengths in turn, best of three
+  each, and fails when the second time is more than eight times the first,
+  plus 50 ms, on two tries in a row. The allocation count reads ten of those
+  hrefs at n and at 4n (n = 4,000, and 500 for the label of distinct code
+  points outside ASCII) and counts the bytes the parser allocates, with
+  tracemalloc at each call and return: the most memory held since the last
+  one, above what was held then. It fails when the second count is more than
+  six times the first; on the four Pythons the ratios were from 3.2 to 4.0,
+  and on Linux from 3.9 to 4.0. Neither count reads a clock, so a machine's
+  load moves neither. A part read again from its start at each code point in
+  lines of Python runs lines that grow with the square of its length, and a
+  part copied whole at each code point allocates bytes that do, so the two
+  counts catch both. A part searched again at each code point by one call
+  into C that allocates nothing, such as `in` or `str.find`, runs no more
+  lines and allocates no more bytes, and work that grows that way inside one
+  such call, as NFC of a run of combining marks does on Python 3.10 to 3.13,
+  does neither: both show only to the timed tests. The tests of NFC: NFC is
+  given no label longer than four times 63 code points, on an href of more
+  than 32,000 combining marks at the budget, resolved alone and on a page,
+  where the bound counts each label's floor; NFC of a domain is NFC of its
+  labels, and no code point decomposes into more than four, over every code
+  point of the running Python; and a label NFC brings to 63 code points
+  resolves as its composed form, while one it brings to 64 is left out. The
+  tests of the bound: the parse stops at the href that would pass the
+  budget, to the byte, for an href that is its own URL, a relative one that
+  counts its URL and one of two-byte characters that counts its own bytes;
+  an href on a page read at a URL of 700 path segments counts that URL; an
+  href rejected once a host of compatibility squares is mapped, for a port
+  past 65535, a number, a forbidden code point (in an http and in a `file:`
+  URL) or an invalid label at its end, an invalid label in the middle or a
+  code point disallowed at the end, lets no more hrefs reach the parser than
+  an href on the same host that resolves; an href rejected for its port lets
+  as many reach it as its twin that resolves, on two-byte letters whose
+  `xn--` form is longer than their bytes, on CJK code points whose `xn--`
+  form is shorter, and on 1,000 labels of one square each; an href rejected
+  at its last label, on one label and on 24 of 63 two-byte letters, for a
+  combining mark at its start, 64 code points or a `|` at its end, and one
+  rejected at the first label or at U+FFFD on 1,334 labels of one such
+  letter, count the labels not yet in their ASCII form as mapped and let
+  more reach the parser than their twins; and one rejected before a code
+  point of its host is mapped counts its own bytes, all counted with no
+  clock; a host that can no longer fit what is left has none of its labels
+  checked, before a path, a port or in a `file:` URL, labels get their
+  `xn--` form only while they fit, the path after a whole host that does not
+  fit is not encoded, and four hrefs that fit what is left, one to the byte,
+  one only in its `xn--` form, one rejected at its first label and one to
+  the byte whose last label NFC shortens, are read or counted as before,
+  counted with no clock too; the scan for links makes no match past the 60th
+  distinct sheet or past the href that does not fit, and asks where
+  `rel=stylesheet` starts only in a tag with an href; the scan, in runs as
+  short as 0, 1 and 7 characters, gives each match of its pattern on 2,000
+  strings made at random for each, and the first k when k are taken; a
+  shorter href after the one that does not fit is not resolved and its sheet
+  not asked for; the parse stops at the 60th distinct sheet, where a repeat,
+  an href `new URL` rejects and a `data:` URL do not count, and nothing
+  after it is resolved; a page of 70 sheets reads its first 60 in order, as
+  the code before this change did; and pages at the 16 MiB read cap of hosts
+  of 21 and of 1,562 labels of 63 CJK code points, of one-byte hrefs on a
+  page read at a URL of 700 path segments, of hosts of 21 such labels until
+  the budget is spent and then the shortest link tag, and of hosts of
+  combining marks, one of which fills the budget, resolve within the 8 s
+  read deadline. With the stand-in, a page with 9 links in 9 spellings asks
+  for its 6 sheets once each and never for the link `new URL` rejects; a
+  page whose second link spells its first sheet another way, among 61
+  distinct sheets, reads the 60th and leaves the 61st out; a page's sheets
+  on internal addresses written in five other forms are refused before a
+  request; and a page whose links hold a port of 4,301 digits and a host of
+  5,000 reads its other sheets. With the real opener, a sheet whose href
+  `new URL` reads as a URL on a host that resolves to 127.0.0.1 is refused
+  at its lookup, a sheet that redirects there is refused before the redirect
+  is followed, and a sheet on a public address whose host is typed as one
+  number is refused, as a page URL and a redirect target typed that way are,
+  while the same address typed as four decimal parts is read.
+- Run on the package this change starts from, no control case fails, and of
+  the other 254 cases from 171 (Python 3.14.6) to 182 (3.10.9) fail there,
+  as `urljoin` differs by Python. Of the 71 tests outside the case set, 67
+  fail there: 14 call `_resolve_href` or replace `_parse_url`, neither of
+  which exists there; 24 call `_url_idna_map`, 11 read the budget, 3 set
+  `_LINK_SCAN_AHEAD`, 1 calls `_stylesheet_links`, 1 replaces the module's
+  `unicodedata` and 1 reads `_URL_IDNA_MAX_COMPOSED`, none of which exists
+  there either; and 12 fail on what they check. The 4 that pass are the case
+  of sheets on internal addresses written in other forms, the two that
+  require a host typed as a number in another form to be refused (the
+  offline URL checks refuse each as `urljoin` left it), and the page of 70
+  sheets. All 334 pass on this change.
+- Mutants, 147 of them, each a change to the parser, its rules, its limits,
+  its second parse, its time, its label limit, its NFC, the opener a sheet
+  is read through, the host it keeps as typed, the bound, the link scan, the
+  charge for an href rejected once its host is built or the bound on how far
+  a host is built, each run against the new test file on Python 3.14.6,
+  3.13.2, 3.12.4 and 3.10.9 with other test runs going on: each fails at
+  least one test on each of them. The timing test is meant to catch eleven:
+  the seven that build a part by making a new string for each code point,
+  three that let a long label reach the punycode codec, and one that
+  searches the query read so far for a `#` at each code point with one call
+  into C. In these runs, with sixteen test processes at once, it failed each
+  of them on each Python. It reads a clock: run as the only test against
+  each of the 147 mutants on Python 3.14.6 and 3.10.9, the two at once, four
+  at a time on each, it failed those eleven, passed the other 134 on 3.10.9
+  and 133 on 3.14.6, where it failed one of the parser's rules once and
+  passed it in three runs of its own after, and held the two below past 20
+  minutes, when their runs were stopped. Two more mutants read a part again
+  from its start at each code point in lines of Python; the line count fails
+  them, and their runs stop there. Run with the timing test left out, these
+  thirteen and the five that change NFC give, on each of the four Pythons
+  and on Python 3.12.3 on Linux, seventeen that fail and one that passes
+  every other test: the search with one call into C, which runs no more
+  lines of Python and allocates no more bytes. On each Python there, the
+  allocation count fails the seven and the three label mutants, the line
+  count the two that read a part again and the two label mutants that let a
+  label outside ASCII through, the label limit's own test the three label
+  mutants, and the tests of NFC the five NFC mutants, one of which runs NFC
+  on a label of any length to count its floor. Nineteen mutants change the
+  bound and the scan: a budget not charged, its boundary moved by a byte
+  either way, counted in code points, read with a strict UTF-8 encoder,
+  passed by skipping one href, or sixteen times as large; an href charged
+  its own bytes alone, its URL's charge not checked against what is left, or
+  that check's boundary moved by a byte; the stop at 60 left out, moved to
+  59 or 61, or counting every part or every repeat; and the scan run over
+  the whole page first, its href starts found only up to where a tag starts,
+  its rel starts found in one run alone, or asked for in every tag. Eleven
+  change the charge for an href rejected once its host is built: the charge
+  left out; its floor at the href's own bytes left out; the full stops
+  between built labels not counted; the record of how far the host was built
+  not given to UTS #46, or not passed by the host parser's call before a
+  port, after a host or for a `file:` host; nothing charged for a host
+  rejected while it is mapped; the labels not yet in their ASCII form not
+  charged; the labels not recorded; and an invalid label given its ASCII
+  form once its check fails, so counted in that form. Each of the eleven
+  fails one or more of the twenty tests that count the hrefs given to the
+  parser. Twelve change the bound on how far a host is built: what is left
+  not passed to the parser, by the host parser's call before a port, after a
+  host or for a `file:` host, or to UTS #46; the sum not raised as labels
+  are built, or checked only before the first label; the host once built not
+  checked; and a label's floor taken as its bytes as mapped, or as four more
+  than its code points after NFC, rather than the fewer, counted from its
+  code points before NFC, or taken as its bytes for a label of more than 63
+  code points rather than 252. Each of the twelve fails one or more of the
+  nine tests that count the labels checked.
+- Hrefs made at random by a script, each resolved by the engine and by
+  `new URL` on Node 24.15.0, with the same counts on Python 3.14.6, 3.13.2,
+  3.12.4 and 3.10.9 unless one is given for each. From tokens, three seeds
+  of 300,000: 1, 6 and 1 differ, 7 of them page URLs Node rejects that the
+  second parse reads and 1 the `file:` drive letter href. Hosts of 1 to 4
+  characters from 10 bidi classes, 22,220: 0 differ. Hosts from characters
+  outside ASCII, two seeds of 200,000: 8 and 11 on 3.14.6, each a ZWNJ the
+  engine rejects and Node accepts, and 12 and 17 on the other three, those
+  and 4 and 6 with a code point Unicode 13.0 does not assign. `xn--`
+  labels, 240,000: 206 on 3.14.6 (182 the engine rejects, 24 Node
+  rejects), 348 on 3.13.2 (326 and 22), 362 on 3.12.4 (340 and 22) and
+  540 on 3.10.9 (each the engine rejects), and each decodes to a code
+  point Unicode 13.0 does not assign.
+- `python -m pytest -o addopts= -q` in packages/designesy-mcp: 1648 passed
+  on Python 3.14.6, 3.13.2, 3.12.4 and 3.10.9 on Windows 11 and on Python
+  3.12.3 on Linux, each in a fresh venv with pytest 9.2.0 and no plugin;
+  1314 on the package this change starts from. `test_offline_url_checks.py`
+  and `test/conftest.py`, whose guard fails a test that looks a name up or
+  connects past 127.0.0.1, are unchanged.
+
+**The URL guard's address checks match the ranges they name, and a host
+that ends in a number must be typed as four decimal parts** (the site
+and the npm engine's source-drift baseline; no version moves).
+Three of the hosted URL guard's checks
+(`app/lib/url-guard.ts`) did not match the ranges they name, and the
+guard now reads a host that ends in a number as it was typed. Every
+route that reads a URL, and the browser audit
+(`app/lib/browser-guard.ts`), runs these checks, so all of them change
+together. What can move: a URL whose host is typed as four decimal parts
+from 100.128.0.0 to 100.255.255.255, a name with an octal- or
+hex-looking label before its last one, such as `007.example.com`, and a
+name of four labels that begin with digits spelling an address in that
+range, such as `100.200.1.2a`, are read where they were refused as
+invalid URLs. No audit check, scoring rule or weight moves. A page that
+links a stylesheet by a host typed as a number in another form is scored
+without that stylesheet, as it is when the stylesheet's host is private,
+and the link still counts as a linked stylesheet.
+
+### Fixed (URL guard ranges)
+
+- **Carrier-grade NAT is 100.64.0.0/10.** A literal IPv4 host was
+  refused as carrier-grade NAT from 100.64.0.0 up to 100.255.255.255. It
+  is now refused from 100.64.0.0 to 100.127.255.255, the range the check
+  of resolver answers already used and the URL bar's hint already
+  showed. A host from 100.128.0.0 to 100.255.255.255 is public and is
+  read.
+- **The numeric-form checks apply only to a host that ends in a
+  number.** The guard refused any host with a label that looked octal or
+  hex, so a name such as `007.example.com` or `0x1.example.com` could
+  not be read, while the URL bar said it would be. These checks now
+  apply only to a host whose last label, once every trailing dot is
+  dropped, is a number. The guard refuses such a host when it is not
+  typed as four decimal parts (below), and checks it as the address it
+  names and refuses it when that is private. Any other host is a name. A
+  name of four labels that begin with digits, with no dot after them, is
+  still refused when those digits spell a private address, and every
+  name is then checked by the addresses it resolves to.
+- **A host that ends in a number must be typed as four decimal parts.**
+  The URL parser can write such a host as four decimal parts before any
+  check of the hostname runs. The guard reads the host as it was typed
+  (`app/lib/typed-host.ts`), the way the URL parser reads it:
+  percent-escapes decoded, IDNA mapping applied (fullwidth digits,
+  ideographic full stops), and userinfo and port left out. A host typed
+  as a number in any other form (one number, a hex or octal part, a
+  leading zero, or fewer parts) is refused, whatever address it names.
+  Every trailing dot is dropped first: four decimal parts and dots are
+  read as the address they name, and refused when it is private. The
+  host is read this way wherever a URL comes in: `isValidUrl`, and
+  through it `isPublicUrl` and `safeFetch`; `normalizeInputUrl`, which
+  leaves such a URL as typed so that `isValidUrl` refuses it;
+  `resolveAndValidateHost`; the browser audit's `createUrlVerdict`, for
+  the URL it is given; each redirect `safeFetch` follows and each
+  stylesheet link of a page (`resolveAsTyped`, which keeps such a host
+  as typed in the URL it gives, so that a link is still read as a link);
+  and the URL bar's hint, which asks for an IP address as four numbers
+  with dots between them. A URL whose host cannot be read as typed is
+  refused: `isValidUrl` refuses it, and `resolveAsTyped` gives a URL
+  that `isValidUrl` refuses for a redirect or a link whose host it
+  cannot read, unless it names the scheme, host and port of the page it
+  came from.
+- **A host typed outside ASCII with an empty label is refused.** The
+  typed-host read gives nothing for a host typed with a character
+  outside ASCII, or a percent-escape of one, when the host the URL
+  parser reads from it has an empty label other than one at its end. The
+  URL parser reads such a host, and a strict IDNA reading refuses the
+  empty label, so readers differ on it. Each place that reads the host
+  as typed refuses it, unless a redirect or a link names the scheme,
+  host and port of the page it came from. The URL bar's hint says it is
+  not a web address yet.
+- **`resolveAndValidateHost` reads a hostname before any lookup.** It
+  refuses a hostname the typed-host read cannot give, one typed as a
+  number in another form, and four decimal parts that name a private
+  address, with or without trailing dots. It refuses a hostname that
+  holds a C0 control or a space before it reads it: the read removes
+  tabs and newlines, as the URL parser does, and the lookup is given the
+  hostname as it came. Every caller in the site passes it the hostname
+  of a URL the URL parser has read, which holds none.
+- **An IPv4-compatible IPv6 answer is not public.** A resolver answer in
+  `::/96`, however it is written, is not public: the check before each
+  request refuses the name, and the lookup the connection is pinned to
+  drops the answer. ipaddr.js does not name that range, so the guard
+  names it itself. The two checks now run one function,
+  `isPrivateAddress`.
+
+### Not changed (URL guard ranges)
+
+- Every IPv6 literal host is refused, and every other private, loopback,
+  link-local, multicast and reserved range is refused as before, for
+  literal hosts and for resolver answers.
+- The redirect limit, the DNS cache, how the connection is pinned, the
+  body limits, and the wording of every error message the guard and the
+  routes give.
+- The npm engine (`packages/score`) reads URLs on the user's own machine
+  with URL checks of its own. This entry does not change them.
+- A request the audited page itself makes reaches the browser audit's
+  check as the browser wrote its URL. The browser can write a host typed
+  as a number as four decimal parts, so that request is checked by the
+  address it names.
+
+### Gates (URL guard ranges)
+
+- `check-url-guard-hosts.js` (new, in the build and in CI after the
+  audit SSRF gate) loads the real URL guard, browser guard, URL bar and
+  routes with stubbed DNS, which answers a lookup in the shape and with
+  the families it asks for and refuses an option it does not model or an
+  `all` option that is not a boolean, and local servers on 127.0.0.1,
+  which a socket reaches only when the guard's pinned lookup answers in
+  the shape it asked for, each address with its own family. It runs 550
+  checks: literal hosts on both sides of each 100.64.0.0/10 edge and
+  after other first parts, names whose other labels look octal or hex or
+  whose last label only starts like a number, names whose four digit-led
+  labels spell a public or a private address, `::/96` answers alone and
+  next to a public one in several spellings, IPv4-mapped answers with a
+  private or a public address inside, private answers next to public
+  ones, of the same family or not, three, four and five answers with a
+  private one among them, link-local, multicast, broadcast, reserved,
+  unspecified, 6to4, Teredo and 64:ff9b::/96 answers, a lookup that
+  fails with a temporary error, every time or at the first lookup alone,
+  a second check of a name whose answers are read from the cache or
+  whose lookup failed, a name read from the cache 59 s after its lookup,
+  and 10 s after it once 501 other names were checked, a name not public
+  at its first lookup checked again from the cache, a name, of one
+  answer or two, asked about again once its answer is older than the
+  cache keeps one, whether or not it was read from the cache in between,
+  and when its new lookup fails or finds no answer, answers that are not
+  public at the pinned connection, alone or next to public ones among up
+  to five answers, first, last or in the middle, one of them or more,
+  when the socket asks for every address, which is handed each public
+  one as the lookup gave them, and when it asks for one, a lookup that
+  fails at the connection, the browser audit's verdict for the same
+  URLs, and hosts typed as a number in other forms or with trailing
+  dots, or typed with a character outside ASCII with an empty label,
+  with four decimal parts and names typed the same ways, with
+  percent-escapes, backslashes, userinfo, a port, spaces and controls
+  around the URL, tabs and newlines inside it, and inputs of up to about
+  5,000 characters, at the places a URL comes in, each place given the
+  ways its rows hold, each route that reads one among them, the compare
+  route's second URL too, and the URL bar as it reads a page, a site and
+  an origin, hostnames of up to 269 characters that hold a control
+  character at their start, inside or at their end, which
+  `resolveAndValidateHost` refuses with no lookup, as it refuses
+  hostnames the typed-host read gives nothing for, one typed as a number
+  in another form, and private addresses typed in fullwidth digits,
+  stylesheet links written with backslashes, a trailing space, or a
+  space or control character that the URL parser keeps, and Locations
+  written with such a character, read as the URL parser reads them,
+  redirects of the five statuses that carry a Location, a redirect to a
+  name the DNS check refuses, a `data:` URL, which the browser audit's
+  check passes, a redirect and a link with no scheme and three slashes,
+  a redirect and a link from a page whose own host is the address they
+  name, a second redirect, read as typed, and a redirect of only a
+  query, each resolved against the URL that answered with it, a page
+  whose one stylesheet is linked that way, read and scored as the same
+  page with none, a link the URL parser reads as a path on its own page,
+  which the score route reads there, and, with the typed-host read made
+  to give nothing for eighteen inputs, a URL, a route's input, the
+  browser audit's check, the URL bar, a link and a redirect whose host
+  it cannot read, a redirect to another host whose name ends with its
+  page's, a redirect and a link to a host under its page's and to its
+  page's parent domain, a redirect to its page's host under www or with
+  a dot after it, a link to its page's host on another port, a redirect
+  and a link from a page on another port to its host on the default
+  port, and a redirect and a link to its page's host on the other
+  scheme. Its checks of resolver answers, of the DNS cache, of the
+  pinned lookup and of the browser audit's verdict are named by case
+  number, apart from the one that counts the lookups of the pinned
+  cases, a failing check of what the pinned lookup handed names no
+  address, and a check that names a typed input gives a long run of one
+  character by its length. The gate runs offline. It refuses every DNS
+  lookup or query, socket connection and fetch past loopback, and its
+  last check fails if it refused any. Against the site before this
+  change, 316 of the 550 fail, each a case the gate marks new, and the
+  other 234 pass.
+- `check-own-contract.mjs` loads the real URL guard through the route
+  harness, so the module the guard now imports loads with it.
+- The source-drift baseline of the npm engine (`packages/score`)
+  records the difference in `extractCssLinks` between its copy and the
+  site's as intentional. The site's copy resolves each stylesheet link
+  with `resolveAsTyped`, so `safeFetch` refuses a link whose host is
+  typed as a number in a form the guard refuses, and an http or https
+  link to another origin whose host `resolveAsTyped` cannot read, which
+  gets a host the guard refuses; the npm engine's copy resolves it with
+  `new URL` and checks it with its own guard.
+- The URL guard before and after this change, run side by side on
+  1,225,762 seeded inputs, give the same result on every input outside
+  the three results above that are now read and the hosts and answers
+  the checks above refuse. The inputs: 300,768 literal IPv4 hosts,
+  120,000 numeric forms of 20,000 addresses and the same 120,000 forms
+  with two trailing dots, 100,000 names, 19,994 names of four labels
+  that begin with digits, 85,000 resolver answers in many spellings,
+  20,000 hosts typed in several spellings, 210,000 hosts typed as four
+  decimal parts or as the six other numeric forms with one, two or three
+  trailing dots, and 10,000 hosts, nearly all typed with a character
+  outside ASCII, with one, two or three full stops at their end or an
+  empty label inside, each of the last three sets read as a URL and as a
+  route reads what a visitor typed (40,000, 420,000 and 20,000). Outside
+  the three results above that are now read, no input the guard refused
+  before is read. For each second part b from 0 to 255, `100.b.0.1` is
+  refused exactly when ipaddr.js 2.5.0 calls it carrier-grade NAT. On
+  200,000 seeded URLs, 103,243 of which the URL parser reads with a
+  network scheme, the guard's reading of the typed host and the URL
+  parser's reading of the whole URL give the same host every time, and
+  no URL a redirect or a link gives came from a read that gave nothing.
+  On 20,000 more seeded URLs whose host is typed with a character
+  outside ASCII and has an empty label other than one at its end, the
+  read gives nothing for each one the URL parser reads, and the guard
+  accepts none of them.
+- Of 257 edits tried to a check or to the typed-host read, each of these
+  255 fails at least one check: the carrier-grade NAT bound moved by one
+  either way or dropped, or its first part loosened either way; `::/96`
+  dropped from either check, from both, or for cached answers, narrowed,
+  replaced, answered public in whole or in part, or let through next to
+  a public answer; the last-label rule inverted, dropped, unanchored, or
+  read from the first or any label, or its hex form dropped, or its
+  trailing-dot rule dropped, narrowed to one dot or to three, or a last
+  label of more than ten digits, of 0x and more than eight hex digits,
+  or of more than 63 characters, or a host of more than 253 characters,
+  read as a name; a name read as an address only when it is four decimal
+  parts or only when it ends in a number; the private ranges of a host
+  that ends in a number read with its trailing dots, by the guard or by
+  the URL bar, or those of every host read without them; an IPv4-mapped
+  answer judged by the address inside it; an answer in 64:ff9b::/96, an
+  IPv4 link-local, loopback, unspecified, multicast or broadcast answer,
+  or an IPv6 link-local, multicast, 6to4 or Teredo answer counted as
+  public, or an IPv4 answer judged by the test for a literal host, at
+  both checks or at the pinned lookup alone; at the DNS check, only its
+  first two answers read, a private answer let through next to a public
+  one of its family, a cached answer kept past its lifetime, always or
+  by each read of it, or checked for `::/96` only, a lookup that failed
+  cached as no answers, a lookup that fails with a code other than
+  ENOTFOUND read as public, a cached answer used, however old, when its
+  new lookup fails, or the check skipped at a redirect; at the pinned
+  lookup, its answer of one address left unfiltered or picked by the
+  range test alone, one `::/96` answer let through, every IPv6 answer
+  kept, every IPv4 answer kept, always or when every answer is IPv4, a
+  private IPv4 answer kept next to a public one, an IPv6 loopback or
+  link-local answer kept, an answer between the first and the last kept
+  unchecked, only the first answer that is not public taken out, the
+  first answer judged alone, its lookup made to ask for one answer when
+  the socket does, for a family given by name, or with an `all` option
+  that is not a boolean, a list handed to a socket that asks for one
+  address, a socket that names no `all` option read as one that asks for
+  every address, a socket that asks for every address refused when its
+  first answer is not public, or handed the answers of one family only,
+  the addresses it hands given the family of another answer, the one
+  address it hands a socket given family 4, the last public answer
+  handed to a socket that asks for one address, or its first answer when
+  none is public, the public answers handed in another order, or the
+  socket answered by the `node:dns` callback `lookup` when its own
+  lookup fails; the four-decimal-parts refusal dropped, two or three
+  parts read as four, five or more parts read as four, a last part from
+  256 to 299, or from 1000 to 1999, read as a decimal part, a part from
+  256 to 259 before the last, or an empty one, read as a decimal part, a
+  leading zero let in before the last part or in a last part of two
+  digits, or the four-decimal-parts test not anchored at its start, or
+  made to drop at most two trailing dots; at `resolveAndValidateHost`, a
+  hostname read as given, or as the host of a URL made from it, a
+  hostname that holds a C0 control or a space let through to the read,
+  in any place, only at its start, only at its end, past its 64th or its
+  253rd character, or when it ends in a number, the private ranges of
+  every hostname read, a number refused before its lookup only when it
+  is not four parts, a hostname looked up when the read gives nothing,
+  four decimal parts of a private address looked up, read with their
+  trailing dots, or read from the hostname as given, its lookup made to
+  ask for IPv4 answers only, for one answer, with the ADDRCONFIG hint,
+  with an `all` option that is not a boolean, or for a family given by
+  name, or only its IPv6 answers read when it has any; the typed host
+  read without decoding and mapping, from only the first 4096 characters
+  typed, by NFKC in place of the URL parser, given as typed when the URL
+  parser refuses it, read although it holds a character that ends a
+  host, any of them, or only an `@`, a slash or a backslash, or a
+  question mark or a number sign, with its userinfo or part of it, with
+  its port, past a backslash, a question mark or a number sign, after at
+  most two or three slashes, with at most 64 slashes skipped, with its
+  authority ended at a space, with its tabs or the spaces around the
+  URL, with only tabs removed, or only the first tab or newline, with a
+  vertical tab and a form feed removed with them, with the spaces
+  outside ASCII that trim drops removed at its ends, with the controls
+  at its end kept, or only the spaces there, with only spaces dropped at
+  its start, with the spaces after its scheme's colon skipped, with the
+  scheme read in lower case only or compared as typed, or read in a link
+  or a redirect only when its scheme is typed in lower case, without ws
+  and wss, read where a relative redirect names no host, one with one
+  slash among them, or not read where a redirect of another network
+  scheme with no slashes names one, read only after two forward slashes
+  in a redirect of the same scheme or in a link or a redirect with no
+  scheme, read after two slashes alone, or not read after three, in a
+  link or a redirect with no scheme, with four decimal parts and a dot
+  refused, given as typed in a link or a redirect, kept in a URL past an
+  `@` that is not the userinfo's, kept in a URL without its port, given
+  as `new URL` gives it when it has userinfo or when the read gives
+  nothing, written with `invalid` over the first copy of its host when
+  the read gives nothing, or with that path skipped for an empty
+  reference, or when the read gives nothing for the page's host on
+  another port or on the other scheme, for another host whose name ends
+  with the page's, for a host under the page's, for the page's host
+  under www or with a dot after it, for the page's parent domain, or for
+  the page's host on the default port from a page on another port, or
+  whenever a link or a redirect names its page's scheme, host and port,
+  or when the host has one trailing dot and the URL parser wrote it as a
+  public address, a second redirect resolved against the first URL of
+  the call, a redirect or a link trimmed before it is resolved, a
+  redirect resolved against the origin of the URL that answered, or read
+  as typed only at the first redirect, let through when the read gives
+  nothing by `normalizeInputUrl`, the browser audit or the URL bar, read
+  by the browser audit from the URL as `new URL` writes it when it
+  starts with a control or a space, only when the URL has no userinfo,
+  or before its pass for `data:`, `blob:` and `about:` URLs, read by the
+  URL bar only as it reads a page, or only when it has no userinfo or
+  names no port, or with a value that has a scheme and no slashes taken
+  as a URL, read by `isValidUrl` from only the first 2048 characters of
+  a URL, kept as typed by `normalizeInputUrl` only up to 2048
+  characters, read as `new URL` writes it from a redirect or a URL for
+  the browser audit of more than 2048 characters, a link of more than
+  512 or a value of the URL bar of more than 253, the URL bar's hint for
+  another numeric form given only for a host of at most 63 characters,
+  or not read at one of the places a URL comes in; and the read of a
+  host typed outside ASCII with an empty label dropped, skipped for a
+  percent-escape, or for one of a two-byte character, made to find an
+  empty label only at the end, made to refuse one empty label at the
+  end, made to skip an empty first label, made to skip the last
+  character typed, made to miss a code point outside the BMP, or applied
+  to every host; and 40 more, written in later rounds, which passed
+  every check the gate then had and now fail at least one: they change
+  how the typed-host read takes some inputs, how a route, the browser
+  audit, the URL bar or a link reads a host, how
+  `resolveAndValidateHost` refuses a control character, how a Location
+  is resolved at a redirect of another status, which answers the DNS
+  check and the pinned lookup read, which public answers the pinned
+  lookup hands, how the `::/96` test reads an answer, how the DNS check
+  takes a lookup that fails, and how the DNS cache keeps an answer. Two
+  edits pass every check, and each refuses more and no less: widening
+  `::/96` to `::/95`, which adds only addresses in the reserved `::/8`,
+  and reading an empty last label as a number, which adds only a host
+  made of dots alone. These figures are for the edits named here, which
+  are not every edit: other small edits, to the typed-host read, the
+  redirect handling, the DNS check and its cache, the pinned lookup and
+  other parts of the guard, pass every check, and independent rounds of
+  edits kept finding new ones.
+
 **The articles are set as reading, the easing curves show their shape, and
 the prices take the figure voice** (the site; no version moves). Three
 visual changes, each its own pull request (#443, #445, #446). The four

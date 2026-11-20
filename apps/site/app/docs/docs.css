@@ -279,15 +279,6 @@
   }
 }
 
-/* These descriptions are paragraphs people read, three to six lines each,
-   not one-line captions: --muted at 14px holds the body floor where the
-   caption grey (--muted-dim at 13px, about Lc 38) did not. */
-.mcp-tools .row-meta {
-  color: var(--muted);
-  font-size: var(--text-label);
-  line-height: var(--leading-body);
-}
-
 /* A client's name over its config: a sub-heading in the sans, as every h3
    inside a section is (the inline size and weight left it in the display
    serif). */

@@ -1685,14 +1685,11 @@ await check('a stalled contract URL aborts at 8 s with CONTRACT_URL_UNREACHABLE 
   assert.equal(r.body.problems[0].why, 'timeout');
 });
 await check('the real URL guard refuses contract URLs on loopback and the metadata address', async () => {
-  const appRequire = createRequire(path.join(APP, 'package.json'));
-  const ts = appRequire('typescript');
-  const src = fs.readFileSync(path.join(APP, 'app', 'lib', 'url-guard.ts'), 'utf8');
-  const out = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
-  const mod = { exports: {} };
-  new Function('exports', 'require', 'module', out)(mod.exports, appRequire, mod);
+  // The real module (realSafeFetch), loaded through the harness so that the
+  // modules it imports load with it.
+  const guard = createHarness({ app: APP, realSafeFetch: true }).load('app/lib/url-guard.ts');
   for (const u of ['http://127.0.0.1/DESIGN.md', 'http://169.254.169.254/latest/meta-data', 'http://localhost/DESIGN.md', 'http://[::1]/x', 'http://2130706433/x']) {
-    const r = await fetchMod.fetchContract(u, mod.exports.safeFetch);
+    const r = await fetchMod.fetchContract(u, guard.safeFetch);
     assert.equal(r.ok, false, u);
     assert.equal(r.problem.why, 'blocked', `${u}: ${r.problem.why}`);
   }

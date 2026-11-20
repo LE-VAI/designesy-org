@@ -64,6 +64,11 @@
 //     reply unless the target completes a WebSocket upgrade.
 //   - Traffic that is not an HTTP request: WebRTC ICE/STUN (UDP), and the
 //     DNS lookups and TCP connects of dns-prefetch and preconnect. Not measured.
+//   - How the audited page itself typed a host. A request reaches this check
+//     as Chromium has written its URL, and Chromium, as new URL() does, can
+//     write a host typed as a number as four decimal parts, so such a host
+//     is checked by the address it names. The audited URL is checked as the
+//     visitor typed it (isPublicUrl, in the audit route). Not measured.
 
 import type {
   Browser,
@@ -74,6 +79,7 @@ import type {
   WebSocketRoute,
 } from 'playwright-core';
 import { isValidUrl, resolveAndValidateHost } from './url-guard';
+import { isOtherNumericForm, typedHost } from './typed-host';
 
 /** Resolves true only for a URL the browser may request. */
 export type UrlVerdict = (url: string) => Promise<boolean>;
@@ -85,7 +91,11 @@ const LOCAL_SCHEMES = new Set(['data:', 'blob:', 'about:']);
  * One request's URL check, with a per-hostname verdict cache. http(s) URLs
  * must pass isValidUrl and then `hostIsPublic` (by default the DNS check in
  * url-guard). ws(s) URLs are checked as the http(s) request their handshake
- * is. data:, blob: and about: pass; every other scheme fails.
+ * is. data:, blob: and about: pass; every other scheme fails. A host typed
+ * as a number in any form other than four decimal parts fails, read from
+ * the URL as it came (typedHost), since isValidUrl reads u.href, where
+ * new URL() can have written such a host as four decimal parts; so does a
+ * URL whose host typedHost cannot read.
  */
 export function createUrlVerdict(
   hostIsPublic: (hostname: string) => Promise<boolean> = resolveAndValidateHost,
@@ -99,6 +109,8 @@ export function createUrlVerdict(
       return false;
     }
     if (LOCAL_SCHEMES.has(u.protocol)) return true;
+    const typed = typedHost(raw);
+    if (typed === null || isOtherNumericForm(typed)) return false;
     if (u.protocol === 'ws:') u.protocol = 'http:';
     else if (u.protocol === 'wss:') u.protocol = 'https:';
     if (!isValidUrl(u.href)) return false;

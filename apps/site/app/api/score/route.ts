@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { recordUsage, scoreClientOf, scoreContractKey } from '../../lib/usage';
 import { unstable_cache } from 'next/cache';
-import { normalizeInputUrl, isValidUrl, safeFetch, cutByBudget, InvalidStatusError, type ReadBudget } from '../../lib/url-guard';
+import { normalizeInputUrl, isValidUrl, safeFetch, resolveAsTyped, cutByBudget, InvalidStatusError, type ReadBudget } from '../../lib/url-guard';
 import { currentScoreMissGate } from '../../lib/score-miss-gate';
 import { buildReceipt } from '../../lib/receipt';
 import { CONTRACT_VERSION } from '../../lib/design-system-contract';
@@ -2047,7 +2047,10 @@ function extractCssLinks(html: string, baseUrl: string): string[] {
   }
   for (const m of stylesheetLinkMatches(html)) {
     try {
-      links.push(new URL(m.groups[0] as string, baseUrl).href);
+      // A link whose host is typed as a number in a form the URL guard
+      // refuses keeps that host as typed (resolveAsTyped): it is still a
+      // URL of its scheme, read as a link, and safeFetch refuses it.
+      links.push(resolveAsTyped(m.groups[0] as string, baseUrl));
     } catch {
       // ignore malformed hrefs
     }

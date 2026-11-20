@@ -424,7 +424,7 @@ export default function McpDocsPage() {
                     {tool.name}
                     <span className="mcp-kind">{tool.kind}</span>
                   </span>
-                  <span className="row-meta">{tool.desc}</span>
+                  <span className="row-meta row-meta--prose">{tool.desc}</span>
                 </span>
                 <span className="row-side">
                   <span className="row-side-line">
