@@ -181,3 +181,14 @@
 .demo-stagger-bar:nth-child(3) { height: 2.5rem; animation-delay: 200ms; }
 
 .demo-stagger-bar:nth-child(4) { height: 3.5rem; animation-delay: 300ms; }
+
+/* The reveal rule (globals.css, .demo-stagger.is-revealed .demo-stagger-bar)
+   sets the whole animation shorthand, which puts every bar's delay back to
+   0s, so the four bars rose together. The delays are restated here on that
+   rule's selector plus :nth-child, one step heavier, so they hold in any
+   sheet order. Under reduced motion the bars still fade together. */
+.demo-stagger.is-revealed .demo-stagger-bar:nth-child(2) { animation-delay: 100ms; }
+
+.demo-stagger.is-revealed .demo-stagger-bar:nth-child(3) { animation-delay: 200ms; }
+
+.demo-stagger.is-revealed .demo-stagger-bar:nth-child(4) { animation-delay: 300ms; }

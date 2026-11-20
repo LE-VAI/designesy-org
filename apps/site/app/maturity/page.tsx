@@ -2,9 +2,8 @@
 //
 // Adapts zeroheight's maturity model pattern (zeroheight.com/maturity):
 // 6 independent axes, 4 stages each, interactive questionnaire, shareable
-// visual result (radar chart). Functions as a lead-gen trust asset —
-// completion produces a scored result and a CTA to "Verify your compliance
-// with Designesy."
+// visual result (a stage matrix). Completion produces a scored result, a
+// result link to copy, and a link to /score.
 //
 // Designesy's 6 axes (mapped to the actual contract categories):
 //   1. Token Discipline       — tokens (9%) + spec (4%)
@@ -37,7 +36,7 @@ export const revalidate = 3600;
 export const metadata: Metadata = pageMeta({
   title: 'Design Compliance Maturity',
   description:
-    'Chart your design system across six compliance axes. A 24-question self-assessment (~6 minutes) with a shareable radar result. Adapted from the zeroheight maturity model pattern, tuned to design contract compliance.',
+    'Chart your design system across six compliance axes. A 24-question self-assessment (~6 minutes) that fills a stage matrix and ends in a shareable result link. Adapted from the zeroheight maturity model pattern, tuned to design contract compliance.',
   path: '/maturity',
   ogTitle: 'Design Compliance Maturity · Designesy',
   ogDescription:

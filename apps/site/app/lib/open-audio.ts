@@ -25,7 +25,6 @@ export const OPEN_AUDIO: Record<string, OpenAudioEntry> = {
   "designesy.tokens": { src: "/audio/open/designesy.tokens.opus", duration: 17.56 },
   "designesy.a11y": { src: "/audio/open/designesy.a11y.opus", duration: 17.4 },
   "designesy.motion": { src: "/audio/open/designesy.motion.opus", duration: 19.2 },
-  "designesy.maturity": { src: "/audio/open/designesy.maturity.opus", duration: 20.76 },
   "designesy.changelog": { src: "/audio/open/designesy.changelog.opus", duration: 21.84 },
   "designesy.m3-bridge": { src: "/audio/open/designesy.m3-bridge.opus", duration: 25.5 },
   "designesy.spring-validator": { src: "/audio/open/designesy.spring-validator.opus", duration: 25.04 },

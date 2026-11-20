@@ -222,8 +222,8 @@ export default function OpenPage() {
           <h2 className="doctrine-heading">Packages</h2>
           <p className="surface-note" style={{ marginBottom: '1rem' }}>
             Live portable cargo. Machine URLs are CORS-open JSON for agents and
-            tools. Each package carries a spoken abstract: automated voice,
-            synthesized at build time, served as static audio.
+            tools. A row with a play button carries a spoken abstract: automated
+            voice, synthesized ahead of time, served as static audio.
           </p>
           <div className="row-stack" role="list">
             {o.packages.map((pkg, i) => (

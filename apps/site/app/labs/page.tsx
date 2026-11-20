@@ -345,7 +345,7 @@ export default function LabsPage() {
             <p className="lab-card-desc">
               Concentric radii, press scale, image outlines, hit areas, and
               stagger rhythm as portable rules with exact values, compiled from
-              external design intelligence and verified on designesy.org.
+              external design intelligence.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>
@@ -370,7 +370,7 @@ export default function LabsPage() {
               Font smoothing, rem-based scale, line-height by role, tracking by
               size, measure, text-wrap, tabular numbers, and selection as
               portable rules with exact values, compiled from external
-              typography intelligence and verified on designesy.org.
+              typography intelligence.
             </p>
             <span className="lab-card-arrow">Open lab →</span>
           </Link>

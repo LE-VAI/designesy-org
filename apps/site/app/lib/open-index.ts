@@ -417,7 +417,7 @@ export const openIndex = {
       title: 'Maturity self-assessment',
       version: '0.1',
       status: 'live',
-      lede: 'Interactive 24-question, 6-axis design compliance maturity questionnaire with radar chart and shareable results. Maps to token discipline, motion consistency, accessibility readiness, platform fit, identity & copy, and verification maturity.',
+      lede: 'Interactive 24-question, 6-axis design compliance maturity questionnaire with a stage matrix and a shareable result link. Maps to token discipline, motion consistency, accessibility readiness, platform fit, identity & copy, and verification maturity.',
       human_url: 'https://www.designesy.org/maturity',
       machine_url: null,
       path: '/maturity',
