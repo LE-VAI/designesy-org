@@ -6,6 +6,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**zod and minimatch move past their advisories in this repository's
+installs** (the lockfiles of the site, @designesy/score and
+@designesy/cli, and the `overrides` in their package.json files; no
+version moves). The flagged copies are indirect dependencies, so npm
+overrides move them, and two engine files gain one type-only cast
+each. What the DESIGN.md linter runs and what it finds do not change.
+
+### Security (zod and minimatch)
+
+- **zod moves from 3.25.76 to 4.6.7 under @google/design.md.** GitHub's
+  advisory database lists GHSA-mrhx-c7xc-m3w5 (high) for zod below
+  4.6.6. @google/design.md 0.4.0, its latest release as of 2026-11-20
+  (published 2026-07-27), asks for zod ^3.24.0, so npm installed zod
+  3.25.76 for it in apps/site, packages/score and packages/cli. Each of
+  their package.json files now overrides the zod @google/design.md gets:
+  to the site's own zod (`$zod`, ^4.6.7) in apps/site, and to ^4.6.7 in
+  packages/score and packages/cli. Each lockfile now holds zod 4.6.7 and
+  no other zod.
+- **minimatch moves from 10.2.6 to 11.0.8 in the site's development
+  install.** GHSA-g3hv-75wg-m249 (moderate) covers minimatch from 7.0.0
+  to below 11.0.1. @typescript-eslint/typescript-estree 8.71.2, the
+  version the site's lockfile holds, asks for ^10.2.2. apps/site now
+  overrides that to ^11.0.1, which its lockfile resolves to 11.0.8, with
+  minimatch's new dependency @isaacs/nonrecursive-glob-match 1.1.0.
+  typescript-estree 8.73.0, which typescript-eslint 8.73.0 pins, asks
+  for ^11.0.1 itself, so the override has nothing left to do once the
+  lockfile moves typescript-eslint to 8.73.0. The minimatch 3.1.5 that
+  eslint and its plugins use is below the advisory's range and stays.
+- **One cast in each engine.** @google/design.md declares its types
+  against zod 3. Under zod 4 those declarations type a finding's
+  severity as a union that also includes a number and functions, so
+  `tsc` rejected `lintDesignMd = mod.lint` (TS2322) in
+  `apps/site/app/api/score/route.ts` and `packages/score/src/engine.ts`.
+  Each casts the linter through `unknown` at that one assignment, with a
+  comment saying why. Apart from that comment, the JavaScript both files
+  emit does not change.
+
+### Not changed (zod and minimatch)
+
+- What the linter runs. Its built file does not import the zod
+  package: it bundles its own copy of zod 3.25.76's code, which the
+  overrides do not reach and which it uses only to check its own
+  spec-config.yaml when it loads, never on the DESIGN.md it lints. The
+  file is byte for byte the same in the installs before and after this
+  change, and on this repository's DESIGN.md it reports 0 errors and 1
+  warning in each of them.
+- No package of this repository changes version, and nothing is
+  published. npm reads `overrides` only from the root package.json of
+  the project it installs, so a project that installs @designesy/score
+  or @designesy/cli from npm still resolves the zod @google/design.md
+  asks for.
+
+### Gates (zod and minimatch)
+
+- After a fresh install, `npm ls zod minimatch --all` lists no zod below
+  4.6.6 and no minimatch from 7.0.0 to below 11.0.1 in apps/site,
+  packages/score or packages/cli. Before this change it listed zod
+  3.25.76 in all three and minimatch 10.2.6 in apps/site.
+- With the cast's line put back to `lintDesignMd = mod.lint;`,
+  `npx tsc --noEmit` in apps/site and `npm run build` in packages/score
+  each report one error, TS2322, on that line.
+
 **Sound is off until a visitor turns it on** (the site; no version moves).
 With nothing stored, or with storage that cannot be read, sound now starts
 off, under reduced motion or not, so "Sound is opt-in", as the labs and
