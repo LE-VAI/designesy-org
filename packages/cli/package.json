@@ -57,5 +57,10 @@
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "test": "node --test test/cli.test.js"
+  },
+  "overrides": {
+    "@google/design.md": {
+      "zod": "^4.6.7"
+    }
   }
 }
