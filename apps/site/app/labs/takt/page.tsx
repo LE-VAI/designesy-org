@@ -18,7 +18,7 @@ import { AdoptedTally } from '../adopted-tally';
 export const metadata: Metadata = pageMeta({
   title: 'Takt',
   description:
-    'Lab Two covers interface feel: radius nesting, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence and verified against designesy.org.',
+    'Lab Two covers interface feel: radius nesting, press scale, image outlines, hit areas, stagger rhythm. Rules compiled from external design intelligence.',
   path: '/labs/takt',
   ogTitle: 'Takt · Lab Two · Designesy',
   ogDescription:
@@ -257,8 +257,9 @@ export default function TaktLabPage() {
           <p className="surface-note">
             Lab Two studies the small details that make an interface feel built
             rather than rendered. Rules are compiled from external design
-            intelligence, cross-referenced against the Designesy contract, and
-            verified on designesy.org.
+            intelligence and cross-referenced against the Designesy contract.
+            The Verification section below lists the rules checked on
+            designesy.org and marks the ones the site does not meet.
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="status-badge">Live</span>
@@ -274,7 +275,7 @@ export default function TaktLabPage() {
             <span className="lab-meta-item">
               Field check ·{' '}
               <Link href="/review/takt" data-cuelume-hover="tick" data-cuelume-press="tick">
-                pass with notes
+                {labs.takt.field_check.outcome}
               </Link>
             </span>
           </div>
@@ -286,11 +287,16 @@ export default function TaktLabPage() {
           <div className="definition">
             <p className="definition-label">Takt grid: see it on this page</p>
             <p>
-              Every interactive surface on designesy.org carries these rules:
-              check-grid cells scale on press, rows have concentric left
-              borders, card hover lifts with a shadow (not a border), and
-              staggered fade-up sections enter ~100ms apart. Scroll this page
-              and watch the section rhythm: that is takt.
+              What this page does on load, with motion on: the header rises
+              12px without fading, its status strip waits 80ms and then
+              fades up, and each section fades up once over 0.6s. The
+              sections start together, and no section waits for scroll. The
+              stagger demo below is the one exception: it waits until it is
+              in view, then its four bars rise 100ms apart. Under reduced
+              motion the header and sections arrive in place, and the four
+              demo bars fade in together over 200ms as the page loads.
+              Principle 05 below says to skip animation on page load. The
+              Verification section marks that rule as not held on this page.
             </p>
           </div>
 
@@ -441,15 +447,28 @@ export default function TaktLabPage() {
           <CheckGrid
             items={[
               { title: 'Concentric radii: card padding 4px + image radius 2px = card 6px', status: 'pass' },
-              { title: 'Press scale 0.96 on check-grid cells', status: 'pass' },
-              { title: 'Press scale 0.985 on pillar cards (softer, for a longer surface)', status: 'pass' },
+              {
+                title: 'Press scale ships 0.995, 0.992, 0.99, 0.985, 0.97, 0.96 and 0.9',
+                meta: 'The rule asks 0.96 and sets a floor of 0.95. The cells in this grid press at 0.992. The small cells on the score page, one per check, press under the floor, at 0.9.',
+                status: 'fail',
+              },
               { title: 'Hit area: all nav links ≥ 40×40px', status: 'pass' },
-              { title: 'Stagger: fade-up sections enter ~100ms apart', status: 'pass' },
+              { title: 'Stagger: the four demo bars enter 100ms apart', status: 'pass' },
+              {
+                title: 'Skip animation on page load: not held on this page',
+                meta: 'The header rises and each section fades up once on load. The sections start together.',
+                status: 'fail',
+              },
               { title: 'No transition: all in globals.css', status: 'pass' },
-              { title: 'will-change only on check-pop and back-button animations', status: 'pass' },
+              {
+                title: 'will-change: stays on in three places',
+                meta: 'The rule allows it only where a stutter was seen. It stays on for the scroll progress bar, the nav drawer at 720px and below, and the check mark of a checked cell. The home page scene sets it only while it is near the screen. One more selector matches no element.',
+                status: 'fail',
+              },
               {
                 title: 'Field check with Kit One · Design Review',
-                status: 'pass',
+                meta: `Reviewed ${FIELD_CHECK.reviewed}. The rows above are newer, and some differ from it.`,
+                status: labs.takt.field_check.outcome,
                 href: '/review/takt',
               },
             ]}

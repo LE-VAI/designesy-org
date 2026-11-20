@@ -5,8 +5,7 @@
 // 6 axes × 4 questions = 24 questions. Each answer = stage 1–4.
 // A stage matrix (six axes, four stages) fills as you answer and carries
 // the result. Shareable via URL hash (base64).
-// CTA: "Score your compliance with Designesy" → /score (wording aligned
-// 2026-09-24 with the destination page, which is named Score, not Verify).
+// CTA: "Score the live site" → /score.
 //
 // All state is client-side. No data is sent to any server.
 
@@ -132,7 +131,7 @@ const QUESTIONS: Question[] = [
     answers: [
       { stage: 1, label: 'Eyeballed, with no automated check' },
       { stage: 2, label: 'Manual axe-core or browser extension checks during QA' },
-      { stage: 3, label: 'APC contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
+      { stage: 3, label: 'APCA contrast checks in CI (Lc 75 body min / Lc 90 preferred / Lc 60 non-body)' },
       { stage: 4, label: 'Automated WCAG 2.2 AA scan in CI + contrast tokens with computed Lc values' },
     ],
   },
