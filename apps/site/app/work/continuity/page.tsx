@@ -115,7 +115,7 @@ const INPUTS: Input[] = [
   {
     title: 'Audience and context',
     meta: 'Public builders on X, in a feed context',
-    side: ['@levainbey on X'],
+    side: ["Founder's account on X"],
   },
   {
     title: 'Governing rules',

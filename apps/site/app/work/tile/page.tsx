@@ -66,17 +66,17 @@ const DIMENSIONS = [
     observation:
       'Visual system aligns with VAI brand: dark default, VAI yellow accent #FFC400. The Designesy colours are deliberately kept out of the VAI surface. The tool follows the same deployment pattern as Continuity.',
     judgment:
-      'Coherent within the VAI surface. The Designesy graduation path is documented: Lab feel on LE-VAI, then contract, then series production for Designesy public surfaces.',
+      'Coherent within the VAI surface. The Designesy graduation path is documented: first as a VAI tool, then contract, then series production for Designesy public surfaces.',
     action: 'Keep the VAI/Designesy separation explicit. When Tile graduates to Designesy /labs, switch from VAI yellow to Designesy tokens.',
   },
   {
     num: '06',
     title: 'Durability',
     observation:
-      'Full BRIEF documents intent, feel, parts, ratios, spine, export, and graduation path. STATUS.md tracks publication state. HOST.md records the live URL, repo, and OG image. The tool is self-contained and will not break from dependency drift.',
+      'A full brief documents intent, feel, parts, ratios, spine, export, and graduation path. A status log tracks publication state. A hosting note records the live URL, repo, and OG image. The tool is self-contained and will not break from dependency drift.',
     judgment:
       'Durable as a shipped artifact. Documentation is complete enough for another builder to remix or maintain.',
-    action: 'Keep BRIEF and STATUS synchronized. When the tool changes, update both.',
+    action: 'Keep the brief and the status log synchronized. When the tool changes, update both.',
   },
   {
     num: '07',
@@ -102,7 +102,7 @@ const FINDINGS = [
   'Purpose is sharp: compose a series grid that stays related without template energy',
   'Zero-dependency deployment: single index.html, no framework, no CDN',
   'Human-language labels lead in place of grammar jargon',
-  'Full documentation: BRIEF, STATUS, HOST, from intent through hosting',
+  'Full documentation: a brief, a status log and a hosting note',
   'Published on X: 617 views (24 h, 2026-07-13)',
   'Designesy graduation path documented and gated',
   'Built on the VAI surface; graduating to Designesy requires token reconciliation',
@@ -126,7 +126,7 @@ const INPUTS: Input[] = [
   {
     title: 'Audience and context',
     meta: 'Public builders and creators on X',
-    side: ['@levainbey'],
+    side: ["Founder's account on X"],
   },
   {
     title: 'Governing rules',
