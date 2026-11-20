@@ -48,6 +48,17 @@ range ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges, and
   ORCHID and drone remote ID), the documentation ranges, 6to4, AS112,
   segment routing, unique local, link-local, site-local and multicast.
 - The package README's SSRF section lists what the check refuses.
+- **Every request connects directly.** The engine sends every request
+  (the page and its other candidate URLs, each redirect, each stylesheet
+  and `/DESIGN.md`) on one connection agent of its own, which has no
+  proxy. It ignores proxy settings in the environment (`HTTPS_PROXY`,
+  `HTTP_PROXY`, `ALL_PROXY`, `NO_PROXY`, `NODE_USE_ENV_PROXY=1` and
+  `--use-env-proxy`) and a proxy set on `https.globalAgent`, so the
+  address check applies to every request. The agent is made when the
+  engine loads, so an `Agent` class put in place of `node:https`'s after
+  that is not used. Code in the same process that replaces
+  `node:https`'s request functions, or its `Agent` class before the
+  engine loads, is outside this.
 
 ### Results that can move (npm address checks)
 
@@ -77,6 +88,17 @@ range ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges, and
   host, a lookup host and a lookup answer.
 - A page that is read is scored as before, and no check, rule, weight or
   grade boundary changes.
+- With the environment proxy on and `HTTPS_PROXY` set, or with a proxy
+  on `https.globalAgent`, the engine's requests went through that proxy,
+  which resolved each name itself. They now connect directly, and the
+  address check judges each name. On a network that allows traffic out
+  only through a proxy, every page is now reported unreachable
+  (`network`), where it was read through the proxy: such a network
+  cannot score pages with the npm engine.
+- Other settings given to `https.globalAgent` (a CA,
+  `rejectUnauthorized` or `maxSockets`, or an agent that replaced it) no
+  longer apply to the engine's requests. `NODE_EXTRA_CA_CERTS` still
+  applies.
 
 ### Not changed (npm address checks)
 
@@ -93,8 +115,6 @@ range ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges, and
   host, and the numeric, octal and hex label rules, which read the host
   after the URL parser has rewritten it.
 - Redirects (at most 3), the read limits and the timeouts.
-- A request Node sends through a proxy: the proxy resolves the name, and
-  the check does not see its answers.
 - The calibration corpus, the offline engine's golden, and every verdict
   for a page that is read.
 - Versions. `@designesy/score` stays 0.9.3 and `ENGINE_VERSION` stays
@@ -130,10 +150,68 @@ range ipaddr.js 2.5.0 names in its IPv4 and IPv6 SpecialRanges, and
   swapped, since no IPv6 range in the table is longer than /96.
 - The source-drift baseline lists `NON_PUBLIC_RANGES`, `addressBytes`
   and `isPublicAddress` as engine-only, in place of `isPrivateIPv4`.
+- `packages/score/test/direct-connect.test.mjs` holds 16 cases. Each
+  scores a page in a child process, and a loopback proxy records what it
+  is sent. They check that no request of the engine reaches the proxy
+  and that the engine's lookup is asked for each name: the page and its
+  `www.` candidate under each way to switch the environment proxy on,
+  each of the 3 redirects the engine follows, a stylesheet,
+  `/DESIGN.md`, an agent that tunnels through the proxy set as
+  `https.globalAgent` before and after the engine loads (and the one
+  `http.setGlobalProxyFromEnv` sets, where Node has it), such an agent's
+  class put in place of `node:https`'s `Agent` after it loads, and
+  `HTTP_PROXY` alone, `ALL_PROXY` or `all_proxy` with the environment
+  proxy on. Two cases check that no request is sent again: one gives the
+  page and its other candidate URLs a connection error (refused, timed
+  out, reset, or an unreachable network or host; the test fails one real
+  connection of the engine's agent with `ENETUNREACH`), and the other
+  gives the page, its other candidate URLs, a stylesheet and
+  `/DESIGN.md` a timeout or a 403, 407, 429, 502 or 503 answer. One case
+  scores through the package's CLI. One checks that with no proxy
+  settings every request goes on one agent that is not
+  `https.globalAgent`, with keep-alive. Two serve pages from loopback
+  TLS sites whose CAs the test makes. In one, the site closes each
+  connection: the host is looked up again for each new one, and the
+  engine's lookup refuses an answer that turns private. In the other, a
+  CA given in `NODE_EXTRA_CA_CERTS` is trusted, a site whose certificate
+  no trusted CA vouches for is refused, for the page and for a
+  stylesheet, and so is one whose certificate is for another name. Every
+  case checks that `https.globalAgent` and `http.globalAgent` stay the
+  same objects while the engine loads and scores, that the proxy
+  settings in the environment stay as they were, that nothing calls
+  `fetch`, and that each connection the engine opens to a host name
+  carries the engine's lookup. Every case but the CLI's also checks that
+  the global agents still send through the proxy after the engine loads
+  and after it scores, when they did before. On a Node that does not
+  send requests through the environment proxy, the first case is
+  skipped, and nine others run with no proxy settings where they would
+  switch it on. On the engine before this change, 13 fail on a Node that
+  sends requests through the environment proxy, and 8 fail on one that
+  does not. The control, with the environment proxy off, and the cases
+  for the `Agent` class and for `HTTP_PROXY` or `ALL_PROXY` pass on
+  both. The source-drift baseline lists `DIRECT_AGENT` as engine-only.
+- `packages/score/test/direct-connect-source.test.mjs` reads the
+  engine's source and its build with the TypeScript compiler: each
+  identifier, and each string written as a property key (in `x['key']`,
+  as a computed key, or as a key in an object literal, a destructuring
+  pattern, a class or an enum), outside type positions, a class's
+  `extends` clause included. It does not read a string used any other
+  way or a name built at run time. It checks that the engine imports
+  nothing that can open a connection but `Agent` and `get` from
+  `node:https`, each taken once, names none of the ways on its lists to
+  send a request (a socket and a request's own writers among them) or to
+  reach code built at run time, calls `get` in one place, with the `url`
+  parameter of its function, which that function never writes to or
+  declares again, `agent: DIRECT_AGENT` and `lookup: safeLookup`, names
+  `agent` only there, and makes `DIRECT_AGENT` once, with its stated
+  options, for that call alone, and that the package's CLI imports only
+  the engine. A way to send a request that no name on its lists reaches
+  is not seen. Its checks are tested first on a small source of the
+  engine's shape.
 - In `packages/score` on Node 24.15.0, `npm run build`,
   `node scripts/export-corpus.mjs --check` (34 fixtures, the digest as
   on main) and `node scripts/export-offline-golden.mjs --check` (152
-  cases) exit 0. `npm test` passes 489 of 489 with no connection allowed
+  cases) exit 0. `npm test` passes 510 of 510 with no connection allowed
   past loopback and 13 tests left out, which reach a live host or
   resolve a name under `.invalid`. With no network, 10 of those 13 fail,
   the same 10 as on main.

@@ -57,6 +57,7 @@
   ],
   "engineOnly": [
     "const:CONTRACT_VERSION",
+    "const:DIRECT_AGENT",
     "const:MAX_DECODED_BYTES",
     "const:MAX_REDIRECT_HOPS",
     "const:NON_PUBLIC_RANGES",
