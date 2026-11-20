@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect } from 'react';
-import { bind, play, unlock } from 'cuelume';
+import { bind, play, setEnabled, unlock } from 'cuelume';
 import { triggerHapticForCue, warmHaptics } from './haptics-engine';
-import { playExtended, isExtendedSound } from './cuelume-extend';
+import { playExtended, isExtendedSound, soundSwitchOn } from './cuelume-extend';
 
 type CueName =
   | 'chime'
@@ -65,10 +65,16 @@ function playSense(cue: CueName, withHaptic = true) {
  * to delegate all data-cuelume-* attributes. Idempotent —
  * safe across route transitions in the Next.js app router.
  *
+ * Before it binds, it sets cuelume's own switch to the site's sound
+ * switch (soundSwitchOn in cuelume-extend.ts). cuelume starts with its
+ * switch on, and otherwise only the sound preference hook turns it off, so
+ * on a page with no sound control (the error page loaded directly)
+ * cuelume's cues would sound for a visitor who never turned sound on.
+ *
  * Mobile fixes:
  * 1. Audio unlock with cuelume's unlock() on every pointerdown and on a
- *    touch or pen pointerup, until it resolves true, and not while
- *    html[data-audio] says off
+ *    touch or pen pointerup, until it resolves true, and not while the
+ *    site's sound switch is off
  * 2. Touch/pen get press/release cues (Cuelume v0.2.2 gap)
  * 3. Hover-only targets map to one tap on coarse pointers
  * 4. Middle-click / auto-scroll spam guard
@@ -76,6 +82,7 @@ function playSense(cue: CueName, withHaptic = true) {
  */
 export function CuelumeBinder() {
   useEffect(() => {
+    setEnabled(soundSwitchOn());
     warmHaptics();
 
     let middleDown = false;
@@ -101,9 +108,14 @@ export function CuelumeBinder() {
      * of the pointerdown that played it, so the two started together.
      *
      * unlock() starts audio whether or not sound is on, so it waits while
-     * the sound preference says off (html[data-audio="off"], which
-     * use-sound writes on mount and in the click that mutes): the binder
-     * starts no cuelume audio on a muted page. It counts as done only
+     * the site's sound switch is off (soundSwitchOn in cuelume-extend.ts):
+     * html[data-audio] where a sound control has set it, which use-sound
+     * writes on mount and in each click of the switch, and on a page with
+     * no sound control, such as the error page loaded directly, the stored
+     * preference, which is off until the visitor turns sound on. So the
+     * binder starts no cuelume audio while sound is off, on a page with a
+     * sound control or without one. The switch is read at each attempt, so
+     * once sound comes on, the next gesture tries. It counts as done only
      * once it resolves true. It resolves false where the browser reports
      * no gesture yet, has no Web Audio, or refuses the resume, and where
      * the browser cannot report a gesture the resume may wait for a later
@@ -111,7 +123,7 @@ export function CuelumeBinder() {
      */
     const unlockAudio = () => {
       if (audioUnlocked) return;
-      if (document.documentElement.dataset.audio === 'off') return;
+      if (!soundSwitchOn()) return;
       void unlock().then((running) => {
         if (running) audioUnlocked = true;
       });
