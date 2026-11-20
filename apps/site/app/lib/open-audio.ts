@@ -14,8 +14,6 @@ export const OPEN_AUDIO: Record<string, OpenAudioEntry> = {
   "cadence": { src: "/audio/open/cadence.opus", duration: 20.13 },
   "acoustics": { src: "/audio/open/acoustics.opus", duration: 14.77 },
   "review.poise": { src: "/audio/open/review.poise.opus", duration: 11.5 },
-  "review.takt": { src: "/audio/open/review.takt.opus", duration: 17.63 },
-  "review.cadence": { src: "/audio/open/review.cadence.opus", duration: 18.43 },
   "review.acoustics": { src: "/audio/open/review.acoustics.opus", duration: 19.26 },
   "review.poise.keyboard": { src: "/audio/open/review.poise.keyboard.opus", duration: 8.1 },
   "review.keyboard": { src: "/audio/open/review.keyboard.opus", duration: 11.75 },
@@ -23,9 +21,6 @@ export const OPEN_AUDIO: Record<string, OpenAudioEntry> = {
   "review.designesy-org": { src: "/audio/open/review.designesy-org.opus", duration: 9.96 },
   "acoustic-tokens": { src: "/audio/open/acoustic-tokens.opus", duration: 16.03 },
   "designesy.tokens": { src: "/audio/open/designesy.tokens.opus", duration: 17.56 },
-  "designesy.a11y": { src: "/audio/open/designesy.a11y.opus", duration: 17.4 },
   "designesy.motion": { src: "/audio/open/designesy.motion.opus", duration: 19.2 },
-  "designesy.changelog": { src: "/audio/open/designesy.changelog.opus", duration: 21.84 },
   "designesy.m3-bridge": { src: "/audio/open/designesy.m3-bridge.opus", duration: 25.5 },
-  "designesy.spring-validator": { src: "/audio/open/designesy.spring-validator.opus", duration: 25.04 },
 };
