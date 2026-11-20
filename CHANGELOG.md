@@ -6,6 +6,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Sound is off until a visitor turns it on** (the site; no version moves).
+With nothing stored, or with storage that cannot be read, sound now starts
+off, under reduced motion or not, so "Sound is opt-in", as the labs and
+reviews say, holds for every visitor. A stored on or off decides, as
+before. The sound switch entry below describes the default before this
+change.
+
+### Changed (sound off by default)
+
+- **Sound starts off.** `soundPreference()` (`app/lib/use-sound.tsx`) says
+  on only for a stored `"true"`, and no longer reads reduced motion, which
+  can no longer change the answer. The sound controls, the extended cues
+  and the score form read it, so for a visitor who has not turned sound
+  on, a first click of the sound switch turns it on and stores `"true"`.
+- **The first render says off.** The sound preference hook starts from
+  off, so the senses menu's Sound row is off in the page as served, where
+  it said on until the hook had read storage.
+
+### Fixed (sound off by default)
+
+- **cuelume's own cues start from the switch where no sound control has
+  mounted.** cuelume's switch starts on, and only the hook turned it off,
+  so on a page with no sound control, the error page loaded directly for
+  one, cuelume's cues could sound for a visitor who had turned sound off.
+  The binder (`app/lib/cuelume-binder.tsx`) now sets cuelume's switch to
+  the site's when it mounts.
+- **The audio unlock waits while sound is off, on every page.** cuelume's
+  `unlock()` starts audio whether or not sound is on, and the binder
+  skipped it only while `html[data-audio]` said off, so on a page with no
+  sound control it started audio at a gesture for a visitor who had not
+  turned sound on. It now skips the unlock while the site's sound switch
+  is off, the check the extended cues make (`soundSwitchOn()` in
+  `app/lib/cuelume-extend.ts`), so the binder starts no audio while sound
+  is off. The acoustic token document's mapping rule 8 says the binder
+  skips the unlock while sound is off; that now holds on every page, and
+  its text does not change.
+
+### Not changed (sound off by default)
+
+- A stored `"true"` or `"false"` and its key, so a visitor who turned
+  sound on keeps it on.
+- The cues, their recipes and which event plays each one.
+- No check, scoring rule, weight, score or version moves, and no contract
+  text changes.
+
+Caveats: none of this was listened to in a browser. The gates stand in
+for Web Audio and the page; they run cuelume's own engine only to read
+how its switch starts and in one audio unlock case.
+
+### Gates (sound off by default)
+
+- `check-sound-switch.mjs`: nothing stored and storage that throws now
+  read off (cases 4 and 8), and the hook's first render must say off. A
+  score form case with a stored `"true"` and no reduced motion keeps the
+  check ticks measured, and a new case mounts the binder with no
+  `html[data-audio]`: a touch press is heard only for a stored `"true"`,
+  with cuelume's switch starting as the installed cuelume starts it. 10
+  cases pass; against main before this change, cases 4, 8 and 10 fail.
+- `check-audio-unlock.mjs`: the five cases where the unlock has to run on
+  a page with no sound control start from a stored `"true"`, and its
+  stand-in for cuelume gains the `setEnabled()` the binder now calls. A
+  new case 12 mounts the binder with cuelume's own engine on such a page
+  with nothing stored: a touch tap on a press control, a pen tap and a
+  mouse click call `unlock()` 0 times and make or resume no AudioContext.
+  12 cases pass; against main before this change, case 12 fails.
+- `check-sound-mute.mjs` starts each page from a stored `"true"`, since a
+  mute starts from on.
+
 **The npm engine's address check: one check reads a URL's host and every
 address its lookup gets for a name** (npm `@designesy/score`, from its
 next release; the hosted engine is not changed and no version moves).

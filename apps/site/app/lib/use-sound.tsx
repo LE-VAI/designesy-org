@@ -17,17 +17,16 @@ function applyAudioAttr(on: boolean) {
 export const SOUND_STORAGE_KEY = 'designesy:sound';
 
 /**
- * The sound preference a page starts from, worked out in this one place: a
- * stored "true" or "false" wins, and with neither (nothing stored, or
- * storage that cannot be read) sound is on unless reduced motion is set.
- * Pure: the caller reads storage and the media query. A sound control
- * starts from it when it mounts, and the extended cues
- * (cuelume-extend.ts) read it on a page that has no sound control.
+ * The sound preference a page starts from, worked out in this one place:
+ * sound is on only once the visitor has turned it on, a stored "true". A
+ * stored "false", nothing stored, or storage that cannot be read leaves it
+ * off, under reduced motion or not. Pure: the caller reads storage. A sound
+ * control starts from it when it mounts, and the extended cues and the
+ * binder (cuelume-extend.ts, cuelume-binder.tsx) read it where no sound
+ * control has set html[data-audio].
  */
-export function soundPreference(stored: string | null, reducedMotion: boolean): boolean {
-  if (stored === 'false') return false;
-  if (stored === 'true') return true;
-  return !reducedMotion;
+export function soundPreference(stored: string | null): boolean {
+  return stored === 'true';
 }
 
 /** The timing of one layer of a cuelume cue, in seconds. */
@@ -86,8 +85,10 @@ function applyToCuelume(on: boolean, afterCue = false) {
 /**
  * Designesy owns the sound preference. Cuelume only applies it.
  *
- * Default is enabled, unless reduced-motion is set (acoustic-reduction
- * proxy) or the visitor has explicitly opted out.
+ * Default is off: sound plays only once the visitor turns it on, under
+ * reduced motion or not (soundPreference, above). Until the hook has read
+ * storage, its first render says off too, so a control never shows On for
+ * a preference it has not read.
  *
  * Mobile: Web Audio starts suspended until a user gesture. While sound
  * is on, the binder (cuelume-binder.tsx) starts it in a gesture with
@@ -100,12 +101,10 @@ function applyToCuelume(on: boolean, afterCue = false) {
  * sound after setEnabled(true). Capture-phase attribute cues fired too early.
  */
 export function useSoundPreference() {
-  const [enabled, setEnabledState] = useState(true);
+  const [enabled, setEnabledState] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
     let stored: string | null = null;
     try {
       stored = localStorage.getItem(SOUND_STORAGE_KEY);
@@ -113,7 +112,7 @@ export function useSoundPreference() {
       // Storage may be unavailable — keep derived default.
     }
 
-    const initial = soundPreference(stored, reducedMotion);
+    const initial = soundPreference(stored);
     setEnabledState(initial);
     applyToCuelume(initial);
     applyAudioAttr(initial);

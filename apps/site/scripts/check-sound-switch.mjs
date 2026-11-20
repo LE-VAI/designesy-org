@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Sound switch: the extended cues play nothing while the site's sound switch
- * is off, and the score form follows the same switch as the rest of the site.
+ * is off, the score form follows the same switch as the rest of the site,
+ * and the binder sets cuelume's own switch to it.
  *
  * WHY THIS EXISTS
  * The sound preference hook (app/lib/use-sound.tsx) turns cuelume on and off
@@ -17,8 +18,13 @@
  * one thing before it touches audio: html[data-audio] where a sound control
  * has set it, and on a page with none, the reading a sound control makes
  * when it mounts (soundPreference in use-sound.tsx): a stored "true" or
- * "false", else on unless reduced motion is set. The score form plays its
- * cues through them and keeps no reading of its own.
+ * "false", else off, under reduced motion or not. The score form plays its
+ * cues through them and keeps no reading of its own. cuelume's own cues,
+ * which the binder (app/lib/cuelume-binder.tsx) plays and binds, follow
+ * cuelume's own switch, which starts on and which otherwise only the hook
+ * turns off. On a page with no sound control they sounded whatever the
+ * preference said, so the binder sets that switch to the site's when it
+ * mounts.
  *
  * HOW IT MEASURES
  * The real modules, loaded through scripts/lib/route-harness.js, on a page
@@ -36,13 +42,20 @@
  * as plain objects and never mounted. Given a URL, it scores it on mount, as
  * a deep link does. The check answers the scoring request by hand after
  * 1.2 s, then renders the form again and runs the count-up's frame 1.3 s
- * later, past its 1.2 s; a second form gets a rate-limit error. cuelume and
- * next/link are stood in for, and cuelume's recipes are its own
- * (cuelume/themes). Calls to the extended cues are labelled with their name
- * as they are made, so on an AudioContext that is running, a pulse of the
- * processing loop, which its timer plays, is the only sound with no label.
- * A cue played once a waiting AudioContext starts has no label either, so
- * the cases that start one waiting count every sound they hear.
+ * later, past its 1.2 s; a second form gets a rate-limit error. next/link is
+ * stood in for, and so is cuelume, as its own switch: setEnabled() sets it,
+ * and a cue cuelume is asked to play is heard only while it is on. It starts
+ * as the installed cuelume starts it, read at the start of the run: a cue
+ * played on the real cuelume before any setEnabled() makes an AudioContext
+ * only while cuelume's switch is on. cuelume's recipes are its own
+ * (cuelume/themes). The binder is mounted with the same stand-in for React,
+ * its haptics swapped for nothing, and a touch press on a press control is
+ * sent to the document's listeners as the browser sends a pointerdown.
+ * Calls to the extended cues are labelled with their name as they are made,
+ * so on an AudioContext that is running, a pulse of the processing loop,
+ * which its timer plays, is the only sound with no label. A cue played once
+ * a waiting AudioContext starts has no label either, so the cases that start
+ * one waiting count every sound they hear.
  *
  * WHAT IT ASSERTS
  *   1. With html[data-audio] "on", every extended cue is heard: error,
@@ -64,46 +77,65 @@
  *   4. With no sound control on the page (no html[data-audio]), the info and
  *      error cues are heard exactly when a sound control mounting on that
  *      page says on: a stored "true" under reduced motion (on), a stored
- *      "false" (off), nothing stored under reduced motion (off) and without
- *      (on), and storage that throws, without reduced motion (on) and under
- *      it (off). The control is the real sound preference hook, mounted
- *      after the cues are played, and it writes that same answer to
+ *      "false" (off), nothing stored, under reduced motion and without
+ *      (off), and storage that throws, without reduced motion and under it
+ *      (off). The control is the real sound preference hook, mounted after
+ *      the cues are played. Its first render, before it has read storage,
+ *      says off, and once mounted it writes the same answer to
  *      html[data-audio].
- *   5. to 8. The score form on four pages: the switch on (html[data-audio]
+ *   5. to 9. The score form on five pages: the switch on (html[data-audio]
  *      "on" with a stored "true", under reduced motion: a visitor who turned
  *      sound on), the switch off ("off" with a stored "true"), no switch
- *      with a stored "true" under reduced motion, and no switch with storage
- *      that throws. Where the switch is on, a graded run plays the
- *      processing pulse while the request is out and the grade reveal when
- *      the result lands, and without reduced motion the check ticks of the
- *      count-up too; no pulse is heard once the answer is in; a run answered
- *      with a rate limit plays the blocked cue. Where it is off, neither run
- *      plays anything and no AudioContext is made.
+ *      with a stored "true" under reduced motion, no switch with storage
+ *      that throws (off), and no switch with a stored "true" without reduced
+ *      motion. Where the switch is on, a graded run plays the processing
+ *      pulse while the request is out and the grade reveal when the result
+ *      lands, and without reduced motion the check ticks of the count-up
+ *      too; no pulse is heard once the answer is in; a run answered with a
+ *      rate limit plays the blocked cue. Where it is off, neither run plays
+ *      anything and no AudioContext is made.
+ *  10. With no html[data-audio] (no sound control on the page, or one whose
+ *      hook has not run yet), a touch press on a press control, which the
+ *      binder plays through cuelume, is heard exactly when a sound control
+ *      mounting there says on: a stored "true", with and without reduced
+ *      motion (heard), and a stored "false", nothing stored, with and
+ *      without reduced motion, and storage that throws (silent). The real
+ *      hook, mounted after the press, writes the same answer to
+ *      html[data-audio].
  *
  * PROVING IT CAN FAIL
  * --app <dir> loads the modules from another apps/site directory. Against
- * the extended cues and the score form before this check, all 8 cases fail:
+ * the code before sound was off by default, cases 4, 8 and 10 fail: nothing
+ * stored and storage that throws read as on, the hook's first render says
+ * on, and with no html[data-audio] the binder's press is heard, under a
+ * stored "false" too. Against the code before this check, 9 of the 10 fail:
  * every cue is heard with the switch off, the processing loop pulses on
- * after a mute, and the score form plays nothing under reduced motion or
- * with storage that throws, whatever the switch says, and everything with
- * the switch off when the stored preference says on. Each of these changes
+ * after a mute, the score form plays nothing under reduced motion whatever
+ * the switch says, plays everything with the switch off when the stored
+ * preference says on, and makes an AudioContext with storage that throws.
+ * Case 9 passes there, since the form's own reading said on for a stored
+ * "true" without reduced motion, as the switch does. Each of these changes
  * to the current code fails the cases in brackets:
  *   - In the extended cues: no switch check before the AudioContext is
- *     made, the one after it kept (1, 2, 6: an AudioContext made while
+ *     made, the one after it kept (1, 2, 6, 8: an AudioContext made while
  *     off); no check when a waiting AudioContext starts (3); no check in the
  *     processing loop's pulse (2); processing-stop sent through the switch
  *     check (2); a processing-start whose AudioContext is still waiting
  *     begins its loop though a processing-stop came first (2);
  *     processing-stop not counted, so a waiting processing-start does not
- *     see it (2); only "on" read as on, so no switch reads as off (4, 7, 8);
- *     the attribute ignored, the stored preference read alone (1, 2, 3, 6);
- *     storage that throws read as off (4, 8).
- *   - In soundPreference: reduced motion read as off before a stored "true"
- *     (4, 7), so the sound control mounts off too.
+ *     see it (2); only "on" read as on, so no switch reads as off (4, 7, 9,
+ *     10); the attribute ignored, the stored preference read alone (1, 2,
+ *     3, 6); storage that throws read as on (4, 8, 10).
+ *   - In the hook: soundPreference on unless a stored "false" (4, 8, 10);
+ *     the hook from before sound was off by default put back whole (4, 8,
+ *     10); reduced motion read as off before a stored "true" (4, 7, 10);
+ *     the first render on (4).
+ *   - In the binder: cuelume's switch not set at mount (10), set on (10),
+ *     or set from html[data-audio] alone (10).
  *   - In the score form: a reading of its own (reduced motion or a stored
  *     "false" says off, storage that throws says off) put back in front of
- *     the processing loop (5, 7, 8); the grade reveal dropped from its
- *     reduced-motion branch (5, 7).
+ *     the processing loop (5, 7); the grade reveal dropped from its
+ *     reduced-motion branch (5, 7); the check-pass tick dropped (9).
  *
  * Usage:  node scripts/check-sound-switch.mjs [--app <dir>]
  * Exits 1 on any failure.
@@ -122,6 +154,35 @@ const { createHarness } = require('./lib/route-harness.js');
 
 // cuelume's exports map offers cuelume/themes to import only, so its recipes are imported, not required.
 const { THEMES } = await import('cuelume/themes');
+
+/**
+ * Whether cuelume's own switch starts on, read from the installed cuelume:
+ * a cue played before any setEnabled() makes an AudioContext only while that
+ * switch is on. The AudioContext never starts, so nothing is rendered.
+ */
+async function cuelumeStartsOn() {
+  let made = 0;
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const AudioContext = class {
+    constructor() {
+      made += 1;
+      this.state = 'suspended';
+    }
+    resume() {
+      return new Promise(() => {});
+    }
+  };
+  Object.defineProperty(globalThis, 'window', { value: { AudioContext }, configurable: true, writable: true });
+  try {
+    const { play } = await import('cuelume');
+    play('tap');
+  } finally {
+    if (saved) Object.defineProperty(globalThis, 'window', saved);
+    else delete globalThis.window;
+  }
+  return made > 0;
+}
+const CUELUME_STARTS_ON = await cuelumeStartsOn();
 
 const STORAGE_KEY = 'designesy:sound';
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -332,6 +393,26 @@ function fakeReact() {
 /** JSX as plain objects: nothing is mounted, and child components are never called. */
 const jsx = (type, props) => ({ type, props });
 
+/** An element with attributes and a parent, enough for closest('[attr]'), getAttribute and hasAttribute. */
+class FakeElement {
+  constructor(attrs = {}, parent = null) {
+    this.attrs = { ...attrs };
+    this.parent = parent;
+  }
+  getAttribute(name) {
+    return Object.prototype.hasOwnProperty.call(this.attrs, name) ? this.attrs[name] : null;
+  }
+  hasAttribute(name) {
+    return Object.prototype.hasOwnProperty.call(this.attrs, name);
+  }
+  closest(selector) {
+    const m = /^\[([\w-]+)\]$/.exec(selector);
+    if (!m) throw new Error(`the fake element answers closest() for one [attribute] selector only, not ${selector}`);
+    for (let el = this; el; el = el.parent) if (el.hasAttribute(m[1])) return el;
+    return null;
+  }
+}
+
 /**
  * One page: the modules loaded fresh, with the browser globals stood in for.
  * `audio` is html[data-audio] (undefined: no sound control on the page);
@@ -342,6 +423,8 @@ const jsx = (type, props) => ({ type, props });
 function newPage({ audio, stored, storage = 'store', reducedMotion = false, startSuspended = false } = {}) {
   const clock = fakeClock();
   const page = { clock, contexts: 0, heard: [], cue: null, resumes: [], frames: [], startSuspended, answer: null };
+  /** cuelume's own switch, as the installed cuelume starts it, and the cues heard through it. */
+  page.cuelume = { on: CUELUME_STARTS_ON, heard: [] };
   const html = { dataset: {} };
   if (audio !== undefined) html.dataset.audio = audio;
   const store = new Map(stored === undefined ? [] : [[STORAGE_KEY, stored]]);
@@ -369,9 +452,25 @@ function newPage({ audio, stored, storage = 'store', reducedMotion = false, star
     addEventListener() {},
     removeEventListener() {},
   };
+  const listeners = [];
+  const document = {
+    documentElement: html,
+    body: {},
+    activeElement: null,
+    addEventListener(type, fn, options) {
+      listeners.push({ type, fn, capture: options === true || Boolean(options && options.capture) });
+    },
+    removeEventListener(type, fn, options) {
+      const capture = options === true || Boolean(options && options.capture);
+      const i = listeners.findIndex((l) => l.type === type && l.fn === fn && l.capture === capture);
+      if (i >= 0) listeners.splice(i, 1);
+    },
+    contains: (node) => node instanceof FakeElement,
+  };
   const globals = {
     window,
-    document: { documentElement: html, body: {}, activeElement: null },
+    document,
+    Element: FakeElement,
     localStorage,
     setTimeout: clock.setTimeout,
     clearTimeout: clock.clear,
@@ -413,13 +512,29 @@ function newPage({ audio, stored, storage = 'store', reducedMotion = false, star
     }
   };
 
+  /**
+   * cuelume as its own switch: setEnabled() sets it, and a cue cuelume is
+   * asked to play is heard only while it is on, as cuelume's play() returns
+   * at once while it is off.
+   */
+  const cuelume = {
+    play(name) {
+      if (page.cuelume.on) page.cuelume.heard.push(name);
+    },
+    setEnabled(value) {
+      if (typeof value === 'boolean') page.cuelume.on = value;
+    },
+    bind: () => () => {},
+    unlock: async () => true,
+  };
+
   const react = fakeReact();
   const h = createHarness({
     app: APP,
     stubs: {
       react: react.api,
       'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: Symbol.for('react.fragment') },
-      cuelume: { play() {}, setEnabled() {}, bind: () => () => {}, unlock: async () => true },
+      cuelume,
       'cuelume/themes': { THEMES },
       'next/link': { __esModule: true, default: function Link() { return null; } },
     },
@@ -429,6 +544,12 @@ function newPage({ audio, stored, storage = 'store', reducedMotion = false, star
         playExtended: (name) => page.during(name, () => real.playExtended(name)),
         playGradeReveal: (grade) => page.during(`grade reveal ${grade}`, () => real.playGradeReveal(grade)),
       }),
+      'app/lib/haptics-engine.ts': (real) => ({
+        ...real,
+        warmHaptics() {},
+        triggerHapticForCue() {},
+        triggerHaptic() {},
+      }),
     },
   });
 
@@ -437,6 +558,34 @@ function newPage({ audio, stored, storage = 'store', reducedMotion = false, star
   page.extend = () => h.load('app/lib/cuelume-extend.ts');
   page.soundHook = () => h.load('app/lib/use-sound.tsx').useSoundPreference;
   page.scoreForm = () => h.load('app/score/score-form.tsx').ScoreForm;
+  /** Mount the binder once, as the root layout does: its effect runs. */
+  page.mountBinder = () => react.render(react.instance(), h.load('app/lib/cuelume-binder.tsx').CuelumeBinder, undefined);
+  /**
+   * A touch press on a press control, sent to the document's listeners,
+   * capture first, as the browser sends a pointerdown; returns how many
+   * cuelume cues it was heard to play.
+   */
+  page.touchPress = () => {
+    const before = page.cuelume.heard.length;
+    let stopped = false;
+    const event = {
+      type: 'pointerdown',
+      pointerType: 'touch',
+      button: 0,
+      target: new FakeElement({ 'data-cuelume-press': '' }),
+      stopImmediatePropagation() {
+        stopped = true;
+      },
+      stopPropagation() {},
+      preventDefault() {},
+    };
+    for (const l of [...listeners.filter((x) => x.capture), ...listeners.filter((x) => !x.capture)]) {
+      if (l.type !== event.type) continue;
+      l.fn(event);
+      if (stopped) break;
+    }
+    return page.cuelume.heard.length - before;
+  };
   /** How many oscillators fn starts, the timers it moves the clock past included. */
   page.listen = (fn) => {
     const before = page.heard.length;
@@ -675,8 +824,8 @@ const CASES = [
         { what: 'a stored "true" under reduced motion', stored: 'true', reducedMotion: true, on: true },
         { what: 'a stored "false"', stored: 'false', on: false },
         { what: 'nothing stored, under reduced motion', reducedMotion: true, on: false },
-        { what: 'nothing stored', on: true },
-        { what: 'storage that throws', storage: 'throws', on: true },
+        { what: 'nothing stored', on: false },
+        { what: 'storage that throws', storage: 'throws', on: false },
         { what: 'storage that throws, under reduced motion', storage: 'throws', reducedMotion: true, on: false },
       ];
       const wrong = [];
@@ -685,11 +834,12 @@ const CASES = [
           const x = page.extend();
           const info = page.listen(() => x.playExtended('info')) > 0;
           const error = page.listen(() => x.playExtended('error')) > 0;
-          page.react.render(page.react.instance(), page.soundHook(), undefined);
+          const first = page.react.render(page.react.instance(), page.soundHook(), undefined);
           const control = page.html.dataset.audio;
           if (info !== row.on || error !== row.on) {
             wrong.push(`${row.what}: info ${info ? 'heard' : 'silent'}, error ${error ? 'heard' : 'silent'}, expected ${row.on ? 'heard' : 'silent'}`);
           }
+          if (first.enabled) wrong.push(`${row.what}: the sound control's first render, before it read storage, said on`);
           if (control !== label(row.on)) wrong.push(`${row.what}: the sound control mounted ${control ?? 'without writing html[data-audio]'}, expected ${label(row.on)}`);
         });
       }
@@ -700,7 +850,34 @@ const CASES = [
   scoreFormCase('the score form plays its cues with the switch on, under reduced motion with a stored "true"', { audio: 'on', stored: 'true', reducedMotion: true }, true),
   scoreFormCase('the score form plays nothing with the switch off, though another tab stored "true"', { audio: 'off', stored: 'true' }, false),
   scoreFormCase('with no sound control, the score form plays its cues for a stored "true" under reduced motion', { stored: 'true', reducedMotion: true }, true),
-  scoreFormCase('with no sound control, the score form plays its cues when storage throws, without reduced motion', { storage: 'throws' }, true),
+  scoreFormCase('with no sound control, the score form plays nothing when storage throws, without reduced motion', { storage: 'throws' }, false),
+  scoreFormCase('with no sound control, the score form plays its cues and the check ticks for a stored "true", without reduced motion', { stored: 'true' }, true),
+  {
+    name: 'with no html[data-audio], a press the binder plays through cuelume is heard exactly when a sound control mounting there says on',
+    run: async () => {
+      const ROWS = [
+        { what: 'a stored "true"', stored: 'true', on: true },
+        { what: 'a stored "true" under reduced motion', stored: 'true', reducedMotion: true, on: true },
+        { what: 'a stored "false"', stored: 'false', on: false },
+        { what: 'nothing stored', on: false },
+        { what: 'nothing stored, under reduced motion', reducedMotion: true, on: false },
+        { what: 'storage that throws', storage: 'throws', on: false },
+      ];
+      const wrong = [];
+      for (const row of ROWS) {
+        await onPage(row, (page) => {
+          page.mountBinder();
+          const heard = page.touchPress() > 0;
+          page.react.render(page.react.instance(), page.soundHook(), undefined);
+          const control = page.html.dataset.audio;
+          if (heard !== row.on) wrong.push(`${row.what}: the press was ${heard ? 'heard' : 'silent'}, expected ${row.on ? 'heard' : 'silent'}`);
+          if (control !== label(row.on)) wrong.push(`${row.what}: the sound control mounted ${control ?? 'without writing html[data-audio]'}, expected ${label(row.on)}`);
+        });
+      }
+      assert.deepEqual(wrong, [], wrong.join('; '));
+      return `cuelume starts ${label(CUELUME_STARTS_ON)}; ${ROWS.map((r) => `${r.what}: ${r.on ? 'heard' : 'silent'}`).join('; ')}`;
+    },
+  },
 ];
 
 console.log(`Sound switch (${path.relative(process.cwd(), APP) || '.'}, node ${process.version})`);
@@ -720,4 +897,4 @@ if (failures.length) {
   console.log(`Sound switch: ${failures.length} case(s) failed.`);
   process.exit(1);
 }
-console.log('Sound switch: the extended cues and the score form are heard while the switch is on and not while it is off.');
+console.log("Sound switch: the extended cues, the score form and the binder's cuelume cues are heard while the switch is on and not while it is off.");
