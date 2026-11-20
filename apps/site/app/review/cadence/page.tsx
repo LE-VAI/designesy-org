@@ -174,6 +174,14 @@ const VERIFICATION = [
 
 const REVIEWED = '2026-07-13';
 
+// The lab page was checked again on CHECKED_AGAIN. The findings in this file
+// are the review's record and are left in place. CHECKED_AGAIN_NOTE names the
+// one confirmed rule now marked fail and two things the site does differently.
+const CHECKED_AGAIN = '2026-11-20';
+
+const CHECKED_AGAIN_NOTE =
+  `This review is dated ${REVIEWED}, with fixes recorded on 2026-07-15. The lab page was checked against the shipped CSS on ${CHECKED_AGAIN}, and one rule confirmed here is now marked fail on /labs/cadence: the measure. The lab's notes cap at 660px where the rule asks 520 to 580px. The review also describes a system font stack and text settings on :root. The site now ships three self-hosted faces and sets those settings on body. The findings stay on this page as the review's record.`;
+
 const SUMMARY =
   'Cadence is a considered lab. The live CSS audit confirms 12 of 13 verifiable typography rules: font smoothing on root, rem-based scale, line-height by role, tracking by size, measure cap, text-wrap balance and pretty, tabular numbers, ::selection with the accent blue, user-select on UI chrome, 16px input floor, font-synthesis: none, and text-underline-position: from-font. Two rules identified in the initial field check have been resolved in globals.css. One rule remains open: block-axis logical properties are not yet migrated (inline-axis is done). Typography rules are adopted into design system contract v0.1.3. Remaining work is block-axis migration and synchronization; adoption is settled.';
 
@@ -279,6 +287,11 @@ export default function CadenceFieldCheckPage() {
               </dl>
             </div>
           </div>
+        </section>
+
+        <section className="doctrine-section fade-up" id="checked-again">
+          <h2 className="doctrine-heading">{`Lab page checked again · ${CHECKED_AGAIN}`}</h2>
+          <p className="surface-note">{CHECKED_AGAIN_NOTE}</p>
         </section>
 
         <section className="doctrine-section fade-up" id="inputs">
@@ -477,6 +490,8 @@ export default function CadenceFieldCheckPage() {
           Outcome: pass with notes. Institutional quality discipline. It is not
           a client report. Typography rules are adopted into contract v0.1.3;
           remaining notes are the block-axis migration and synchronization.
+          The lab page was checked again on {CHECKED_AGAIN}, and its measure
+          rule is now marked fail.
         </div>
       </main>
 

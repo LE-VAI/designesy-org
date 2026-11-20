@@ -197,9 +197,9 @@ Rules (each with an exact value):
   10. 16px input floor on mobile
 
 Open tensions (not yet fully verified on designesy.org):
-  - Block-axis logical properties not yet migrated (margin-block-start/end)
-  - border-inline-start not yet used; decorative borders still physical
-  - inset-inline not yet used; absolute positioning still left/right
+  - Block-axis logical properties partly migrated (padding-block, margin-block)
+  - border-inline-start used once; decorative borders still physical
+  - inset-inline used in places; most absolute positioning still left/right
   - Measure wider than rule 5: notes cap at 660px, page shell at 1180px to 1560px
 
 Resolved tensions (v0.1.3 CSS fixes applied):
@@ -479,8 +479,8 @@ export default function CadenceLabPage() {
               { title: 'text-underline-position: from-font, set on body', status: 'pass' },
               { title: 'text-decoration-skip-ink: auto, set on body', status: 'pass' },
               { title: 'Logical inline properties: margin-inline and padding-inline applied', status: 'pass' },
-              { title: 'Block-axis logical properties: not yet migrated (open tension)', status: 'fail' },
-              { title: 'border-inline-start unused; decorative borders still physical (open tension)', status: 'fail' },
+              { title: 'Block-axis logical properties: partly migrated (open tension)', status: 'fail' },
+              { title: 'border-inline-start used once; border-left accents remain (open tension)', status: 'fail' },
               {
                 title: 'Field check with Kit One · Design Review',
                 meta: `Reviewed ${FIELD_CHECK.reviewed}. The rows above are newer, and some differ from it.`,
