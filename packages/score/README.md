@@ -108,6 +108,8 @@ Built-in SSRF protection rejects:
 - Encoded IP bypasses (decimal, octal, hex)
 - Redirect chains to internal addresses
 
+The engine connects directly to each site and ignores proxy settings in the environment (`HTTPS_PROXY`, `HTTP_PROXY`, `ALL_PROXY`, `NO_PROXY`, `NODE_USE_ENV_PROXY=1`, `--use-env-proxy`) and a proxy set on `https.globalAgent`, so the check applies to every request: the page and its other candidate URLs, each redirect, each stylesheet and `/DESIGN.md`. On a network that allows traffic out only through a proxy, the engine cannot reach sites, and each page is reported unreachable (`unreachableReason: 'network'`), so the engine cannot score pages on such a network. Other settings given to `https.globalAgent`, such as a CA, do not apply to the engine's requests; `NODE_EXTRA_CA_CERTS` does. The engine makes its agent when it loads, so an `Agent` class put in place of `node:https`'s after that is not used. Code in the same process that replaces `node:https`'s request functions, or its `Agent` class before the engine loads, is outside this.
+
 ## License
 
 MIT © [Designesy](https://www.designesy.org)

@@ -19,7 +19,7 @@
  *   APCA-W3 0.0.98G-4g (perceptual contrast)
  */
 
-import { get as httpsGet } from 'node:https';
+import { Agent as HttpsAgent, get as httpsGet } from 'node:https';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import type { LookupOptions, LookupAddress } from 'node:dns';
 import { createBrotliDecompress, createGunzip, createInflate, createInflateRaw } from 'node:zlib';
@@ -277,6 +277,11 @@ function isPublicAddress(address: string): boolean {
  * IPv6, encoded IPs, IP-literal private ranges). This lookup function adds
  * the DNS-resolution layer that catches hostnames that resolve to private IPs.
  * A URL host and every answer, IPv4 and IPv6, go through the same check.
+ * Every request is sent on DIRECT_AGENT, which has no proxy, so this lookup
+ * runs for each connection the agent opens to a host name. A request on a
+ * kept-alive connection goes to an address this lookup already accepted. A
+ * URL whose host is an IP address is connected to with no lookup, and
+ * isValidUrl judges that host before the request.
  *
  * References:
  *   OWASP SSRF Prevention Cheat Sheet (DNS pinning — resolve A+AAAA, validate every address)
@@ -351,6 +356,27 @@ const BROWSER_HEADERS: Record<string, string> = {
 const MAX_REDIRECT_HOPS = 3;
 
 /**
+ * The agent every request httpsFetch makes is sent on: the page and its other
+ * candidate URLs, each redirect, each stylesheet and the /DESIGN.md probe. It
+ * has the settings Node's own https.globalAgent has from Node 19 (keep-alive,
+ * lifo scheduling, a 5 s idle timeout) and no proxy, so each connection goes
+ * directly to an address safeLookup accepted, or to an IP-literal host that
+ * isValidUrl accepted, and requests to one host share a connection. Node
+ * gives a proxy named in the environment (HTTPS_PROXY, with
+ * NODE_USE_ENV_PROXY=1 or --use-env-proxy) to its global agents, and code in
+ * the process can give https.globalAgent a proxy; an agent made here with no
+ * proxy option takes neither. `agent: false` is not used: it makes a new
+ * agent of https.globalAgent's class, and a replaced global agent's class can
+ * send through a proxy of its own. The agent is made once, when the engine
+ * loads, and is not exported, so an Agent class put in place of node:https's
+ * after that is not used. Code in the same process that replaces node:https's
+ * request functions, or its Agent class before the engine loads, is outside
+ * this. On a network that lets traffic out only through a proxy, the engine
+ * cannot reach a site, and the page is reported unreachable.
+ */
+const DIRECT_AGENT = new HttpsAgent({ keepAlive: true, scheduling: 'lifo', timeout: 5000 });
+
+/**
  * The most bytes httpsFetch decodes from one compressed body (engine 1.5.4),
  * and the most a page's stylesheets decode between them (fetchPageResilient
  * shares one budget of this size across them). Past it the read fails: a
@@ -417,6 +443,9 @@ type HttpsFetchOutcome = { ok: boolean; status: number; text: string; redirected
  * or names a registered coding not decoded here (or more than one coding) is
  * a failed read (ok: false, status 0), never compressed bytes read as text.
  * When the coded stream ends, the response is not read further.
+ *
+ * Every request, the first and each redirect, is sent on DIRECT_AGENT, so it
+ * connects directly and uses no proxy from the environment.
  */
 function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8000, hop = 0, budget?: { left: number }): Promise<HttpsFetchOutcome> {
   return new Promise((resolve) => {
@@ -432,7 +461,7 @@ function httpsFetch(url: string, headers?: Record<string, string>, timeoutMs = 8
       resolve(r);
     };
     try {
-      const req = httpsGet(url, { headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
+      const req = httpsGet(url, { agent: DIRECT_AGENT, headers: { ...BROWSER_HEADERS, ...(headers || {}) }, timeout: timeoutMs, lookup: safeLookup as typeof import('node:dns').lookup }, (res) => {
         // Follow a redirect manually (3xx → Location)
         if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           try {
