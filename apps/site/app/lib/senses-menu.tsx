@@ -20,8 +20,11 @@ import { pushLayer } from './overlay-stack';
  * the target is the full row and a voice user can say the name they see.
  *
  * aria-pressed rather than role="switch" keeps these on the contract's toggle
- * pattern: v04 traces the sound control by aria-pressed plus the data-audio
- * attribute, and v38 reads aria-pressed as a selection control, not a command.
+ * pattern, and v38 reads aria-pressed as a selection control, not a command.
+ * The Sound row carries data-sound-toggle, which the browser audit's v04
+ * looks for before any name: it opens this panel with the trigger, clicks
+ * the row and reads its aria-pressed. By name alone, a visible pressed control
+ * that mentions sound, such as a checklist row on /contracts, would come first.
  *
  * The tile at the right of each row is the state: lit when the sense is on,
  * with a glyph that changes shape rather than swapping characters.
@@ -33,6 +36,7 @@ function Row({
   hint,
   on,
   onToggle,
+  sound,
   children,
 }: {
   name: string;
@@ -40,6 +44,7 @@ function Row({
   hint: string;
   on: boolean;
   onToggle: (e: MouseEvent<HTMLButtonElement>) => void;
+  sound?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -51,6 +56,7 @@ function Row({
       aria-describedby={`${id}-h`}
       onClick={onToggle}
       data-cuelume-hover="whisper"
+      data-sound-toggle={sound ? '' : undefined}
     >
       {/* Named by its content, the label; the hint is its description. An
           aria-labelledby of the label alone failed axe-core 4.14's Label in
@@ -224,6 +230,7 @@ export function SensesMenu() {
           hint={sound.enabled ? 'Soft cues on press and toggle' : 'Muted'}
           on={sound.enabled}
           onToggle={sound.toggle}
+          sound
         >
           <SoundGlyph />
         </Row>

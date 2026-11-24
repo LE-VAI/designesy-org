@@ -6,6 +6,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**v04 finds the sound control a visitor would use, and judges it on any
+site** (the site; no version moves). With the browser audit on, v04
+clicked the first element in the page with `aria-pressed` or
+`data-sound-toggle`. On designesy.org that is the Motion row of the senses
+menu, hidden until the menu opens, so v04 waited 30 s for it and came back
+MANUAL, "browser launch failed". On any other site it also required
+designesy.org's own stored preference to change, so a sound toggle that
+works failed: the Mute button of the W3C ARIA Authoring Practices button
+example is one.
+
+### Fixed (v04 sound control)
+
+- **The sound control is found by its mark, then by its name.** v04 takes
+  an element marked `data-sound-toggle` first: on designesy.org, the
+  senses menu's Sound row and the labs' sound switches. Otherwise it takes
+  a button or a switch (a `<button>` with no role, `role="button"` or
+  `role="switch"`) with `aria-pressed` or `aria-checked` whose accessible
+  name or text says sound, audio or mute, in any case, a visible one
+  first. A pressed control that is neither marked nor named for sound,
+  such as a Bold toggle, is never taken for the sound control or judged.
+  A marked control with neither `aria-pressed` nor `aria-checked` is FAIL
+  at once, hidden or not, and is not clicked.
+- **A hidden control is opened as a visitor opens it.** v04 first clicks a
+  visible element with `aria-expanded="false"` whose `aria-controls` names
+  the control or an element that holds it, as the senses menu's trigger
+  names its panel, whatever that element's own pressed state. A hidden
+  control with a pressed or checked state that nothing opens is MANUAL
+  and is not clicked. Each click, on the element that opens the control
+  and on the control, waits at most 3 s, where it waited 30 s.
+- **The stored preference is judged only with scope `contract`.** A
+  designesy.org address gets that scope by default. The pressed or checked
+  state must change on every site; `designesy:sound` must change as well
+  only with scope `contract`, and with scope `universal` it is not read.
+- **v04 judges what holds.** It waits up to 2 s for the state to move and,
+  with scope `contract`, as long again for `designesy:sound` to follow.
+  It then reads the state once more, 500 ms after those waits, and with
+  scope `contract` reads `designesy:sound` at the same moment, and judges
+  that reading, where it read both once, 500 ms after the click. A toggle
+  that goes back before that reading, as an optimistic toggle that rolls
+  back at once does, is FAIL; one that goes back later passes.
+- **A failure says where it happened.** Every error read "browser launch
+  failed", with Playwright's call log after it. v04 now says the browser
+  could not open a page, the page did not load, or the check stopped, with
+  the error's first line. A browser that does not launch is the route's
+  502, as before.
+- **The senses menu marks its Sound row** with `data-sound-toggle`
+  (`app/lib/senses-menu.tsx`). By name alone, a visible checklist row that
+  mentions sound, on /contracts, would come first.
+
+### Results that can move (v04 sound control)
+
+Only with the browser audit on (`ENABLE_BROWSER_AUDIT`):
+
+- designesy.org: v04 opens the senses menu, clicks the Sound row and is
+  PASS when its `aria-pressed` and `designesy:sound` change and hold,
+  where it was MANUAL after 30 s.
+- A site whose sound toggle is marked `data-sound-toggle`, or is named for
+  sound, audio or mute, and changes its pressed or checked state within
+  2 s of the click and keeps it is PASS, where it was FAIL, or MANUAL
+  after 30 s when a hidden pressed control came first.
+- A site whose only pressed or checked controls are not named for sound is
+  SKIP with scope `universal` and WARN with scope `contract`, where its
+  first pressed control was clicked and judged, most often FAIL.
+- A sound switch with `aria-checked` and no `aria-pressed` is judged on
+  `aria-checked`, where v04 clicked the page's first pressed control
+  instead, or, on a page with none, was SKIP or WARN, or FAIL when the
+  switch was a `<button>` whose text said sound.
+- A sound control with a pressed or checked state that is hidden with
+  nothing to open it, whose opener does not take a click, or that does
+  not take a click itself, is MANUAL within 3 s, where it waited 30 s.
+- A control marked `data-sound-toggle` that has neither `aria-pressed`
+  nor `aria-checked` is FAIL at once, hidden or not, where a hidden one
+  that came first was MANUAL after 30 s.
+- Every v04 detail is new text. The score after an audit
+  (`/api/score/rescore`) takes v04's verdict as before, so it can move
+  with it.
+
+### Not changed (v04 sound control)
+
+- The contract and its v04 item, "Sound toggle flips aria-pressed and
+  applies the audio preference", word for word.
+- v02 and v21, the route's one browser, its URL and browser guards, the
+  rate limit and the answer's shape.
+- The score without an audit. No scoring rule, weight or version moves.
+
+Caveats: v04 has not run against designesy.org with this change. The
+gate's pages stand in for the site and for other sites, and its case for
+designesy.org renders the senses menu's markup, with a script of its own
+in place of the menu's client code. v04 reads the state once more 500 ms
+after its waits, so a toggle that goes back later than that passes. A
+sound control named for none of sound, audio or mute, such as "Volume",
+one named in another language, or one with no name, is not found unless
+it is marked `data-sound-toggle`: SKIP with scope `universal`, and WARN
+with scope `contract`, as is a page whose pressed controls are none of
+them sound controls. A pressed control whose name or text says sound,
+audio or mute but that is not a sound control, such as a checklist row
+about sound or a "Mute thread" toggle, is taken for the sound control and
+judged, unless the page marks its sound control `data-sound-toggle`. A
+hidden control is opened only by a visible element with
+`aria-expanded="false"` whose `aria-controls` names the control or an
+element that holds it; behind any other opener it is MANUAL.
+
+### Gates (v04 sound control)
+
+- `check-v04-sound-toggle.mjs`, new, in `npm run build` and CI's Build
+  site job. The real route, loaded through `scripts/lib/route-harness.js`,
+  answers 45 cases on the gate's own pages, and each v04 status and detail
+  must match exactly: designesy.org's senses menu, the W3C example's
+  pattern written for the gate, a page whose only pressed controls are not
+  named for sound, a page with none, toggles that do not move and ones
+  that move back, a pressed control that opens the sound control's
+  panel, a panel that sets its control's state as it opens, a page that
+  watches its storage, storage that throws, pages slow to load, and
+  hidden, disabled, late and failing controls, openers and pages. Each
+  answer's item and category must be the check registry's. The browser
+  is a stand-in with no browser process, on whose clock each case's
+  waiting time must match too; `--channel` or `--chromium` runs the same
+  cases in Chrome, with the same 45 results. Against main before this
+  change, 43 of the 45 cases fail. Of 412 single edits to the new code,
+  every two neighbouring statements swapped among them, 353 fail at least
+  one case, and the 59 others change nothing v04 reports; the gate's
+  header lists all of them, with the reasons.
+- `check-audit-ssrf.js` passes unchanged.
+
 **The reference-format code sample holds the label size on every screen, and
 the Takt and Cadence labs, their field checks and their records name rules
 the shipped CSS does not meet** (the site; no version moves). Three changes,
