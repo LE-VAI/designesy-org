@@ -226,6 +226,18 @@ jobs:
         if: ${{ !cancelled() }}
         run: node scripts/check-audit-ssrf.js
 
+      # The browser audit's v04 takes the sound control marked
+      # data-sound-toggle, or else a pressed or checked button or switch named
+      # for sound, opens a hidden one with the element that controls its
+      # panel, and judges the pressed or checked state that holds after the
+      # click on every site, and designesy:sound only with scope contract,
+      # which designesy.org gets by default (the real route and the senses
+      # menu's markup, with the browser, the pages and their scripts stood in
+      # for).
+      - name: Audit sound control (v04)
+        if: ${{ !cancelled() }}
+        run: node scripts/check-v04-sound-toggle.mjs
+
       # The URL guard applies its numeric-form checks only to a host that
       # ends in a number, read with any trailing dots dropped, and refuses
       # such a host unless it is typed as four decimal parts, reading the

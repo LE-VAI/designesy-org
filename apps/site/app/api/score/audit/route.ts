@@ -297,6 +297,7 @@ async function checkCoreWebVitalsLab(targetUrl: string, fallbackReason: string, 
 
 import path from 'node:path';
 import { chromium as playwrightChromium } from 'playwright-core';
+import type { BrowserContext, ElementHandle, Page } from 'playwright-core';
 import sparticuzChromium from '@sparticuz/chromium';
 
 function browserAuditEnabled(): boolean {
@@ -524,110 +525,260 @@ async function checkResponsiveOverflow(targetUrl: string, shared?: GuardedBrowse
   }
 }
 
-// v04 — sound toggle. Launch Chromium, navigate, locate the sound toggle by
-// [aria-pressed] or [data-sound-toggle] or button text matching 'sound',
-// click it, observe aria-pressed flip, observe localStorage[designesy:sound]
-// update. PASS if both state changes occur.
-// When scope=universal, absence of a sound toggle is SKIP (not WARN) — a site
-// without sound isn't broken, it just doesn't use audio.
-async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal', shared?: GuardedBrowser): Promise<CheckResult> {
-  if (!browserAuditEnabled()) {
-    return {
-      id: 'v04',
-      item: 'Sound toggle flips aria-pressed and applies the audio preference',
-      category: 'poise',
-      status: 'MANUAL',
-      detail: 'this check needs a live browser session, which this deployment does not run, so no result is reported rather than a guessed one',
-    };
+// v04 — the sound control. One page at 1280x800 on the route's browser:
+//
+//  1. Find it. An element marked data-sound-toggle comes first: designesy.org
+//     marks the senses menu's Sound row and the labs' sound switches with it.
+//     Otherwise a button or a switch (a <button> with no role, role="button"
+//     or role="switch") with aria-pressed or aria-checked whose accessible
+//     name or text says sound, audio or mute, in any case. Among those found,
+//     a visible one is taken first. A found control with neither
+//     aria-pressed nor aria-checked, which only a marked one can be, is FAIL
+//     at once, hidden or not, and nothing is clicked.
+//  2. Open it the way a visitor would. A hidden control is shown by clicking
+//     a visible element with aria-expanded="false" whose aria-controls names
+//     the control or an element that holds it, as the senses menu's trigger
+//     names its panel: the control itself is tried first, then each element
+//     above it in turn. A hidden control with a pressed or checked state
+//     that nothing opens is MANUAL and is not clicked.
+//  3. Click it, waiting at most V04_PRESS_MS for it to be visible, enabled and
+//     still. A control that does not take the click is MANUAL.
+//  4. Judge. In every scope its aria-pressed, or its aria-checked when it has
+//     no aria-pressed, must move within V04_SETTLE_MS of the click; with
+//     scope=contract, which a designesy.org address gets by default, the
+//     stored preference, designesy:sound, then gets as long again to follow
+//     it. Other sites keep their preference where they choose, so with
+//     scope=universal it is never read. The state is read again once,
+//     V04_HOLD_MS after those waits end, and judged on that reading; with
+//     scope=universal that is V04_HOLD_MS after the state is seen to move. A
+//     state that is back where it was is FAIL, so a toggle that goes back
+//     before that reading fails and one that goes back later passes. With
+//     scope=contract designesy:sound is read before the click, just after the
+//     state, and again at the moment of that reading, and one that is what it
+//     was before the click is FAIL.
+//
+// No sound control is SKIP when scope=universal (a site without sound is not
+// broken, it does not use audio) and WARN when scope=contract (the contract
+// expects one on designesy.org). A pressed control that is neither marked nor
+// named for sound, a Bold toggle say, is never taken for the sound control or
+// judged; the element that opens a hidden sound control is clicked to open
+// it, whatever its own state. One that is named for sound but does something
+// else, a checklist row about sound or a "Mute thread" toggle, is taken for
+// the sound control and judged, unless the page marks its sound control
+// data-sound-toggle.
+//
+// Earlier versions clicked the first [aria-pressed] or [data-sound-toggle] in
+// the document. On designesy.org that is the Motion row, in the senses panel,
+// which is hidden until the menu opens, so the click waited 30 s for it to
+// show and v04 came back MANUAL. On other sites they read designesy:sound, so
+// a toggle that worked failed. And the stored value was once read after the
+// click, so it was compared with itself and never moved.
+//
+// A failure says where it happened: opening a page, loading it, or the check
+// itself. The route launches the browser, so a launch failure is the route's
+// 502, never a v04 detail.
+
+/** The item's wording, the contract's own. */
+const V04_ITEM = 'Sound toggle flips aria-pressed and applies the audio preference';
+
+/** Words that name a sound control, matched anywhere in its name or text, in any case. */
+const SOUND_WORDS = 'sound|audio|mute';
+
+/** Where designesy.org keeps the sound preference (SOUND_STORAGE_KEY in app/lib/use-sound.tsx). */
+const SOUND_KEY = 'designesy:sound';
+
+/** How long each click waits for its target to be visible, enabled and still, and how long a hidden control gets to show once its opener is clicked. */
+const V04_PRESS_MS = 3000;
+
+/** How long the check waits after the click for the state to move, and then for the stored preference to follow it. */
+const V04_SETTLE_MS = 2000;
+
+/** How long after those waits the state, and with scope=contract the stored preference, are read again and judged. */
+const V04_HOLD_MS = 500;
+
+function v04(status: CheckResult['status'], detail: string): CheckResult {
+  return { id: 'v04', item: V04_ITEM, category: 'poise', status, detail };
+}
+
+/** A found control's name for a detail, as JSON text, at most 80 characters. */
+function quoted(name: string): string {
+  return JSON.stringify(name.length > 80 ? `${name.slice(0, 79).trimEnd()}…` : name);
+}
+
+/** The first line of an error: Playwright puts its call log on the lines after it. */
+function firstLine(e: unknown): string {
+  return (e instanceof Error ? e.message : String(e)).split('\n')[0];
+}
+
+// The three page functions below run in the browser, which receives their
+// source text, so each reads only its argument and the page, never this module.
+
+/** The sound control, the element that opens it when it is hidden, and what the check reports about them. */
+function soundControlProbe(words: string) {
+  const sound = new RegExp(words, 'i');
+  const shown = (el: Element) => {
+    const box = el.getBoundingClientRect();
+    return box.width > 0 && box.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+  };
+  // Name from content: the text, without what aria-hidden takes out.
+  const content = (node: Node): string => {
+    if (node.nodeType === 3) return node.nodeValue || '';
+    if (node.nodeType !== 1 || (node as Element).getAttribute('aria-hidden') === 'true') return '';
+    let text = '';
+    for (let i = 0; i < node.childNodes.length; i++) text += content(node.childNodes[i]);
+    return text;
+  };
+  const nameOf = (el: Element) => {
+    let label = '';
+    for (const id of (el.getAttribute('aria-labelledby') || '').split(/\s+/)) {
+      const ref = id ? document.getElementById(id) : null;
+      if (ref) label += ` ${ref.textContent || ''}`;
+    }
+    const name =
+      label.trim() ||
+      (el.getAttribute('aria-label') || '').trim() ||
+      content(el).trim() ||
+      (el.getAttribute('title') || '').trim();
+    return name.replace(/\s+/g, ' ');
+  };
+  const isToggle = (el: Element) => {
+    const role = el.getAttribute('role') || (el.tagName === 'BUTTON' ? 'button' : '');
+    return role === 'button' || role === 'switch';
+  };
+  const marked = Array.from(document.querySelectorAll('[data-sound-toggle]'));
+  const toggles = Array.from(document.querySelectorAll('[aria-pressed], [aria-checked]')).filter(isToggle);
+  const named = toggles.filter((el) => sound.test(nameOf(el)) || sound.test(el.textContent || ''));
+  const pool = marked.length > 0 ? marked : named;
+  const control = pool.find(shown) || pool[0] || null;
+  const hidden = control !== null && !shown(control);
+  let opener: Element | null = null;
+  if (control && hidden) {
+    const triggers = Array.from(document.querySelectorAll('[aria-expanded="false"][aria-controls]')).filter(shown);
+    for (let el: Element | null = control; el && !opener; el = el.parentElement) {
+      const id = el.id;
+      if (id) opener = triggers.find((t) => (t.getAttribute('aria-controls') || '').split(/\s+/).indexOf(id) >= 0) || null;
+    }
   }
-  let browser;
-  let ownsBrowser = false;
+  let state = '';
+  if (control && control.hasAttribute('aria-pressed')) state = 'aria-pressed';
+  else if (control && control.hasAttribute('aria-checked')) state = 'aria-checked';
+  return {
+    control,
+    opener,
+    info: {
+      found: control ? (marked.length > 0 ? 'data-sound-toggle' : 'its name') : '',
+      name: control ? nameOf(control) : '',
+      state,
+      hidden,
+      opener: opener ? nameOf(opener) : '',
+      toggles: toggles.length,
+    },
+  };
+}
+
+type SoundProbeInfo = ReturnType<typeof soundControlProbe>['info'];
+
+/** The stored sound preference, or null where storage cannot be read. */
+function storedSound(key: string): string | null {
   try {
-    // Prefer the caller-owned browser: the route opens ONE Chromium and
-    // passes it in, so neither check has to launch or close it.
-    browser = shared ?? (await openAuditBrowser());
-    ownsBrowser = !shared;
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** True once the control's state has moved and, when a key is given, the stored preference too. */
+function soundMoved(arg: { el: Node; attr: string; was: string | null; key: string; stored: string | null }): boolean {
+  if ((arg.el as Element).getAttribute(arg.attr) === arg.was) return false;
+  if (!arg.key) return true;
+  try {
+    return localStorage.getItem(arg.key) !== arg.stored;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether soundMoved holds within V04_SETTLE_MS: false when the time runs out, and any other failure is thrown. */
+async function settled(page: Page, el: ElementHandle, attr: string, was: string | null, key: string, stored: string | null): Promise<boolean> {
+  try {
+    await page.waitForFunction(soundMoved, { el, attr, was, key, stored }, { timeout: V04_SETTLE_MS, polling: 100 });
+    return true;
+  } catch (e) {
+    if (e instanceof Error && e.name === 'TimeoutError') return false;
+    throw e;
+  }
+}
+
+async function clickSoundControl(page: Page, contract: boolean): Promise<CheckResult> {
+  const probe = await page.evaluateHandle(soundControlProbe, SOUND_WORDS);
+  const info = (await (await probe.getProperty('info')).jsonValue()) as SoundProbeInfo;
+  const control = (await probe.getProperty('control')).asElement();
+  const opener = (await probe.getProperty('opener')).asElement();
+  if (!control) {
+    const none = `no sound control on the page (buttons and switches with a pressed or checked state: ${info.toggles}, none named for sound)`;
+    return contract ? v04('WARN', none) : v04('SKIP', `${none}; skipped: scope=universal, sound is optional`);
+  }
+  const what = `the sound control ${quoted(info.name)} (found by ${info.found})`;
+  if (!info.state) return v04('FAIL', `${what} has neither aria-pressed nor aria-checked`);
+  if (info.hidden) {
+    if (!opener) {
+      return v04('MANUAL', `${what} is hidden, and no visible element with aria-expanded="false" controls it or an element that holds it, so it was not clicked`);
+    }
+    try {
+      await opener.click({ timeout: V04_PRESS_MS });
+      await control.waitForElementState('visible', { timeout: V04_PRESS_MS });
+    } catch (e) {
+      return v04('MANUAL', `${what} is hidden, and clicking ${quoted(info.opener)} did not show it: ${firstLine(e)}`);
+    }
+  }
+  const before = await control.getAttribute(info.state);
+  const storedBefore = contract ? await page.evaluate(storedSound, SOUND_KEY) : null;
+  try {
+    await control.click({ timeout: V04_PRESS_MS });
+  } catch (e) {
+    return v04('MANUAL', `${what} did not take a click within ${V04_PRESS_MS} ms: ${firstLine(e)}`);
+  }
+  if (!(await settled(page, control, info.state, before, '', null))) {
+    return v04('FAIL', `${what} did not change ${info.state} when clicked (it stayed ${before})`);
+  }
+  const stored = contract && (await settled(page, control, info.state, before, SOUND_KEY, storedBefore));
+  // Judged on what holds: a toggle that moves and then moves back has not changed.
+  await page.waitForTimeout(V04_HOLD_MS);
+  const after = await control.getAttribute(info.state);
+  if (after === before) return v04('FAIL', `${what} changed ${info.state} when clicked, then went back to ${before}`);
+  const moved = `${info.state} ${before}→${after}`;
+  if (!contract) return v04('PASS', `${what}: ${moved}`);
+  const storedAfter = await page.evaluate(storedSound, SOUND_KEY);
+  if (storedAfter === storedBefore) {
+    const was = JSON.stringify(storedBefore);
+    return v04('FAIL', `${what}: ${moved}, but ${SOUND_KEY} ${stored ? `changed, then went back to ${was}` : `did not change (${was})`}`);
+  }
+  return v04('PASS', `${what}: ${moved}, ${SOUND_KEY} ${JSON.stringify(storedBefore)}→${JSON.stringify(storedAfter)}`);
+}
+
+async function checkSoundToggle(targetUrl: string, scope?: 'contract' | 'universal', shared?: GuardedBrowser): Promise<CheckResult> {
+  // No browser is launched here: the route hands the checks its one browser.
+  if (!browserAuditEnabled() || !shared) {
+    return v04('MANUAL', 'this check needs a live browser session, which this deployment does not run, so no result is reported rather than a guessed one');
+  }
+  let stage: 'page' | 'load' | 'check' = 'page';
+  let ctx: BrowserContext | undefined;
+  try {
+    ctx = await shared.newContext({ viewport: { width: 1280, height: 800 } });
     const page = await ctx.newPage();
+    stage = 'load';
     try {
       await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 8000 });
     } catch {
       await page.goto(targetUrl, { waitUntil: 'load', timeout: 8000 });
     }
-    // Locate sound toggle — aria-pressed is the contract spec.
-    //
-    // `button:has-text("sound" i)` is invalid Playwright syntax and throws
-    // "Unexpected token \"i\" while parsing css selector" on every call — the
-    // ` i` case-insensitivity flag belongs to CSS attribute selectors
-    // ([attr="v" i]), not to :has-text(), which is already case-insensitive
-    // and substring-matching by definition. That made v04 unable to pass
-    // anywhere, ever. Kept the pseudo-class bare, and the fallbacks run as
-    // separate locators so an unsupported selector can't take down the check.
-    let toggle = await page.$('[aria-pressed], [data-sound-toggle]');
-    if (!toggle) {
-      toggle = await page.$('button:has-text("sound")').catch(() => null);
-    }
-    if (!toggle) {
-      await ctx.close();
-      // scope=universal: absence of sound is SKIP, not WARN — a site without
-      // sound isn't broken, it just doesn't use audio. scope=contract: WARN
-      // (the contract expects a sound toggle on designesy.org).
-      const absenceStatus = scope === 'universal' ? 'SKIP' : 'WARN';
-      return {
-        id: 'v04',
-        item: 'Sound toggle flips aria-pressed and applies the audio preference',
-        category: 'poise',
-        status: absenceStatus as 'SKIP' | 'WARN',
-        detail: scope === 'universal'
-          ? 'no sound toggle element found on page (skipped: scope=universal; sound is optional)'
-          : 'no sound toggle element found on page',
-      };
-    }
-    // Read BOTH baselines before interacting. The previous order read
-    // beforeStorage AFTER the click, so it was already the post-click value and
-    // the comparison was storage-against-itself — storageUpdated could never be
-    // true, so v04 reported FAIL on every site that actually worked. On
-    // designesy.org sound is off until a visitor turns it on, so a first click
-    // of its sound switch flips aria-pressed false->true AND writes
-    // designesy:sound null->"true".
-    const beforePressed = await toggle.getAttribute('aria-pressed');
-    const beforeStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
-    await toggle.click();
-    await page.waitForTimeout(500);
-    const afterPressed = await toggle.getAttribute('aria-pressed');
-    const afterStorage = await page.evaluate(() => localStorage.getItem('designesy:sound'));
-    const pressedFlipped = beforePressed !== afterPressed;
-    const storageUpdated = beforeStorage !== afterStorage;
-    await ctx.close();
-    if (pressedFlipped && storageUpdated) {
-      return {
-        id: 'v04',
-        item: 'Sound toggle flips aria-pressed and applies the audio preference',
-        category: 'poise',
-        status: 'PASS',
-        detail: `aria-pressed ${beforePressed}→${afterPressed}, storage updated`,
-      };
-    }
-    return {
-      id: 'v04',
-      item: 'Sound toggle flips aria-pressed and applies the audio preference',
-      category: 'poise',
-      status: 'FAIL',
-      detail: `aria-pressed flip=${pressedFlipped}, storage update=${storageUpdated}`,
-    };
+    stage = 'check';
+    return await clickSoundControl(page, scope === 'contract');
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Unknown error';
-    return {
-      id: 'v04',
-      item: 'Sound toggle flips aria-pressed and applies the audio preference',
-      category: 'poise',
-      status: 'MANUAL',
-      detail: `browser launch failed: ${msg}`,
-    };
+    const where = stage === 'page' ? 'the browser could not open a page' : stage === 'load' ? 'the page did not load' : 'the check stopped';
+    return v04('MANUAL', `${where}: ${firstLine(e)}`);
   } finally {
-    // Release the SHARED browser — closing it here would kill the browser
-    // out from under the sibling checks that are still running.
-    if (ownsBrowser && browser) await browser.close();
+    await ctx?.close().catch(() => {});
   }
 }
 
