@@ -67,7 +67,6 @@ export default function GraphPage() {
           </p>
           <div className="lab-meta fade-up fade-up-delay-1">
             <span className="lab-meta-item">Version · {graph.version}</span>
-            <span className="lab-meta-item">Machine export · /graph.json</span>
           </div>
           <AgentActions mdPath="/graph.md" label="the graph page" />
         </section>
@@ -148,29 +147,12 @@ export default function GraphPage() {
           </div>
         </section>
 
-        <section className="doctrine-section fade-up" id="what-this-is">
-          <h2 className="doctrine-heading" data-scramble>What this is</h2>
-          <div className="definition">
-            <p className="definition-label">Public read-only surface</p>
-            <p>
-              The Graph is the internal knowledge tree of Designesy. This
-              public surface shows the chain with real examples, leaving out
-              internal paths, control-plane naming,
-              and private doctrine. It is the provenance layer: a visitor can trace how
-              a source became a principle, a principle became a contract,
-              a contract became a token, a token became a verification, and
-              a verification became shipped work.
-            </p>
-          </div>
-        </section>
-
         <section className="doctrine-section fade-up" id="boundaries">
           <h2 className="doctrine-heading" data-scramble>Boundaries</h2>
           <ul className="checkmark-list">
             <li>A knowledge graph of design concepts: curated, versioned, and read-only.</li>
             <li>Examples are hand-selected rather than live-streamed from production.</li>
             <li>Companion to the contract and review surfaces.</li>
-            <li>Internal paths and control-plane naming stay private.</li>
           </ul>
         </section>
 
@@ -271,9 +253,8 @@ export default function GraphPage() {
         </section>
 
         <div className="status-note">
-          Provenance chain v{graph.version}. The Graph prevents design
-          knowledge from becoming anonymous taste. Machine export at
-          /graph.json.
+          Provenance chain v{graph.version}. Each stage links to routes on
+          this site.
         </div>
       </main>
 
