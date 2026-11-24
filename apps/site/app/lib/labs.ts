@@ -106,7 +106,7 @@ export const labs = {
       'Three faces, no decorative display fonts: Fraunces for headlines, Schibsted Grotesk for interface and reading, Atkinson Hyperlegible Mono for data (amended from the v0.1.3 system-stack rule; the mono face changed in v0.4.5)',
     ],
     verified_against:
-      'The shipped CSS, checked on 2026-11-20 against the rules in the Verification section of the lab page (the field check audited a 48,755-byte stylesheet in July 2026). Pass: rem scale, tracking on headings and labels, text-wrap, tabular-nums, ::selection, user-select, font-synthesis, text-underline-position, text-decoration-skip-ink, and logical inline properties. Pass with notes: font smoothing (set on body, where the rule names the root) and line-height (1.08 on section headings, 1.55 on body, 1.02 on the page title). Fail: the measure, block-axis logical properties, and border-inline-start. Each failed rule has a row under unverified.',
+      'The shipped CSS, checked on 2026-11-20 against the rules in the Verification section of the lab page (the field check audited a 48,755-byte stylesheet in July 2026). Pass: rem scale, text-wrap, tabular-nums, ::selection, user-select, font-synthesis, text-underline-position, text-decoration-skip-ink, and logical inline properties. Pass with notes: font smoothing (set on body, where the rule names the root) and line-height (1.08 on section headings, 1.55 on body, 1.02 on the page title). Fail: tracking by size, the measure, block-axis logical properties, and border-inline-start. Each failed rule has a row under unverified.',
     verification: [
       'https://www.designesy.org/labs/cadence',
       'https://www.designesy.org/review/cadence',
@@ -116,6 +116,7 @@ export const labs = {
       'border-inline-start fails (checked 2026-11-20). It is used once, and the border-left accents are not yet migrated: visual regression risk needs testing',
       'inset left/right positioning partly migrated to inset-inline: absolute positioning needs case-by-case review',
       'Measure fails (checked 2026-11-20). Lab page notes are capped at 660px, about 90 characters a line, and the page shell at 1180px to 1560px. The rule asks 520 to 580px and a 1080px shell',
+      'Tracking by size fails (checked 2026-11-20). Body text is set to -0.003em where the rule says zero, and 40 of the 204 letter-spacing values in the shipped CSS sit outside every range the rule names, from -0.018em to 0.02em',
     ],
     field_check: {
       outcome: 'pass with notes',
