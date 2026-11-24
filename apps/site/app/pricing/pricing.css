@@ -80,7 +80,7 @@
   font-size: var(--text-label);
   font-weight: 500;
   color: var(--muted);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.03em;
 }
 
 /* The sentence that says what the tier is. It was on the label step, the
@@ -149,7 +149,7 @@
   color: var(--paper-on-signal);
   font-size: var(--text-body);
   font-weight: 600;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   text-decoration: none;
   transition:
     background var(--duration-fast) var(--ease-out),
@@ -292,7 +292,7 @@ html[data-motion="paused"] .pricing-card .pricing-cta-link[href^="mailto:"]::aft
   font-size: var(--text-body);
   font-weight: 600;
   color: var(--ink);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   user-select: none;
   transition: background var(--duration-fast) var(--ease-out);
 }

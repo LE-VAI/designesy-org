@@ -277,7 +277,7 @@ html[data-motion="paused"] .chain-cell-main::after {
   font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.3rem;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   color: var(--ink);
   flex: 1 1 0;
   min-width: 0;

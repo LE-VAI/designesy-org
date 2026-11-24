@@ -875,7 +875,7 @@ body {
   font-optical-sizing: auto;
   font-size: var(--text-body);
   line-height: var(--leading-body);
-  letter-spacing: -0.003em;
+  letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-synthesis: none;
@@ -1640,7 +1640,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   color: var(--ink);
   font: inherit;
   font-size: var(--text-body); /* 17px — legible against glass, above 16px iOS floor */
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 
 .cmdk-input::placeholder {
@@ -1899,7 +1899,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   font-size: var(--text-body);
   margin: 0 0 var(--space-fine-35);
   font-weight: 500;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 
 .cmdk-empty-sub {
@@ -2299,7 +2299,7 @@ html[data-motion="paused"] .cmdk-overlay[data-state] .cmdk-panel {
   padding: var(--space-fine-65) var(--space-20);
   font-size: var(--text-body);
   font-weight: 600;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   border-radius: var(--radius);
   transition: transform 160ms var(--ease-out), background 0.2s var(--ease),
     border-color 0.2s var(--ease);
@@ -3007,7 +3007,7 @@ html[data-motion="paused"] :is(.surface-card, .pillar-grid > .pillar)::after {
   font-size: var(--text-lead);
   font-weight: 650;
   line-height: var(--leading-card);
-  letter-spacing: -0.005em;
+  letter-spacing: -0.02em;
   color: var(--ink);
   margin-bottom: var(--space-fine-45);
   text-wrap: balance;
@@ -6060,7 +6060,7 @@ button.check-cell {
 .check-cell-title {
   font-size: var(--text-body);
   font-weight: 650;
-  letter-spacing: -0.012em;
+  letter-spacing: 0;
   color: var(--ink);
   line-height: var(--leading-cell-title);
   text-wrap: pretty;
@@ -6488,7 +6488,7 @@ button.check-cell {
   }
   .nav-drawer-close-label {
     font-size: var(--text-label);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
   }
   .nav-drawer a {
     display: flex;
@@ -8277,7 +8277,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
   font-size: var(--text-body);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-decoration: none;
   transform: translateY(-160%);
   transition: transform 0.15s var(--ease-out);
@@ -8485,7 +8485,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   color: var(--ink);
   font-size: var(--text-label);
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   opacity: 0;
   transition: opacity 0.2s var(--ease), transform 0.2s var(--ease-out);
 }
@@ -9238,7 +9238,7 @@ a.lab-card:focus-visible .lab-card-arrow {
   font-size: var(--text-run-title);
   font-weight: 650;
   line-height: var(--leading-snug);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 
@@ -11606,7 +11606,7 @@ html[data-motion="paused"] .pricing-card::after {
   justify-content: center;
   font-size: var(--text-label);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   background: var(--surface-soft);
   color: var(--muted);
   border: 1px solid var(--line);
@@ -12264,7 +12264,7 @@ html[data-motion="paused"] .pricing-card::after {
 .report-slop-title {
   font-size: var(--text-body);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--warn-ink);
   margin-bottom: var(--space-4);
 }
@@ -12678,7 +12678,7 @@ select {
      check mark on a D said "passed". */
   font-size: var(--text-body);
   font-weight: 500;
-  letter-spacing: -0.006em;
+  letter-spacing: 0;
   line-height: var(--leading-cell-meta);
   color: var(--ink);
   margin: 0;
@@ -12720,7 +12720,7 @@ select {
   font-variant-numeric: tabular-nums;
   padding: var(--space-2) var(--space-7);
   border-radius: var(--radius-full);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
 }
 
 .score-delta-chip.is-up {
@@ -12912,8 +12912,9 @@ select {
   min-width: 0;
 }
 /* Four keys on one line in the 311px a 390 phone gives the score form. At
-   the 12.8px text floor the 8px gap and 6px swatch margin wrapped it; a 6px
-   gap and a 4px margin keep it to one line. */
+   the 12.8px text floor the 8px gap and 6px swatch margin wrapped it, and
+   with body text tracked at 0 so did a 4px margin (312px); a 6px gap and a
+   3px margin keep it to one line (309px). */
 .rs-legend {
   display: flex;
   flex-wrap: wrap;
@@ -12929,7 +12930,7 @@ select {
   width: var(--space-8);
   height: var(--space-8);
   border-radius: var(--radius-xs);
-  margin-right: var(--space-4);
+  margin-right: var(--space-3);
   background: var(--tone);
 }
 .rs-list {
@@ -14580,7 +14581,7 @@ button.rs-row:focus-visible {
   color: var(--muted);
   font-size: var(--text-label);
   font-family: var(--mono, ui-monospace, monospace);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-decoration: none;
   cursor: pointer;
   transition:

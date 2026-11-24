@@ -343,7 +343,7 @@
 
 .sv-answer-word {
   font: 600 var(--text-h3)/1.15 var(--sans);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   color: var(--sv-hue);
 }
 
@@ -715,7 +715,7 @@ html[data-motion="paused"] .sv-answer-glow {
 
 .sv-checks-scope {
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-transform: none;
 }
 
