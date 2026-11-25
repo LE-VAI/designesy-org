@@ -17,6 +17,7 @@ import { Topbar } from '../lib/topbar';
 import { Footer } from '../lib/footer';
 import { pageMeta } from '../lib/site-meta';
 import { SpringValidator } from './spring-validator-form';
+import { designSystemContract } from '../lib/design-system-contract';
 import { AgentActions } from '../lib/agent-actions';
 
 // ISR — static content that revalidates hourly
@@ -33,6 +34,14 @@ export const metadata: Metadata = pageMeta({
   twitterDescription: 'Spring physics validator · designesy.org/spring-validator',
 });
 
+// The contract's two springs, passed to the client form so the form never
+// imports the contract.
+const springs = designSystemContract.motion.springs;
+const contractSprings = {
+  default: { damping: springs.default.damping, response: springs.default.response },
+  momentum: { damping: springs.momentum.damping, response: springs.momentum.response },
+};
+
 export default function SpringValidatorPage() {
   return (
     <>
@@ -42,8 +51,8 @@ export default function SpringValidatorPage() {
           <p className="surface-eyebrow" data-scramble>Motion frontier</p>
           <h1 className="surface-title" data-scramble>Spring Physics Validator</h1>
           <p className="surface-lede">
-            Spring-based motion ships in M3 Expressive, iOS, Framer Motion and
-            React Spring. This tool computes a spring&apos;s overshoot and
+            Spring-based motion ships in M3 Expressive, iOS, Motion and React
+            Spring. This tool computes a spring&apos;s overshoot and
             compares it with the contract&apos;s reduced-motion thresholds.
           </p>
           <p className="surface-note">
@@ -55,7 +64,7 @@ export default function SpringValidatorPage() {
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-1">
-          <SpringValidator />
+          <SpringValidator contractSprings={contractSprings} />
         </section>
 
         <section className="doctrine-section fade-up fade-up-delay-2">
@@ -78,9 +87,11 @@ export default function SpringValidatorPage() {
           <p className="surface-note" style={{ maxWidth: '70ch' }}>
             The physics: a spring&apos;s damping ratio (ζ) determines its
             behavior. ζ &gt; 1 is overdamped (no overshoot, slow). ζ = 1 is
-            critically damped (no overshoot, fastest settle). 0 &lt; ζ &lt; 1 is
+            critically damped (the fastest settle without overshoot). 0 &lt; ζ &lt; 1 is
             underdamped (overshoots, oscillates). The lower the damping ratio,
-            the larger the overshoot.
+            the larger the overshoot. A small overshoot can settle sooner: at a
+            stiffness of 200 and a mass of 1, ζ = 0.795 settles to 2% in 263ms,
+            and ζ = 1 in 413ms.
           </p>
         </section>
       </main>
