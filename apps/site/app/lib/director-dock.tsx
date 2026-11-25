@@ -77,6 +77,13 @@ function footRoom(pill: HTMLElement): number {
  * brings the circle up (globals.css, :focus-visible).
  * Wider, CSS parks the pill in the gutter and this does nothing.
  *
+ * The point where the pill comes up (end, below) is measured when the page
+ * or the viewport changes size, not on every scrolled frame: a scroll frame
+ * only compares scrollY + innerHeight against it. Measuring per frame read
+ * scrollHeight and footRoom's computed styles while the page's scroll-driven
+ * styles were dirty, which forced a style and layout pass inside the scroll
+ * handler (a long frame on a throttled phone).
+ *
  * It also lets Escape dismiss the name tag the compact circles show on hover
  * or focus (WCAG 1.4.13), until the pointer leaves or focus moves.
  */
@@ -87,31 +94,42 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
     const noGutter = window.matchMedia(NO_GUTTER);
     let shown = false;
     let frame = 0;
+    // The viewport bottom (scrollY + innerHeight) at which the pill comes up.
+    let end = 0;
     const show = (v: boolean) => {
       if (v === shown) return;
       shown = v;
       el.toggleAttribute('data-shown', v);
     };
+    const measure = () => {
+      end = document.documentElement.scrollHeight - footRoom(el);
+    };
     const update = () => {
       frame = 0;
       // A modal layer holds the page still; its scroll events are not reading.
       if (document.documentElement.hasAttribute('data-scroll-lock')) return;
-      const doc = document.documentElement;
-      const toEnd = doc.scrollHeight - (window.scrollY + window.innerHeight);
-      show(toEnd <= footRoom(el));
+      show(window.scrollY + window.innerHeight >= end);
     };
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
     // The page can grow or shrink under a still scroll position (late
-    // content, an opened disclosure), which moves the end without a scroll.
-    const grow = new ResizeObserver(onScroll);
+    // content, an opened disclosure), which moves the end without a scroll;
+    // a resize can move the pill's own offset.
+    const remeasure = () => {
+      measure();
+      onScroll();
+    };
+    const grow = new ResizeObserver(remeasure);
     const bind = () => {
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', remeasure);
       grow.disconnect();
       if (noGutter.matches) {
         window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', remeasure);
         grow.observe(document.body);
+        measure();
         update();
       } else {
         show(false);
@@ -135,6 +153,7 @@ export function useDockPacing(ref: RefObject<HTMLElement | null>, active = true)
       el.removeEventListener('pointerleave', unquiet);
       el.removeEventListener('blur', unquiet);
       window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', remeasure);
       grow.disconnect();
       if (frame) cancelAnimationFrame(frame);
     };
