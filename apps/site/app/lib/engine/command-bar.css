@@ -702,8 +702,7 @@
 
 /* --- The slab's own width decides the layout ----------------------------- */
 
-/* Phone widths: the key goes under the wells, full width, and the choices
-   take the row they share with their label. */
+/* Phone widths: the key goes under the wells, full width. */
 @container ctl (width < 30rem) {
   .eg-bar-line {
     flex-direction: column;
@@ -714,10 +713,34 @@
   .eg-seg-track {
     justify-self: stretch;
   }
+  /* The choices sit beside their label where the track's own width fits
+     there, and take the row under it where not, so the three equal
+     segments get the slab's width. As a grid with the label always beside
+     them, a one-word choice wider than its segment ("Standard", "Universal",
+     "Contract") was cut at viewport widths 280 to 397 on the home page and
+     /drift: it cannot wrap, and the segment hides what overflows. No width
+     here describes the copy. Below about 317 three equal segments still
+     cannot hold "Standard". The bridge's head lays its choice out itself,
+     below. */
+  .eg-seg:not(.m3-head .eg-seg) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .eg-seg:not(.m3-head .eg-seg) > .eg-seg-label {
+    flex: 0 0 auto;
+  }
+  .eg-seg:not(.m3-head .eg-seg) > .eg-seg-track {
+    flex: 1 1 max-content;
+    min-width: 0;
+  }
+  .eg-seg:not(.m3-head .eg-seg) > .eg-seg-hint {
+    flex: 0 0 100%;
+  }
   /* A choice that does not fit wraps to a second line inside its segment
      instead of losing its end to an ellipsis (/m3-bridge at 320: "CSS cust…"). */
   .eg-seg-opt {
-    padding: var(--space-4) var(--space-8);
+    padding: var(--space-4);
     white-space: normal;
     text-wrap: balance;
     line-height: var(--leading-segment);

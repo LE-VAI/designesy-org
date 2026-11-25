@@ -6,6 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The scope choices are whole at phone widths** (the site; no version
+moves). On the home page, /score/<site> and /drift, the scope control's
+one-word choices ("Standard", "Universal", "Contract") were cut at
+viewport widths 280 to 397: "Standard" lost 26px of its width at 320
+(it read "Standa") and 13px at 360.
+
+### Fixed (scope control)
+
+- **On a phone-width slab the choices sit beside their label where the
+  track's own width fits there, and take the row under it where not**
+  (`.eg-seg` in `app/lib/engine/command-bar.css`, under the slab's 30rem
+  container width). As a grid with the label always beside them, each of
+  the three equal segments got a third of what the label left, and a
+  one-word choice cannot wrap, so the segment hid its end. The choices'
+  side padding is 4px there, where it was 8px. The bridge's head keeps
+  its own layout.
+
+### Not changed (scope control)
+
+- At every viewport width from 280 to 620 where the live control was
+  whole, the label, the track and every choice are in the same place at
+  the same size, on the home page, /score/lovable, /drift and /m3-bridge.
+- Above a 30rem slab nothing changes.
+
+Caveats: at viewport widths 280 to 316 three equal segments still cannot
+hold "Standard" in the slab, so it is still cut there; widths in that
+range are rare (a folded phone's cover screen). Measured in headless
+Chromium 153 on Windows 11 as a phone (device pixel ratio 2, touch),
+dark theme. Safari, Firefox and real devices were not measured.
+
 **The home page's contract card reads its version at phone widths** (the
 site; no version moves). The featured contract card shows three facts:
 the version, the principles and the checks. At viewport widths 280 to
