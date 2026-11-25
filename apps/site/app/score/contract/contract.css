@@ -556,7 +556,7 @@
   font-variation-settings: 'opsz' 32, 'SOFT' 40;
   font-size: var(--text-fidelity-null);
   line-height: var(--leading-figure-tight);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 

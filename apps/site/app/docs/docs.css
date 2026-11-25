@@ -9,7 +9,7 @@
   font-family: var(--sans);
   font-size: var(--text-body);
   font-weight: 700;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   color: var(--ink);
   margin-bottom: var(--space-16);
 }
@@ -285,6 +285,6 @@
 .mcp-client {
   margin: 0 0 var(--space-8);
   font: 700 var(--text-body)/1.35 var(--sans);
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
   color: var(--ink);
 }
