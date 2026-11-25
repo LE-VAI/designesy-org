@@ -53,9 +53,8 @@ width from 320 to 1100 on all ten routes (to 1920 on /score/contract),
 as built, with body letter-spacing set to 0, and with the operator glyph
 set in Consolas and in Courier New; at 1440 and 1920 in both themes.
 Safari, Firefox, the iPad's own mono faces (SF Mono, Menlo) and real
-devices were not measured. Headless Chromium has no classic scrollbar;
-with one, each window width is the viewport width above plus
-the scrollbar's.
+devices were not measured. Headless Chromium has no classic scrollbar,
+and no width was measured with one.
 
 ### Gates (formula plate)
 
