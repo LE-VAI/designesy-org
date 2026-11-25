@@ -6,6 +6,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The engine's name and state never collide at phone widths** (the
+site; no version moves). Each engine page's instrument has a title bar
+with the engine's name on the left and its state on the right ("73
+checks · ready", "24 of 24 answered"). On a phone the name touched or
+ran into the state: up to viewport width 321 on /score, 320 on
+/readiness and /monitor, and 329 on /maturity once its count reads "24
+of 24 answered", where the name's last letter printed over the count.
+
+### Fixed (instrument title bar)
+
+- **On a narrow bench the bar is a flex row that wraps** (`.eg-inst-bar`
+  in `app/engine.css`, under the bench's 36rem container width): the
+  name and the state share the row where both fit with a 12px gap, and
+  the state takes the line under the name, at its right end, where not.
+  As two grid columns the name, which never wraps, ran past its column
+  into the state.
+
+### Not changed (instrument title bar)
+
+- At every viewport width from 280 to 620 where the live name and state
+  did not touch, they are in the same place and the bar is the same
+  height, on /score, /readiness, /monitor, /drift, /report, /compare,
+  /guardrails, /maturity and /score/contract. The exceptions are one
+  width each on /guardrails (305) and /maturity before any answer
+  (329), where the live name was within 12px of the state; the state
+  moves to its own line there.
+- Above a 36rem bench nothing changes (checked to 1440).
+
+Caveats: measured in headless Chromium 153 on Windows 11 as a phone
+(device pixel ratio 2, touch), dark theme; /maturity's count was set to
+"0 of 24 answered" and "24 of 24 answered" in the page rather than by
+answering. Safari, Firefox and real devices were not measured.
+
 **The scope choices are whole at phone widths** (the site; no version
 moves). On the home page, /score/<site> and /drift, the scope control's
 one-word choices ("Standard", "Universal", "Contract") were cut at
