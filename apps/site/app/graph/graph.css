@@ -62,8 +62,8 @@
 }
 
 /* --------------------------------------------------------------------------
-   The stage card: reading material, the same recipe as the definition under
-   it (globals, "Reading material"): --mat-reading, --elev-1, no border, and
+   The stage card: reading material, from the recipe in globals ("Reading
+   material"): --mat-reading, --elev-1, no border, and
    the top-lit rim on a masked ::before at its resting opacity. A panel is
    read, not pressed, so the rim never heats. The signal wash is a
    pre-rendered layer (::after) at opacity 0 at rest; only contact with the
