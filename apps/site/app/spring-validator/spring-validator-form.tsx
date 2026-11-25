@@ -1,116 +1,65 @@
 'use client';
 
-// Spring physics validator — simulates spring motion and validates
-// against accessibility/reduced-motion requirements.
-//
-// Physics model: damped harmonic oscillator
-//   x(t) = e^(-ζω₀t) * [cos(ωd·t) + (ζ/√(1-ζ²))·sin(ωd·t)]  (underdamped)
-//   where ω₀ = √(k/m), ζ = c/(2√(km)), ωd = ω₀√(1-ζ²)
+// Spring physics validator: reads a spring from its closed-form response and
+// checks it against the contract's reduced-motion thresholds. The physics
+// lives in lib/spring-sampler.ts, so the readouts, the chart, the budget row
+// and the exported CSS all read one sampled response.
 //
 // All computation is client-side.
 
 import { useState, useMemo, useCallback, useRef, useEffect, useId, type CSSProperties, type ReactNode } from 'react';
 import Link from 'next/link';
 import './spring-validator.css';
+import {
+  readSpring,
+  chartDomainMs,
+  sampleResponse,
+  linearEasing,
+  cubicBezierProgress,
+  formatMs,
+  springFromResponse,
+  dampingForRatio,
+  type Spring,
+  type SpringReading,
+  type LinearResult,
+} from '../lib/spring-sampler';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
-interface SpringParams {
-  stiffness: number;   // k — N/m (spring constant)
-  damping: number;     // c — damping coefficient
-  mass: number;        // m — kg
-}
+// k (N/m), c (N·s/m) and m (kg), as the sampler reads them.
+type SpringParams = Spring;
 
 interface SpringResult {
   dampingRatio: number;    // ζ = c / (2√(km))
-  naturalFreq: number;      // ω₀ = √(k/m) — rad/s
-  dampedFreq: number;       // ωd = ω₀√(1-ζ²) — rad/s (underdamped only)
-  overshoot: number;        // % — peak overshoot past equilibrium
-  settleTime: number;       // ms — time to stay within 2% of equilibrium
-  riseTime: number;         // ms — time to first reach equilibrium
+  naturalFreq: number;      // ω₀ = √(k/m), rad/s
+  dampedFreq: number;       // ωd = ω₀√(1-ζ²), rad/s (underdamped only)
+  overshoot: number;        // %: peak overshoot past equilibrium
+  settleTime: number;       // ms: last exit from the 2% band
+  riseTime: number;         // ms: 10 to 90% of the way
+  restTime: number;         // ms: last exit from the 0.1% band
   classification: 'overdamped' | 'critically-damped' | 'underdamped';
   verdict: 'safe' | 'caution' | 'violation';
   reducedMotionRequired: boolean;
   peakAmplitude: number;    // max displacement from equilibrium
-  peakTime: number;         // ms — when peak occurs
+  peakTime: number;         // ms: when the peak occurs
 }
 
-// ── Spring physics computation ──────────────────────────────────────────────
+// ── Verdict ─────────────────────────────────────────────────────────────────
 
-function computeSpring(p: SpringParams): SpringResult {
-  const { stiffness: k, damping: c, mass: m } = p;
-
-  // Guard against invalid inputs
-  if (k <= 0 || m <= 0 || c < 0) {
-    return {
-      dampingRatio: NaN,
-      naturalFreq: NaN,
-      dampedFreq: NaN,
-      overshoot: 0,
-      settleTime: 0,
-      riseTime: 0,
-      classification: 'overdamped',
-      verdict: 'violation',
-      reducedMotionRequired: false,
-      peakAmplitude: 0,
-      peakTime: 0,
-    };
-  }
-
-  const omega0 = Math.sqrt(k / m);              // natural frequency (rad/s)
-  const zeta = c / (2 * Math.sqrt(k * m));       // damping ratio
-
-  let classification: SpringResult['classification'];
-  let overshoot = 0;
-  let dampedFreq = 0;
-  let peakTime = 0;
-  let peakAmplitude = 1; // starts at 0, moves to 1 (equilibrium)
-
-  if (zeta > 1) {
-    classification = 'overdamped';
-    // No overshoot — slow return to equilibrium
-    // Approximate settle time: ~4/(ζ·ω₀ - ω₀·√(ζ²-1))
-    const slowRoot = zeta * omega0 - omega0 * Math.sqrt(zeta * zeta - 1);
-    peakAmplitude = 1;
-  } else if (zeta === 1) {
-    classification = 'critically-damped';
-    // No overshoot — fastest return without oscillation
-    peakAmplitude = 1;
-  } else {
-    // Underdamped (0 ≤ ζ < 1)
-    classification = 'underdamped';
-    dampedFreq = omega0 * Math.sqrt(1 - zeta * zeta);
-
-    // Overshoot percentage: e^(-π·ζ/√(1-ζ²)) × 100
-    overshoot = Math.exp((-Math.PI * zeta) / Math.sqrt(1 - zeta * zeta)) * 100;
-
-    // Peak time (first overshoot): π/ωd
-    peakTime = (Math.PI / dampedFreq) * 1000; // convert to ms
-
-    // Peak amplitude: 1 + overshoot/100
-    peakAmplitude = 1 + overshoot / 100;
-  }
-
-  // Rise time (time to first cross equilibrium) — approx
-  const riseTime = (Math.PI / (2 * omega0)) * 1000; // ms
-
-  // Settle time (2% criterion) — approx 4/(ζ·ω₀) for underdamped
-  let settleTime: number;
-  if (zeta < 1) {
-    settleTime = (4 / (zeta * omega0)) * 1000; // ms
-  } else if (zeta === 1) {
-    settleTime = (5.8 / omega0) * 1000; // critically damped ~5.8/ω₀
-  } else {
-    // Overdamped — slower
-    settleTime = (4 / (zeta * omega0)) * 1000;
-  }
+// The reading comes from the sampler; the verdict thresholds are this page's
+// policy and stay here.
+function resultOf(r: SpringReading): SpringResult {
+  const overshoot = r.overshootPct;
 
   // Verdict: is the overshoot visible enough to require reduced-motion?
   // Threshold: overshoot > 2% is perceptible; > 10% is clearly visible
   let verdict: SpringResult['verdict'];
   let reducedMotionRequired: boolean;
 
-  if (overshoot > 10) {
+  if (!r.valid) {
+    verdict = 'violation';
+    reducedMotionRequired = false;
+  } else if (overshoot > 10) {
     verdict = 'violation';
     reducedMotionRequired = true;
   } else if (overshoot > 2) {
@@ -122,102 +71,93 @@ function computeSpring(p: SpringParams): SpringResult {
   }
 
   return {
-    dampingRatio: zeta,
-    naturalFreq: omega0,
-    dampedFreq,
+    dampingRatio: r.zeta,
+    naturalFreq: r.omega0,
+    dampedFreq: r.omegaD,
     overshoot,
-    settleTime,
-    riseTime,
-    classification,
+    settleTime: r.settleMs,
+    riseTime: r.riseMs,
+    restTime: r.restMs,
+    classification: r.classification,
     verdict,
     reducedMotionRequired,
-    peakAmplitude,
-    peakTime,
+    peakAmplitude: 1 + overshoot / 100,
+    peakTime: r.peakMs,
   };
-}
-
-// ── Spring simulation (for visualization) ───────────────────────────────────
-
-function simulateSpring(p: SpringParams, durationMs: number, samples: number): { t: number; x: number }[] {
-  const { stiffness: k, damping: c, mass: m } = p;
-  const omega0 = Math.sqrt(k / m);
-  const zeta = c / (2 * Math.sqrt(k * m));
-
-  const points: { t: number; x: number }[] = [];
-  const dt = (durationMs / 1000) / samples;
-
-  for (let i = 0; i <= samples; i++) {
-    const t = i * dt;
-    let x: number;
-
-    if (zeta >= 1) {
-      // Overdamped or critically damped: no oscillation
-      if (zeta > 1) {
-        const r1 = -zeta * omega0 + omega0 * Math.sqrt(zeta * zeta - 1);
-        const r2 = -zeta * omega0 - omega0 * Math.sqrt(zeta * zeta - 1);
-        // x(t) = 1 + (r2/(r1-r2))·e^(r1·t) - (r1/(r1-r2))·e^(r2·t)
-        x = 1 + (r2 / (r1 - r2)) * Math.exp(r1 * t) - (r1 / (r1 - r2)) * Math.exp(r2 * t);
-      } else {
-        // Critically damped: x(t) = 1 - (1 + ω₀·t)·e^(-ω₀·t)
-        x = 1 - (1 + omega0 * t) * Math.exp(-omega0 * t);
-      }
-    } else {
-      // Underdamped
-      const omegaD = omega0 * Math.sqrt(1 - zeta * zeta);
-      // x(t) = 1 - e^(-ζω₀t)·[cos(ωd·t) + (ζ/√(1-ζ²))·sin(ωd·t)]
-      x = 1 - Math.exp(-zeta * omega0 * t) * (Math.cos(omegaD * t) + (zeta / Math.sqrt(1 - zeta * zeta)) * Math.sin(omegaD * t));
-    }
-
-    points.push({ t: t * 1000, x: Math.max(-0.5, Math.min(2, x)) });
-  }
-
-  return points;
 }
 
 // ── Preset springs ──────────────────────────────────────────────────────────
 
-const PRESETS: { name: string; params: SpringParams; source: string }[] = [
-  {
-    name: 'M3 Default',
-    params: { stiffness: 200, damping: 28, mass: 1 },
-    source: 'Material 3 Expressive · default spring',
-  },
-  {
-    name: 'M3 Momentum',
-    params: { stiffness: 300, damping: 24, mass: 1 },
-    source: 'Material 3 Expressive · momentum spring',
-  },
-  {
-    name: 'iOS Snappy',
-    params: { stiffness: 300, damping: 30, mass: 1 },
-    source: 'iOS default spring (approx)',
-  },
-  {
-    name: 'iOS Gentle',
-    params: { stiffness: 120, damping: 20, mass: 1 },
-    source: 'iOS gentle spring (approx)',
-  },
-  {
-    name: 'Framer Motion',
-    params: { stiffness: 170, damping: 26, mass: 1 },
-    source: 'Framer Motion default',
-  },
-  {
-    name: 'Bouncy (risky)',
-    params: { stiffness: 400, damping: 10, mass: 1 },
-    source: 'High overshoot, past the contract\'s 10% threshold',
-  },
-  {
-    name: 'Critically damped',
-    params: { stiffness: 200, damping: 28.28, mass: 1 },
-    source: 'ζ = 1.0: fastest settle, no overshoot',
-  },
-  {
-    name: 'Designesy contract',
-    params: { stiffness: 250, damping: 31.6, mass: 1 },
-    source: 'Designesy default spring (damping=1.0, response=0.4)',
-  },
-];
+interface Preset {
+  name: string;
+  params: SpringParams;
+  source: string;
+}
+
+interface ContractSpring {
+  damping: number;
+  response: number;
+}
+
+export interface ContractSprings {
+  default: ContractSpring;
+  momentum: ContractSpring;
+}
+
+// Eight presets, each with the source of its values (the button's title).
+// The Designesy pair is built from the contract springs the page passes in,
+// so this file never imports the contract. Material gives stiffness and a
+// damping ratio; SwiftUI and the contract give a response and a damping
+// ratio; react-spring and Motion give stiffness and damping directly.
+function presetsFor(c: ContractSprings): Preset[] {
+  return [
+    {
+      name: 'M3 Expressive',
+      params: { stiffness: 380, damping: dampingForRatio(380, 0.8), mass: 1 },
+      source: 'Material 3 Expressive default spatial spring: stiffness 380, damping ratio 0.8',
+    },
+    {
+      name: 'M3 Standard',
+      params: { stiffness: 700, damping: dampingForRatio(700, 0.9), mass: 1 },
+      source: 'Material 3 Standard default spatial spring: stiffness 700, damping ratio 0.9',
+    },
+    {
+      name: 'Designesy default',
+      params: springFromResponse(c.default.damping, c.default.response),
+      source: `Designesy contract default spring: damping ratio ${c.default.damping.toFixed(1)}, response ${c.default.response}s`,
+    },
+    {
+      name: 'Designesy momentum',
+      params: springFromResponse(c.momentum.damping, c.momentum.response),
+      source: `Designesy contract momentum spring: damping ratio ${c.momentum.damping.toFixed(1)}, response ${c.momentum.response}s`,
+    },
+    {
+      name: 'React Spring',
+      params: { stiffness: 170, damping: 26, mass: 1 },
+      source: 'react-spring config.default: tension 170, friction 26',
+    },
+    {
+      name: 'iOS Bouncy',
+      params: springFromResponse(0.7, 0.5),
+      source: 'SwiftUI Spring.bouncy: duration 0.5s, bounce 0.3',
+    },
+    {
+      name: 'Motion',
+      params: { stiffness: 100, damping: 10, mass: 1 },
+      source: 'Motion spring defaults: stiffness 100, damping 10, mass 1',
+    },
+    {
+      name: 'Critically damped',
+      params: { stiffness: 200, damping: 2 * Math.sqrt(200), mass: 1 },
+      source: 'ζ = 1.0: the fastest settle without overshoot',
+    },
+  ];
+}
+
+// The reduced-motion model: a 150ms transform (the contract's
+// --duration-quick) on the contract's ease-out, with no overshoot.
+const REDUCED_MS = 150;
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -253,12 +193,6 @@ function overshootBand(pct: number): { label: string; tone: 'pass' | 'warn' | 'f
   return { label: 'large', tone: 'fail' };
 }
 
-// A settle time is infinite when damping is zero; say so instead of
-// rendering "Infinityms".
-function fmtMs(ms: number): string {
-  return Number.isFinite(ms) ? `${ms.toFixed(0)}ms` : 'never';
-}
-
 /**
  * One instrument (design spec 2.2 rule 4, 3.1): the curve and the controls
  * that drive it read as one device split on the 7-line. From 64rem the face
@@ -270,19 +204,23 @@ function fmtMs(ms: number): string {
  * Layout lives in spring-validator.css; nothing here sets geometry inline,
  * so the edge probes read real classes.
  */
-export function SpringValidator() {
-  const [params, setParams] = useState<SpringParams>({ stiffness: 200, damping: 28, mass: 1 });
-  const [selectedPreset, setSelectedPreset] = useState<string>('M3 Default');
+export function SpringValidator({ contractSprings }: { contractSprings: ContractSprings }) {
+  const presets = useMemo(() => presetsFor(contractSprings), [contractSprings]);
+  const [params, setParams] = useState<SpringParams>(() => presets[0].params);
+  const [selectedPreset, setSelectedPreset] = useState<string>(() => presets[0].name);
   const [showReducedMotion, setShowReducedMotion] = useState(true);
   const uid = useId();
 
-  const result = useMemo(() => computeSpring(params), [params]);
+  const reading = useMemo(() => readSpring(params), [params]);
+  const result = useMemo(() => resultOf(reading), [reading]);
 
-  // Simulate for chart — duration based on settle time, capped at 2000ms
-  const simDuration = useMemo(() => Math.min(Math.max(result.settleTime * 1.5, 500), 2000), [result.settleTime]);
-  const simData = useMemo(() => simulateSpring(params, simDuration, 200), [params, simDuration]);
+  // The chart spans the whole exported curve (its rest point) and a quarter
+  // past the settle point, from 500ms to 3s.
+  const simDuration = useMemo(() => chartDomainMs(reading), [reading]);
+  const simData = useMemo(() => sampleResponse(params, simDuration, 200), [params, simDuration]);
+  const curve = useMemo(() => linearEasing(params, reading), [params, reading]);
 
-  const handlePreset = useCallback((preset: typeof PRESETS[0]) => {
+  const handlePreset = useCallback((preset: Preset) => {
     setParams(preset.params);
     setSelectedPreset(preset.name);
   }, []);
@@ -293,7 +231,7 @@ export function SpringValidator() {
   }, []);
 
   const verdict = VERDICT[result.verdict];
-  const reducedMs = Math.min(result.settleTime, 150);
+  const reducedMs = REDUCED_MS;
   const band = overshootBand(result.overshoot);
   const checks = checklistOf(result);
 
@@ -316,7 +254,7 @@ export function SpringValidator() {
           Preset springs
         </p>
         <div className="sv-preset-row">
-          {PRESETS.map((preset) => (
+          {presets.map((preset) => (
             <button
               key={preset.name}
               type="button"
@@ -370,6 +308,7 @@ export function SpringValidator() {
               data={simData}
               durationMs={simDuration}
               overshoot={result.overshoot}
+              settleMs={result.settleTime}
               showReducedMotion={showReducedMotion}
               reducedDuration={reducedMs}
               verdict={result.verdict}
@@ -380,7 +319,8 @@ export function SpringValidator() {
                   This spring produces {result.overshoot.toFixed(1)}% overshoot. An
                   explicit <code>@media (prefers-reduced-motion: reduce)</code> rule
                   must suppress or replace this animation. Recommendation: replace
-                  with a linear or ease-out transition at {reducedMs.toFixed(0)}ms.
+                  it with a {reducedMs}ms transition on the contract&apos;s ease-out
+                  curve, as the snippet below does.
                 </>
               ) : (
                 <>
@@ -455,8 +395,8 @@ export function SpringValidator() {
                 hint={band.label}
                 tone={band.tone}
               />
-              <Metric label="Settle time (2%)" value={fmtMs(result.settleTime)} hint="to equilibrium" />
-              <Metric label="Rise time" value={fmtMs(result.riseTime)} hint="to equilibrium" />
+              <Metric label="Settle time (2%)" value={formatMs(result.settleTime)} hint="to equilibrium" />
+              <Metric label="Rise time" value={formatMs(result.riseTime)} hint="10 to 90%" />
               <Metric label="Natural freq" value={`${(result.naturalFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.naturalFreq.toFixed(1)} rad/s`} />
               {result.dampedFreq > 0 ? (
                 <Metric label="Damped freq" value={`${(result.dampedFreq / (2 * Math.PI)).toFixed(2)} Hz`} hint={`${result.dampedFreq.toFixed(1)} rad/s`} />
@@ -503,17 +443,7 @@ export function SpringValidator() {
           CSS snippet with reduced-motion fallback
         </figcaption>
         <pre className="sv-snippet-code">
-{`.spring-${result.classification} {
-  /* Damping ratio: ζ = ${result.dampingRatio.toFixed(3)} · Overshoot: ${result.overshoot.toFixed(1)}% */
-  transition: transform ${fmtMs(result.settleTime)} cubic-bezier(0.2, 0, 0, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spring-${result.classification} {
-    /* Suppress overshoot: linear or ease-out at ${reducedMs.toFixed(0)}ms */
-    transition: transform ${reducedMs.toFixed(0)}ms ease-out;
-  }
-}`}
+{snippetOf(result, curve)}
         </pre>
       </figure>
 
@@ -531,6 +461,46 @@ export function SpringValidator() {
       </div>
     </div>
   );
+}
+
+// ── CSS snippet ─────────────────────────────────────────────────────────────
+
+const NO_CURVE: Record<'never' | 'too-long' | 'too-many-stops', string> = {
+  never: 'This spring never comes to rest, so there is no curve to export',
+  'too-long': 'This spring takes longer than 3 seconds to come to rest, so there is no curve to export',
+  'too-many-stops': 'This curve needs more than 120 linear() stops to stay accurate, so there is no curve to export',
+};
+
+// The exported CSS: the spring as a linear() curve timed to its rest point.
+// The fallback line comes first and carries a var(); the linear() line
+// carries none, so a browser without linear() drops it while parsing and
+// keeps the fallback. A var() inside it would only fail at computed-value
+// time, which would discard both lines.
+function snippetOf(r: SpringResult, curve: LinearResult): string {
+  const cls = `.spring-${r.classification}`;
+  const settle = Number.isFinite(r.settleTime) ? `within 2% at ${formatMs(r.settleTime)}` : 'never settles within 2%';
+  const head = `  /* Damping ratio ζ = ${r.dampingRatio.toFixed(3)} · overshoot ${r.overshoot.toFixed(1)}% · ${settle} */`;
+  const ease = `cubic-bezier(${EASE_OUT.join(', ')})`;
+  const body = curve.ok
+    ? [
+        head,
+        `  /* The curve runs to 0.1% of rest at ${curve.durationMs}ms, so it lands without a jump */`,
+        `  transition: transform ${curve.durationMs}ms var(--ease-out, ${ease});`,
+        `  transition: transform ${curve.durationMs}ms ${curve.easing};`,
+      ]
+    : [head, `  /* ${NO_CURVE[curve.reason]} */`];
+  return [
+    `${cls} {`,
+    ...body,
+    '}',
+    '',
+    '@media (prefers-reduced-motion: reduce) {',
+    `  ${cls} {`,
+    `    /* Reduced motion: a ${REDUCED_MS}ms ease-out with no overshoot, in place of the spring */`,
+    `    transition: transform var(--duration-quick, ${REDUCED_MS}ms) var(--ease-out, ${ease});`,
+    '  }',
+    '}',
+  ].join('\n');
 }
 
 // ── ParamSlider subcomponent ────────────────────────────────────────────────
@@ -623,7 +593,7 @@ interface CheckRow {
  * The reduced-motion rows are the verdict's own thresholds: overshoot over
  * 2% (reducedMotionRequired, Caution and up) and over 10% (Violation). The
  * @media row asked for a rule on every underdamped spring, so it warned
- * under a Safe verdict (M3 Default: zeta 0.990, 0.0% overshoot) and passed
+ * under a Safe verdict (k 200, c 28, m 1: zeta 0.990, 0.0% overshoot) and passed
  * under a Violation; now it is not applicable wherever the verdict needs no
  * rule, and met where it does, because the snippet this tool emits carries
  * the rule. The budget rows check the emitted CSS against bounds the verdict
@@ -656,7 +626,8 @@ function checklistOf(r: SpringResult): { reducedMotion: CheckRow[]; budget: Chec
     ],
     budget: [
       {
-        state: r.settleTime <= 300 ? 'pass' : 'fail',
+        // The rounded value the Settle tile shows, so the row and the tile agree.
+        state: Math.round(r.settleTime) <= 300 ? 'pass' : 'fail',
         label: 'Settle time ≤ 300ms (UI animation bound)',
         detail: 'UI animation should stay at or below 300ms unless justified',
       },
@@ -756,6 +727,7 @@ function SpringChart({
   data,
   durationMs,
   overshoot,
+  settleMs,
   showReducedMotion,
   reducedDuration,
   verdict,
@@ -763,6 +735,7 @@ function SpringChart({
   data: { t: number; x: number }[];
   durationMs: number;
   overshoot: number;
+  settleMs: number;
   showReducedMotion: boolean;
   reducedDuration: number;
   verdict: 'safe' | 'caution' | 'violation';
@@ -795,29 +768,32 @@ function SpringChart({
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
+  // The drawing clamps progress to -0.5..2, so a large overshoot stays on
+  // the plot; the readouts never read clamped values.
+  const drawn = data.map((d) => ({ t: d.t, x: Math.max(-0.5, Math.min(2, d.x)) }));
+
   // Y range: from 0 to max(1.5, peak amplitude + 0.1)
-  const yMax = Math.max(1.5, Math.max(...data.map((d) => d.x)) + 0.1);
+  const yMax = Math.max(1.5, Math.max(...drawn.map((d) => d.x)) + 0.1);
   const yMin = -0.1;
 
   const xScale = (t: number) => padding.left + (t / durationMs) * chartW;
   const yScale = (x: number) => padding.top + chartH - ((x - yMin) / (yMax - yMin)) * chartH;
 
   // Build path
-  const linePts: Pt[] = data.map((d) => [xScale(d.t), yScale(d.x)]);
+  const linePts: Pt[] = drawn.map((d) => [xScale(d.t), yScale(d.x)]);
   const linePath = linePts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ');
 
   // Equilibrium line (y = 1)
   const eqY = yScale(1);
 
-  // Reduced-motion line (ease-out curve from 0 to 1, capped at reducedDuration)
+  // Reduced-motion line: the contract's ease-out from 0 to 1 over reducedDuration
   const reducedPts: Pt[] = [];
   if (showReducedMotion && reducedDuration < durationMs) {
     const reducedSamples = 50;
     for (let i = 0; i <= reducedSamples; i++) {
       const t = (i / reducedSamples) * reducedDuration;
       const progress = t / reducedDuration;
-      // Ease-out: 1 - (1-p)³
-      const x = 1 - Math.pow(1 - progress, 3);
+      const x = cubicBezierProgress(progress, EASE_OUT[0], EASE_OUT[1], EASE_OUT[2], EASE_OUT[3]);
       reducedPts.push([xScale(t), yScale(x)]);
     }
   }
@@ -831,7 +807,7 @@ function SpringChart({
   const responseObstacles = densify(linePts);
   const taken: Box[] = [];
 
-  const peak = data.reduce((max, d) => (d.x > max.x ? d : max), data[0]);
+  const peak = drawn.reduce((max, d) => (d.x > max.x ? d : max), drawn[0]);
   let overshootLabel: { x: number; y: number; anchor: 'start' | 'end'; text: string } | null = null;
   if (overshoot > 2) {
     const text = `${overshoot.toFixed(1)}% overshoot`;
@@ -894,7 +870,7 @@ function SpringChart({
         className="sv-chart-svg"
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`Spring response chart showing ${overshoot.toFixed(1)}% overshoot over ${durationMs.toFixed(0)}ms`}
+        aria-label={`Spring response chart showing ${overshoot.toFixed(1)}% overshoot, ${Number.isFinite(settleMs) ? `within 2% at ${formatMs(settleMs)}` : 'never settling within 2%'}, over ${durationMs.toFixed(0)}ms`}
       >
         {/* Grid lines */}
         {[0, 0.5, 1, 1.5].map((y) => (
