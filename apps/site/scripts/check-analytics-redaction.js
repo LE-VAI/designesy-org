@@ -28,6 +28,15 @@
  *      that hook. A correct function that nothing calls protects nobody, and a
  *      second mount added later without the hook would send the address again.
  *
+ * On the same reading, a third clause holds what is measured at all:
+ *
+ *   3. FULL PAGE LOADS ONLY: every <SpeedInsights> element passes
+ *      softNavs={false} and spreads no props. @vercel/speed-insights 2.1.0
+ *      writes that as data-soft-navs="false" on the script tag it adds, and
+ *      Vercel's hosted script then reports no client-side navigation. Left
+ *      out, no attribute is written and the hosted script's own default,
+ *      which reports them, decides. A spread could set the prop back.
+ *
  * THE CLAUSE THAT COULD NOT FAIL
  * This lane's source gates have each shipped once with a clause that passed on
  * broken code: a pattern satisfied by a comment, or matched across an element
@@ -35,7 +44,12 @@
  * match to ONE opening tag (a bounded run that cannot cross a `>`), and the
  * gate fails if it finds no mount at all instead of passing on an empty set.
  * Both clauses were mutation-tested: deleting the hook from either element, and
- * making the hook return its input unchanged, each exit non-zero.
+ * making the hook return its input unchanged, each exit non-zero. The third
+ * clause fails on the mount as it was before softNavs={false}, and with the
+ * prop deleted, set to true or joined by a spread. Clauses 2 and 3 read the
+ * source as text without parsing it, so they hold the element in the plain
+ * form used here; other ways of writing JSX are left to review and the type
+ * check.
  *
  * Usage:  node scripts/check-analytics-redaction.js [--json]
  * Exits 1 on any finding, so it can gate CI.
@@ -164,6 +178,18 @@ function wiringFindings() {
       });
     }
   }
+  // Clause 3, full page loads only. A spread could set softNavs back, so a
+  // <SpeedInsights> that spreads props fails as well.
+  const softNavsOff = /(?:^|\s)softNavs=\{\s*false\s*\}/;
+  for (const m of mounts.filter((x) => x.name === 'SpeedInsights')) {
+    if (!softNavsOff.test(m.attrs) || /\{\s*\.\.\./.test(m.attrs)) {
+      findings.push({
+        id: 'SpeedInsights-soft-navs-off',
+        why: `<SpeedInsights> in ${m.file} does not pass softNavs={false}, or spreads props that could set it, so Vercel's hosted script can also report client-side navigations, which it does by default.`,
+        fix: 'Pass softNavs={false} to that element and spread no props on it.',
+      });
+    }
+  }
   return { findings, mounts };
 }
 
@@ -176,8 +202,10 @@ async function main() {
   if (asJson) {
     console.log(JSON.stringify({ ok: findings.length === 0, cases: CASES.length, mounts, findings }, null, 2));
   } else if (findings.length === 0) {
+    const speedInsights = mounts.filter((m) => m.name === 'SpeedInsights').length;
     console.log(
       `analytics-redaction: OK — ${CASES.length} address case(s) redacted; ${mounts.length} mount(s) pass beforeSend={${HOOK}} (${mounts.map((m) => `${m.name} in ${m.file}`).join(', ')})`,
+      `and ${speedInsights} SpeedInsights mount(s) pass softNavs={false}`,
     );
   } else {
     console.error(`analytics-redaction: ${findings.length} finding(s)\n`);

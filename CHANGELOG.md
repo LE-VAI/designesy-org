@@ -6,6 +6,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**Speed Insights reports no soft navigations** (the site; no version
+moves). Vercel's changelog entry "Speed Insights now measures soft
+navigations" turned soft-navigation measurement on by default for every
+project: in a Chromium-based browser that supports it, a client-side
+navigation can send measurements of its own. The site's one
+`<SpeedInsights>` now passes `softNavs={false}`, so a move between pages
+inside the site sends none, and a full page load is measured as before.
+
+### Changed (Speed Insights soft navigations)
+
+- **`<SpeedInsights>` passes `softNavs={false}`**
+  (`app/lib/site-analytics.tsx`). @vercel/speed-insights 2.1.0, the
+  version the site installs since #436, writes it on the script tag it
+  adds as `data-soft-navs="false"`, and Vercel's hosted script then
+  observes no soft navigation. With the prop left out, as before, no
+  attribute is written and the hosted script's own default decides: the
+  script served on 2026-11-24 reports soft navigations unless the
+  attribute says `"false"`. A `softNavs` value in the settings Vercel
+  inlines at build time cannot turn it back on, since the package lets
+  the element's own props win.
+- **The redaction hook's comment names @vercel/speed-insights 2.1.0**
+  (`app/lib/analytics-url.ts`), the version in `package-lock.json` since
+  #436, where it named 2.0.0.
+
+### Not changed (Speed Insights soft navigations)
+
+- What a full page load reports: time to first byte, first and largest
+  contentful paint, layout shift and interaction to next paint. Every
+  measurement passes the same `beforeSend` hook, which cuts its address
+  at the first `?` or `#`.
+- Web Analytics, the hosted script's address, the vitals endpoint and the
+  content security policy.
+- No check, scoring rule, weight, score or version moves, and no contract
+  text changes.
+
+Caveats: no browser was run for this change. That the hosted script
+sends no soft-navigation measurement with the attribute set is read from
+its code as served on 2026-11-24, and Vercel can change that script
+without a change here. Soft navigations are measured only in
+Chromium-based browsers, so other browsers sent none before this change
+either.
+
+### Gates (Speed Insights soft navigations)
+
+- `check-analytics-redaction.js`, in `npm run build` and CI's Build site
+  job, gains a third clause: every `<SpeedInsights>` element under `app/`
+  passes `softNavs={false}` and spreads no props, read from
+  comment-stripped source one opening tag at a time, as the `beforeSend`
+  clause reads it. Against main before this change the gate reports one
+  finding, and it fails with the prop deleted, set to `true` or joined by
+  a spread. The address cases and the `beforeSend` wiring pass as before.
+
 **v04 finds the sound control a visitor would use, and judges it on any
 site** (the site; no version moves). With the browser audit on, v04
 clicked the first element in the page with `aria-pressed` or

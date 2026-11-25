@@ -18,7 +18,11 @@ export function SiteAnalytics() {
   return (
     <>
       <Analytics beforeSend={redactAnalyticsEvent} />
-      <SpeedInsights beforeSend={redactAnalyticsEvent} />
+      {/* Full page loads only. By default the hosted script also reports
+          client-side navigations in Chromium-based browsers that support
+          them; softNavs={false} turns that off, so a move between pages
+          inside the site sends no measurement of its own. */}
+      <SpeedInsights beforeSend={redactAnalyticsEvent} softNavs={false} />
     </>
   );
 }
