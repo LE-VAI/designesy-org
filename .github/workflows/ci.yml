@@ -924,6 +924,16 @@ jobs:
           echo "::error::Edge contract timed out on both attempts"
           exit 1
 
+      # The engine pages' formula plate (.eg-formula), laid out at 15 widths
+      # from 320 to 1920: nothing ends past the plate's edge, an item beside
+      # another is on one line, and the note starts under the formula. As a
+      # two-column grid the second item broke over up to five lines on six
+      # pages, and on /report ran 24px past the edge; nothing clips there,
+      # so the edge contract passed it. About 10 s.
+      - name: Formula plate
+        if: ${{ !cancelled() && steps.serve.outcome == 'success' }}
+        run: node scripts/check-formula-plate.js --base http://127.0.0.1:3422 --channel chrome
+
       - name: Glass blur
         if: ${{ !cancelled() && steps.serve.outcome == 'success' }}
         # playwright-core does not download browsers, so this must use a system

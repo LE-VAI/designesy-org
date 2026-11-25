@@ -2968,14 +2968,27 @@ button.mt-row {
    gradient's lit top --muted-dim measures 4.38:1.
 
    Two rows on every engine page: the formula and its scale on the first, in
-   ink and muted; the note on the second, dimmer. As a flex row the note ran
-   on after the formula on seven pages and broke under it on two, so the same
-   plate had two shapes. The last span is the note on every page; one column
-   on a narrow method, where row one would not fit. */
+   ink and muted; the note on the second, dimmer. The plate is a flex row
+   that wraps, so the scale (on /compare and /maturity, a second formula)
+   sits beside the formula where both fit on one line and takes a row of
+   its own, whole, where they do not. No width in this sheet has to
+   describe the copy: as a two-column grid with a 44rem threshold, the
+   second item was squeezed into what the formula left and broke over two
+   to five lines on six pages (on /report at every window width from 767
+   to 1069px), and there its last grade ran up to 24px past the plate's
+   edge. A longer formula, wider tracking or a wider operator glyph now
+   moves only the width at which the second item drops.
+
+   The last span is the note on every page and always takes a full row: as
+   a plain flex row it ran on after the formula on seven pages and broke
+   under it on two, so the same plate had two shapes. Each item may shrink
+   to the plate and wrap inside it, so a formula longer than the plate
+   never pushes past the edge. On a narrow method (under 44rem) every item
+   is a row, as before. */
 .eg-formula {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4) var(--space-24);
   margin: var(--space-32) 0 0;
   padding: var(--space-16) var(--space-20);
@@ -2987,14 +3000,19 @@ button.mt-row {
   font-variant-numeric: tabular-nums;
 }
 
+.eg-formula > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .eg-formula > :last-child {
-  grid-column: 1 / -1;
+  flex: 0 0 100%;
   color: var(--muted-dim);
 }
 
 @container method (width < 44rem) {
-  .eg-formula {
-    grid-template-columns: minmax(0, 1fr);
+  .eg-formula > * {
+    flex-basis: 100%;
   }
 }
 
