@@ -6,6 +6,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The engine pages' formula plate wraps whole** (the site; no version
+moves). Under each engine page's method a plate shows the formula, on
+most pages the letter scale or a second formula beside it, and a note.
+Between a tablet's width and a small laptop's that second item was
+squeezed beside the formula: it broke over two lines on /readiness,
+/drift, /monitor and /compare and over up to five on /score and /report,
+and on /report its last grade ran up to 24px past the plate's right edge
+at viewport widths 767 to 790. It now sits beside the formula where both
+fit on one line and takes a row of its own where they do not.
+
+### Fixed (formula plate)
+
+- **The plate is a flex row that wraps** (`.eg-formula` in
+  `app/engine.css`), where it was a two-column grid with one 44rem
+  threshold for every page. The pages' formulas differ in length, so one
+  threshold could not fit them all: main held the second item on two to
+  five lines at viewport widths 767 (/readiness), 767 to 855 (/drift),
+  767 to 894 (/monitor), 767 to 898 (/compare), 767 to 1014 (/score) and
+  767 to 1069 (/report). No width in the sheet describes the copy now, so
+  a longer formula, wider tracking or a wider operator glyph only moves
+  the width at which the second item drops to its own row.
+- **The note always takes a full row**, and each item may shrink to the
+  plate and wrap inside it, so a formula longer than the plate stays
+  inside the edge.
+- **/score/contract loses its own threshold for the plate**
+  (`app/score/contract/contract.css`, 78.5rem). It set the grid's
+  columns, which does nothing on a flex row.
+
+### Not changed (formula plate)
+
+- Wherever the plate was a clean row or stacked, it is the same: at each
+  of the 6909 route widths from 320 to 1100 where main's second item was
+  on one line, the items' offsets, line counts and the plate's height
+  equal main's. Under a 44rem method every item is still a row.
+- One exception, on /score/contract at viewport widths 1587 to 1591: the
+  scale now sits beside the formula, where the deleted threshold held it
+  under although the row fits.
+- The plate's material, rim, type and colours, the pages' copy and
+  markup, and every other rule on the engine pages.
+- No check, scoring rule, weight, score or version moves, and no contract
+  text changes.
+
+Caveats: measured in headless Chromium 153 on Windows 11 at every viewport
+width from 320 to 1100 on all ten routes (to 1920 on /score/contract),
+as built, with body letter-spacing set to 0, and with the operator glyph
+set in Consolas and in Courier New; at 1440 and 1920 in both themes.
+Safari, Firefox, the iPad's own mono faces (SF Mono, Menlo) and real
+devices were not measured. Headless Chromium has no classic scrollbar,
+and no width was measured with one.
+
+### Gates (formula plate)
+
+- `check-formula-plate.js` is new, in CI's Visual gates part 1 after
+  Edge contract. It loads every route whose page passes a formula to
+  `EngineMethod` at 15 widths from 320 to 1920 and fails when an item
+  ends past the plate's edge, when an item beside another is on more than
+  one line, or when the note does not start under the formula. Against
+  main before this change it exits 1 on six routes and names /report's
+  overflow at 767, 768, 771 and 780; `--break` puts the grid back and
+  must exit 1; `--letter-spacing 0` passes here and fails on main for
+  /readiness at 768. About 10 s.
+
 **Speed Insights reports no soft navigations** (the site; no version
 moves). Vercel's changelog entry "Speed Insights now measures soft
 navigations" turned soft-navigation measurement on by default for every

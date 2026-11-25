@@ -1741,15 +1741,6 @@ html[data-motion="paused"] .cf-skeleton li {
   }
 }
 
-/* The method plate: contract mode's formula is longer than an engine page's,
-   so below the width where the formula and the whole scale fit on one line
-   (78.5rem, measured in QA round 3.1), the scale takes its own row. */
-@container method (width < 78.5rem) {
-  .cf .eg-formula {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* The source choice at 200% text (WCAG 1.4.4): where the slab is wide enough,
    the choice keeps its labels whole and the reading wraps under it. */
 @container ctl (width >= 30rem) {

@@ -105,6 +105,7 @@ function main() {
   const CI_ONLY = new Set([
     'check-gate-parity.js',
     'edge-contract.js',
+    'check-formula-plate.js',
     'check-glass-blur.js',
     'check-focus-visibility.js',
     'check-motion-pause.js',
