@@ -9,7 +9,7 @@
  * on every vital, so a private or staging address typed into the score box
  * left the browser for the analytics store. Both scripts hand every event to a
  * `beforeSend` hook first (@vercel/analytics 2.0.1 and @vercel/speed-insights
- * 2.0.0, the versions in package-lock.json), and returning the event with a
+ * 2.1.0, the versions in package-lock.json), and returning the event with a
  * shortened `url` is what they send.
  *
  * WHY EVERYWHERE, NOT ONLY ON /score. Eight routes carry a visitor-entered
