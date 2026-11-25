@@ -6,6 +6,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**The home page's contract card reads its version at phone widths** (the
+site; no version moves). The featured contract card shows three facts:
+the version, the principles and the checks. At viewport widths 280 to
+328 the version's figure ran into the principles figure beside it, so
+the card read "v0.4.79".
+
+### Fixed (home contract card)
+
+- **The facts are a flex row that wraps** (`.home-contract-facts` in
+  `app/home.css`), where they were a three-column grid of equal thirds.
+  Each fact is at least as wide as its own figure. Where each third holds
+  its figure the facts are equal thirds, as before. Where a third is too
+  narrow for "v0.4.7" (viewport 280 to 351, and on wider layouts 721 to
+  723 and 1024 to 1069, where the card is narrow), the version keeps its
+  width and the other two share the rest. Where even that does not fit,
+  as at 200% text, a fact moves to the next row.
+
+### Not changed (home contract card)
+
+- At each of the 1033 widths from 280 to 1440 where the grid held every
+  figure inside its third, the facts' offsets and widths and the card's
+  height are the same (largest difference 0.05px). Eight widths at the
+  edges of the bands above move by up to 0.41px, where the figure was
+  already up to half a pixel past its third.
+- The facts' type, colours, labels and copy, and every other rule on the
+  home page.
+
+Caveats: measured in headless Chromium 153 on Windows 11, as a phone
+(device pixel ratio 2, touch), dark theme, at every viewport width from
+280 to 1440, and again with the root text at 200%. Safari, Firefox and
+real devices were not measured.
+
 **The engine pages' formula plate wraps whole** (the site; no version
 moves). Under each engine page's method a plate shows the formula, on
 most pages the letter scale or a second formula beside it, and a note.
