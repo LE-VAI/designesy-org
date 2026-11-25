@@ -684,10 +684,18 @@
   margin-top: auto;
 }
 
+/* The contract's three facts (version, principles, checks) in equal thirds
+   wherever each third holds its figure. The facts are a flex row that wraps,
+   not a three-column grid: as a grid, at viewport widths up to 351 the
+   version's figure ran past its third, and up to 328 it ran into the
+   principles figure beside it, so "v0.4.7" and "9" read "v0.4.79". Each fact
+   is now at least as wide as its own figure; where thirds are too narrow
+   the version keeps its width and the other two share the rest, and where
+   even that does not fit a fact moves to the next row. */
 .home-contract-facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-8);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-16) var(--space-8);
   margin: var(--space-24) 0 var(--space-24);
   padding-top: var(--space-20);
   border-top: 1px solid var(--line);
@@ -695,6 +703,8 @@
 
 .home-contract-facts div {
   display: grid;
+  flex: 1 1 0;
+  min-width: max-content;
   gap: var(--space-4);
 }
 
