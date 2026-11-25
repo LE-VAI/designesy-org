@@ -411,6 +411,26 @@
   }
 }
 
+/* Narrow bench, a narrower row still: the name and the state share the row
+   where both fit with a 12px gap, and the state takes the line under the
+   name, at its right end, where not. As two grid columns the name (one
+   line, never wrapped) ran into the state at viewport widths up to 320 on
+   /score, /readiness and /monitor, and up to 336 on /maturity once its
+   count reads "24 of 24 answered". No width here describes the copy. */
+@container bench (width < 36rem) {
+  .eg-inst-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-12);
+    row-gap: var(--space-4);
+    padding-block: var(--space-8);
+  }
+  .eg-inst-state {
+    margin-inline-start: auto;
+  }
+}
+
 /* The title bar follows the panes (design spec 2.2 rule 6). From 64rem the
    bar splits on the 7-line like the body under it: the engine's name and the
    target pill sit over the face, the state sits over the side, and the
